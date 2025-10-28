@@ -245,16 +245,24 @@ class ShortsAdapter(
         }
     }
 
-    override fun onViewAttachedToWindow(holder: StringViewHolder) {
-        super.onViewAttachedToWindow(holder)
-        holder.onViewAttached()
-    }
+//    override fun onViewAttachedToWindow(holder: StringViewHolder) {
+//        super.onViewAttachedToWindow(holder)
+//        holder.onViewAttached()
+//    }
 
     override fun getItemCount(): Int {
         return shortsList.size
     }
 
 
+    override fun onViewAttachedToWindow(holder: StringViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        holder.onViewAttached()
+
+        // CRITICAL: Reattach player when view comes back
+        holder.getSurface().player = exoplayer
+        holder.getSurface().visibility = View.VISIBLE
+    }
 
 }
 
@@ -328,37 +336,97 @@ class StringViewHolder(
     }
 
 
-    // INITIALIZATION
 
 
+    // 2. UPDATED setupClickListeners with all clicks in one place
+    private fun setupClickListeners(
+        data: MyData,
+        url: String,
+        shortOwnerId: String,
+        shortOwnerName: String,
+        shortOwnerUsername: String,
+        shortOwnerProfilePic: String
+    ) {
+        // Clear any existing listeners to prevent duplicates
+        commentsParentLayout.setOnClickListener(null)
+        shareBtn.setOnClickListener(null)
+        downloadBtn.setOnClickListener(null)
+        username.setOnClickListener(null)
+        profileImageView.setOnClickListener(null)
+        shortsViewPager.setOnClickListener(null)
+
+        // Set new listeners
+        commentsParentLayout.setOnClickListener {
+            Log.d(TAG, "onBind: Posting for main activity to open comments")
+            val userShortsEntity = shortsEntityToUserShortsEntity(data.shortsEntity)
+            commentsClickListener.onCommentsClick(bindingAdapterPosition, userShortsEntity)
+        }
+
+        shareBtn.setOnClickListener {
+            onClickListeners.onShareClick(bindingAdapterPosition)
+        }
+
+        downloadBtn.setOnClickListener {
+            onClickListeners.onDownloadClick(url, "FlashShorts")
+        }
+
+        username.setOnClickListener {
+            handleUsernameClick(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+        }
+
+        // Profile image click (moved from setupProfileImage)
+        profileImageView.setOnClickListener {
+            handleProfileImageClick(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+        }
+
+        // Pause/Play on frame click
+        shortsViewPager.setOnClickListener {
+            EventBus.getDefault().post(PausePlayEvent(true))
+        }
+    }
+
+    // 3. UPDATED setupProfileImage - ONLY loads image, NO click listener
+    private fun setupProfileImage(
+        shortOwnerId: String,
+        shortOwnerName: String,
+        shortOwnerUsername: String,
+        shortOwnerProfilePic: String
+    ) {
+        // Only load the image - click listener is set in setupClickListeners
+        Glide.with(itemView.context)
+            .load(shortOwnerProfilePic)
+            .apply(RequestOptions.bitmapTransform(CircleCrop()))
+            .apply(RequestOptions.placeholderOf(R.drawable.flash21))
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .into(profileImageView)
+
+        // NO CLICK LISTENER HERE - it's in setupClickListeners now
+    }
+
+    // 4. REMOVE this call from init block
     init {
-        setupClickListeners()
+        // DELETE THIS LINE:
+        // setupClickListeners()
+
+        // Keep these:
         setupSeekBar()
         setupPlayer()
         setupUploadComponents()
     }
 
-
-
+    // 5. UPDATED onBind method
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
     override fun onBind(data: MyData) {
         val shortsEntity = data.shortsEntity
 
-        // Clear previous player state first
+        // Properly attach player
         videoView.player = null
-
-        // Small delay to ensure surface is ready
-        videoView.post {
-            // Now attach player
-            videoView.player = exoplayer
-            videoView.useController = false
-            videoView.keepScreenOn = true
-
-            // Force visibility and layout
-            videoView.visibility = View.VISIBLE
-            videoView.requestLayout()
-        }
+        videoView.player = exoplayer
+        videoView.useController = false
+        videoView.keepScreenOn = true
+        videoView.visibility = View.VISIBLE
+        videoView.requestLayout()
 
         val url = shortsEntity.images[0].url
         val shortOwnerId = shortsEntity.author.account._id
@@ -369,9 +437,14 @@ class StringViewHolder(
         totalComments = shortsEntity.comments
 
         setupEventBusEvents(shortsEntity)
-        setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-        setupFollowButton(data, shortOwnerId)
+
+        // IMPORTANT: Setup profile image BEFORE click listeners
         setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+
+        // NOW setup all click listeners (including profile image click)
+        setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+
+        setupFollowButton(data, shortOwnerId)
         setupContent(shortsEntity)
 
         // Reset video progress
@@ -379,17 +452,161 @@ class StringViewHolder(
         videoDuration = 0L
     }
 
+    // 6. ADD cleanup method for onViewRecycled
     fun onViewRecycled() {
         stopProgressUpdates()
 
-        // CRITICAL: Detach player from this view
-        videoView.player = null
+        // Clear click listeners to prevent memory leaks
+        commentsParentLayout.setOnClickListener(null)
+        shareBtn.setOnClickListener(null)
+        downloadBtn.setOnClickListener(null)
+        username.setOnClickListener(null)
+        profileImageView.setOnClickListener(null)
+        shortsViewPager.setOnClickListener(null)
+
+        // Don't detach player - just pause
+        // videoView.player = null  // KEEP THIS COMMENTED
 
         // Reset state
         videoDuration = 0L
         bottomVideoSeekBar.progress = 0
         isPlaying = false
     }
+
+    // 7. OPTIONAL: Add a method to reattach player and listeners
+    fun reattachPlayer() {
+        videoView.player = null
+        videoView.post {
+            videoView.player = exoplayer
+            videoView.visibility = View.VISIBLE
+            videoView.requestLayout()
+        }
+    }
+
+    // INITIALIZATION
+
+
+//    init {
+//        setupClickListeners()
+//        setupSeekBar()
+//        setupPlayer()
+//        setupUploadComponents()
+//    }
+
+
+//
+//    @OptIn(UnstableApi::class)
+//    @SuppressLint("SetTextI18n")
+//    override fun onBind(data: MyData) {
+//        val shortsEntity = data.shortsEntity
+//
+//        // Clear previous player state first
+//        videoView.player = null
+//
+//        // Small delay to ensure surface is ready
+//        videoView.post {
+//            // Now attach player
+//            videoView.player = exoplayer
+//            videoView.useController = false
+//            videoView.keepScreenOn = true
+//
+//            // Force visibility and layout
+//            videoView.visibility = View.VISIBLE
+//            videoView.requestLayout()
+//        }
+//
+//        val url = shortsEntity.images[0].url
+//        val shortOwnerId = shortsEntity.author.account._id
+//        val shortOwnerUsername = shortsEntity.author.account.username
+//        val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
+//        val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
+//
+//        totalComments = shortsEntity.comments
+//
+//        setupEventBusEvents(shortsEntity)
+//        setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+//        setupFollowButton(data, shortOwnerId)
+//        setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+//        setupContent(shortsEntity)
+//
+//        // Reset video progress
+//        bottomVideoSeekBar.progress = 0
+//        videoDuration = 0L
+//    }
+
+
+//    @OptIn(UnstableApi::class)
+//    @SuppressLint("SetTextI18n")
+//    override fun onBind(data: MyData) {
+//        val shortsEntity = data.shortsEntity
+//
+//        // IMPORTANT: Ensure player is properly attached
+//        videoView.player = null
+//
+//        // Immediately attach the player
+//        videoView.player = exoplayer
+//        videoView.useController = false
+//        videoView.keepScreenOn = true
+//
+//        // Force visibility and ensure view is ready
+//        videoView.visibility = View.VISIBLE
+//        videoView.requestLayout()
+//
+//        // Remove the post{} delay - it's causing issues
+//        // The view should be ready immediately in RecyclerView
+//
+//        val url = shortsEntity.images[0].url
+//        val shortOwnerId = shortsEntity.author.account._id
+//        // ... rest of your code
+//
+//        setupEventBusEvents(shortsEntity)
+//        setupClickListeners(data, url, shortOwnerId)
+//        setupFollowButton(data, shortOwnerId)
+//        setupProfileImage(
+//            shortOwnerId,
+//            shortOwnerName = TODO(),
+//            shortOwnerUsername = TODO(),
+//            shortOwnerProfilePic = TODO()
+//        )
+//        setupContent(shortsEntity)
+//
+//        // Reset video progress
+//        bottomVideoSeekBar.progress = 0
+//        videoDuration = 0L
+//    }
+//
+//    fun reattachPlayer() {
+//        videoView.player = null
+//        videoView.post {
+//            videoView.player = exoplayer
+//            videoView.visibility = View.VISIBLE
+//            videoView.requestLayout()
+//        }
+//    }
+//
+//    fun onViewRecycled() {
+//        stopProgressUpdates()
+//
+//        // Don't detach player immediately - just pause
+//        // videoView.player = null  // REMOVE THIS LINE
+//
+//        // Reset state
+//        videoDuration = 0L
+//        bottomVideoSeekBar.progress = 0
+//        isPlaying = false
+//    }
+
+//    fun onViewRecycled() {
+//        stopProgressUpdates()
+//
+//        // CRITICAL: Detach player from this view
+//        videoView.player = null
+//
+//        // Reset state
+//        videoDuration = 0L
+//        bottomVideoSeekBar.progress = 0
+//        isPlaying = false
+//    }
 
     private fun setupPlayer() {
         player = exoplayer
@@ -453,11 +670,11 @@ class StringViewHolder(
         shortsUploadTopSeekBar?.visibility = View.GONE
     }
 
-    private fun setupClickListeners() {
-        shortsViewPager.setOnClickListener {
-            EventBus.getDefault().post(PausePlayEvent(true))
-        }
-    }
+//    private fun setupClickListeners() {
+//        shortsViewPager.setOnClickListener {
+//            EventBus.getDefault().post(PausePlayEvent(true))
+//        }
+//    }
 
     private fun setupSeekBar() {
         // Hide the secondary progress line completely
@@ -567,32 +784,32 @@ class StringViewHolder(
         EventBus.getDefault().post(ShortsBookmarkButton(shortsEntity, favorite))
     }
 
-    private fun setupClickListeners(
-        data: MyData,
-        url: String,
-        shortOwnerId: String,
-        shortOwnerName: String,
-        shortOwnerUsername: String,
-        shortOwnerProfilePic: String
-    ) {
-        commentsParentLayout.setOnClickListener {
-            Log.d(TAG, "onBind: Posting for main activity to open comments")
-            val userShortsEntity = shortsEntityToUserShortsEntity(data.shortsEntity)
-            commentsClickListener.onCommentsClick(bindingAdapterPosition, userShortsEntity)
-        }
-
-        shareBtn.setOnClickListener {
-            onClickListeners.onShareClick(bindingAdapterPosition)
-        }
-
-        downloadBtn.setOnClickListener {
-            onClickListeners.onDownloadClick(url, "FlashShorts")
-        }
-
-        username.setOnClickListener {
-            handleUsernameClick(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-        }
-    }
+//    private fun setupClickListeners(
+//        data: MyData,
+//        url: String,
+//        shortOwnerId: String,
+//        shortOwnerName: String,
+//        shortOwnerUsername: String,
+//        shortOwnerProfilePic: String
+//    ) {
+//        commentsParentLayout.setOnClickListener {
+//            Log.d(TAG, "onBind: Posting for main activity to open comments")
+//            val userShortsEntity = shortsEntityToUserShortsEntity(data.shortsEntity)
+//            commentsClickListener.onCommentsClick(bindingAdapterPosition, userShortsEntity)
+//        }
+//
+//        shareBtn.setOnClickListener {
+//            onClickListeners.onShareClick(bindingAdapterPosition)
+//        }
+//
+//        downloadBtn.setOnClickListener {
+//            onClickListeners.onDownloadClick(url, "FlashShorts")
+//        }
+//
+//        username.setOnClickListener {
+//            handleUsernameClick(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+//        }
+//    }
 
     private fun setupFollowButton(data: MyData, shortOwnerId: String) {
         if (shortOwnerId == LocalStorage.getInstance(profileImageView.context).getUserId()) {
@@ -624,23 +841,23 @@ class StringViewHolder(
         }
     }
 
-    private fun setupProfileImage(
-        shortOwnerId: String,
-        shortOwnerName: String,
-        shortOwnerUsername: String,
-        shortOwnerProfilePic: String
-    ) {
-        Glide.with(itemView.context)
-            .load(shortOwnerProfilePic)
-            .apply(RequestOptions.bitmapTransform(CircleCrop()))
-            .apply(RequestOptions.placeholderOf(R.drawable.flash21))
-            .diskCacheStrategy(DiskCacheStrategy.ALL)
-            .into(profileImageView)
-
-        profileImageView.setOnClickListener {
-            handleProfileImageClick(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-        }
-    }
+//    private fun setupProfileImage(
+//        shortOwnerId: String,
+//        shortOwnerName: String,
+//        shortOwnerUsername: String,
+//        shortOwnerProfilePic: String
+//    ) {
+//        Glide.with(itemView.context)
+//            .load(shortOwnerProfilePic)
+//            .apply(RequestOptions.bitmapTransform(CircleCrop()))
+//            .apply(RequestOptions.placeholderOf(R.drawable.flash21))
+//            .diskCacheStrategy(DiskCacheStrategy.ALL)
+//            .into(profileImageView)
+//
+//        profileImageView.setOnClickListener {
+//            handleProfileImageClick(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+//        }
+//    }
 
     private fun setupContent(shortsEntity: ShortsEntity) {
         val caption = shortsEntity.content.toString()

@@ -1340,104 +1340,104 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    private fun playVideoAtPosition(position: Int) {
-        val videoShorts = shortsViewModel.videoShorts
+//    private fun playVideoAtPosition(position: Int) {
+//        val videoShorts = shortsViewModel.videoShorts
+//
+//        // Validate position bounds
+//        if (position < 0 || position >= videoShorts.size) {
+//            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
+//            return
+//        }
+//
+//        // Prevent multiple simultaneous preparations
+//        if (isPlayerPreparing) {
+//            Log.d("playVideoAtPosition", "Player is already preparing, ignoring request")
+//            return
+//        }
+//
+//        val shortVideo = videoShorts[position]
+//        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
+//
+//        // Get video URL from the shortVideo object
+//        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
+//
+//        if (rawVideoUrl.isNullOrEmpty()) {
+//            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
+//            return
+//        }
+//
+//        // Determine the correct video URL
+//        val finalVideoUrl = when {
+//            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
+//                rawVideoUrl
+//            }
+//            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
+//                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
+//                serverBaseUrl + rawVideoUrl.trimStart('/')
+//            }
+//            else -> {
+//                val serverBaseUrl = "http://192.168.1.103:8080/"
+//                if (rawVideoUrl.startsWith("/")) {
+//                    serverBaseUrl + rawVideoUrl.trimStart('/')
+//                } else {
+//                    serverBaseUrl + rawVideoUrl
+//                }
+//            }
+//        }
+//
+//        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
+//
+//        // Validate and play the video
+//        validateAndPlayVideo(finalVideoUrl, position)
+//    }
 
-        // Validate position bounds
-        if (position < 0 || position >= videoShorts.size) {
-            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
-            return
-        }
-
-        // Prevent multiple simultaneous preparations
-        if (isPlayerPreparing) {
-            Log.d("playVideoAtPosition", "Player is already preparing, ignoring request")
-            return
-        }
-
-        val shortVideo = videoShorts[position]
-        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
-
-        // Get video URL from the shortVideo object
-        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
-
-        if (rawVideoUrl.isNullOrEmpty()) {
-            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
-            return
-        }
-
-        // Determine the correct video URL
-        val finalVideoUrl = when {
-            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
-                rawVideoUrl
-            }
-            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
-                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
-                serverBaseUrl + rawVideoUrl.trimStart('/')
-            }
-            else -> {
-                val serverBaseUrl = "http://192.168.1.103:8080/"
-                if (rawVideoUrl.startsWith("/")) {
-                    serverBaseUrl + rawVideoUrl.trimStart('/')
-                } else {
-                    serverBaseUrl + rawVideoUrl
-                }
-            }
-        }
-
-        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
-
-        // Validate and play the video
-        validateAndPlayVideo(finalVideoUrl, position)
-    }
-
-    private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
-        try {
-            val videoUri = Uri.parse(videoUrl)
-            Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
-
-            val mediaItem = MediaItem.Builder()
-                .setUri(videoUri)
-                .apply {
-                    val detectedMimeType = getMimeTypeFromUrl(videoUrl)
-                    if (detectedMimeType != MimeTypes.VIDEO_UNKNOWN) {
-                        setMimeType(detectedMimeType)
-                    }
-                }
-                .build()
-
-            val mediaSource = createEnhancedMediaSource(mediaItem, videoUrl)
-
-            // Remove old listener
-            currentPlayerListener?.let { oldListener ->
-                exoPlayer?.removeListener(oldListener)
-            }
-
-            // Create new listener
-            currentPlayerListener = createPlayerListener(position)
-
-            exoPlayer?.let { player ->
-                // DON'T call stop() - just pause
-                player.pause()
-                player.clearMediaItems()
-
-                player.addListener(currentPlayerListener!!)
-                player.repeatMode = Player.REPEAT_MODE_ONE
-                player.playWhenReady = true
-
-                player.setMediaSource(mediaSource)
-                player.prepare()
-
-                Log.d("prepareAndPlayVideo", "Video preparation started for position: $position")
-            }
-
-            isPlayerPreparing = true
-        } catch (e: Exception) {
-            Log.e("prepareAndPlayVideo", "Error in prepareAndPlayVideo", e)
-            isPlayerPreparing = false
-            handlePlaybackError(position)
-        }
-    }
+//    private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
+//        try {
+//            val videoUri = Uri.parse(videoUrl)
+//            Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
+//
+//            val mediaItem = MediaItem.Builder()
+//                .setUri(videoUri)
+//                .apply {
+//                    val detectedMimeType = getMimeTypeFromUrl(videoUrl)
+//                    if (detectedMimeType != MimeTypes.VIDEO_UNKNOWN) {
+//                        setMimeType(detectedMimeType)
+//                    }
+//                }
+//                .build()
+//
+//            val mediaSource = createEnhancedMediaSource(mediaItem, videoUrl)
+//
+//            // Remove old listener
+//            currentPlayerListener?.let { oldListener ->
+//                exoPlayer?.removeListener(oldListener)
+//            }
+//
+//            // Create new listener
+//            currentPlayerListener = createPlayerListener(position)
+//
+//            exoPlayer?.let { player ->
+//                // DON'T call stop() - just pause
+//                player.pause()
+//                player.clearMediaItems()
+//
+//                player.addListener(currentPlayerListener!!)
+//                player.repeatMode = Player.REPEAT_MODE_ONE
+//                player.playWhenReady = true
+//
+//                player.setMediaSource(mediaSource)
+//                player.prepare()
+//
+//                Log.d("prepareAndPlayVideo", "Video preparation started for position: $position")
+//            }
+//
+//            isPlayerPreparing = true
+//        } catch (e: Exception) {
+//            Log.e("prepareAndPlayVideo", "Error in prepareAndPlayVideo", e)
+//            isPlayerPreparing = false
+//            handlePlaybackError(position)
+//        }
+//    }
 
     override fun onStart() {
         super.onStart()
@@ -1967,6 +1967,106 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
+    private fun playVideoAtPosition(position: Int) {
+        val videoShorts = shortsViewModel.videoShorts
+
+        if (position < 0 || position >= videoShorts.size) {
+            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
+            return
+        }
+
+        if (isPlayerPreparing) {
+            Log.d("playVideoAtPosition", "Player is already preparing, ignoring request")
+            return
+        }
+
+        // CRITICAL: Ensure the current ViewHolder's surface is properly attached
+        val currentHolder = shortsAdapter.getCurrentViewHolder()
+        currentHolder?.reattachPlayer()
+
+        val shortVideo = videoShorts[position]
+        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
+
+        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
+
+        if (rawVideoUrl.isNullOrEmpty()) {
+            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
+            return
+        }
+
+        val finalVideoUrl = when {
+            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
+                rawVideoUrl
+            }
+            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
+                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
+                serverBaseUrl + rawVideoUrl.trimStart('/')
+            }
+            else -> {
+                val serverBaseUrl = "http://192.168.1.103:8080/"
+                if (rawVideoUrl.startsWith("/")) {
+                    serverBaseUrl + rawVideoUrl.trimStart('/')
+                } else {
+                    serverBaseUrl + rawVideoUrl
+                }
+            }
+        }
+
+        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
+        validateAndPlayVideo(finalVideoUrl, position)
+    }
+
+    private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
+        try {
+            val videoUri = Uri.parse(videoUrl)
+            Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
+
+            // CRITICAL: Ensure surface is visible before preparing
+            val currentHolder = shortsAdapter.getCurrentViewHolder()
+            currentHolder?.getSurface()?.let { playerView ->
+                playerView.visibility = View.VISIBLE
+                playerView.player = exoPlayer
+            }
+
+            val mediaItem = MediaItem.Builder()
+                .setUri(videoUri)
+                .apply {
+                    val detectedMimeType = getMimeTypeFromUrl(videoUrl)
+                    if (detectedMimeType != MimeTypes.VIDEO_UNKNOWN) {
+                        setMimeType(detectedMimeType)
+                    }
+                }
+                .build()
+
+            val mediaSource = createEnhancedMediaSource(mediaItem, videoUrl)
+
+            currentPlayerListener?.let { oldListener ->
+                exoPlayer?.removeListener(oldListener)
+            }
+
+            currentPlayerListener = createPlayerListener(position)
+
+            exoPlayer?.let { player ->
+                player.pause()
+                player.clearMediaItems()
+
+                player.addListener(currentPlayerListener!!)
+                player.repeatMode = Player.REPEAT_MODE_ONE
+                player.playWhenReady = true
+
+                player.setMediaSource(mediaSource)
+                player.prepare()
+
+                Log.d("prepareAndPlayVideo", "Video preparation started for position: $position")
+            }
+
+            isPlayerPreparing = true
+        } catch (e: Exception) {
+            Log.e("prepareAndPlayVideo", "Error in prepareAndPlayVideo", e)
+            isPlayerPreparing = false
+            handlePlaybackError(position)
+        }
+    }
 
     @SuppressLint("NotifyDataSetChanged")
     override fun onResume() {
