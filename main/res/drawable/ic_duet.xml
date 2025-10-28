@@ -1,0 +1,28 @@
+<!-- res/drawable/ic_react.xml -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+
+    <!-- Gray circular background -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M20,2C10.06,2 2,10.06 2,20s8.06,18 18,18 18,-8.06 18,-18S29.94,2 20,2z"/>
+
+    <!-- Overlapping emojis (circle outlines) -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="1.5"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M15,15a6,6 0 1,0 0.01,0z
+                          M25,17a6,6 0 1,0 0.01,0z" />
+
+    <!-- Emoji eyes (optional tiny dots) -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M13.5,14.5h0.5v0.5h-0.5z
+                          M16.5,14.5h0.5v0.5h-0.5z
+                          M23.5,16.5h0.5v0.5h-0.5z
+                          M26.5,16.5h0.5v0.5h-0.5z" />
+</vector>

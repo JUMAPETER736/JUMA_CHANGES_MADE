@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@android:color/transparent"
+    android:id="@+id/shortsViewPager"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/video_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:backgroundTint="@color/black"
+        app:resize_mode="fill"
+        app:use_controller="false"
+        android:visibility="visible"
+        tools:ignore="DuplicateIds" />
+
+
+
+    <!-- Upload Progress SeekBar at the very top edge to edge -->
+    <SeekBar
+        android:id="@+id/uploadTopSeekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:max="100"
+        android:maxHeight="4dp"
+        android:minHeight="4dp"
+        android:progress="0"
+        android:progressBackgroundTint="@color/background"
+        android:progressTint="@color/bluejeans"
+        android:splitTrack="false"
+        android:thumb="@null"
+        android:visibility="gone"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:paddingLeft="0dp"
+        android:paddingRight="0dp" />
+
+    <!-- Cancel button below the SeekBar -->
+    <ImageButton
+        android:id="@+id/shortsUploadCancelButton"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:src="@drawable/cancel_svgrepo_com"
+        android:visibility="gone"
+        android:scaleType="fitCenter"
+        app:tint="@color/white" />
+
+
+    <!-- Play/Pause Button -->
+    <ImageView
+        android:id="@+id/btnPlayPause"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_gravity="center"
+        android:background="?android:attr/selectableItemBackground"
+        android:visibility="gone"
+        android:src="@drawable/baseline_pause_black"
+        app:tint="@color/white" />
+
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:visibility="invisible"
+        android:layout_height="37dp"
+        android:layout_gravity="center_horizontal|center" />
+
+    <!-- Like Icon -->
+    <ImageButton
+        android:id="@+id/btnLike"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="380dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:src="@drawable/favorite_svgrepo_com" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:id="@+id/likeCount"
+        android:layout_marginEnd="30dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="360dp"
+        android:textColor="@color/white"
+        />
+
+    <!-- Comments Layout -->
+    <LinearLayout
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="5dp"
+        android:gravity="center_vertical"
+        android:id="@+id/commentsParentLayout"
+        android:layout_marginBottom="310dp">
+
+        <ImageView
+            android:id="@+id/comments"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="15dp"
+            android:src="@drawable/chat_round_svgrepo_com_shorts" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:id="@+id/commentsCount"
+        android:layout_marginEnd="30dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="290dp"
+        android:textColor="@color/white"
+        />
+    <!-- Favorite Icon -->
+    <ImageView
+        android:id="@+id/favorite"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="240dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:src="@drawable/favorite_svgrepo_com__1_" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:visibility="invisible"
+        android:layout_marginEnd="30dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="220dp"
+        android:textColor="@color/white"
+        />
+    <!-- Share Button -->
+    <ImageButton
+        android:id="@+id/shareBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="188dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:src="@drawable/baseline_share_24" />
+
+    <!-- Download Button -->
+    <ImageButton
+        android:id="@+id/downloadBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="140dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:src="@drawable/download_02_svgrepo_com" />
+
+    <!-- Profile and Caption Container -->
+    <LinearLayout
+        android:id="@+id/profileCaptionContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_marginEnd="70dp"
+        android:layout_marginBottom="20dp"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/profileImageView"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginStart="5dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/baseline_person_outline_24" />
+
+            <TextView
+                android:id="@+id/shortUsername"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Username"
+                android:layout_marginStart="8dp"
+                android:textColor="#FFF"
+                />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/followButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:textAllCaps="false"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/shorts_follow_button_border"
+                android:text="Follow"
+                android:textColor="#FFF"
+                />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="10dp"
+            >
+            <TextView
+                android:layout_width="wrap_content"
+                android:id="@+id/tvReadMoreLess"
+                android:textColor="@android:color/white"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_gravity="center"
+                android:text="HERE GIVE YOUR TEXT"/>
+
+        </LinearLayout>
+
+        <!-- Music/Song Info Section with SINGLE SeekBar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="30dp"
+            >
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Artist name + Song title"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:layout_marginStart="8dp"
+                />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                >
+                <androidx.cardview.widget.CardView
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="8dp"
+                    app:cardCornerRadius="8dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/user"
+                        android:scaleType="centerCrop"
+                        android:adjustViewBounds="true"
+                        android:layout_gravity="center"/>
+
+                </androidx.cardview.widget.CardView>
+
+
+                <SeekBar
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="30dp"
+                    android:layout_gravity="center"
+                    android:id="@+id/bottomShortsVideoProgressSeekBar"
+                    android:progressTint="@color/bluejeans"
+                    android:progressBackgroundTint="@color/dark_gray"
+                    android:max="100"
+                    android:progress="0"
+                    android:thumb="@null"
+                    android:splitTrack="false"
+                    android:visibility="visible"
+                    android:minHeight="4dp"
+                    android:maxHeight="4dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp" />
+
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

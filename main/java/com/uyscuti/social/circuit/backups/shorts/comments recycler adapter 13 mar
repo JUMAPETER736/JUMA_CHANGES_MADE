@@ -1,0 +1,300 @@
+package com.uyscut.flashdesign.adapter
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.bitmap.CircleCrop
+import com.bumptech.glide.request.RequestOptions
+import com.uyscut.flashdesign.R
+import com.uyscut.flashdesign.adapter.notifications.AdPaginatedAdapter
+import com.uyscut.flashdesign.adapter.shorts.ReplyCommentAdapter
+import com.uyscuti.social.circuit.model.ToggleReplyToTextView
+import com.uyscuti.social.circuit.utils.MongoDBTimeFormatter
+import com.uyscuti.social.circuit.utils.TimeUtils
+import com.uyscut.network.api.response.comment.allcomments.Comment
+import org.greenrobot.eventbus.EventBus
+
+private const val TAG = "CommentsRecyclerViewAdapter"
+
+class CommentsRecyclerViewAdapter(
+    private val context: Context,
+    private val onViewReplies: OnViewRepliesClickListener
+) :
+    AdPaginatedAdapter<com.uyscuti.social.circuit.data.model.Comment, RecyclerView.ViewHolder>() {
+
+    private val VIEW_TYPE_COMMENT = 0
+    private val VIEW_TYPE_EMPTY = 1
+
+    inner class CommentViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val imageView: ImageView = itemView.findViewById(R.id.profilePic)
+        private val username: TextView = itemView.findViewById(R.id.username)
+        private val content: TextView = itemView.findViewById(R.id.content)
+        private val time: TextView = itemView.findViewById(R.id.time)
+        private val reply: TextView = itemView.findViewById(R.id.reply)
+        private val commentReplies: TextView = itemView.findViewById(R.id.commentReplies)
+        private val hideCommentReplies: TextView = itemView.findViewById(R.id.hideCommentReplies)
+//        private val mentionTV: TextView = itemView.findViewById(R.id.mentionTV)
+
+        private val repliesRecyclerView: RecyclerView =  itemView.findViewById(R.id.repliesRecyclerView)
+
+        private var isReplyCount = false
+        @SuppressLint("SetTextI18n")
+        fun render(data: com.uyscuti.social.circuit.data.model.Comment) {
+            var replyCount = data.replyCount
+            Glide.with(context)
+                .load(data.author!!.account.avatar.url)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(imageView)
+
+//            Log.d(TAG, "render absoluteAdapterPosition before: $absoluteAdapterPosition")
+
+            try {
+
+                for(commentReply in data.replies) {
+                    commentReply.__v = absoluteAdapterPosition
+//                    commentReply.
+                }
+                val replyCommentAdapter = ReplyCommentAdapter(data, data.postId)
+//                val replyCommentAdapter = ReplyCommentAdapter(data)
+                repliesRecyclerView.adapter = replyCommentAdapter
+
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            if (replyCount == 0) {
+                commentReplies.visibility = View.GONE
+                hideCommentReplies.visibility = View.GONE
+            } else {
+//                Log.d(TAG, "render: else data is replies visible ${data.isRepliesVisible}")
+                Log.d(TAG, "render: data.hasNextPage: ${data.hasNextPage} page number ${data.pageNumber}")
+
+                commentReplies.visibility = View.VISIBLE
+//                repliesRecyclerView.visibility = if (data.isRepliesVisible) View.VISIBLE else View.GONE
+                if (data.isRepliesVisible) {
+//                    commentReplies.text = "Hide replies"
+                    hideCommentReplies.visibility = View.VISIBLE
+                } else {
+                    commentReplies.text = if (replyCount == 1) "...View 1 reply" else "...View $replyCount replies"
+                }
+            }
+
+            hideCommentReplies.setOnClickListener {
+                data.isRepliesVisible = !data.isRepliesVisible
+                repliesRecyclerView.visibility = View.GONE
+                hideCommentReplies.visibility = View.GONE
+            }
+
+            commentReplies.setOnClickListener {
+//                Log.d(TAG, "render: before click data is replies visible ${data.isRepliesVisible}")
+//                data.isRepliesVisible = !data.isRepliesVisible
+//                Log.d(TAG, "render: after click data is replies visible ${data.isRepliesVisible}")
+                repliesRecyclerView.visibility = View.VISIBLE
+                data.isRepliesVisible = true
+
+                if (data.isRepliesVisible) {
+//                    commentReplies.text = "Hide replies"
+                    hideCommentReplies.visibility = View.VISIBLE
+
+                } else {
+                    commentReplies.text = if (replyCount == 1) "...View 1 reply" else "...View $replyCount replies"
+                }
+//                repliesRecyclerView.visibility = if (data.isRepliesVisible) View.VISIBLE else View.GONE
+                onViewReplies.onViewRepliesClick(
+                    data, absoluteAdapterPosition, commentReplies, repliesRecyclerView,
+                    data.isRepliesVisible, data.pageNumber!!)
+                Log.d(TAG, "render: after listener data.hasNextPage: ${data.hasNextPage} page number ${data.pageNumber}")
+
+//                Log.d(TAG, "render: last loc data is replies visible ${data.isRepliesVisible}")
+            }
+
+
+            username.text = data.author.account.username
+//            var mentionedNames = getMentionedNames()
+
+
+            val inputString = data.content
+            val regex = Regex("@\\w+")
+            val matches = regex.findAll(inputString)
+
+//            val spannableString = SpannableString(inputString)
+            if (matches.none()) {
+                // No mentions, simply set the text
+                content.text = inputString
+            } else {
+                val highlightColor: Int by lazy {
+                    ContextCompat.getColor(context, R.color.bluejeans)
+                }
+                val spannableString = SpannableString(inputString)
+
+                matches.forEach {
+                    val start = it.range.first
+                    val end = it.range.last + 1 // +1 to include the "@" symbol
+
+                    // Set blue color to the mentioned user
+                    spannableString.setSpan(
+                        ForegroundColorSpan(highlightColor),
+                        start,
+                        end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                }
+
+                content.text = spannableString
+            }
+
+            val timeFormatter = MongoDBTimeFormatter()
+
+//            timeFormatter.startUpdatingCurrentTime(data.createdAt) { formattedTime ->
+//                // Update your UI with the formatted time
+////                println(formattedTime)
+//                time.text = formattedTime
+//            }
+//            content.text = data.content
+            time.text = TimeUtils.formatMongoTimestamp(data.createdAt)
+            reply.setOnClickListener {
+//                Log.d(TAG, "render: comment to reply on position $absoluteAdapterPosition and id ${data._id}")
+                EventBus.getDefault().post(ToggleReplyToTextView(data, absoluteAdapterPosition))
+//                onViewReplies.onReplyButtonClick(position = absoluteAdapterPosition, data)
+            }
+
+        }
+    }
+
+    fun getMentionedNames(): List<String> {
+        val inputString =
+            "Hello @user1, how are you? @user2 is also here. Mention @user3 in your reply."
+
+        val regex = Regex("@\\w+")
+        val matches = regex.findAll(inputString)
+
+        return matches.map { it.value }.toList()
+//        println("Mentioned users: $mentionedUsers")
+    }
+
+    inner class EmptyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        // You can customize this ViewHolder if needed
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+
+        return when (viewType) {
+            VIEW_TYPE_COMMENT -> {
+                val itemView = inflater.inflate(R.layout.bottom_sheet_1_item, parent, false)
+                CommentViewHolder(itemView)
+            }
+
+            VIEW_TYPE_EMPTY -> {
+                val itemView = inflater.inflate(R.layout.placeholder_layout, parent, false)
+                EmptyViewHolder(itemView)
+            }
+
+            else -> throw IllegalArgumentException("Invalid view type")
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (holder is CommentViewHolder) {
+            Log.d("HolderRender", "position $position")
+            holder.render(getItem(position))
+        } else if (holder is EmptyViewHolder) {
+            // You can customize this part if needed
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+//        Log.d("getItemViewType", "getItemViewType: itemCount $itemCount")
+
+//        if(itemCount == 0) Log.d(TAG, "getItemViewType: item count is 0")
+        return if (itemCount == 0) VIEW_TYPE_EMPTY else VIEW_TYPE_COMMENT
+    }
+}
+
+interface OnViewRepliesClickListener {
+    fun onViewRepliesClick(
+        data: com.uyscuti.social.circuit.data.model.Comment,
+        repliesRecyclerView: RecyclerView,
+        position: Int,
+    )
+
+    fun onViewRepliesClick(
+        data: com.uyscuti.social.circuit.data.model.Comment, position: Int,
+        commentRepliesTV: TextView, repliesRecyclerView: RecyclerView, isRepliesVisible: Boolean,
+        page:Int
+    )
+
+    fun onReplyButtonClick(position: Int, data: com.uyscuti.social.circuit.data.model.Comment)
+}
+//class CommentsRecyclerViewAdapter(private val context: Context) :
+//    PaginatedAdapter<Comment, CommentsRecyclerViewAdapter.ViewHolder>() {
+//
+//    var firstPageLoaded = false;
+//
+//    private val timeUtilsLiveData = TimeUtilsLiveData.formattedTimestampLiveData
+//
+//    @NonNull
+//    override fun onCreateViewHolder(@NonNull parent: ViewGroup, viewType: Int): ViewHolder {
+//        return ViewHolder(
+//            LayoutInflater.from(parent.context)
+//                .inflate(R.layout.bottom_sheet_1_item, parent, false),
+//        )
+//    }
+//
+//    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+//
+//    }
+//
+//    fun setLoadMoreListener(listener: (Int) -> Unit) {
+//        setLoadMoreListener(LoadMoreListener { pageNumber -> listener.invoke(pageNumber) })
+//    }
+//
+//
+//    inner class ViewHolder(@NonNull itemView: View) : RecyclerView.ViewHolder(itemView) {
+//        var imageView: ImageView
+//        var username: TextView
+//        lateinit var content: TextView
+//        lateinit var time: TextView
+//
+//        init {
+//            imageView = itemView.findViewById(R.id.profilePic)
+//            username = itemView.findViewById(R.id.username)
+//            content = itemView.findViewById(R.id.content)
+//            time = itemView.findViewById(R.id.time)
+//        }
+//
+//        //        fun  itemCount
+//        fun render(data: Comment) {
+//            Glide.with(context)
+//                .load(data.author!!.account.avatar.url)
+//                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+//                .placeholder(R.drawable.flash21)
+//                .diskCacheStrategy(DiskCacheStrategy.ALL)
+//                .into(imageView)
+//
+//            val formattedTime = TimeUtils.formatMongoTimestamp(data.createdAt)
+//
+//            username.text = data.author!!.account.username
+//            content.text = data.content
+//            time.text = formattedTime
+//        }
+//
+//    }
+//}
+
+

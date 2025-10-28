@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black"
+    android:theme="@style/FUllScreen"
+    tools:context=".ui.fragments.ShotsFragment">
+
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/playerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:resize_mode="fill"
+        android:contentDescription="@string/content_description"
+        android:clickable="true"
+        app:use_controller="false"
+        android:focusable="true" >
+
+    </androidx.media3.ui.PlayerView>
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/shortsViewPager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+       />
+<!--    <androidx.coordinatorlayout.widget.CoordinatorLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="0dp"-->
+<!--        android:layout_weight="1">-->
+
+<!--        &lt;!&ndash; Other views inside CoordinatorLayout if needed &ndash;&gt;-->
+
+<!--        <androidx.viewpager2.widget.ViewPager2-->
+<!--            android:id="@+id/viewPager"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            app:layout_behavior="@string/appbar_scrolling_view_behavior" />-->
+
+<!--    </androidx.coordinatorlayout.widget.CoordinatorLayout>-->
+<!--    Something like an appbar-->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:id="@+id/appbar"
+        android:gravity="top"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="10dp">
+
+        <!-- Your existing ImageView -->
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_gravity="end"
+            android:layout_weight="1"
+            android:visibility="invisible"
+            android:src="@drawable/baseline_search_24_black"
+            />
+
+        <!-- First additional ImageView -->
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/baseline_search_24_black"
+            android:layout_marginEnd="50dp"
+            app:tint="@color/white" />
+
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:id="@+id/shortsMenu"
+            android:src="@drawable/options_vertical_svgrepo_com"
+            android:layout_marginEnd="15dp"
+            app:tint="@color/white"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/progressBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/appbar"
+        android:background="@color/transparent"
+        android:orientation="horizontal"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:visibility="invisible"
+        android:gravity="center"
+        >
+
+        <!-- Left ImageView -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/black"
+            android:layout_marginEnd="15dp"
+            android:layout_marginStart="15dp">
+
+
+        </androidx.cardview.widget.CardView>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="100"
+            android:progress="5"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:progressTint="@color/white"
+            android:scaleY="0.5" />
+
+        <!-- Right Cancel ImageView -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:backgroundTint="@color/black"
+            android:layout_marginEnd="25dp"
+            android:layout_marginStart="15dp"
+            android:layout_gravity="center"
+            >
+
+            <ImageView
+                android:id="@+id/cancelShortsUpload"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+
+                android:src="@drawable/times_svgrepo_com"
+                app:tint="@color/white" />
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/downloadProgressBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/appbar"
+        android:background="@color/transparent"
+        android:orientation="horizontal"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:gravity="center"
+        android:visibility="gone"
+        >
+
+        <!-- Left ImageView -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/black"
+            android:layout_marginEnd="15dp"
+            android:layout_marginStart="15dp">
+
+            <ImageView
+                android:id="@+id/shortsDownloadImageView"
+                android:layout_width="20dp"
+                android:scaleType="centerCrop"
+                android:background="@drawable/shorts_upload_1"
+                android:adjustViewBounds="true"
+                android:layout_height="20dp"
+                app:tint="@color/white" />
+        </androidx.cardview.widget.CardView>
+
+        <ProgressBar
+            android:id="@+id/shortsDownloadProgressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="100"
+            android:progress="5"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:progressTint="@color/white"
+            android:scaleY="0.5" />
+
+        <!-- Right Cancel ImageView -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:backgroundTint="@color/black"
+            android:layout_marginEnd="25dp"
+            android:layout_marginStart="15dp"
+            android:layout_gravity="center"
+            >
+
+            <ImageView
+                android:id="@+id/cancelShortsDownload"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+
+                android:src="@drawable/times_svgrepo_com"
+                app:tint="@color/white" />
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+
+
+    <SeekBar
+        android:id="@+id/shortSeekBar"
+        style="@style/SeekBarNoThumb"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="16dp"
+        android:progress="0"
+        android:layout_marginBottom="57dp"
+        android:layout_toStartOf="@+id/fabAction"
+        android:progressTint="@color/bluejeans" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/content_description"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="50dp"
+        android:background="@drawable/fab_bg"
+        android:tint="@color/white"
+        app:backgroundTint="@color/bluejeans"
+        app:srcCompat="@drawable/baseline_add_24"
+        app:tint="@color/white" />
+
+</RelativeLayout>

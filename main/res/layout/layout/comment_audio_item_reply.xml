@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="10dp"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <ImageView
+        android:id="@+id/profilePic"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/person_button_svgrepo_com" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="15dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/username"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Username"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginStart="15dp"
+                android:text="time"
+                android:textColor="#BDB5B5" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="username"
+                    android:id="@+id/content"
+                    />
+                <LinearLayout
+                    android:id="@+id/playAudioLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/playVnAudioBtn"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/ic_ripple"
+                        android:padding="8dp"
+                        android:src="@drawable/play_svgrepo_com"
+                        app:tint="@color/white"
+
+                        />
+
+                    <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
+                        android:id="@+id/wave"
+                        android:layout_width="0dp"
+                        android:layout_height="22dp"
+                        android:layout_weight="1"
+                        android:layout_gravity="center"
+                        app:marker_color="@color/fade"
+                        android:layout_margin="16dp"
+                        app:marker_text_padding="2dp"
+                        app:marker_text_size="12dp"
+                        app:marker_width="1dp"
+                        app:wave_background_color="@color/gray_dark"
+                        app:wave_corner_radius="2dp"
+                        app:wave_gap="1.5dp"
+                        app:wave_gravity="center"
+                        app:wave_max_progress="100"
+                        app:wave_min_height="3dp"
+                        app:wave_progress="0"
+                        app:wave_progress_color="@color/bluejeans"
+                        app:wave_width="3dp" />
+                    <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
+                        android:id="@+id/secondWave"
+                        android:layout_width="0dp"
+                        android:layout_height="22dp"
+                        android:layout_weight="1"
+                        android:layout_gravity="center"
+                        app:marker_color="@color/fade"
+                        android:layout_margin="16dp"
+                        app:marker_text_padding="2dp"
+                        app:marker_text_size="12dp"
+                        app:marker_width="1dp"
+                        app:wave_background_color="@color/gray_dark"
+                        app:wave_corner_radius="2dp"
+                        android:visibility="gone"
+                        app:wave_gap="1.5dp"
+                        app:wave_gravity="center"
+                        app:wave_max_progress="100"
+                        app:wave_min_height="3dp"
+                        app:wave_progress="0"
+                        app:wave_progress_color="@color/bluejeans"
+                        app:wave_width="3dp" />
+                    <SeekBar
+                        android:id="@+id/commentAudioSeekBar"
+                        android:layout_width="0dp"
+                        android:layout_height="22dp"
+                        android:layout_weight="1"
+                        android:visibility="gone"
+                        android:progressTint="@color/bluejeans"
+                        app:wave_progress="0"
+                        android:layout_gravity="center"
+                        android:layout_margin="16dp" />
+
+                    <SeekBar
+                        android:id="@+id/secondCommentAudioSeekBar"
+                        android:layout_width="0dp"
+                        android:layout_height="22dp"
+                        android:layout_weight="1"
+                        android:progressTint="@color/bluejeans"
+                        android:visibility="gone"
+                        app:wave_progress="0"
+                        android:layout_gravity="center"
+                        android:layout_margin="16dp" />
+                    <LinearLayout
+                        android:id="@+id/likeLinearLayout"
+                        android:layout_width="60dp"
+                        android:layout_height="35dp"
+                        android:layout_gravity="center">
+
+                        <ImageView
+                            android:id="@+id/likeUnLikeComment"
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:layout_gravity="end|center"
+                            android:layout_marginStart="15dp"
+                            android:src="@drawable/like_svgrepo_com" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/audioDurationTVCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top"
+                        android:layout_marginStart="40dp"
+                        android:gravity="start"
+                        android:text="00:00" />
+
+                    <TextView
+                        android:id="@+id/secondAudioDurationTV"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top"
+                        android:visibility="gone"
+                        android:layout_marginStart="40dp"
+                        android:gravity="start"
+                        android:text="00:00" />
+
+                    <TextView
+                        android:id="@+id/audioDurationTV"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top"
+                        android:layout_marginStart="40dp"
+                        android:layout_weight="1"
+                        android:gravity="end"
+                        android:text="00:00" />
+
+
+                </LinearLayout>
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/likesCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="likes"
+                android:textColor="#BDB5B5" />
+
+            <TextView
+                android:id="@+id/reply"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginStart="25dp"
+                android:text="Reply"
+                android:textColor="#BDB5B5" />
+
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/repliesRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="5dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:visibility="visible"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:listitem="@layout/comment_audio_item_reply" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/commentReplies"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:padding="5dp"
+                android:text="View more replies"
+                android:textColor="#BDB5B5"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/hideCommentReplies"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:padding="5dp"
+                android:text="Hide replies"
+                android:textColor="#BDB5B5"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

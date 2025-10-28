@@ -1,0 +1,20 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item android:id="@+id/menu_setting"
+        android:icon="@drawable/chat_round_svgrepo_com"
+        android:title="Settings"
+        app:showAsAction="never" />
+    <item android:id="@+id/exit"
+        android:icon="@drawable/chat_round_svgrepo_com"
+        android:title="Exit"
+        app:showAsAction="never" />
+    <item android:id="@+id/block"
+        android:icon="@drawable/chat_round_svgrepo_com"
+        android:title="Block Content"
+        app:showAsAction="never" />
+    <item android:id="@+id/report"
+        android:icon="@drawable/chat_round_svgrepo_com"
+        android:title="Report"
+        app:showAsAction="never" />
+</menu>

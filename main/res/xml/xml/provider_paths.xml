@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <external-files-path
+        name="app_images"
+        path="Pictures" />
+    <external-path name="external_files" path="." />
+
+    <external-path name="external_files_root" path="." />
+
+    <external-path name="screenshots" path="DCIM/Screenshots/" />
+    <external-path name="camera" path="DCIM/Camera/" />
+
+    <files-path name="my_files" path="." /> <!-- Allow access to the app's files directory -->
+    <cache-path name="my_cache" path="." /> <!-- Allow access to the app's cache directory -->
+    <external-path name="flash_media_documents" path="Download/FlashMedia/Documents/" />
+    <external-path name="flash_app_documents" path="Download/FlashApp/Documents/" />
+    <external-path name="flash_documents" path="Download/Flash/Documents/" />
+
+    <external-path name="external" path="." />
+    <external-files-path name="external_files" path="." />
+    <cache-path name="cache" path="." />
+    <external-cache-path name="external_cache" path="." />
+    <files-path name="files" path="." />
+
+<!--    <root-path name="root" path="." />-->
+    <files-path name="my_images" path="/" />
+    <files-path name="my_images" path="MyFiles/"/>
+    <files-path name="files" path="." />
+</paths>

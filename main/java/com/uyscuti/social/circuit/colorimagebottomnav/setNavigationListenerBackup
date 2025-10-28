@@ -1,0 +1,142 @@
+
+
+
+
+//        bottomNavigation.setOnClickedButtonListener { button, pos ->
+//            when (button.drawable) {
+//                R.drawable.nav_notification_icon -> {
+//                    item.drawableTint = Color.WHITE
+//
+////                    item.text = "3"
+//////                    item.textDirection = Gravity.TOP
+////                    item.textColor = Color.RED
+//                    getNavigationController().navigate("R.id.notifications", "Notification")
+//                }
+//
+//                R.drawable.chat_round_svgrepo_com -> {
+//                    item1.drawableTint = Color.WHITE
+//                    getNavigationController().navigate("R.id.chat", "Chat")
+//                }
+//
+//                R.drawable.play_svgrepo_com -> {
+//                    item2.drawableTint = Color.WHITE
+//                    getNavigationController().navigate("R.id.shots", "Shorts")
+//                }
+//
+//                R.drawable.scroll_text_line_svgrepo_com -> {
+//                    item3.drawableTint = Color.WHITE
+//                    getNavigationController().navigate("R.id.feed", "Feed")
+//                }
+//
+//                R.drawable.bottom_nav_profile -> {
+//                    item4.drawableTint = Color.WHITE
+//                    getNavigationController().navigate("R.id.profile", "Profile")
+//                }
+//            }
+//
+//            when (pos) {
+//                0 -> {
+//                    // Handle click on the first button
+//                    // Example: getNavigationController().navigate("R.id.first_fragment", "First Fragment")
+//                    Log.d("bottomNavigation", "position $pos")
+//
+//                }
+//
+//                1 -> {
+//                    // Handle click on the second button
+//                    // Example: getNavigationController().navigate("R.id.second_fragment", "Second Fragment")
+//                    Log.d("bottomNavigation", "position $pos")
+//
+//                }
+//
+//                2 -> {
+//                    // Handle click on the third button
+//                    // Example: getNavigationController().navigate("R.id.third_fragment", "Third Fragment")
+//                    Log.d("bottomNavigation", "position $pos")
+//
+//                }
+//
+//                3 -> {
+//                    // Handle click on the third button
+//                    // Example: getNavigationController().navigate("R.id.third_fragment", "Third Fragment")
+//                    Log.d("bottomNavigation", "position $pos")
+//
+//                }
+//
+//                4 -> {
+//                    // Handle click on the third button
+//                    getNavigationController().navigate("R.id.profile", "Profile")
+//
+//                    Log.d("bottomNavigation", "position $pos")
+//
+//                }
+//
+//                // ... add more cases for other positions
+//
+//                else -> {
+//                    // Handle unknown position
+//                    Log.d("bottomNavigation", "position position")
+//
+//                }
+//            }
+//            val page: String? = null
+////            button[4].setOnClickListener {
+////            }
+////            when(pos == 4) {
+////                getNavigationController().navigate("R.id.profile", "Profile")
+////                else -> {}
+////            }
+//        }
+//        bottomNavigation.setOnItemSelectedListener {
+//
+//            val menu = bottomNavigation.menu
+//            for (i in 0 until menu.size()) {
+//                val menuItem = menu.getItem(i)
+//                menuItem.actionView?.findViewById<View>(R.id.underline)?.visibility = View.INVISIBLE
+//            }
+//
+//
+//            // Show underline for the selected item
+//            it.actionView?.findViewById<View>(R.id.underline)?.visibility = View.VISIBLE
+//
+//            // Handle item selection logic here
+//            when (it.itemId) {
+//
+//                R.id.notifications -> {
+////                    replaceFragment(FeedFragment())
+//                    getNavigationController().navigate("R.id.notifications", "Notification")
+//                }
+//
+//                R.id.chat -> {
+////                    replaceFragment(ChatFragment())
+//                    getNavigationController().navigate("R.id.chat", "Chat")
+//                }
+//
+//                R.id.shorts -> {
+////                    replaceFragment(ShortsFragment())
+//                    setDarkTheme()
+//                    getNavigationController().navigate("R.id.shots", "Shorts")
+//
+//                }
+//
+//                R.id.feed -> {
+////                    replaceFragment(FeedFragment())
+//                    getNavigationController().navigate("R.id.feed", "Feed")
+//                }
+//
+//                R.id.profile -> {
+////                    replaceFragment(FeedFragment())
+//                    getNavigationController().navigate("R.id.profile", "Profile")
+//                }
+//
+//
+//                else -> {
+//
+//
+//                }
+//
+//            }
+//
+//            true
+//
+//        }

@@ -1,0 +1,1408 @@
+package com.uyscut.flashdesign.ui.fragments.feed
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
+import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.transition.TransitionInflater
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.snackbar.Snackbar
+import com.uyscut.core.common.data.room.entity.FollowUnFollowEntity
+import com.uyscut.core.common.data.room.entity.ShortsEntityFollowList
+import com.uyscut.flashdesign.R
+import com.uyscuti.social.circuit.adapter.feed.FeedAdapter
+import com.uyscut.flashdesign.adapter.feed.FeedPaginatedAdapter
+import com.uyscuti.social.circuit.adapter.feed.OnFeedClickListener
+import com.uyscuti.social.circuit.eventbus.AllFeedUpdateLike
+import com.uyscuti.social.circuit.eventbus.FeedFavoriteClick
+import com.uyscuti.social.circuit.eventbus.FeedFavoriteFollowUpdate
+import com.uyscuti.social.circuit.eventbus.FeedLikeClick
+import com.uyscuti.social.circuit.eventbus.FeedUploadResponseEvent
+import com.uyscuti.social.circuit.eventbus.FromFavoriteFragmentFeedFavoriteClick
+import com.uyscuti.social.circuit.eventbus.FromFavoriteFragmentFeedLikeClick
+import com.uyscuti.social.circuit.eventbus.FromOtherUsersFeedFavoriteClick
+import com.uyscuti.social.circuit.eventbus.HideFeedFloatingActionButton
+import com.uyscuti.social.circuit.eventbus.ShowFeedFloatingActionButton
+import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.social.circuit.model.FeedAdapterNotifyDatasetChanged
+import com.uyscuti.social.circuit.model.FeedCommentClick
+import com.uyscuti.social.circuit.model.FeedCommentClicked
+import com.uyscuti.social.circuit.model.FeedUploadProgress
+import com.uyscuti.social.circuit.model.HideAppBar
+import com.uyscuti.social.circuit.model.HideBottomNav
+import com.uyscuti.social.circuit.model.ShowAppBar
+import com.uyscuti.social.circuit.model.ShowBottomNav
+import com.uyscuti.social.circuit.model.feed.SetAllFragmentScrollPosition
+import com.uyscut.flashdesign.repository.feed.FeedUploadRepository
+import com.uyscuti.social.circuit.ui.feedactivities.FeedVideoViewFragment
+import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedAudioViewFragment
+import com.uyscuti.social.circuit.ui.fragments.feed.feedviewfragments.FeedDocViewFragment
+import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedImageViewFragment
+import com.uyscuti.social.circuit.ui.fragments.feed.feedviewfragments.FeedMixedFilesViewFragment
+import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedMultipleImageViewFragment
+import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedTextViewFragment
+import com.uyscuti.social.circuit.ui.fragments.feed.feedviewfragments.NewRepostedPostFragment
+import com.uyscuti.social.circuit.utils.removeDuplicateFollowers
+import com.uyscuti.social.circuit.viewmodels.FeedShortsViewModel
+import com.uyscuti.social.circuit.viewmodels.FollowUnfollowViewModel
+import com.uyscuti.social.circuit.viewmodels.GetShortsByUsernameViewModel
+import com.uyscuti.social.circuit.viewmodels.feed.FeedUploadViewModel
+import com.uyscuti.social.circuit.viewmodels.feed.GetFeedViewModel
+import com.uyscut.network.api.response.feed.getallfeed.Follow
+import com.uyscut.network.api.response.feed.getallfeed.Post
+import com.uyscut.network.api.retrofit.instance.RetrofitInstance
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import javax.inject.Inject
+// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+private const val ARG_PARAM1 = "param1"
+private const val ARG_PARAM2 = "param2"
+/**
+ * A simple [Fragment] subclass.
+ * Use the [AllFragment.newInstance] factory method to
+ * create an instance of this fragment.
+ */
+
+private const val TAG = "AllFragment"
+@AndroidEntryPoint
+class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterface {
+    private var param1: String? = null
+    private var param2: String? = null
+    var bitmap: Bitmap? = null
+    private val getFeedViewModel: GetFeedViewModel by activityViewModels()
+    private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
+    private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
+    private val shortsViewModel: GetShortsByUsernameViewModel by activityViewModels()
+    private lateinit var myFeedAdapter: FeedAdapter
+    private lateinit var favoriteFeedAdapter: FeedAdapter
+
+    private lateinit var allFeedAdapterRecyclerView: RecyclerView
+    private lateinit var allFeedAdapter: FeedAdapter
+    private lateinit var progressBar: ProgressBar
+    private lateinit var frameLayout: FrameLayout
+
+    @Inject
+    lateinit var retrofitInstance: RetrofitInstance
+    private var feedTextViewFragment: FeedTextViewFragment? = null
+    private var feedImageViewFragment: FeedImageViewFragment? = null
+    private var feedVideoViewFragment: FeedVideoViewFragment? = null
+    private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
+    private var feedDocsViewFragment: FeedDocViewFragment? = null
+    private var feedAudioViewFragment: FeedAudioViewFragment? = null
+    private var feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
+//    var fragment = FeedTextViewFragment()
+
+
+    private val feedShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
+
+    private var currentAdapterPosition = -1
+    private lateinit var feedUploadRepository: FeedUploadRepository
+
+//    private var
+
+    private var positionFromShorts: SetAllFragmentScrollPosition? = null
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val inflater = TransitionInflater.from(requireContext())
+        exitTransition = inflater.inflateTransition(R.transition.feed_fragment_fade)
+        arguments?.let {
+            param1 = it.getString(ARG_PARAM1)
+            param2 = it.getString(ARG_PARAM2)
+        }
+
+        EventBus.getDefault().register(this)
+    }
+
+    fun setPositionFromShorts(positionFromShorts: SetAllFragmentScrollPosition) {
+        Log.d(TAG, "setPositionFromShorts: ${positionFromShorts.allFragmentFeedPosition}")
+        this.positionFromShorts = positionFromShorts
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        // Inflate the layout for this fragment
+        val view = inflater.inflate(R.layout.fragment_all, container, false)
+        feedUploadRepository = FeedUploadRepository()
+        // Observe the upload status
+//        feedUploadRepository.uploadStatus.observe(viewLifecycleOwner) { status ->
+//            // Update UI based on upload status
+//            if (status) {
+//                // Handle successful upload
+//                Log.d(
+//                    "feedUploadRepository",
+//                    "onCreateView: feedUploadRepository id: ${feedUploadRepository._id}"
+//                )
+//                feedUploadRepository.updateUploadStatus(false)
+//            } else {
+//                // Handle upload failure
+//            }
+//        }
+        progressBar = view.findViewById(R.id.progressBar)
+        allFeedAdapterRecyclerView = view.findViewById(R.id.rv)
+        frameLayout = view.findViewById(R.id.feed_text_view_fragment)
+        allFeedAdapter = FeedAdapter(
+            requireActivity(),
+            this
+        )
+
+        allFeedAdapter.recyclerView = allFeedAdapterRecyclerView
+        allFeedAdapterRecyclerView.itemAnimator = null
+
+//        allFeedAdapterRecyclerView.addOnChildAttachStateChangeListener(object : RecyclerView.OnChildAttachStateChangeListener {
+//            override fun onChildViewAttachedToWindow(view: View) {
+//                val position = allFeedAdapterRecyclerView.getChildAdapterPosition(view)
+//                Log.d("RecyclerView", "View attached at position: $position")
+//                // Handle the item being displayed
+//            }
+//
+//            override fun onChildViewDetachedFromWindow(view: View) {
+//                val position = allFeedAdapterRecyclerView.getChildAdapterPosition(view)
+//                Log.d("RecyclerView", "View detached from position: $position")
+//                // Handle the item being hidden
+//            }
+//        })
+
+        allFeedAdapterRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                // You can handle scroll state changes here if needed
+            }
+
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+                val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
+
+                // Handle the visible items
+//                Log.d("RecyclerView", "First visible item position: $firstVisibleItemPosition")
+//                Log.d("RecyclerView", "Last visible item position: $lastVisibleItemPosition")
+                getFeedViewModel.allFeedDataLastViewPosition = firstVisibleItemPosition + 1
+
+
+            }
+        })
+        allFeedAdapterRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        allFeedAdapter.setOnPaginationListener(object : FeedPaginatedAdapter.OnPaginationListener {
+            override fun onCurrentPage(page: Int) {
+                Log.d(TAG, "currentPage: page number $page")
+
+            }
+
+            override fun onNextPage(page: Int) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Log.d(TAG, "onNextPage: page number $page")
+                    getAllFeed(page)
+//                    getFeedReposts(page)
+                }
+            }
+
+            override fun onFinish() {
+                Log.d(TAG, "finished: page number")
+            }
+        })
+
+        lifecycleScope.launch(Dispatchers.Main) {
+//            Log.d(TAG, "onCreateView: ${getFeedViewModel.getAllFeedData()}")
+            if (getFeedViewModel.getAllFeedData().isEmpty()) {
+//                Log.d(TAG, "onCreateView: get all feed data is empty")
+                getAllFeed(allFeedAdapter.startPage)
+//                getFeedReposts(allFeedAdapter.startPage)
+            } else {
+                Log.d(TAG, "onCreateView: get all feed data is not empty")
+            }
+            getFeedViewModel.isFeedDataAvailable.observe(viewLifecycleOwner) { isDataAvailable ->
+                // Handle the updated value of isResuming here
+                if (isDataAvailable) {
+                    // Do something when isResuming is true
+//                    Log.d(
+//                        TAG,
+//                        "onCreateView: data is available ${getFeedViewModel.getAllFeedData().size}  last visible Item ${getFeedViewModel.allFeedDataLastViewPosition}  "
+//                    )
+//                    allFeedAdapter.item
+                    allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData( ))
+                    allFeedAdapter.addFollowList(getFeedViewModel.getFollowList())
+
+
+                    if (positionFromShorts?.setPosition == true) {
+                        Log.i(
+                            TAG,
+                            "onCreateView: positionFromShorts!!.allFragmentFeedPosition ${positionFromShorts!!.allFragmentFeedPosition}"
+                        )
+                        allFeedAdapterRecyclerView.scrollToPosition(positionFromShorts!!.allFragmentFeedPosition)
+
+                        val feedPostData = getFeedViewModel.getAllFeedDataByPosition(positionFromShorts!!.allFragmentFeedPosition)
+                        feedFileClicked(positionFromShorts!!.allFragmentFeedPosition, feedPostData)
+                    } else {
+                        Log.i(
+                            TAG,
+                            "onCreateView: getFeedViewModel.allFeedDataLastViewPosition ${getFeedViewModel.allFeedDataLastViewPosition}"
+                        )
+
+                        allFeedAdapterRecyclerView.scrollToPosition(getFeedViewModel.allFeedDataLastViewPosition)
+                    }
+//                    getFeedViewModel.allFeedDataLastViewPosition = positionFromShorts.allFragmentFeedPosition
+//                    getFeedViewModel.setIsDataAvailable(false)
+                } else {
+                    // Do something when isResuming is false
+                    Log.d(TAG, "onCreateView: data not added")
+                }
+            }
+            getFeedViewModel.isSingleFeedAvailable.observe(viewLifecycleOwner) { isDataAvailable ->
+                // Handle the updated value of isResuming here
+                if (isDataAvailable) {
+                    // Do something when isResuming is true
+                    Log.d(TAG, "onCreateView: data is available")
+//                    allFeedAdapter.item
+//                    allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
+                    allFeedAdapter.submitItem(getFeedViewModel.getSingleAllFeedData(), 0)
+                    allFeedAdapter.addFollowList(getFeedViewModel.getFollowList())
+                    allFeedAdapterRecyclerView.smoothScrollToPosition(0)
+//                    getFeedViewModel.setIsDataAvailable(false)
+                } else {
+                    // Do something when isResuming is false
+                    Log.d(TAG, "onCreateView: data not added")
+                }
+            }
+        }
+        Log.d(TAG, "onCreateView: currentAdapterPosition $currentAdapterPosition")
+        // Observe the LiveData
+//        getFeedViewModel.myData.observe(viewLifecycleOwner) { value ->
+        // Update UI or react to changes
+//            if(getFeedViewModel.getAllFeedData().isNotEmpty()) {
+//                Log.d(TAG, "onCreateView: delete feed from all feed data ")
+//                if(value.booleanValue) {
+//                    getFeedViewModel.removeAllFeedFragment(value.position)
+//                    allFeedAdapter.removeItem(value.position)
+////                    allFeedAdapter.notifyItemRemoved(value.position)
+//                }
+//            } else {
+//                Log.e(TAG, "onCreateView: cant delete coz feed is empty")
+//            }
+//        }
+        feedShortsSharedViewModel.data.observe(viewLifecycleOwner) { newData ->
+            Log.d(
+                "feesShortsSharedViewModel",
+                "onCreateView: data from all shorts fragment $newData"
+            )
+
+            allFeedAdapter.addSingleFollowList(
+                com.uyscut.network.api.response.getfeedandresposts.Follow(
+                    newData.userId,
+                    newData.isFollowing
+                )
+            )
+            getFeedViewModel.addFollowToFollowList(
+                com.uyscut.network.api.response.getfeedandresposts.Follow(
+                    newData.userId,
+                    newData.isFollowing
+                )
+            )
+        }
+//        feedShortsSharedViewModel.allFeedData.observe(viewLifecycleOwner) { newData ->
+//            Log.d(
+//                "feesShortsSharedViewModel",
+//                "onCreateView allFeedData: data from all shorts fragment $newData"
+//            )
+//
+//        }
+        return view
+    }
+
+    fun getAllFeed(page: Int) {
+        Log.d(
+            TAG,
+            "getAllFeed: page number $page"
+        )
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+
+                val response = retrofitInstance.apiService.getAllFeed(
+                    page.toString())
+
+                val responseBody =  response.body()
+//                Log.d(TAG, "feed: respo  nse $response")
+//                Log.d(TAG, "feed: response message ${response.message()}")
+//                Log.d(TAG, "feed: response message error body ${response.errorBody()}")
+//                Log.d(TAG, "feed: response body $responseBody")
+//                Log.d(TAG, "feed: response body data ${responseBody?.data?.posts?.posts?.get(4)}")
+                Log.d("getAllFeed", "feed: response body message ${responseBody!!.message}")
+
+                val data = responseBody.data
+
+//                data.
+//                Log.d("FollowList", "getAllFeed: follow list ${data.followList}")
+                getFeedViewModel.addAllFeedData(data.posts.posts.toMutableList())
+//                getFeedViewModel.setFollowList(data.si.followList)
+                withContext(Dispatchers.Main) {
+//                    allFeedAdapter.submitItems(data.posts.posts)
+                    allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
+                }
+
+//                Log.d(TAG, "text comment data response: $data")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "comment: $e")
+                Log.e(TAG, "comment: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
+    }
+
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun successEvent(event: FeedUploadProgress) {
+        progressBar.max = event.maxProgress
+        progressBar.progress = event.currentProgress
+    }
+
+
+    private var hasNotifiedDatasetChanged = false
+
+    @SuppressLint("NotifyDataSetChanged")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun feedAdapterNotifyDatasetChanged(event: FeedAdapterNotifyDatasetChanged) {
+//        if (hasNotifiedDatasetChanged) {
+//            // If already notified, return to prevent duplicate execution
+//            Log.e(TAG, "feedAdapterNotifyDatasetChanged: already called")
+//            hasNotifiedDatasetChanged = false
+//            return
+//        }
+        Log.d(
+            TAG,
+            "FeedAdapterNotifyDatasetChanged: in feed adapter notify adapter: seh data set changed"
+        )
+        allFeedAdapter.notifyDataSetChanged()
+//        if(feedTextViewFragment != null) {
+//            feedTextViewFragment?.setFeedCommentsCount()
+//        }
+        // Set the flag to true after executing the function
+//        hasNotifiedDatasetChanged = true
+    }
+
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy: called")
+        EventBus.getDefault().unregister(this)
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        Log.d(TAG, "onDetach: called")
+    }
+
+    override fun onStop() {
+        super.onStop()
+
+        Log.d(TAG, "onStop: called")
+    }
+
+    override fun onResume() {
+        super.onResume()
+//        getFeedViewModel.isResuming = true
+        Log.d(TAG, "onResume: currentAdapterPosition $currentAdapterPosition")
+        Log.d(TAG, "onResume: called")
+        allFeedAdapterRecyclerView.visibility = View.VISIBLE
+        frameLayout.visibility = View.GONE
+        EventBus.getDefault().post(ShowBottomNav())
+        EventBus.getDefault().post(ShowFeedFloatingActionButton())
+        EventBus.getDefault().post(ShowAppBar())
+//        if(toggleFeedFloatingActionButton != null) {
+//            toggleFeedFloatingActionButton?.displayFloatingActionButton()
+//        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        Log.d(TAG, "onDestroyView: called")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        currentAdapterPosition = allFeedAdapter.getCurrentItemDisplayPosition()
+        Log.d(TAG, "onCreateView: data added last view position $currentAdapterPosition")
+        Log.d(TAG, "onPause: called")
+    }
+    // Call this method when you need to get the position
+
+    private fun getCurrentFeedPosition(): Int? {
+        val layoutManager = allFeedAdapterRecyclerView.layoutManager as LinearLayoutManager
+        val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+        val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
+        // You can determine which item is considered as "current" based on your criteria
+        // For example, return the first visible item or some other logic
+
+//        return if (firstVisibleItemPosition <= lastVisibleItemPosition) {
+//            firstVisibleItemPosition
+//        } else {
+//            null
+//        }
+        return firstVisibleItemPosition.takeIf { it <= lastVisibleItemPosition }
+
+    }
+
+
+    companion object {
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment AllFragment.
+         */
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            AllFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
+
+
+    override fun likeUnLikeFeed(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+        Log.d("likeUnLikeFeed", "likeUnLikeFeed: $data")
+        try {
+            val updatedComment = if (data.isLiked) {
+                data.copy(
+                    likes = data.likes + 1,
+                    repostedByUserId = data.repostedByUserId?: ""
+
+
+                )
+            } else {
+                data.copy(
+                    likes = data.likes - 1,
+                    repostedByUserId = data.repostedByUserId?: ""
+
+                )
+            }
+            lifecycleScope.launch {
+                feedUploadViewModel.likeUnLikeFeed(data._id)
+            }
+            Log.d("likeUnLikeFeed", "likeUnLikeFeed: likes count is ${data.likes}")
+            val updatedItems = getFeedViewModel.getAllFeedData()
+
+            for (updatedItem in updatedItems) {
+
+                if (updatedItem._id == data._id) {
+                    if (data.isLiked) {
+                        updatedItem.likes  +=1
+                    } else {
+                        updatedItem.likes -= 1
+                    }
+                }
+            }
+
+            val isFavoriteFeedDataEmpty = getFeedViewModel.getAllFavoriteFeedData().isEmpty()
+            if (!isFavoriteFeedDataEmpty) {
+                val favoriteFeedData = getFeedViewModel.getAllFavoriteFeedData()
+                val feedToUpdate = favoriteFeedData.find { feed -> feed._id == data._id }
+                if (feedToUpdate != null) {
+                    EventBus.getDefault().post(FeedLikeClick(position, updatedComment))
+                    Log.d("likeUnLikeFeed", "likeUnLikeFeed: remove feed from favorite fragment")
+                } else {
+                    Log.d("likeUnLikeFeed", "likeUnLikeFeed: add feed to favorite fragment")
+                }
+            } else {
+                Log.i("likeUnLikeFeed", "likeUnLikeFeed: my feed data is empty")
+            }
+            allFeedAdapter.updateItem(position, updatedComment)
+            val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
+            if (!isMyFeedEmpty) {
+                val myFeedData = getFeedViewModel.getMyFeedData()
+                val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
+                if (feedToUpdate != null) {
+                    feedToUpdate.isLiked = data.isLiked
+                    feedToUpdate.likes = data.likes
+                    val myFeedDataPosition =
+                        getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
+                    getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
+                } else {
+                    Log.d(TAG, "likeUnLikeFeed: feed to update is not available in the list")
+                }
+            } else {
+                Log.i(TAG, "likeUnLikeFeed: my feed data is empty")
+            }
+        } catch (e: Exception) {
+            Log.e("likeUnLikeFeed", "likeUnLikeFeed: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+//    override fun likeUnLikeFeed(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+//
+//    }
+
+    override fun feedCommentClicked(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+        //implemented in main activity kt
+        Log.d(TAG, "feedCommentClick: this is the one listening")
+        EventBus.getDefault().post(FeedCommentClicked(position, data))
+    }
+
+    override fun feedFavoriteClick(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+        Log.d(TAG, "feedFavoriteClick: favorite clicked")
+        EventBus.getDefault().post(FeedFavoriteClick(position, data))
+
+//        val isFavoriteFeedDataEmpty = getFeedViewModel.getAllFavoriteFeedData().isEmpty()
+//        if(!isFavoriteFeedDataEmpty) {
+//            val favoriteFeedData = getFeedViewModel.getAllFavoriteFeedData()
+//            val feedToUpdate = favoriteFeedData.find { feed -> feed._id == data._id }
+//            if (feedToUpdate != null) {
+//                Log.d("likeUnLikeFeed", "likeUnLikeFeed: remove feed from favorite fragment")
+//            }else {
+//                Log.d("likeUnLikeFeed", "likeUnLikeFeed: add feed to favorite fragment")
+//            }
+//        }else {
+//            Log.i("likeUnLikeFeed", "likeUnLikeFeed: my feed data is empty")
+//        }
+//        EventBus.getDefault().post(MainActivityFeedFavoriteClick(position, data))
+//        Log.d(TAG, "feedFavoriteClick isBookmarked: ${data.isBookmarked}")
+//        Log.d(TAG, "feedFavoriteClick: getMyFeedData size ${getFeedViewModel.getMyFeedData().size}")
+//        Log.d(TAG, "feedFavoriteClick: getMyFeedData is empty ${getFeedViewModel.getMyFeedData().isEmpty()}")
+        val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
+        if (!isMyFeedEmpty) {
+            val myFeedData = getFeedViewModel.getMyFeedData()
+            val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
+            if (feedToUpdate != null) {
+                feedToUpdate.isBookmarked = data.isBookmarked
+                val myFeedDataPosition = getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
+                getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
+            } else {
+                Log.d(TAG, "feedFavoriteClick: feed to update is not available in the list")
+            }
+        } else {
+            Log.i(TAG, "feedFavoriteClick: my feed data is empty")
+        }
+
+        lifecycleScope.launch {
+            feedUploadViewModel.favoriteFeed(data._id)
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun favoriteFeedClick(event: FromFavoriteFragmentFeedFavoriteClick) {
+        Log.d("FromFavoriteFragmentFeedFavoriteClick", "FromFavoriteFragmentFeedFavoriteClick: ")
+        val feedPosition = allFeedAdapter.getPositionById(event.data._id)
+
+        allFeedAdapter.updateItem(feedPosition, event.data)
+        getFeedViewModel.updateForAllFeedFragment(feedPosition, event.data)
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun favoriteFromOtherUsersFeedFavoriteClick(event: FromOtherUsersFeedFavoriteClick) {
+        Log.d("FromOtherUsersFeedFavoriteClick", "FromOtherUsersFeedFavoriteClick: ")
+        val feedPosition = allFeedAdapter.getPositionById(event.data._id)
+        EventBus.getDefault().post(FeedFavoriteClick(event.position, event.data))
+        allFeedAdapter.updateItem(feedPosition, event.data)
+        getFeedViewModel.updateForAllFeedFragment(feedPosition, event.data)
+    }
+
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun feedUploadResponseEvent(event: FeedUploadResponseEvent) {
+        Log.d("feedUploadResponseEvent", "feedUploadResponseEvent: ")
+//        val feedPosition = allFeedAdapter.getPositionById(event.data._id)
+        val feedPost = getFeedViewModel.getSingleAllFeedData()
+
+        feedPost._id = event.id
+
+        Log.i("feedUploadResponseEvent", "feedUploadResponseEvent:feed post id:  ${feedPost._id}")
+        allFeedAdapter.updateItem(0, feedPost)
+        getFeedViewModel.updateForAllFeedFragment(0, feedPost)
+    }
+
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun likeFeedClick(event: FromFavoriteFragmentFeedLikeClick) {
+        Log.d(
+            TAG,
+            "likeFeedClick: event bus position ${event.position} isLiked ${event.data.isLiked} likes ${event.data.likes}"
+        )
+        val feedPosition = allFeedAdapter.getPositionById(event.data._id)
+        allFeedAdapter.updateItem(feedPosition, event.data)
+        getFeedViewModel.updateForAllFeedFragment(feedPosition, event.data)
+    }
+
+    @SuppressLint("InflateParams", "MissingInflatedId")
+    override fun moreOptionsClick(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+      Log.d(TAG, "moreOptionsClick: More options clicked")
+        val view: View = layoutInflater.inflate(R.layout.feed_more_options_layout, null)
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(view)
+        dialog.show()
+        val reportUser: View = view.findViewById(R.id.report_option)
+        val makeAddFavorite: View = view.findViewById(R.id.deleteFeedLayout)
+        val downloadOption: View = view.findViewById(R.id.downloadFeedLayout)
+
+
+        if (data.isBookmarked) {
+            data.isBookmarked = true
+            makeAddFavorite.visibility = View.GONE
+        }
+
+        if (data.contentType=="text"){
+            downloadOption.visibility=View.GONE
+
+        }
+        reportUser.setOnClickListener {
+            showReportConfirmationDialog(data._id)
+        }
+        downloadOption.setOnClickListener {
+            Log.d(TAG, "Download option clicked for post: $data")
+            Toast.makeText(requireContext(), "download clicked", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+    }
+
+    private fun showReportConfirmationDialog(feedId: String) {
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("Report User")
+        builder.setMessage("Are you sure you want to report this user?")
+            .setPositiveButton("Yes") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setNegativeButton("No") { dialog, _ ->
+                dialog.dismiss()
+            }
+
+    }
+    @SuppressLint("InflateParams")
+    private fun showDeleteConfirmationDialog(feedId: String, position: Int) {
+        val inflater = LayoutInflater.from(requireContext())
+        val customTitleView: View = inflater.inflate(R.layout.delete_title_custom_layout, null)
+        val builder = AlertDialog.Builder(requireContext())
+//        builder.setTitle("Delete Feed Confirmation")
+        builder.setCustomTitle(customTitleView)
+        builder.setMessage("Are you sure you want to delete this feed?")
+
+        // Positive Button
+        builder.setPositiveButton("Delete") { dialog, which ->
+//             Handle delete action
+
+            handleDeleteAction(feedId = feedId, position){ isSuccess, message ->
+                if (isSuccess) {
+                    Log.d(TAG, "handleDeleteAction $message")
+                    dialog.dismiss()
+                } else {
+                    dialog.dismiss()
+                    Log.e(TAG, "handleDeleteAction $message")
+                }}
+            dialog.dismiss()
+        }
+
+        // Negative Button
+        builder.setNegativeButton("Cancel") { dialog, which ->
+            dialog.dismiss() // Dismiss the dialog
+        }
+
+        // Create and show the AlertDialog
+        val alertDialog = builder.create()
+        alertDialog.show()
+    }
+
+    private fun handleDeleteAction(feedId: String, position: Int, callback: (Boolean, String) -> Unit) {
+        // Logic to delete the item
+        // e.g., remove it from a list or database
+        Log.d(TAG, "handleDeleteAction: remove from database")
+        lifecycleScope.launch {
+            val response = retrofitInstance.apiService.deleteFeed(feedId)
+            Log.d(TAG, "handleDeleteAction: $response")
+            Log.d(TAG, "handleDeleteAction body: ${response.body()}")
+            Log.d(TAG, "handleDeleteAction isSuccessful: ${response.isSuccessful}")
+            if(response.isSuccessful) {
+                getFeedViewModel.removeMyFeed(position)
+                myFeedAdapter.removeItem(position)
+//                shortsViewModel.decrementPostCount()
+                shortsViewModel.postCount -= 1
+                shortsViewModel.setIsRefreshPostCount(true)
+//                myFeedAdapter.notifyItemRemoved(position)
+//                myFeedAdapter.notifyDataSetChanged()
+                Log.d(TAG, "handleDeleteAction: delete successful")
+                showSnackBar("File has been deleted successfully")
+                val isAllFeedDataEmpty = getFeedViewModel.getAllFeedData().isEmpty()
+                val isFavoriteFeedDataEmpty = getFeedViewModel.getAllFavoriteFeedData().isEmpty()
+
+                if(!isFavoriteFeedDataEmpty) {
+                    val favoriteFeed = getFeedViewModel.getAllFavoriteFeedData()
+                    val feedToUpdate = favoriteFeed.find { feed-> feed._id == feedId }
+
+                    if(feedToUpdate != null) {
+                        Log.d(TAG, "handleDeleteAction: feed to update id ${feedToUpdate._id}")
+                        try {
+                            Log.d("feedResponse", "handleDeleteAction: 1 ${feedToUpdate._id}")
+                            val feedPos = getFeedViewModel.getPositionById(feedId)
+                            Log.d("feedResponse", "handleDeleteAction: 2 ${feedToUpdate._id}")
+                            getFeedViewModel.removeFavoriteFeed(feedPos)
+                            Log.d("feedResponse", "handleDeleteAction: 3 ${feedToUpdate._id}")
+//                            val feedResponse = retrofitInstance.apiService.deleteFavoriteFeed(feedToUpdate._id)
+                            Log.d("feedResponse", "handleDeleteAction: 4 ${feedToUpdate._id}")
+//                            Log.d("feedResponse", "handleDeleteAction: $feedResponse")
+//                            Log.d("feedResponse", "handleDeleteAction body: ${feedResponse.body()}")
+                        }catch (e: Exception) {
+                            Log.e(TAG, "handleDeleteAction: error on bookmark delete ${e.message}")
+                            e.printStackTrace()
+                        }
+
+                    }else {
+                        Log.e("feedResponse", "handleDeleteAction: feed to un-favorite not available")
+                    }
+                }
+
+                if(!isAllFeedDataEmpty) {
+                    val allFeedData = getFeedViewModel.getAllFeedData()
+                    val feedToUpdate = allFeedData.find { feed -> feed._id == feedId }
+                    if (feedToUpdate != null) {
+                        Log.d(TAG, "handleDeleteAction: feed data found for all fragment")
+                        val pos = getFeedViewModel.getAllFeedDataPositionById(feedToUpdate._id)
+                        try{
+                            getFeedViewModel.removeAllFeedFragment(pos)
+                        }catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+//                        getFeedViewModel.setRefreshMyData(pos, true)
+                    }else {
+                        Log.d(TAG, "handleDeleteAction: feed data not found for all fragment")
+                    }
+                }else {
+                    Log.i(TAG, "handleDeleteAction: all feed data is empty")
+                }
+
+                if(!isFavoriteFeedDataEmpty) {
+                    val favoriteFeedData = getFeedViewModel.getAllFavoriteFeedData()
+                    val feedToUpdate = favoriteFeedData.find { feed -> feed._id == feedId }
+                    if (feedToUpdate != null) {
+                        Log.d(TAG, "handleDeleteAction: feed data found for favorite")
+                        getFeedViewModel.setRefreshMyData(position, true)
+                    }else {
+                        Log.d(TAG, "handleDeleteAction: feed data not found for favorite")
+                    }
+                }else {
+                    Log.i(TAG, "handleDeleteAction: favorite feed data is empty")
+                }
+            } else {
+                callback(false, "Failed to delete file")
+                showSnackBar("Please try again!!!")
+            }
+        }
+    }
+    private fun showSnackBar(message: String) {
+        Snackbar.make(requireActivity().findViewById(android.R.id.content), message, 1000)
+            .setBackgroundTint((ContextCompat.getColor(requireContext(),R.color.green_dark))) // Custom background color
+            .setAction("OK") {
+                // Handle undo action if needed
+            }
+            .show()
+    }
+    override fun feedFileClicked(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+        Log.d(TAG, "feedFileClicked: clicked on isBookmarked ${data.isBookmarked}")
+        when (data.contentType) {
+            "mixed_files" -> {
+                EventBus.getDefault().post(HideBottomNav())
+                EventBus.getDefault().post(HideAppBar())
+                EventBus.getDefault().post(HideFeedFloatingActionButton())
+                frameLayout.visibility = View.VISIBLE
+                allFeedAdapterRecyclerView.visibility = View.GONE
+                feedMixedFilesViewFragment = FeedMixedFilesViewFragment()
+                feedMixedFilesViewFragment?.setListener(this)
+                val args = Bundle().apply {
+                    putInt("position", position)
+                    putSerializable("data", data) // Adjust type if needed
+                }
+                feedMixedFilesViewFragment?.arguments = args
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(
+                        R.id.feed_text_view_fragment,
+                        feedMixedFilesViewFragment!!
+                    ) // Use the correct container ID
+                    .addToBackStack(null) // Optional, to add to back stack
+                    .commit()
+            }
+
+            "image" -> {
+                //            val intent = Intent(requireActivity(), FeedImageViewActivity::class.java)
+                //            intent.putExtra("position", position)
+                //            intent.putExtra("data", data)
+                //            requireActivity().startActivity(intent)
+                EventBus.getDefault().post(HideBottomNav())
+                EventBus.getDefault().post(HideAppBar())
+                EventBus.getDefault().post(HideFeedFloatingActionButton())
+                frameLayout.visibility = View.VISIBLE
+                allFeedAdapterRecyclerView.visibility = View.GONE
+                val args = Bundle().apply {
+                    putInt("position", position)
+                    putSerializable("data", data) // Adjust type if needed
+                }
+                feedImageViewFragment = FeedImageViewFragment()
+                feedImageViewFragment?.setListener(this)
+                feedImageViewFragment?.arguments = args
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(
+                        R.id.feed_text_view_fragment,
+                        feedImageViewFragment!!
+                    ) // Use the correct container ID
+                    .addToBackStack(null) // Optional, to add to back stack
+                    .commit()
+            }
+
+            "text" -> {
+                //            val intent = Intent(requireActivity(), FeedTextViewFragment::class.java)
+                //            intent.putExtra("position", position)
+                //            intent.putExtra("data", data)
+                //            requireActivity().startActivity(intent)
+                //            Log.d(TAG, "feedFileClicked: ")
+                EventBus.getDefault().post(HideBottomNav())
+                EventBus.getDefault().post(HideAppBar())
+                EventBus.getDefault().post(HideFeedFloatingActionButton())
+                frameLayout.visibility = View.VISIBLE
+                allFeedAdapterRecyclerView.visibility = View.GONE
+                val args = Bundle().apply {
+                    putInt("position", position)
+                    putSerializable("data", data) // Adjust type if needed
+                }
+                feedTextViewFragment = FeedTextViewFragment()
+                feedTextViewFragment?.setListener(this)
+                feedTextViewFragment?.arguments = args
+
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(
+                        R.id.feed_text_view_fragment,
+                        feedTextViewFragment!!
+                    ) // Use the correct container ID
+                    .addToBackStack(null) // Optional, to add to back stack
+                    .commit()
+
+            }
+
+            "docs" -> {
+                //            val intent = Intent(requireActivity(), FeedImageViewActivity::class.java)
+                //            intent.putExtra("position", position)
+                //            intent.putExtra("data", data)
+                //            requireActivity().startActivity(intent)
+
+                EventBus.getDefault().post(HideBottomNav())
+                EventBus.getDefault().post(HideAppBar())
+                EventBus.getDefault().post(HideFeedFloatingActionButton())
+                frameLayout.visibility = View.VISIBLE
+                allFeedAdapterRecyclerView.visibility = View.GONE
+                val args = Bundle().apply {
+                    putInt("position", position)
+                    putSerializable("data", data) // Adjust type if needed
+                }
+                feedDocsViewFragment = FeedDocViewFragment()
+                feedDocsViewFragment?.setListener(this)
+                feedDocsViewFragment?.arguments = args
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(
+                        R.id.feed_text_view_fragment,
+                        feedDocsViewFragment!!
+                    ) // Use the correct container ID
+                    .addToBackStack(null) // Optional, to add to back stack
+                    .commit()
+            }
+
+            "video" -> {
+                EventBus.getDefault().post(HideBottomNav())
+                EventBus.getDefault().post(HideAppBar())
+                EventBus.getDefault().post(HideFeedFloatingActionButton())
+                frameLayout.visibility = View.VISIBLE
+                allFeedAdapterRecyclerView.visibility = View.GONE
+                val args = Bundle().apply {
+                    putInt("position", position)
+                    putSerializable("data", data) // Adjust type if needed
+                }
+                feedVideoViewFragment = FeedVideoViewFragment()
+                feedVideoViewFragment?.setListener(this)
+                feedVideoViewFragment?.arguments = args
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(
+                        R.id.feed_text_view_fragment,
+                        feedVideoViewFragment!!
+                    ) // Use the correct container ID
+                    .addToBackStack(null) // Optional, to add to back stack
+                    .commit()
+            }
+
+            "audio", "vn" -> {
+                EventBus.getDefault().post(HideBottomNav())
+                EventBus.getDefault().post(HideAppBar())
+                EventBus.getDefault().post(HideFeedFloatingActionButton())
+                frameLayout.visibility = View.VISIBLE
+                allFeedAdapterRecyclerView.visibility = View.GONE
+                val args = Bundle().apply {
+                    putInt("position", position)
+                    putSerializable("data", data) // Adjust type if needed
+                }
+                feedAudioViewFragment = FeedAudioViewFragment()
+                feedAudioViewFragment?.setListener(this)
+                feedAudioViewFragment?.arguments = args
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(
+                        R.id.feed_text_view_fragment,
+                        feedAudioViewFragment!!
+                    ) // Use the correct container ID
+                    .addToBackStack(null) // Optional, to add to back stack
+                    .commit()
+            }
+
+            "multiple_images" -> {
+                EventBus.getDefault().post(HideBottomNav())
+                EventBus.getDefault().post(HideAppBar())
+                EventBus.getDefault().post(HideFeedFloatingActionButton())
+                frameLayout.visibility = View.VISIBLE
+                allFeedAdapterRecyclerView.visibility = View.GONE
+                val args = Bundle().apply {
+                    putInt("position", position)
+                    putSerializable("data", data) // Adjust type if needed
+                }
+                feedMultipleImageViewFragment = FeedMultipleImageViewFragment()
+                feedMultipleImageViewFragment?.setListener(this)
+                feedMultipleImageViewFragment?.arguments = args
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(
+                        R.id.feed_text_view_fragment,
+                        feedMultipleImageViewFragment!!
+                    ) // Use the correct container ID
+                    .addToBackStack(null) // Optional, to add to back stack
+                    .commit()
+            }
+        }
+    }
+
+    override fun feedShare(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+        val shareIntent = Intent().apply {
+            action = Intent.ACTION_SEND // Specifies the action for sharing a single file or text
+        }
+        if (data.contentType == "text") {
+            shareTextFeed(data)
+        }
+        else if (data.contentType == "image") {
+            shareImageFeed(data)
+        }
+    }
+
+
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun feedFavoriteFollowUpdate(event: FeedFavoriteFollowUpdate) {
+        Log.d(TAG, "feedFavoriteFollowUpdate: feed follow update")
+        allFeedAdapter.addSingleFollowList(
+            com.uyscut.network.api.response.getfeedandresposts.Follow(
+                event.userId,
+                event.isFollowing
+            )
+        )
+        getFeedViewModel.addFollowToFollowList(
+            com.uyscut.network.api.response.getfeedandresposts.Follow(
+                event.userId,
+                event.isFollowing
+            )
+        )
+    }
+
+    override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity) {
+        Log.d("followButtonClicked", "followButtonClicked: clicked")
+//        EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+//        val followList = allFeedAdapter.getFollowList()
+        allFeedAdapter.addSingleFollowList(
+            com.uyscut.network.api.response.getfeedandresposts. Follow(
+                followUnFollowEntity.userId,
+                followUnFollowEntity.isFollowing
+            )
+        )
+        EventBus.getDefault().post(
+            FeedFavoriteFollowUpdate(
+                followUnFollowEntity.userId,
+                followUnFollowEntity.isFollowing
+            )
+        )
+
+        feedShortsSharedViewModel.setData(
+            FollowUnFollowEntity(
+                followUnFollowEntity.userId,
+                followUnFollowEntity.isFollowing
+            )
+        )
+        getFeedViewModel.addFollowToFollowList(
+            com.uyscut.network.api.response.getfeedandresposts. Follow(
+                followUnFollowEntity.userId,
+                followUnFollowEntity.isFollowing
+            )
+        )
+        followClicked(followUnFollowEntity)
+    }
+
+
+
+    override fun feedRepostPost(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+
+        val newRepostedPostFragment = NewRepostedPostFragment.newInstance("param1Value", "param2Value")
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.feed_text_view_fragment, newRepostedPostFragment)
+            .addToBackStack(null)
+            .commit()
+
+        val view: View = layoutInflater.inflate(R.layout.feed_moreoptions_bottomsheet_layout, null)
+        val deleteFeedLayout: LinearLayout = view.findViewById(R.id.deleteFeedLayout)
+        val favoriteFeedLayout : LinearLayout =view.findViewById(R.id.favoriteFeedLayout)
+        val quoteButton : LinearLayout = view.findViewById(R.id.not_Interested)
+        val repostButton : LinearLayout = view.findViewById(R.id.shareFeedLayout)
+        val download : LinearLayout = view.findViewById(R.id.downloadFeedLayout)
+        download.visibility = View.GONE
+        repostButton.visibility = View.VISIBLE
+        favoriteFeedLayout.visibility = View.GONE
+        deleteFeedLayout.visibility = View.GONE
+        quoteButton.visibility = View.VISIBLE
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(view)
+        dialog.show()
+        repostButton.setOnClickListener {
+            if (data.isReposted) {
+                data.repostedUsers.size > 1 // Example, add current user to reposted users+= "currentUserId" // Example, append current user to reposted users
+
+            } else {
+                data.repostedUsers.size < 0
+            }
+        }
+
+        quoteButton.setOnClickListener {
+            dialog.dismiss()
+            // Navigate to the NewRepostedPostFragment
+            val fragment = NewRepostedPostFragment.newInstance("","")
+            val transaction = requireActivity().supportFragmentManager.beginTransaction()
+            transaction.replace(R.id.frame_layout, fragment) // Ensure fragment_container is correct
+            transaction.addToBackStack(null)
+            transaction.commit()
+        }
+    }
+
+    private fun followClicked(followUnFollowEntity: FollowUnFollowEntity) {
+        Log.d("followButtonClicked", "followButtonClicked: $followUnFollowEntity")
+        val followListItem: List<ShortsEntityFollowList> = listOf(
+            ShortsEntityFollowList(
+                followUnFollowEntity.userId, followUnFollowEntity.isFollowing
+            )
+        )
+
+        lifecycleScope.launch(Dispatchers.IO) {
+//            delay(200)
+            val uniqueFollowList = removeDuplicateFollowers(followListItem)
+
+            followUnFollowViewModel.followUnFollow(followUnFollowEntity.userId)
+            Log.d(
+                "followButtonClicked",
+                "followButtonClicked: Inserted uniqueFollowList $uniqueFollowList"
+            )
+            delay(100)
+        }
+    }
+
+    private fun shareTextFeed(data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+        val sendIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, data.content)
+            type = "text/plain"
+        }
+        // Verify that the Intent will resolve to an activity
+        if (sendIntent.resolveActivity(requireContext().packageManager) != null) {
+            // Start the activity to share the text
+            startActivity(Intent.createChooser(sendIntent, "Share via"))
+        }
+    }
+
+    private fun shareImageFeed(data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+        Glide.with(this).asBitmap().load(data.files[0].url).into(
+            object : CustomTarget<Bitmap?>() {
+                override fun onResourceReady(
+                    resource: Bitmap,
+                    transition: Transition<in Bitmap?>?
+                ) {
+
+                    bitmap = resource
+
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {
+
+                }
+
+            }
+        )
+        if (bitmap != null) {
+            shareImage()
+        }
+    }
+
+    private fun shareImageFeed(data: Post) {
+        Glide.with(this).asBitmap().load(data.files[0].url).into(
+            object : CustomTarget<Bitmap?>() {
+                override fun onResourceReady(
+                    resource: Bitmap,
+                    transition: Transition<in Bitmap?>?
+                ) {
+                    bitmap = resource
+                    // Call shareImage() once the bitmap is ready
+                    shareImage()
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {
+                    // Handle cleanup if needed
+                }
+            }
+        )
+    }
+
+
+    private fun shareImage() {
+        try {
+            val cachePath = File(requireActivity().cacheDir, "images")
+            cachePath.mkdir()
+            val stream = FileOutputStream("${cachePath}/sharable_image.png")
+            bitmap?.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            stream.close()
+
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+
+        val imagePath = File(requireActivity().cacheDir, "images")
+        val newFile = File(imagePath, "sharable_image.png")
+        val contentUri = FileProvider.getUriForFile(
+            requireContext(),
+            "${requireActivity().applicationContext.packageName}.file provider",
+            newFile
+        )
+
+        if (contentUri != null) {
+            val shareIntent = Intent()
+            shareIntent.action = Intent.ACTION_SEND
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+            shareIntent.setDataAndType(
+                contentUri,
+                requireActivity().contentResolver.getType(contentUri)
+            )
+
+            shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri)
+            shareIntent.putExtra(Intent.EXTRA_TEXT, "This image is shared from flash")
+            startActivity(Intent.createChooser(shareIntent, "Share via"))
+        }
+    }
+
+    fun forShow() {
+        Log.d("forShow", "forShow: is called")
+    }
+
+
+    override fun backPressedFromFeedTextViewFragment() {
+        Log.d(TAG, "backPressedFromFeedTextViewFragment: listening back pressed ")
+        allFeedAdapterRecyclerView.visibility = View.VISIBLE
+        frameLayout.visibility = View.GONE
+        EventBus.getDefault().post(ShowBottomNav())
+        EventBus.getDefault().post(ShowAppBar())
+        EventBus.getDefault().post(ShowFeedFloatingActionButton())
+//        if(toggleFeedFloatingActionButton != null) {
+//            toggleFeedFloatingActionButton?.displayFloatingActionButton()
+//        }
+    }
+
+    override fun onCommentClickFromFeedTextViewFragment(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+        EventBus.getDefault().post(FeedCommentClicked(position, data))
+        Log.d(TAG, "onCommentClickFromFeedTextViewFragment: comment clicked")
+
+
+    }
+
+    override fun onLikeUnLikeFeedFromFeedTextViewFragment(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+        try {
+            val updatedComment = if (data.isLiked) {
+                data.copy(
+                    likes = data.likes + 1,
+                    repostedByUserId = data.repostedByUserId?:"",
+                    feedShortsBusinessId = data.feedShortsBusinessId // Ensure this field is set
+//                    isLiked = data.isLiked
+                )
+            } else {
+                data.copy(
+                    likes = data.likes - 1,
+                    repostedByUserId = data.repostedByUserId?:"",
+                    feedShortsBusinessId = data.feedShortsBusinessId // Ensure this field is set
+                )
+            }
+            lifecycleScope.launch {
+                feedUploadViewModel.likeUnLikeFeed(data._id)
+            }
+            Log.d("likeUnLikeFeed", "likeUnLikeFeed: likes count is ${data.likes}")
+            val updatedItems = getFeedViewModel.getAllFeedData()
+            for (updatedItem in updatedItems) {
+                if (updatedItem._id == data._id) {
+                    updatedItem.isLiked = data.isLiked
+                    if (data.isLiked) {
+                        updatedItem.likes += 1
+                    }else {
+                        updatedItem.likes -=1
+                    }
+                }
+            }
+            val isFavoriteFeedDataEmpty = getFeedViewModel.getAllFavoriteFeedData().isEmpty()
+            if (!isFavoriteFeedDataEmpty) {
+                val favoriteFeedData = getFeedViewModel.getAllFavoriteFeedData()
+                val feedToUpdate = favoriteFeedData.find { feed -> feed._id == data._id }
+                if (feedToUpdate != null) {
+                    EventBus.getDefault().post(FeedLikeClick(position, updatedComment))
+                    Log.d("likeUnLikeFeed", "likeUnLikeFeed: remove feed from favorite fragment")
+                } else {
+                    Log.d("likeUnLikeFeed", "likeUnLikeFeed: add feed to favorite fragment")
+                }
+            } else {
+                Log.i("likeUnLikeFeed", "likeUnLikeFeed: my feed data is empty")
+            }
+            allFeedAdapter.updateItem(position, updatedComment)
+            val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
+            if (!isMyFeedEmpty) {
+                val myFeedData = getFeedViewModel.getMyFeedData()
+                val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
+                if (feedToUpdate != null) {
+                    feedToUpdate.isLiked = data.isLiked
+                    feedToUpdate.likes = data.likes
+                    val myFeedDataPosition =
+                        getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
+                    getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
+                } else {
+                    Log.d(TAG, "likeUnLikeFeed: feed to update is not available in the list")
+                }
+            } else {
+                Log.i(TAG, "likeUnLikeFeed: my feed data is empty")
+            }
+        } catch (e: Exception) {
+            Log.e("likeUnLikeFeed", "likeUnLikeFeed: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    override fun onFeedFavoriteClickFromFeedTextViewFragment(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+        EventBus.getDefault().post(FeedFavoriteClick(position, data))
+//        EventBus.getDefault().post(FromFavoriteFragmentFeedFavoriteClick(position, data))
+        val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
+        if (!isMyFeedEmpty) {
+            val myFeedData = getFeedViewModel.getMyFeedData()
+            val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
+            if (feedToUpdate != null) {
+                feedToUpdate.isBookmarked = data.isBookmarked
+                val myFeedDataPosition = getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
+                getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
+            } else {
+                Log.d(TAG, "feedFavoriteClick: feed to update is not available in the list")
+            }
+        } else {
+            Log.i(TAG, "feedFavoriteClick: my feed data is empty")
+        }
+
+        val allFeed = getFeedViewModel.getAllFeedData().isEmpty()
+        if (!allFeed) {
+            Log.i(TAG, "onFeedFavoriteClickFromFeedTextViewFragment: allFeed is not empty")
+            val allFeedPost = getFeedViewModel.getAllFeedData().find { it._id == data._id }
+            if (allFeedPost != null) {
+                Log.i(TAG, "onFeedFavoriteClickFromFeedTextViewFragment: allFeedPost is not null")
+                val allFeedPosition = getFeedViewModel.getAllFeedDataPositionById(allFeedPost._id)
+                getFeedViewModel.updateForAllFeedFragment(allFeedPosition, data)
+                allFeedAdapter.updateItem(position, data)
+            } else {
+                Log.i(TAG, "onFeedFavoriteClickFromFeedTextViewFragment: allFeedPost is null")
+            }
+        } else {
+            Log.e(TAG, "onFeedFavoriteClickFromFeedTextViewFragment: allFeed is empty")
+        }
+        lifecycleScope.launch {
+            feedUploadViewModel.favoriteFeed(data._id)
+        }
+    }
+
+    @SuppressLint("InflateParams")
+    override fun onMoreOptionsClickFromFeedTextViewFragment(position: Int, data:com.uyscut.network.api.response.getfeedandresposts. Post) {
+        val view: View = layoutInflater.inflate(R.layout.feed_moreoptions_bottomsheet_layout, null)
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(view)
+        dialog.show()
+
+
+    }
+
+    override fun finishedPlayingVideo(position: Int) {
+        Log.d("finishedPlayingVideo", "finishedPlayingVideo: refresh on position $position")
+        allFeedAdapter.notifyItemChanged(position)
+    }
+
+    //    @SuppressLint("NotifyDataSetChanged")
+//    override fun onBackPressed() {
+//        Log.d(TAG, "onBackPressed: from feed text view fragment")
+//        allFeedAdapterRecyclerView.visibility = View.VISIBLE
+//        frameLayout.visibility = View.GONE
+//        EventBus.getDefault().post(ShowBottomNav())
+//        allFeedAdapter.notifyDataSetChanged()
+//    }
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun feedAllFeedUpdateLike(event: AllFeedUpdateLike) {
+//        Log.d("AllFeedUpdateLike", "AllFeedUpdateLike: in all fragment")
+        Log.d(
+            "AllFeedUpdateLike",
+            "AllFeedUpdateLike: event bus position ${event.position} isLiked ${event.data.isLiked} likes ${event.data.likes}"
+        )
+        val feedPosition = allFeedAdapter.getPositionById(event.data._id)
+        allFeedAdapter.updateItem(feedPosition, event.data)
+        getFeedViewModel.updateForAllFeedFragment(feedPosition, event.data)
+
+        val isFavoriteFeedDataEmpty = getFeedViewModel.getAllFavoriteFeedData().isEmpty()
+        if (!isFavoriteFeedDataEmpty) {
+            val favoriteFeedData = getFeedViewModel.getAllFavoriteFeedData()
+            val feedToUpdate = favoriteFeedData.find { feed -> feed._id == event.data._id }
+            if (feedToUpdate != null) {
+                EventBus.getDefault().post(FeedLikeClick(event.position, event.data))
+                Log.d("likeUnLikeFeed", "likeUnLikeFeed: remove feed from favorite fragment")
+            } else {
+                Log.d("likeUnLikeFeed", "likeUnLikeFeed: add feed to favorite fragment")
+            }
+        } else {
+            Log.i("likeUnLikeFeed", "likeUnLikeFeed: my feed data is empty")
+        }
+    }
+}

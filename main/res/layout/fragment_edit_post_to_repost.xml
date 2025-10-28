@@ -1,0 +1,655 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FAFAFA">
+
+    <!-- Hidden TextView -->
+    <TextView
+        android:id="@+id/content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="3dp"
+        android:text="Upload File"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        tools:ignore="MissingConstraints" />
+
+    <!-- Top Bar -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/blueJeans"
+        android:elevation="4dp"
+        android:clickable="false"
+        android:focusable="false"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/cancelButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:padding="8dp"
+            android:src="@drawable/cancel_svgrepo_com"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            app:tint="@color/white" />
+
+        <TextView
+            android:id="@+id/repostButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:layout_gravity="end|center_vertical"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:text="Repost"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            android:enabled="true" />
+
+    </com.google.android.material.appbar.MaterialToolbar>
+
+    <!-- Divider -->
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray"
+        android:alpha="0.15"
+        app:layout_constraintTop_toBottomOf="@id/topBar" />
+
+    <!-- Main Content Container -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/divider"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:id="@+id/repostContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF">
+
+            <!-- User Profile Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="10dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/userReposterProfile"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/flash21"
+                    android:backgroundTint="@color/white"
+                    android:scaleType="centerCrop" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <!-- Reposter Name -->
+                    <TextView
+                        android:id="@+id/reposterName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Uy Scuti"
+                        android:textColor="#000000"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="2dp" />
+
+                    <!-- Reposter Username -->
+                    <TextView
+                        android:id="@+id/reposterUsername"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="\@uyscuti"
+                        android:textColor="#999999"
+                        android:textSize="13sp"
+                        android:layout_marginBottom="0dp" />
+
+                    <!-- Hashtags -->
+                    <TextView
+                        android:id="@+id/hashtags"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="#Repost #ProudMoment #Innovation"
+                        android:textColor="@color/blueJeans"
+                        android:visibility="gone"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Reply Input Field -->
+            <EditText
+                android:id="@+id/replyInput"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/bottom_input_field_dark_gray_color"
+                android:backgroundTint="@color/blueJeans"
+                android:gravity="center_vertical"
+                android:hint="Post your reply"
+                android:paddingHorizontal="16dp"
+                android:textColor="@android:color/black"
+                android:textColorHint="#808080"
+                android:textSize="16sp" />
+
+            <!-- Optimized Action Icons Section -->
+            <LinearLayout
+                android:id="@+id/iconLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/white"
+                android:orientation="horizontal"
+                android:weightSum="4">
+
+                <!-- Tag People -->
+                <LinearLayout
+                    android:id="@+id/tagPeopleLayout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginBottom="4dp"
+                        android:src="@drawable/person_svgrepo_com"
+                        app:tint="@color/blueJeans" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tag people"
+                        android:textColor="@android:color/black"
+                        android:textSize="10sp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:gravity="center" />
+
+                </LinearLayout>
+
+                <!-- Add Topics -->
+                <LinearLayout
+                    android:id="@+id/topics_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginBottom="4dp"
+                        android:src="@drawable/topic2_svgrepo_com"
+                        app:tint="@color/blueJeans" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Add topics"
+                        android:textColor="@android:color/black"
+                        android:textSize="10sp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:gravity="center" />
+
+                </LinearLayout>
+
+                <!-- Add Location -->
+                <LinearLayout
+                    android:id="@+id/location_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginBottom="4dp"
+                        android:src="@drawable/location_svgrepo_com"
+                        app:tint="@color/blueJeans" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Add location"
+                        android:textColor="@android:color/black"
+                        android:textSize="10sp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:gravity="center" />
+
+                </LinearLayout>
+
+                <!-- Add More -->
+                <LinearLayout
+                    android:id="@+id/addMoreFeed"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginBottom="4dp"
+                        android:src="@drawable/baseline_add_24"
+                        app:tint="@color/blueJeans" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Add more"
+                        android:textColor="@android:color/black"
+                        android:textSize="10sp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:gravity="center" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Video Thumbnail Container (Hidden by default) -->
+            <FrameLayout
+                android:id="@+id/shortVideoThumbNail"
+                android:layout_width="match_parent"
+                android:layout_height="292dp"
+                android:layout_marginBottom="16dp"
+                android:background="#F0F0F0"
+                android:visibility="gone"
+                android:elevation="2dp">
+
+                <ImageView
+                    android:id="@+id/shortThumbNail"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:adjustViewBounds="true"
+                    android:scaleType="centerCrop"
+                    app:srcCompat="@drawable/attach_svgrepo_com" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/multipleImagesContainers"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <androidx.viewpager2.widget.ViewPager2
+                        android:id="@+id/viewPagers"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        app:layout_constraintBottom_toTopOf="@+id/circleIndicator" />
+
+                    <me.relex.circleindicator.CircleIndicator3
+                        android:id="@+id/circleIndicator"
+                        android:layout_width="match_parent"
+                        android:layout_height="24dp"
+                        android:background="#80000000"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </FrameLayout>
+
+            <!-- Original Post Container -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/originalPostContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#FFFFFF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Original Post Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <ImageView
+                            android:id="@+id/originalPostProfileImage"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@drawable/circle"
+                            android:scaleType="centerCrop" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:id="@+id/originalPostUsername"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Uy Scuti"
+                                    android:textColor="#000000"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/repostedTimeIndicator"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="end"
+                                    android:text="a minute ago"
+                                    android:textColor="#999999"
+                                    android:textSize="14sp" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/originalUserHandle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="\@contentCreator"
+                                android:textColor="#999999"
+                                android:textSize="12sp" />
+
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Original Post Content -->
+                    <TextView
+                        android:id="@+id/originalFeedTextContent"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:lineSpacingExtra="4dp"
+                        android:text="Just wanted to take a moment to appreciate Social Circuit App! 🙌 It's been a game-changer for me—smooth, user-friendly, and super helpful. If you haven't tried it yet, you're missing out! 📱✨"
+                        android:textColor="#333333"
+                        android:textSize="14sp" />
+
+                    <!-- Media Content -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/mixedFilesCardView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/dimen_4"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="@color/white">
+
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:id="@+id/multipleFilesContainer2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/recyclerView"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="@color/white"
+                                android:nestedScrollingEnabled="false"
+                                app:layoutManager="androidx.recyclerview.widget.StaggeredGridLayoutManager"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent"
+                                app:spanCount="3" />
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Original Post Hashtags -->
+                    <TextView
+                        android:id="@+id/originalHashtags"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="#GreatApp #MustTry #Appreciation"
+                        android:textColor="@color/blueJeans"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Interaction Buttons -->
+            <LinearLayout
+                android:id="@+id/interactionButtons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="4"
+                android:paddingVertical="8dp">
+
+                <!-- Like -->
+                <LinearLayout
+                    android:id="@+id/like_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp">
+
+                    <ImageView
+                        android:id="@+id/likeButtonIcon"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/heart_svgrepo_com"
+                        app:tint="@color/blueJeans" />
+
+                    <TextView
+                        android:id="@+id/likesCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="0"
+                        android:textColor="#657786"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <!-- Comment -->
+                <LinearLayout
+                    android:id="@+id/comment_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp">
+
+                    <ImageView
+                        android:id="@+id/commentButtonIcon"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/comments"
+                        app:tint="@color/blueJeans" />
+
+                    <TextView
+                        android:id="@+id/commentCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="0"
+                        android:textColor="#657786"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <!-- Bookmark -->
+                <LinearLayout
+                    android:id="@+id/bookmarkSection"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp">
+
+                    <ImageView
+                        android:id="@+id/favoritesButton"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/favorite_svgrepo_com__1_"
+                        app:tint="@color/blueJeans" />
+
+                    <TextView
+                        android:id="@+id/favoriteCounts"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="0"
+                        android:textColor="#657786"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+                <!-- Share -->
+                <LinearLayout
+                    android:id="@+id/share_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp">
+
+                    <ImageView
+                        android:id="@+id/shareButtonIcon"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/share_svgrepo_com"
+                        app:tint="@color/blueJeans" />
+
+                    <TextView
+                        android:id="@+id/shareCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="0"
+                        android:textColor="#657786"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <!-- Hidden Components -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView2"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:visibility="gone"
+        android:padding="16dp"
+        tools:ignore="MissingConstraints" />
+
+    <ImageView
+        android:id="@+id/postImage"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:layout_margin="16dp"
+        android:adjustViewBounds="true"
+        android:scaleType="centerCrop"
+        android:src="@drawable/nav_user_notification2"
+        android:visibility="gone"
+        tools:ignore="MissingConstraints" />
+
+    <FrameLayout
+        android:id="@+id/mixedFilesContainer"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginTop="8dp"
+        android:clickable="true"
+        android:visibility="gone"
+        android:background="#FFFFFF"
+        android:elevation="1dp"
+        tools:ignore="MissingConstraints">
+
+        <ImageView
+            android:id="@+id/originalFeedImages"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="originalPost"
+            android:src="@drawable/imageplaceholder"
+            android:visibility="invisible" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerView2s"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="visible"
+            app:spanCount="1" />
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

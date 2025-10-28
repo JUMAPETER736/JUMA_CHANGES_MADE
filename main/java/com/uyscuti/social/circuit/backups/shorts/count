@@ -1,0 +1,26 @@
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import kotlinx.android.synthetic.main.activity_main.*
+import java.text.DecimalFormat
+
+class MainActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        val count = 1234 // replace this with your actual count
+
+        val formattedCount = formatCount(count)
+        textViewCount.text = formattedCount
+    }
+
+    private fun formatCount(count: Int): String {
+        return when {
+            count < 1000 -> count.toString()
+            count < 10000 -> DecimalFormat("#.#K").format(count / 1000.0)
+            count < 1000000 -> DecimalFormat("#K").format(count / 1000.0)
+            else -> DecimalFormat("#.#M").format(count / 1000000.0)
+        }
+    }
+}

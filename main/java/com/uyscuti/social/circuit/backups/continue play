@@ -1,0 +1,108 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <size
+        android:width="20dp"
+        android:height="20dp" />
+    <solid android:color="@color/your_color_here" />
+</shape>
+<SeekBar
+    android:id="@+id/seekBar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:thumb="@drawable/thumb_seekbar" />
+<SeekBar
+    android:id="@+id/seekBar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:thumb="@drawable/thumb_seekbar"
+    android:progressBackgroundTint="@color/progress_background_color"
+    android:progressTint="@color/progress_color"
+    android:thumbTint="@color/thumb_color" />
+
+
+
+wave form seek bar with on drag and on click listeners
+var isDragging = false // Flag to track if a drag has occurred
+
+override fun onTouchEvent(event: MotionEvent?): Boolean {
+    if (!isEnabled) return false
+
+    if (visibleProgress > 0) {
+        when (event?.action) {
+            MotionEvent.ACTION_DOWN -> {
+                mTouchDownX = event.x
+                mProgress = progress
+                mAlreadyMoved = false
+                isDragging = false
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (abs(event.x - mTouchDownX) > mScaledTouchSlop || mAlreadyMoved) {
+                    updateProgress(event)
+                    mAlreadyMoved = true
+                    isDragging = true
+                }
+            }
+            MotionEvent.ACTION_UP -> {
+                if (isDragging) {
+                    updateOnRelease(event) // Call only if dragging has occurred
+                } else {
+                    onClick(event) // Call your custom click method here
+                }
+                performClick()
+            }
+        }
+    } else {
+        when (event?.action) {
+            MotionEvent.ACTION_DOWN -> {
+                if (isParentScrolling()) {
+                    mTouchDownX = event.x
+                } else {
+                    updateProgress(event)
+                }
+                isDragging = false
+            }
+            MotionEvent.ACTION_MOVE -> {
+                updateProgress(event)
+                isDragging = true
+            }
+            MotionEvent.ACTION_UP -> {
+                if (abs(event.x - mTouchDownX) > mScaledTouchSlop) {
+                    updateProgress(event)
+                    isDragging = true
+                }
+                if (isDragging) {
+                    updateOnRelease(event) // Call only if dragging has occurred
+                } else {
+                    onClick(event) // Call your custom click method here
+                }
+                performClick()
+            }
+        }
+    }
+    return true
+}
+
+private fun updateOnRelease(event: MotionEvent?) {
+    // Implement your logic for the release event here
+    onReleaseListener?.onRelease(event)
+}
+
+private fun onClick(event: MotionEvent?) {
+    // Implement your logic for the click event here
+    onClickListener?.onClick(event)
+}
+
+// Define an interface for your click listener
+interface OnClickListener {
+    fun onClick(event: MotionEvent?)
+}
+
+// Member variable for the click listener
+private var onClickListener: OnClickListener? = null
+
+// Setter method for the click listener
+fun setOnClickListener(listener: OnClickListener) {
+    onClickListener = listener
+}

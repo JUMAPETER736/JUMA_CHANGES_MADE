@@ -1,0 +1,709 @@
+private const val VIEW_TYPE_TEXT_FEED = 0
+private const val VIEW_TYPE_MIXED_FEED_FILES = 1
+private const val TAG = "FeedAdapter"
+class FeedAdapter(
+    private val context: Context,
+    private val feedClickListener: OnFeedClickListener
+) : FeedPaginatedAdapter<RecyclerView.ViewHolder>(), OnMultipleImagesClickListener {
+    var onItemVisible: ((Int) -> Unit)? = null
+    inner class FeedTextViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val tag = "FeedTextViewHolder"
+        private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
+        private val likeButton: ImageView = itemView.findViewById(R.id.like)
+        private val commentButton: ImageView = itemView.findViewById(R.id.comment)
+        private val favoriteButton: ImageView = itemView.findViewById(R.id.favorite)
+        private val moreOptionsButton: ImageView = itemView.findViewById(R.id.moreOptions)
+        private val textView: TextView = itemView.findViewById(R.id.textView)
+        private val caption: ReadMoreTextView = itemView.findViewById(R.id.caption)
+        private val tags: TextView = itemView.findViewById(R.id.tags)
+        private val dateTime: TextView = itemView.findViewById(R.id.date_time)
+        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
+        private val feedCommentsCount: TextView = itemView.findViewById(R.id.feedCommentsCount)
+        private val reFeed : ImageView = itemView.findViewById(R.id.reFeed)
+        private val feedTextLayoutContainer: ConstraintLayout = itemView.findViewById(R.id.feedTextLayoutContainer)
+
+        private val feedShare: ImageView = itemView.findViewById(R.id.share)
+        private var isFollowed = false
+        private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
+        @OptIn(UnstableApi::class)
+        @SuppressLint("SetTextI18n", "SimpleDateFormat", "SuspiciousIndentation")
+        fun render(data:com.uyscut.network.api.response.getfeedandresposts.Post) {
+//            Log.d(TAG, "render: on bind position $absoluteAdapterPosition")
+//            itemView.viewTreeObserver.addOnGlobalLayoutListener {
+//                Log.d(TAG, "render: viewTreeObserver on bind position $absoluteAdapterPosition")
+//                // Determine if this view is visible on screen
+//                val rect = Rect()
+//                itemView.getGlobalVisibleRect(rect)
+//                if (!rect.isEmpty) {
+//                    Log.d(TAG, "render: Rect")
+//                    onItemVisible?.invoke(absoluteAdapterPosition)
+//                }else {
+//                    Log.d(TAG, "render: Rect")
+//                }
+//            }
+//            Log.d(tag, "render: data likes:: ${data.likes} isLiked ${data.isLiked}")
+//            Log.d(tag, "render: follow list $followList")
+            var isFollowingData: com.uyscut.network.api.response.getfeedandresposts.Follow? = null
+            val isRepost = data.isReposted
+//            val feedPostOwner =
+            val feedOwnerId = if (isRepost) data.originalPost[0].author.account[0]._id else data.author[0].account._id
+            if (!data.isLocal) {
+                if (followList.isNotEmpty()) {
+                    isFollowingData =
+                        followList.findLast { it.followersId == data.author[0].account._id }!!
+                }
+//            Log.d(tag, "render: is following = $isFollowingData")
+                if (feedOwnerId == LocalStorage.getInstance(profileImageView.context).getUserId()) {
+
+                    followButton.visibility = View.INVISIBLE
+//                Log.d(tag, "onBind: feed owner id == logged user id")
+                } else {
+                    followButton.visibility = View.VISIBLE
+//             EventBus.getDefault().post(HandleInShortsFollowButtonClick(followButton, shortOwnerId, shortOwnerUsername))
+
+                    if (isFollowingData != null) {
+                        if (isFollowingData.isFollowing) {
+                            followButton.text = "Following"
+                            followButton.isAllCaps = false
+                            followButton.setBackgroundResource(R.drawable.shorts_following_button)
+                            isFollowed = true
+                        } else {
+                            followButton.text = "Follow"
+                            followButton.setBackgroundResource(R.drawable.feed_follow_button_border)
+                            isFollowed = false
+                        }
+                    }
+
+//                Log.d(tag, "onBind: short owner id != logged user id")
+
+                }
+                followButton.setOnClickListener {
+//                onFollow.invoke(shortOwnerId, shortOwnerUsername, followButton)
+
+                    handleFollowButtonClick(feedOwnerId)
+
+                }
+            } else {
+                followButton.visibility = View.GONE
+            }
+
+            val captionText = if (data.isReposted) data.originalPost[0].content else data.content
+            val readMoreText = "Read More"
+            val profilePicUrl = if (data.isReposted) data.originalPost[0].author.account[0].avatar.url else data.author[0].account.avatar.url
+//            val profilePicUrl = data.author[0].account.avatar.url
+            val feedOwnerUsername =if (data.isReposted) data.originalPost[0].author.account[0].username else data.author[0].account.username
+
+            caption.text = captionText
+            Glide.with(context)
+                .load(profilePicUrl)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(profileImageView)
+
+            profileImageView.setOnClickListener {
+                Log.d(TAG, "render: profile pic clicked")
+            }
+            textView.setOnClickListener {
+
+                Log.d(TAG, "render: username clicked")
+            }
+
+            textView.text = feedOwnerUsername
+            val feedOwnerName =
+//                "${data.originalPost[0].author.firstName} ${data.author[0].lastName}"
+            if (data.isReposted) data.originalPost[0].author.firstName else data.author[0].firstName
+            textView.setOnClickListener {
+
+
+                if (feedOwnerId == LocalStorage.getInstance(textView.context).getUserId()) {
+                    //open user profile fragment
+                    EventBus.getDefault().post(GoToUserProfileFragment())
+
+                } else {
+                    Log.d(TAG, "onBind: Clicked on another users profile")
+                    val otherUsersProfile = OtherUsersProfile(
+                        feedOwnerName, feedOwnerUsername, profilePicUrl, feedOwnerId
+                    )
+                    OtherUserProfile.openFromShorts(
+                        profileImageView.context,
+                        otherUsersProfile
+                    )
+                }
+
+
+            }
+
+
+            profileImageView.setOnClickListener {
+                if (feedOwnerId == LocalStorage.getInstance(profileImageView.context).getUserId()) {
+                    //open user profile fragment
+                    EventBus.getDefault().post(GoToUserProfileFragment())
+
+                } else {
+                    Log.d(TAG, "onBind: Clicked on another users profile")
+                    val otherUsersProfile = OtherUsersProfile(
+                        feedOwnerName, feedOwnerUsername, profilePicUrl, feedOwnerId
+                    )
+                    OtherUserProfile.openFromShorts(
+                        profileImageView.context,
+                        otherUsersProfile
+                    )
+            //  EventBus.getDefault().post(UpdateButtonEvent(currentItem.someText, this))
+                }
+            }
+            // Example date string from MongoDB
+            val mongoDateString = data.createdAt
+
+
+            dateTime.text = formattedMongoDateTime(mongoDateString)
+
+            if (data.tags.isNotEmpty()) {
+                tags.visibility = View.VISIBLE
+                val formattedTags = data.tags.joinToString(" ") { "#$it" }
+
+                tags.text = formattedTags
+            } else {
+                tags.visibility = View.INVISIBLE
+            }
+
+            likesCount.text = data.likes.toString()
+            feedCommentsCount.text = data.comments.toString()
+            if (data.isLiked) {
+                likeButton.setImageResource(R.drawable.filled_favorite_like)
+            } else {
+                likeButton.setImageResource(R.drawable.like_svgrepo_com)
+            }
+
+            likeButton.setOnClickListener {
+                data.isLiked = !data.isLiked
+                feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
+                if (data.isLiked) {
+                    Log.d(TAG,"Like button has been clicked " )
+
+                    if (data.likes == 0) {
+                        likesCount.text = "0"
+                    }
+                    else {
+                        likesCount.text = (data.likes + 1).toString()
+                    }
+
+                        likeButton.setImageResource(R.drawable.filled_favorite_like)
+                        YoYo.with(Techniques.Tada)
+                            .duration(700)
+                            .repeat(1)
+                            .playOn(likeButton)
+
+                }
+                else {
+                    if (data.likes > 0){
+                        likesCount.text = (data.likes - 1).toString()
+                        likeButton.setImageResource(R.drawable.like_svgrepo_com)
+                        YoYo.with(Techniques.Tada)
+                            .duration(700)
+                            .repeat(1)
+                            .playOn(likeButton)
+                    }
+
+                }
+            }
+            commentButton.setOnClickListener {
+                Log.d(TAG, "render: button clicked")
+                feedClickListener.feedCommentClicked(absoluteAdapterPosition, data)
+            }
+
+            if (data.isBookmarked) {
+                favoriteButton.setImageResource(R.drawable.filled_favorite)
+            } else {
+                favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+            }
+            favoriteButton.setOnClickListener {
+                data.isBookmarked = !data.isBookmarked
+                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
+                if (data.isBookmarked) {
+                    favoriteButton.setImageResource(R.drawable.filled_favorite)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                } else {
+                    favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                }
+            }
+
+            moreOptionsButton.setOnClickListener {
+//              Toast.makeText(context, "button clicked", Toast.LENGTH_SHORT).show()
+                feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
+            }
+            feedTextLayoutContainer.setOnClickListener {
+                Log.d(TAG, "render: text container clicked")
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+            caption.setOnClickListener {
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+            feedShare.setOnClickListener {
+                feedClickListener.feedShare(absoluteAdapterPosition, data)
+            }
+        }
+
+        @SuppressLint("SetTextI18n")
+        private fun handleFollowButtonClick(shortOwnerId: String) {
+            Log.d(TAG, "handleFollowButtonClick: is followed value $isFollowed")
+            isFollowed = !isFollowed
+            if (isFollowed) {
+                followButton.text = "Following"
+
+                Log.d(TAG, "handleFollowButtonClick: following $isFollowed")
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, true)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+            } else {
+                Log.d(TAG, "handleFollowButtonClick: follow $isFollowed")
+                followButton.text = "Follow"
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, false)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+            }
+        }
+    }
+
+        inner class FeedMixedFilesViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        val tag = "FeedMultipleImageViewHolder"
+        private val moreOptionsButton: ImageView = itemView.findViewById(R.id.moreOptions)
+        private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
+        //        private val feedImage: ImageView = itemView.findViewById(R.id.feedImage)
+        private val textView: TextView = itemView.findViewById(R.id.textView)
+        private val caption: ReadMoreTextView = itemView.findViewById(R.id.caption)
+        private val tags: TextView = itemView.findViewById(R.id.tags)
+        private val dateTime: TextView = itemView.findViewById(R.id.date_time)
+
+        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
+        private val likeButton: ImageView = itemView.findViewById(R.id.like)
+        private val commentButton: ImageView = itemView.findViewById(R.id.comment)
+        private val favoriteButton: ImageView = itemView.findViewById(R.id.favorite)
+        private val mixedFilesCardView: CardView = itemView.findViewById(R.id.mixedFilesCardView)
+        private val feedCommentsCount: TextView = itemView.findViewById(R.id.feedCommentsCount)
+        private val feedMixedFilesContainer: ConstraintLayout = itemView.findViewById(R.id.feedMixedFilesContainer)
+        private val feedShare: ImageView = itemView.findViewById(R.id.share)
+        val recyclerView: RecyclerView = itemView.findViewById(R.id.recyclerView)
+        private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
+        private var isFollowed = false
+
+        @OptIn(UnstableApi::class)
+        @SuppressLint("SetTextI18n")
+        fun render(data: com.uyscut.network.api.response.getfeedandresposts.Post) {
+
+//            Log.d(TAG, "render: on bind position $absoluteAdapterPosition")
+//            itemView.viewTreeObserver.addOnGlobalLayoutListener {
+//                Log.d(TAG, "render: viewTreeObserver on bind position $absoluteAdapterPosition")
+//                // Determine if this view is visible on screen
+//                val rect = Rect()
+//                itemView.getGlobalVisibleRect(rect)
+//                if (!rect.isEmpty) {
+//                    Log.d(TAG, "render: Rect")
+//                    onItemVisible?.invoke(absoluteAdapterPosition)
+//                }else {
+//                    Log.d(TAG, "render: Rect")
+//                }
+//            }
+//            Log.d(tag, "render: data:: ${data.contentType}")
+            val feedOwnerId = data.author[0].account._id
+            if (data.isLocal) {
+                var isFollowingData: com.uyscut.network.api.response.getfeedandresposts.Follow? = null
+                if (followList.isNotEmpty()) {
+                    isFollowingData =
+                        followList.findLast { it.followersId == data.author[0].account._id }!!
+
+                }else{
+                    isFollowingData = null
+                }
+//            Log.d(tag, "render: is following = $isFollowingData")
+                if (feedOwnerId == LocalStorage.getInstance(profileImageView.context).getUserId()) {
+
+                    followButton.visibility = View.INVISIBLE
+//                Log.d(tag, "onBind: feed owner id == logged user id")
+                } else {
+                    followButton.visibility = View.VISIBLE
+
+                    if (isFollowingData != null) {
+                        if (isFollowingData.isFollowing) {
+                            followButton.text = "Following"
+                            followButton.isAllCaps = false
+                            followButton.setBackgroundResource(R.drawable.shorts_following_button)
+                            isFollowed = true
+                        } else {
+                            followButton.text = "Follow"
+                            followButton.isAllCaps = false
+                            followButton.setBackgroundResource(R.drawable.feed_follow_button_border)
+                            isFollowed = false
+                        }
+                    }
+
+//                Log.d(tag, "onBind: short owner id != logged user id")
+
+                }
+                followButton.setOnClickListener {
+                    handleFollowButtonClick(feedOwnerId)
+                }
+                val mongoDateString = data.createdAt
+                feedCommentsCount.text = data.comments.toString()
+                dateTime.text = formattedMongoDateTime(mongoDateString)
+            }
+            else {
+                followButton.visibility = View.INVISIBLE
+//                Log.d(TAG, "render: id is do_not")
+            }
+
+            Glide.with(context)
+                .load(data.author[0].account.avatar.url)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(profileImageView)
+
+            commentButton.setOnClickListener {
+                Log.d(TAG, "render: button clicked")
+                feedClickListener.feedCommentClicked(absoluteAdapterPosition, data)
+            }
+            feedShare.setOnClickListener {
+                Log.d(TAG, "render: share clicked")
+
+                feedClickListener.feedShare(absoluteAdapterPosition, data)
+            }
+            val fileList: MutableList<String> = mutableListOf()
+            if (data.files.isNotEmpty()) {
+                for (file in data.files) {
+//                    Log.d(TAG, "render: images ${file.url}")
+                    fileList.add(file.url)
+                }
+            } else {
+//                Log.d(TAG, "render: data files is empty")
+            }
+
+            val adapter = FeedMixedFilesViewAdapter(data)
+//            FeedDocumentsViewAdapter()
+            when (fileList.size) {
+                1 -> {
+                    recyclerView.layoutManager = GridLayoutManager(context, 1)
+                    recyclerView.setHasFixedSize(true) // Ensures items won't change size
+                    recyclerView.adapter = adapter
+                }
+                2 -> {
+                    recyclerView.layoutManager = GridLayoutManager(context, 2) // 2 columns in the grid
+                    recyclerView.setHasFixedSize(true) // Ensures items won't change size
+                    recyclerView.adapter = adapter // Replace with your adapter
+                }
+                3 -> {
+                    // Use a GridLayoutManager with span size 2 for the first row and 1 for the second row
+                    val layoutManager = GridLayoutManager(context, 2)
+                    layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                        override fun getSpanSize(position: Int): Int {
+                            return if (position < 2) 1 else 2
+                        }
+                    }
+                    recyclerView.layoutManager = layoutManager
+                    recyclerView.setHasFixedSize(true) // Ensures items won't change size
+                    recyclerView.adapter = adapter // Replace with your adapter
+                }
+                else -> {
+                    val layoutManager = GridLayoutManager(context, 2)
+
+                    layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                        override fun getSpanSize(position: Int): Int {
+                            return when (position) {
+                                0, 1 -> 1  // First and second items span 2 columns
+                                else -> 1   // All other items span 1 column
+                            }
+                        }
+                    }
+                    recyclerView.layoutManager = layoutManager
+                    recyclerView.adapter = adapter
+                }
+            }
+
+
+            adapter.setOnMultipleFilesClickListener(object : OnMultipleFilesClickListener {
+                override fun multipleFileClickListener() {
+                    feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+                }
+            })
+
+
+            textView.text = data.author[0].account.username
+
+            val feedOwnerName =
+                "${data.author[0].firstName} ${data.author[0].lastName}"
+            val profilePicUrl = data.author[0].account.avatar.url
+            val feedOwnerUsername = data.author[0].account.username
+            textView.setOnClickListener {
+
+
+                if (feedOwnerId == LocalStorage.getInstance(textView.context).getUserId()) {
+                    //open user profile fragment
+                    EventBus.getDefault().post(GoToUserProfileFragment())
+
+                } else {
+                    Log.d(TAG, "onBind: Clicked on another users profile")
+                    val otherUsersProfile = OtherUsersProfile(
+                        feedOwnerName, feedOwnerUsername, profilePicUrl, feedOwnerId
+                    )
+                    OtherUserProfile.openFromShorts(
+                        profileImageView.context,
+                        otherUsersProfile
+                    )
+                }
+            }
+
+            profileImageView.setOnClickListener {
+
+
+                if (feedOwnerId == LocalStorage.getInstance(profileImageView.context).getUserId()) {
+                    //open user profile fragment
+                    EventBus.getDefault().post(GoToUserProfileFragment())
+
+                } else {
+                    Log.d(TAG, "onBind: Clicked on another users profile")
+                    val otherUsersProfile = OtherUsersProfile(
+                        feedOwnerName, feedOwnerUsername, profilePicUrl, feedOwnerId
+                    )
+                    OtherUserProfile.openFromShorts(
+                        profileImageView.context,
+                        otherUsersProfile
+                    )
+//                EventBus.getDefault().post(UpdateButtonEvent(currentItem.someText, this))
+                }
+            }
+            caption.setOnClickListener {
+                Log.d(TAG, "render: multiple feed view caption clicked")
+            }
+            if (data.content.isNotEmpty()) {
+                caption.text = data.content
+                caption.visibility = View.VISIBLE
+            } else {
+                caption.visibility = View.INVISIBLE
+            }
+
+
+            if (data.tags.isNotEmpty()) {
+                tags.visibility = View.VISIBLE
+                val formattedTags = data.tags.joinToString(" ") { "#$it" }
+
+                tags.text = formattedTags
+            } else {
+                tags.visibility = View.INVISIBLE
+            }
+
+            likesCount.text = data.likes.toString()
+            if (data.isLiked) {
+                likeButton.setImageResource(R.drawable.filled_favorite_like)
+            } else {
+                likeButton.setImageResource(R.drawable.like_svgrepo_com)
+            }
+
+            likeButton.setOnClickListener {
+                data.isLiked = !data.isLiked
+                feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
+                if (data.isLiked) {
+                    likeButton.setImageResource(R.drawable.filled_favorite_like)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                } else {
+                    likeButton.setImageResource(R.drawable.like_svgrepo_com)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                }
+            }
+
+            if (data.isBookmarked) {
+                favoriteButton.setImageResource(R.drawable.filled_favorite)
+            } else {
+                favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+            }
+            favoriteButton.setOnClickListener {
+                data.isBookmarked = !data.isBookmarked
+                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
+                if (data.isBookmarked) {
+                    favoriteButton.setImageResource(R.drawable.filled_favorite)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                } else {
+                    favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                }
+            }
+            moreOptionsButton.setOnClickListener {
+                feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
+            }
+
+            feedMixedFilesContainer.setOnClickListener {
+                Log.d(TAG, "render: mixed files container clicked")
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+
+            mixedFilesCardView.setOnClickListener {
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+
+            feedShare.setOnClickListener {
+                feedClickListener.feedShare(absoluteAdapterPosition, data)
+            }
+
+        }
+
+        @SuppressLint("SetTextI18n")
+        private fun handleFollowButtonClick(shortOwnerId: String) {
+            Log.d(TAG, "handleFollowButtonClick: is followed value $isFollowed")
+            isFollowed = !isFollowed
+            if (isFollowed) {
+                followButton.text = "Following"
+
+                Log.d(TAG, "handleFollowButtonClick: following $isFollowed")
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, true)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+            } else {
+                Log.d(TAG, "handleFollowButtonClick: follow $isFollowed")
+
+                followButton.text = "Follow"
+
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, false)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+            }
+
+        }
+    }
+
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+
+        return when (viewType) {
+            VIEW_TYPE_TEXT_FEED -> {
+                val itemView = inflater.inflate(R.layout.feed_caption_layout, parent, false)
+                FeedTextViewHolder(itemView)
+            }
+
+            VIEW_TYPE_MIXED_FEED_FILES -> {
+                val itemView = inflater.inflate(R.layout.feed_mixed_files_viewholder, parent, false)
+                FeedMixedFilesViewHolder(itemView)
+            }
+
+            else -> throw IllegalArgumentException("Invalid view type")
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+
+
+    }
+
+    private var currentItemDisplayPosition = -1
+
+    fun getCurrentItemDisplayPosition(): Int {
+        return currentItemDisplayPosition
+    }
+
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        @SuppressLint("RecyclerView") position: Int,
+        payloads: MutableList<Any>
+    ) {
+        currentItemDisplayPosition = position
+        when (holder) {
+
+            is FeedTextViewHolder -> {
+                holder.render(getItem(position))
+            }
+
+            is FeedMixedFilesViewHolder -> {
+                holder.render(getItem(position))
+            }
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        val tag = "FeedType"
+        return when (getItem(position).contentType) {
+            "text" -> {
+                VIEW_TYPE_TEXT_FEED
+            }
+
+            "mixed_files" -> {
+                VIEW_TYPE_MIXED_FEED_FILES
+            }
+
+            else -> {
+                Log.d(tag, "getItemViewType: unknown type")
+                VIEW_TYPE_TEXT_FEED
+            }
+        }
+    }
+
+    private var followList: MutableList<com.uyscut.network.api.response.getfeedandresposts.Follow> = mutableListOf()
+    fun addFollowList(follow: List<com.uyscut.network.api.response.getfeedandresposts.Follow>) {
+        this.followList.addAll(follow)
+    }
+
+    fun getFollowList(): List<com.uyscut.network.api.response.getfeedandresposts.Follow> {
+        return followList
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun addSingleFollowList(follow: com.uyscut.network.api.response.getfeedandresposts.Follow) {
+        followList.add(follow)
+        notifyDataSetChanged()
+    }
+
+    override fun multipleImagesClickListener() {
+
+    }
+
+    override fun SetOnPaginationListener(onPaginationListener: OnPaginationListener) {
+    }
+
+}
+
+
+@SuppressLint("SimpleDateFormat")
+private fun formattedMongoDateTime(mongoDateString: String): String {
+    try {
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+        val dateFormat = SimpleDateFormat("HH:mm:ss '-' dd-MM-yyyy")
+        // Parse the MongoDB date string into a Date object
+        val date: Date? = inputFormat.parse(mongoDateString)
+
+        // Format the Date object into desired output format
+        val formattedDate: String = date?.let { dateFormat.format(it) }.toString()
+
+        return formattedDate
+    } catch (e: Exception) {
+        e.printStackTrace()
+//        return "Upload Time Date not available"
+        return "Just now"
+    }
+}
+
+interface OnFeedClickListener {
+    fun likeUnLikeFeed(position: Int, data:com.uyscut.network.api.response.getfeedandresposts.Post)
+    fun feedCommentClicked(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post)
+    fun feedFavoriteClick(position: Int, data:com.uyscut.network.api.response.getfeedandresposts. Post)
+    fun moreOptionsClick(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post)
+    fun feedFileClicked(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post)
+    fun feedShare(position: Int, data: com.uyscut.network.api.response.getfeedandresposts.Post)
+    fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity)
+}

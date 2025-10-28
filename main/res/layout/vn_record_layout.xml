@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/VNLayout"
+        android:visibility="visible">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:elevation="18dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:id="@+id/VNLinearLayout"
+                android:background="@drawable/rounded_corners_vn">
+
+                <!-- SHARED WAVEFORM AREA - ALWAYS VISIBLE -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center_vertical"
+                    android:padding="8dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp">
+
+                    <!-- Timer for recording (visible during recording) -->
+                    <TextView
+                        android:id="@+id/timerTv"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="00:00"
+                        android:textSize="16sp"
+                        android:textColor="@color/blueJeans"
+                        android:layout_marginEnd="12dp"
+                        android:visibility="visible" />
+
+                    <!-- Play controls for paused state (hidden during recording) -->
+                    <LinearLayout
+                        android:id="@+id/playVNRecorded"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:id="@+id/playVnAudioBtn"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/play_svgrepo_com"
+                            app:tint="@color/blueJeans"
+                            android:padding="4dp"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:id="@+id/secondTimerTv"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="00:00"
+                            android:textSize="16sp"
+                            android:textColor="@color/blueJeans"
+                            android:layout_marginEnd="12dp" />
+                    </LinearLayout>
+
+                    <!-- Full waveform container - STAYS HERE ALWAYS -->
+                    <HorizontalScrollView
+                        android:id="@+id/waveformScrollView"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/waveDotsContainer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingEnd="8dp"
+                            tools:ignore="RtlSymmetry" />
+
+                    </HorizontalScrollView>
+
+                </LinearLayout>
+
+                <!-- Container for WaveformSeekBar -->
+                <LinearLayout
+                    android:id="@+id/recordingLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
+                        android:id="@+id/wave"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:scaleY="1.8"
+                        app:wave_width="4dp"
+                        app:wave_gap="6dp"
+                        app:wave_min_height="16dp"
+                        app:wave_corner_radius="2dp"
+                        app:wave_background_color="@color/blueJeans"
+                        app:wave_progress_color="@color/blueJeans"
+                        app:wave_gravity="center"
+                        android:visibility="gone"
+                        tools:ignore="MissingClass" />
+                </LinearLayout>
+
+                <!-- Control buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:id="@+id/deleteVN"
+                        android:src="@drawable/delete_24"
+                        app:tint="@color/white"
+                        android:background="@drawable/ic_ripple"
+                        android:layout_marginStart="16dp"
+                        android:layout_gravity="center"
+                        android:padding="5dp" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <ImageView
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:src="@drawable/ic_mic_on"
+                        android:padding="10dp"
+                        app:tint="@color/white"
+                        android:id="@+id/recordVN"
+                        android:layout_gravity="center"
+                        android:background="@drawable/ic_ripple" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:padding="8dp"
+                        android:src="@drawable/send_svgrepo_com__1_"
+                        app:tint="@color/white"
+                        android:id="@+id/sendVN"
+                        android:scaleType="centerCrop"
+                        android:layout_gravity="center"
+                        android:background="@drawable/ic_ripple_disabled"
+                        android:layout_marginEnd="16dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,1405 @@
+package com.uyscut.flashdesign.adapter.feed.multiple_files
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.SeekBar
+import android.widget.TextView
+import androidx.appcompat.view.menu.MenuView.ItemView
+import androidx.cardview.widget.CardView
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.google.android.material.card.MaterialCardView
+import com.uyscut.flashdesign.R
+import com.uyscuti.social.circuit.utils.commaSeparatedStringToList
+import com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
+import com.uyscut.network.api.response.feed.getallfeed.Post
+import org.w3c.dom.Text
+
+
+private const val VIEW_TYPE_IMAGE_FEED = 0
+private const val VIEW_TYPE_AUDIO_FEED = 1
+private const val VIEW_TYPE_VIDEO_FEED = 2
+private const val VIEW_TYPE_DOCUMENT_FEED = 3
+private const val VIEW_TYPE_DEFAULT = 4
+
+private const val TAG = "FeedMixedFilesViewAdapter"
+
+class FeedMixedFilesViewAdapter(
+    private val feedPost:com.uyscut.network.api.response.allFeedRepostsPost.Post) :
+    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    private var onMultipleFilesClickListener: OnMultipleFilesClickListener? = null
+
+    fun setOnMultipleFilesClickListener(l: OnMultipleFilesClickListener) {
+        onMultipleFilesClickListener = l
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+
+        return when (viewType) {
+            VIEW_TYPE_IMAGE_FEED -> {
+                val itemView = inflater.inflate(R.layout.feed_mixed_image_view_item, parent, false)
+                FeedImage(itemView)
+            }
+
+            VIEW_TYPE_AUDIO_FEED -> {
+                val itemView = inflater.inflate(R.layout.feed_mixed_audio_view_item, parent, false)
+                FeedAudio(itemView)
+            }
+
+            VIEW_TYPE_VIDEO_FEED -> {
+                val itemView = inflater.inflate(R.layout.feed_mixed_video_view_item, parent, false)
+                FeedVideo(itemView)
+            }
+
+            VIEW_TYPE_DOCUMENT_FEED -> {
+                val itemView =
+                    inflater.inflate(R.layout.feed_mixed_document_view_item, parent, false)
+                FeedDocument(itemView)
+            }
+
+            else -> throw IllegalArgumentException("Invalid view type")
+        }
+    }
+
+    inner class FeedImage(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val imageView: ImageView = itemView.findViewById(R.id.imageView)
+        private val materialCardView: MaterialCardView =
+            itemView.findViewById(R.id.materialCardView)
+        private val countTextView: TextView = itemView.findViewById(R.id.textView)
+        private val imageView2: ImageView = itemView.findViewById(R.id.imageView2)
+
+        fun Int.dpToPx(context: Context): Int {
+            return (this * context.resources.displayMetrics.density).toInt()
+        }
+        @SuppressLint("SetTextI18n")
+        fun onBind(data: com.uyscut.network.api.response.allFeedRepostsPost.Post) {
+            Log.d(TAG, "image feed $absoluteAdapterPosition item count $itemCount")
+            val imageUrl: String
+//            val imageUrl = data.files[absoluteAdapterPosition].url
+//            Log.d(TAG, "onBind: Ready to display data.files::data.files:: ${data.files}")
+            val fileIdToFind = data.fileIds[absoluteAdapterPosition]
+            val file = data.files.find { it.fileId == fileIdToFind }
+            Log.d(TAG, "onBind: file id $fileIdToFind")
+//            Log.d(TAG, "onBind: file image $file")
+//            if(data.isLocal) {
+//                imageUrl = data.files.
+//            }
+            imageUrl = file?.url ?: data.files[absoluteAdapterPosition].url
+//            for(i in data.files) {
+//                Log.d(TAG, "onBind: files $i")
+//            }
+            val fileSize = itemCount
+            Log.d(TAG, "image getItemCount: $fileSize $imageUrl")
+
+            itemView.setOnClickListener {
+                onMultipleFilesClickListener?.multipleFileClickListener()
+            }
+
+            when {
+                fileSize <= 1 -> {
+//                    Log.d("TAG", "bind: less or equal to 1")
+
+                    Glide.with(itemView.context)
+                        .load(imageUrl)
+                        .placeholder(R.drawable.flash21)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .into(imageView)
+                }
+                fileSize == 2 -> {
+                    Log.d(TAG, "onBind: file size == 2")
+                    val displayMetrics = itemView.context.resources.displayMetrics
+                    val screenWidth = displayMetrics.widthPixels
+                    val margin = 8.dpToPx(itemView.context) // Convert dp to pixels
+                    val layoutParams = materialCardView.layoutParams
+                    val newWidthInPixels = 320  // for example, 300 pixels
+                    val newHeightInPixels = 300
+                    when (absoluteAdapterPosition) {
+                        0 -> {
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                            layoutParams.width = newWidthInPixels
+                            layoutParams.height = newHeightInPixels
+                            materialCardView.layoutParams = layoutParams
+                        }
+
+                        1 -> {
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                            layoutParams.width = newWidthInPixels
+                            layoutParams.height = newHeightInPixels
+                            materialCardView.layoutParams = layoutParams
+                        }
+                    }
+                }
+//                fileSize == 3 -> {
+//                    Log.d(TAG, "onBind: file size == 3")
+//                    val layoutParams = materialCardView.layoutParams
+//                    val newWidthInPixels = 320  // for example, 300 pixels
+//                    val newHeightInPixels = 180 // for example, 200 pixels
+//                    val displayMetrics = itemView.context.resources.displayMetrics
+//                    val screenWidth = displayMetrics.widthPixels
+//                    val margin = 8.dpToPx(itemView.context) // Convert dp to pixels
+//                    //                val layoutParams = holder.cardView.layoutParams as RecyclerView.LayoutParams
+//                    when (absoluteAdapterPosition) {
+//                        0 -> {
+////                            layoutParams.width = 325
+////                            layoutParams.height = newHeightInPixels
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//                        1 -> {
+//
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+////                            layoutParams.width = 325
+////                            layoutParams.height = newHeightInPixels
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//                        2 -> {
+////                            layoutParams.width = 680
+////                            layoutParams.height = 200
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//                        // Add more cases as needed
+//                        else -> {
+//                            layoutParams.width = newWidthInPixels
+//                            layoutParams.height = newHeightInPixels
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//                    }
+//
+//                }
+
+
+                fileSize == 3 -> {
+                        val displayMetrics = itemView.context.resources.displayMetrics
+                        val screenWidth = displayMetrics.widthPixels
+                        val margin = 8.dpToPx(itemView.context)
+                        val layoutParams = materialCardView.layoutParams
+                    if (layoutParams is StaggeredGridLayoutManager.LayoutParams) {
+                        when (absoluteAdapterPosition) {
+                            0 -> {
+                                layoutParams.isFullSpan = true
+                                layoutParams.width = screenWidth - (margin * 2)
+                                layoutParams.height = 160.dpToPx(itemView.context)
+                            }
+
+                            1, 2 -> {
+                                layoutParams.isFullSpan = false
+//                                layoutParams.width = (screenWidth / 2) - margin
+                                layoutParams.width = (screenWidth * 2) - (margin * 2)
+                                layoutParams.height = 160.dpToPx(itemView.context)
+                            }
+                        }
+                        materialCardView.layoutParams = layoutParams
+                    }
+                }
+
+
+//                fileSize == 4 -> {
+//                    Log.d(TAG, "bind: size list > 4")
+//                    val layoutParams = materialCardView.layoutParams
+//                    val newWidthInPixels = 320  // for example, 300 pixels
+//                    val newHeightInPixels = 200 // for example, 200 pixels
+//                    val displayMetrics = itemView.context.resources.displayMetrics
+//                    val screenWidth = displayMetrics.widthPixels
+//                    val margin = 8.dpToPx(itemView.context) // Convert dp to pixels
+//                    //                val layoutParams = holder.cardView.layoutParams as RecyclerView.LayoutParams
+//                    when (absoluteAdapterPosition) {
+//                        0 -> {
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+////                            layoutParams.width = newWidthInPixels
+////                            layoutParams.height = newHeightInPixels
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//                        1 -> {
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+////                            layoutParams.width = newWidthInPixels
+////                            layoutParams.height = newHeightInPixels
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//                        2 -> {
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//                        3 -> {
+////                            Log.d("TAG", "bind: load 4th")
+//                            layoutParams.width = newWidthInPixels
+//                            layoutParams.height = newHeightInPixels
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//                        // Add more cases as needed
+//                        else -> {
+//
+//                            layoutParams.width = newWidthInPixels
+//                            layoutParams.height = newHeightInPixels
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//                    }
+//                }
+                fileSize == 4 -> {
+                    val displayMetrics = itemView.context.resources.displayMetrics
+                    val screenWidth = displayMetrics.widthPixels
+                    val margin = 4.dpToPx(itemView.context) // margin between items
+                    val layoutParams = materialCardView.layoutParams
+
+                    // Calculate size for 2x2 grid
+                    val itemWidth = (screenWidth / 2) - (margin * 2)
+                    val itemHeight = itemWidth // Make them square (optional)
+                    layoutParams.width = itemWidth
+                    layoutParams.height = itemHeight
+                    materialCardView.layoutParams = layoutParams
+
+                    if (absoluteAdapterPosition > 4) {
+                        layoutParams.width = (screenWidth / 2) - margin
+                        layoutParams.height = screenWidth / 3
+                    } else {
+                        countTextView.visibility = View.VISIBLE
+                        countTextView.text = "+${fileSize - 4}"
+                    }
+                }
+
+//                fileSize == 5 -> {
+//                    val displayMetrics = itemView.context.resources.displayMetrics
+//                    val screenWidth = displayMetrics.widthPixels
+//                    val margin = 2.dpToPx(itemView.context) // margin between items
+//                    val layoutParams = materialCardView.layoutParams
+//
+//                    // Calculate size for 2x2 grid
+//                    val itemWidth = (screenWidth / 2) - (margin * 2)
+//                    val itemHeight = itemWidth // Make them square (optional)
+//
+//                    layoutParams.width = itemWidth
+//                    layoutParams.height = itemHeight
+//                    materialCardView.layoutParams = layoutParams
+//                }else -> {
+//
+//                    val displayMetrics = itemView.context.resources.displayMetrics
+//                    val screenWidth = displayMetrics.widthPixels
+//                    val margin = 2.dpToPx(itemView.context) // margin between items
+//
+//                    val layoutParams = materialCardView.layoutParams
+//                        if (absoluteAdapterPosition < 4) {
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = screenWidth / 3
+//                        } else {
+//                            countTextView.visibility = View.VISIBLE
+//                            countTextView.text = "+${fileSize - 4}"
+//                        }
+//                }
+
+//                    val displayMetrics = itemView.context.resources.displayMetrics
+//                    val screenWidth = displayMetrics.widthPixels
+//                    val margin = 8.dpToPx(itemView.context)
+//                    val layoutParams = materialCardView.layoutParams
+//
+//                    if (layoutParams is StaggeredGridLayoutManager.LayoutParams) {
+//                        when (absoluteAdapterPosition) {
+//                            0 -> {
+//                                // Large image on the left
+//                                layoutParams.isFullSpan = false
+//                                layoutParams.width = (screenWidth / 2) - (margin * 2)
+////                                layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT // or fixed large height
+//                                layoutParams.height = 270.dpToPx(itemView.context) // you can tune this
+//                            }
+//
+//                            1, 2, 3, 4 -> {
+//                                // Small images stacked on the right
+//                                layoutParams.isFullSpan = false
+//                                layoutParams.width = (screenWidth * 3) - (margin * 3)
+//                                layoutParams.height = 180.dpToPx(itemView.context) // you can tune this
+//                            }
+//                        }
+//                        materialCardView.layoutParams = layoutParams
+//                    }
+
+
+
+//                else -> {
+////                    Log.d(TAG, "bind: size list > 4")
+//                    val displayMetrics = itemView.context.resources.displayMetrics
+//                    val layoutParams = materialCardView.layoutParams
+//                    val newWidthInPixels = 320  // for example, 300 pixels
+//                    val newHeightInPixels = 195 // for example, 200 pixels
+//                    val screenWidth = displayMetrics.widthPixels
+//                    val margin = 8.dpToPx(itemView.context) // Convert dp to pixels
+//
+//
+//                    //                val layoutParams = holder.cardView.layoutParams as RecyclerView.LayoutParams
+//                    when (absoluteAdapterPosition) {
+//                        0 -> {
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+////                            layoutParams.width = newHeightInPixels
+////                            layoutParams.height = newHeightInPixels
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//                        1 -> {
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+////                            layoutParams.width = newHeightInPixels
+////                            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//                        2 -> {
+////                            layoutParams.width = newWidthInPixels
+////                            layoutParams.height = newHeightInPixels
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//
+////
+//                        // Add more cases as needed
+//                        else -> {
+////                          Log.d("TAG", "bind: load 4th")
+//                            //transparentView.visibility = View.VISIBLE
+//                            imageView2.visibility = View.VISIBLE
+//                            countTextView.visibility = View.VISIBLE
+//                            countTextView.text = "+ ${fileSize - 4}"
+//                            layoutParams.width = newWidthInPixels
+//                            layoutParams.height = newHeightInPixels
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//                    }
+//                }
+//                else -> {
+//                    val displayMetrics = itemView.context.resources.displayMetrics
+//                    val screenWidth = displayMetrics.widthPixels
+//                    val margin = 8.dpToPx(itemView.context)
+//
+//                    val layoutParams = materialCardView.layoutParams
+//
+//                    val bigItemWidth = (screenWidth / 2) - (margin * 2)
+//                    val bigItemHeight = bigItemWidth // or any custom size
+//
+//                    val smallItemWidth = bigItemWidth / 2
+//                    val smallItemHeight = smallItemWidth // square, or adjust if needed
+//
+//                    when (absoluteAdapterPosition) {
+//                        0 -> {
+//                            // Big image on the left
+//                            layoutParams.width = bigItemWidth
+//                            layoutParams.height = bigItemHeight * 2 + margin // take 2 rows height
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//                        in 1..3 -> {
+//                            // 4 smaller items on the right
+//                            layoutParams.width = smallItemWidth
+//                            layoutParams.height = smallItemHeight
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//                        4 -> {
+//                            // 5th item: show overlay with "+x"
+//                            imageView2.visibility = View.VISIBLE
+//                            countTextView.visibility = View.VISIBLE
+//                            countTextView.text = "+${fileSize - 5}"
+//
+//                            layoutParams.width = smallItemWidth
+//                            layoutParams.height = smallItemHeight
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//                        else -> {
+//                            // Hide extras if they shouldn't be visible
+//                            itemView.visibility = View.GONE
+//                            layoutParams.width = 0
+//                            layoutParams.height = 0
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//                    }
+//                }
+
+            }
+            Glide.with(itemView.context)
+                .load(imageUrl)
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(imageView)
+
+
+        }
+
+//        @SuppressLint("SetTextI18n")
+//        fun onBind(data: com.uyscut.network.api.response.allFeedRepostsPost.Post) {
+//            Log.d(TAG, "image feed $absoluteAdapterPosition item count $itemCount")
+//
+//            val fileSize = itemCount
+//            val imageUrl: String
+//            val fileIdToFind = data.fileIds[absoluteAdapterPosition]
+//            val file = data.files.find {
+//                it.fileId == fileIdToFind
+//            }
+//            imageUrl = file?.url ?: data.files[absoluteAdapterPosition].url
+//
+//            itemView.setOnClickListener {
+//                onMultipleFilesClickListener?.multipleFileClickListener()
+//            }
+//
+//            // Get Layout Params
+//
+//
+//            val layoutParams = materialCardView.layoutParams as ViewGroup.MarginLayoutParams
+//            val displayMetrics = itemView.context.resources.displayMetrics
+//            val screenWidth = displayMetrics.widthPixels
+//            val margin = 8.dpToPx(itemView.context) // Convert dp to pixels
+//
+//            when (fileSize) {
+//                1 -> { // Single image (full width)
+//                    layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+//                    layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
+//                }
+//                2 -> { // Two images (equal halves)
+//                    layoutParams.width = (screenWidth / 2) - margin
+//                    layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+//                }
+//                3 -> { // Three images (one big, two small)
+////                    layoutParams.width = (screenWidth / 3) - margin
+////                    layoutParams.height = (screenWidth / 3) // Square shape
+//                    if (absoluteAdapterPosition == 0) {
+//                        layoutParams.width = screenWidth - (2 * margin)
+//                        layoutParams.height = screenWidth / 2
+//                    } else {
+//                        layoutParams.width = (screenWidth / 2) - margin
+//                        layoutParams.height = screenWidth / 4
+//                    }
+//                }
+//
+//                4 -> { // Four images (2x2 grid)
+//                    layoutParams.width = (screenWidth / 2) - margin
+//                    layoutParams.height = screenWidth / 3
+//                }
+//                else -> { // Five or more images (first four visible, others show count)
+//                    if (absoluteAdapterPosition < 4) {
+//                        layoutParams.width = (screenWidth / 2) - margin
+//                        layoutParams.height = screenWidth / 3
+//                    } else {
+//                        countTextView.visibility = View.VISIBLE
+//                        countTextView.text = "+${fileSize - 4}"
+//                    }
+//                }
+//            }
+//
+//            materialCardView.layoutParams = layoutParams
+//
+//            Glide.with(itemView.context)
+//                .load(imageUrl)
+//                .placeholder(R.drawable.flash21)
+//                .diskCacheStrategy(DiskCacheStrategy.ALL)
+//                .into(imageView)
+//        }
+//
+//        // Helper function to convert dp to pixels
+//        fun Int.dpToPx(context: Context): Int {
+//            return (this * context.resources.displayMetrics.density).toInt()
+//        }
+
+    }
+
+    inner class FeedAudio(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        fun Int.dpToPx(context: Context): Int {
+            return (this * context.resources.displayMetrics.density).toInt()
+        }
+
+        private val audioDurationTextView: TextView = itemView.findViewById(R.id.audioDuration)
+        private val materialCardView: MaterialCardView =
+            itemView.findViewById(R.id.materialCardView)
+        private val artworkLayout: LinearLayout = itemView.findViewById(R.id.artworkLayout)
+        private val countTextView: TextView = itemView.findViewById(R.id.textView)
+        private val imageView2: ImageView = itemView.findViewById(R.id.imageView2)
+        private val artworkImageView: ImageView = itemView.findViewById(R.id.artworkImageView)
+        private val seekBar = itemView.findViewById<SeekBar>(R.id.seekBar)
+        private val waveSeekBar = itemView.findViewById<WaveformSeekBar>(R.id.waveSeekBar)
+
+
+        @SuppressLint("SetTextI18n")
+        fun onBind(data: com.uyscut.network.api.response.allFeedRepostsPost.Post) {
+            val fileIdToFind = data.fileIds[absoluteAdapterPosition]
+            Log.d(TAG, "onBind: $fileIdToFind")
+            seekBar.setOnClickListener {
+                Log.d(TAG, "onBind: seek bar clicked")
+            }
+
+            val durationItem = data.duration?.find { it.fileId == fileIdToFind }
+            val duration = durationItem?.duration
+            audioDurationTextView.text = duration
+            itemView.setOnClickListener {
+                onMultipleFilesClickListener?.multipleFileClickListener()
+            }
+            // Find the file name using fileId
+            val fileName = data.fileNames?.find { it.fileId == fileIdToFind }?.fileName
+
+            val itemCount = data.files.size
+            fileName?.let {
+                when {
+                    it.endsWith(".mp3", ignoreCase = true) -> {
+                        waveSeekBar.visibility = View.VISIBLE
+                        artworkLayout.visibility = View.GONE
+                        seekBar.visibility = View.GONE
+                        artworkImageView.visibility = View.VISIBLE // Replace with your mp3 image
+                    }
+
+                    it.endsWith(".ogg", ignoreCase = true) -> {
+                        seekBar.visibility = View.VISIBLE
+                        waveSeekBar.visibility = View.GONE
+                        artworkLayout.visibility = View.VISIBLE // Replace with your ogg image
+                    }
+
+                    else -> {
+                        artworkImageView.setImageResource(R.drawable.music_placeholder) // Default image for other formats
+                    }
+                }
+            }
+            val fileSize = itemCount
+
+            when {
+                fileSize <= 1 -> {
+                    Log.d("TAG", "bind: less or equal to 1")
+
+                }
+
+                fileSize == 2 -> {
+                    val layoutParams = materialCardView.layoutParams
+                    val newWidthInPixels = 320
+                    val newHeightInPixels = 300
+                    when (absoluteAdapterPosition) {
+                        0 -> {
+                            layoutParams.width = newWidthInPixels
+                            layoutParams.height = newHeightInPixels
+                            materialCardView.layoutParams = layoutParams
+                        }
+
+                        1 -> {
+                            layoutParams.width = newWidthInPixels
+                            layoutParams.height = newHeightInPixels
+                            materialCardView.layoutParams = layoutParams
+                        }
+                    }
+                }
+
+//                fileSize == 3 -> {
+////                    Log.d(TAG, "onBind: file size == 3")
+//                    val artworkImageViewParams = artworkImageView.layoutParams
+//                    val newWidthInPixels = 320  // for example, 300 pixels
+//                    val newHeightInPixels = 180 // for example, 200 pixels
+//                    val layoutParams = materialCardView.layoutParams
+//                    when (absoluteAdapterPosition) {
+//                        0 -> {
+//
+//                            artworkImageViewParams.width = 325
+//                            artworkImageViewParams.height = 50
+//
+//                            artworkImageView.layoutParams = artworkImageViewParams
+//                        }
+//
+//                        1 -> {
+//                            artworkImageViewParams.width = 325
+//                            artworkImageViewParams.height = 50
+//                            artworkImageView.layoutParams = artworkImageViewParams
+//                        }
+//
+//                        2 -> {
+//                            artworkImageViewParams.width = 680
+//                            artworkImageViewParams.height = 100
+//                            artworkImageView.layoutParams = artworkImageViewParams
+//
+//                            layoutParams.height = 200
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//                        // Add more cases as needed
+//                        else -> {
+//                            artworkImageViewParams.width = newWidthInPixels
+//                            artworkImageViewParams.height = newHeightInPixels
+//                            artworkImageView.layoutParams = artworkImageViewParams
+//                        }
+//                    }
+//
+//                }
+                fileSize == 3 -> {
+                    val artworkImageViewParams = artworkImageView.layoutParams
+                    val displayMetrics = itemView.context.resources.displayMetrics
+                    val screenWidth = displayMetrics.widthPixels
+                    val margin = 8.dpToPx(itemView.context)
+                    val layoutParams = materialCardView.layoutParams
+
+                    if (layoutParams is StaggeredGridLayoutManager.LayoutParams) {
+                        when (absoluteAdapterPosition) {
+                            0 -> {
+                                layoutParams.isFullSpan = true
+                                layoutParams.width = screenWidth - (margin * 2)
+                                layoutParams.height = 160.dpToPx(itemView.context)
+                            }
+
+                            1, 2 -> {
+                                layoutParams.isFullSpan = false
+//                                layoutParams.width = (screenWidth / 2) - margin
+                                artworkImageViewParams.width = (screenWidth * 2) - (margin * 2)
+                                artworkImageViewParams.height = 160.dpToPx(itemView.context)
+                            }
+                        }
+                        materialCardView.layoutParams = layoutParams
+                    }
+                }
+
+                fileSize == 4 -> {
+
+                    val displayMetrics = itemView.context.resources.displayMetrics
+                    val screenWidth = displayMetrics.widthPixels
+                    val margin = 8.dpToPx(itemView.context) // margin between items
+                    val layoutParams = materialCardView.layoutParams
+
+                    // Calculate size for 2x2 grid
+                    val itemWidth = (screenWidth / 2) - (margin * 2)
+                    val itemHeight = itemWidth // Make them square (optional)
+                    layoutParams.width = itemWidth
+                    layoutParams.height = itemHeight
+                    materialCardView.layoutParams = layoutParams
+
+
+//                    Log.d(TAG, "bind: size list > 4")
+//                    val layoutParams = materialCardView.layoutParams
+//                    val layoutParams2 = artworkImageView.layoutParams
+//
+//                    val height = 80
+//                    layoutParams2.height = height
+//                    artworkImageView.layoutParams = layoutParams2
+//
+//
+//                    val newWidthInPixels = 320  // for example, 300 pixels
+//                    val newHeightInPixels = 200 // for example, 200 pixels
+//                    when (absoluteAdapterPosition) {
+//                        0 -> {
+//                            layoutParams.width = newWidthInPixels
+//                            layoutParams.height = newHeightInPixels
+//                            materialCardView.layoutParams = layoutParams
+//
+//                        }
+//
+//                        1 -> {
+//                            layoutParams.width = newWidthInPixels
+//                            layoutParams.height = newHeightInPixels
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//                        2 -> {
+//                            layoutParams.width = newWidthInPixels
+//                            layoutParams.height = 160
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//                        else -> {
+////                            Log.d("TAG", "bind: load 4th")
+//                            layoutParams.width = newWidthInPixels
+//                            layoutParams.height = 160
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//                    }
+//                }
+//
+//                else -> {
+//                    val layoutParams = materialCardView.layoutParams
+//                    val layoutParams2 = artworkImageView.layoutParams
+//
+//                    val height = 80
+//                    layoutParams2.height = height
+//                    artworkImageView.layoutParams = layoutParams2
+//
+//
+//                    val newWidthInPixels = 320  // for example, 300 pixels
+//                    val newHeightInPixels = 200 // for example, 200 pixels
+//                    when (absoluteAdapterPosition) {
+//                        0 -> {
+//                            layoutParams.width = newWidthInPixels
+//                            layoutParams.height = newHeightInPixels
+//                            materialCardView.layoutParams = layoutParams
+//
+//                        }
+//
+//                        1 -> {
+//                            layoutParams.width = newWidthInPixels
+//                            layoutParams.height = newHeightInPixels
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//                        2 -> {
+//                            layoutParams.width = newWidthInPixels
+//                            layoutParams.height = 160
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//
+//                        else -> {
+////                            Log.d("TAG", "bind: load 4th")
+//                            layoutParams.width = newWidthInPixels
+//                            layoutParams.height = 160
+//                            materialCardView.layoutParams = layoutParams
+//                        }
+//                    }
+                }
+            }
+//            val layoutParams = materialCardView.layoutParams as ViewGroup.MarginLayoutParams
+//            val displayMetrics = itemView.context.resources.displayMetrics
+//            val screenWidth = displayMetrics.widthPixels
+//            val margin = 8.dpToPx(itemView.context) // Convert dp to pixels
+//            when (fileSize) {
+//                1 -> { // Single audio (full width)
+//                    layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+//                    layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+//                    countTextView.visibility = View.GONE
+//                    materialCardView.visibility = View.VISIBLE
+//                }
+//
+//                2 -> { // Two audios (equal halves)
+//                    layoutParams.width = (screenWidth / 2) - margin
+//                    layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+//                    countTextView.visibility = View.GONE
+//                    materialCardView.visibility = View.VISIBLE
+//                }
+//
+//                3 -> { // Three audios (one big, two small)
+//                    if (absoluteAdapterPosition == 0) {
+//                        layoutParams.width = screenWidth - (2 * margin)
+//                        layoutParams.height = screenWidth / 2
+//                    } else {
+//                        layoutParams.width = (screenWidth / 2) - margin
+//                        layoutParams.height = screenWidth / 4
+//                    }
+//                    countTextView.visibility = View.GONE
+//                    materialCardView.visibility = View.VISIBLE
+//                }
+//
+//                4 -> { // Four audios (2x2 grid)
+//                    layoutParams.width = (screenWidth / 2) - margin
+//                    layoutParams.height = screenWidth / 3
+//                    countTextView.visibility = View.GONE
+//                    materialCardView.visibility = View.VISIBLE
+//                }
+//                5 -> if (absoluteAdapterPosition < 4){ // Five audios (show first four, then "+X more")
+//                    layoutParams.width = (screenWidth / 2) - margin
+//                    layoutParams.height = screenWidth / 3
+//                    countTextView.visibility = View.GONE
+//                    materialCardView.visibility = View.VISIBLE
+//                } else { // Last three are small
+//                layoutParams.width = (screenWidth / 3) - margin
+//                layoutParams.height = screenWidth / 4
+//            }
+//                else -> { // Five or more audios (show first four, then "+X more")
+//                    if (absoluteAdapterPosition < 4) {
+//                        layoutParams.width = (screenWidth / 2) - margin
+//                        layoutParams.height = screenWidth / 3
+//                        countTextView.visibility = View.GONE
+//                        materialCardView.visibility = View.VISIBLE
+//                    } else {
+//                        materialCardView.layoutParams = ViewGroup.LayoutParams(0, 0)
+//                        materialCardView.visibility = View.GONE
+//                        // Hide extra audio files and show the count overlay
+//                        materialCardView.visibility = View.GONE
+//                        countTextView.visibility = View.VISIBLE
+//                        countTextView.text = "+${fileSize - 4} more"
+//                    }
+//                }
+//            }
+
+            // Apply updated layout parameters
+//            materialCardView.layoutParams = layoutParams
+        }
+
+    }
+
+
+
+    inner class FeedVideo(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        fun Int.dpToPx(context: Context): Int {
+            return (this * context.resources.displayMetrics.density).toInt()
+        }
+        private val feedThumbnail: ImageView = itemView.findViewById(R.id.feedThumbnail)
+        private val feedVideoDurationTextView: TextView =
+            itemView.findViewById(R.id.feedVideoDurationTextView)
+        private val cardView: CardView = itemView.findViewById(R.id.cardView)
+        private val countTextView: TextView = itemView.findViewById(R.id.textView)
+        private val imageView2: ImageView = itemView.findViewById(R.id.imageView2)
+
+        @SuppressLint("SetTextI18n")
+        fun onBind(data: com.uyscut.network.api.response.allFeedRepostsPost.Post) {
+            Log.d(TAG, "onBind: file type doc $absoluteAdapterPosition item count $itemCount")
+//            Log.d(TAG, "onBind: ready to display some video thumbnail ${data.thumbnail}")
+//            Log.d(TAG, "onBind for videos: file size $itemCount")
+            val fileIdToFind = data.fileIds[absoluteAdapterPosition]
+            itemView.setOnClickListener {
+                onMultipleFilesClickListener?.multipleFileClickListener()
+            }
+            val durationItem = data.duration?.find { it.fileId == fileIdToFind }
+            val thumbnail = data.thumbnail.find { it.fileId == fileIdToFind }
+
+            // Get the position of the item
+//            val position = if (durationItem != null) {
+//                data.fileIds.indexOf(fileIdToFind)
+//            } else {
+//                -1 // or another value indicating the item was not found
+//            }
+
+//            Log.d(TAG, "onBind: position: $position")
+//            val feedVideoThumbnailUrl = data.thumbnail[position].thumbnailUrl
+
+            val duration = durationItem?.duration
+            feedVideoDurationTextView.text = duration
+
+            val fileSize = itemCount
+            if (thumbnail != null) {
+                Glide.with(itemView.context)
+                    .load(thumbnail.thumbnailUrl)
+                    .placeholder(R.drawable.flash21)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .into(feedThumbnail)
+            } else {
+                Glide.with(itemView.context)
+                    .load(R.drawable.videoplaceholder)
+                    .placeholder(R.drawable.flash21)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .into(feedThumbnail)
+            }
+
+            when {
+                fileSize <= 1 -> {
+//                    Log.d("TAG", "bind: more")
+                    val layoutParams = cardView.layoutParams
+                    layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT // or fixed large height
+                    val newHeightInPixels = 300 // for example, 200 pixels
+                    layoutParams.height = newHeightInPixels
+                    cardView.layoutParams = layoutParams
+                }
+
+                fileSize == 2 -> {
+
+
+                }
+
+                fileSize == 3 -> {
+//                    Log.d(TAG, "onBind: file size == 3")
+                    val layoutParams = cardView.layoutParams
+                    val newWidthInPixels = 320  // for example, 300 pixels
+                    val newHeightInPixels = 180 // for example, 200 pixels
+                    //                val layoutParams = holder.cardView.layoutParams as RecyclerView.LayoutParams
+                    when (absoluteAdapterPosition) {
+                        0 -> {
+                            layoutParams.width = 325
+                            layoutParams.height = newHeightInPixels
+                            cardView.layoutParams = layoutParams
+                        }
+
+                        1 -> {
+                            layoutParams.width = 325
+                            layoutParams.height = newHeightInPixels
+                            cardView.layoutParams = layoutParams
+                        }
+
+                        2 -> {
+                            layoutParams.width = 670
+                            layoutParams.height = 180
+                            cardView.layoutParams = layoutParams
+                        }
+                        // Add more cases as needed
+                        else -> {
+                            layoutParams.width = newWidthInPixels
+                            layoutParams.height = newHeightInPixels
+                            cardView.layoutParams = layoutParams
+                        }
+                    }
+
+                }
+
+//                fileSize == 3 -> {
+//                    val layoutParams = cardView.layoutParams
+//                    val smallWidth = 320
+//                    val smallHeight = 90
+//                    val largeWidth = 640
+//                    val largeHeight = 180
+//
+//                    when (absoluteAdapterPosition) {
+//                        0, 1 -> {
+//                            layoutParams.width = smallWidth
+//                            layoutParams.height = smallHeight
+//                        }
+//                        2 -> {
+//                            layoutParams.width = largeWidth
+//                            layoutParams.height = largeHeight
+//                        }
+//                    }
+//
+//                    cardView.layoutParams = layoutParams
+//
+//                    // Optional: Add spacing
+//                    if (layoutParams is ViewGroup.MarginLayoutParams) {
+//                        layoutParams.setMargins(8, 8, 8, 8)
+//                        cardView.layoutParams = layoutParams
+//                    }
+//                }
+
+
+                fileSize == 4 -> {
+                    Log.d(TAG, "bind:video size list == 4")
+                    val layoutParams = cardView.layoutParams
+                    val newWidthInPixels = 320  // for example, 300 pixels
+                    val newHeightInPixels = 180 // for example, 200 pixels
+                    //                val layoutParams = holder.cardView.layoutParams as RecyclerView.LayoutParams
+                    when (absoluteAdapterPosition) {
+                        0 -> {
+                            layoutParams.width = newWidthInPixels
+                            layoutParams.height = newHeightInPixels
+                            cardView.layoutParams = layoutParams
+                        }
+
+                        1 -> {
+                            layoutParams.width = newWidthInPixels
+                            layoutParams.height = newHeightInPixels
+                            cardView.layoutParams = layoutParams
+                        }
+
+                        2 -> {
+                            layoutParams.width = newWidthInPixels
+                            layoutParams.height = newHeightInPixels
+                            cardView.layoutParams = layoutParams
+                        }
+
+                        3 -> {
+//                            Log.d("TAG", "bind: load 4th")
+                            layoutParams.width = newWidthInPixels
+                            layoutParams.height = newHeightInPixels
+                            cardView.layoutParams = layoutParams
+                        }
+                        // Add more cases as needed
+                        else -> {
+//                            layoutParams.width = newWidthInPixels
+//                            layoutParams.height = newHeightInPixels
+//                            materialCardView.layoutParams = layoutParams
+                        }
+                    }
+                }
+
+                else -> {
+//                    Log.d(TAG, "bind: size list > 4")
+                    val layoutParams = cardView.layoutParams
+                    val newWidthInPixels = 320  // for example, 300 pixels
+                    val newHeightInPixels = 190 // for example, 200 pixels
+                    //                val layoutParams = holder.cardView.layoutParams as RecyclerView.LayoutParams
+                    when (absoluteAdapterPosition) {
+                        0 -> {
+                            layoutParams.width = newWidthInPixels
+                            layoutParams.height = newHeightInPixels
+                            cardView.layoutParams = layoutParams
+                        }
+
+                        1 -> {
+                            layoutParams.width = newWidthInPixels
+                            layoutParams.height = newHeightInPixels
+                            cardView.layoutParams = layoutParams
+                        }
+
+                        2 -> {
+                            layoutParams.width = newWidthInPixels
+                            layoutParams.height = newHeightInPixels
+                            cardView.layoutParams = layoutParams
+                        }
+
+//
+                        // Add more cases as needed
+                        else -> {
+//                            Log.d("TAG", "bind: load 4th")
+                            //                        transparentView.visibility = View.VISIBLE
+                            imageView2.visibility = View.VISIBLE
+                            countTextView.visibility = View.VISIBLE
+
+                            countTextView.text = "+ ${fileSize - 4}"
+                            layoutParams.width = newWidthInPixels
+                            layoutParams.height = newHeightInPixels
+                            cardView.layoutParams = layoutParams
+                        }
+                    }
+                }
+            }
+//            val layoutParams = cardView.layoutParams as ViewGroup.MarginLayoutParams
+//            val displayMetrics = itemView.context.resources.displayMetrics
+//            val screenWidth = displayMetrics.widthPixels
+//            val margin = 8.dpToPx(itemView.context) // Convert dp to pixels
+//
+//            when (fileSize) {
+//                1 -> { // Single image (full width)
+//                    layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+//                    layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
+//                }
+//
+//                2 -> { // Two big images (each takes half)
+//                    layoutParams.width = (screenWidth / 2) - margin
+//                    layoutParams.height = screenWidth / 2
+//                }
+//
+//                3 -> { // One big, two small
+//                    if (absoluteAdapterPosition == 0) {
+//                        layoutParams.width = screenWidth - (2 * margin)
+//                        layoutParams.height = screenWidth / 2
+//                    } else {
+//                        layoutParams.width = (screenWidth / 2) - margin
+//                        layoutParams.height = screenWidth / 4
+//                    }
+//                }
+//
+//                4, 5 -> { // First two big, last two or three small
+//                    if (absoluteAdapterPosition < 2) { // First two are big
+//                        layoutParams.width = (screenWidth / 2) - margin
+//                        layoutParams.height = screenWidth / 2
+//                    } else { // Remaining are smaller
+//                        layoutParams.width = (screenWidth / 3) - margin
+//                        layoutParams.height = screenWidth / 4
+//                    }
+//                }
+//
+//                else -> { // Shouldn't reach here since max is 5
+//                    countTextView.visibility = View.VISIBLE
+//                    countTextView.text = "+${fileSize - 5}"
+//                }
+//            }
+        }
+    }
+
+
+
+    inner class FeedDocument(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        fun Int.dpToPx(context: Context): Int {
+            return (this * context.resources.displayMetrics.density).toInt()
+        }
+        private var tag = "FeedDocument"
+        private val pdfImageView: ImageView = itemView.findViewById(R.id.pdfImageView)
+        private val documentContainer: CardView = itemView.findViewById(R.id.documentContainer)
+        private val documentNameTextView: TextView = itemView.findViewById(R.id.documentName)
+        private val numberOfPagesTextView: TextView = itemView.findViewById(R.id.numberOfPages)
+        private val documentSize: TextView = itemView.findViewById(R.id.numberOfPagesCount)
+        @SuppressLint("SetTextI18n")
+        fun onBind(data: com.uyscut.network.api.response.allFeedRepostsPost.Post) {
+
+            Log.d(TAG, "onBind: file type doc $absoluteAdapterPosition item count $itemCount")
+//            Log.i(tag, "onBind: data file ${data.files[absoluteAdapterPosition].url}")
+//            Log.i(
+//                tag,
+//                "onBind: data file size ${data.files.size} absoluteAdapterPosition $absoluteAdapterPosition"
+//            )
+            itemView.setOnClickListener {
+                onMultipleFilesClickListener?.multipleFileClickListener()
+            }
+            val fileIdToFind = data.fileIds[absoluteAdapterPosition]
+            val documentType = data.fileTypes?.find { it.fileId == fileIdToFind }
+            val numberOfPages = data.numberOfPages?.find { it.fileId == fileIdToFind }
+
+
+
+            val documentName = data.fileNames?.find { it.fileId == fileIdToFind }
+//            val numberOfPages = data.numberOfPages?.find { it.fileId == fileIdToFind }
+
+            val fileSize = itemCount
+//            val position: Int
+
+
+            if (documentName != null) {
+                documentNameTextView.text = documentName.fileName
+            }
+            if (numberOfPages != null) {
+                documentSize.text = numberOfPages.numberOfPage + " pages"
+            }
+            if (documentType != null) {
+//                Log.d(TAG, "onBind: document type ${documentType.fileType}")
+
+                if (documentType.fileType == "pdf") {
+//                    Log.d(tag, "onBind: file type is pdf isLocal ${data.isLocal}")
+                    val thumbnail = data.thumbnail.find { it.fileId == fileIdToFind }
+//                    if (thumbnail != null) {
+////                        Log.d(tag, "onBind: thumbnail ${thumbnail.thumbnailUrl}")
+//                    } else {
+////                        Log.d(tag, "onBind: thumbnail null")
+//                    }
+
+//                    if (data.isLocal) {
+//                        pdfImageView.scaleType = ImageView.ScaleType.CENTER_CROP
+//                        if (thumbnail != null) {
+//                            Glide.with(itemView.context)
+//                                .load(thumbnail.fileThumbnail)
+//                                .diskCacheStrategy(DiskCacheStrategy.ALL)
+//                                .into(pdfImageView)
+//                        }
+//                    } else {
+                        pdfImageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
+                        if (thumbnail != null) {
+                            Glide.with(itemView.context)
+                                .load(thumbnail.thumbnailUrl)
+                                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                .into(pdfImageView)
+                        }
+//                    }
+
+                    data.fileTypes?.indexOfFirst { it.fileId == fileIdToFind }!!
+                } else if(documentType.fileType != "doc") {
+
+                    val thumbnail = data.thumbnail.find { it.fileId == fileIdToFind }
+
+                    Log.d(tag, "onBind: file type is not pdf")
+                    pdfImageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
+                    Glide.with(itemView.context)
+                        .load(thumbnail?.thumbnailUrl)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .into(pdfImageView)
+
+                    data.fileTypes?.indexOfFirst { it.fileId == fileIdToFind }!!
+
+                }
+                when {
+                    fileSize <= 1 -> {
+//                    Log.d("TAG", "bind: more")
+                    }
+
+                    fileSize == 2 -> {
+                        Log.d(TAG, "onBind: file size 2")
+                        val layoutParams2 = documentContainer.layoutParams
+                        when (absoluteAdapterPosition) {
+
+                            0 -> {
+                                Log.d(TAG, "onBind: position 1")
+                                val layoutParams = pdfImageView.layoutParams
+                                layoutParams.height = 230
+                                pdfImageView.layoutParams = layoutParams
+
+                                layoutParams2.height = 390
+                                documentContainer.layoutParams = layoutParams2
+                            }
+
+                            1 -> {
+                                Log.d(TAG, "onBind: position 2")
+                                val layoutParams = pdfImageView.layoutParams
+                                layoutParams.height = 230
+                                pdfImageView.layoutParams = layoutParams
+
+                                layoutParams2.height = 390
+                                documentContainer.layoutParams = layoutParams2
+                            }
+
+                            else -> {
+                                Log.d(TAG, "onBind: position 3")
+                                val layoutParams = pdfImageView.layoutParams
+                                layoutParams.height = 230
+                                pdfImageView.layoutParams = layoutParams
+
+                                layoutParams2.height = 290
+                                documentContainer.layoutParams = layoutParams2
+                            }
+                        }
+                    }
+
+                    fileSize == 3 -> {
+//                        Log.d(tag, "onBind: file size 3")
+                        val layoutParams = pdfImageView.layoutParams
+                        val layoutParams2 = documentContainer.layoutParams
+
+
+                        when (absoluteAdapterPosition) {
+
+                            0 -> {
+                                layoutParams.height = 90
+                                pdfImageView.layoutParams = layoutParams
+
+                                layoutParams2.height = 190
+                                documentContainer.layoutParams = layoutParams2
+                            }
+
+                            1 -> {
+                                layoutParams.height = 90
+                                pdfImageView.layoutParams = layoutParams
+
+                                layoutParams2.height = 190
+                                documentContainer.layoutParams = layoutParams2
+                            }
+
+                            2 -> {
+                                layoutParams.height = 100
+//                                layoutParams.width = 600
+                                pdfImageView.layoutParams = layoutParams
+
+                                layoutParams2.height = 210
+                                documentContainer.layoutParams = layoutParams2
+                            }
+
+                            else -> {
+                                layoutParams.height = 200
+                                pdfImageView.layoutParams = layoutParams
+
+                                layoutParams2.height = 200
+                                documentContainer.layoutParams = layoutParams2
+                            }
+                        }
+                    }
+
+                    fileSize == 4 -> {
+//                        Log.d(TAG, "onBind: file size 4")
+//                        val layoutParams = pdfImageView.layoutParams
+//                        val layoutParams2 = documentContainer.layoutParams
+//                        layoutParams.height = 90
+//                        when (absoluteAdapterPosition) {
+//                            0 -> {
+////                                layoutParams.height = 90
+//                                pdfImageView.layoutParams = layoutParams
+//
+//                                layoutParams2.height = 190
+//                                documentContainer.layoutParams = layoutParams2
+//                            }
+//                            1 -> {
+////                                layoutParams.height = 90
+//                                pdfImageView.layoutParams = layoutParams
+//                                layoutParams2.height = 190
+//                                documentContainer.layoutParams = layoutParams2
+//                            }
+//                            2 -> {
+////                                layoutParams.height = 90
+//                                pdfImageView.layoutParams = layoutParams
+//
+//                                layoutParams2.height = 190
+//                                documentContainer.layoutParams = layoutParams2
+//                            }
+//                            3 -> {
+//                                pdfImageView.layoutParams = layoutParams
+//
+//                                layoutParams2.height = 190
+//                                documentContainer.layoutParams = layoutParams2
+//                            }
+//                        }
+//                    }
+//                    else -> {
+//                        Log.d(TAG, "onBind: file size more than 4")
+//                    }
+//                }
+
+//                val layoutParams = documentContainer.layoutParams as ViewGroup.MarginLayoutParams
+//                val displayMetrics = itemView.context.resources.displayMetrics
+//                val screenWidth = displayMetrics.widthPixels
+//                val margin = 8.dpToPx(itemView.context) // Convert dp to pixels
+//
+//                when (fileSize) {
+//                    1 -> { // Single image (full width)
+//                        layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+//                        layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+//                    }
+//
+//                    2 -> { // Two images (equal halves)
+//                        layoutParams.width = (screenWidth / 2) - margin
+//                        layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+//                    }
+//
+//                    3 -> { // Three images (one big, two small)
+//                        if (absoluteAdapterPosition == 0) {
+//                            layoutParams.width = screenWidth - (2 * margin)
+//                            layoutParams.height = screenWidth / 2
+//                        } else {
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = screenWidth / 4
+//                        }
+//                    }
+//
+//                    4 -> { // Four images (2x2 grid)
+//                        layoutParams.width = (screenWidth / 2) - margin
+//                        layoutParams.height = screenWidth / 3
+//                    }
+//
+//                    else -> { // Five or more images (first four visible, others show count)
+//                        if (absoluteAdapterPosition < 4) {
+//                            layoutParams.width = (screenWidth / 2) - margin
+//                            layoutParams.height = screenWidth / 3
+//                        } else {
+////                            countTextView.visibility = View.VISIBLE
+////                            countTextView.text = "+${fileSize - 4}"
+//                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (holder) {
+
+            is FeedImage -> {
+                holder.onBind(feedPost)
+            }
+
+            is FeedAudio -> {
+                holder.onBind(feedPost)
+            }
+
+            is FeedVideo -> {
+                holder.onBind(feedPost)
+            }
+
+            is FeedDocument -> {
+                holder.onBind(feedPost)
+            }
+
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        if (feedPost.fileTypes.isEmpty() || position >= feedPost.fileTypes.size) {
+            Log.e(TAG, "getItemViewType: Invalid position $position, size: ${feedPost.fileTypes.size}")
+            return VIEW_TYPE_DEFAULT // Define a fallback default view type
+        }
+
+        return when (feedPost.fileTypes.get(position).fileType) {
+
+            "image" -> {
+                VIEW_TYPE_IMAGE_FEED
+            }
+
+            "audio" -> {
+                VIEW_TYPE_AUDIO_FEED
+            }
+
+            "video" -> {
+                VIEW_TYPE_VIDEO_FEED
+            }
+
+            "doc", "pdf" -> {
+                VIEW_TYPE_DOCUMENT_FEED
+            }
+
+            else -> {
+                Log.d(TAG, "VIEW_TYPE_DEFAULT")
+            }
+        }
+    }
+
+    override fun getItemCount(): Int {
+        return feedPost.files.size
+    }
+
+
+}
+
+interface OnMultipleFilesClickListener {
+    fun multipleFileClickListener()
+}

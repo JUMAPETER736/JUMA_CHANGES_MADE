@@ -1,0 +1,154 @@
+package com.uyscut.flashdesign.adapter.shorts
+
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.bitmap.CircleCrop
+import com.bumptech.glide.request.RequestOptions
+import com.uyscut.flashdesign.R
+import com.uyscut.flashdesign.databinding.CommentReplyBinding
+import com.uyscuti.social.circuit.model.ToggleReplyToTextView
+import com.uyscuti.social.circuit.utils.TimeUtils
+import com.uyscut.network.api.response.commentreply.allreplies.Comment
+import org.greenrobot.eventbus.EventBus
+
+
+class ReplyCommentAdapter(private val itemList: MutableList<com.uyscuti.social.circuit.data.model.Comment> = mutableListOf()) :
+    RecyclerView.Adapter<ReplyCommentAdapter.ViewHolder>() {
+
+
+    // ViewHolder class to hold the views
+    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val binding = CommentReplyBinding.bind(itemView)
+    }
+
+    // Inflate the layout and create ViewHolder
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.comment_reply, parent, false)
+        return ViewHolder(view)
+    }
+
+    // Bind data to the views
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val currentItem = itemList[position].replies
+        val mainItem = itemList[position]
+        holder.binding.apply {
+//            username.text = currentItem.author!!.account.username
+            username.text = currentItem[0].author!!.account.username
+//            content.text = currentItem.content
+            time.text = TimeUtils.formatMongoTimestamp(currentItem[0].createdAt)
+
+
+            val commentReply = com.uyscuti.social.circuit.data.model.Comment(
+                __v = currentItem[0].__v,
+                _id = currentItem[0]._id,
+                author = mainItem.author,
+                content = currentItem[0].content,
+                createdAt = currentItem[0].createdAt,
+                isLiked = currentItem[0].isLiked,
+                likes = currentItem[0].likes,
+                postId = mainItem.postId,
+                updatedAt = currentItem[0].updatedAt,
+                replyCount = mainItem.replyCount,
+                replies = mutableListOf()
+            )
+            reply.setOnClickListener {
+                // Handle the click event for the reply button
+                EventBus.getDefault().post(ToggleReplyToTextView(commentReply))
+            }
+
+            Glide.with(profilePic.context)
+                .load(currentItem[0].author!!.account.avatar.url)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(profilePic)
+
+            val inputString = currentItem[0].content
+            val regex = Regex("@\\w+")
+            val matches = regex.findAll(inputString)
+            if (matches.none()) {
+                // No mentions, simply set the text
+                content.text = inputString
+            }
+            else {
+                val highlightColor: Int by lazy {
+                    ContextCompat.getColor(content.context, R.color.bluejeans)
+                }
+                val spannableString = SpannableString(inputString)
+
+                matches.forEach {
+                    val start = it.range.first
+                    val end = it.range.last + 1 // +1 to include the "@" symbol
+
+                    // Set blue color to the mentioned user
+                    spannableString.setSpan(
+                        ForegroundColorSpan(highlightColor),
+                        start,
+                        end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                }
+
+                content.text = spannableString
+            }
+        }
+    }
+
+    // Return the size of the dataset
+    override fun getItemCount(): Int {
+        return itemList.size
+    }
+
+    // Add a new comment to the itemList
+//    fun addComment(comment: Comment) {
+//        itemList.add(comment)
+//        notifyItemInserted(itemList.size - 1)
+//    }
+}
+
+
+//class ReplyCommentAdapter(private val itemList: List<Comment>) :
+//    RecyclerView.Adapter<ReplyCommentAdapter.ViewHolder>() {
+//
+//    // ViewHolder class to hold the views
+//    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+//        val binding = CommentReplyBinding.bind(itemView)
+////        val itemName: TextView = itemView.findViewById(R.id.item_name)
+//    }
+//
+//    // Inflate the layout and create ViewHolder
+//    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+//        val view = LayoutInflater.from(parent.context).inflate(R.layout.comment_reply, parent, false)
+//        return ViewHolder(view)
+//    }
+//
+//    // Bind data to the views
+//    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+//        val currentItem = itemList[position]
+////        holder.itemName.text = currentItem.name
+//
+////        Log.d(TAG, "onBindViewHolder: set data on ${currentItem.}")
+//        holder.binding.apply {
+//            username.text = itemList[position].author!!.account.username
+//            content.text = itemList[position].content
+//            time.text = TimeUtils.formatMongoTimestamp(itemList[position].createdAt)
+//            reply.setOnClickListener {
+////                EventBus.getDefault().post(ToggleReplyToTextView(itemList[0]))
+//            }
+//        }
+//    }
+//
+//    // Return the size of the dataset
+//    override fun getItemCount(): Int {
+//        return itemList.size
+//    }
+//}

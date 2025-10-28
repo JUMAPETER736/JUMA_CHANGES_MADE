@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Other content of your screen goes here -->
+
+    <LinearLayout
+        android:id="@+id/repostBottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/white"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_alignParentBottom="true"
+        android:elevation="8dp">
+
+        <ImageView
+            android:id="@+id/repostIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/retweet_svgrepo_com"
+            app:tint="@color/blueJeans" />
+
+        <TextView
+            android:id="@+id/repostText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Repost"
+            android:textColor="@color/blueJeans"
+            android:textSize="18sp"
+            android:layout_marginStart="12dp" />
+
+    </LinearLayout>
+</RelativeLayout>

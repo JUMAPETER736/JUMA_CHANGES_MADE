@@ -1,0 +1,3654 @@
+package com.uyscut.flashdesign.ui.fragments.feed
+
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.graphics.PorterDuff
+import android.graphics.pdf.PdfRenderer
+import android.media.MediaMetadataRetriever
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.provider.MediaStore
+import android.provider.OpenableColumns
+import android.util.Log
+import android.util.TypedValue
+import android.view.View
+import android.view.animation.AnimationUtils
+import android.widget.LinearLayout
+import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.setPadding
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.viewpager.widget.ViewPager
+import androidx.viewpager2.widget.ViewPager2
+import androidx.work.Constraints
+import androidx.work.Data
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequest
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
+import com.abedelazizshe.lightcompressorlibrary.CompressionListener
+import com.abedelazizshe.lightcompressorlibrary.VideoCompressor
+import com.abedelazizshe.lightcompressorlibrary.VideoQuality
+import com.abedelazizshe.lightcompressorlibrary.config.Configuration
+import com.abedelazizshe.lightcompressorlibrary.config.SaveLocation
+import com.abedelazizshe.lightcompressorlibrary.config.SharedStorageConfiguration
+import com.bumptech.glide.Glide
+import com.github.dhaval2404.imagepicker.ImagePicker
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.snackbar.Snackbar
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.uyscut.flashdesign.R
+import com.uyscuti.social.circuit.adapter.feed.MultipleFeedImagesAdapter
+import com.uyscuti.social.circuit.adapter.feed.MultipleImagesListener
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.DocumentListenerInterface
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.FeedVideoThumbnailAdapter
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.MixedFilesUploadAdapter
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleAudiosListener
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleFeedAudioAdapter
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleFeedDocAdapter
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleFeedFilesPagerAdapter
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleSelectedFeedVideoAdapter
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleVideosListener
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.UriTypeAdapter
+import com.uyscut.flashdesign.databinding.ActivityUploadFeeedBinding
+import com.uyscuti.social.circuit.feed_demo.VideoPagerAdapter
+import com.uyscuti.social.circuit.model.ProgressEvent
+import com.uyscuti.social.circuit.model.feed.FeedMultipleImages
+import com.uyscuti.social.circuit.model.feed.multiple_files.FeedMultipleAudios
+import com.uyscuti.social.circuit.model.feed.multiple_files.FeedMultipleDocumentsDataClass
+import com.uyscuti.social.circuit.model.feed.multiple_files.FeedMultipleVideos
+import com.uyscuti.social.circuit.model.feed.multiple_files.MixedFeedFilesClass
+import com.uyscuti.social.circuit.model.feed.multiple_files.MixedFeedUploadDataClass
+import com.uyscuti.social.circuit.model.feed.multiple_files.MultipleAudios
+import com.uyscuti.social.circuit.ui.feed.FeedAudioWorker
+import com.uyscuti.social.circuit.ui.feed.FeedUploadWorker
+import com.uyscuti.social.circuit.ui.shorts.TopicsActivity
+import com.uyscuti.social.circuit.ui.shorts.UniqueIdGenerator
+import com.uyscuti.social.circuit.ui.shorts.UploadShortsActivity
+import com.uyscuti.social.circuit.ui.shorts.VideoThumbnailAdapter
+import com.uyscuti.social.circuit.ui.shorts.VideoUtils
+import com.uyscuti.social.circuit.ui.shorts.getFileSize
+import com.uyscuti.social.circuit.ui.uploads.AudioActivity
+import com.uyscuti.social.circuit.ui.uploads.CameraActivity
+import com.uyscuti.social.circuit.ui.uploads.VideosActivity
+import com.uyscuti.social.circuit.ui.uploads.feed_uploads.FeedAudioActivity
+import com.uyscuti.social.circuit.ui.uploads.feed_uploads.FeedSelectVideoActivity
+import com.uyscuti.social.circuit.ui.uploads.feed_uploads.models.SelectFeedVideoDataClass
+import com.uyscut.flashdesign.utils.AndroidUtil
+import com.uyscuti.social.circuit.utils.AudioDurationHelper.getFormattedDuration
+import com.uyscuti.social.circuit.utils.AudioDurationHelper.reverseFormattedDuration
+import com.uyscuti.social.circuit.utils.PathUtil
+import com.uyscuti.social.circuit.utils.audio_compressor.AudioCompressorWithProgress
+import com.uyscuti.social.circuit.utils.feedutils.feedRemoveTextStartingWithHash
+import com.uyscuti.social.circuit.utils.fileType
+import com.uyscuti.social.circuit.utils.formatFileSize
+import com.uyscuti.social.circuit.utils.generateRandomFileName
+import com.uyscuti.social.circuit.utils.generateRandomId
+import com.uyscuti.social.circuit.utils.getFileNameFromLocalPath
+import com.uyscuti.social.circuit.utils.isFileSizeGreaterThan2MB
+import com.uyscuti.social.circuit.utils.listToCommaSeparatedString
+import com.uyscuti.social.circuit.viewmodels.feed.FeedUploadViewModel
+import com.uyscuti.social.circuit.viewmodels.feed.GetFeedViewModel
+import dagger.hilt.android.AndroidEntryPoint
+import id.zelory.compressor.Compressor
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import me.relex.circleindicator.CircleIndicator3
+import org.apache.poi.hwpf.HWPFDocument
+import org.apache.poi.hwpf.usermodel.Range
+import org.apache.poi.xwpf.usermodel.XWPFDocument
+import org.greenrobot.eventbus.EventBus
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
+
+private const val TAG = "UploadFeedActivity"
+private const val RTAG = "VNHandler"
+
+@AndroidEntryPoint
+class UploadFeeedActivity : AppCompatActivity(), FeedVideoThumbnailAdapter.ThumbnailClickListener,
+    AudioCompressorWithProgress.ProgressListener, MultipleImagesListener, MultipleAudiosListener,
+    DocumentListenerInterface,
+    MultipleVideosListener {
+
+    private lateinit var binding: ActivityUploadFeeedBinding
+    private lateinit var attachmentFile: CardView
+
+    private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
+    private lateinit var audioPickerLauncher: ActivityResultLauncher<Intent>
+    private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
+
+    private var imagePickLauncher: ActivityResultLauncher<Intent>? = null
+
+    private lateinit var feedUploadViewModel: FeedUploadViewModel
+
+    val tags: MutableList<String> = mutableListOf()
+    val audioPathList: MutableList<String> = mutableListOf()
+    var text = ""
+    var fileType: String = ""
+    private var durationString = ""
+    private var videoDurationStringList: MutableList<String> = mutableListOf()
+    private var audioDurationStringList: MutableList<String> = mutableListOf()
+    private var compressedAudioPath = ""
+    private lateinit var videoUri: Uri
+    private var videoUris: MutableList<Uri> = mutableListOf()
+    private var videoPaths: MutableList<String> = mutableListOf()
+    private var isThumbnailClicked = false
+
+    private lateinit var thumbnail: Bitmap
+    private var thumbnails: MutableList<Bitmap> = mutableListOf()
+    private var imagesList = mutableListOf<String>()
+    private var audiosList = mutableListOf<MultipleAudios>()
+    private var videosList = mutableListOf<FeedMultipleVideos>()
+
+    private var documentUriListToUpload: MutableList<String> = mutableListOf()
+    private var documentFileNamesToUpload: MutableList<String> = mutableListOf()
+    private var documentNumberOfPagesToUpload: MutableList<String> = mutableListOf()
+    private var documentTypesToUpload: MutableList<String> = mutableListOf()
+    private var documentThumbnailsToUpload: MutableList<String> = mutableListOf()
+
+    private var permissionGranted = false
+    private val getFeedViewModel: GetFeedViewModel by viewModels()
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private val permissions = arrayOf(
+        Manifest.permission.RECORD_AUDIO,
+        Manifest.permission.READ_EXTERNAL_STORAGE,
+        Manifest.permission.READ_MEDIA_IMAGES
+    )
+    private val REQUEST_CODE = 2024
+
+    private var compressedImageFile: File? = null
+
+    private var compressedImageFiles: MutableList<File> = mutableListOf()
+
+    private var uploadWorkRequest: OneTimeWorkRequest? = null
+
+    private var audioPath = ""
+    private var videoPath = ""
+    private val toCompressUris = mutableListOf<Uri>()
+
+    private var fileName = ""
+    private var docType = ""
+    private var docFilePath = ""
+    private var numberOfPages = ""
+
+    private var vnFilePath: String? = null
+    private var vnDurationString: String? = null
+    private var vnFileName: String? = null
+
+    private var isMultipleImages = false
+
+    private lateinit var multipleAudioAdapter: MultipleFeedAudioAdapter
+    private lateinit var multipleDocsAdapter: MultipleFeedDocAdapter
+    private lateinit var multipleSelectedFeedVideoAdapter: MultipleSelectedFeedVideoAdapter
+    private lateinit var mixedFilesUploadAdapter: MixedFilesUploadAdapter
+
+    private var addMoreFeedFiles = true
+    private val documentsList = ArrayList<Uri>()
+
+    private var multipleFeedFilesPagerAdapter: MultipleFeedFilesPagerAdapter? = null
+
+    @OptIn(DelicateCoroutinesApi::class)
+    @SuppressLint("SetTextI18n")
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        binding = ActivityUploadFeeedBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.feeds)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
+        feedUploadViewModel = ViewModelProvider(this)[FeedUploadViewModel::class.java]
+
+        vnFilePath = intent?.getStringExtra("vnFilePath").toString()
+        vnDurationString = intent?.getStringExtra("vnDurationString").toString()
+        vnFileName = intent?.getStringExtra("vnFileName").toString()
+
+        mixedFilesUploadAdapter = MixedFilesUploadAdapter(this, this, this)
+
+//        adapter = MultipleFeedVideosAdapter(requireContext(), videoList, this)
+
+        // Get the RecyclerView from ViewPager2
+//        val recyclerView: RecyclerView = binding.viewPager.getChildAt(0) as RecyclerView
+//
+//// Set the ItemAnimator to null to disable animations
+//        recyclerView.itemAnimator = null
+        binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
+        Log.d(TAG, "onCreate: vnFilePath - $vnFilePath duration $vnDurationString")
+
+        if (vnFilePath != "null") {
+            binding.shortThumbNail.setImageResource(R.drawable.baseline_headphones_24)
+
+            val tintColor = getColor(R.color.black)
+            binding.recyclerView2.visibility = View.INVISIBLE
+            // Apply tint to the image
+            binding.shortThumbNail.setColorFilter(tintColor, PorterDuff.Mode.SRC_ATOP)
+            feedUploadViewModel.setText("File name: $vnFileName \nDuration: $vnDurationString")
+        } else {
+            Log.d(TAG, "onCreate: vn path is null")
+        }
+
+//        timer = Timer(this)
+        // Observe changes in the text and update the UI
+        feedUploadViewModel.displayText.observe(this) { text ->
+            Log.d(TAG, "onCreate: text $text")
+            binding.content.text = text
+        }
+        cancelShortsUpload()
+        backFromShortsUpload()
+
+        permissionGranted = ActivityCompat.checkSelfPermission(
+            this, permissions[0]
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!permissionGranted) {
+            ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
+        }
+
+
+        cameraLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == Activity.RESULT_OK) {
+                    // Handle image selection result here
+                    val data = result.data
+                    // Process the selected image data
+                    fileType = "image"
+                    val imagePath = data?.getStringExtra("image_url")
+                    Log.d(
+                        "cameraLauncher", "Selected image path from camera: $imagePath"
+                    )
+                    val imageUri = Uri.parse(imagePath)
+                    Log.d(
+                        "cameraLauncher", "Selected image path from camera: $imageUri"
+                    )
+                    if (imagePath != null) {
+//                        binding.multipleImagesContainer.visibility = View.VISIBLE
+                        setAddMoreFeedVisible()
+                        val file = File(imagePath)
+                        if (file.exists()) {
+                            lifecycleScope.launch {
+                                val compressedImageFile =
+                                    Compressor.compress(this@UploadFeeedActivity, file)
+                                Log.d(
+                                    "cameraLauncher",
+                                    "cameraLauncher: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
+                                )
+
+                                val fileSizeInBytes = compressedImageFile.length()
+                                val fileSizeInKB = fileSizeInBytes / 1024
+                                val fileSizeInMB = fileSizeInKB / 1024
+
+                                this@UploadFeeedActivity.compressedImageFile = compressedImageFile
+                                Log.d(
+                                    "cameraLauncher",
+                                    "cameraLauncher: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB addMoreFeedFiles $addMoreFeedFiles"
+                                )
+                                feedUploadViewModel.addMixedFeedUploadDataClass(
+                                    MixedFeedUploadDataClass(
+                                        images = FeedMultipleImages(imagePath = compressedImageFile.absolutePath)
+                                    )
+                                )
+                                if (addMoreFeedFiles) {
+                                    multipleFeedFilesPagerAdapter =
+                                        MultipleFeedFilesPagerAdapter(this@UploadFeeedActivity)
+                                    binding.viewPager.adapter = multipleFeedFilesPagerAdapter
+
+
+                                    val mixedFeedFiles =
+                                        feedUploadViewModel.getMixedFeedUploadDataClass()
+
+                                    multipleFeedFilesPagerAdapter?.setMixedFeedUploadDataClass2(
+                                        mixedFeedFiles
+                                    )
+                                    binding.viewPager.orientation =
+                                        ViewPager2.ORIENTATION_HORIZONTAL
+
+                                    // Setup CircleIndicator for ViewPager2
+                                    val indicator =
+                                        findViewById<CircleIndicator3>(R.id.circleIndicator)
+                                    indicator.setViewPager(binding.viewPager)
+                                    binding.viewPager.registerOnPageChangeCallback(object :
+                                        ViewPager2.OnPageChangeCallback() {
+                                        override fun onPageScrolled(
+                                            position: Int,
+                                            positionOffset: Float,
+                                            positionOffsetPixels: Int
+                                        ) {
+                                            // This method will be invoked when the ViewPager2 is scrolled, but not necessarily settled (user is still swiping)
+                                        }
+
+                                        override fun onPageSelected(position: Int) {
+                                            // This method will be invoked when a new page becomes selected.
+                                            // You can perform actions here based on the selected page position.
+                                            Log.d("ViewPager2", "onPageSelected: $position")
+
+                                            binding.recyclerView2.visibility = View.INVISIBLE
+                                            binding.multipleImagesContainer.visibility =
+                                                View.VISIBLE
+                                            binding.shortThumbNail.visibility = View.GONE
+                                            binding.content.visibility = View.INVISIBLE
+                                        }
+
+                                        override fun onPageScrollStateChanged(state: Int) {
+                                            // Called when the scroll state changes:
+                                            // SCROLL_STATE_IDLE, SCROLL_STATE_DRAGGING, SCROLL_STATE_SETTLING
+                                            when (state) {
+                                                ViewPager2.SCROLL_STATE_IDLE -> {
+                                                    // The pager is in an idle, settled state.
+//                                    Log.d("ViewPager2", "Page selected: SCROLL_STATE_IDLE")
+                                                }
+
+                                                ViewPager2.SCROLL_STATE_DRAGGING -> {
+                                                    // The user is dragging the pager.
+//                                    Log.d("ViewPager2", "Page selected: SCROLL_STATE_DRAGGING")
+                                                }
+
+                                                ViewPager2.SCROLL_STATE_SETTLING -> {
+                                                    // The pager is settling to a final position.
+//                                    Log.d("ViewPager2", "Page selected: SCROLL_STATE_SETTLING")
+                                                }
+                                            }
+                                        }
+                                    })
+                                    // Ensure visibility settings are correct
+                                    binding.recyclerView2.visibility = View.INVISIBLE
+                                    binding.multipleImagesContainer.visibility = View.VISIBLE
+                                    binding.shortThumbNail.visibility = View.GONE
+                                    binding.content.visibility = View.INVISIBLE
+                                } else {
+
+                                    Glide.with(this@UploadFeeedActivity)
+                                        .load(compressedImageFile)
+                                        .into(binding.shortThumbNail)
+                                }
+
+//                                binding.content.text = ""
+                                feedUploadViewModel.setText("")
+                                binding.recyclerView2.visibility = View.INVISIBLE
+// Reset tint
+                                binding.shortThumbNail.colorFilter = null
+                                binding.shortThumbNail.setPadding(0)
+                            }
+                        }
+
+                    }
+                }
+
+            }
+//        isInternetAvailable(this)
+        attachmentFile = findViewById(R.id.shortVideoThumbNail)
+//        checkPermissionAndSelectFiles()
+
+
+        attachmentFile.setOnClickListener {
+//            selectFiles()
+            showAttachmentDialog()
+            addMoreFeedFiles = true
+        }
+
+        binding.addMoreFeed.setOnClickListener {
+            val mixedFeedFiles = feedUploadViewModel.getMixedFeedUploadDataClass()
+            if (mixedFeedFiles.size > 10) {
+                Toast.makeText(this, "Select 10 files only", Toast.LENGTH_SHORT).show()
+//                Snackbar.make(this, "", Snackbar.LENGTH_SHORT).show()
+            } else {
+                Log.d(TAG, "onCreate: addMoreFeedFiles $addMoreFeedFiles")
+                addMoreFeedFiles = true
+                showAttachmentDialog()
+
+            }
+
+        }
+
+        binding.topics.setOnClickListener {
+            val intent = Intent(this@UploadFeeedActivity, TopicsActivity::class.java)
+            startActivityForResult(intent, UploadShortsActivity.REQUEST_TOPICS_ACTIVITY)
+//            startActivity(intent)
+        }
+
+
+        binding.interactionsBox.setOnClickListener {
+            ImagePicker.with(this).cropSquare().compress(512).maxResultSize(512, 512)
+                .createIntent { intent: Intent ->
+                    imagePickLauncher?.launch(intent)
+//
+                }
+        }
+
+        imagePickLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    setAddMoreFeedVisible()
+                    val data = result.data
+                    if (data != null && data.data != null) {
+                        val selectedImageUri: Uri = data.data!!
+
+                        isThumbnailClicked = true
+
+                        // Load the bitmap from the URI
+                        val bitmap = loadBitmapFromUri(selectedImageUri)
+                        binding.shortThumbNail.colorFilter = null
+                        binding.shortThumbNail.setPadding(0)
+                        Glide.with(this)
+                            .load(selectedImageUri)
+                            .into(binding.shortThumbNail)
+                        thumbnail = bitmap
+
+                        // Now 'bitmap' contains the selected image as a Bitmap
+                        // Use the 'bitmap' as needed
+
+                        // For example, set the bitmap in an ImageView
+//                        binding.imageView.setImageBitmap(bitmap)
+                    }
+                }
+            }
+
+        audioPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == Activity.RESULT_OK) {
+                    // Handle image selection result here
+                    fileType = "audio"
+                    setAddMoreFeedVisible()
+                    binding.content.visibility = View.VISIBLE
+                    val data = result.data
+                    // Process the selected image data
+                    val audioPath = data?.getStringArrayListExtra("audio_url")
+
+                    val audioToUpload: MutableList<String> = mutableListOf()
+                    val feedMultipleAudios: MutableList<FeedMultipleAudios> = mutableListOf()
+//                    var audioToUpload: String = ""
+                    val audioDurationToUpload: MutableList<String> = mutableListOf()
+                    if (audioPath != null) {
+                        if (!addMoreFeedFiles) {
+                            audiosList.clear()
+                            audioPathList.clear()
+                            audioDurationStringList.clear()
+                        }
+
+                        for (audioFilePath in audioPath) {
+                            val durationString = getFormattedDuration(audioFilePath)
+                            val fileName = getFileNameFromLocalPath(audioFilePath)
+//                            Log.d("audioPickerLauncher", "onCreate: audioPath i: $audioFilePath")
+//                            Log.d(
+//                                "audioPickerLauncher",
+//                                "onCreate: durationString i: $durationString fileName $fileName"
+//                            )
+
+                            audioDurationStringList.add(durationString)
+                            audioPathList.add(audioFilePath)
+                            audiosList.add(MultipleAudios(audioFilePath, durationString, fileName))
+                            audioToUpload.add(audioFilePath)
+//                            audioToUpload = audioFilePath
+                            audioDurationToUpload.add(durationString)
+                            feedMultipleAudios.add(
+                                FeedMultipleAudios(
+                                    durationString,
+                                    audioFilePath,
+                                    fileName
+                                )
+                            )
+                        }
+
+
+
+                        if (addMoreFeedFiles) {
+                            Log.d("addMoreFeedFiles", "onCreate: add more files $audioToUpload")
+                            multipleFeedFilesPagerAdapter = MultipleFeedFilesPagerAdapter(this)
+                            binding.viewPager.adapter = multipleFeedFilesPagerAdapter
+
+                            for (audio in feedMultipleAudios) {
+                                Log.d(TAG, "onCreate: audio to upload $audio")
+                                feedUploadViewModel.addMixedFeedUploadDataClass(
+                                    MixedFeedUploadDataClass(
+//                                        videos = video
+                                        audios = audio
+                                    )
+                                )
+                            }
+
+//                            for (video in audiosList) {
+//
+//                            }
+
+
+                            val mixedFeedFiles = feedUploadViewModel.getMixedFeedUploadDataClass()
+                            multipleFeedFilesPagerAdapter?.setMixedFeedUploadDataClass2(
+                                mixedFeedFiles
+                            )
+//                            multipleFeedFilesPagerAdapter = MultipleFeedFilesPagerAdapter(this)
+//                            binding.viewPager.adapter = multipleFeedFilesPagerAdapter
+
+                        } else {
+                            Log.d("addMoreFeedFiles", "onCreate: do not add more files")
+                            // Setup ViewPager2 with the adapter
+                            multipleAudioAdapter = MultipleFeedAudioAdapter(this, audiosList, this)
+                            binding.viewPager.adapter = multipleAudioAdapter
+
+                            for (audio in feedMultipleAudios) {
+                                Log.d(TAG, "onCreate: audio to upload $audio")
+                                feedUploadViewModel.addMixedFeedUploadDataClass(
+                                    MixedFeedUploadDataClass(
+//                                        videos = video
+                                        audios = audio
+                                    )
+                                )
+                            }
+                        }
+
+                        binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
+                        binding.viewPager.registerOnPageChangeCallback(object :
+                            ViewPager2.OnPageChangeCallback() {
+                            override fun onPageScrolled(
+                                position: Int,
+                                positionOffset: Float,
+                                positionOffsetPixels: Int
+                            ) {
+                                // This method will be invoked when the ViewPager2 is scrolled, but not necessarily settled (user is still swiping)
+                            }
+
+                            override fun onPageSelected(position: Int) {
+                                // This method will be invoked when a new page becomes selected.
+                                // You can perform actions here based on the selected page position.
+                                Log.d("ViewPager2", "Page selected: $position")
+
+                                if (!addMoreFeedFiles) {
+                                    val audioDetails =
+                                        multipleAudioAdapter.getAudioDetails(position)
+                                    Log.d("ViewPager2", "Page selected audioDetails: $audioDetails")
+
+                                    val handler = Handler(Looper.getMainLooper())
+                                    handler.postDelayed({
+                                        binding.content.text =
+                                            "File name: ${audioDetails.fileName} \nDuration: ${audioDetails.audioDuration}"
+                                    }, 500)
+                                } else {
+
+                                    val audioDetails =
+                                        multipleFeedFilesPagerAdapter?.getAudioDetails(position)
+                                    Log.d(
+                                        "ViewPager2",
+                                        "onPageSelected: get audio details $audioDetails"
+                                    )
+                                    binding.recyclerView2.visibility = View.INVISIBLE
+                                    if (audioDetails == null) {
+//                                        binding.content.visibility = View.INVISIBLE
+
+
+                                    } else {
+                                        binding.content.visibility = View.VISIBLE
+                                    }
+                                    val handler = Handler(Looper.getMainLooper())
+                                    handler.postDelayed({
+                                        if (audioDetails != null) {
+                                            binding.content.text =
+                                                "File name: ${audioDetails.filename} \nDuration: ${audioDetails.duration}"
+                                        }
+                                    }, 500)
+                                }
+
+
+                            }
+
+                            override fun onPageScrollStateChanged(state: Int) {
+                                // Called when the scroll state changes:
+                                // SCROLL_STATE_IDLE, SCROLL_STATE_DRAGGING, SCROLL_STATE_SETTLING
+                                when (state) {
+                                    ViewPager2.SCROLL_STATE_IDLE -> {
+                                        // The pager is in an idle, settled state.
+                                        Log.d("ViewPager2", "Page selected: SCROLL_STATE_IDLE")
+                                    }
+
+                                    ViewPager2.SCROLL_STATE_DRAGGING -> {
+                                        // The user is dragging the pager.
+                                        Log.d("ViewPager2", "Page selected: SCROLL_STATE_DRAGGING")
+                                    }
+
+                                    ViewPager2.SCROLL_STATE_SETTLING -> {
+                                        // The pager is settling to a final position.
+                                        Log.d("ViewPager2", "Page selected: SCROLL_STATE_SETTLING")
+                                    }
+                                }
+                            }
+                        })
+
+
+                        // Setup CircleIndicator for ViewPager2
+                        val indicator = findViewById<CircleIndicator3>(R.id.circleIndicator)
+                        indicator.setViewPager(binding.viewPager)
+
+                        // Ensure visibility settings are correct
+                        binding.recyclerView2.visibility = View.INVISIBLE
+                        binding.multipleImagesContainer.visibility = View.VISIBLE
+                        binding.shortThumbNail.visibility = View.GONE
+                        binding.content.visibility = View.VISIBLE
+                    }
+
+                }
+            }
+        videoPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                Log.d("VideoDebug", "onActivityResult callback triggered")
+                if (result.resultCode == Activity.RESULT_OK) {
+                    setAddMoreFeedVisible()
+                    val newVideosList: MutableList<FeedMultipleVideos> = mutableListOf()
+                    fileType = "video"
+                    val data = result.data
+
+                    if (!addMoreFeedFiles) {
+                        videosList.clear()
+                    }
+
+                    val videoPaths = data?.getStringArrayListExtra("video_url")
+                    val uriString = data?.getStringArrayListExtra("vUri")
+
+                    val videoUri: MutableList<Uri> = mutableListOf()
+                    val videoPathList: MutableList<String> = mutableListOf()
+                    if (uriString != null && videoPaths != null) {
+
+                        feedUploadViewModel.mixedFilesCount += videoPaths.size
+                        Log.d(
+                            TAG,
+                            "feedUploadViewModel:  mixedFilesCount = ${feedUploadViewModel.mixedFilesCount}"
+                        )
+                        for (uri in uriString) {
+                            val vUri = Uri.parse(uri)
+                            videoUri.add(vUri)
+//                            videoUris.addAll(uri)
+
+                            Log.d(TAG, "onCreate: Uri $uri videoUri $videoUri vUri $vUri")
+                        }
+                        for (i in videoPaths.indices) {
+                            val videoPath = videoPaths[i]
+                            val videoPathUri = videoUri[i]
+
+                            Log.d(TAG, "Video Path: $videoPath")
+//                            Log.d(TAG, "URI String: $uriString")
+
+                            // Assuming videoPathList and videosList are your data holders
+                            videoPathList.add(videoPath)
+
+                            // Get additional information
+                            val durationString = getFormattedDuration(videoPath)
+                            val fileName = getFileNameFromLocalPath(videoPath)
+
+                            val videoItem = FeedMultipleVideos(
+                                videoPath,
+                                durationString,
+                                fileName,
+                                videoPathUri.toString(),
+                                null,
+//                                generateRandomId()
+                            )
+                            videosList.add(videoItem)
+                            newVideosList.add(videoItem)
+                        }
+                    }
+
+
+                    Log.d(
+                        TAG,
+                        "onCreate: videoUri.size ${videoUri.size} videoPathList.size ${videoPathList.size}"
+                    )
+                    videoUris.addAll(videoUri)
+                    this.videoPaths.addAll(videoPathList)
+
+// Setup ViewPager2 with the adapter
+                    val arrayList: ArrayList<FeedMultipleVideos> = ArrayList(videosList)
+                    if (addMoreFeedFiles) {
+
+                        multipleFeedFilesPagerAdapter = MultipleFeedFilesPagerAdapter(this)
+                        binding.viewPager.adapter = multipleFeedFilesPagerAdapter
+
+                        for (video in newVideosList) {
+                            feedUploadViewModel.addMixedFeedUploadDataClass(
+                                MixedFeedUploadDataClass(
+                                    videos = video
+                                )
+                            )
+
+                        }
+
+                        val mixedFeedFiles = feedUploadViewModel.getMixedFeedUploadDataClass()
+                        multipleFeedFilesPagerAdapter?.setMixedFeedUploadDataClass2(
+                            mixedFeedFiles
+                        )
+
+                    } else {
+
+                        for (video in newVideosList) {
+                            feedUploadViewModel.addMixedFeedUploadDataClass(
+                                MixedFeedUploadDataClass(
+                                    videos = video
+                                )
+                            )
+                        }
+                        multipleSelectedFeedVideoAdapter =
+                            MultipleSelectedFeedVideoAdapter(this, arrayList, this)
+                        binding.viewPager.adapter = multipleSelectedFeedVideoAdapter
+                    }
+
+                    binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
+                    binding.viewPager.registerOnPageChangeCallback(object :
+                        ViewPager2.OnPageChangeCallback() {
+                        override fun onPageScrolled(
+                            position: Int,
+                            positionOffset: Float,
+                            positionOffsetPixels: Int
+                        ) {
+                            // This method will be invoked when the ViewPager2 is scrolled, but not necessarily settled (user is still swiping)
+                        }
+
+                        override fun onPageSelected(position: Int) {
+                            // This method will be invoked when a new page becomes selected.
+                            // You can perform actions here based on the selected page position.
+                            Log.d("ViewPager2", "Page selected: $position")
+                            binding.content.visibility = View.VISIBLE
+                            if (!addMoreFeedFiles) {
+
+                                val videoDetails =
+                                    multipleSelectedFeedVideoAdapter.getVideoDetails(position)
+                                Log.d("ViewPager2", "Page selected videoDetails: $videoDetails")
+                                val handler = Handler(Looper.getMainLooper())
+                                handler.postDelayed({
+                                    Log.d(
+                                        "ViewPager2",
+                                        "File name: ${videoDetails.fileName} Duration: ${videoDetails.videoDuration}"
+                                    )
+                                    binding.content.text =
+                                        "File name: ${videoDetails.fileName} \nDuration: ${videoDetails.videoDuration}"
+                                }, 500)
+
+                                lifecycleScope.launch(Dispatchers.IO) {
+                                    val videoThumbnails =
+                                        extractThumbnailsFromVideos(videoDetails.videoUri.toUri())
+
+                                    // Switch to the main thread to update the RecyclerView
+                                    withContext(Dispatchers.Main) {
+                                        setupRecyclerView(videoThumbnails, videoDetails)
+                                    }
+                                }
+                            } else {
+
+
+                                val videoDetails =
+                                    multipleFeedFilesPagerAdapter?.getVideoDetails(position)
+                                Log.d("ViewPager2", "Page selected videoDetails: $videoDetails")
+                                binding.content.visibility = View.VISIBLE
+
+                                if (videoDetails == null) {
+//                                    binding.content.visibility = View.INVISIBLE
+                                } else {
+                                    binding.content.visibility = View.VISIBLE
+                                }
+                                val handler = Handler(Looper.getMainLooper())
+                                handler.postDelayed({
+//                                    if (videoDetails != null) {
+//                                        Log.d(
+//                                            "ViewPager2",
+//                                            "File name: ${videoDetails.fileName} Duration: ${videoDetails.videoDuration}"
+//                                        )
+//                                    }
+                                    if (videoDetails != null) {
+                                        binding.content.text =
+                                            "File name: ${videoDetails.fileName} \nDuration: ${videoDetails.videoDuration}"
+                                    }
+                                }, 500)
+
+                                lifecycleScope.launch(Dispatchers.IO) {
+                                    val videoThumbnails =
+                                        videoDetails?.let { extractThumbnailsFromVideos(it.videoUri.toUri()) }
+
+                                    // Switch to the main thread to update the RecyclerView
+                                    withContext(Dispatchers.Main) {
+                                        if (videoDetails != null) {
+                                            if (videoThumbnails != null) {
+                                                binding.content.visibility = View.VISIBLE
+                                                setupRecyclerView(videoThumbnails, videoDetails)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+
+                        override fun onPageScrollStateChanged(state: Int) {
+                            // Called when the scroll state changes:
+                            // SCROLL_STATE_IDLE, SCROLL_STATE_DRAGGING, SCROLL_STATE_SETTLING
+                            when (state) {
+                                ViewPager2.SCROLL_STATE_IDLE -> {
+                                    // The pager is in an idle, settled state.
+//                                    Log.d("ViewPager2", "Page selected: SCROLL_STATE_IDLE")
+                                }
+
+                                ViewPager2.SCROLL_STATE_DRAGGING -> {
+                                    // The user is dragging the pager.
+//                                    Log.d("ViewPager2", "Page selected: SCROLL_STATE_DRAGGING")
+                                }
+
+                                ViewPager2.SCROLL_STATE_SETTLING -> {
+                                    // The pager is settling to a final position.
+//                                    Log.d("ViewPager2", "Page selected: SCROLL_STATE_SETTLING")
+                                }
+                            }
+                        }
+                    })
+                    // Setup CircleIndicator for ViewPager2
+                    val indicator = findViewById<CircleIndicator3>(R.id.circleIndicator)
+                    indicator.setViewPager(binding.viewPager)
+
+                    // Ensure visibility settings are correct
+                    binding.recyclerView2.visibility = View.INVISIBLE
+                    binding.multipleImagesContainer.visibility = View.VISIBLE
+                    binding.shortThumbNail.visibility = View.GONE
+                    binding.content.visibility = View.VISIBLE
+
+//                    val uri = Uri.parse(videoPath)
+
+//                    if (videoPath != null) {
+//                        val fileName = getFileNameFromLocalPath(videoPath)
+//                        feedUploadViewModel.setText("File name: $fileName \nDuration: $durationString")
+//
+////                        binding.content.text =
+//                        videoUri = vUri
+//
+//
+//                        lifecycleScope.launch(Dispatchers.IO) {
+//                            val videoThumbnails = extractThumbnailsFromVideos()
+//
+//                            // Switch to the main thread to update the RecyclerView
+//                            withContext(Dispatchers.Main) {
+//                                setupRecyclerView(videoThumbnails)
+//                            }
+//                        }
+////                        toCompressUris
+//                    } else {
+//                        Log.d("PhotoPicker", "No media selected")
+//                    }
+                }
+            }
+        binding.postButton.setOnClickListener {
+            val caption = binding.editTextText.text.toString()
+            val TAG = "postButton"
+            Log.d(TAG, "File type :$fileType")
+            if (addMoreFeedFiles) {
+                val mixedFeedFiles = feedUploadViewModel.getMixedFeedUploadDataClass()
+                Log.d(TAG, "onCreate: send mixed files $mixedFeedFiles")
+                if (text.isNotEmpty()) {
+                    uploadMixedFeed(
+                        mixedFeedFiles,
+                        text,
+                        tags
+                    )
+                } else {
+                    uploadMixedFeed(
+                        mixedFeedFiles,
+                        caption,
+                        tags
+                    )
+                }
+            } else if (fileType == "video") {
+                Log.d(TAG, "Lets upload some videos")
+//                Log.d(
+//                    TAG,
+//                    "onCreate: Lets upload some video duration $durationString video path $videoPath videoUri $videoUri"
+//                )
+
+
+                val filePathsToUpload: MutableList<String> = mutableListOf()
+                val compressedFilePathsToUpload: MutableList<String> = mutableListOf()
+                for (videoPathIndex in videoPaths.indices) {
+                    val videoPath = videoPaths[videoPathIndex]
+                    val videoPathUri = videoUris[videoPathIndex]
+
+
+                    val file = File(videoPath)
+                    if (file.exists()) {
+                        val fileSizeInBytes = file.length()
+                        val fileSizeInKB = fileSizeInBytes / 1024
+                        val fileSizeInMB = fileSizeInKB / 1024
+                        Log.d("VideoPicker", "File size: $fileSizeInMB MB")
+
+                        val fileSizeInGB = fileSizeInMB / 1024 // Conversion from MB to GB
+//                            Log.d("VideoPicker", "File size: $fileSizeInGB GB")
+
+                        if (fileSizeInGB.toInt() == 1) {
+                            AndroidUtil.showToast(this, "File size too large")
+                        } else if (fileSizeInMB > 5) {
+                            //compress
+
+                            toCompressUris.add(videoPathUri)
+                            val videoDuration = getFormattedDuration(videoPath)
+                            videoDurationStringList.add(videoDuration)
+                        } else {
+                            filePathsToUpload.add(videoPath)
+                            val videoDuration = getFormattedDuration(videoPath)
+                            videoDurationStringList.add(videoDuration)
+                        }
+
+
+//                        else if (fileSizeInMB > 10) {
+//                            Log.d("VideoPicker", "File size: greater than $fileSizeInMB MB")
+//                            toCompressUris.addAll(videoUris)
+//                            if (text.isNotEmpty()) {
+////                            uploadVideoFeed(videoPath, text, tags, durationString)
+//                                compressFeedVideo(
+//                                    durationString = durationString,
+//                                    content = text,
+//                                    tags = tags,
+//                                    videoPath,
+//                                )
+//                            } else {
+//                                compressFeedVideo(
+//                                    durationString = durationString,
+//                                    content = caption,
+//                                    tags = tags,
+//                                    videoPath
+//                                )
+//                            }
+//                        }
+//                        else {
+//                            Log.d("VideoPicker", "File size: less than $fileSizeInMB MB")
+//                            if (text.isNotEmpty()) {
+//                                uploadVideoFeed(videoPath, text, tags, durationString)
+//                            } else {
+//                                uploadVideoFeed(videoPath, caption, tags, durationString)
+//                            }
+//                        }
+
+
+                    } else {
+                        Log.d("VideoPicker", "File does not exists ")
+                    }
+
+                }
+
+                Log.d(
+                    TAG,
+                    "onCreate: filePaths to upload size b4 compression: ${filePathsToUpload.size}"
+                )
+
+                if (toCompressUris.size >= 1) {
+                    compressFeedVideo(
+//                        Log.d(TAG, "onCreate: compressFeedVideo result $it")
+//                        filePathsToUpload.add(it)
+//                        Log.d(
+//                            TAG,
+//                            "onCreate: filePaths to upload size because of no compression: ${filePathsToUpload.size}"
+//                        )
+
+                        onSuccess = { path ->
+                            // Code to execute when compression is successful
+                            Log.d("Video Path", "Compressed video saved at: $path")
+                            filePathsToUpload.add(path)
+                        },
+                        onCompletion = {
+                            // Code to execute after onSuccess (or optionally onFailure or onCancelled)
+                            Log.d(
+                                "Compress",
+                                "Compression process completed total files to upload: $filePathsToUpload"
+                            )
+                            if (text.isNotEmpty()) {
+                                uploadVideoFeed(
+                                    filePathsToUpload,
+                                    text,
+                                    tags,
+                                    listToCommaSeparatedString(videoDurationStringList)
+                                )
+                            } else {
+                                uploadVideoFeed(
+                                    filePathsToUpload,
+                                    caption,
+                                    tags,
+                                    listToCommaSeparatedString(videoDurationStringList)
+                                )
+                            }
+                            // Perform any additional actions here
+                        }
+                    )
+
+
+                    Log.d(TAG, "last step")
+                } else {
+                    Log.i(TAG, "onCreate: no video files to compress")
+                    Log.d(
+                        TAG,
+                        "onCreate: filePaths to upload size because of no compression: ${filePathsToUpload.size}"
+                    )
+
+//                    videoDurationStringList
+                    if (text.isNotEmpty()) {
+                        uploadVideoFeed(
+                            filePathsToUpload,
+                            text,
+                            tags,
+                            listToCommaSeparatedString(videoDurationStringList)
+                        )
+                    } else {
+                        uploadVideoFeed(
+                            filePathsToUpload,
+                            caption,
+                            tags,
+                            listToCommaSeparatedString(videoDurationStringList)
+                        )
+                    }
+                }
+
+
+            } else if (fileType == "audio") {
+                Log.d(TAG, "onCreate: Lets upload some audio duration $durationString")
+
+                if (text.isNotEmpty()) {
+                    uploadAudioFeed(audioPathList, text, "audio", tags)
+//                    feedUploadViewModel.uploadFileFeed(compressedImageFile!!.absolutePath,  text, "image", tags)
+
+                } else {
+//                    Log.d(TAG, "I have found this $caption and tags $tags")
+                    uploadAudioFeed(audioPathList, caption, "audio", tags)
+//                    feedUploadViewModel.uploadFileFeed(compressedImageFile!!.absolutePath,  caption, "image", tags)
+                }
+            } else if (fileType == "image") {
+//                Log.d(
+//                    TAG,
+//                    "onCreate: Lets upload some images exists ${compressedImageFile?.exists()}"
+//                )
+
+
+//                Log.d(TAG, "onCreate: compressed image path ${compressedImageFile?.absolutePath}")
+
+                if (isMultipleImages) {
+                    if (text.isNotEmpty()) {
+                        uploadMultipleImageFeed(compressedImageFiles, text, tags)
+//                    feedUploadViewModel.uploadFileFeed(compressedImageFile!!.absolutePath,  text, "image", tags)
+
+                    } else {
+//                    Log.d(TAG, "I have found this $caption and tags $tags")
+                        uploadMultipleImageFeed(compressedImageFiles, caption, tags)
+//                    feedUploadViewModel.uploadFileFeed(compressedImageFile!!.absolutePath,  caption, "image", tags)
+                    }
+                } else {
+                    if (text.isNotEmpty()) {
+                        uploadImageFeed(compressedImageFile!!.absolutePath, text, tags)
+//                    feedUploadViewModel.uploadFileFeed(compressedImageFile!!.absolutePath,  text, "image", tags)
+
+                    } else {
+//                    Log.d(TAG, "I have found this $caption and tags $tags")
+                        uploadImageFeed(compressedImageFile!!.absolutePath, caption, tags)
+//                    feedUploadViewModel.uploadFileFeed(compressedImageFile!!.absolutePath,  caption, "image", tags)
+                    }
+                }
+
+            } else if (fileType == "doc") {
+                Log.d(TAG, "onCreate: Lets upload some doc")
+                val stringNop = listToCommaSeparatedString(documentNumberOfPagesToUpload)
+                val stringType = listToCommaSeparatedString(documentTypesToUpload)
+                val stringName = listToCommaSeparatedString(documentFileNamesToUpload)
+                if (text.isNotEmpty()) {
+//                    Log.d(TAG, "I have found this $text and tags $tags")
+
+                    uploadDocFeed(
+                        documentUriListToUpload,
+                        documentThumbnailsToUpload,
+                        text,
+                        tags,
+                        stringNop,
+                        stringName,
+                        stringType
+                    )
+                } else {
+//                    Log.d(TAG, "I have found this $caption and tags $tags")
+                    uploadDocFeed(
+                        documentUriListToUpload,
+                        documentThumbnailsToUpload,
+                        caption,
+                        tags,
+                        stringNop,
+                        stringName,
+                        stringType
+                    )
+//                    uploadDocFeed(docFilePath, caption, tags, numberOfPages, fileName, docType)
+                }
+            } else if (vnFilePath != "null") {
+                Log.d(
+                    TAG,
+                    "onCreate: Its time to upload this vn $vnFilePath duration $vnDurationString"
+                )
+
+                if (text.isNotEmpty()) {
+
+                    uploadVNAudioFeed(vnFilePath!!, text, "vn", tags, vnDurationString!!)
+//                    feedUploadViewModel.uploadFileFeed(compressedImageFile!!.absolutePath,  text, "image", tags)
+
+                } else {
+//                    Log.d(TAG, "I have found this $caption and tags $tags")
+                    uploadVNAudioFeed(vnFilePath!!, caption, "vn", tags, vnDurationString!!)
+//                    feedUploadViewModel.uploadFileFeed(compressedImageFile!!.absolutePath,  caption, "image", tags)
+                }
+            } else {
+                Log.d(TAG, "onCreate: Lets upload some text")
+
+                if (text.isNotEmpty()) {
+//                    Log.d(TAG, "I have found this $text and tags $tags")
+                    feedUploadViewModel.uploadTextFeed(text, "text", tags,
+                        onSuccess = { data ->
+                            // Handle the successful data
+                            Log.d(TAG, "Data received: $data")
+//                            val post = setPost(data)
+//                            getFeedViewModel.addSingleFeedToAllFeed(0, post)
+
+                            // Update UI or perform actions with the data
+                        },
+                        onError = { errorMessage ->
+                            // Handle the error
+                            Log.e(TAG, "Error occurred: $errorMessage")
+                            // Show an error message to the user or log it
+                        }
+                    )
+                } else {
+//                    Log.d(TAG, "I have found this $caption and tags $tags")
+                    feedUploadViewModel.uploadTextFeed(caption, "text", tags,
+                        onSuccess = { data ->
+                            // Handle the successful data
+                            Log.d(TAG, "Data received: $data")
+//                            val post = setPost(data)
+//                            getFeedViewModel.addSingleFeedToAllFeed(0, post)
+
+                            // Update UI or perform actions with the data
+                        },
+                        onError = { errorMessage ->
+                            // Handle the error
+                            Log.e(TAG, "Error occurred: $errorMessage")
+                            // Show an error message to the user or log it
+                        }
+                    )
+                }
+            }
+//            finish()
+            val resultIntent = Intent()
+            setResult(Activity.RESULT_OK, resultIntent)
+            finish()
+        }
+
+    }
+
+    private fun createGson(): Gson {
+        return GsonBuilder()
+            .registerTypeAdapter(Uri::class.java, UriTypeAdapter())
+            .create()
+    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun uploadMixedFeed(
+        mixedFiles: MutableList<MixedFeedUploadDataClass>,
+        content: String,
+        tags: MutableList<String>,
+    ) {
+        val TAG = "uploadMixedFeed"
+        val gson = createGson()
+//        Log.d(
+//            TAG,
+//            "uploadMixedFeed: mixedFiles size ${mixedFiles.size}"
+//        )
+
+        val uploadDataJson = gson.toJson(mixedFiles)
+        setFirstFrameAsThumbnail()
+//        Log.d(TAG, "uploadMixedFeed: step 1")
+
+//        for(i in mixedFiles) {
+//            Log.d(TAG, "uploadMixedFeed thumbnails: ${i.videos?.thumbnail}")
+//        }
+        val inputData = Data.Builder()
+            .putString("upload_data", uploadDataJson)
+            .putString(FeedUploadWorker.CAPTION, content)
+            .putString(FeedUploadWorker.CONTENT_TYPE, "mixed_files")
+            .putStringArray(FeedUploadWorker.TAGS, tags.toTypedArray())
+            .build()
+
+//        val uploadWorkRequest = OneTimeWorkRequestBuilder<FeedUploadWorker>()
+//            .setInputData(inputData)
+//            .build()
+        val thumbnailFilePaths: ArrayList<String> = arrayListOf()
+        for (i in thumbnails) {
+//            Log.i(TAG, "uploadVideoFeed: thumbnails: $i")
+            val thumbnailFile = saveBitmapToFile(i, applicationContext, generateRandomFileName())
+            val thumbnailFilePath = thumbnailFile.absolutePath
+            thumbnailFilePaths.add(thumbnailFilePath)
+        }
+//        Log.d(TAG, "uploadVideoFeed: step 2 $uploadDataJson")
+
+//        if (!isThumbnailClicked) {
+//        }
+        try {
+            GlobalScope.launch(Dispatchers.IO) {
+                Log.d(TAG, "uploadVideoFeed: step 3")
+
+                Log.d(TAG, "uploadVideoFeed: thumbnailFilePath $thumbnailFilePaths")
+                uploadWorkRequest = OneTimeWorkRequestBuilder<FeedUploadWorker>()
+                    .setInputData(inputData)
+                    .build()
+
+
+                val workManager = WorkManager.getInstance(applicationContext)
+
+                Log.d("Upload", "Enqueuing upload work request...")
+                workManager.enqueue(uploadWorkRequest!!)
+
+//                lifecycleScope.launch(Dispatchers.Main) {
+//                    Log.d("Progress", "Progress ...scope")
+//
+//                    val workManager = WorkManager.getInstance(applicationContext)
+//                    workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+//                        .observe(this@UploadFeeedActivity) { workInfo ->
+//                            Log.d("Progress", "Observer triggered!")
+//                            if (workInfo != null) {
+//                                val progress =
+//                                    workInfo.progress.getInt(FeedUploadWorker.Progress, 0)
+//                                // Update your UI with the progress value
+//                                Log.d("Progress", "Progress $progress")
+//                            } else {
+//                                Log.d("Progress", "Work info is null")
+//                            }
+//
+//                            if (workInfo.state == WorkInfo.State.RUNNING) {
+//                                // Access progress here
+//                                Log.d("Progress", "Running")
+//                            }
+//                            if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+//                                // Access progress here
+//                                Log.d("Progress", "SUCCEEDED")
+//                            }
+//                            if (workInfo.state == WorkInfo.State.ENQUEUED) {
+//                                // Access progress here
+//                                Log.d("Progress", "ENQUEUED")
+//                            }
+//                            if (workInfo.state == WorkInfo.State.BLOCKED) {
+//                                // Access progress here
+//                                Log.d("Progress", "BLOCKED")
+//                            }
+//
+//                            if (workInfo.state == WorkInfo.State.CANCELLED) {
+//                                // Access progress here
+//                                Log.d("Progress", "CANCELLED")
+//                            }
+//
+//                        }
+//                }
+
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "uploadVideoFeed: error because ${e.message}")
+            e.printStackTrace()
+        }
+//        Log.d(TAG, "uploadVideoFeed: step 4")
+    }
+
+    private fun openFilePicker() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/*"
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        }
+        getDocumentContent.launch(intent)
+    }
+
+    private val getDocumentContent =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                setAddMoreFeedVisible()
+                if (!addMoreFeedFiles) {
+                    documentsList.clear()
+                }
+                val feedMultipleDocuments: MutableList<FeedMultipleDocumentsDataClass> =
+                    mutableListOf()
+                result.data?.let { data ->
+                    if (data.clipData != null) {
+                        // Multiple files selected
+                        val count = data.clipData!!.itemCount
+                        for (i in 0 until count) {
+                            val uri = data.clipData!!.getItemAt(i).uri
+                            Log.d("FilePicker", "Selected URI: $uri")
+                            // Perform operations with each URI
+                            documentsList.add(uri)
+//                            feedMultipleDocuments.add(FeedMultipleDocumentsDataClass(uri))
+                            handleDocumentUriToUpload(uri)
+                            feedMultipleDocuments.add(handleDocumentUriToUploadReturn(uri))
+                        }
+                    } else {
+                        // Single file selected
+                        val uri = data.data
+                        if (uri != null) {
+                            Log.d("FilePicker", "Selected URI: $uri")
+                            // Perform operations with the single URI
+                            documentsList.add(uri)
+
+                            handleDocumentUriToUpload(uri)
+                            feedMultipleDocuments.add(handleDocumentUriToUploadReturn(uri))
+                        }
+                    }
+                }
+
+                if (addMoreFeedFiles) {
+
+                    Log.d(TAG, "step 1: ")
+                    multipleFeedFilesPagerAdapter = MultipleFeedFilesPagerAdapter(this)
+                    Log.d(TAG, "step 2: ")
+                    binding.viewPager.adapter = multipleFeedFilesPagerAdapter
+                    for (doc in feedMultipleDocuments) {
+                        Log.d("addMoreFeedFiles", "onCreate: audio to upload $doc")
+                        feedUploadViewModel.addMixedFeedUploadDataClass(
+                            MixedFeedUploadDataClass(
+//                                        videos = video
+                                documents = doc
+                            )
+                        )
+                    }
+                    Log.d(TAG, "step 3: ")
+                    val mixedFeedFiles = feedUploadViewModel.getMixedFeedUploadDataClass()
+                    Log.d(TAG, "step 4: ")
+                    multipleFeedFilesPagerAdapter?.setMixedFeedUploadDataClass2(
+                        mixedFeedFiles
+                    )
+                    Log.d(TAG, "step 5: ")
+
+                } else {
+                    multipleDocsAdapter = MultipleFeedDocAdapter(this, documentsList, this)
+                    binding.viewPager.adapter = multipleDocsAdapter
+                }
+
+
+                binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
+                binding.viewPager.registerOnPageChangeCallback(object :
+                    ViewPager2.OnPageChangeCallback() {
+                    override fun onPageScrolled(
+                        position: Int,
+                        positionOffset: Float,
+                        positionOffsetPixels: Int
+                    ) {
+                        // This method will be invoked when the ViewPager2 is scrolled, but not necessarily settled (user is still swiping)
+                    }
+
+                    @SuppressLint("SetTextI18n")
+                    override fun onPageSelected(position: Int) {
+                        // This method will be invoked when a new page becomes selected.
+                        // You can perform actions here based on the selected page position.
+                        Log.d("ViewPager2", "Page selected: $position")
+                        if (!addMoreFeedFiles) {
+                            val documentUri = multipleDocsAdapter.getDocumentUri(position)
+                            Log.d("ViewPager2", "Page selected documentUri: $documentUri")
+
+                            lifecycleScope.launch {
+                                delay(500)
+                                handleDocumentUri(documentUri)
+                            }
+                        } else {
+                            Log.d(TAG, "onPageSelected: ")
+
+                            val documentDetails =
+                                multipleFeedFilesPagerAdapter?.getDocumentDetails(position)
+                            Log.d(
+                                "ViewPager2",
+                                "onPageSelected: get document details $documentDetails"
+                            )
+                            if (documentDetails == null) {
+                                binding.content.visibility = View.INVISIBLE
+                            } else {
+                                binding.content.visibility = View.VISIBLE
+                            }
+                            val handler = Handler(Looper.getMainLooper())
+                            handler.postDelayed({
+                                if (documentDetails != null) {
+                                    binding.shortThumbNail.setPadding(0)
+                                    binding.shortThumbNail.colorFilter = null
+                                    binding.content.text =
+                                        "File name: ${documentDetails.filename} \nFile size: ${documentDetails.fileSize} \nDocument Type: ${documentDetails.documentType} \n${documentDetails.numberOfPages} pages"
+//                                    feedUploadViewModel.setText("File name: ${documentDetails.filename} \nFile size: ${documentDetails.fileSize} \nDocument Type: ${documentDetails.documentType} \n${documentDetails.numberOfPages} pages")
+                                }
+                            }, 500)
+                        }
+
+
+                    }
+
+                    override fun onPageScrollStateChanged(state: Int) {
+                        // Called when the scroll state changes:
+                        // SCROLL_STATE_IDLE, SCROLL_STATE_DRAGGING, SCROLL_STATE_SETTLING
+                        when (state) {
+                            ViewPager2.SCROLL_STATE_IDLE -> {
+                                // The pager is in an idle, settled state.
+                                Log.d("ViewPager2", "Page selected: SCROLL_STATE_IDLE")
+                            }
+
+                            ViewPager2.SCROLL_STATE_DRAGGING -> {
+                                // The user is dragging the pager.
+                                Log.d("ViewPager2", "Page selected: SCROLL_STATE_DRAGGING")
+                            }
+
+                            ViewPager2.SCROLL_STATE_SETTLING -> {
+                                // The pager is settling to a final position.
+                                Log.d("ViewPager2", "Page selected: SCROLL_STATE_SETTLING")
+                            }
+                        }
+                    }
+                })
+                // Setup CircleIndicator for ViewPager2
+                val indicator = findViewById<CircleIndicator3>(R.id.circleIndicator)
+                indicator.setViewPager(binding.viewPager)
+
+                // Ensure visibility settings are correct
+                binding.recyclerView2.visibility = View.INVISIBLE
+                binding.multipleImagesContainer.visibility = View.VISIBLE
+                binding.shortThumbNail.visibility = View.GONE
+                binding.content.visibility = View.VISIBLE
+            }
+        }
+
+    private val pickMultipleMedia =
+        registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(10)) { uris ->
+            // Callback is invoked after the user selects media items or closes the
+            // photo picker.
+            setAddMoreFeedVisible()
+            val newImagesList: MutableList<String> = mutableListOf()
+            val newCompressedImageFiles: MutableList<File> = mutableListOf()
+            if (uris.isNotEmpty()) {
+                if (!addMoreFeedFiles) {
+                    imagesList.clear()
+                }
+                if (uris.isNotEmpty()) {
+                    Log.d(TAG, "selected more than 1 image: ${uris.size}")
+                    isMultipleImages = true
+
+                    feedUploadViewModel.mixedFilesCount += uris.size
+
+                    Log.d(
+                        TAG,
+                        "feedUploadViewModel:  mixedFilesCount = ${feedUploadViewModel.mixedFilesCount}"
+                    )
+                    for (uri in uris) {
+                        val filePath = PathUtil.getPath(
+                            this,
+                            uri
+                        ) // Use the utility class to get the real file path
+                        Log.d("PhotoPicker", "File path: $filePath")
+                        Log.d("PhotoPicker", "Selected image path from camera: $uri")
+                        if (filePath != null) {
+                            imagesList.add(filePath)
+                            newImagesList.add(filePath)
+                            val file = File(filePath)
+                            lifecycleScope.launch {
+                                val compressedImageFile =
+                                    Compressor.compress(this@UploadFeeedActivity, file)
+                                Log.d(
+                                    "PhotoPicker",
+                                    "PhotoPicker: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
+                                )
+
+                                val fileSizeInBytes = compressedImageFile.length()
+                                val fileSizeInKB = fileSizeInBytes / 1024
+                                val fileSizeInMB = fileSizeInKB / 1024
+//                            binding.content.text = ""
+                                Log.d(
+                                    "PhotoPicker",
+                                    "PhotoPicker: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB"
+                                )
+                                compressedImageFiles.add(compressedImageFile)
+                                newCompressedImageFiles.add(compressedImageFile)
+//                                this@UploadFeeedActivity.compressedImageFile =
+//                                    compressedImageFile
+                            }
+                        }
+                    }
+                    fileType = "image"
+
+                    // Setup ViewPager2 with the adapter
+                    if (addMoreFeedFiles) {
+//                        mixedFilesUploadAdapter.setSize(feedUploadViewModel.mixedFilesCount)
+////                        mixedFilesUploadAdapter = MixedFilesUploadAdapter(this, this, this)
+//                        binding.viewPager.adapter = mixedFilesUploadAdapter
+//                        mixedFilesUploadAdapter.setType("image")
+//
+//                        mixedFilesUploadAdapter.addImages(imagesList)
+                        multipleFeedFilesPagerAdapter = MultipleFeedFilesPagerAdapter(this)
+                        binding.viewPager.adapter = multipleFeedFilesPagerAdapter
+//                        val multipleImagesList: MutableList<String> = mutableListOf()
+//                        for (compressedFile in newCompressedImageFiles) {
+//                            val compressedFilePath = compressedFile.absolutePath
+//                            multipleImagesList.add(compressedFilePath)
+//                            Log.d("CompressedFilePath", "Compressed file path: $compressedFilePath")
+//                            // Use compressedFilePath as needed, e.g., to display, upload, etc.
+//                            feedUploadViewModel.addMixedFeedUploadDataClass(
+//                                MixedFeedUploadDataClass(
+//                                    images = compressedFilePath
+//                                )
+//                            )
+//                        }
+                        for (image in newImagesList) {
+//                            multipleFeedFilesPagerAdapter?.setMixedFeedUploadDataClass(
+//                                MixedFeedUploadDataClass(image)
+//                            )
+
+                            Log.d("newCompressedImageFiles", "newCompressedImageFiles file path: $newCompressedImageFiles")
+                            feedUploadViewModel.addMixedFeedUploadDataClass(
+                                MixedFeedUploadDataClass(
+                                    images = FeedMultipleImages(imagePath = image)
+
+                                )
+                            )
+                        }
+
+
+                        val mixedFeedFiles = feedUploadViewModel.getMixedFeedUploadDataClass()
+
+                        multipleFeedFilesPagerAdapter?.setMixedFeedUploadDataClass2(
+                            mixedFeedFiles
+                        )
+//                        for(mixedFiles in mixedFeedFiles) {
+//                            multipleFeedFilesPagerAdapter?.setMixedFeedUploadDataClass(
+//                                MixedFeedUploadDataClass(images = mixedFiles.images, videos = mixedFiles.videos)
+//                            )
+//                        }
+
+                    } else {
+                        for (image in newImagesList) {
+//                            multipleFeedFilesPagerAdapter?.setMixedFeedUploadDataClass(
+//                                MixedFeedUploadDataClass(image)
+//                            )
+                            feedUploadViewModel.addMixedFeedUploadDataClass(
+                                MixedFeedUploadDataClass(
+                                    images = FeedMultipleImages(imagePath = image)
+                                )
+                            )
+                        }
+                        binding.viewPager.adapter =
+                            MultipleFeedImagesAdapter(this, imagesList, this)
+
+                    }
+
+                    binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
+
+                    // Setup CircleIndicator for ViewPager2
+                    val indicator = findViewById<CircleIndicator3>(R.id.circleIndicator)
+                    indicator.setViewPager(binding.viewPager)
+                    binding.viewPager.registerOnPageChangeCallback(object :
+                        ViewPager2.OnPageChangeCallback() {
+                        override fun onPageScrolled(
+                            position: Int,
+                            positionOffset: Float,
+                            positionOffsetPixels: Int
+                        ) {
+                            // This method will be invoked when the ViewPager2 is scrolled, but not necessarily settled (user is still swiping)
+                        }
+
+                        override fun onPageSelected(position: Int) {
+                            // This method will be invoked when a new page becomes selected.
+                            // You can perform actions here based on the selected page position.
+                            Log.d("ViewPager2", "onPageSelected: $position")
+
+                            binding.recyclerView2.visibility = View.INVISIBLE
+                            binding.multipleImagesContainer.visibility = View.VISIBLE
+                            binding.shortThumbNail.visibility = View.GONE
+                            binding.content.visibility = View.INVISIBLE
+                        }
+
+                        override fun onPageScrollStateChanged(state: Int) {
+                            // Called when the scroll state changes:
+                            // SCROLL_STATE_IDLE, SCROLL_STATE_DRAGGING, SCROLL_STATE_SETTLING
+                            when (state) {
+                                ViewPager2.SCROLL_STATE_IDLE -> {
+                                    // The pager is in an idle, settled state.
+//                                    Log.d("ViewPager2", "Page selected: SCROLL_STATE_IDLE")
+                                }
+
+                                ViewPager2.SCROLL_STATE_DRAGGING -> {
+                                    // The user is dragging the pager.
+//                                    Log.d("ViewPager2", "Page selected: SCROLL_STATE_DRAGGING")
+                                }
+
+                                ViewPager2.SCROLL_STATE_SETTLING -> {
+                                    // The pager is settling to a final position.
+//                                    Log.d("ViewPager2", "Page selected: SCROLL_STATE_SETTLING")
+                                }
+                            }
+                        }
+                    })
+                    // Ensure visibility settings are correct
+                    binding.recyclerView2.visibility = View.INVISIBLE
+                    binding.multipleImagesContainer.visibility = View.VISIBLE
+                    binding.shortThumbNail.visibility = View.GONE
+                    binding.content.visibility = View.INVISIBLE
+                } else {
+                    isMultipleImages = false
+//                    imagesList.clear()
+                    for (uri in uris) {
+                        val filePath = PathUtil.getPath(
+                            this,
+                            uri
+                        ) // Use the utility class to get the real file path
+                        Log.d("PhotoPicker", "File path: $filePath")
+                        Log.d(
+                            "PhotoPicker", "Selected image path from camera: $uri"
+                        )
+
+                        val file = filePath?.let { File(it) }
+                        if (file?.exists() == true) {
+                            fileType = "image"
+                            feedUploadViewModel.setText("")
+                            binding.recyclerView2.visibility = View.INVISIBLE
+                            binding.multipleImagesContainer.visibility = View.GONE
+                            binding.shortThumbNail.visibility = View.VISIBLE
+                            binding.shortThumbNail.setPadding(0)
+                            binding.shortThumbNail.colorFilter = null
+                            Glide.with(this@UploadFeeedActivity)
+                                .load(filePath)
+                                .into(binding.shortThumbNail)
+
+
+                            lifecycleScope.launch {
+                                val compressedImageFile =
+                                    Compressor.compress(this@UploadFeeedActivity, file)
+                                Log.d(
+                                    "PhotoPicker",
+                                    "PhotoPicker: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
+                                )
+
+                                val fileSizeInBytes = compressedImageFile.length()
+                                val fileSizeInKB = fileSizeInBytes / 1024
+                                val fileSizeInMB = fileSizeInKB / 1024
+//                            binding.content.text = ""
+                                Log.d(
+                                    "PhotoPicker",
+                                    "PhotoPicker: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB"
+                                )
+                                this@UploadFeeedActivity.compressedImageFile = compressedImageFile
+                            }
+                        }
+                    }
+                }
+
+//                if(uris.size > 1) {
+//                    Log.d(TAG, "selected more than 1 image: ")
+//                    for (uri in uris) {
+//                        val filePath = PathUtil.getPath(
+//                            this,
+//                            uri
+//                        ) // Use the utility class to get the real file path
+//                        Log.d("PhotoPicker", "File path: $filePath")
+//                        Log.d(
+//                            "PhotoPicker", "Selected image path from camera: $uri"
+//                        )
+//                        if (filePath != null) {
+//                            imagesList.add(filePath)
+//                        }
+//
+//                        val file = filePath?.let { File(it) }
+//                        if (file?.exists() == true) {
+//                            fileType = "image"
+//                            feedUploadViewModel.setText("")
+//                            binding.recyclerView2.visibility = View.INVISIBLE
+//
+//                            binding.shortThumbNail.setPadding(0)
+//                            binding.shortThumbNail.colorFilter = null
+//                            binding.multipleImagesContainer.visibility = View.VISIBLE
+//                            binding.shortThumbNail.visibility = View.GONE
+//
+//
+//                            binding.viewPager.adapter = MultipleFeedImagesAdapter(this, imagesList)
+//                            binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
+//
+//                            val indicator = findViewById<CircleIndicator3>(R.id.circleIndicator)
+//                            indicator.setViewPager(binding.viewPager)
+//
+//                            lifecycleScope.launch {
+//                                val compressedImageFile =
+//                                    Compressor.compress(this@UploadFeeedActivity, file)
+//                                Log.d(
+//                                    "PhotoPicker",
+//                                    "PhotoPicker: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
+//                                )
+//
+//                                val fileSizeInBytes = compressedImageFile.length()
+//                                val fileSizeInKB = fileSizeInBytes / 1024
+//                                val fileSizeInMB = fileSizeInKB / 1024
+////                            binding.content.text = ""
+//                                Log.d(
+//                                    "PhotoPicker",
+//                                    "PhotoPicker: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB"
+//                                )
+//                                this@UploadFeeedActivity.compressedImageFile = compressedImageFile
+//                            }
+//                        }
+//                    }
+//                }
+//                else {
+//                    for (uri in uris) {
+//                        val filePath = PathUtil.getPath(
+//                            this,
+//                            uri
+//                        ) // Use the utility class to get the real file path
+//                        Log.d("PhotoPicker", "File path: $filePath")
+//                        Log.d(
+//                            "PhotoPicker", "Selected image path from camera: $uri"
+//                        )
+//
+//                        val file = filePath?.let { File(it) }
+//                        if (file?.exists() == true) {
+//                            fileType = "image"
+//                            feedUploadViewModel.setText("")
+//                            binding.recyclerView2.visibility = View.INVISIBLE
+//
+//                            binding.shortThumbNail.setPadding(0)
+//                            binding.shortThumbNail.colorFilter = null
+//                            Glide.with(this@UploadFeeedActivity)
+//                                .load(filePath)
+//                                .into(binding.shortThumbNail)
+//
+//
+//                            lifecycleScope.launch {
+//                                val compressedImageFile =
+//                                    Compressor.compress(this@UploadFeeedActivity, file)
+//                                Log.d(
+//                                    "PhotoPicker",
+//                                    "PhotoPicker: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
+//                                )
+//
+//                                val fileSizeInBytes = compressedImageFile.length()
+//                                val fileSizeInKB = fileSizeInBytes / 1024
+//                                val fileSizeInMB = fileSizeInKB / 1024
+////                            binding.content.text = ""
+//                                Log.d(
+//                                    "PhotoPicker",
+//                                    "PhotoPicker: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB"
+//                                )
+//                                this@UploadFeeedActivity.compressedImageFile = compressedImageFile
+//                            }
+//                        }
+//                    }
+//                }
+
+
+            } else {
+                Log.d("PhotoPicker", "No media selected")
+            }
+        }
+
+    private fun setAddMoreFeedVisible() {
+        binding.addMoreFeed.visibility = View.VISIBLE
+    }
+
+    private fun setFirstFrameAsThumbnail() {
+        Log.d(TAG, "inside setFirstFrameAsThumbnail: ")
+        try {
+
+            for (videoUri in videoUris) {
+                val firstFrame: Bitmap? = VideoUtils.getFirstFrame(this, videoUri)
+                if (firstFrame != null) {
+                    Log.d(TAG, "setFirstFrameAsThumbnail: thumbnail not null")
+//                thumbnail = firstFrame
+                    thumbnails.add(firstFrame)
+                } else {
+                    Log.d(TAG, "setFirstFrameAsThumbnail: thumbnail is null")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "setFirstFrameAsThumbnail: ${e.message}")
+            e.printStackTrace()
+        }
+
+
+//        val resultIntent = Intent()
+//        setResult(Activity.RESULT_OK, resultIntent)
+//        finish()
+    }
+
+    fun oneTimeWork() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+//            .setRequiresCharging(true)
+            .build()
+
+        val myWorkRequest: WorkRequest = OneTimeWorkRequest.Builder(FeedAudioWorker::class.java)
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(this).enqueue(myWorkRequest)
+    }
+
+    private fun uploadAudioFeed(
+        audiosList: MutableList<String>,
+        content: String,
+        contentType: String,
+        tags: MutableList<String>,
+    ) {
+        val TAG = "uploadAudioFeed"
+        Log.d(TAG, "uploadAudioFeed: ")
+
+
+        val compressedAudioPaths: MutableList<String> = mutableListOf()
+        lifecycleScope.launch(Dispatchers.IO) {
+//                val compressor = FFMPEG_AudioCompressor()
+//                val isCompressionSuccessful =
+//                    compressor.compress(filePath, outputFilePath.absolutePath)
+            val audioListToUpload: MutableList<String> = mutableListOf()
+            try {
+                for (audioPath in audiosList) {
+                    Log.d(TAG, "uploadAudioFeed audioPath: $audioPath")
+                    val outputFileName =
+                        "compressed_audio${System.currentTimeMillis()}.mp3" // Example output file name
+                    val outputFilePath = File(cacheDir, outputFileName)
+                    val ffmpegCompressor = AudioCompressorWithProgress()
+                    // Start compression in a coroutine scope
+                    Log.d(
+                        TAG,
+                        "uploadAudioFeed: multipleAudioAdapter.getAudioDuration(audioPath) : ${
+                            multipleAudioAdapter.getAudioDuration(audioPath)
+                        }"
+                    )
+                    val audioDu =
+                        reverseFormattedDuration(multipleAudioAdapter.getAudioDuration(audioPath))
+
+                    val audioFile = File(audioPath)
+                    val fileSizeInBytes = audioFile.length()
+                    val fileSizeInKB = fileSizeInBytes / 1024
+                    val fileSizeInMB = fileSizeInKB / 1024
+                    if (fileSizeInMB > 2) {
+                        val isCompressionSuccessful = ffmpegCompressor.compress(
+                            audioPath,
+                            outputFilePath.absolutePath,
+                            audioDu, this@UploadFeeedActivity
+                        )
+                        Log.d(TAG, "uploadAudioFeed outputFileName: ${outputFilePath.absolutePath}")
+                        if (isCompressionSuccessful) {
+                            audioListToUpload.add(outputFilePath.absolutePath)
+                            Log.d(TAG, "uploadAudioFeed: compression successful")
+                        } else {
+                            Log.d(TAG, "uploadAudioFeed: compression not successful")
+                        }
+                    } else {
+                        audioListToUpload.add(audioPath)
+                    }
+
+                }
+                Log.d(TAG, "uploadAudioFeed: total files to upload : ${audioListToUpload.size}")
+                for (audio in audioListToUpload) {
+                    val audioFile = File(audioPath)
+                    val fileSizeInBytes = audioFile.length()
+                    val fileSizeInKB = fileSizeInBytes / 1024
+                    val fileSizeInMB = fileSizeInKB / 1024
+                    Log.d(TAG, "uploadAudioFeed: audio :fileSizeInKB: $fileSizeInKB $audio ")
+
+                }
+                val audDuration = listToCommaSeparatedString(audioDurationStringList)
+                uploadWorkRequest =
+                    OneTimeWorkRequestBuilder<FeedUploadWorker>()
+                        .setInputData(
+                            Data.Builder()
+                                .putStringArray(
+                                    FeedUploadWorker.MULTIPLE_AUDIOS,
+                                    audioListToUpload.toTypedArray()
+                                )
+                                .putString(FeedUploadWorker.CAPTION, content)
+                                .putString(FeedUploadWorker.DURATION, audDuration)
+                                .putString(FeedUploadWorker.CONTENT_TYPE, contentType)
+                                .putStringArray(FeedUploadWorker.TAGS, tags.toTypedArray())
+                                .build()
+                        )
+                        .build()
+
+                var workManager = WorkManager.getInstance(applicationContext)
+
+                workManager.enqueue(uploadWorkRequest!!)
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Log.d("Progress", "Progress ...scope")
+
+                    workManager = WorkManager.getInstance(applicationContext)
+                    workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+                        .observe(this@UploadFeeedActivity) { workInfo ->
+                            Log.d("Progress", "Observer triggered!")
+                            if (workInfo != null) {
+                                val progress =
+                                    workInfo.progress.getInt(FeedUploadWorker.Progress, 0)
+                                // Update your UI with the progress value
+                                Log.d("Progress", "Progress $progress")
+                            } else {
+                                Log.d("Progress", "Work info is null")
+                            }
+
+                            if (workInfo.state == WorkInfo.State.RUNNING) {
+                                // Access progress here
+                                Log.d("Progress", "Running")
+                            }
+                            if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+                                // Access progress here
+                                Log.d("Progress", "SUCCEEDED")
+                            }
+                            if (workInfo.state == WorkInfo.State.ENQUEUED) {
+                                // Access progress here
+                                Log.d("Progress", "ENQUEUED")
+                            }
+                            if (workInfo.state == WorkInfo.State.BLOCKED) {
+                                // Access progress here
+                                Log.d("Progress", "BLOCKED")
+                            }
+
+                            if (workInfo.state == WorkInfo.State.CANCELLED) {
+                                // Access progress here
+                                Log.d("Progress", "CANCELLED")
+                            }
+
+                        }
+                }
+//                val ffmpegCompressor = AudioCompressorWithProgress()
+//                // Start compression in a coroutine scope
+//                val audioDu = reverseFormattedDuration(durationString)
+//                val isCompressionSuccessful = ffmpegCompressor.compress(
+//                    filePath,
+//                    outputFilePath.absolutePath,
+//                    audioDu, this@UploadFeeedActivity
+//                )
+//                Log.d(
+//                    TAG,
+//                    "uploadAudioFeed: $isCompressionSuccessful outputFilePath.absolutePath ${outputFilePath.absolutePath}"
+//                )
+//                if (isCompressionSuccessful) {
+//                    Log.d("AudioPicker", "AudioPicker: Compression successful ")
+////                compressedAudioPath = outputFilePath.absolutePath
+//                    uploadWorkRequest =
+//                        OneTimeWorkRequestBuilder<FeedUploadWorker>()
+//                            .setInputData(
+//                                Data.Builder()
+//                                    .putString(
+//                                        FeedUploadWorker.EXTRA_FILE_PATH,
+//                                        outputFilePath.absolutePath
+//                                    )
+//                                    .putString(FeedUploadWorker.CAPTION, content)
+//                                    .putString(FeedUploadWorker.DURATION, durationString)
+//                                    .putString(FeedUploadWorker.CONTENT_TYPE, contentType)
+//                                    .putStringArray(FeedUploadWorker.TAGS, tags.toTypedArray())
+//                                    .build()
+//                            )
+//                            .build()
+//
+//                    val workManager = WorkManager.getInstance(applicationContext)
+//
+//                    Log.d("Upload", "Enqueuing upload work request...")
+//                    workManager.enqueue(uploadWorkRequest!!)
+//
+//                    lifecycleScope.launch(Dispatchers.Main) {
+//                        Log.d("Progress", "Progress ...scope")
+//
+//                        val workManager = WorkManager.getInstance(applicationContext)
+//                        workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+//                            .observe(this@UploadFeeedActivity) { workInfo ->
+//                                Log.d("Progress", "Observer triggered!")
+//                                if (workInfo != null) {
+//                                    val progress =
+//                                        workInfo.progress.getInt(FeedUploadWorker.Progress, 0)
+//                                    // Update your UI with the progress value
+//                                    Log.d("Progress", "Progress $progress")
+//                                } else {
+//                                    Log.d("Progress", "Work info is null")
+//                                }
+//
+//                                if (workInfo.state == WorkInfo.State.RUNNING) {
+//                                    // Access progress here
+//                                    Log.d("Progress", "Running")
+//                                }
+//                                if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+//                                    // Access progress here
+//                                    Log.d("Progress", "SUCCEEDED")
+//                                }
+//                                if (workInfo.state == WorkInfo.State.ENQUEUED) {
+//                                    // Access progress here
+//                                    Log.d("Progress", "ENQUEUED")
+//                                }
+//                                if (workInfo.state == WorkInfo.State.BLOCKED) {
+//                                    // Access progress here
+//                                    Log.d("Progress", "BLOCKED")
+//                                }
+//
+//                                if (workInfo.state == WorkInfo.State.CANCELLED) {
+//                                    // Access progress here
+//                                    Log.d("Progress", "CANCELLED")
+//                                }
+//
+//                            }
+//                    }
+//                }
+
+            } catch (e: Exception) {
+                Log.d(TAG, "uploadAudioFeed: error ${e.message}")
+                e.printStackTrace()
+            }
+
+            runBlocking {
+
+
+            }
+        }
+
+//        Log.d(
+//            TAG,
+//            "uploadAudioFeed: Lets upload some duration $durationString audio path ${outputFilePath.absolutePath}"
+//        )
+
+
+    }
+
+    private fun uploadVNAudioFeed(
+        filePath: String,
+        content: String,
+        contentType: String,
+        tags: MutableList<String>,
+        durationString: String
+    ) {
+        if (contentType == "vn") {
+            lifecycleScope.launch(Dispatchers.IO) {
+                Log.d("AudioPicker", "AudioPicker: Compression successful ")
+//                compressedAudioPath = outputFilePath.absolutePath
+                uploadWorkRequest =
+                    OneTimeWorkRequestBuilder<FeedUploadWorker>()
+                        .setInputData(
+                            Data.Builder()
+                                .putString(
+                                    FeedUploadWorker.EXTRA_FILE_PATH,
+                                    filePath
+                                )
+                                .putString(FeedUploadWorker.CAPTION, content)
+                                .putString(FeedUploadWorker.DURATION, durationString)
+                                .putString(FeedUploadWorker.CONTENT_TYPE, contentType)
+                                .putStringArray(FeedUploadWorker.TAGS, tags.toTypedArray())
+                                .build()
+                        )
+                        .build()
+
+                val workManager = WorkManager.getInstance(applicationContext)
+
+                Log.d("Upload", "Enqueuing upload work request...")
+                workManager.enqueue(uploadWorkRequest!!)
+
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Log.d("Progress", "Progress ...scope")
+
+                    val workManager = WorkManager.getInstance(applicationContext)
+                    workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+                        .observe(this@UploadFeeedActivity) { workInfo ->
+                            Log.d("Progress", "Observer triggered!")
+                            if (workInfo != null) {
+                                val progress =
+                                    workInfo.progress.getInt(FeedUploadWorker.Progress, 0)
+                                // Update your UI with the progress value
+                                Log.d("Progress", "Progress $progress")
+                            } else {
+                                Log.d("Progress", "Work info is null")
+                            }
+
+                            if (workInfo.state == WorkInfo.State.RUNNING) {
+                                // Access progress here
+                                Log.d("Progress", "Running")
+                            }
+                            if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+                                // Access progress here
+                                Log.d("Progress", "SUCCEEDED")
+                            }
+                            if (workInfo.state == WorkInfo.State.ENQUEUED) {
+                                // Access progress here
+                                Log.d("Progress", "ENQUEUED")
+                            }
+                            if (workInfo.state == WorkInfo.State.BLOCKED) {
+                                // Access progress here
+                                Log.d("Progress", "BLOCKED")
+                            }
+
+                            if (workInfo.state == WorkInfo.State.CANCELLED) {
+                                // Access progress here
+                                Log.d("Progress", "CANCELLED")
+                            }
+
+                        }
+                }
+
+            }
+
+        } else {
+            Log.d(TAG, "uploadAudioFeed: ")
+            val outputFileName =
+                "compressed_audio${System.currentTimeMillis()}.mp3" // Example output file name
+            val outputFilePath = File(cacheDir, outputFileName)
+
+            lifecycleScope.launch(Dispatchers.IO) {
+//                val compressor = FFMPEG_AudioCompressor()
+//                val isCompressionSuccessful =
+//                    compressor.compress(filePath, outputFilePath.absolutePath)
+                try {
+                    val ffmpegCompressor = AudioCompressorWithProgress()
+                    // Start compression in a coroutine scope
+                    val audioDu = reverseFormattedDuration(durationString)
+                    val isCompressionSuccessful = ffmpegCompressor.compress(
+                        filePath,
+                        outputFilePath.absolutePath,
+                        audioDu, this@UploadFeeedActivity
+                    )
+                    Log.d(
+                        TAG,
+                        "uploadAudioFeed: $isCompressionSuccessful outputFilePath.absolutePath ${outputFilePath.absolutePath}"
+                    )
+                    if (isCompressionSuccessful) {
+                        Log.d("AudioPicker", "AudioPicker: Compression successful ")
+//                compressedAudioPath = outputFilePath.absolutePath
+                        uploadWorkRequest =
+                            OneTimeWorkRequestBuilder<FeedUploadWorker>()
+                                .setInputData(
+                                    Data.Builder()
+                                        .putString(
+                                            FeedUploadWorker.EXTRA_FILE_PATH,
+                                            outputFilePath.absolutePath
+                                        )
+                                        .putString(FeedUploadWorker.CAPTION, content)
+                                        .putString(FeedUploadWorker.DURATION, durationString)
+                                        .putString(FeedUploadWorker.CONTENT_TYPE, contentType)
+                                        .putStringArray(FeedUploadWorker.TAGS, tags.toTypedArray())
+                                        .build()
+                                )
+                                .build()
+
+                        val workManager = WorkManager.getInstance(applicationContext)
+
+                        Log.d("Upload", "Enqueuing upload work request...")
+                        workManager.enqueue(uploadWorkRequest!!)
+
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            Log.d("Progress", "Progress ...scope")
+
+                            val workManager = WorkManager.getInstance(applicationContext)
+                            workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+                                .observe(this@UploadFeeedActivity) { workInfo ->
+                                    Log.d("Progress", "Observer triggered!")
+                                    if (workInfo != null) {
+                                        val progress =
+                                            workInfo.progress.getInt(FeedUploadWorker.Progress, 0)
+                                        // Update your UI with the progress value
+                                        Log.d("Progress", "Progress $progress")
+                                    } else {
+                                        Log.d("Progress", "Work info is null")
+                                    }
+
+                                    if (workInfo.state == WorkInfo.State.RUNNING) {
+                                        // Access progress here
+                                        Log.d("Progress", "Running")
+                                    }
+                                    if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+                                        // Access progress here
+                                        Log.d("Progress", "SUCCEEDED")
+                                    }
+                                    if (workInfo.state == WorkInfo.State.ENQUEUED) {
+                                        // Access progress here
+                                        Log.d("Progress", "ENQUEUED")
+                                    }
+                                    if (workInfo.state == WorkInfo.State.BLOCKED) {
+                                        // Access progress here
+                                        Log.d("Progress", "BLOCKED")
+                                    }
+
+                                    if (workInfo.state == WorkInfo.State.CANCELLED) {
+                                        // Access progress here
+                                        Log.d("Progress", "CANCELLED")
+                                    }
+
+                                }
+                        }
+                    }
+
+                } catch (e: Exception) {
+                    Log.d(TAG, "uploadAudioFeed: error ${e.message}")
+                    e.printStackTrace()
+                }
+
+                runBlocking {
+
+
+                }
+            }
+//            lifecycleScope.launch(Dispatchers.IO) {
+////                val compressor = FFMPEG_AudioCompressor()
+////                val isCompressionSuccessful =
+////                    compressor.compress(filePath, outputFilePath.absolutePath)
+//                try {
+//                    val ffmpegCompressor = AudioCompressorWithProgress()
+//                    // Start compression in a coroutine scope
+//                    val audioDu = reverseFormattedDuration(durationString)
+//                    val isCompressionSuccessful = ffmpegCompressor.compress(
+//                        filePath,
+//                        outputFilePath.absolutePath,
+//                        audioDu, this@UploadFeeedActivity
+//                    )
+//                    if (isCompressionSuccessful) {
+//                        Log.d("AudioPicker", "AudioPicker: Compression successful ")
+////                compressedAudioPath = outputFilePath.absolutePath
+//                        uploadWorkRequest =
+//                            OneTimeWorkRequestBuilder<FeedUploadWorker>()
+//                                .setInputData(
+//                                    Data.Builder()
+//                                        .putString(
+//                                            FeedUploadWorker.EXTRA_FILE_PATH,
+//                                            outputFilePath.absolutePath
+//                                        )
+//                                        .putString(FeedUploadWorker.CAPTION, content)
+//                                        .putString(FeedUploadWorker.DURATION, durationString)
+//                                        .putString(FeedUploadWorker.CONTENT_TYPE, contentType)
+//                                        .putStringArray(FeedUploadWorker.TAGS, tags.toTypedArray())
+//                                        .build()
+//                                )
+//                                .build()
+//
+//                        val workManager = WorkManager.getInstance(applicationContext)
+//
+//                        Log.d("Upload", "Enqueuing upload work request...")
+//                        workManager.enqueue(uploadWorkRequest!!)
+//
+//                        lifecycleScope.launch(Dispatchers.Main) {
+//                            Log.d("Progress", "Progress ...scope")
+//
+//                            val workManager = WorkManager.getInstance(applicationContext)
+//                            workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+//                                .observe(this@UploadFeeedActivity) { workInfo ->
+//                                    Log.d("Progress", "Observer triggered!")
+//                                    if (workInfo != null) {
+//                                        val progress =
+//                                            workInfo.progress.getInt(FeedUploadWorker.Progress, 0)
+//                                        // Update your UI with the progress value
+//                                        Log.d("Progress", "Progress $progress")
+//                                    } else {
+//                                        Log.d("Progress", "Work info is null")
+//                                    }
+//
+//                                    if (workInfo.state == WorkInfo.State.RUNNING) {
+//                                        // Access progress here
+//                                        Log.d("Progress", "Running")
+//                                    }
+//                                    if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+//                                        // Access progress here
+//                                        Log.d("Progress", "SUCCEEDED")
+//                                    }
+//                                    if (workInfo.state == WorkInfo.State.ENQUEUED) {
+//                                        // Access progress here
+//                                        Log.d("Progress", "ENQUEUED")
+//                                    }
+//                                    if (workInfo.state == WorkInfo.State.BLOCKED) {
+//                                        // Access progress here
+//                                        Log.d("Progress", "BLOCKED")
+//                                    }
+//
+//                                    if (workInfo.state == WorkInfo.State.CANCELLED) {
+//                                        // Access progress here
+//                                        Log.d("Progress", "CANCELLED")
+//                                    }
+//
+//                                }
+//                        }
+//                    }
+//
+//                } catch (e: Exception) {
+//                    Log.d(TAG, "uploadAudioFeed: error ${e.message}")
+//                    e.printStackTrace()
+//                }
+//
+//                runBlocking {
+//
+//
+//                }
+//            }
+            Log.d(
+                TAG,
+                "uploadAudioFeed: Lets upload some duration $durationString audio path ${outputFilePath.absolutePath}"
+            )
+        }
+
+
+    }
+
+    private fun uploadDocFeed(
+        filePath: MutableList<String>,
+        thumbnail: MutableList<String>,
+        content: String,
+        tags: MutableList<String>,
+        numberOfPages: String,
+        fileName: String,
+        fileType: String
+    ) {
+//        Log.d(
+//            TAG,
+//            "uploadDocFeed: numberOfPages $numberOfPages fileName $fileName fileType $fileType"
+//        )
+        for (doc in filePath) {
+            Log.d("uploadDocFeed", "uploadDocFeed: doc $doc :: doc uri:: ${doc.toUri()} ")
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            uploadWorkRequest =
+                OneTimeWorkRequestBuilder<FeedUploadWorker>()
+                    .setInputData(
+                        Data.Builder()
+                            .putStringArray(
+                                FeedUploadWorker.MULTIPLE_DOCS,
+                                filePath.toTypedArray()
+                            )
+                            .putStringArray(
+                                FeedUploadWorker.MULTIPLE_THUMBNAILS,
+                                thumbnail.toTypedArray()
+                            )
+                            .putString(FeedUploadWorker.CAPTION, content)
+                            .putString(FeedUploadWorker.DURATION, durationString)
+                            .putString(FeedUploadWorker.CONTENT_TYPE, "docs")
+                            .putString(FeedUploadWorker.NOP, numberOfPages)
+                            .putString(FeedUploadWorker.FILENAME, fileName)
+                            .putString(FeedUploadWorker.FILETYPE, fileType)
+                            .putStringArray(FeedUploadWorker.TAGS, tags.toTypedArray())
+                            .build()
+                    )
+                    .build()
+
+            val workManager = WorkManager.getInstance(applicationContext)
+
+            Log.d("Upload", "Enqueuing upload work request...")
+            workManager.enqueue(uploadWorkRequest!!)
+
+            lifecycleScope.launch(Dispatchers.Main) {
+                Log.d("Progress", "Progress ...scope")
+
+                val workManager = WorkManager.getInstance(applicationContext)
+                workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+                    .observe(this@UploadFeeedActivity) { workInfo ->
+                        Log.d("Progress", "Observer triggered!")
+                        if (workInfo != null) {
+                            val progress =
+                                workInfo.progress.getInt(FeedUploadWorker.Progress, 0)
+                            // Update your UI with the progress value
+                            Log.d("Progress", "Progress $progress")
+                        } else {
+                            Log.d("Progress", "Work info is null")
+                        }
+
+                        if (workInfo.state == WorkInfo.State.RUNNING) {
+                            // Access progress here
+                            Log.d("Progress", "Running")
+                        }
+                        if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+                            // Access progress here
+                            Log.d("Progress", "SUCCEEDED")
+                        }
+                        if (workInfo.state == WorkInfo.State.ENQUEUED) {
+                            // Access progress here
+                            Log.d("Progress", "ENQUEUED")
+                        }
+                        if (workInfo.state == WorkInfo.State.BLOCKED) {
+                            // Access progress here
+                            Log.d("Progress", "BLOCKED")
+                        }
+
+                        if (workInfo.state == WorkInfo.State.CANCELLED) {
+                            // Access progress here
+                            Log.d("Progress", "CANCELLED")
+                        }
+
+                    }
+            }
+        }
+
+    }
+
+//    private fun uploadDocFeed(
+//        filePath: String,
+//        content: String,
+//        tags: MutableList<String>,
+//        numberOfPages: String,
+//        fileName: String,
+//        fileType: String
+//    ) {
+//        Log.d(
+//            TAG,
+//            "uploadDocFeed: numberOfPages $numberOfPages fileName $fileName fileType $fileType"
+//        )
+//        lifecycleScope.launch(Dispatchers.IO) {
+//            uploadWorkRequest =
+//                OneTimeWorkRequestBuilder<FeedUploadWorker>()
+//                    .setInputData(
+//                        Data.Builder()
+//                            .putString(
+//                                FeedUploadWorker.EXTRA_FILE_PATH,
+//                                filePath
+//                            )
+//                            .putString(FeedUploadWorker.CAPTION, content)
+//                            .putString(FeedUploadWorker.DURATION, durationString)
+//                            .putString(FeedUploadWorker.CONTENT_TYPE, "docs")
+//                            .putString(FeedUploadWorker.NOP, numberOfPages)
+//                            .putString(FeedUploadWorker.FILENAME, fileName)
+//                            .putString(FeedUploadWorker.FILETYPE, fileType)
+//                            .putStringArray(FeedUploadWorker.TAGS, tags.toTypedArray())
+//                            .build()
+//                    )
+//                    .build()
+//
+//            val workManager = WorkManager.getInstance(applicationContext)
+//
+//            Log.d("Upload", "Enqueuing upload work request...")
+//            workManager.enqueue(uploadWorkRequest!!)
+//
+//            lifecycleScope.launch(Dispatchers.Main) {
+//                Log.d("Progress", "Progress ...scope")
+//
+//                val workManager = WorkManager.getInstance(applicationContext)
+//                workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+//                    .observe(this@UploadFeeedActivity) { workInfo ->
+//                        Log.d("Progress", "Observer triggered!")
+//                        if (workInfo != null) {
+//                            val progress =
+//                                workInfo.progress.getInt(FeedUploadWorker.Progress, 0)
+//                            // Update your UI with the progress value
+//                            Log.d("Progress", "Progress $progress")
+//                        } else {
+//                            Log.d("Progress", "Work info is null")
+//                        }
+//
+//                        if (workInfo.state == WorkInfo.State.RUNNING) {
+//                            // Access progress here
+//                            Log.d("Progress", "Running")
+//                        }
+//                        if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+//                            // Access progress here
+//                            Log.d("Progress", "SUCCEEDED")
+//                        }
+//                        if (workInfo.state == WorkInfo.State.ENQUEUED) {
+//                            // Access progress here
+//                            Log.d("Progress", "ENQUEUED")
+//                        }
+//                        if (workInfo.state == WorkInfo.State.BLOCKED) {
+//                            // Access progress here
+//                            Log.d("Progress", "BLOCKED")
+//                        }
+//
+//                        if (workInfo.state == WorkInfo.State.CANCELLED) {
+//                            // Access progress here
+//                            Log.d("Progress", "CANCELLED")
+//                        }
+//
+//                    }
+//            }
+//        }
+//
+//    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun uploadVideoFeed(
+        filePath: MutableList<String>,
+        content: String,
+        tags: MutableList<String>,
+        durationString: String
+    ) {
+        val TAG = "uploadVideoFeed"
+
+        Log.d(
+            TAG,
+            "uploadVideoFeed: file path size ${filePath.size} duration String $durationString"
+        )
+        setFirstFrameAsThumbnail()
+        Log.d(TAG, "uploadVideoFeed: step 1")
+        val thumbnailFilePaths: ArrayList<String> = arrayListOf()
+        for (i in thumbnails) {
+            Log.i(TAG, "uploadVideoFeed: thumbnails: $i")
+            val thumbnailFile = saveBitmapToFile(i, applicationContext, generateRandomFileName())
+            val thumbnailFilePath = thumbnailFile.absolutePath
+            thumbnailFilePaths.add(thumbnailFilePath)
+        }
+        Log.d(TAG, "uploadVideoFeed: step 2")
+
+//        if (!isThumbnailClicked) {
+//        }
+        try {
+            GlobalScope.launch(Dispatchers.IO) {
+                Log.d(TAG, "uploadVideoFeed: step 3")
+
+                Log.d(TAG, "uploadVideoFeed: thumbnailFilePath $thumbnailFilePaths")
+                uploadWorkRequest =
+                    OneTimeWorkRequestBuilder<FeedUploadWorker>()
+                        .setInputData(
+                            Data.Builder()
+                                .putStringArray(
+                                    FeedUploadWorker.MULTIPLE_VIDEOS,
+                                    filePath.toTypedArray()
+                                )
+                                .putString(FeedUploadWorker.CAPTION, content)
+                                .putString(FeedUploadWorker.DURATION, durationString)
+                                .putString(FeedUploadWorker.CONTENT_TYPE, "video")
+                                .putStringArray(FeedUploadWorker.TAGS, tags.toTypedArray())
+                                .putStringArray(
+                                    FeedUploadWorker.MULTIPLE_THUMBNAILS,
+                                    thumbnailFilePaths.toTypedArray()
+                                )
+                                .build()
+                        )
+                        .build()
+
+                val workManager = WorkManager.getInstance(applicationContext)
+
+                Log.d("Upload", "Enqueuing upload work request...")
+                workManager.enqueue(uploadWorkRequest!!)
+
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Log.d("Progress", "Progress ...scope")
+
+                    val workManager = WorkManager.getInstance(applicationContext)
+                    workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+                        .observe(this@UploadFeeedActivity) { workInfo ->
+                            Log.d("Progress", "Observer triggered!")
+                            if (workInfo != null) {
+                                val progress =
+                                    workInfo.progress.getInt(FeedUploadWorker.Progress, 0)
+                                // Update your UI with the progress value
+                                Log.d("Progress", "Progress $progress")
+                            } else {
+                                Log.d("Progress", "Work info is null")
+                            }
+
+                            if (workInfo.state == WorkInfo.State.RUNNING) {
+                                // Access progress here
+                                Log.d("Progress", "Running")
+                            }
+                            if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+                                // Access progress here
+                                Log.d("Progress", "SUCCEEDED")
+                            }
+                            if (workInfo.state == WorkInfo.State.ENQUEUED) {
+                                // Access progress here
+                                Log.d("Progress", "ENQUEUED")
+                            }
+                            if (workInfo.state == WorkInfo.State.BLOCKED) {
+                                // Access progress here
+                                Log.d("Progress", "BLOCKED")
+                            }
+
+                            if (workInfo.state == WorkInfo.State.CANCELLED) {
+                                // Access progress here
+                                Log.d("Progress", "CANCELLED")
+                            }
+
+                        }
+                }
+
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "uploadVideoFeed: error because ${e.message}")
+            e.printStackTrace()
+        }
+
+
+        Log.d(TAG, "uploadVideoFeed: step 4")
+    }
+//    private fun uploadVideoFeed(
+//        filePath: String,
+//        content: String,
+//        tags: MutableList<String>,
+//        durationString: String
+//    ) {
+//
+//        if (!isThumbnailClicked) {
+//            setFirstFrameAsThumbnail()
+//        }
+//        lifecycleScope.launch(Dispatchers.IO) {
+//            val thumbnailFile = saveBitmapToFile(thumbnail, applicationContext)
+//            val thumbnailFilePath = thumbnailFile.absolutePath
+//
+//            Log.d(TAG, "uploadVideoFeed: thumbnailFilePath $thumbnailFilePath")
+//            uploadWorkRequest =
+//                OneTimeWorkRequestBuilder<FeedUploadWorker>()
+//                    .setInputData(
+//                        Data.Builder()
+//                            .putString(
+//                                FeedUploadWorker.EXTRA_FILE_PATH,
+//                                filePath
+//                            )
+//                            .putString(FeedUploadWorker.CAPTION, content)
+//                            .putString(FeedUploadWorker.DURATION, durationString)
+//                            .putString(FeedUploadWorker.CONTENT_TYPE, "video")
+//                            .putStringArray(FeedUploadWorker.TAGS, tags.toTypedArray())
+//                            .putString(FeedUploadWorker.THUMBNAIL, thumbnailFilePath)
+//                            .build()
+//                    )
+//                    .build()
+//
+//            val workManager = WorkManager.getInstance(applicationContext)
+//
+//            Log.d("Upload", "Enqueuing upload work request...")
+//            workManager.enqueue(uploadWorkRequest!!)
+//
+//            lifecycleScope.launch(Dispatchers.Main) {
+//                Log.d("Progress", "Progress ...scope")
+//
+//                val workManager = WorkManager.getInstance(applicationContext)
+//                workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+//                    .observe(this@UploadFeeedActivity) { workInfo ->
+//                        Log.d("Progress", "Observer triggered!")
+//                        if (workInfo != null) {
+//                            val progress =
+//                                workInfo.progress.getInt(FeedUploadWorker.Progress, 0)
+//                            // Update your UI with the progress value
+//                            Log.d("Progress", "Progress $progress")
+//                        } else {
+//                            Log.d("Progress", "Work info is null")
+//                        }
+//
+//                        if (workInfo.state == WorkInfo.State.RUNNING) {
+//                            // Access progress here
+//                            Log.d("Progress", "Running")
+//                        }
+//                        if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+//                            // Access progress here
+//                            Log.d("Progress", "SUCCEEDED")
+//                        }
+//                        if (workInfo.state == WorkInfo.State.ENQUEUED) {
+//                            // Access progress here
+//                            Log.d("Progress", "ENQUEUED")
+//                        }
+//                        if (workInfo.state == WorkInfo.State.BLOCKED) {
+//                            // Access progress here
+//                            Log.d("Progress", "BLOCKED")
+//                        }
+//
+//                        if (workInfo.state == WorkInfo.State.CANCELLED) {
+//                            // Access progress here
+//                            Log.d("Progress", "CANCELLED")
+//                        }
+//
+//                    }
+//            }
+//
+//        }
+//
+//
+//    }
+
+
+    private fun uploadImageFeed(filePath: String, content: String, tags: MutableList<String>) {
+        uploadWorkRequest =
+            OneTimeWorkRequestBuilder<FeedUploadWorker>()
+                .setInputData(
+                    Data.Builder()
+                        .putString(FeedUploadWorker.EXTRA_FILE_PATH, filePath)
+                        .putString(FeedUploadWorker.CAPTION, content)
+                        .putString(FeedUploadWorker.CONTENT_TYPE, "image")
+                        .putString(FeedUploadWorker.DURATION, "")
+                        .putStringArray(FeedUploadWorker.TAGS, tags.toTypedArray())
+                        .build()
+                )
+                .build()
+
+        val workManager = WorkManager.getInstance(applicationContext)
+
+        Log.d("Upload", "Enqueuing upload work request...")
+        workManager.enqueue(uploadWorkRequest!!)
+
+        lifecycleScope.launch(Dispatchers.Main) {
+            Log.d("Progress", "Progress ...scope")
+
+            val workManager = WorkManager.getInstance(applicationContext)
+            workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+                .observe(this@UploadFeeedActivity) { workInfo ->
+                    Log.d("Progress", "Observer triggered!")
+                    if (workInfo != null) {
+                        val progress =
+                            workInfo.progress.getInt(FeedUploadWorker.Progress, 0)
+                        // Update your UI with the progress value
+                        Log.d("Progress", "Progress $progress")
+                    } else {
+                        Log.d("Progress", "Work info is null")
+                    }
+
+                    if (workInfo.state == WorkInfo.State.RUNNING) {
+                        // Access progress here
+                        Log.d("Progress", "Running")
+                    }
+                    if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+                        // Access progress here
+                        Log.d("Progress", "SUCCEEDED")
+                    }
+                    if (workInfo.state == WorkInfo.State.ENQUEUED) {
+                        // Access progress here
+                        Log.d("Progress", "ENQUEUED")
+                    }
+                    if (workInfo.state == WorkInfo.State.BLOCKED) {
+                        // Access progress here
+                        Log.d("Progress", "BLOCKED")
+                    }
+
+                    if (workInfo.state == WorkInfo.State.CANCELLED) {
+                        // Access progress here
+                        Log.d("Progress", "CANCELLED")
+                    }
+
+                }
+        }
+
+    }
+
+    private fun uploadMultipleImageFeed(
+        compressedImageFiles: MutableList<File>,
+        content: String,
+        tags: MutableList<String>
+    ) {
+        Log.d(
+            TAG,
+            "uploadMultipleImageFeed: 'upload multiple files size: ${compressedImageFiles.size}"
+        )
+// Assuming compressedImageFiles is your list of compressed files
+        val multipleImagesList: MutableList<String> = mutableListOf()
+        for (compressedFile in compressedImageFiles) {
+            val compressedFilePath = compressedFile.absolutePath
+            multipleImagesList.add(compressedFilePath)
+            Log.d("CompressedFilePath", "Compressed file path: $compressedFilePath")
+            // Use compressedFilePath as needed, e.g., to display, upload, etc.
+        }
+
+        uploadWorkRequest =
+            OneTimeWorkRequestBuilder<FeedUploadWorker>()
+                .setInputData(
+                    Data.Builder()
+                        .putStringArray(
+                            FeedUploadWorker.MULTIPLE_IMAGES,
+                            multipleImagesList.toTypedArray()
+                        )
+                        .putString(FeedUploadWorker.CAPTION, content)
+                        .putString(FeedUploadWorker.CONTENT_TYPE, "multiple_images")
+                        .putString(FeedUploadWorker.DURATION, "")
+                        .putStringArray(FeedUploadWorker.TAGS, tags.toTypedArray())
+                        .build()
+                )
+                .build()
+
+        val workManager = WorkManager.getInstance(applicationContext)
+
+        Log.d("Upload", "Enqueuing upload work request...")
+        workManager.enqueue(uploadWorkRequest!!)
+
+        lifecycleScope.launch(Dispatchers.Main) {
+            Log.d("Progress", "Progress ...scope")
+
+            val workManager = WorkManager.getInstance(applicationContext)
+            workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+                .observe(this@UploadFeeedActivity) { workInfo ->
+                    Log.d("Progress", "Observer triggered!")
+                    if (workInfo != null) {
+                        val progress =
+                            workInfo.progress.getInt(FeedUploadWorker.Progress, 0)
+                        // Update your UI with the progress value
+                        Log.d("Progress", "Progress $progress")
+                    } else {
+                        Log.d("Progress", "Work info is null")
+                    }
+
+                    if (workInfo.state == WorkInfo.State.RUNNING) {
+                        // Access progress here
+                        Log.d("Progress", "Running")
+                    }
+                    if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+                        // Access progress here
+                        Log.d("Progress", "SUCCEEDED")
+                    }
+                    if (workInfo.state == WorkInfo.State.ENQUEUED) {
+                        // Access progress here
+                        Log.d("Progress", "ENQUEUED")
+                    }
+                    if (workInfo.state == WorkInfo.State.BLOCKED) {
+                        // Access progress here
+                        Log.d("Progress", "BLOCKED")
+                    }
+
+                    if (workInfo.state == WorkInfo.State.CANCELLED) {
+                        // Access progress here
+                        Log.d("Progress", "CANCELLED")
+                    }
+
+                }
+        }
+
+    }
+
+    private suspend fun extractThumbnailsFromVideos(videoUri: Uri): List<Bitmap> {
+        // Replace this with your actual implementation to extract thumbnails
+        val videoUrls = listOf(videoUri)
+        val thumbnails = mutableListOf<Bitmap>()
+
+        for (videoUrl in videoUrls) {
+            val thumbnail = extractThumbnail(videoUrl)
+            thumbnail?.let { thumbnails.addAll(it) }
+        }
+
+        return thumbnails
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE) {
+            permissionGranted = grantResults[0] == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+
+    fun saveBitmapToFile(bitmap: Bitmap, context: Context): File {
+        val fileDir = File(context.filesDir, "thumbnails")
+        if (!fileDir.exists()) {
+            fileDir.mkdirs()
+        }
+        val fileName = "thumbnail.png"
+
+        val file = File(fileDir, fileName)
+        try {
+            val stream = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            stream.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        return file
+    }
+
+    fun saveBitmapToFile(bitmap: Bitmap, context: Context, fileName: String): File {
+        // Create a directory for the thumbnails if it doesn't already exist
+        val fileDir = File(context.filesDir, "thumbnails")
+        if (!fileDir.exists()) {
+            fileDir.mkdirs()
+        }
+
+        // Create a File object with the specified file name
+        val file = File(fileDir, fileName)
+
+        try {
+            // Write the bitmap to the file
+            val stream = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            stream.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+
+        return file
+    }
+
+    private suspend fun extractThumbnail(videoUrl: Uri): List<Bitmap>? {
+        return try {
+            val retriever = MediaMetadataRetriever()
+            retriever.setDataSource(this, videoUrl)
+
+            // Get the duration of the video in milliseconds
+            val durationMs =
+                retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong()
+                    ?: 0
+
+            // Set the frame interval to 1000ms (1 second)
+            val frameIntervalMs = 1000L
+
+            val thumbnails = mutableListOf<Bitmap>()
+
+            // Iterate through each second and retrieve the frame
+            for (timeMs in 0 until durationMs step frameIntervalMs) {
+                val bitmap: Bitmap? = retriever.getFrameAtTime(
+                    timeMs * 1000,
+                    MediaMetadataRetriever.OPTION_CLOSEST_SYNC
+                )
+                bitmap?.let { thumbnails.add(it) }
+            }
+
+            // Release the MediaMetadataRetriever
+            retriever.release()
+
+            thumbnails
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun loadBitmapFromUri(uri: Uri): Bitmap {
+        return if (Build.VERSION.SDK_INT < 28) {
+            // For versions before Android 9 (API level 28)
+            MediaStore.Images.Media.getBitmap(contentResolver, uri)
+        } else {
+            // For Android 9 (API level 28) and above
+            val source = ImageDecoder.createSource(contentResolver, uri)
+            ImageDecoder.decodeBitmap(source)
+        }
+    }
+
+
+    @SuppressLint("SetTextI18n")
+    private fun handleDocumentUriToUpload(uri: Uri) {
+        // Handle the selected document URI here
+        // For example, you can retrieve the file name
+        documentUriListToUpload.add(uri.toString())
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+            cursor.moveToFirst()
+            val fileName = cursor.getString(nameIndex)
+            val fileSize = cursor.getLong(sizeIndex)
+
+            var numberOfPages = 0
+            val formattedFileSize = formatFileSize(fileSize)
+            fileType = "doc"
+
+            val fileSizes = isFileSizeGreaterThan2MB(fileSize)
+            val documentType = fileType(fileName)
+            Log.d("handleDocumentUri", ": $fileName")
+            Log.d("handleDocumentUri", "uri $uri")
+            Log.d("handleDocumentUri", "formattedFileSize $formattedFileSize")
+
+            binding.recyclerView2.visibility = View.INVISIBLE
+
+            numberOfPages = when (documentType) {
+                "doc" -> {
+                    getNumberOfPagesFromUriForDoc(uri)
+                }
+
+                "docx", "xlsx", "pptx" -> {
+                    getNumberOfPagesFromUriForDocx(uri)
+                }
+
+                else -> {
+                    getNumberOfPagesFromUriForPDF(this, uri)
+                }
+            }
+
+
+//            this.numberOfPages = numberOfPages.toString()
+//            this.fileName = fileName
+//            this.docType = documentType
+//            this.docFilePath = uri.toString()
+            documentFileNamesToUpload.add(fileName)
+            documentNumberOfPagesToUpload.add(numberOfPages.toString())
+            documentTypesToUpload.add(documentType)
+            if (documentType == "pdf") {
+                retrieveFirstPageAndSaveAsImage(this, uri)
+            }
+//            binding.content.text =
+        }
+    }
+
+    private fun handleDocumentUriToUploadReturn(uri: Uri): FeedMultipleDocumentsDataClass {
+        // Handle the selected document URI here
+        // For example, you can retrieve the file name
+        documentUriListToUpload.add(uri.toString())
+        var numberOfPages = 0
+        var formattedFileSize: String = ""
+        var documentType: String = ""
+        var fileName: String = ""
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+            cursor.moveToFirst()
+            fileName = cursor.getString(nameIndex)
+            val fileSize = cursor.getLong(sizeIndex)
+
+
+            formattedFileSize = formatFileSize(fileSize)
+            fileType = "doc"
+
+            val fileSizes = isFileSizeGreaterThan2MB(fileSize)
+            documentType = fileType(fileName)
+            Log.d("handleDocumentUri", ": $fileName")
+            Log.d("handleDocumentUri", "uri $uri")
+            Log.d("handleDocumentUri", "formattedFileSize $formattedFileSize")
+
+            binding.recyclerView2.visibility = View.INVISIBLE
+
+            numberOfPages = when (documentType) {
+                "doc" -> {
+                    getNumberOfPagesFromUriForDoc(uri)
+                }
+
+                "docx", "xlsx", "pptx" -> {
+                    getNumberOfPagesFromUriForDocx(uri)
+                }
+
+                else -> {
+                    getNumberOfPagesFromUriForPDF(this, uri)
+                }
+            }
+
+
+//            this.numberOfPages = numberOfPages.toString()
+//            this.fileName = fileName
+//            this.docType = documentType
+//            this.docFilePath = uri.toString()
+            documentFileNamesToUpload.add(fileName)
+            documentNumberOfPagesToUpload.add(numberOfPages.toString())
+            documentTypesToUpload.add(documentType)
+            if (documentType == "pdf") {
+                retrieveFirstPageAndSaveAsImage(this, uri)
+            }
+//            binding.content.text =
+
+        }
+        return FeedMultipleDocumentsDataClass(
+            uri = uri,
+            filename = fileName,
+            numberOfPages = numberOfPages.toString(),
+            documentType = documentType,
+            fileSize = formattedFileSize
+        )
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun handleDocumentUri(uri: Uri) {
+        // Handle the selected document URI here
+        // For example, you can retrieve the file name
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+            cursor.moveToFirst()
+            val fileName = cursor.getString(nameIndex)
+            val fileSize = cursor.getLong(sizeIndex)
+
+            binding.shortThumbNail.setImageResource(R.drawable.document)
+//            val numberOfPages = getNumberOfPagesFromUri(this, uri)
+            var numberOfPages = 0
+            val formattedFileSize = formatFileSize(fileSize)
+            fileType = "doc"
+
+            val fileSizes = isFileSizeGreaterThan2MB(fileSize)
+            val documentType = fileType(fileName)
+            Log.d("handleDocumentUri", ": $fileName")
+            Log.d("handleDocumentUri", "uri $uri")
+            Log.d("handleDocumentUri", "formattedFileSize $formattedFileSize")
+
+            binding.recyclerView2.visibility = View.INVISIBLE
+
+            numberOfPages = when (documentType) {
+                "doc" -> {
+                    getNumberOfPagesFromUriForDoc(uri)
+                }
+
+                "docx", "xlsx", "pptx" -> {
+                    getNumberOfPagesFromUriForDocx(uri)
+                }
+
+                else -> {
+                    getNumberOfPagesFromUriForPDF(this, uri)
+                }
+            }
+
+            binding.shortThumbNail.setPadding(0)
+            binding.shortThumbNail.colorFilter = null
+            feedUploadViewModel.setText("File name: $fileName \nFile size: $formattedFileSize \nDocument Type: $documentType \n$numberOfPages pages")
+
+            this.numberOfPages = numberOfPages.toString()
+            this.fileName = fileName
+            this.docType = documentType
+            this.docFilePath = uri.toString()
+//            retrieveFirstPageAndSaveAsImage(this, uri)
+//            binding.content.text =
+        }
+    }
+
+    private fun retrieveFirstPageAndSaveAsImage(context: Context, uri: Uri) {
+        val contentResolver = context.contentResolver
+
+        Log.i(TAG, "retrieveFirstPageAndSaveAsImage: save to bitmap")
+        try {
+            // Open a ParcelFileDescriptor from the URI
+            val parcelFileDescriptor = contentResolver.openFileDescriptor(uri, "r")
+
+            parcelFileDescriptor?.use { pfd ->
+                // Create a PdfRenderer from the ParcelFileDescriptor
+                val pdfRenderer = PdfRenderer(pfd)
+
+                // Open the first page
+                val page = pdfRenderer.openPage(0)
+
+                // Create a bitmap of the page
+                val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
+
+                // Render the page content into the bitmap
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+
+                // Close the page and the PdfRenderer
+                page.close()
+                pdfRenderer.close()
+
+                // Save bitmap to cache directory
+                saveBitmapToCache(context, bitmap)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "retrieveFirstPageAndSaveAsImage: not saved to bitmap")
+            e.printStackTrace()
+        }
+    }
+
+    // Function to save bitmap to cache directory
+    private fun saveBitmapToCache(context: Context, bitmap: Bitmap) {
+        val cacheDir = context.cacheDir // Get the cache directory
+
+        // Create a file in the cache directory
+//        val file = File(cacheDir, "first_page_image.png")
+        val file = File(cacheDir, generateRandomFileName())
+
+        try {
+            // Write the bitmap data to the file
+            FileOutputStream(file).use { fos ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
+            }
+            // Bitmap saved successfully
+            Log.d(TAG, "Bitmap saved to cache directory: ${file.absolutePath}")
+            documentThumbnailsToUpload.add(file.absolutePath)
+        } catch (e: IOException) {
+            Log.e(TAG, "saveBitmapToCache: not saved to bitmap")
+            e.printStackTrace()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun showAttachmentDialog() {
+        val dialog = BottomSheetDialog(this)
+
+        dialog.setContentView(R.layout.file_upload_dialog)
+
+        val video = dialog.findViewById<LinearLayout>(R.id.upload_video)
+        val audio = dialog.findViewById<LinearLayout>(R.id.upload_audio)
+        val image = dialog.findViewById<LinearLayout>(R.id.upload_image)
+        val camera = dialog.findViewById<LinearLayout>(R.id.open_camera)
+        val doc = dialog.findViewById<LinearLayout>(R.id.upload_doc)
+        val location = dialog.findViewById<LinearLayout>(R.id.share_location)
+        val vnRecord = dialog.findViewById<LinearLayout>(R.id.vnRecord)
+        // Apply animation to the dialog's view
+        val dialogView =
+            dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+        dialogView?.startAnimation(AnimationUtils.loadAnimation(this, R.anim.slide_up))
+
+
+        val selectableItemBackground = TypedValue()
+        image?.context?.theme?.resolveAttribute(
+            android.R.attr.selectableItemBackground, selectableItemBackground, true
+        )
+        image?.setBackgroundResource(selectableItemBackground.resourceId)
+
+
+        video?.context?.theme?.resolveAttribute(
+            android.R.attr.selectableItemBackground, selectableItemBackground, true
+        )
+        video?.setBackgroundResource(selectableItemBackground.resourceId)
+
+
+        audio?.context?.theme?.resolveAttribute(
+            android.R.attr.selectableItemBackground, selectableItemBackground, true
+        )
+        audio?.setBackgroundResource(selectableItemBackground.resourceId)
+
+
+        camera?.context?.theme?.resolveAttribute(
+            android.R.attr.selectableItemBackground, selectableItemBackground, true
+        )
+        camera?.setBackgroundResource(selectableItemBackground.resourceId)
+
+
+        doc?.context?.theme?.resolveAttribute(
+            android.R.attr.selectableItemBackground, selectableItemBackground, true
+        )
+        doc?.setBackgroundResource(selectableItemBackground.resourceId)
+
+        location?.context?.theme?.resolveAttribute(
+            android.R.attr.selectableItemBackground, selectableItemBackground, true
+        )
+        location?.setBackgroundResource(selectableItemBackground.resourceId)
+
+        vnRecord?.context?.theme?.resolveAttribute(
+            android.R.attr.selectableItemBackground, selectableItemBackground, true
+        )
+        vnRecord?.setBackgroundResource(selectableItemBackground.resourceId)
+
+        image?.setOnClickListener {
+            Log.d("SelectImage", "Image selector button clicked")
+
+            pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            dialog.dismiss()
+
+        }
+
+        video?.setOnClickListener {
+//            val intent = Intent(this@ChatActivity, DisplayVideosActivity::class.java)
+//            val intent = Intent(this@UploadFeeedActivity, VideosActivity::class.java)
+            val intent = Intent(this@UploadFeeedActivity, FeedSelectVideoActivity::class.java)
+//            dialog.dismiss()
+            videoPickerLauncher.launch(intent)
+            dialog.dismiss()
+
+        }
+
+        audio?.setOnClickListener {
+            val intent = Intent(this@UploadFeeedActivity, FeedAudioActivity::class.java)
+
+            dialog.dismiss()
+            audioPickerLauncher.launch(intent)
+
+        }
+
+        doc?.setOnClickListener {
+            openFilePicker()
+            dialog.dismiss()
+        }
+        camera?.setOnClickListener {
+            val intent = Intent(this@UploadFeeedActivity, CameraActivity::class.java)
+//            startActivity(intent)
+            cameraLauncher.launch(intent)
+            dialog.dismiss()
+        }
+
+        location?.visibility = View.GONE
+        vnRecord?.visibility = View.INVISIBLE
+        vnRecord?.setOnClickListener {
+//            showVNDialog()
+            dialog.dismiss()
+        }
+        location?.setOnClickListener {
+
+        }
+
+
+        dialog.show()
+    }
+//
+//
+
+
+    private val filePickerLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+            // Handle selected files URIs here
+            for (uri in uris) {
+                // Process each selected file URI
+            }
+        }
+
+    private val permissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+//                selectFiles()
+            } else {
+                Toast.makeText(
+                    this,
+                    "Permission denied. Cannot select files.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+    private fun checkPermissionAndSelectFiles() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            selectFiles()
+        } else {
+            permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+    }
+
+    private fun selectFiles() {
+        filePickerLauncher.launch(arrayOf("*/*"))
+    }
+
+    private fun getNumberOfPagesFromUriForPDF(context: Context, uri: Uri): Int {
+        var inputStream: InputStream? = null
+        var numberOfPages = 0
+        try {
+            inputStream = context.contentResolver.openInputStream(uri)
+            if (inputStream != null) {
+                val document = PDDocument.load(inputStream)
+                numberOfPages = document.numberOfPages
+                document.close()
+            }
+        } catch (e: Exception) {
+            // Handle exceptions
+            Log.e("getNumberOfPagesFromUri", "getNumberOfPagesFromUri ex $e")
+            e.printStackTrace()
+        } finally {
+            inputStream?.close()
+        }
+        return numberOfPages
+    }
+
+    private fun getNumberOfPagesFromUriForDoc(uri: Uri): Int {
+        var numberOfPages = 0
+        val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return 0
+        val hwpfDocument = HWPFDocument(inputStream)
+        val range = hwpfDocument.range
+
+        // Count the paragraphs within the range
+        val paragraphs = Range(range.startOffset, range.endOffset, hwpfDocument).numParagraphs()
+        numberOfPages = paragraphs
+
+        hwpfDocument.close()
+        inputStream.close()
+
+        return numberOfPages
+
+    }
+
+    private fun getNumberOfPagesFromUriForDocx(uri: Uri): Int {
+        var numberOfPages = 0
+        val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return 0
+        val xwpfDocument = XWPFDocument(inputStream)
+
+        // Count the paragraphs or sections in the document
+        numberOfPages = xwpfDocument.paragraphs.size
+
+        xwpfDocument.close()
+        inputStream.close()
+
+        return numberOfPages
+
+    }
+
+    @Deprecated("This method has been deprecated in favor of using the Activity Result API\n      which brings increased type safety via an {@link ActivityResultContract} and the prebuilt\n      contracts for common intents available in\n      {@link androidx.activity.result.contract.ActivityResultContracts}, provides hooks for\n      testing, and allow receiving results in separate, testable classes independent from your\n      activity. Use\n      {@link #registerForActivityResult(ActivityResultContract, ActivityResultCallback)}\n      with the appropriate {@link ActivityResultContract} and handling the result in the\n      {@link ActivityResultCallback#onActivityResult(Object) callback}.")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == UploadShortsActivity.REQUEST_TOPICS_ACTIVITY) {
+            if (resultCode == Activity.RESULT_OK) {
+                // Handle the result when TopicsActivity returns RESULT_OK
+                // You can use data to retrieve any additional information passed back
+                // For example, val resultValue = data?.getStringExtra("keyName")
+                val selectedSubtopics = data?.getStringArrayListExtra("selectedSubtopics")
+//                Log.d("selectedSubtopics", selectedSubtopics.toString())
+//                binding.editTextText.setText(selectedSubtopics.toString())
+
+                val formattedSubtopics = selectedSubtopics?.joinToString(" ") { "#$it" }
+                // Get the current text from the EditText
+                val currentText = binding.editTextText.text?.toString() ?: ""
+
+//                tags.add(selectedSubtopics.toString())
+
+                selectedSubtopics?.let { subtopics ->
+                    for (subtopic in subtopics) {
+                        tags.add(subtopic)
+                    }
+                }
+// Define a regex pattern to match text starting with #
+                val cleanedText = currentText.replace(Regex("#[^\\s]*"), "")
+
+                val finalText = feedRemoveTextStartingWithHash(currentText)
+// Optionally, trim any extra spaces that might be left
+
+                text = finalText
+                // Set the formatted subtopics to the EditText
+//                binding.editTextText.setText(formattedSubtopics)
+                val updatedText = if (currentText.isEmpty()) {
+                    formattedSubtopics ?: ""
+                } else {
+                    "$currentText \n\n$formattedSubtopics"
+                }
+
+                // Set the updated text to the EditText
+                binding.editTextText.setText(updatedText)
+
+            } else {
+                // Handle other result codes if needed
+            }
+        }
+    }
+
+    private fun cancelShortsUpload() {
+        binding.cancelButton.setOnClickListener {
+            finish()
+        }
+    }
+
+    private fun backFromShortsUpload() {
+        binding.backButton.setOnClickListener {
+            finish()
+        }
+    }
+
+
+    override fun onDestroy() {
+
+        super.onDestroy()
+//        if (::playVnAudioBtn.isInitialized) {
+//            stopPlaying()
+//            stopRecording()
+//            stopRecordWaveRunnable()
+//        }
+
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun compressFeedVideo(
+        onSuccess: (String) -> Unit,
+        onCompletion: () -> Unit
+    ) {
+//        binding.mainContents.visibility = View.VISIBLE
+        val uniqueId = UniqueIdGenerator.generateUniqueId()
+        Log.d("progress id", uniqueId)
+        Log.d("toCompressUris", "toCompressUris $toCompressUris")
+
+        lifecycleScope.launch {
+            VideoCompressor.start(
+                context = applicationContext,
+                toCompressUris,
+                isStreamable = true,
+                sharedStorageConfiguration = SharedStorageConfiguration(
+                    saveAt = SaveLocation.movies,
+                    subFolderName = "flash_feed_video_compresses"
+                ),
+//                appSpecificStorageConfiguration = AppSpecificStorageConfiguration(
+//
+//                ),
+                configureWith = Configuration(
+                    quality = VideoQuality.MEDIUM,
+//                    videoNames = uris.map { uri -> uri.pathSegments.last() },
+                    videoNames = toCompressUris.map { uri -> uri.pathSegments.last() },
+//                    videoNames = listOf("compressed_short"),
+                    isMinBitrateCheckEnabled = false,
+                ),
+
+                listener = object : CompressionListener {
+                    override fun onProgress(index: Int, percent: Float) {
+
+                        //Update UI
+                        if (percent <= 100) {
+                            Log.d("Compress", "Progress: $percent")
+                            EventBus.getDefault()
+                                .post(ProgressEvent("uniqueIdVideo", percent.toInt()))
+
+                        }
+                    }
+
+                    override fun onStart(index: Int) {
+
+
+                    }
+
+                    override fun onSuccess(index: Int, size: Long, path: String?) {
+
+                        Log.d(
+                            "compressFeedVideo",
+                            "compressFeedVideo file size: ${getFileSize(size)}"
+                        )
+                        Log.d("compressFeedVideo", "compressFeedVideo path: $path")
+
+                        if (path != null) {
+                            onSuccess(path)
+                        }
+                        toCompressUris.clear()
+
+// Execute the completion callback
+                        onCompletion()
+                    }
+
+                    override fun onFailure(index: Int, failureMessage: String) {
+                        Log.wtf("Compress", failureMessage)
+                    }
+
+                    override fun onCancelled(index: Int) {
+                        Log.wtf("Compress", "compression has been cancelled")
+                        // make UI changes, cleanup, etc
+                    }
+
+                },
+
+                )
+        }
+    }
+
+
+    override fun onProgress(progress: Int) {
+        Log.d(TAG, "Progress: $progress%")
+        EventBus.getDefault().post(ProgressEvent("uniqueIdAudio", progress))
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    override fun onImageClick() {
+        showAttachmentDialog()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    override fun onAudioClick() {
+        showAttachmentDialog()
+    }
+
+    @SuppressLint("SetTextI18n")
+    override fun onAudioDisplay(details: MultipleAudios) {
+        Log.d(TAG, "onAudioDisplay details: $details")
+//        feedUploadViewModel.setText("File name: ${details.fileName} \nDuration: ${details.audioDuration}")
+
+//        binding.content.text = "File name: ${details.fileName} \nDuration: ${details.audioDuration}"
+//        val handler = Handler(Looper.getMainLooper())
+//
+//        handler.postDelayed({
+//            binding.content.text = feedUploadViewModel.displayText.toString()
+//        }, 500)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    override fun onVideoClick() {
+        showAttachmentDialog()
+
+    }
+
+    private fun setupRecyclerView(videoThumbnails: List<Bitmap>, videoDetails: FeedMultipleVideos) {
+        val layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+
+
+        val adapter = FeedVideoThumbnailAdapter(videoThumbnails, this)
+        adapter.setVideoDetails(videoDetails)
+        binding.recyclerView2.visibility = View.VISIBLE
+//        val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
+        binding.recyclerView2.layoutManager = layoutManager
+        binding.recyclerView2.adapter = adapter
+    }
+
+    private fun getAllVideos(videosList: MutableList<MixedFeedUploadDataClass>): ArrayList<FeedMultipleVideos> {
+//        return videosList.filter { it.videos != null }.map {
+//            it.videos
+//        }
+        return videosList
+            .mapNotNull { it.videos } // Filter out null values and map to FeedMultipleVideos
+            .let { ArrayList(it) } // Convert the List to ArrayList
+    }
+
+    override fun onThumbnailClick(thumbnail: Bitmap, videoDetails: FeedMultipleVideos) {
+        Log.d(TAG, "onThumbnailClick: ")
+        var allVideos: ArrayList<FeedMultipleVideos> = arrayListOf()
+//        var allVideos2: MutableList<MixedFeedUploadDataClass> = mutableListOf()
+
+        var feedAllVideos = feedUploadViewModel.getMixedFeedUploadDataClass()
+        if (!addMoreFeedFiles) {
+            allVideos = multipleSelectedFeedVideoAdapter.getVideoDetails()
+        } else {
+//            allVideos2 = multipleFeedFilesPagerAdapter?.getVideoDetails()!!
+            allVideos = getAllVideos(feedAllVideos)
+        }
+
+
+
+        videoDetails.thumbnail = thumbnail
+        val videoToUpdate = allVideos.indexOfFirst { it.videoUri == videoDetails.videoUri }
+
+
+//        videoToUpdate = videoDetails
+        if (!addMoreFeedFiles) {
+            multipleSelectedFeedVideoAdapter.updateSelectedVideo(videoToUpdate, videoDetails)
+        } else {
+            Log.d(
+                TAG,
+                "onThumbnailClick: update selected videoToUpdate $videoToUpdate, video details $videoDetails"
+            )
+            val feedVideoToUpdate =
+                feedAllVideos.indexOfFirst { (it.videos?.videoUri ?: "") == videoDetails.videoUri }
+            val feedVideoToUpdates =
+                feedAllVideos.find { (it.videos?.videoUri ?: "") == videoDetails.videoUri }
+            if (feedVideoToUpdates != null) {
+                feedVideoToUpdates.videos = videoDetails
+            }
+            if (feedVideoToUpdates != null) {
+                feedUploadViewModel.updateMixedFeedUploadDataClass(
+                    feedVideoToUpdate,
+                    feedVideoToUpdates
+                )
+            }
+            multipleFeedFilesPagerAdapter?.updateSelectedVideo(videoToUpdate, videoDetails)
+        }
+
+//
+//        isThumbnailClicked = true
+//        Glide.with(this)
+//            .load(thumbnail)
+//            .into(binding.shortThumbNail)
+
+
+        this.thumbnail = thumbnail
+
+    }
+
+    override fun onVideoDisplay(details: FeedMultipleVideos) {
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    override fun onDocumentClickListener() {
+        showAttachmentDialog()
+    }
+}
+

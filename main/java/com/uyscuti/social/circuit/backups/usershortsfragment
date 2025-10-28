@@ -1,0 +1,329 @@
+package com.uyscut.flashdesign.ui.fragments.user_profile_fragments
+
+import android.content.Intent
+import android.graphics.drawable.AnimationDrawable
+import android.os.Bundle
+import android.os.Handler
+import android.util.Log
+import androidx.fragment.app.Fragment
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.DefaultItemAnimator
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.uyscut.core.common.data.room.entity.ShortsEntity
+import com.uyscut.flashdesign.R
+import com.uyscuti.social.circuit.adapter.ShortsAdapter
+import com.uyscuti.social.circuit.adapter.ShortsUserProfileAdapter
+import com.uyscuti.social.circuit.model.CancelShortsUpload
+import com.uyscuti.social.circuit.model.ProgressEvent
+import com.uyscuti.social.circuit.model.UserProfileShortsStartGet
+import com.uyscuti.social.circuit.presentation.UserShortsViewModel
+import com.uyscuti.social.circuit.service.VideoPreLoadingService
+import com.uyscuti.social.circuit.ui.fragments.SHORTS
+import com.uyscuti.social.circuit.utils.Constants
+import com.uyscut.network.api.response.getallshorts.Post
+import com.uyscut.network.api.retrofit.instance.RetrofitInstance
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
+import retrofit2.HttpException
+import java.io.IOException
+import javax.inject.Inject
+
+// TODO: Rename parameter arguments, choose names that match
+// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+private const val ARG_PARAM1 = "param1"
+private const val ARG_PARAM2 = "param2"
+
+/**
+ * A simple [Fragment] subclass.
+ * Use the [UserShortsFragment.newInstance] factory method to
+ * create an instance of this fragment.
+ */
+@AndroidEntryPoint
+class UserShortsFragment : Fragment() {
+    // TODO: Rename and change types of parameters
+    private var param1: String? = null
+    private var param2: String? = null
+
+    //    private lateinit var
+    private var isLoading = false
+    private var isLastPage = false
+    private var currentPage = 1
+    @Inject
+    lateinit var retrofitIns: RetrofitInstance
+    private lateinit var shortsAdapter: ShortsUserProfileAdapter
+    private var shortsList = ArrayList<String>()
+    private lateinit var profileShortsAdapterRecyclerView: RecyclerView
+
+    private var gridLayoutManager: GridLayoutManager? = null
+
+    private var loadMoreJob: Job? = null
+
+    private val viewModel: UserShortsViewModel by viewModels()
+
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            param1 = it.getString(ARG_PARAM1)
+            param2 = it.getString(ARG_PARAM2)
+        }
+        EventBus.getDefault().register(this)
+
+        viewModel.shortsData.observe(this) { shorts ->
+            // Update your RecyclerView adapter here
+            shortsAdapter.addData(shorts)
+            isLoading = false
+            isLastPage = shorts.isEmpty()
+        }
+    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        // Inflate the layout for this fragment
+        val view = inflater.inflate(R.layout.fragment_user_shorts, container, false)
+        GlobalScope.launch(Dispatchers.IO) {
+//            loadMoreShorts(currentPage)
+        }
+
+        viewModel.shortsData.observe(viewLifecycleOwner) { shortsEntity ->
+            shortsEntity?.let {
+                // Update your UI with the new data
+                shortsAdapter.addData(it)
+            }
+        }
+        viewModel.showToast.observe(viewLifecycleOwner) { message ->
+            message?.let {
+                showToast(it)
+            }
+        }
+
+        // Initial load
+        lifecycleScope.launch(Dispatchers.IO) {
+            delay(1000)
+            viewModel.loadMoreShorts()
+        }
+        shortsAdapter = ShortsUserProfileAdapter(requireContext())
+        profileShortsAdapterRecyclerView = view.findViewById(R.id.userShortsRecyclerView)
+        gridLayoutManager = GridLayoutManager(requireContext(), 3)
+
+        profileShortsAdapterRecyclerView.layoutManager = gridLayoutManager
+        profileShortsAdapterRecyclerView.itemAnimator = DefaultItemAnimator()
+        profileShortsAdapterRecyclerView.addItemDecoration(
+            DividerItemDecoration(context, gridLayoutManager!!.orientation)
+        )
+        profileShortsAdapterRecyclerView.adapter = shortsAdapter
+        profileShortsAdapterRecyclerView.addOnScrollListener(object :
+            RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val visibleItemCount = gridLayoutManager?.childCount ?: 0
+                val totalItemCount = gridLayoutManager?.itemCount ?: 0
+                val pastVisibleItems = gridLayoutManager?.findFirstVisibleItemPosition() ?: 0
+
+                if (!viewModel.isLoading && !viewModel.isLastPage) {
+                    if (visibleItemCount + pastVisibleItems >= totalItemCount) {
+                        currentPage++
+                        try {
+                            lifecycleScope.launch {
+                                delay(1000)
+                                viewModel.loadMoreShorts()
+                            }
+                        }catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+
+                    }
+                }
+            }
+        })
+//        profileShortsAdapterRecyclerView.addOnScrollListener(object :
+//            RecyclerView.OnScrollListener() {
+//            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+//                super.onScrolled(recyclerView, dx, dy)
+//                val visibleItemCount = gridLayoutManager?.childCount ?: 0
+//                val totalItemCount = gridLayoutManager?.itemCount ?: 0
+//                val pastVisibleItems = gridLayoutManager?.findFirstVisibleItemPosition() ?: 0
+//
+//                if (!isLoading && !isLastPage) {
+//                    if (visibleItemCount + pastVisibleItems >= totalItemCount) {
+//                        currentPage++
+//                        loadMoreJob?.cancel()
+//                        GlobalScope.launch(Dispatchers.IO) {
+////                            delay(200)
+//                            loadMoreShorts(currentPage)
+//                        }
+//
+//                        val handler = Handler()
+//
+//                    }
+//                }
+//            }
+//        })
+        // Initial load
+        lifecycleScope.launch(Dispatchers.IO) {
+//            loadMoreShorts(currentPage)
+        }
+        return view
+    }
+
+
+    @OptIn(DelicateCoroutinesApi::class)
+    private suspend fun loadMoreShorts(currentPage: Int) {
+        isLoading = true
+        try {
+            val response = retrofitIns.apiService.myShorts(currentPage.toString())
+
+            if (response.isSuccessful) {
+                val responseBody = response.body()
+                Log.d("AllShorts", "Shorts List in page $currentPage ${responseBody?.data}")
+
+
+                val shortsEntity = responseBody?.data?.posts?.let { serverResponseToEntity(it) }
+
+                // Now, insert yourEntity into the Room database
+                if (shortsEntity != null) {
+
+
+                    GlobalScope.launch(Dispatchers.IO) {
+//                      shortsViewModel.addAllShorts(shortsEntity)
+
+                        for (entity in shortsEntity) {
+                            // Access the list of images for each entity
+                            val images = entity.images
+//                            videoShorts.add(entity)
+
+                            // Iterate through the list of images
+                            for (image in images) {
+                                // Access individual image properties or perform any desired actions
+                                val imageUrl = image.url
+                                Log.d(SHORTS, "imageUrl - $imageUrl")
+                                shortsList.add(imageUrl)
+//                                viewPager.offscreenPageLimit = viewpager2Limit + 10
+
+//                                EventBus.getDefault().post(ShortsCacheEvent(shortsList))
+
+                                // Do something with the imageUrl...
+                            }
+                        }
+//                        viewPager.offscreenPageLimit = 21
+//                        startPreLoadingService()
+                        withContext(Dispatchers.Main) {
+                            isLoading = false
+                            shortsAdapter.addData(shortsEntity)
+                            isLastPage = shortsEntity.isEmpty()
+                        }
+
+                    }
+//
+//                    Log.d(SHORTS, "Data added to local database - $shortsEntity")
+                } else {
+                    Log.d(SHORTS, "failed to add shorts to local database")
+                    isLoading = false
+                }
+//                Log.d(SHORTS, "Handle the updated list of persons")
+//                shortsViewModel.addAllShorts(personList)
+
+            } else {
+                Log.d("AllShorts", "Error: ${response.message()}")
+                isLoading = false
+                requireActivity().runOnUiThread {
+                    showToast(response.message())
+                }
+            }
+
+        } catch (e: HttpException) {
+            Log.d("AllShorts", "Http Exception ${e.message}")
+            requireActivity().runOnUiThread {
+                showToast("Failed to connect try again...")
+            }
+        } catch (e: IOException) {
+            Log.d("AllShorts", "IOException ${e.message}")
+            requireActivity().runOnUiThread {
+                showToast("Failed to connect try again...")
+            }
+        }
+    }
+
+    companion object {
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment UserShortsFragment.
+         */
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            UserShortsFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
+    fun showToast(message: String) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun serverResponseToEntity(serverResponse: List<Post>): List<ShortsEntity> {
+        return serverResponse.map { serverResponseItem ->
+            ShortsEntity(
+                __v = serverResponseItem.__v,
+                _id = serverResponseItem._id,
+                content = serverResponseItem.content,
+                author = serverResponseItem.author,
+                comments = serverResponseItem.comments,
+                createdAt = serverResponseItem.createdAt,
+                images = serverResponseItem.images,
+                isBookmarked = serverResponseItem.isBookmarked,
+                isLiked = serverResponseItem.isLiked,
+                likes = serverResponseItem.likes,
+                tags = serverResponseItem.tags,
+                updatedAt = serverResponseItem.updatedAt
+                // map other properties...
+            )
+        }
+    }
+
+    private fun startPreLoadingService() {
+        Log.d(SHORTS, "Preloading called")
+        val preloadingServiceIntent = Intent(requireContext(), VideoPreLoadingService::class.java)
+        preloadingServiceIntent.putStringArrayListExtra(Constants.VIDEO_LIST, shortsList)
+        requireContext().startService(preloadingServiceIntent)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        EventBus.getDefault().unregister(this)
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onUserProfileShorts(event: UserProfileShortsStartGet) {
+//      loadMoreShorts(1)
+        Log.d("onProgressEvent", "onProgressEvent: you can load shorts")
+    }
+}
+

@@ -1,0 +1,151 @@
+<resources>
+    <dimen name="fab_margin">16dp</dimen>
+    <dimen name="icon_radius">20dp</dimen>
+    <dimen name="dialog_radius">28dp</dimen>
+    <dimen name="sender_radius">12dp</dimen>
+    <dimen name="badge_text_size">12dp</dimen>
+    <dimen name="feed_new_margin_bottom">0dp</dimen>
+    <dimen name="feed_reset_margin_bottom">70dp</dimen>
+    <dimen name="spacing_between_drawable_and_badge">2dp</dimen>
+
+
+    <dimen name="max_image_width">300dp</dimen>
+    <dimen name="max_image_height">450dp</dimen>
+
+    <dimen name="your_fixed_peek_height">300dp</dimen>
+
+    <dimen name="action_icon_size">26dp</dimen>
+    <dimen name="action_text_size">12sp</dimen>
+    <dimen name="action_text_margin">5dp</dimen>
+    <dimen name="action_item_padding">4dp</dimen>
+    <dimen name="action_bar_padding_vertical">12dp</dimen>
+
+    <dimen name="min_scrollable_height">600dp</dimen>
+    <dimen name="card_elevation">2dp</dimen>
+    <dimen name="card_corner_radius">8dp</dimen>
+
+    <!-- Header -->
+    <dimen name="header_height">56dp</dimen>
+    <dimen name="header_padding_horizontal">16dp</dimen>
+    <dimen name="header_button_size">32dp</dimen>
+    <dimen name="header_text_size">18sp</dimen>
+
+    <!-- Content -->
+    <dimen name="content_padding">16dp</dimen>
+    <dimen name="profile_image_size">48dp</dimen>
+    <dimen name="username_text_size">16sp</dimen>
+    <dimen name="handle_text_size">14sp</dimen>
+    <dimen name="timestamp_text_size">12sp</dimen>
+    <dimen name="follow_button_width">70dp</dimen>
+    <dimen name="follow_button_height">30dp</dimen>
+    <dimen name="button_text_size">13sp</dimen>
+
+    <!-- Text sizes -->
+    <dimen name="post_text_size">16sp</dimen>
+    <dimen name="body_text_size">14sp</dimen>
+    <dimen name="hashtag_text_size">14sp</dimen>
+
+    <!-- Quoted content -->
+    <dimen name="quoted_profile_size">36dp</dimen>
+    <dimen name="quoted_username_size">14sp</dimen>
+    <dimen name="quoted_handle_size">12sp</dimen>
+    <dimen name="quoted_timestamp_size">12sp</dimen>
+    <dimen name="quoted_body_size">14sp</dimen>
+    <dimen name="quoted_hashtag_size">13sp</dimen>
+
+    <!-- Media -->
+    <dimen name="media_max_height">300dp</dimen>
+    <dimen name="quoted_media_max_height">250dp</dimen>
+    <dimen name="legacy_image_height">200dp</dimen>
+
+    <!-- Spacing -->
+    <dimen name="xsmall_margin">2dp</dimen>
+    <dimen name="small_margin">4dp</dimen>
+    <dimen name="medium_margin">8dp</dimen>
+    <dimen name="large_margin">16dp</dimen>
+
+    <dimen name="margin_xsmall">4dp</dimen>
+    <dimen name="margin_small">-10dp</dimen>
+    <dimen name="margin_medium">12dp</dimen>
+    <dimen name="margin_large">16dp</dimen>
+
+    <dimen name="text_small">12sp</dimen>
+    <dimen name="text_medium">15sp</dimen>
+    <dimen name="text_large">18sp</dimen>
+    <dimen name="icon_size">28dp</dimen>
+
+    <dimen name="seekbar_min_height">24dp</dimen>
+    <dimen name="seekbar_max_height">48dp</dimen>
+    <dimen name="dimen_12">12dp</dimen>
+
+
+        <!-- Content margins and max width -->
+        <dimen name="content_margin_horizontal">16dp</dimen>
+        <dimen name="max_content_width">600dp</dimen>
+
+        <!-- Video thumbnail dimensions -->
+        <dimen name="video_thumbnail_min_height">200dp</dimen>
+        <dimen name="video_thumbnail_max_height">400dp</dimen>
+        <dimen name="video_thumbnail_max_width">300dp</dimen>
+
+        <!-- Section margins -->
+        <dimen name="section_margin_top">16dp</dimen>
+        <dimen name="bottom_margin">16dp</dimen>
+
+        <!-- Text sizes -->
+        <dimen name="section_text_size">16sp</dimen>
+        <dimen name="caption_text_size">14sp</dimen>
+        <dimen name="icon_text_size">11sp</dimen>
+
+        <!-- Button dimensions -->
+        <dimen name="button_height">44dp</dimen>
+        <dimen name="button_min_width">120dp</dimen>
+        <dimen name="button_margin">12dp</dimen>
+        <dimen name="button_padding">12dp</dimen>
+        <dimen name="button_padding_horizontal">24dp</dimen>
+
+        <!-- Icon dimensions -->
+
+        <dimen name="icon_margin_bottom">6dp</dimen>
+        <dimen name="icon_option_padding">12dp</dimen>
+
+        <!-- Other dimensions -->
+
+        <dimen name="edittext_padding">12dp</dimen>
+        <dimen name="cover_recyclerview_height">60dp</dimen>
+        <dimen name="caption_min_height">120dp</dimen>
+
+    <dimen name="space_between_items">4dp</dimen>
+    <dimen name="default_margin">8dp</dimen>
+    <dimen name="max_media_height">300dp</dimen>
+
+
+    <!-- QR Dialog Dimensions -->
+    <dimen name="qr_dialog_padding">24dp</dimen>
+    <dimen name="qr_dialog_margin">16dp</dimen>
+    <dimen name="qr_dialog_corner_radius">16dp</dimen>
+
+    <!-- Profile Image Dimensions -->
+
+    <dimen name="profile_image_border_width">3dp</dimen>
+    <dimen name="verification_badge_size">24dp</dimen>
+
+    <!-- QR Code Dimensions -->
+    <dimen name="qr_code_size">300dp</dimen>
+    <dimen name="qr_code_padding">16dp</dimen>
+    <dimen name="qr_card_elevation">4dp</dimen>
+    <dimen name="qr_card_corner_radius">16dp</dimen>
+
+    <!-- Text Dimensions -->
+    <dimen name="dialog_title_text_size">20sp</dimen>
+    <dimen name="instruction_text_size">14sp</dimen>
+
+    <!-- Spacing -->
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_small">8dp</dimen>
+    <dimen name="spacing_medium">16dp</dimen>
+    <dimen name="spacing_large">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
+
+
+</resources>

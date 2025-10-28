@@ -1,0 +1,543 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/privacySettingsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        tools:context=".ui.PrivacySettingsActivity">
+
+        <!-- Save Button -->
+        <!-- Header Section -->
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/saveButton"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:text="Save Privacy Settings"
+            android:textAllCaps="false"
+            app:cornerRadius="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.961"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/headerTitle"
+            app:layout_constraintVertical_bias="0.0" />
+
+        <TextView
+            android:id="@+id/headerTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Privacy Settings"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:padding="16dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <!-- Account Privacy Section -->
+        <TextView
+            android:id="@+id/accountPrivacyHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Account Privacy"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/gray_dark"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/headerTitle"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/accountTypeLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/accountPrivacyHeader">
+
+            <TextView
+                android:id="@+id/accountTypeLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Account Type"
+                android:textColor="@color/gray_dark"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/accountTypeSelection"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/accountTypeDescription"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Choose who can see your content"
+                android:textColor="@color/blueJeans"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/accountTypeLabel"
+                app:layout_constraintEnd_toStartOf="@id/accountTypeSelection"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/accountTypeSelection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true"
+                app:selectionRequired="true"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/publicAccountButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:text="Public"
+                    android:textSize="12sp"
+                    app:cornerRadius="8dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/privateAccountButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:text="Private"
+                    android:textSize="12sp"
+                    app:cornerRadius="8dp" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/activityStatusSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show Activity Status"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/accountTypeLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp" />
+
+        <View
+            android:id="@+id/divider1"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/activityStatusSwitch" />
+
+        <!-- Content Interactions Section -->
+        <TextView
+            android:id="@+id/interactionsHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Interactions"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/divider1"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/commentControlLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/interactionsHeader">
+
+            <TextView
+                android:id="@+id/commentControlLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Comments on Your Posts"
+                android:textColor="@color/gray_dark"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/commentControlArrow"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/commentControlSetting"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Everyone"
+                android:textColor="@color/blueJeans"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/commentControlLabel"
+                app:layout_constraintEnd_toStartOf="@id/commentControlArrow"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <ImageView
+                android:id="@+id/commentControlArrow"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/baseline_arrow_back_black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/taggingControlLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/commentControlLayout">
+
+            <TextView
+                android:id="@+id/taggingControlLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Tags and Mentions"
+                android:textColor="@color/gray_dark"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/taggingControlArrow"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/taggingControlSetting"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Followers only"
+                android:textColor="@color/blueJeans"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/taggingControlLabel"
+                app:layout_constraintEnd_toStartOf="@id/taggingControlArrow"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <ImageView
+                android:id="@+id/taggingControlArrow"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/baseline_arrow_back_black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/likeCountsSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hide Like Counts"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/taggingControlLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp"
+            />
+
+        <View
+            android:id="@+id/divider2"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/likeCountsSwitch" />
+
+        <!-- Story & Content Privacy -->
+        <TextView
+            android:id="@+id/storyPrivacyHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Story Privacy"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/divider2"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/storyViewersLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/storyPrivacyHeader">
+
+            <TextView
+                android:id="@+id/storyViewersLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Who Can See Your posts"
+                android:textColor="@color/gray_dark"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/storyViewersArrow"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/storyViewersSetting"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="All followers"
+                android:textColor="@color/blueJeans"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/storyViewersLabel"
+                app:layout_constraintEnd_toStartOf="@id/storyViewersArrow"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <ImageView
+                android:id="@+id/storyViewersArrow"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/baseline_arrow_back_black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/allowRepostSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Allow Others to Repost Your Content"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/storyViewersLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp"
+             />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/hideLocationSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hide Location Data"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/allowRepostSwitch"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp"
+             />
+
+        <View
+            android:id="@+id/divider3"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/hideLocationSwitch" />
+
+        <!-- Blocking & Restrictions -->
+        <TextView
+            android:id="@+id/blockRestrictHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Blocking &amp; Restrictions"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/divider3"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/blockedAccountsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/blockRestrictHeader">
+
+            <TextView
+                android:id="@+id/blockedAccountsLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Blocked Accounts"
+                android:textColor="@color/gray_dark"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/blockedAccountsArrow"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/blockedAccountsCount"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="0 accounts"
+                android:textColor="@color/blueJeans"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/blockedAccountsLabel"
+                app:layout_constraintEnd_toStartOf="@id/blockedAccountsArrow"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <ImageView
+                android:id="@+id/blockedAccountsArrow"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/baseline_arrow_back_black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/restrictedAccountsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/blockedAccountsLayout">
+
+            <TextView
+                android:id="@+id/restrictedAccountsLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Restricted Accounts"
+                android:textColor="@color/gray_dark"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/restrictedAccountsArrow"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/restrictedAccountsDescription"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Limit interactions without blocking"
+                android:textColor="@color/blueJeans"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/restrictedAccountsLabel"
+                app:layout_constraintEnd_toStartOf="@id/restrictedAccountsArrow"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <ImageView
+                android:id="@+id/restrictedAccountsArrow"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/baseline_arrow_back_black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/mutedAccountsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+
+            app:layout_constraintTop_toBottomOf="@id/restrictedAccountsLayout">
+
+            <TextView
+                android:id="@+id/mutedAccountsLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Muted Accounts"
+                android:textColor="@color/gray_dark"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/mutedAccountsArrow"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/mutedAccountsDescription"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Hide content without unfollowing"
+                android:textColor="@color/blueJeans"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/mutedAccountsLabel"
+                app:layout_constraintEnd_toStartOf="@id/mutedAccountsArrow"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <ImageView
+                android:id="@+id/mutedAccountsArrow"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/baseline_arrow_back_black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <View
+            android:id="@+id/divider4"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/mutedAccountsLayout" />
+
+        <!-- Data Privacy Section -->
+        <TextView
+            android:id="@+id/dataPrivacyHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Data Privacy"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/divider4"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/adTrackingSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Limit Ad Tracking"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/dataPrivacyHeader"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp"
+            />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/dataDownloadLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/adTrackingSwitch">
+
+            <TextView
+                android:id="@+id/dataDownloadLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Download Your Data"
+                android:textColor="@color/gray_dark"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/dataDownloadArrow"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/dataDownloadDescription"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Get a copy of your information"
+                android:textColor="@color/blueJeans"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/dataDownloadLabel"
+                app:layout_constraintEnd_toStartOf="@id/dataDownloadArrow"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <ImageView
+                android:id="@+id/dataDownloadArrow"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/baseline_arrow_back_black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.core.widget.NestedScrollView>

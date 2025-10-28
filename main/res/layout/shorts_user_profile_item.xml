@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="500dp">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="1dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/round_user"
+        android:adjustViewBounds="true"
+        android:id="@+id/thumbnailImageView"/>
+
+    <ImageView
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/play_svgrepo_com"
+        android:layout_alignBottom="@id/thumbnailImageView"
+        android:id="@+id/played"
+        />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@id/thumbnailImageView"
+        android:text="1K"
+        android:layout_marginStart="2dp"
+        android:layout_toRightOf="@id/played"
+        />
+</RelativeLayout>

@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/feedDocLayout"
+    xmlns:expandableTextView="http://schemas.android.com/tools">
+
+    <!-- res/layout/item_text.xml -->
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:contentDescription="@string/content_description"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginHorizontal="50dp"
+        android:layout_marginVertical="10dp"
+        android:src="@drawable/documents"
+        android:id="@+id/profileImageView"
+        />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:textSize="18sp"
+        android:id="@+id/textView"
+        app:layout_constraintLeft_toRightOf="@id/profileImageView"
+        android:layout_marginHorizontal="10dp"
+        android:text="Username"
+        app:layout_constraintTop_toTopOf="@id/profileImageView"
+        app:layout_constraintBottom_toBottomOf="@id/profileImageView"
+        />
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/followButton"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:textAllCaps="false"
+        android:background="@drawable/feed_follow_button_border"
+        android:text="Follow"
+        app:layout_constraintLeft_toRightOf="@id/textView"
+        app:layout_constraintTop_toTopOf="@id/textView"
+        app:layout_constraintBottom_toBottomOf="@id/textView"
+        android:layout_marginStart="10dp"
+        android:textColor="@color/black"
+        />
+<!--    <net.expandable.ExpandableTextView-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        app:layout_constraintTop_toBottomOf="@id/profileImageView"-->
+<!--        app:layout_constraintLeft_toLeftOf="parent"-->
+<!--        android:text="ctetur adipiscing elit, sed do eiusmod ghgfdgfd tempor"-->
+<!--        android:textSize="16sp"-->
+<!--        app:collapse_lines="3"-->
+<!--        app:collapsedLines="3"-->
+<!--        app:expanded="false"-->
+<!--        android:layout_marginTop="30dp"-->
+<!--        android:layout_marginStart="50dp"-->
+<!--        android:justificationMode="inter_word"-->
+<!--        android:layout_marginEnd="20dp"-->
+<!--        android:id="@+id/caption"-->
+<!--        />-->
+    <com.colormoon.readmoretextview.ReadMoreTextView
+        android:id="@+id/caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="16sp"
+        app:trimExpandedText=""
+        app:trimCollapsedText="@string/read_more"
+        app:layout_constraintTop_toBottomOf="@id/profileImageView"
+        app:trimMode="trimModeLength"
+        app:trimLength="50"
+        android:layout_marginTop="10dp"
+        app:colorClickableText="#039BE5"
+        android:layout_marginEnd="50dp"
+        android:layout_marginStart="50dp"
+        android:justificationMode="inter_word"
+        expandableTextView:ignore="MissingClass" />
+    <!--   <TextView
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           app:layout_constraintLeft_toRightOf="@+id/caption"
+           app:layout_constraintBottom_toBottomOf="@+id/caption"
+           android:text="Read More"
+           android:textColor="@color/blueJeans"
+           />
+   -->
+
+<!--    <ImageView-->
+<!--        android:id="@+id/feedDocImage"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="300dp"-->
+<!--        android:layout_marginHorizontal="50dp"-->
+<!--        android:layout_marginTop="12dp"-->
+<!--        android:scaleType="centerCrop"-->
+<!--        android:src="@drawable/document"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/caption"-->
+<!--        expandableTextView:layout_editor_absoluteX="50dp" />-->
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:id="@+id/feedDocImageCardView"
+        app:layout_constraintTop_toBottomOf="@+id/tags"
+        android:layout_marginHorizontal="50dp"
+        android:layout_marginTop="12dp"
+        android:visibility="visible"
+        app:cardCornerRadius="16dp"
+        android:layout_height="300dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="invisible"
+            >
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                >
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/documents"
+                    />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Document Title"
+                    android:layout_gravity="center"
+
+                    />
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_height="200dp"
+                android:visibility="visible"
+                android:id="@+id/pdfViewContainer"
+                >
+
+                <com.rajat.pdfviewer.PdfRendererView
+                    android:id="@+id/pdfView"
+                    android:visibility="visible"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:pdfView_divider="@drawable/pdf_viewer_divider"
+                    app:pdfView_showDivider="false" />
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:id="@+id/pdfImageView"
+                    android:visibility="gone"
+                    />
+            </LinearLayout>
+
+<!--            document Icon -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                >
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/documents"
+                    android:visibility="gone"
+                    android:id="@+id/documentIcon"
+                    />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Document name"
+                    android:textSize="20sp"
+                    android:layout_gravity="center"
+android:layout_marginStart="5dp"
+                    android:id="@+id/docName"
+                    />
+            </LinearLayout>
+
+<!--            number of pages -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:orientation="horizontal"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="No. of pages"
+                    android:layout_marginTop="2dp"
+                    android:id="@+id/docInfo"
+                    android:layout_marginStart="5dp"
+
+                    />
+            </LinearLayout>
+
+        </LinearLayout>
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/multipleVideosContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clickable="false"
+            android:layout_gravity="center"
+            android:adjustViewBounds="true"
+            android:visibility="visible">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:nestedScrollingEnabled="false"
+                android:clickable="false"
+                android:id="@+id/recyclerView"
+                app:spanCount="3"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.cardview.widget.CardView>
+
+
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/caption"
+        android:id="@+id/tags"
+        android:text=""
+        android:textColor="@color/bluejeans"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="5dp"
+        android:visibility="visible"
+        app:layout_constraintLeft_toLeftOf="@+id/feedDocImageCardView"
+        app:layout_constraintRight_toRightOf="@+id/feedDocImageCardView"
+        />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/date_time"
+        app:layout_constraintTop_toBottomOf="@id/feedDocImageCardView"
+        android:layout_marginStart="50dp"
+        android:text="Date - Time"
+        android:padding="5dp"
+        />
+
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:padding="10dp"
+        app:layout_constraintTop_toBottomOf="@id/date_time"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginStart="50dp"
+        android:src="@drawable/favorite_svgrepo_com"
+        android:id="@+id/likeButtonIcon"
+        app:tint="@color/bluejeans" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/likeButtonIcon"
+        app:layout_constraintLeft_toLeftOf="@+id/likeButtonIcon"
+        app:layout_constraintRight_toRightOf="@+id/likeButtonIcon"
+        android:text="0"
+        android:id="@+id/likesCount"
+        />
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:padding="10dp"
+        app:layout_constraintTop_toTopOf="@+id/likeButtonIcon"
+        app:layout_constraintLeft_toRightOf="@id/likeButtonIcon"
+        android:layout_marginStart="20dp"
+        android:src="@drawable/chat_round_svgrepo_com_shorts"
+        app:tint="@color/bluejeans"
+        android:id="@+id/commentButtonIcon"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/commentButtonIcon"
+        app:layout_constraintLeft_toLeftOf="@+id/commentButtonIcon"
+        app:layout_constraintRight_toRightOf="@+id/commentButtonIcon"
+        android:text="0"
+        android:id="@+id/feedCommentsCount"
+        />
+
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:padding="10dp"
+        app:layout_constraintTop_toTopOf="@+id/likeButtonIcon"
+        app:layout_constraintLeft_toRightOf="@id/commentButtonIcon"
+        android:layout_marginStart="20dp"
+        android:src="@drawable/favorite_svgrepo_com__1_"
+        android:id="@+id/favorite"
+        app:tint="@color/bluejeans"
+        />
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:padding="10dp"
+        app:layout_constraintTop_toTopOf="@+id/likeButtonIcon"
+        app:layout_constraintLeft_toRightOf="@id/shareButtonIcon"
+        android:layout_marginStart="20dp"
+        android:src="@drawable/options_vertical_svgrepo_com"
+        android:id="@+id/moreOptions"
+        app:tint="@color/bluejeans"
+        />
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:padding="10dp"
+        app:layout_constraintTop_toTopOf="@+id/likeButtonIcon"
+        app:layout_constraintLeft_toRightOf="@id/favorite"
+        android:layout_marginStart="20dp"
+        android:src="@drawable/retweet_svgrepo_com"
+        android:id="@+id/repostPost"
+        app:tint="@color/bluejeans"
+        />
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:padding="10dp"
+        app:layout_constraintTop_toTopOf="@+id/likeButtonIcon"
+        app:layout_constraintLeft_toRightOf="@id/repostPost"
+        android:layout_marginStart="20dp"
+        android:src="@drawable/baseline_share_24"
+        android:id="@+id/shareButtonIcon"
+        app:tint="@color/bluejeans"
+        />
+
+    <!--    <View-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="1dp"-->
+    <!--        app:layout_constraintTop_toBottomOf="@id/repostPost"-->
+    <!--        android:background="@android:color/black"/>-->
+
+</androidx.constraintlayout.widget.ConstraintLayout>

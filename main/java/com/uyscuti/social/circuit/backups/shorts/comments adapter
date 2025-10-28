@@ -1,0 +1,26 @@
+class CommentsRecyclerViewAdapter(private val context: Context, private val itemList: List<Comment>) :
+    RecyclerView.Adapter<CommentsRecyclerViewAdapter.ViewHolder>() {
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(context).inflate(R.layout.bottom_sheet_1_item, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val item = itemList[position]
+        holder.bind(item)
+    }
+
+    override fun getItemCount(): Int {
+        Log.d("TAG", "getItemCount:${itemList.size}")
+        return itemList.size
+    }
+
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val itemNameTextView: TextView = itemView.findViewById(R.id.username)
+
+        fun bind(item: Comment) {
+            itemNameTextView.text = item.name
+        }
+    }
+}

@@ -1,0 +1,23 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/notifications"
+        android:icon="@drawable/nav_notification_icon"
+        android:title="" />
+    <item
+        android:id="@+id/chat"
+        android:icon="@drawable/chat_round_svgrepo_com"
+        android:title="" />
+    <item
+        android:id="@+id/shorts"
+        android:icon="@drawable/play_svgrepo_com"
+        android:title="" />
+    <item
+        android:id="@+id/feed"
+        android:icon="@drawable/scroll_text_line_svgrepo_com"
+        android:title="" />
+    <item
+        android:id="@+id/profile"
+        android:icon="@drawable/nav_user_notification2"
+        android:title="" />
+</menu>

@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/main"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/bluejeans"
+        tools:context=".User_Interface.OtherImportantProfileThings.NotificationsSettingsActivity">
+
+        <!-- Header Section -->
+        <TextView
+            android:id="@+id/headerTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Notification Settings"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:padding="16dp"
+            android:background="@color/white"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <!-- General Notifications Section -->
+        <TextView
+            android:id="@+id/generalNotificationHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="General"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/headerTitle"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/notificationSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Enable all notifications"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/generalNotificationHeader"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp"
+             />
+
+        <View
+            android:id="@+id/divider1"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/notificationSwitch" />
+
+        <!-- Sound & Vibration Section -->
+        <TextView
+            android:id="@+id/alertsHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Alerts"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/divider1"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/soundSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sound"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/alertsHeader"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/vibrationSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Vibration"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/soundSwitch"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/soundPickerLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/vibrationSwitch">
+
+            <TextView
+                android:id="@+id/notificationSoundLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Notification Sound"
+                android:textColor="@color/gray_dark"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/soundPickerArrow"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/currentSoundName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Default"
+                android:textColor="@color/bluejeans"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/notificationSoundLabel"
+                app:layout_constraintEnd_toStartOf="@id/soundPickerArrow"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <ImageView
+                android:id="@+id/soundPickerArrow"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/baseline_arrow_back_black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <View
+            android:id="@+id/divider2"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/soundPickerLayout" />
+
+        <!-- Social Activity Section -->
+        <TextView
+            android:id="@+id/socialActivityHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Social Activity"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/divider2"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/likesSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Likes and Reactions"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/socialActivityHeader"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp"
+             />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/commentsSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Comments"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/likesSwitch"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp"
+             />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/followersSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="New Followers"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/commentsSwitch"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp"
+             />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/tagsSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tags and Mentions"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/followersSwitch"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp" />
+
+        <View
+            android:id="@+id/divider3"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/tagsSwitch" />
+
+        <!-- Direct Messages Section -->
+        <TextView
+            android:id="@+id/messagesHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Direct Messages"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/divider3"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/messagesSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Message notifications"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/messagesHeader"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp"
+           />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/messagePrivacyLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/messagesSwitch">
+
+            <TextView
+                android:id="@+id/messagePrivacyLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Message Privacy"
+                android:textColor="@color/gray_dark"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/messagePrivacyArrow"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/currentPrivacySetting"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="All contacts"
+                android:textColor="@color/bluejeans"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/messagePrivacyLabel"
+                app:layout_constraintEnd_toStartOf="@id/messagePrivacyArrow"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <ImageView
+                android:id="@+id/messagePrivacyArrow"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/baseline_arrow_back_black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <View
+            android:id="@+id/divider4"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/messagePrivacyLayout" />
+
+        <!-- Other Notifications Section -->
+        <TextView
+            android:id="@+id/otherNotificationsHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Other"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/divider4"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/liveStreamSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Live Stream Alerts"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/otherNotificationsHeader"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp"
+            />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/suggestionsSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Friend Suggestions"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/liveStreamSwitch"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp"
+             />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/eventSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Events and Reminders"
+            android:textColor="@color/gray_dark"
+            app:layout_constraintTop_toBottomOf="@id/suggestionsSwitch"
+            app:layout_constraintStart_toStartOf="parent"
+            android:padding="16dp"
+             />
+
+        <!-- Do Not Disturb Section -->
+        <View
+            android:id="@+id/divider5"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/gray_light"
+            app:layout_constraintTop_toBottomOf="@id/eventSwitch" />
+
+        <TextView
+            android:id="@+id/dndHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Do Not Disturb"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/bluejeans"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/divider5"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/scheduleLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/dndHeader">
+
+            <TextView
+                android:id="@+id/scheduleLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Quiet Hours"
+                android:textColor="@color/gray_dark"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/scheduleArrow"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/scheduleDescription"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Off"
+                android:textColor="@color/blueJeans"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/scheduleLabel"
+                app:layout_constraintEnd_toStartOf="@id/scheduleArrow"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <ImageView
+                android:id="@+id/scheduleArrow"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/baseline_arrow_back_black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Save Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/saveButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save Settings"
+            android:textAllCaps="false"
+            android:layout_margin="16dp"
+            app:cornerRadius="8dp"
+            app:layout_constraintTop_toBottomOf="@id/scheduleLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.core.widget.NestedScrollView>

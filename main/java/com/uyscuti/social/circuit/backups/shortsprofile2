@@ -1,0 +1,181 @@
+
+try {
+                Log.d("AudioFile", "File created: $newFile")
+
+                if (!isReply) {
+
+                    val profilePic2 = settings.getString("profile_pic", "").toString()
+                    val avatar = Avatar("", "", url = profilePic2)
+                    val account =
+                        Account(
+                            _id = "",
+                            avatar = avatar,
+                            "",
+                            LocalStorage.getInstance(this).getUsername()
+                        )
+                    val author =
+                        Author(_id = "12", account = account, firstName = "", lastName = "")
+                    val comment = com.uyscuti.social.circuit.data.model.Comment(
+                        __v = 1,
+                        _id = "12",
+                        author = author,
+                        content = "no content",
+                        createdAt = "",
+                        isLiked = false,
+                        likes = 0,
+                        postId = postId,
+                        updatedAt = "",
+                        replyCount = 0,
+                        vnComment = vnPath
+                    )
+
+                    addAudioComment(postId, "no content", newFile)
+//                    val newCommentEntity = ShortCommentEntity(postId, vnPath)
+//                    shortsCommentViewModel.insertComment(newCommentEntity)
+//                    Log.d(TAG, "onSubmit: inserted comment $newCommentEntity")
+
+                    Log.d(TAG, "onSubmit: comment $comment")
+//        adapter.submitItems(listOf(comment) )
+//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
+//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
+
+                    adapter!!.submitItem(comment, adapter!!.itemCount)
+                    shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
+                    Log.d(TAG, "onSubmit: count before ${shortToComment!!.comments}")
+
+//                    if (shortToComment != null) {
+//                        shortToComment!!.comments += 1
+//
+//                        // Update the count in the mutableShortsList
+//                        // Update the count in the mutableShortsList
+//                        shortsViewModel.mutableShortsList.forEach { short ->
+//                            if (short._id == postId) {
+//                                short.comments = shortToComment!!.comments
+//                            }
+//                        }
+//                        val newShortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
+//                        Log.d(TAG, "onSubmit: count after ${newShortToComment!!.comments}")
+//
+//                        EventBus.getDefault().post(ShortAdapterNotifyDatasetChanged())
+//                    }
+                }
+                // Now you can use 'newFile' as needed, for example, setting it in your message.
+                val audioUrl = Uri.fromFile(newFile)
+
+
+            } catch (e: IOException) {
+                Log.e("AudioFile", "Error creating file", e)
+            }
+
+@Multipart
+    @POST("social-media/comments/post/{postId}")
+    suspend fun addComment(
+        @Path("postId") postId: String,
+        @Part audio: MultipartBody.Part,
+        @Body requestBody: CommentRequestBody,
+    ) : Response<ShortCommentResponse>
+
+
+package com.uyscut.flashdesign.adapter
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.media.MediaMetadataRetriever
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.bitmap.CircleCrop
+import com.bumptech.glide.request.RequestOptions
+import com.uyscut.core.common.data.room.entity.ShortsEntity
+import com.uyscut.flashdesign.R
+import androidx.recyclerview.widget.GridLayoutManager
+
+
+
+class ShortsUserProfileAdapter(context: Context?) :
+    RecyclerView.Adapter<ShortsUserProfileAdapter.ViewHolder?>() {
+    private val dataList: MutableList<String>
+    private val inflater: LayoutInflater
+    private val shortsList: MutableList<ShortsEntity> = mutableListOf()
+
+    init {
+        inflater = LayoutInflater.from(context)
+        dataList = ArrayList()
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view: View = inflater.inflate(R.layout.shorts_user_profile_item, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val data = shortsList[position]
+        holder.bind(data)
+    }
+
+    override fun getItemCount(): Int {
+        return shortsList.size
+    }
+
+    fun addData(newData: List<ShortsEntity>) {
+        val startPosition = shortsList.size
+        shortsList.addAll(newData)
+        val endPosition = shortsList.size - 1
+        notifyItemRangeInserted(startPosition, endPosition)
+    }
+
+
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val thumbnailImageView: ImageView
+
+        init {
+            thumbnailImageView =
+                itemView.findViewById(R.id.thumbnailImageView) // Replace with the actual ID of the TextView in your item layout
+        }
+
+        fun bind(data: ShortsEntity?) {
+            Log.d("thumbnailImageView", "bind: in bind data $data")
+//            thumbnailImageView.text = data
+//            thumbnailImageView
+            // Load video thumbnail using Glide
+            loadVideoThumbnail(thumbnailImageView.context, data!!.images[0].url, thumbnailImageView)
+        }
+
+        private fun loadVideoThumbnail(context: Context, videoUrl: String, imageView: ImageView) {
+            // Create a MediaMetadataRetriever
+            val retriever = MediaMetadataRetriever()
+
+            try {
+                // Set the data source to the video URL
+                retriever.setDataSource(videoUrl)
+
+                // Retrieve the first frame (thumbnail) of the video
+                val bitmap: Bitmap? = retriever.frameAtTime
+
+                // Use Glide to load and display the thumbnail
+                Glide.with(context)
+                    .load(bitmap)
+                    .apply(RequestOptions.centerCropTransform())
+                    .placeholder(R.drawable.flash21)
+//                    .diskCacheStrategy(
+//                        DiskCacheStrategy.ALL
+//                    )
+                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .into(imageView)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                // Release the MediaMetadataRetriever
+                retriever.release()
+            }
+        }
+    }
+}
+
+
