@@ -2088,26 +2088,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
 
-//    @SuppressLint("NotifyDataSetChanged")
-//    override fun onResume() {
-//        super.onResume()
-//        (activity as? MainActivity)?.hideAppBar()
-//        val vNLayout = activity?.findViewById<ConstraintLayout>(R.id.VNLayout)
-//        if (vNLayout?.visibility == View.VISIBLE) {
-//            pauseVideo()
-//        } else {
-//            exoPlayer!!.play()
-//            val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
-//            if (index != -1) {
-//                val player = exoPlayerItems[index].exoPlayer
-//                player.playWhenReady = true
-//                player.play()
-//                player.seekTo(0)
-//            }
-//        }
-//        updateStatusBar()
-//
-//    }
 
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
