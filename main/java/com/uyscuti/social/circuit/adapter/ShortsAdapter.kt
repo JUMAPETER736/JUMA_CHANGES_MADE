@@ -302,12 +302,14 @@ class ShortsAdapter(
 }
 
 class StringViewHolder(
+
     itemView: View,
     private val commentsClickListener: OnCommentsClickListener,
     private var onClickListeners: OnClickListeners,
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
+
 ) : ViewHolder<MyData>(itemView) {
 
     companion object {
@@ -434,6 +436,54 @@ class StringViewHolder(
         shortsViewPager.setOnClickListener {
             EventBus.getDefault().post(PausePlayEvent(true))
         }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun updateFollowButtonState(isFollowing: Boolean) {
+        isFollowed = isFollowing
+        if (isFollowing) {
+            followButton.text = "Following"
+            followButton.isAllCaps = false
+            followButton.setBackgroundResource(R.drawable.shorts_following_button)
+        } else {
+            followButton.text = "Follow"
+            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
+        }
+    }
+
+    private fun setupContent(shortsEntity: ShortsEntity) {
+        val caption = shortsEntity.content.toString()
+        if (caption.isNotEmpty()) {
+            captionTextView.text = caption
+        }
+
+        username.text = shortsEntity.author.account.username
+        commentsCount.text = totalComments.toString()
+        likeCount.text = totalLikes.toString()
+        favoriteCount.text = totalFavorites.toString()
+        shareCount.text = totalShares.toString()
+        downloadCount.text = totalDownloads.toString()
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun handleFollowButtonClick(shortOwnerId: String) {
+        isFollowed = !isFollowed
+        val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, isFollowed)
+
+        if (isFollowed) {
+            followButton.text = "Following"
+            followButton.isAllCaps = false
+            followButton.setBackgroundResource(R.drawable.shorts_following_button)
+        } else {
+            followButton.text = "Follow"
+            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
+        }
+
+        EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+    }
+
+    fun updateButton(newText: String) {
+        followButton.text = newText
     }
 
     private fun handleLikeClick(shortOwnerId: String) {
@@ -569,6 +619,8 @@ class StringViewHolder(
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(shortsProfileImage)
     }
+
+
 
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
@@ -845,53 +897,7 @@ class StringViewHolder(
         }
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun updateFollowButtonState(isFollowing: Boolean) {
-        isFollowed = isFollowing
-        if (isFollowing) {
-            followButton.text = "Following"
-            followButton.isAllCaps = false
-            followButton.setBackgroundResource(R.drawable.shorts_following_button)
-        } else {
-            followButton.text = "Follow"
-            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
-        }
-    }
 
-    private fun setupContent(shortsEntity: ShortsEntity) {
-        val caption = shortsEntity.content.toString()
-        if (caption.isNotEmpty()) {
-            captionTextView.text = caption
-        }
-
-        username.text = shortsEntity.author.account.username
-        commentsCount.text = totalComments.toString()
-        likeCount.text = totalLikes.toString()
-        favoriteCount.text = totalFavorites.toString()
-        shareCount.text = totalShares.toString()
-        downloadCount.text = totalDownloads.toString()
-    }
-
-    @SuppressLint("SetTextI18n")
-    private fun handleFollowButtonClick(shortOwnerId: String) {
-        isFollowed = !isFollowed
-        val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, isFollowed)
-
-        if (isFollowed) {
-            followButton.text = "Following"
-            followButton.isAllCaps = false
-            followButton.setBackgroundResource(R.drawable.shorts_following_button)
-        } else {
-            followButton.text = "Follow"
-            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
-        }
-
-        EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
-    }
-
-    fun updateButton(newText: String) {
-        followButton.text = newText
-    }
 
     private fun shortsEntityToUserShortsEntity(serverResponseItem: ShortsEntity): UserShortsEntity {
         return UserShortsEntity(
