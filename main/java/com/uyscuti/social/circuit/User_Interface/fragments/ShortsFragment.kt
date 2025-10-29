@@ -1039,6 +1039,73 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
+    private fun preloadVideosAround(position: Int) {
+        preloadHandler.removeCallbacksAndMessages(null)
+
+        preloadHandler.postDelayed({
+            val startPos = maxOf(0, position - PRELOAD_WINDOW)
+            val endPos = minOf(shortsViewModel.videoShorts.size - 1, position + PRELOAD_WINDOW)
+
+            Log.d("Preload", "Preloading videos from $startPos to $endPos around position $position")
+
+            for (i in startPos..endPos) {
+                if (i != position && !preloadedPositions.contains(i)) {
+                    preloadVideo(i)
+                }
+            }
+
+            // Clear old preloaded videos
+            val iterator = preloadedPositions.iterator()
+            while (iterator.hasNext()) {
+                val preloadedPos = iterator.next()
+                if (preloadedPos < startPos || preloadedPos > endPos) {
+                    mediaItemCache.remove(preloadedPos)
+                    iterator.remove()
+                    Log.d("Preload", "Removed preload for position $preloadedPos")
+                }
+            }
+        }, 100)
+    }
+
+    private fun preloadVideo(position: Int) {
+        if (position < 0 || position >= shortsViewModel.videoShorts.size) return
+
+        try {
+            val shortVideo = shortsViewModel.videoShorts[position]
+            val rawVideoUrl = shortVideo.images.firstOrNull()?.url ?: return
+
+            val finalVideoUrl = when {
+                rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> rawVideoUrl
+                rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
+                    "http://192.168.1.103:8080/feed_mixed_files/" + rawVideoUrl.trimStart('/')
+                }
+                else -> {
+                    val serverBaseUrl = "http://192.168.1.103:8080/"
+                    if (rawVideoUrl.startsWith("/")) {
+                        serverBaseUrl + rawVideoUrl.trimStart('/')
+                    } else {
+                        serverBaseUrl + rawVideoUrl
+                    }
+                }
+            }
+
+            // Cache the MediaItem
+            if (!mediaItemCache.containsKey(position)) {
+                val mediaItem = MediaItem.Builder()
+                    .setUri(Uri.parse(finalVideoUrl))
+                    .setMimeType(getMimeTypeFromUrl(finalVideoUrl))
+                    .build()
+
+                mediaItemCache[position] = mediaItem
+                preloadedPositions.add(position)
+
+                Log.d("Preload", "Cached video at position $position")
+            }
+        } catch (e: Exception) {
+            Log.e("Preload", "Error preloading video at position $position: ${e.message}")
+        }
+    }
+
     private fun loadMoreVideos(pageNumber: Int) {
         // Call the function that makes a request to the server for more videos
         lifecycleScope.launch(Dispatchers.IO) {
