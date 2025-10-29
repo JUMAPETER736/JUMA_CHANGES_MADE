@@ -1616,18 +1616,35 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    private fun releasePlayer() {
-        try {
-            exoPlayer?.apply {
-                pause() // Don't stop, just pause
-                // Don't clear media items during scrolling
-                currentPlayerListener?.let { removeListener(it) }
-                // Don't release the player here - only on fragment destroy
+
+
+    @SuppressLint("NotifyDataSetChanged")
+    override fun onResume() {
+        super.onResume()
+        (activity as? MainActivity)?.hideAppBar()
+
+        val vNLayout = activity?.findViewById<ConstraintLayout>(R.id.VNLayout)
+        if (vNLayout?.visibility == View.VISIBLE) {
+            pauseVideo()
+        } else {
+            // Reattach player to current holder
+            val currentHolder = shortsAdapter.getCurrentViewHolder()
+            currentHolder?.reattachPlayer()
+
+            // Resume playback
+            exoPlayer?.play()
+
+            val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
+            if (index != -1) {
+                val player = exoPlayerItems[index].exoPlayer
+                player.playWhenReady = true
+                player.play()
             }
-            currentPlayerListener = null
-        } catch (e: Exception) {
-            Log.e("ShotsFragment", "Error releasing player", e)
+
+            // Preload around current position
+            preloadVideosAround(currentPosition)
         }
+        updateStatusBar()
     }
 
     override fun onDestroyView() {
@@ -1646,6 +1663,11 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     override fun onDestroy() {
         super.onDestroy()
+
+        // Clear all caches
+        preloadHandler.removeCallbacksAndMessages(null)
+        mediaItemCache.clear()
+        preloadedPositions.clear()
 
         try {
             exoPlayer?.apply {
@@ -2083,50 +2105,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         validateAndPlayVideo(finalVideoUrl, position)
     }
 
-
-    @SuppressLint("NotifyDataSetChanged")
-    override fun onResume() {
-        super.onResume()
-        (activity as? MainActivity)?.hideAppBar()
-
-        val vNLayout = activity?.findViewById<ConstraintLayout>(R.id.VNLayout)
-        if (vNLayout?.visibility == View.VISIBLE) {
-            pauseVideo()
-        } else {
-            // Reattach player to current holder
-            val currentHolder = shortsAdapter.getCurrentViewHolder()
-            currentHolder?.reattachPlayer()
-
-            // Resume playback
-            exoPlayer?.play()
-
-            val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
-            if (index != -1) {
-                val player = exoPlayerItems[index].exoPlayer
-                player.playWhenReady = true
-                player.play()
-            }
-
-            // Preload around current position
-            preloadVideosAround(currentPosition)
-        }
-        updateStatusBar()
-    }
-
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-
-        // Clear preload cache
-        preloadHandler.removeCallbacksAndMessages(null)
-
-        // Only pause, don't release
-        exoPlayer?.pause()
-
-        lifecycleScope.launch {
-            shortsViewModel.isResuming = true
-        }
-    }
 
 //    @SuppressLint("NotifyDataSetChanged")
 //    override fun onResume() {
