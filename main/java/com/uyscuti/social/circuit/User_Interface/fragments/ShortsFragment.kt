@@ -1398,8 +1398,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             shortsViewModel.isResuming = true
         }
     }
-
-
+    
     override fun onPause() {
         super.onPause()
         exoPlayer!!.pause()
@@ -1514,27 +1513,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    override fun onResume() {
-        super.onResume()
-        (activity as? MainActivity)?.hideAppBar()
-        val vNLayout = activity?.findViewById<ConstraintLayout>(R.id.VNLayout)
-        if (vNLayout?.visibility == View.VISIBLE) {
-            pauseVideo()
-        } else {
-            exoPlayer!!.play()
-            val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
-            if (index != -1) {
-                val player = exoPlayerItems[index].exoPlayer
-                player.playWhenReady = true
-                player.play()
-                player.seekTo(0)
-            }
-        }
-        updateStatusBar()
-
-    }
-
     private fun setupVideoPlaybackInShots(videoUrl: String) {
         // Implement video playback logic specific to ShotsFragment
         Log.d("ShotsFragment", "Setting up video playback for: $videoUrl")
@@ -1589,6 +1567,29 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             }
         }
     }
+
+    @SuppressLint("NotifyDataSetChanged")
+    override fun onResume() {
+        super.onResume()
+        (activity as? MainActivity)?.hideAppBar()
+        val vNLayout = activity?.findViewById<ConstraintLayout>(R.id.VNLayout)
+        if (vNLayout?.visibility == View.VISIBLE) {
+            pauseVideo()
+        } else {
+            exoPlayer!!.play()
+            val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
+            if (index != -1) {
+                val player = exoPlayerItems[index].exoPlayer
+                player.playWhenReady = true
+                player.play()
+                player.seekTo(0)
+            }
+        }
+        updateStatusBar()
+
+    }
+
+
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun successEvent(event: UploadSuccessful) {
