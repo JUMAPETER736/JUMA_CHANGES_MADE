@@ -18,9 +18,13 @@ import android.widget.SeekBar
 import android.widget.TextView
 import androidx.annotation.OptIn
 import androidx.appcompat.widget.AppCompatButton
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -39,19 +43,14 @@ import com.uyscuti.social.core.common.data.room.entity.*
 import com.uyscuti.social.network.utils.LocalStorage
 import org.greenrobot.eventbus.EventBus
 import java.util.Date
-import kotlin.compareTo
-import kotlin.div
-import kotlin.text.toInt
 
 // Constants
 private const val TAG = "ShortsAdapter"
 private const val TAG2 = "MyData"
 private const val PROGRESS_UPDATE_INTERVAL = 100L
-
+private const val PRELOAD_COUNT = 10 // Number of videos to preload
 
 // INTERFACES
-
-
 interface OnCommentsClickListener {
     fun onCommentsClick(position: Int, data: UserShortsEntity)
 }
@@ -68,25 +67,18 @@ interface OnVideoPreparedListener {
 }
 
 // DATA CLASSES
-
-
 data class MyData(
     val shortsEntity: ShortsEntity,
     val followItemEntity: ShortsEntityFollowList
 )
 
-
 // MAIN ADAPTER CLASS
-
-
 class ShortsAdapter(
-
     private val commentsClickListener: OnCommentsClickListener,
     private var clickListeners: OnClickListeners,
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
-
 ) : RecyclerView.Adapter<StringViewHolder>() {
 
     // Properties
@@ -94,10 +86,11 @@ class ShortsAdapter(
     private val shortsList: MutableList<ShortsEntity> = mutableListOf()
     private val followingData: MutableList<ShortsEntityFollowList> = mutableListOf()
     private var currentViewHolder: StringViewHolder? = null
-    private var surfaceList: ArrayList<PlayerView> = arrayListOf()
     private var currentActivePosition: Int = 0
 
-
+    // Preloading management
+    private val preloadedVideos = mutableSetOf<Int>()
+    private val preloadHandler = Handler(Looper.getMainLooper())
 
     @SuppressLint("NotifyDataSetChanged")
     fun addData(newData: List<ShortsEntity>) {
@@ -107,6 +100,8 @@ class ShortsAdapter(
 
         if (startPosition == 0) {
             notifyDataSetChanged()
+            // Preload first batch
+            preloadVideosAround(0)
         } else {
             notifyItemRangeInserted(startPosition, newData.size)
         }
@@ -120,10 +115,57 @@ class ShortsAdapter(
         currentViewHolder?.updateButton(text)
     }
 
+    // PRELOADING METHODS
+    private fun preloadVideosAround(position: Int) {
+        preloadHandler.removeCallbacksAndMessages(null)
+
+        preloadHandler.post {
+            val startPos = maxOf(0, position - PRELOAD_COUNT)
+            val endPos = minOf(shortsList.size - 1, position + PRELOAD_COUNT)
+
+            for (i in startPos..endPos) {
+                if (i != position && !preloadedVideos.contains(i)) {
+                    preloadVideo(i)
+                }
+            }
+
+            // Clear old preloaded videos that are too far away
+            val iterator = preloadedVideos.iterator()
+            while (iterator.hasNext()) {
+                val preloadedPos = iterator.next()
+                if (preloadedPos < position - PRELOAD_COUNT ||
+                    preloadedPos > position + PRELOAD_COUNT) {
+                    iterator.remove()
+                }
+            }
+        }
+    }
+
+    private fun preloadVideo(position: Int) {
+        if (position < 0 || position >= shortsList.size) return
+
+        try {
+            val videoUrl = shortsList[position].images[0].url
+            val mediaItem = MediaItem.fromUri(videoUrl)
+
+            // Mark as preloaded
+            preloadedVideos.add(position)
+
+            Log.d(TAG, "Preloading video at position: $position")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error preloading video at position $position: ${e.message}")
+        }
+    }
+
+    fun onPositionChanged(newPosition: Int) {
+        if (newPosition != currentActivePosition) {
+            currentActivePosition = newPosition
+            preloadVideosAround(newPosition)
+            Log.d(TAG, "Position changed to: $newPosition, preloading adjacent videos")
+        }
+    }
 
     // UPLOAD PROGRESS METHODS
-
-
     fun getCurrentViewHolderUploadSeekBar(): SeekBar? {
         return currentViewHolder?.getUploadTopSeekBar()
     }
@@ -132,7 +174,7 @@ class ShortsAdapter(
         return if (currentActivePosition in 0 until viewHolderList.size) {
             viewHolderList[currentActivePosition]
         } else {
-            Log.w("ShortsAdapter", "Invalid currentActivePosition: $currentActivePosition")
+            Log.w(TAG, "Invalid currentActivePosition: $currentActivePosition")
             null
         }
     }
@@ -142,36 +184,36 @@ class ShortsAdapter(
             val currentViewHolder = getCurrentViewHolder()
             currentViewHolder?.itemView?.findViewById(R.id.shortsUploadCancelButton)
         } catch (e: Exception) {
-            Log.e("ShortsAdapter", "Error getting cancel button: ${e.message}")
+            Log.e(TAG, "Error getting cancel button: ${e.message}")
             null
         }
     }
 
     fun updateCurrentViewHolderUploadProgress(progress: Int) {
         currentViewHolder?.updateUploadProgress(progress)
-            ?: Log.w("ShortsAdapter", "Current ViewHolder not available for progress update")
+            ?: Log.w(TAG, "Current ViewHolder not available for progress update")
     }
 
     fun showCurrentViewHolderUploadProgress() {
         currentViewHolder?.showUploadProgress()
-            ?: Log.w("ShortsAdapter", "Current ViewHolder not available to show upload progress")
+            ?: Log.w(TAG, "Current ViewHolder not available to show upload progress")
     }
 
     fun hideCurrentViewHolderUploadProgress() {
         currentViewHolder?.hideUploadProgress()
-            ?: Log.w("ShortsAdapter", "Current ViewHolder not available to hide upload progress")
+            ?: Log.w(TAG, "Current ViewHolder not available to hide upload progress")
     }
 
     fun setCurrentViewHolderUploadCancelListener(listener: View.OnClickListener) {
         currentViewHolder?.setUploadCancelClickListener(listener)
-            ?: Log.w("ShortsAdapter", "Current ViewHolder not available to set cancel listener")
+            ?: Log.w(TAG, "Current ViewHolder not available to set cancel listener")
     }
 
     fun getViewHolderUploadSeekBar(position: Int): SeekBar? {
         return if (position >= 0 && position < viewHolderList.size) {
             viewHolderList[position].getUploadTopSeekBar()
         } else {
-            Log.w("ShortsAdapter", "Invalid position $position for ViewHolder list size ${viewHolderList.size}")
+            Log.w(TAG, "Invalid position $position for ViewHolder list size ${viewHolderList.size}")
             null
         }
     }
@@ -179,7 +221,6 @@ class ShortsAdapter(
     fun getCurrentActivePosition(): Int {
         return currentActivePosition
     }
-
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StringViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(
@@ -197,13 +238,11 @@ class ShortsAdapter(
         return viewHolder
     }
 
-
     override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
         currentViewHolder = holder
         currentActivePosition = position
         val data = shortsList[position]
 
-        // Safe handling of missing follow data
         val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
             ?: ShortsEntityFollowList(
                 followersId = data.author.account._id,
@@ -216,8 +255,8 @@ class ShortsAdapter(
         Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
         holder.onBind(myData)
 
-        val surface = holder.getSurface()
-
+        // Preload adjacent videos
+        preloadVideosAround(position)
     }
 
     fun ensureFollowDataExists(shortsEntity: ShortsEntity) {
@@ -243,45 +282,45 @@ class ShortsAdapter(
         }
     }
 
-
     override fun getItemCount(): Int {
         return shortsList.size
     }
-
 
     override fun onViewAttachedToWindow(holder: StringViewHolder) {
         super.onViewAttachedToWindow(holder)
         holder.onViewAttached()
 
-        // CRITICAL: Reattach player when view comes back
-        holder.getSurface().player = exoplayer
-        holder.getSurface().visibility = View.VISIBLE
+        // CRITICAL: Properly reattach player
+        holder.reattachPlayer()
     }
 
+    override fun onViewDetachedFromWindow(holder: StringViewHolder) {
+        super.onViewDetachedFromWindow(holder)
+        // Don't detach player completely, just pause updates
+        holder.pauseUpdates()
+    }
 }
 
-
 class StringViewHolder(
-
     itemView: View,
     private val commentsClickListener: OnCommentsClickListener,
     private var onClickListeners: OnClickListeners,
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
+) : ViewHolder<MyData>(itemView) {
 
-)
-
-    : ViewHolder<MyData>(itemView) {
+    companion object {
+        private const val TAG = "StringViewHolder"
+        private const val PROGRESS_UPDATE_INTERVAL = 100L
+    }
 
     // UI COMPONENTS
-    // Video components
     private val videoView: PlayerView = itemView.findViewById(R.id.video_view)
     private val bottomVideoSeekBar: SeekBar = itemView.findViewById(R.id.bottomShortsVideoProgressSeekBar)
     private val btnPlayPause: ImageView = itemView.findViewById(R.id.btnPlayPause)
     private var shortsUploadTopSeekBar: SeekBar? = null
 
-    // User interaction components
     private val btnLike: ImageButton = itemView.findViewById(R.id.btnLike)
     private val favorite: ImageView = itemView.findViewById(R.id.favorite)
     private val shareBtn: ImageButton = itemView.findViewById(R.id.shareBtn)
@@ -289,12 +328,10 @@ class StringViewHolder(
     private val comments: ImageView = itemView.findViewById(R.id.comments)
     private val commentsParentLayout: LinearLayout = itemView.findViewById(R.id.commentsParentLayout)
 
-    // Profile components
     private val shortsProfileImage: ImageView = itemView.findViewById(R.id.profileImageForShorts)
     private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
     private val username: TextView = itemView.findViewById(R.id.shortUsername)
 
-    // Content components
     private val captionTextView: TextView = itemView.findViewById(R.id.tvReadMoreLess)
     private val likeCount: TextView = itemView.findViewById(R.id.likeCount)
     private val commentsCount: TextView = itemView.findViewById(R.id.commentsCount)
@@ -302,7 +339,6 @@ class StringViewHolder(
     private val shareCount: TextView = itemView.findViewById(R.id.shareCount)
     private val downloadCount: TextView = itemView.findViewById(R.id.downloadCount)
 
-    // Layout components
     private val shortsViewPager: FrameLayout = itemView.findViewById(R.id.shortsViewPager)
     private val shortsUploadCancelButton: ImageButton = itemView.findViewById(R.id.shortsUploadCancelButton)
 
@@ -320,7 +356,6 @@ class StringViewHolder(
     private var isPlaying = false
     private var videoDuration = 0L
 
-    // Progress tracking
     private val mainHandler = Handler(Looper.getMainLooper())
     private val progressUpdateRunnable = object : Runnable {
         override fun run() {
@@ -333,6 +368,19 @@ class StringViewHolder(
         setupSeekBar()
         setupPlayer()
         setupUploadComponents()
+
+        // Ensure videoView is properly configured
+        videoView.apply {
+            useController = false
+            keepScreenOn = true
+            // Set background to prevent black screen
+            setBackgroundColor(Color.BLACK)
+            setShutterBackgroundColor(Color.BLACK)
+        }
+    }
+
+    fun pauseUpdates() {
+        stopProgressUpdates()
     }
 
     @OptIn(UnstableApi::class)
@@ -344,7 +392,6 @@ class StringViewHolder(
         shortOwnerUsername: String,
         shortOwnerProfilePic: String
     ) {
-        // Clear any existing listeners to prevent duplicates
         commentsParentLayout.setOnClickListener(null)
         btnLike.setOnClickListener(null)
         favorite.setOnClickListener(null)
@@ -354,19 +401,16 @@ class StringViewHolder(
         shortsProfileImage.setOnClickListener(null)
         shortsViewPager.setOnClickListener(null)
 
-        // Set new listeners
         commentsParentLayout.setOnClickListener {
             Log.d(TAG, "onBind: Posting for main activity to open comments")
             val userShortsEntity = shortsEntityToUserShortsEntity(data.shortsEntity)
             commentsClickListener.onCommentsClick(bindingAdapterPosition, userShortsEntity)
         }
 
-        // Like button with bluejeans fill
         btnLike.setOnClickListener {
             handleLikeClick(shortOwnerId)
         }
 
-        // Favorite button with bluejeans fill
         favorite.setOnClickListener {
             handleFavoriteClick()
         }
@@ -379,82 +423,60 @@ class StringViewHolder(
             handleDownloadClick(url)
         }
 
-        // Username click - navigate to profile
         username.setOnClickListener {
             handleProfileClick(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
         }
 
-        // Profile image click - navigate to profile
         shortsProfileImage.setOnClickListener {
             handleProfileClick(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
         }
 
-        // Pause/Play on frame click
         shortsViewPager.setOnClickListener {
             EventBus.getDefault().post(PausePlayEvent(true))
         }
     }
 
-    // Updated like click handler with bluejeans color
     private fun handleLikeClick(shortOwnerId: String) {
         isLiked = !isLiked
         if (isLiked) {
             totalLikes += 1
             likeCount.text = totalLikes.toString()
-            // Set bluejeans color
             btnLike.imageTintList = ColorStateList.valueOf(
                 ContextCompat.getColor(itemView.context, R.color.bluejeans)
             )
             btnLike.setImageResource(R.drawable.filled_favorite_like)
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(btnLike)
+            YoYo.with(Techniques.Tada).duration(700).repeat(1).playOn(btnLike)
             EventBus.getDefault().post(ShortsLikeUnLike(shortOwnerId, isLiked))
         } else {
             totalLikes = maxOf(0, totalLikes - 1)
             likeCount.text = totalLikes.toString()
-            // Set white color
             btnLike.imageTintList = ColorStateList.valueOf(
                 ContextCompat.getColor(itemView.context, R.color.white)
             )
             btnLike.setImageResource(R.drawable.favorite_svgrepo_com)
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(btnLike)
+            YoYo.with(Techniques.Tada).duration(700).repeat(1).playOn(btnLike)
             EventBus.getDefault().post(ShortsLikeUnLike(shortOwnerId, isLiked))
         }
     }
 
-    // Updated favorite click handler with bluejeans color
     private fun handleFavoriteClick() {
         isFavorite = !isFavorite
         if (isFavorite) {
             totalFavorites += 1
             favoriteCount.text = totalFavorites.toString()
-            // Set bluejeans color
             favorite.imageTintList = ColorStateList.valueOf(
                 ContextCompat.getColor(itemView.context, R.color.bluejeans)
             )
             favorite.setImageResource(R.drawable.filled_favorite)
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(favorite)
+            YoYo.with(Techniques.Tada).duration(700).repeat(1).playOn(favorite)
         } else {
             totalFavorites = maxOf(0, totalFavorites - 1)
             favoriteCount.text = totalFavorites.toString()
-            // Set white color
             favorite.imageTintList = ColorStateList.valueOf(
                 ContextCompat.getColor(itemView.context, R.color.white)
             )
             favorite.setImageResource(R.drawable.favorite_svgrepo_com__1_)
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .pivotX(2.6F)
-                .playOn(favorite)
+            YoYo.with(Techniques.Tada).duration(700).repeat(1).pivotX(2.6F).playOn(favorite)
         }
     }
 
@@ -470,7 +492,6 @@ class StringViewHolder(
         onClickListeners.onDownloadClick(url, "FlashShorts")
     }
 
-    // Unified profile click handler
     @OptIn(UnstableApi::class)
     private fun handleProfileClick(
         shortOwnerId: String,
@@ -479,10 +500,8 @@ class StringViewHolder(
         shortOwnerProfilePic: String
     ) {
         if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
-            // Navigate to own profile
             EventBus.getDefault().post(GoToUserProfileFragment())
         } else {
-            // Navigate to other user's profile
             Log.d(TAG, "handleProfileClick: Navigating to another user's profile")
             val otherUsersProfile = OtherUsersProfile(
                 shortOwnerName,
@@ -528,7 +547,6 @@ class StringViewHolder(
                 categories = emptyList()
             )
 
-            // Open the OtherUserProfileAccount activity
             OtherUserProfileAccount.open(
                 context = itemView.context,
                 user = otherUsersProfile,
@@ -544,7 +562,6 @@ class StringViewHolder(
         shortOwnerUsername: String,
         shortOwnerProfilePic: String
     ) {
-        // Only load the image - click listener is set in setupClickListeners
         Glide.with(itemView.context)
             .load(shortOwnerProfilePic)
             .apply(RequestOptions.bitmapTransform(CircleCrop()))
@@ -558,13 +575,18 @@ class StringViewHolder(
     override fun onBind(data: MyData) {
         val shortsEntity = data.shortsEntity
 
-        // Properly attach player
+        // Ensure clean state
         videoView.player = null
-        videoView.player = exoplayer
-        videoView.useController = false
-        videoView.keepScreenOn = true
         videoView.visibility = View.VISIBLE
-        videoView.requestLayout()
+
+        // Reattach player properly
+        videoView.post {
+            videoView.player = exoplayer
+            videoView.useController = false
+            videoView.keepScreenOn = true
+            videoView.requestLayout()
+            videoView.invalidate()
+        }
 
         val url = shortsEntity.images[0].url
         val shortOwnerId = shortsEntity.author.account._id
@@ -577,22 +599,15 @@ class StringViewHolder(
         isLiked = shortsEntity.isLiked
         isFavorite = shortsEntity.isBookmarked
 
-        // Update UI based on current state
         updateLikeButtonState()
         updateFavoriteButtonState()
 
         setupEventBusEvents(shortsEntity)
-
-        // IMPORTANT: Setup profile image BEFORE click listeners
         setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-
-        // NOW setup all click listeners (including profile image click)
         setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-
         setupFollowButton(data, shortOwnerId)
         setupContent(shortsEntity)
 
-        // Reset video progress
         bottomVideoSeekBar.progress = 0
         videoDuration = 0L
     }
@@ -629,7 +644,6 @@ class StringViewHolder(
     fun onViewRecycled() {
         stopProgressUpdates()
 
-        // Clear click listeners to prevent memory leaks
         commentsParentLayout.setOnClickListener(null)
         btnLike.setOnClickListener(null)
         favorite.setOnClickListener(null)
@@ -639,30 +653,34 @@ class StringViewHolder(
         shortsProfileImage.setOnClickListener(null)
         shortsViewPager.setOnClickListener(null)
 
-        // Reset state
         videoDuration = 0L
         bottomVideoSeekBar.progress = 0
         isPlaying = false
     }
 
     fun reattachPlayer() {
-        videoView.player = null
         videoView.post {
+            videoView.player = null
             videoView.player = exoplayer
             videoView.visibility = View.VISIBLE
+            videoView.useController = false
+            videoView.keepScreenOn = true
             videoView.requestLayout()
+            videoView.invalidate()
+
+            Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
         }
     }
 
     private fun setupPlayer() {
         player = exoplayer
 
-        // Add surface callback to ensure video renders
         videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {
                 Log.d(TAG, "VideoView attached to window")
                 if (videoView.player == null) {
                     videoView.player = exoplayer
+                    videoView.visibility = View.VISIBLE
                 }
             }
 
@@ -679,10 +697,13 @@ class StringViewHolder(
                         if (videoDuration > 0) {
                             bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
                             bottomVideoSeekBar.secondaryProgress = 0
-                            Log.d(TAG, "Video duration: ${videoDuration}ms, Bottom SeekBar max: ${bottomVideoSeekBar.max}")
+                            Log.d(TAG, "Video ready: ${videoDuration}ms")
                         }
-                        // Force redraw when ready
+                        videoView.visibility = View.VISIBLE
                         videoView.invalidate()
+                    }
+                    Player.STATE_BUFFERING -> {
+                        Log.d(TAG, "Video buffering")
                     }
                     Player.STATE_ENDED -> {
                         stopProgressUpdates()
@@ -694,7 +715,6 @@ class StringViewHolder(
                 this@StringViewHolder.isPlaying = isPlaying
                 if (isPlaying) {
                     startProgressUpdates()
-                    // Ensure surface is visible when playing
                     videoView.visibility = View.VISIBLE
                 } else {
                     stopProgressUpdates()
@@ -704,6 +724,7 @@ class StringViewHolder(
 
             override fun onRenderedFirstFrame() {
                 Log.d(TAG, "First frame rendered - video is displaying")
+                videoView.visibility = View.VISIBLE
             }
         })
     }
@@ -711,13 +732,12 @@ class StringViewHolder(
     private fun setupUploadComponents() {
         shortsUploadTopSeekBar = itemView.findViewById(R.id.uploadTopSeekBar)
         if (shortsUploadTopSeekBar == null) {
-            Log.w("StringViewHolder", "uploadTopSeekBar not found in layout")
+            Log.w(TAG, "uploadTopSeekBar not found in layout")
         }
         shortsUploadTopSeekBar?.visibility = View.GONE
     }
 
     private fun setupSeekBar() {
-        // Hide the secondary progress line completely
         bottomVideoSeekBar.apply {
             secondaryProgress = 0
             splitTrack = false
@@ -746,7 +766,6 @@ class StringViewHolder(
         })
     }
 
-    // UPLOAD PROGRESS METHODS
     fun getUploadTopSeekBar(): SeekBar? = shortsUploadTopSeekBar
 
     fun updateUploadProgress(progress: Int) {
@@ -767,24 +786,18 @@ class StringViewHolder(
         shortsUploadCancelButton.setOnClickListener(listener)
     }
 
-    private fun cancelUpload() {
-        hideUploadProgress()
-        // Add your cancel upload logic here
-    }
-
-    // PROGRESS TRACKING METHODS
     private fun updateSeekBarProgress() {
         if (!isUserSeeking && exoplayer.duration > 0) {
             val currentPosition = exoplayer.currentPosition
             val progress = (currentPosition / 1000).toInt()
             bottomVideoSeekBar.progress = progress
-            Log.d(TAG, "Updating bottom SeekBar progress: ${currentPosition}ms -> ${progress}s")
         }
     }
 
     private fun startProgressUpdates() {
-        stopProgressUpdates()
-        mainHandler.post(progressUpdateRunnable)
+        if (isPlaying) {
+            mainHandler.post(progressUpdateRunnable)
+        }
     }
 
     private fun stopProgressUpdates() {
@@ -792,7 +805,6 @@ class StringViewHolder(
     }
 
     fun updateSeekBarProgress(progress: Long) {
-        Log.d(TAG, "External updateSeekBarProgress $progress")
         if (!isUserSeeking) {
             val progressInSeconds = (progress / 1000).toInt()
             bottomVideoSeekBar.progress = progressInSeconds
@@ -801,10 +813,13 @@ class StringViewHolder(
 
     fun setSeekBarMaxValue(max: Int) {
         bottomVideoSeekBar.max = max
-        Log.d(TAG, "Bottom SeekBar max set to: $max")
     }
 
     fun onViewAttached() {
+        videoView.visibility = View.VISIBLE
+        if (videoView.player == null) {
+            videoView.player = exoplayer
+        }
         if (isPlaying) {
             startProgressUpdates()
         }
@@ -818,14 +833,10 @@ class StringViewHolder(
     }
 
     private fun setupFollowButton(data: MyData, shortOwnerId: String) {
-        if (shortOwnerId == LocalStorage.getInstance(shortsProfileImage
-                .context).getUserId()) {
+        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
             followButton.visibility = View.INVISIBLE
-            Log.d(TAG, "onBind: short owner id == logged user id")
         } else {
             followButton.visibility = View.VISIBLE
-            Log.d(TAG, "onBind: ${data.followItemEntity.isFollowing}")
-
             updateFollowButtonState(data.followItemEntity.isFollowing)
 
             followButton.setOnClickListener {
@@ -836,51 +847,48 @@ class StringViewHolder(
 
     @SuppressLint("SetTextI18n")
     private fun updateFollowButtonState(isFollowing: Boolean) {
+        isFollowed = isFollowing
         if (isFollowing) {
             followButton.text = "Following"
             followButton.isAllCaps = false
             followButton.setBackgroundResource(R.drawable.shorts_following_button)
-            isFollowed = true
         } else {
             followButton.text = "Follow"
             followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
-            isFollowed = false
         }
     }
-
-
 
     private fun setupContent(shortsEntity: ShortsEntity) {
         val caption = shortsEntity.content.toString()
         if (caption.isNotEmpty()) {
             captionTextView.text = caption
-        } else {
-            Log.d("Caption", "Caption empty")
         }
 
         username.text = shortsEntity.author.account.username
         commentsCount.text = totalComments.toString()
+        likeCount.text = totalLikes.toString()
+        favoriteCount.text = totalFavorites.toString()
+        shareCount.text = totalShares.toString()
+        downloadCount.text = totalDownloads.toString()
     }
 
     @SuppressLint("SetTextI18n")
     private fun handleFollowButtonClick(shortOwnerId: String) {
-        Log.d(TAG, "handleFollowButtonClick: is followed value $isFollowed")
         isFollowed = !isFollowed
-
         val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, isFollowed)
 
         if (isFollowed) {
             followButton.text = "Following"
-            Log.d(TAG, "handleFollowButtonClick: following $isFollowed")
+            followButton.isAllCaps = false
+            followButton.setBackgroundResource(R.drawable.shorts_following_button)
         } else {
             followButton.text = "Follow"
-            Log.d(TAG, "handleFollowButtonClick: follow $isFollowed")
+            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
         }
 
         EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
     }
 
-    // UTILITY METHODS
     fun updateButton(newText: String) {
         followButton.text = newText
     }
@@ -901,10 +909,5 @@ class StringViewHolder(
             updatedAt = serverResponseItem.updatedAt,
             thumbnail = serverResponseItem.thumbnail
         )
-    }
-
-    companion object {
-        private const val TAG = "StringViewHolder"
-        private const val PROGRESS_UPDATE_INTERVAL = 100L
     }
 }
