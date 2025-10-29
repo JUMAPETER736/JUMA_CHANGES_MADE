@@ -488,22 +488,6 @@ class StringViewHolder(
         downloadCount.text = totalDownloads.toString()
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun handleFollowButtonClick(shortOwnerId: String) {
-        isFollowed = !isFollowed
-        val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, isFollowed)
-
-        if (isFollowed) {
-            followButton.text = "Following"
-            followButton.isAllCaps = false
-            followButton.setBackgroundResource(R.drawable.shorts_following_button)
-        } else {
-            followButton.text = "Follow"
-            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
-        }
-
-        EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
-    }
 
     fun updateButton(newText: String) {
         followButton.text = newText
