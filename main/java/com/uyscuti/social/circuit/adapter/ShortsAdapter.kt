@@ -286,18 +286,25 @@ class ShortsAdapter(
         return shortsList.size
     }
 
-    override fun onViewAttachedToWindow(holder: StringViewHolder) {
-        super.onViewAttachedToWindow(holder)
-        holder.onViewAttached()
-
-        // CRITICAL: Properly reattach player
-        holder.reattachPlayer()
-    }
+//    override fun onViewAttachedToWindow(holder: StringViewHolder) {
+//        super.onViewAttachedToWindow(holder)
+//        holder.onViewAttached()
+//
+//        // CRITICAL: Properly reattach player
+//        holder.reattachPlayer()
+//    }
 
     override fun onViewDetachedFromWindow(holder: StringViewHolder) {
         super.onViewDetachedFromWindow(holder)
         // Don't detach player completely, just pause updates
         holder.pauseUpdates()
+    }
+
+    override fun onViewAttachedToWindow(holder: StringViewHolder) {
+        super.onViewAttachedToWindow(holder as StringViewHolder)
+        if (holder is StringViewHolder) {
+            holder.reattachPlayer()   // <-- safe, idempotent
+        }
     }
 }
 
@@ -310,7 +317,8 @@ class StringViewHolder(
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
 
-) : ViewHolder<MyData>(itemView) {
+)
+    : ViewHolder<MyData>(itemView) {
 
     companion object {
         private const val TAG = "StringViewHolder"
@@ -441,38 +449,42 @@ class StringViewHolder(
     }
 
 
-    @SuppressLint("SetTextI18n")
-    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
-        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
-            followButton.visibility = View.INVISIBLE
-        } else {
-            followButton.visibility = View.VISIBLE
-            updateFollowButtonState(data.followItemEntity.isFollowing)
-
-            followButton.setOnClickListener {
-                // Update UI immediately without rebinding
-                isFollowed = !isFollowed
-                updateFollowButtonState(isFollowed)
-
-                // Post event for backend update
-                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, isFollowed)
-                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
-            }
-        }
+    fun updateButton(newText: String) {
+        followButton.text = newText
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun updateFollowButtonState(isFollowing: Boolean) {
-        isFollowed = isFollowing
-        if (isFollowing) {
-            followButton.text = "Following"
-            followButton.isAllCaps = false
-            followButton.setBackgroundResource(R.drawable.shorts_following_button)
-        } else {
-            followButton.text = "Follow"
-            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
-        }
-    }
+//    @SuppressLint("SetTextI18n")
+//    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
+//        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
+//            followButton.visibility = View.INVISIBLE
+//        } else {
+//            followButton.visibility = View.VISIBLE
+//            updateFollowButtonState(data.followItemEntity.isFollowing)
+//
+//            followButton.setOnClickListener {
+//                // Update UI immediately without rebinding
+//                isFollowed = !isFollowed
+//                updateFollowButtonState(isFollowed)
+//
+//                // Post event for backend update
+//                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, isFollowed)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+//            }
+//        }
+//    }
+//
+//    @SuppressLint("SetTextI18n")
+//    private fun updateFollowButtonState(isFollowing: Boolean) {
+//        isFollowed = isFollowing
+//        if (isFollowing) {
+//            followButton.text = "Following"
+//            followButton.isAllCaps = false
+//            followButton.setBackgroundResource(R.drawable.shorts_following_button)
+//        } else {
+//            followButton.text = "Follow"
+//            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
+//        }
+//    }
 
     private fun setupContent(shortsEntity: ShortsEntity) {
         val caption = shortsEntity.content.toString()
@@ -486,11 +498,6 @@ class StringViewHolder(
         favoriteCount.text = totalFavorites.toString()
         shareCount.text = totalShares.toString()
         downloadCount.text = totalDownloads.toString()
-    }
-
-
-    fun updateButton(newText: String) {
-        followButton.text = newText
     }
 
     private fun handleLikeClick(shortOwnerId: String) {
@@ -632,21 +639,9 @@ class StringViewHolder(
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
     override fun onBind(data: MyData) {
+
+
         val shortsEntity = data.shortsEntity
-
-        // Ensure clean state
-        videoView.player = null
-        videoView.visibility = View.VISIBLE
-
-        // Reattach player properly
-        videoView.post {
-            videoView.player = exoplayer
-            videoView.useController = false
-            videoView.keepScreenOn = true
-            videoView.requestLayout()
-            videoView.invalidate()
-        }
-
         val url = shortsEntity.images[0].url
         val shortOwnerId = shortsEntity.author.account._id
         val shortOwnerUsername = shortsEntity.author.account.username
@@ -658,18 +653,131 @@ class StringViewHolder(
         isLiked = shortsEntity.isLiked
         isFavorite = shortsEntity.isBookmarked
 
+        // UI that can change without killing the player
         updateLikeButtonState()
         updateFavoriteButtonState()
-
-        setupEventBusEvents(shortsEntity)
         setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
         setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-        setupFollowButton(data, shortOwnerId)
+        setupFollowButton(data, shortOwnerId)   // <-- this is the only thing that changes
         setupContent(shortsEntity)
 
-        bottomVideoSeekBar.progress = 0
-        videoDuration = 0L
+        // Keep seek bar in sync (no player re-attachment)
+        if (exoplayer.duration > 0) {
+            bottomVideoSeekBar.max = (exoplayer.duration / 1000).toInt()
+        }
     }
+
+
+
+
+    fun reattachPlayer() {
+        // Only attach if not already attached
+        if (videoView.player == null) {
+            videoView.player = exoplayer
+            videoView.useController = false
+            videoView.keepScreenOn = true
+            Log.d(TAG, "Player attached in onViewAttachedToWindow")
+        }
+    }
+
+//    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
+//        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
+//            followButton.visibility = View.INVISIBLE
+//            return
+//        }
+//
+//        followButton.visibility = View.VISIBLE
+//        val currentFollowing = data.followItemEntity.isFollowing
+//        updateFollowButtonState(currentFollowing)
+//
+//        followButton.setOnClickListener {
+//            val newFollowing = !currentFollowing
+//            data.followItemEntity.isFollowing = newFollowing        // mutate source
+//            updateFollowButtonState(newFollowing)                   // UI flip
+//
+//            // Notify **only this item** → no full rebind
+//            notifyItemChanged(bindingAdapterPosition)
+//
+//            // Fire network request
+//            EventBus.getDefault().post(
+//                ShortsFollowButtonClicked(FollowUnFollowEntity(shortOwnerId, newFollowing))
+//            )
+//        }
+//    }
+
+    fun updateFollowButtonState(isFollowing: Boolean) {
+        if (isFollowing) {
+            followButton.text = "Following"
+            followButton.isAllCaps = false
+            followButton.setBackgroundResource(R.drawable.shorts_following_button)
+        } else {
+            followButton.text = "Follow"
+            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
+        }
+    }
+
+    // Replace setupFollowButton with this
+    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
+        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
+            followButton.visibility = View.INVISIBLE
+            return
+        }
+        followButton.visibility = View.VISIBLE
+        updateFollowButtonState(data.followItemEntity.isFollowing)
+
+        followButton.setOnClickListener {
+            val newState = !data.followItemEntity.isFollowing
+            data.followItemEntity.isFollowing = newState
+            updateFollowButtonState(newState)
+           // notifyItemChanged(bindingAdapterPosition) // or adapter.notifyItemChanged(pos, newState)
+            EventBus.getDefault().post(
+                ShortsFollowButtonClicked(FollowUnFollowEntity(shortOwnerId, newState)
+                )
+            )
+        }
+    }
+
+//    @OptIn(UnstableApi::class)
+//    @SuppressLint("SetTextI18n")
+//    override fun onBind(data: MyData) {
+//        val shortsEntity = data.shortsEntity
+//
+//        // Ensure clean state
+//        videoView.player = null
+//        videoView.visibility = View.VISIBLE
+//
+//        // Reattach player properly
+//        videoView.post {
+//            videoView.player = exoplayer
+//            videoView.useController = false
+//            videoView.keepScreenOn = true
+//            videoView.requestLayout()
+//            videoView.invalidate()
+//        }
+//
+//        val url = shortsEntity.images[0].url
+//        val shortOwnerId = shortsEntity.author.account._id
+//        val shortOwnerUsername = shortsEntity.author.account.username
+//        val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
+//        val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
+//
+//        totalComments = shortsEntity.comments
+//        totalLikes = shortsEntity.likes
+//        isLiked = shortsEntity.isLiked
+//        isFavorite = shortsEntity.isBookmarked
+//
+//        updateLikeButtonState()
+//        updateFavoriteButtonState()
+//
+//        setupEventBusEvents(shortsEntity)
+//        setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+//        setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+//        setupFollowButton(data, shortOwnerId)
+//        setupContent(shortsEntity)
+//
+//        bottomVideoSeekBar.progress = 0
+//        videoDuration = 0L
+//    }
 
     private fun updateLikeButtonState() {
         likeCount.text = totalLikes.toString()
@@ -717,19 +825,19 @@ class StringViewHolder(
         isPlaying = false
     }
 
-    fun reattachPlayer() {
-        videoView.post {
-            videoView.player = null
-            videoView.player = exoplayer
-            videoView.visibility = View.VISIBLE
-            videoView.useController = false
-            videoView.keepScreenOn = true
-            videoView.requestLayout()
-            videoView.invalidate()
-
-            Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
-        }
-    }
+//    fun reattachPlayer() {
+//        videoView.post {
+//            videoView.player = null
+//            videoView.player = exoplayer
+//            videoView.visibility = View.VISIBLE
+//            videoView.useController = false
+//            videoView.keepScreenOn = true
+//            videoView.requestLayout()
+//            videoView.invalidate()
+//
+//            Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
+//        }
+//    }
 
     private fun setupPlayer() {
         player = exoplayer
