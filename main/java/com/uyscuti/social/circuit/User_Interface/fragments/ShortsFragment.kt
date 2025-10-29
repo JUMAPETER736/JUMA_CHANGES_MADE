@@ -1968,7 +1968,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             DefaultDataSource.Factory(requireContext())
         }
     }
-    
+
 
     private fun handlePlaybackError(position: Int) {
         lifecycleScope.launch {
@@ -2084,22 +2084,52 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     override fun onResume() {
         super.onResume()
         (activity as? MainActivity)?.hideAppBar()
+
         val vNLayout = activity?.findViewById<ConstraintLayout>(R.id.VNLayout)
         if (vNLayout?.visibility == View.VISIBLE) {
             pauseVideo()
         } else {
-            exoPlayer!!.play()
+            // Reattach player to current holder
+            val currentHolder = shortsAdapter.getCurrentViewHolder()
+            currentHolder?.reattachPlayer()
+
+            // Resume playback
+            exoPlayer?.play()
+
             val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
             if (index != -1) {
                 val player = exoPlayerItems[index].exoPlayer
                 player.playWhenReady = true
                 player.play()
-                player.seekTo(0)
             }
+
+            // Preload around current position
+            preloadVideosAround(currentPosition)
         }
         updateStatusBar()
-
     }
+
+
+//    @SuppressLint("NotifyDataSetChanged")
+//    override fun onResume() {
+//        super.onResume()
+//        (activity as? MainActivity)?.hideAppBar()
+//        val vNLayout = activity?.findViewById<ConstraintLayout>(R.id.VNLayout)
+//        if (vNLayout?.visibility == View.VISIBLE) {
+//            pauseVideo()
+//        } else {
+//            exoPlayer!!.play()
+//            val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
+//            if (index != -1) {
+//                val player = exoPlayerItems[index].exoPlayer
+//                player.playWhenReady = true
+//                player.play()
+//                player.seekTo(0)
+//            }
+//        }
+//        updateStatusBar()
+//
+//    }
 
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
