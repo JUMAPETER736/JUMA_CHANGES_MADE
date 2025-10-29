@@ -1279,6 +1279,75 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
+    private fun createPlayerListener(position: Int): Player.Listener {
+        return object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                super.onPlaybackStateChanged(playbackState)
+
+                when (playbackState) {
+                    Player.STATE_BUFFERING -> {
+                        Log.d("PlayerState", "Buffering at position: $position")
+                    }
+                    Player.STATE_READY -> {
+                        Log.d("PlayerState", "Ready at position: $position")
+                        isPlayerPreparing = false
+
+                        // CRITICAL: Ensure surface is visible when ready
+                        val currentHolder = shortsAdapter.getCurrentViewHolder()
+                        currentHolder?.getSurface()?.let { playerView ->
+                            playerView.visibility = View.VISIBLE
+                            playerView.invalidate()
+                        }
+
+                        exoPlayer?.let { player ->
+                            if (player.duration != C.TIME_UNSET) {
+                                shortSeekBar.max = player.duration.toInt()
+                            }
+                            // Ensure playback starts
+                            if (!player.isPlaying) {
+                                player.play()
+                            }
+                        }
+                    }
+                    Player.STATE_ENDED -> {
+                        Log.d("PlayerState", "Ended at position: $position")
+                    }
+                    Player.STATE_IDLE -> {
+                        Log.d("PlayerState", "Idle at position: $position")
+                        isPlayerPreparing = false
+                    }
+                }
+            }
+
+            override fun onRenderedFirstFrame() {
+                super.onRenderedFirstFrame()
+                Log.d("PlayerState", "First frame rendered at position: $position - VIDEO IS VISIBLE")
+
+                // Ensure surface stays visible
+                val currentHolder = shortsAdapter.getCurrentViewHolder()
+                currentHolder?.getSurface()?.visibility = View.VISIBLE
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                super.onPlayerError(error)
+                isPlayerPreparing = false
+                Log.e("PlayerError", "Error at position $position: ${error.message}", error)
+                handlePlaybackError(position)
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                super.onIsPlayingChanged(isPlaying)
+                Log.d("PlayerState", "Is playing: $isPlaying at position: $position")
+
+                if (isPlaying) {
+                    // Ensure surface is visible while playing
+                    val currentHolder = shortsAdapter.getCurrentViewHolder()
+                    currentHolder?.getSurface()?.visibility = View.VISIBLE
+                }
+            }
+        }
+    }
+
     private fun convertFeedPostsToShortsEntity(
         feedPosts: List<com.uyscuti.social.network.api.response.posts.Post>
     ): List<ShortsEntity> {
@@ -1899,105 +1968,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             DefaultDataSource.Factory(requireContext())
         }
     }
-
-    private fun createPlayerListener(position: Int): Player.Listener {
-        return object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                super.onPlaybackStateChanged(playbackState)
-
-                when (playbackState) {
-                    Player.STATE_BUFFERING -> {
-                        Log.d("PlayerState", "Buffering video at position: $position")
-
-                    }
-                    Player.STATE_READY -> {
-                        Log.d("PlayerState", "Video ready at position: $position")
-                        isPlayerPreparing = false
-
-
-                        exoPlayer?.let { player ->
-                            if (player.duration != C.TIME_UNSET) {
-                                shortSeekBar.max = player.duration.toInt()
-                                Log.d("PlayerState", "Duration set: ${player.duration}")
-                            }
-                            player.play()
-                        }
-                    }
-                    Player.STATE_ENDED -> {
-                        Log.d("PlayerState", "Video ended at position: $position")
-                    }
-                    Player.STATE_IDLE -> {
-                        Log.d("PlayerState", "Player idle at position: $position")
-                        isPlayerPreparing = false
-                    }
-                }
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                super.onPlayerError(error)
-                isPlayerPreparing = false
-
-                Log.e("PlayerError", "Playback error at position $position", error)
-                Log.e("PlayerError", "Error cause: ${error.cause}")
-                Log.e("PlayerError", "Error message: ${error.message}")
-                Log.e("PlayerError", "Error code: ${error.errorCode}")
-
-                // Enhanced error handling with specific messages
-                when (error.errorCode) {
-                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
-                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT -> {
-
-                        Log.e("PlayerError", "Network error: ${error.message}")
-                    }
-                    PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
-                    PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED -> {
-
-                        Log.e("PlayerError", "Format error: ${error.message}")
-                    }
-                    PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> {
-
-                        Log.e("PlayerError", "File not found: ${error.message}")
-                    }
-                    PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED -> {
-
-                        Log.e("PlayerError", "Unsupported container: ${error.message}")
-                    }
-                    PlaybackException.ERROR_CODE_DECODER_INIT_FAILED -> {
-
-                        Log.e("PlayerError", "Decoder init failed: ${error.message}")
-                    }
-                    else -> {
-                        // Check if it's the specific UnrecognizedInputFormatException
-                        if (error.cause is androidx.media3.exoplayer.source.UnrecognizedInputFormatException) {
-
-                            Log.e("PlayerError", "Unrecognized input format - file may be corrupted")
-                        } else {
-
-                            Log.e("PlayerError", "Unknown error: ${error.message}")
-                        }
-                    }
-                }
-
-                // Enhanced recovery mechanism
-                handlePlaybackError(position)
-            }
-
-            override fun onPositionDiscontinuity(
-                oldPosition: Player.PositionInfo,
-                newPosition: Player.PositionInfo,
-                reason: Int
-            ) {
-                super.onPositionDiscontinuity(oldPosition, newPosition, reason)
-                updateSeekBar()
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                super.onIsPlayingChanged(isPlaying)
-                Log.d("PlayerState", "Is playing: $isPlaying at position: $position")
-
-            }
-        }
-    }
+    
 
     private fun handlePlaybackError(position: Int) {
         lifecycleScope.launch {
