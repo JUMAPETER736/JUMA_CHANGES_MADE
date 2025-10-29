@@ -307,6 +307,14 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         val url: String
     )
 
+    data class AuthorInfo(
+        val displayName: String,
+        val username: String,
+        val avatarUrl: String,
+        val userId: String
+    )
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         extractArguments()
@@ -314,6 +322,15 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
         apiService = retrofitInstance.apiService
        
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        rootView = inflater.inflate(R.layout.tapped_files_in_the_container_view, container, false)
+        return rootView
     }
 
     @OptIn(UnstableApi::class)
@@ -397,31 +414,25 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    fun getUserId(context: Context): String {
-        val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        return sharedPreferences.getString("user_id", "") ?: ""
-    }
+    private fun loadInitialPost() {
+        postList?.let { posts ->
+            if (posts.isNotEmpty() && currentPosition < posts.size) {
+                val postItem = posts[currentPosition]
+                postId = postItem.postId
 
-    fun getUsername(context: Context): String {
-        val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        return sharedPreferences.getString("username", "") ?: ""
-    }
+                loadPostMetrics(postId!!)
+                loadPostContent(postId!!)
 
-    fun getEmail(context: Context): String {
-        val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        return sharedPreferences.getString("email", "") ?: ""
-    }
+                // Load the full Post object to get author info
+                loadPostWithAuthorInfo(postId!!)
 
-    fun getAvatarUrl(context: Context): String {
-        val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        return sharedPreferences.getString("avatar_url", "") ?: ""
-    }
+                updateUI()
 
-    fun getAccessToken(context: Context): String {
-        val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        return sharedPreferences.getString("access_token", "") ?: ""
+                viewPager.setCurrentItem(currentPosition, false)
+                Log.d(TAG, "Initial post loaded: ${postItem.postId}")
+            }
+        }
     }
-
 
     @SuppressLint("CutPasteId")
     private fun initializeAllViews(view: View) {
@@ -502,6 +513,33 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
 
     }
+
+
+    fun getUserId(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("user_id", "") ?: ""
+    }
+
+    fun getUsername(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("username", "") ?: ""
+    }
+
+    fun getEmail(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("email", "") ?: ""
+    }
+
+    fun getAvatarUrl(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("avatar_url", "") ?: ""
+    }
+
+    fun getAccessToken(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("access_token", "") ?: ""
+    }
+
 
     @OptIn(UnstableApi::class)
     private fun immediateNavigateBack() {
@@ -653,19 +691,77 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
+    private fun loadPostWithAuthorInfo(postId: String) {
+        // First, check if we already have author info from arguments
+        val authorName = arguments?.getString("author_name")
+        val authorUsername = arguments?.getString("author_username")
+        val authorProfileImageUrl = arguments?.getString("author_profile_image_url")
+        val userId = arguments?.getString("user_id")
+
+        // If we have complete author info from arguments, use it immediately
+        if (!authorName.isNullOrEmpty() && !authorUsername.isNullOrEmpty()) {
+            Log.d(TAG, "Using author info from arguments: $authorName (@$authorUsername)")
+            val authorInfo = AuthorInfo(
+                displayName = authorName,
+                username = authorUsername,
+                avatarUrl = authorProfileImageUrl ?: "",
+                userId = userId ?: ""
+            )
+            populateHeaderWithAuthorInfo(authorInfo)
+            // Don't return here - still try to fetch from API for completeness
+        }
+
+        // Validate post ID before making API call
+        if (postId.startsWith("file_") || postId.isEmpty() || postId.length < 24) {
+            Log.w(TAG, "Invalid post ID format: $postId - using argument data only")
+            return
+        }
+
+        // Try to fetch complete post data from API
+        lifecycleScope.launch {
+            try {
+                Log.d(TAG, "Fetching post data from API for postId: $postId")
+                val response = apiService.getPostById(postId)
+
+                if (response.isSuccessful) {
+                    response.body()?.let { getPostByIdResponse ->
+                        val postData = getPostByIdResponse.data
+                        val authorInfo = extractAuthorInfoFromPostData(postData)
+                        populateHeaderWithAuthorInfo(authorInfo)
+                        Log.d(TAG, "Author info updated from API: ${authorInfo.displayName}")
+                    }
+                } else {
+                    Log.e(TAG, "API returned error ${response.code()} for postId: $postId")
+                    // Keep using the argument data we already populated
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading post from API: ${e.message}", e)
+                // Keep using the argument data we already populated
+            }
+        }
+    }
+
     private fun extractFilesData() {
         val filesData = arguments?.getString("files_data")
         val fileUrls = arguments?.getStringArrayList("file_urls")
         val mediaType = arguments?.getString("media_type") ?: "unknown"
         val selectedPosition = arguments?.getInt("selected_position", 0) ?: 0
 
-        // ✅ Get the REAL post ID from arguments
+        //  Get ALL author/post info from arguments
         val realPostId = arguments?.getString(ARG_POST_ID) ?: ""
-
         val authorName = arguments?.getString("author_name")
         val authorUsername = arguments?.getString("author_username")
         val authorProfileImageUrl = arguments?.getString("author_profile_image_url")
         val userId = arguments?.getString("user_id")
+
+        Log.d(TAG, """
+        Extracting files with author info:
+        - Post ID: $realPostId
+        - Author: $authorName
+        - Username: $authorUsername
+        - User ID: $userId
+        - Profile Image: $authorProfileImageUrl
+    """.trimIndent())
 
         // Try JSON parsing first
         if (!filesData.isNullOrEmpty()) {
@@ -678,10 +774,11 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                             audioThumbnailUrl = null,
                             videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mov")) file.url else null,
                             videoThumbnailUrl = null,
-                            postId = realPostId,  // ✅ Use real post ID, not file_$index
+                            postId = realPostId,  //  Use real post ID
                             data = "",
                             files = arrayListOf(file.url),
                             fileType = mediaType,
+                            // Pass author info to each PostItem
                             authorName = authorName,
                             authorUsername = authorUsername,
                             authorProfileImageUrl = authorProfileImageUrl,
@@ -690,6 +787,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                     }
                     viewPager.adapter = PostPagerAdapter(requireActivity(), postItems)
                     viewPager.setCurrentItem(selectedPosition, false)
+                    Log.d(TAG, "Created ${postItems.size} PostItems with author info")
                     return
                 }
             } catch (e: Exception) {
@@ -705,10 +803,11 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                     audioThumbnailUrl = null,
                     videoUrl = if (url.endsWith(".mp4") || url.endsWith(".mov")) url else null,
                     videoThumbnailUrl = null,
-                    postId = realPostId,  // ✅ Use real post ID, not "file_$index"
+                    postId = realPostId,  // Use real post ID
                     data = "",
                     files = arrayListOf(url),
                     fileType = mediaType,
+                    // Pass author info to each PostItem
                     authorName = authorName,
                     authorUsername = authorUsername,
                     authorProfileImageUrl = authorProfileImageUrl,
@@ -717,52 +816,140 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             }
             viewPager.adapter = PostPagerAdapter(requireActivity(), postItems)
             viewPager.setCurrentItem(selectedPosition, false)
+            Log.d(TAG, "Created ${postItems.size} PostItems from URLs with author info")
             return
         }
 
         Log.e(TAG, "No valid files data found")
     }
 
-    private fun loadPostWithAuthorInfo(postId: String) {
-        // ✅ Validate post ID before making API call
-        if (postId.startsWith("file_") || postId.isEmpty()) {
-            Log.w(TAG, "Skipping API call - invalid post ID: $postId")
-            // Use author info from arguments instead
-            val authorName = arguments?.getString("author_name")
-            val authorUsername = arguments?.getString("author_username")
-            val authorProfileImageUrl = arguments?.getString("author_profile_image_url")
-            val userId = arguments?.getString("user_id")
+    private fun initializeAndPopulateHeaderViews(view: View) {
+        // Initialize header views
+        fullNameTextView = view.findViewById(R.id.fullNameTextView)
+        usernameTextView = view.findViewById(R.id.usernameTextView)
+        userProfileImage = view.findViewById(R.id.userProfileIcon)
 
-            if (!authorName.isNullOrEmpty() && !authorUsername.isNullOrEmpty()) {
-                val authorInfo = AuthorInfo(
-                    displayName = authorName,
-                    username = authorUsername,
-                    avatarUrl = authorProfileImageUrl ?: "",
-                    userId = userId ?: ""
-                )
-                populateHeaderWithAuthorInfo(authorInfo)
+        // Get author info from arguments
+        val authorName = arguments?.getString("author_name")
+        val authorUsername = arguments?.getString("author_username")
+        val authorProfileImageUrl = arguments?.getString("author_profile_image_url")
+        val authorUserId = arguments?.getString("user_id")
+
+        Log.d(TAG, """
+        Initializing header with author info:
+        - Name: $authorName
+        - Username: $authorUsername
+        - User ID: $authorUserId
+        - Profile Image: $authorProfileImageUrl
+    """.trimIndent())
+
+        // Populate immediately with available data
+        if (!authorName.isNullOrEmpty() && !authorUsername.isNullOrEmpty()) {
+            fullNameTextView.text = authorName
+            usernameTextView.text = "@$authorUsername"
+
+            // Load profile image
+            if (!authorProfileImageUrl.isNullOrEmpty()) {
+                loadProfileImage(authorProfileImageUrl, userProfileImage)
+                Log.d(TAG, "Loading profile image: $authorProfileImageUrl")
+            } else {
+                userProfileImage.setImageResource(R.drawable.flash21)
+                Log.d(TAG, "No profile image URL, using default")
             }
-            return
+
+            // Setup click listeners
+            setupProfileClickListenersForPostAuthor(
+                authorUserId = authorUserId,
+                authorName = authorName,
+                authorUsername = authorUsername,
+                authorProfileImageUrl = authorProfileImageUrl
+            )
+
+            Log.d(TAG, "Header populated with author: $authorName (@$authorUsername)")
+        } else {
+            // Fallback to defaults
+            Log.w(TAG, "⚠No author info available in arguments")
+            userProfileImage.setImageResource(R.drawable.flash21)
+            fullNameTextView.text = "Uy Scuti"
+            usernameTextView.text = "@uyscuti"
         }
+    }
 
-        lifecycleScope.launch {
-            try {
-                Log.d(TAG, "Loading post with author info for postId: $postId")
-                val response = apiService.getPostById(postId)
+    // Updated populateHeaderWithAuthorInfo to handle updates gracefully
+    private fun populateHeaderWithAuthorInfo(authorInfo: AuthorInfo) {
+        try {
+            Log.d(TAG, "Updating header with author info: ${authorInfo.displayName} (@${authorInfo.username})")
 
-                if (response.isSuccessful) {
-                    response.body()?.let { getPostByIdResponse ->
-                        val postData = getPostByIdResponse.data
-                        val authorInfo = extractAuthorInfoFromPostData(postData)
-                        populateHeaderWithAuthorInfo(authorInfo)
-                        Log.d(TAG, "Author info loaded: ${authorInfo.displayName}")
-                    }
-                } else {
-                    Log.e(TAG, "Failed to load post: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading post with author info: ${e.message}", e)
+            if (::fullNameTextView.isInitialized) {
+                fullNameTextView.text = authorInfo.displayName
             }
+            if (::usernameTextView.isInitialized) {
+                usernameTextView.text = "@${authorInfo.username}"
+            }
+
+            if (::userProfileImage.isInitialized) {
+                if (authorInfo.avatarUrl.isNotEmpty()) {
+                    loadProfileImage(authorInfo.avatarUrl, userProfileImage)
+                } else {
+                    userProfileImage.setImageResource(R.drawable.flash21)
+                }
+            }
+
+            // Setup/update click listeners
+            setupProfileClickListenersForPostAuthor(
+                authorUserId = authorInfo.userId,
+                authorName = authorInfo.displayName,
+                authorUsername = authorInfo.username,
+                authorProfileImageUrl = authorInfo.avatarUrl
+            )
+
+            Log.d(TAG, "Header updated successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error populating header: ${e.message}", e)
+        }
+    }
+
+    private fun loadProfileImage(url: String, imageView: ImageView) {
+        try {
+            if (url.isEmpty()) {
+                Log.w(TAG, "Empty URL provided for profile image")
+                imageView.setImageResource(R.drawable.flash21)
+                return
+            }
+
+            Log.d(TAG, "Loading profile image from: $url")
+
+            Glide.with(this)
+                .load(url)
+                .placeholder(R.drawable.flash21)
+                .error(R.drawable.flash21)
+                .circleCrop()
+                .listener(object : com.bumptech.glide.request.RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: com.bumptech.glide.request.target.Target<Drawable>,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.e(TAG, "Failed to load profile image: ${e?.message}")
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: Drawable,
+                        model: Any,
+                        target: com.bumptech.glide.request.target.Target<Drawable>?,
+                        dataSource: com.bumptech.glide.load.DataSource,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.d(TAG, "✅ Profile image loaded successfully")
+                        return false
+                    }
+                })
+                .into(imageView)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading profile image: ${e.message}", e)
+            imageView.setImageResource(R.drawable.flash21)
         }
     }
 
@@ -833,13 +1020,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             userId = userId
         )
     }
-
-    data class AuthorInfo(
-        val displayName: String,
-        val username: String,
-        val avatarUrl: String,
-        val userId: String
-    )
 
     private fun populateHeaderWithPostAuthorInfo(post: Post) {
         try {
@@ -934,26 +1114,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    private fun loadInitialPost() {
-        postList?.let { posts ->
-            if (posts.isNotEmpty() && currentPosition < posts.size) {
-                val postItem = posts[currentPosition]
-                postId = postItem.postId
-
-                loadPostMetrics(postId!!)
-                loadPostContent(postId!!)
-
-                // Load the full Post object to get author info
-                loadPostWithAuthorInfo(postId!!)
-
-                updateUI()
-
-                viewPager.setCurrentItem(currentPosition, false)
-                Log.d(TAG, "Initial post loaded: ${postItem.postId}")
-            }
-        }
-    }
-
     private fun extractAuthorInfoFromPostData(postData: com.uyscuti.social.network.api.response.post.Data): AuthorInfo {
         val author = postData.author
 
@@ -981,35 +1141,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         )
     }
 
-    private fun populateHeaderWithAuthorInfo(authorInfo: AuthorInfo) {
-        try {
-            if (::fullNameTextView.isInitialized) {
-                fullNameTextView.text = authorInfo.displayName
-            }
-            if (::usernameTextView.isInitialized) {
-                usernameTextView.text = "@${authorInfo.username}"
-            }
-
-            if (::userProfileImage.isInitialized && authorInfo.avatarUrl.isNotEmpty()) {
-                loadProfileImage(authorInfo.avatarUrl, userProfileImage)
-            } else if (::userProfileImage.isInitialized) {
-                userProfileImage.setImageResource(R.drawable.flash21)
-            }
-
-            // Setup click listeners
-            setupProfileClickListenersForPostAuthor(
-                authorUserId = authorInfo.userId,
-                authorName = authorInfo.displayName,
-                authorUsername = authorInfo.username,
-                authorProfileImageUrl = authorInfo.avatarUrl
-            )
-
-            Log.d(TAG, "Header populated with author: ${authorInfo.displayName}")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error populating header: ${e.message}", e)
-        }
-    }
-
     @SuppressLint("SetTextI18n")
     private fun populateHeaderWithOriginalAuthor(originalPost: OriginalPost) {
         try {
@@ -1032,45 +1163,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             Log.d(TAG, "Original author info populated in POST CONTENT area (not header)")
         } catch (e: Exception) {
             Log.e(TAG, "Error populating original author info: ${e.message}", e)
-        }
-    }
-
-    private fun initializeAndPopulateHeaderViews(view: View) {
-        // Initialize header views
-        fullNameTextView = view.findViewById(R.id.fullNameTextView)
-        usernameTextView = view.findViewById(R.id.usernameTextView)
-        userProfileImage = view.findViewById(R.id.userProfileIcon)
-
-        // Get post author info from arguments (following PostItem structure)
-        val authorName = arguments?.getString("author_name")
-        val authorUsername = arguments?.getString("author_username")
-        val authorProfileImageUrl = arguments?.getString("author_profile_image_url")
-        val authorUserId = arguments?.getString("user_id")
-
-        Log.d(TAG, "PostItem Author from args - Name: $authorName, Username: $authorUsername, UserId: $authorUserId")
-
-        // If we have author info from PostItem arguments, use it immediately
-        if (!authorName.isNullOrEmpty() && !authorUsername.isNullOrEmpty()) {
-            fullNameTextView.text = authorName
-            usernameTextView.text = "@$authorUsername"
-
-            if (!authorProfileImageUrl.isNullOrEmpty()) {
-                loadProfileImage(authorProfileImageUrl, userProfileImage)
-                Log.d(TAG, "Loading post author avatar from PostItem: $authorProfileImageUrl")
-            } else {
-                userProfileImage.setImageResource(R.drawable.flash21)
-            }
-
-            // Setup click listeners for post author profile
-            setupProfileClickListenersForPostAuthor(authorUserId, authorName, authorUsername, authorProfileImageUrl)
-
-            Log.d(TAG, "Header populated with PostItem author: $authorName (@$authorUsername)")
-        } else {
-            // Fallback: If no author info in arguments, will populate from Post/OriginalPost data
-            Log.w(TAG, "No author info in PostItem arguments, will populate from Post/OriginalPost data classes")
-            userProfileImage.setImageResource(R.drawable.flash21)
-            fullNameTextView.text = "Uy Scuti"
-            usernameTextView.text = "@uyscuti"
         }
     }
 
@@ -1125,14 +1217,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        rootView = inflater.inflate(R.layout.tapped_files_in_the_container_view, container, false)
-        return rootView
-    }
+
 
     @OptIn(UnstableApi::class)
     private fun navigateToUserProfile(
@@ -1205,23 +1290,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    private fun loadProfileImage(url: String, imageView: ImageView) {
-        try {
-            // Using Glide to load images
-            Glide.with(this)
-                .load(url)
-                .placeholder(R.drawable.flash21)
-                .error(R.drawable.flash21)
-                .circleCrop()
-                .into(imageView)
-
-            Log.d(TAG, "Loading profile image from: $url")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error loading profile image: ${e.message}", e)
-            // Set default image on error
-            imageView.setImageResource(R.drawable.flash21)
-        }
-    }
 
     private fun loadPostContent(postId: String) {
         // Fetch post data by ID from Firestore or local source

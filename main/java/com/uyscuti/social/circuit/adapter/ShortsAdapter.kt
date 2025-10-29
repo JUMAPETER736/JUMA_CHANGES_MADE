@@ -764,7 +764,7 @@ class StringViewHolder(
         username.text = shortsEntity.author.account.username
         commentsCount.text = totalComments.toString()
     }
-    
+
 
     @OptIn(UnstableApi::class)
     private fun navigateToOtherUserProfile(
