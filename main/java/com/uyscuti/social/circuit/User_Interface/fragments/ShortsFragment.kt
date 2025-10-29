@@ -2573,7 +2573,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
 
-
     @SuppressLint("MissingInflatedId")
     override fun onShareClick(position: Int) {
         val context = requireContext()
@@ -2602,40 +2601,118 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         // Show share bottom sheet
         val bottomSheetDialog = BottomSheetDialog(context)
         val shareView = layoutInflater.inflate(R.layout.bottom_dialog_for_share, null)
-
-        val closeButton = shareView.findViewById<ImageButton>(R.id.close_button)
-        val recyclerView = shareView.findViewById<RecyclerView>(R.id.apps_recycler_view)
-
-        if (recyclerView == null) {
-            Log.e(TAG, "apps_recycler_view not found in layout")
-            Toast.makeText(context, "Error loading share options", Toast.LENGTH_SHORT).show()
-            return
-        }
-
         bottomSheetDialog.setContentView(shareView)
 
-        closeButton?.setOnClickListener {
+        // Prepare share content
+        val shareText = "Check out this video on Flash!\n" +
+                "By: ${shortVideo.author.account.username}\n" +
+                "${shortVideo.content}"
+        val videoUrl = shortVideo.images.firstOrNull()?.url
+        val fullShareText = if (videoUrl != null) "$shareText\n$videoUrl" else shareText
+
+        // Setup share buttons
+        shareView.findViewById<ImageButton>(R.id.btnWhatsApp)?.setOnClickListener {
+            shareToApp(context, "com.whatsapp", fullShareText)
             bottomSheetDialog.dismiss()
         }
 
-        val packageManager = context.packageManager
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            val shareText = "Check out this video on Flash!\n" +
-                    "By: ${shortVideo.author.account.username}\n" +
-                    "${shortVideo.content}"
-            val videoUrl = shortVideo.images.firstOrNull()?.url
-            putExtra(Intent.EXTRA_TEXT, if (videoUrl != null) "$shareText\n$videoUrl" else shareText)
+        shareView.findViewById<ImageButton>(R.id.btnSMS)?.setOnClickListener {
+            shareViaSMS(context, fullShareText)
+            bottomSheetDialog.dismiss()
         }
 
-        val resolveInfoList = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        shareView.findViewById<ImageButton>(R.id.btnInstagram)?.setOnClickListener {
+            shareToApp(context, "com.instagram.android", fullShareText)
+            bottomSheetDialog.dismiss()
+        }
 
-        recyclerView.apply {
-            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-            adapter = ShareVideoAdapter(resolveInfoList, context, position)
+        shareView.findViewById<ImageButton>(R.id.btnMessenger)?.setOnClickListener {
+            shareToApp(context, "com.facebook.orca", fullShareText)
+            bottomSheetDialog.dismiss()
+        }
+
+        shareView.findViewById<ImageButton>(R.id.btnFacebook)?.setOnClickListener {
+            shareToApp(context, "com.facebook.katana", fullShareText)
+            bottomSheetDialog.dismiss()
+        }
+
+        shareView.findViewById<ImageButton>(R.id.btnTelegram)?.setOnClickListener {
+            shareToApp(context, "org.telegram.messenger", fullShareText)
+            bottomSheetDialog.dismiss()
+        }
+
+        // Setup action buttons
+        shareView.findViewById<ImageButton>(R.id.btnReport)?.setOnClickListener {
+            // Handle report action
+            Toast.makeText(context, "Report functionality", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+
+        shareView.findViewById<ImageButton>(R.id.btnNotInterested)?.setOnClickListener {
+            // Handle not interested action
+            Toast.makeText(context, "Not interested", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+
+        shareView.findViewById<ImageButton>(R.id.btnSaveVideo)?.setOnClickListener {
+            // Handle save video action
+            Toast.makeText(context, "Save video functionality", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+
+        shareView.findViewById<ImageButton>(R.id.btnDuet)?.setOnClickListener {
+            // Handle duet action
+            Toast.makeText(context, "Duet functionality", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+
+        shareView.findViewById<ImageButton>(R.id.btnReact)?.setOnClickListener {
+            // Handle react action
+            Toast.makeText(context, "React functionality", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+
+        shareView.findViewById<ImageButton>(R.id.btnAddToFavorites)?.setOnClickListener {
+            // Handle add to favorites action
+            Toast.makeText(context, "Add to favorites", Toast.LENGTH_SHORT).show()
+            bottomSheetDialog.dismiss()
+        }
+
+        // Setup cancel button
+        shareView.findViewById<TextView>(R.id.btnCancel)?.setOnClickListener {
+            bottomSheetDialog.dismiss()
         }
 
         bottomSheetDialog.show()
+    }
+
+    // Helper function to share to specific app
+    private fun shareToApp(context: Context, packageName: String, text: String) {
+        try {
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                setPackage(packageName)
+                putExtra(Intent.EXTRA_TEXT, text)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "App not installed", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "Error sharing to $packageName", e)
+        }
+    }
+
+    // Helper function to share via SMS
+    private fun shareViaSMS(context: Context, text: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("sms:")
+                putExtra("sms_body", text)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "SMS not available", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "Error sharing via SMS", e)
+        }
     }
 
     override fun onUploadCancelClick() {
