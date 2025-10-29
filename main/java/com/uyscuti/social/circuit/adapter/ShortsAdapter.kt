@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
+import androidx.core.content.ContextCompat
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -260,26 +261,19 @@ class ShortsAdapter(
 }
 
 
-// VIEWHOLDER CLASS
-
-
 class StringViewHolder(
+
     itemView: View,
     private val commentsClickListener: OnCommentsClickListener,
     private var onClickListeners: OnClickListeners,
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
-)
 
-    : ViewHolder<MyData>(itemView) {
-
+) : ViewHolder<MyData>(itemView) {
 
     // UI COMPONENTS
-
-
     // Video components
-
     private val videoView: PlayerView = itemView.findViewById(R.id.video_view)
     private val bottomVideoSeekBar: SeekBar = itemView.findViewById(R.id.bottomShortsVideoProgressSeekBar)
     private val btnPlayPause: ImageView = itemView.findViewById(R.id.btnPlayPause)
@@ -294,8 +288,7 @@ class StringViewHolder(
     private val commentsParentLayout: LinearLayout = itemView.findViewById(R.id.commentsParentLayout)
 
     // Profile components
-    private val shortsProfileImage
-    : ImageView = itemView.findViewById(R.id.profileImageForShorts)
+    private val shortsProfileImage: ImageView = itemView.findViewById(R.id.profileImageForShorts)
     private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
     private val username: TextView = itemView.findViewById(R.id.shortUsername)
 
@@ -303,18 +296,21 @@ class StringViewHolder(
     private val captionTextView: TextView = itemView.findViewById(R.id.tvReadMoreLess)
     private val likeCount: TextView = itemView.findViewById(R.id.likeCount)
     private val commentsCount: TextView = itemView.findViewById(R.id.commentsCount)
+    private val favoriteCount: TextView = itemView.findViewById(R.id.favoriteCounts)
+    private val shareCount: TextView = itemView.findViewById(R.id.shareCount)
+    private val downloadCount: TextView = itemView.findViewById(R.id.downloadCount)
 
     // Layout components
     private val shortsViewPager: FrameLayout = itemView.findViewById(R.id.shortsViewPager)
     private val shortsUploadCancelButton: ImageButton = itemView.findViewById(R.id.shortsUploadCancelButton)
 
-
     // PROPERTIES
-
-
     private var player: ExoPlayer? = null
     private var totalLikes = 0
     private var totalComments = 0
+    private var totalFavorites = 0
+    private var totalShares = 0
+    private var totalDownloads = 0
     private var isLiked = false
     private var isFavorite = false
     private var isFollowed = false
@@ -331,14 +327,11 @@ class StringViewHolder(
         }
     }
 
-
     init {
-
         setupSeekBar()
         setupPlayer()
         setupUploadComponents()
     }
-
 
     @OptIn(UnstableApi::class)
     private fun setupClickListeners(
@@ -351,6 +344,8 @@ class StringViewHolder(
     ) {
         // Clear any existing listeners to prevent duplicates
         commentsParentLayout.setOnClickListener(null)
+        btnLike.setOnClickListener(null)
+        favorite.setOnClickListener(null)
         shareBtn.setOnClickListener(null)
         downloadBtn.setOnClickListener(null)
         username.setOnClickListener(null)
@@ -364,12 +359,22 @@ class StringViewHolder(
             commentsClickListener.onCommentsClick(bindingAdapterPosition, userShortsEntity)
         }
 
+        // Like button with bluejeans fill
+        btnLike.setOnClickListener {
+            handleLikeClick(shortOwnerId)
+        }
+
+        // Favorite button with bluejeans fill
+        favorite.setOnClickListener {
+            handleFavoriteClick()
+        }
+
         shareBtn.setOnClickListener {
-            onClickListeners.onShareClick(bindingAdapterPosition)
+            handleShareClick()
         }
 
         downloadBtn.setOnClickListener {
-            onClickListeners.onDownloadClick(url, "FlashShorts")
+            handleDownloadClick(url)
         }
 
         // Username click - navigate to profile
@@ -386,6 +391,81 @@ class StringViewHolder(
         shortsViewPager.setOnClickListener {
             EventBus.getDefault().post(PausePlayEvent(true))
         }
+    }
+
+    // Updated like click handler with bluejeans color
+    private fun handleLikeClick(shortOwnerId: String) {
+        isLiked = !isLiked
+        if (isLiked) {
+            totalLikes += 1
+            likeCount.text = totalLikes.toString()
+            // Set bluejeans color
+            btnLike.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(itemView.context, R.color.bluejeans)
+            )
+            btnLike.setImageResource(R.drawable.filled_favorite_like)
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(btnLike)
+            EventBus.getDefault().post(ShortsLikeUnLike(shortOwnerId, isLiked))
+        } else {
+            totalLikes = maxOf(0, totalLikes - 1)
+            likeCount.text = totalLikes.toString()
+            // Set white color
+            btnLike.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(itemView.context, R.color.white)
+            )
+            btnLike.setImageResource(R.drawable.favorite_svgrepo_com)
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(btnLike)
+            EventBus.getDefault().post(ShortsLikeUnLike(shortOwnerId, isLiked))
+        }
+    }
+
+    // Updated favorite click handler with bluejeans color
+    private fun handleFavoriteClick() {
+        isFavorite = !isFavorite
+        if (isFavorite) {
+            totalFavorites += 1
+            favoriteCount.text = totalFavorites.toString()
+            // Set bluejeans color
+            favorite.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(itemView.context, R.color.bluejeans)
+            )
+            favorite.setImageResource(R.drawable.filled_favorite)
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(favorite)
+        } else {
+            totalFavorites = maxOf(0, totalFavorites - 1)
+            favoriteCount.text = totalFavorites.toString()
+            // Set white color
+            favorite.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(itemView.context, R.color.white)
+            )
+            favorite.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .pivotX(2.6F)
+                .playOn(favorite)
+        }
+    }
+
+    private fun handleShareClick() {
+        totalShares += 1
+        shareCount.text = totalShares.toString()
+        onClickListeners.onShareClick(bindingAdapterPosition)
+    }
+
+    private fun handleDownloadClick(url: String) {
+        totalDownloads += 1
+        downloadCount.text = totalDownloads.toString()
+        onClickListeners.onDownloadClick(url, "FlashShorts")
     }
 
     // Unified profile click handler
@@ -456,9 +536,6 @@ class StringViewHolder(
         }
     }
 
-
-
-
     private fun setupProfileImage(
         shortOwnerId: String,
         shortOwnerName: String,
@@ -471,13 +548,8 @@ class StringViewHolder(
             .apply(RequestOptions.bitmapTransform(CircleCrop()))
             .apply(RequestOptions.placeholderOf(R.drawable.flash21))
             .diskCacheStrategy(DiskCacheStrategy.ALL)
-            .into(shortsProfileImage
-            )
-
-
+            .into(shortsProfileImage)
     }
-
-
 
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
@@ -499,6 +571,13 @@ class StringViewHolder(
         val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
 
         totalComments = shortsEntity.comments
+        totalLikes = shortsEntity.likes
+        isLiked = shortsEntity.isLiked
+        isFavorite = shortsEntity.isBookmarked
+
+        // Update UI based on current state
+        updateLikeButtonState()
+        updateFavoriteButtonState()
 
         setupEventBusEvents(shortsEntity)
 
@@ -516,27 +595,53 @@ class StringViewHolder(
         videoDuration = 0L
     }
 
+    private fun updateLikeButtonState() {
+        likeCount.text = totalLikes.toString()
+        if (isLiked) {
+            btnLike.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(itemView.context, R.color.bluejeans)
+            )
+            btnLike.setImageResource(R.drawable.filled_favorite_like)
+        } else {
+            btnLike.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(itemView.context, R.color.white)
+            )
+            btnLike.setImageResource(R.drawable.favorite_svgrepo_com)
+        }
+    }
+
+    private fun updateFavoriteButtonState() {
+        if (isFavorite) {
+            favorite.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(itemView.context, R.color.bluejeans)
+            )
+            favorite.setImageResource(R.drawable.filled_favorite)
+        } else {
+            favorite.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(itemView.context, R.color.white)
+            )
+            favorite.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+        }
+    }
 
     fun onViewRecycled() {
         stopProgressUpdates()
 
         // Clear click listeners to prevent memory leaks
         commentsParentLayout.setOnClickListener(null)
+        btnLike.setOnClickListener(null)
+        favorite.setOnClickListener(null)
         shareBtn.setOnClickListener(null)
         downloadBtn.setOnClickListener(null)
         username.setOnClickListener(null)
-        shortsProfileImage
-            .setOnClickListener(null)
+        shortsProfileImage.setOnClickListener(null)
         shortsViewPager.setOnClickListener(null)
-
-
 
         // Reset state
         videoDuration = 0L
         bottomVideoSeekBar.progress = 0
         isPlaying = false
     }
-
 
     fun reattachPlayer() {
         videoView.player = null
@@ -609,15 +714,12 @@ class StringViewHolder(
         shortsUploadTopSeekBar?.visibility = View.GONE
     }
 
-
     private fun setupSeekBar() {
         // Hide the secondary progress line completely
         bottomVideoSeekBar.apply {
             secondaryProgress = 0
             splitTrack = false
-            secondaryProgressTintList = ColorStateList.valueOf(
-                Color.TRANSPARENT
-            )
+            secondaryProgressTintList = ColorStateList.valueOf(Color.TRANSPARENT)
         }
 
         bottomVideoSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -643,12 +745,9 @@ class StringViewHolder(
     }
 
     // UPLOAD PROGRESS METHODS
-
     fun getUploadTopSeekBar(): SeekBar? = shortsUploadTopSeekBar
 
-
     fun updateUploadProgress(progress: Int) {
-        // Implementation depends on your upload progress UI
         shortsUploadTopSeekBar?.progress = progress
     }
 
@@ -671,9 +770,7 @@ class StringViewHolder(
         // Add your cancel upload logic here
     }
 
-
     // PROGRESS TRACKING METHODS
-
     private fun updateSeekBarProgress() {
         if (!isUserSeeking && exoplayer.duration > 0) {
             val currentPosition = exoplayer.currentPosition
@@ -718,10 +815,8 @@ class StringViewHolder(
         EventBus.getDefault().post(ShortsBookmarkButton(shortsEntity, favorite))
     }
 
-
     private fun setupFollowButton(data: MyData, shortOwnerId: String) {
-        if (shortOwnerId == LocalStorage.getInstance(shortsProfileImage
-            .context).getUserId()) {
+        if (shortOwnerId == LocalStorage.getInstance(shortsProfileImage.context).getUserId()) {
             followButton.visibility = View.INVISIBLE
             Log.d(TAG, "onBind: short owner id == logged user id")
         } else {
@@ -750,7 +845,6 @@ class StringViewHolder(
         }
     }
 
-
     private fun setupContent(shortsEntity: ShortsEntity) {
         val caption = shortsEntity.content.toString()
         if (caption.isNotEmpty()) {
@@ -761,59 +855,6 @@ class StringViewHolder(
 
         username.text = shortsEntity.author.account.username
         commentsCount.text = totalComments.toString()
-    }
-
-
-    @OptIn(UnstableApi::class)
-    private fun navigateToOtherUserProfile(
-        shortOwnerName: String,
-        shortOwnerUsername: String,
-        shortOwnerProfilePic: String,
-        shortOwnerId: String
-    ) {
-        Log.d(TAG, "onBind: Clicked on another users profile")
-        OtherUsersProfile(
-            shortOwnerName, shortOwnerUsername, shortOwnerProfilePic, shortOwnerId,
-            isVerified = false,
-            bio = "",
-            linkInBio = "",
-            isCreator = false,
-            isTrending = false,
-            isFollowing = false,
-            isPrivate = false,
-            followersCount = 0L,
-            followingCount = 0L,
-            postsCount = 0L,
-            shortsCount = 0L,
-            videosCount = 0L,
-            isOnline = false,
-            lastSeen = null,
-            joinedDate = Date(),
-            location = "",
-            website = "",
-            email = "",
-            phoneNumber = "",
-            dateOfBirth = null,
-            gender = "",
-            accountType = "user",
-            isBlocked = false,
-            isMuted = false,
-            badgeType = null,
-            level = 1,
-            reputation = 0L,
-            coverPhoto = null,
-            theme = null,
-            language = null,
-            timezone = null,
-            notificationsEnabled = true,
-            privacySettings = emptyMap(),
-            socialLinks = emptyMap(),
-            achievements = emptyList(),
-            interests = emptyList(),
-            categories = emptyList()
-        )
-       // UserProfileAccount.openFromShorts(shortsProfileImage
-    // .context, otherUsersProfile)
     }
 
     @SuppressLint("SetTextI18n")
@@ -834,9 +875,7 @@ class StringViewHolder(
         EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
     }
 
-
     // UTILITY METHODS
-
     fun updateButton(newText: String) {
         followButton.text = newText
     }
@@ -859,49 +898,8 @@ class StringViewHolder(
         )
     }
 
-
-    // UNUSED METHODS (Consider removing if not needed)
-
-
-    private fun handleLikeClick(shortOwnerId: String) {
-        isLiked = !isLiked
-        if (isLiked) {
-            totalLikes += 1
-            likeCount.text = totalLikes.toString()
-            btnLike.setImageResource(R.drawable.filled_favorite_like)
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(btnLike)
-            EventBus.getDefault().post(ShortsLikeUnLike(shortOwnerId, isLiked))
-        } else {
-            totalLikes -= 1
-            likeCount.text = totalLikes.toString()
-            btnLike.setImageResource(R.drawable.favorite_svgrepo_com)
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(btnLike)
-            EventBus.getDefault().post(ShortsLikeUnLike(shortOwnerId, isLiked))
-        }
+    companion object {
+        private const val TAG = "StringViewHolder"
+        private const val PROGRESS_UPDATE_INTERVAL = 100L
     }
-
-    private fun handleFavoriteClick() {
-        isFavorite = !isFavorite
-        if (isFavorite) {
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(favorite)
-            favorite.setImageResource(R.drawable.filled_favorite)
-        } else {
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .pivotX(2.6F)
-                .playOn(favorite)
-            favorite.setImageResource(R.drawable.favorite_svgrepo_com__1_)
-        }
-    }
-
 }
