@@ -33,6 +33,7 @@ import com.uyscuti.social.circuit.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.social.circuit.model.*
 import com.uyscuti.social.circuit.User_Interface.shorts.ExoPlayerItem
 import com.uyscuti.social.chatsuit.commons.ViewHolder
+import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.core.common.data.room.entity.*
 import com.uyscuti.social.network.utils.LocalStorage
 import org.greenrobot.eventbus.EventBus
@@ -269,7 +270,9 @@ class StringViewHolder(
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
-) : ViewHolder<MyData>(itemView) {
+)
+
+    : ViewHolder<MyData>(itemView) {
 
 
     // UI COMPONENTS
@@ -291,7 +294,8 @@ class StringViewHolder(
     private val commentsParentLayout: LinearLayout = itemView.findViewById(R.id.commentsParentLayout)
 
     // Profile components
-    private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
+    private val shortsProfileImage
+    : ImageView = itemView.findViewById(R.id.profileImageForShorts)
     private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
     private val username: TextView = itemView.findViewById(R.id.shortUsername)
 
@@ -331,6 +335,7 @@ class StringViewHolder(
 
 
 
+    @OptIn(UnstableApi::class)
     private fun setupClickListeners(
         data: MyData,
         url: String,
@@ -344,7 +349,7 @@ class StringViewHolder(
         shareBtn.setOnClickListener(null)
         downloadBtn.setOnClickListener(null)
         username.setOnClickListener(null)
-        profileImageView.setOnClickListener(null)
+        shortsProfileImage.setOnClickListener(null)
         shortsViewPager.setOnClickListener(null)
 
         // Set new listeners
@@ -362,13 +367,14 @@ class StringViewHolder(
             onClickListeners.onDownloadClick(url, "FlashShorts")
         }
 
+        // Username click - navigate to profile
         username.setOnClickListener {
-            handleUsernameClick(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+            handleProfileClick(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
         }
 
-        // Profile image click (moved from setupProfileImage)
-        profileImageView.setOnClickListener {
-            handleProfileImageClick(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+        // Profile image click - navigate to profile
+        shortsProfileImage.setOnClickListener {
+            handleProfileClick(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
         }
 
         // Pause/Play on frame click
@@ -376,6 +382,76 @@ class StringViewHolder(
             EventBus.getDefault().post(PausePlayEvent(true))
         }
     }
+
+    // Unified profile click handler
+    @OptIn(UnstableApi::class)
+    private fun handleProfileClick(
+        shortOwnerId: String,
+        shortOwnerName: String,
+        shortOwnerUsername: String,
+        shortOwnerProfilePic: String
+    ) {
+        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
+            // Navigate to own profile
+            EventBus.getDefault().post(GoToUserProfileFragment())
+        } else {
+            // Navigate to other user's profile
+            Log.d(TAG, "handleProfileClick: Navigating to another user's profile")
+            val otherUsersProfile = OtherUsersProfile(
+                shortOwnerName,
+                shortOwnerUsername,
+                shortOwnerProfilePic,
+                shortOwnerId,
+                isVerified = false,
+                bio = "",
+                linkInBio = "",
+                isCreator = false,
+                isTrending = false,
+                isFollowing = false,
+                isPrivate = false,
+                followersCount = 0L,
+                followingCount = 0L,
+                postsCount = 0L,
+                shortsCount = 0L,
+                videosCount = 0L,
+                isOnline = false,
+                lastSeen = null,
+                joinedDate = Date(),
+                location = "",
+                website = "",
+                email = "",
+                phoneNumber = "",
+                dateOfBirth = null,
+                gender = "",
+                accountType = "user",
+                isBlocked = false,
+                isMuted = false,
+                badgeType = null,
+                level = 1,
+                reputation = 0L,
+                coverPhoto = null,
+                theme = null,
+                language = null,
+                timezone = null,
+                notificationsEnabled = true,
+                privacySettings = emptyMap(),
+                socialLinks = emptyMap(),
+                achievements = emptyList(),
+                interests = emptyList(),
+                categories = emptyList()
+            )
+
+            // Open the OtherUserProfileAccount activity
+            OtherUserProfileAccount.open(
+                context = itemView.context,
+                user = otherUsersProfile,
+                dialogPhoto = shortOwnerProfilePic,
+                dialogId = shortOwnerId
+            )
+        }
+    }
+
+
 
 
     private fun setupProfileImage(
@@ -390,7 +466,8 @@ class StringViewHolder(
             .apply(RequestOptions.bitmapTransform(CircleCrop()))
             .apply(RequestOptions.placeholderOf(R.drawable.flash21))
             .diskCacheStrategy(DiskCacheStrategy.ALL)
-            .into(profileImageView)
+            .into(shortsProfileImage
+            )
 
 
     }
@@ -403,7 +480,7 @@ class StringViewHolder(
         setupUploadComponents()
     }
 
-    // 5. UPDATED onBind method
+
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
     override fun onBind(data: MyData) {
@@ -450,7 +527,8 @@ class StringViewHolder(
         shareBtn.setOnClickListener(null)
         downloadBtn.setOnClickListener(null)
         username.setOnClickListener(null)
-        profileImageView.setOnClickListener(null)
+        shortsProfileImage
+            .setOnClickListener(null)
         shortsViewPager.setOnClickListener(null)
 
 
@@ -644,7 +722,8 @@ class StringViewHolder(
 
 
     private fun setupFollowButton(data: MyData, shortOwnerId: String) {
-        if (shortOwnerId == LocalStorage.getInstance(profileImageView.context).getUserId()) {
+        if (shortOwnerId == LocalStorage.getInstance(shortsProfileImage
+            .context).getUserId()) {
             followButton.visibility = View.INVISIBLE
             Log.d(TAG, "onBind: short owner id == logged user id")
         } else {
@@ -685,36 +764,7 @@ class StringViewHolder(
         username.text = shortsEntity.author.account.username
         commentsCount.text = totalComments.toString()
     }
-
-
-    // CLICK HANDLERS
-
-
-    private fun handleUsernameClick(
-        shortOwnerId: String,
-        shortOwnerName: String,
-        shortOwnerUsername: String,
-        shortOwnerProfilePic: String
-    ) {
-        if (shortOwnerId == LocalStorage.getInstance(username.context).getUserId()) {
-            EventBus.getDefault().post(GoToUserProfileFragment())
-        } else {
-            navigateToOtherUserProfile(shortOwnerName, shortOwnerUsername, shortOwnerProfilePic, shortOwnerId)
-        }
-    }
-
-    private fun handleProfileImageClick(
-        shortOwnerId: String,
-        shortOwnerName: String,
-        shortOwnerUsername: String,
-        shortOwnerProfilePic: String
-    ) {
-        if (shortOwnerId == LocalStorage.getInstance(profileImageView.context).getUserId()) {
-            EventBus.getDefault().post(GoToUserProfileFragment())
-        } else {
-            navigateToOtherUserProfile(shortOwnerName, shortOwnerUsername, shortOwnerProfilePic, shortOwnerId)
-        }
-    }
+    
 
     @OptIn(UnstableApi::class)
     private fun navigateToOtherUserProfile(
@@ -764,7 +814,8 @@ class StringViewHolder(
             interests = emptyList(),
             categories = emptyList()
         )
-       // UserProfileAccount.openFromShorts(profileImageView.context, otherUsersProfile)
+       // UserProfileAccount.openFromShorts(shortsProfileImage
+    // .context, otherUsersProfile)
     }
 
     @SuppressLint("SetTextI18n")
