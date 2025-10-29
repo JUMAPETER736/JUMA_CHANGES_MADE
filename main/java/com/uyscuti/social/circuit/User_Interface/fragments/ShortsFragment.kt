@@ -321,6 +321,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     private val preloadHandler = Handler(Looper.getMainLooper())
     private val PRELOAD_WINDOW = 10 // Load 10 videos before and after
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -596,11 +597,11 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     override fun onPageSelected(position: Int) {
                         shortsViewModel.shortIndex = position
 
-                        // DON'T stop the player - just pause it
-                        exoPlayer?.let { player ->
-                            player.pause()
-                            // Don't call stop() or seekTo(0) here
-                        }
+                        // Notify adapter of position change
+                        shortsAdapter.onPositionChanged(position)
+
+                        // Pause current video without stopping
+                        exoPlayer?.pause()
 
                         // Set track selection parameters
                         exoPlayer?.trackSelectionParameters = exoPlayer!!.trackSelectionParameters
@@ -608,6 +609,10 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                             .setMaxVideoSizeSd()
                             .build()
 
+                        // Preload adjacent videos
+                        preloadVideosAround(position)
+
+                        // Play video at new position
                         playVideoAtPosition(position)
                     }
 
