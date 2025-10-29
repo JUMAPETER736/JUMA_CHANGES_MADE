@@ -298,10 +298,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     // Repository
     private lateinit var myProfileRepository: ProfileRepository
 
-    // User Profile Data
-    private var _id: String? = null
-    private var _followUnFollowButton: AppCompatButton? = null
-    private var _username: String? = null
+
 
     // Back Press & Navigation
     private val doubleBackPressThreshold = 3
@@ -313,6 +310,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     private var feedShortsBusinessId = ""
     private var feedShortsBusinessFileId = ""
     val count = 0
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -1358,20 +1356,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         if (EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().unregister(this)
             Log.d("EventBus", "ShotsFragment unregistered")
-        }
-    }
-
-    private fun releasePlayer() {
-        try {
-            exoPlayer?.apply {
-                pause() // Don't stop, just pause
-                // Don't clear media items during scrolling
-                currentPlayerListener?.let { removeListener(it) }
-                // Don't release the player here - only on fragment destroy
-            }
-            currentPlayerListener = null
-        } catch (e: Exception) {
-            Log.e("ShotsFragment", "Error releasing player", e)
         }
     }
 
