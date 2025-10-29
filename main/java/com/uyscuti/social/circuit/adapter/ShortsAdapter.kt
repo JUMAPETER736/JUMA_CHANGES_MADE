@@ -332,7 +332,12 @@ class StringViewHolder(
     }
 
 
+    init {
 
+        setupSeekBar()
+        setupPlayer()
+        setupUploadComponents()
+    }
 
 
     @OptIn(UnstableApi::class)
@@ -472,13 +477,6 @@ class StringViewHolder(
 
     }
 
-
-    init {
-
-        setupSeekBar()
-        setupPlayer()
-        setupUploadComponents()
-    }
 
 
     @OptIn(UnstableApi::class)
@@ -747,7 +745,7 @@ class StringViewHolder(
             isFollowed = true
         } else {
             followButton.text = "Follow"
-            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
+            followButton.setBackgroundResource(R.drawable.shorts_following_button)
             isFollowed = false
         }
     }
