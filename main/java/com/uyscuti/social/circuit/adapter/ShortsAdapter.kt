@@ -387,12 +387,14 @@ class StringViewHolder(
 
     @OptIn(UnstableApi::class)
     private fun setupClickListeners(
+
         data: MyData,
         url: String,
         shortOwnerId: String,
         shortOwnerName: String,
         shortOwnerUsername: String,
         shortOwnerProfilePic: String
+
     ) {
         commentsParentLayout.setOnClickListener(null)
         btnLike.setOnClickListener(null)
@@ -435,6 +437,27 @@ class StringViewHolder(
 
         shortsViewPager.setOnClickListener {
             EventBus.getDefault().post(PausePlayEvent(true))
+        }
+    }
+
+
+    @SuppressLint("SetTextI18n")
+    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
+        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
+            followButton.visibility = View.INVISIBLE
+        } else {
+            followButton.visibility = View.VISIBLE
+            updateFollowButtonState(data.followItemEntity.isFollowing)
+
+            followButton.setOnClickListener {
+                // Update UI immediately without rebinding
+                isFollowed = !isFollowed
+                updateFollowButtonState(isFollowed)
+
+                // Post event for backend update
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, isFollowed)
+                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+            }
         }
     }
 
@@ -884,18 +907,18 @@ class StringViewHolder(
         EventBus.getDefault().post(ShortsBookmarkButton(shortsEntity, favorite))
     }
 
-    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
-        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
-            followButton.visibility = View.INVISIBLE
-        } else {
-            followButton.visibility = View.VISIBLE
-            updateFollowButtonState(data.followItemEntity.isFollowing)
-
-            followButton.setOnClickListener {
-                handleFollowButtonClick(shortOwnerId)
-            }
-        }
-    }
+//    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
+//        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
+//            followButton.visibility = View.INVISIBLE
+//        } else {
+//            followButton.visibility = View.VISIBLE
+//            updateFollowButtonState(data.followItemEntity.isFollowing)
+//
+//            followButton.setOnClickListener {
+//                handleFollowButtonClick(shortOwnerId)
+//            }
+//        }
+//    }
 
 
 
