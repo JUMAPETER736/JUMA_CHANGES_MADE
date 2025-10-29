@@ -54,6 +54,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
@@ -479,6 +480,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             DefaultMediaSourceFactory(requireContext())
                 .setDataSourceFactory(cacheDataSourceFactory)
 
+
         // Proper ExoPlayer initialization with video rendering config
         exoPlayer = ExoPlayer.Builder(requireActivity())
             .setMediaSourceFactory(mediaSourceFactory)
@@ -488,9 +490,19 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         // Configure player defaults
         exoPlayer?.apply {
-
             repeatMode = Player.REPEAT_MODE_ONE
             playWhenReady = false
+
+            // CRITICAL: Add surface listener to prevent black screen
+            addListener(object : Player.Listener {
+                override fun onRenderedFirstFrame() {
+                    Log.d("ExoPlayer", "First frame rendered - video visible")
+                }
+
+                override fun onVideoSizeChanged(videoSize: VideoSize) {
+                    Log.d("ExoPlayer", "Video size: ${videoSize.width}x${videoSize.height}")
+                }
+            })
         }
 
         val tag = "handleFollowButtonClick"
