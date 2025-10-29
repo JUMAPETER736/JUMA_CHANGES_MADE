@@ -314,6 +314,12 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     private var feedShortsBusinessFileId = ""
     val count = 0
 
+    // Preloading management
+    private val preloadedPositions = mutableSetOf<Int>()
+    private val mediaItemCache = mutableMapOf<Int, MediaItem>()
+    private val preloadHandler = Handler(Looper.getMainLooper())
+    private val PRELOAD_WINDOW = 10 // Load 10 videos before and after
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
