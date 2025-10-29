@@ -2567,25 +2567,69 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     }
 
+
     @SuppressLint("MissingInflatedId")
     override fun onShareClick(position: Int) {
         val context = requireContext()
 
-        val bottomSheetDialog = BottomSheetDialog(requireContext())
+        val bottomSheetDialog = BottomSheetDialog(context)
         val shareView = layoutInflater.inflate(R.layout.bottom_dialog_for_share, null)
-        val close_button = shareView.findViewById<ImageButton>(R.id.close_button)
+
+        // Find views with null safety
+        val closeButton = shareView.findViewById<ImageButton>(R.id.close_button)
         val recyclerView = shareView.findViewById<RecyclerView>(R.id.apps_recycler_view)
         val userRecyclerView = shareView.findViewById<RecyclerView>(R.id.users_recycler_view)
 
+        // Check if recyclerView is null before proceeding
+        if (recyclerView == null) {
+            Log.e("onShareClick", "apps_recycler_view not found in layout")
+            Toast.makeText(context, "Error loading share options", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         bottomSheetDialog.setContentView(shareView)
-        bottomSheetDialog.show()
+
+        // Setup close button
+        closeButton?.setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
 
         // Fetch installed apps that support sharing
         val packageManager = context.packageManager
-        val intent = Intent(Intent.ACTION_SEND).apply { type = "text/plain" }
-        val resolveInfoList = packageManager?.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
-        recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-        recyclerView.adapter = resolveInfoList?.let { ShareVideoAdapter(it, context, position) }
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            // Add the content you want to share
+            val shortVideo = shortsViewModel.videoShorts.getOrNull(position)
+            if (shortVideo != null) {
+                val shareText = "Check out this video on Flash!\n" +
+                        "By: ${shortVideo.author.account.username}\n" +
+                        "${shortVideo.content}"
+                putExtra(Intent.EXTRA_TEXT, shareText)
+
+                // If you want to share the video URL
+                val videoUrl = shortVideo.images.firstOrNull()?.url
+                if (videoUrl != null) {
+                    putExtra(Intent.EXTRA_TEXT, "$shareText\n$videoUrl")
+                }
+            }
+        }
+
+        val resolveInfoList = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+
+        // Setup RecyclerView
+        recyclerView.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            adapter = ShareVideoAdapter(resolveInfoList, context, position)
+        }
+
+        // Setup user RecyclerView if needed
+        userRecyclerView?.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            // Add your user adapter here if you want to share with specific users
+            // adapter = YourUserAdapter(...)
+        }
+
+        bottomSheetDialog.show()
     }
 
     override fun onUploadCancelClick() {
