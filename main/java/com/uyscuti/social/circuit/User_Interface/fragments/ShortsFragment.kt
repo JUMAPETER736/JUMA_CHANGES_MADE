@@ -1091,7 +1091,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-
     private fun playVideoAtPosition(position: Int) {
         val videoShorts = shortsViewModel.videoShorts
 
@@ -1247,7 +1246,210 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             }
         }
     }
-    
+
+    override fun onStart() {
+        super.onStart()
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this)
+            Log.d("EventBus", "ShotsFragment registered")
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().unregister(this)
+            Log.d("EventBus", "ShotsFragment unregistered")
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // Only pause, don't release
+        exoPlayer?.pause()
+
+        lifecycleScope.launch {
+            shortsViewModel.isResuming = true
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        try {
+            exoPlayer?.apply {
+                removeListener(playbackStateListener)
+                currentPlayerListener?.let { removeListener(it) }
+                stop()
+                clearMediaItems()
+                release()
+            }
+            exoPlayer = null
+        } catch (e: Exception) {
+            Log.e("ShotsFragment", "Error destroying player", e)
+        }
+
+        if (exoPlayerItems.isNotEmpty()) {
+            for (item in exoPlayerItems) {
+                val player = item.exoPlayer
+                player.stop()
+                player.clearMediaItems()
+            }
+            exoPlayerItems.clear()
+        }
+
+        lifecycleScope.launch {
+            shortsViewModel.isResuming = true
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        exoPlayer!!.pause()
+        val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
+        if (index != -1) {
+            val player = exoPlayerItems[index].exoPlayer
+            player.pause()
+
+            player.playWhenReady = false
+            player.seekTo(0)
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    override fun onResume() {
+        super.onResume()
+        (activity as? MainActivity)?.hideAppBar()
+        val vNLayout = activity?.findViewById<ConstraintLayout>(R.id.VNLayout)
+        if (vNLayout?.visibility == View.VISIBLE) {
+            pauseVideo()
+        } else {
+            exoPlayer!!.play()
+            val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
+            if (index != -1) {
+                val player = exoPlayerItems[index].exoPlayer
+                player.playWhenReady = true
+                player.play()
+                player.seekTo(0)
+            }
+        }
+        updateStatusBar()
+
+    }
+
+    private suspend fun loadMoreShortsPage1(currentPage: Int) {
+        try {
+            val response = retrofitIns.apiService.getShorts(currentPage.toString())
+
+            if (response.isSuccessful) {
+                val responseBody = response.body()
+                Log.d(
+                    "AllShorts3",
+                    "Shorts List in page $currentPage ${responseBody?.data!!.posts}"
+                )
+                Log.d(
+                    "AllShorts3",
+                    "loadMoreShorts: followItem:  ${responseBody.data.followList}"
+                )
+
+
+                val shortsEntity = serverResponseToEntity(responseBody.data.posts.posts)
+
+                val followListItem =
+                    responseBody.data.followList.let { serverResponseToFollowEntity(it) }
+
+
+                // Now, insert yourEntity into the Room database
+                lifecycleScope.launch(Dispatchers.IO) {
+
+                    val uniqueFollowList = removeDuplicateFollowers(followListItem)
+                    Log.d(
+                        "AllShorts3",
+                        "getAllShort3: Inserted uniqueFollowList $uniqueFollowList"
+                    )
+                    followShortsViewModel.insertFollowListItems(uniqueFollowList)
+                    if (uniqueFollowList.isEmpty()) {
+                        Log.d("AllShorts3", "loadMoreShorts:uniqueFollowList is empty")
+
+                        withContext(Dispatchers.Main) {
+                            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
+                                shortsViewModel.followList.addAll(it)
+
+                                shortsAdapter.addIsFollowingData(it)
+
+                            }
+                        }
+                    }
+
+
+                    for (entity in shortsEntity) {
+
+                        // Access the list of images for each entity
+                        val images = entity.images
+
+                        Log.d("ShortsData", "short: $entity")
+
+
+                        // Add the unique entity to both the set and your ViewModel's list
+                        shortsViewModel.videoShorts.add(entity)
+
+
+                        for (image in images) {
+                            // Access individual image properties or perform any desired actions
+                            val imageUrl = image.url
+
+                            shortsList.add(imageUrl)
+                        }
+                    }
+
+                    startPreLoadingService()
+                    withContext(Dispatchers.Main) {
+                        if (shortsEntity.isNotEmpty()) {
+                            Log.d("AllShorts3", "loadMoreShorts: shorts entity is not empty")
+
+
+                            shortsViewModel.mutableShortsList.addAll(shortsEntity)
+                            shortsViewModel.followList.addAll(followListItem)
+                            shortsAdapter.addData(shortsEntity)
+
+                            shortsAdapter.addIsFollowingData(followListItem)
+
+                        } else {
+                            Log.d("AllShorts3", "loadMoreShorts:shorts entity is empty")
+                        }
+
+                    }
+
+                }
+
+
+            } else {
+                Log.d("ErrorInShortsFragment", "Error message: ${response.message()}")
+                Log.d("ErrorInShortsFragment", "Error body: ${response.body()}")
+                Log.d("ErrorInShortsFragment", "Error error body: ${response.errorBody()}")
+                Log.d("ErrorInShortsFragment", "Error response: $response")
+                Log.d("ErrorInShortsFragment", "Error response code: ${response.code()}")
+                Log.d("ErrorInShortsFragment", "Error response headers: ${response.headers()}")
+                Log.d("ErrorInShortsFragment", "Error response raw: ${response.raw()}")
+
+                requireActivity().runOnUiThread {
+                    showToast(response.message())
+                }
+            }
+
+        } catch (e: HttpException) {
+            Log.d("AllShorts", "Http Exception ${e.message}")
+            requireActivity().runOnUiThread {
+                showToast("Failed to connect try again...")
+            }
+        } catch (e: IOException) {
+            Log.d("AllShorts", "IOException ${e.message}")
+            requireActivity().runOnUiThread {
+                showToast("Failed to connect try again...")
+            }
+        }
+    }
+
     private fun convertFeedPostsToShortsEntity(
         feedPosts: List<com.uyscuti.social.network.api.response.posts.Post>
     ): List<ShortsEntity> {
@@ -1386,213 +1588,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             )
         }
     }
-
-    private suspend fun loadMoreShortsPage1(currentPage: Int) {
-        try {
-            val response = retrofitIns.apiService.getShorts(currentPage.toString())
-
-            if (response.isSuccessful) {
-                val responseBody = response.body()
-                Log.d(
-                    "AllShorts3",
-                    "Shorts List in page $currentPage ${responseBody?.data!!.posts}"
-                )
-                Log.d(
-                    "AllShorts3",
-                    "loadMoreShorts: followItem:  ${responseBody.data.followList}"
-                )
-
-
-                val shortsEntity = serverResponseToEntity(responseBody.data.posts.posts)
-
-                val followListItem =
-                    responseBody.data.followList.let { serverResponseToFollowEntity(it) }
-
-
-                // Now, insert yourEntity into the Room database
-                lifecycleScope.launch(Dispatchers.IO) {
-
-                    val uniqueFollowList = removeDuplicateFollowers(followListItem)
-                    Log.d(
-                        "AllShorts3",
-                        "getAllShort3: Inserted uniqueFollowList $uniqueFollowList"
-                    )
-                    followShortsViewModel.insertFollowListItems(uniqueFollowList)
-                    if (uniqueFollowList.isEmpty()) {
-                        Log.d("AllShorts3", "loadMoreShorts:uniqueFollowList is empty")
-
-                        withContext(Dispatchers.Main) {
-                            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
-                                shortsViewModel.followList.addAll(it)
-
-                                shortsAdapter.addIsFollowingData(it)
-
-                            }
-                        }
-                    }
-
-
-                    for (entity in shortsEntity) {
-
-                        // Access the list of images for each entity
-                        val images = entity.images
-
-                        Log.d("ShortsData", "short: $entity")
-
-
-                        // Add the unique entity to both the set and your ViewModel's list
-                        shortsViewModel.videoShorts.add(entity)
-
-
-                        for (image in images) {
-                            // Access individual image properties or perform any desired actions
-                            val imageUrl = image.url
-
-                            shortsList.add(imageUrl)
-                        }
-                    }
-
-                    startPreLoadingService()
-                    withContext(Dispatchers.Main) {
-                        if (shortsEntity.isNotEmpty()) {
-                            Log.d("AllShorts3", "loadMoreShorts: shorts entity is not empty")
-
-
-                            shortsViewModel.mutableShortsList.addAll(shortsEntity)
-                            shortsViewModel.followList.addAll(followListItem)
-                            shortsAdapter.addData(shortsEntity)
-
-                            shortsAdapter.addIsFollowingData(followListItem)
-
-                        } else {
-                            Log.d("AllShorts3", "loadMoreShorts:shorts entity is empty")
-                        }
-
-                    }
-
-                }
-
-
-            } else {
-                Log.d("ErrorInShortsFragment", "Error message: ${response.message()}")
-                Log.d("ErrorInShortsFragment", "Error body: ${response.body()}")
-                Log.d("ErrorInShortsFragment", "Error error body: ${response.errorBody()}")
-                Log.d("ErrorInShortsFragment", "Error response: $response")
-                Log.d("ErrorInShortsFragment", "Error response code: ${response.code()}")
-                Log.d("ErrorInShortsFragment", "Error response headers: ${response.headers()}")
-                Log.d("ErrorInShortsFragment", "Error response raw: ${response.raw()}")
-
-                requireActivity().runOnUiThread {
-                    showToast(response.message())
-                }
-            }
-
-        } catch (e: HttpException) {
-            Log.d("AllShorts", "Http Exception ${e.message}")
-            requireActivity().runOnUiThread {
-                showToast("Failed to connect try again...")
-            }
-        } catch (e: IOException) {
-            Log.d("AllShorts", "IOException ${e.message}")
-            requireActivity().runOnUiThread {
-                showToast("Failed to connect try again...")
-            }
-        }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        if (!EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().register(this)
-            Log.d("EventBus", "ShotsFragment registered")
-        }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        if (EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().unregister(this)
-            Log.d("EventBus", "ShotsFragment unregistered")
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        // Only pause, don't release
-        exoPlayer?.pause()
-
-        lifecycleScope.launch {
-            shortsViewModel.isResuming = true
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        try {
-            exoPlayer?.apply {
-                removeListener(playbackStateListener)
-                currentPlayerListener?.let { removeListener(it) }
-                stop()
-                clearMediaItems()
-                release()
-            }
-            exoPlayer = null
-        } catch (e: Exception) {
-            Log.e("ShotsFragment", "Error destroying player", e)
-        }
-
-        if (exoPlayerItems.isNotEmpty()) {
-            for (item in exoPlayerItems) {
-                val player = item.exoPlayer
-                player.stop()
-                player.clearMediaItems()
-            }
-            exoPlayerItems.clear()
-        }
-
-        lifecycleScope.launch {
-            shortsViewModel.isResuming = true
-        }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        exoPlayer!!.pause()
-        val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
-        if (index != -1) {
-            val player = exoPlayerItems[index].exoPlayer
-            player.pause()
-
-            player.playWhenReady = false
-            player.seekTo(0)
-        }
-    }
-
-
-
-    @SuppressLint("NotifyDataSetChanged")
-    override fun onResume() {
-        super.onResume()
-        (activity as? MainActivity)?.hideAppBar()
-        val vNLayout = activity?.findViewById<ConstraintLayout>(R.id.VNLayout)
-        if (vNLayout?.visibility == View.VISIBLE) {
-            pauseVideo()
-        } else {
-            exoPlayer!!.play()
-            val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
-            if (index != -1) {
-                val player = exoPlayerItems[index].exoPlayer
-                player.playWhenReady = true
-                player.play()
-                player.seekTo(0)
-            }
-        }
-        updateStatusBar()
-
-    }
-
-
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun successEvent(event: UploadSuccessful) {
