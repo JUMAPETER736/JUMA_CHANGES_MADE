@@ -74,108 +74,196 @@
         android:layout_height="37dp"
         android:layout_gravity="center_horizontal|center" />
 
-    <!-- Right Side Action Icons - All Uniform Size and Aligned -->
+    <!-- Right Side Action Icons - TikTok Style with Counters Below -->
 
-    <!-- Like Icon -->
-    <ImageButton
-        android:id="@+id/btnLike"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="380dp"
-        android:padding="8dp"
-        android:scaleType="fitCenter"
-        android:background="?android:attr/selectableItemBackground"
-        android:src="@drawable/favorite_svgrepo_com"
-        app:tint="@color/blueJeans" />
-
-    <TextView
-        android:id="@+id/likeCount"
+    <!-- Like Icon with Counter -->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="0"
-        android:layout_marginEnd="22dp"
-        android:layout_gravity="bottom|end"
-        android:layout_marginBottom="360dp"
-        android:textColor="@color/white"
-        android:textSize="12sp"
-        android:gravity="center" />
-
-    <!-- Comments Layout -->
-    <LinearLayout
-        android:id="@+id/commentsParentLayout"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="320dp"
-        android:gravity="center"
-        android:background="?android:attr/selectableItemBackground">
+        android:layout_marginBottom="355dp"
+        android:orientation="vertical"
+        android:gravity="center">
 
-        <ImageView
-            android:id="@+id/comments"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+        <ImageButton
+            android:id="@+id/btnLike"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="8dp"
             android:scaleType="fitCenter"
-            android:src="@drawable/chat_round_svgrepo_com_shorts"
-            app:tint="@color/blueJeans" />
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@drawable/favorite_svgrepo_com"
+            android:tag="unfilled"
+            app:tint="@color/white" />
 
+        <TextView
+            android:id="@+id/likeCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:layout_marginTop="2dp"
+            android:textStyle="bold"
+            android:shadowColor="#80000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2"
+            android:gravity="center" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/commentsCount"
+    <!-- Comments with Counter -->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="0"
-        android:layout_marginEnd="22dp"
-        android:layout_gravity="bottom|end"
-        android:layout_marginBottom="300dp"
-        android:textColor="@color/white"
-        android:textSize="12sp"
-        android:gravity="center" />
-
-    <!-- Favorite Icon -->
-    <ImageButton
-        android:id="@+id/favorite"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="260dp"
-        android:padding="8dp"
-        android:scaleType="fitCenter"
-        android:background="?android:attr/selectableItemBackground"
-        android:src="@drawable/favorite_svgrepo_com__1_"
-        app:tint="@color/blueJeans" />
+        android:layout_marginBottom="285dp"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <LinearLayout
+            android:id="@+id/commentsParentLayout"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:gravity="center"
+            android:background="?android:attr/selectableItemBackground">
+
+            <ImageView
+                android:id="@+id/comments"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/chat_round_svgrepo_com_shorts"
+                app:tint="@color/white" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/commentsCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:layout_marginTop="2dp"
+            android:textStyle="bold"
+            android:shadowColor="#80000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2"
+            android:gravity="center" />
+    </LinearLayout>
+
+    <!-- Favorite Icon (Bookmark) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="215dp"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <ImageButton
+            android:id="@+id/favorite"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@drawable/favorite_svgrepo_com__1_"
+            android:tag="unfilled"
+            app:tint="@color/white" />
+
+        <TextView
+            android:id="@+id/favoriteCounts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:layout_marginTop="2dp"
+            android:textStyle="bold"
+            android:shadowColor="#80000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2"
+            android:gravity="center" />
+    </LinearLayout>
 
     <!-- Share Button -->
-    <ImageButton
-        android:id="@+id/shareBtn"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="200dp"
-        android:padding="8dp"
-        android:scaleType="fitCenter"
-        android:background="?android:attr/selectableItemBackground"
-        android:src="@drawable/share_svgrepo_com"
-        app:tint="@color/blueJeans" />
+        android:layout_marginBottom="145dp"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <ImageButton
+            android:id="@+id/shareBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@drawable/share_svgrepo_com"
+            app:tint="@color/white" />
+
+        <TextView
+            android:id="@+id/shareCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:layout_marginTop="2dp"
+            android:textStyle="bold"
+            android:shadowColor="#80000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2"
+            android:gravity="center" />
+    </LinearLayout>
 
     <!-- Download Button -->
-    <ImageButton
-        android:id="@+id/downloadBtn"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="140dp"
-        android:padding="8dp"
-        android:scaleType="fitCenter"
-        android:background="?android:attr/selectableItemBackground"
-        android:src="@drawable/download_02_svgrepo_com"
-        app:tint="@color/blueJeans" />
+        android:layout_marginBottom="75dp"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <ImageButton
+            android:id="@+id/downloadBtn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@drawable/download_02_svgrepo_com"
+            app:tint="@color/white" />
+
+        <TextView
+            android:id="@+id/downloadCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:layout_marginTop="2dp"
+            android:textStyle="bold"
+            android:shadowColor="#80000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2"
+            android:gravity="center" />
+    </LinearLayout>
 
     <!-- Profile and Caption Container -->
     <LinearLayout
@@ -209,32 +297,46 @@
                 android:text="Username"
                 android:layout_marginStart="8dp"
                 android:textColor="#FFF"
-                />
+                android:textStyle="bold"
+                android:shadowColor="#80000000"
+                android:shadowDx="0"
+                android:shadowDy="1"
+                android:shadowRadius="2" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/followButton"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
+                android:layout_height="32dp"
+                android:minWidth="70dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
                 android:textAllCaps="false"
-                android:layout_marginStart="10dp"
+                android:layout_marginStart="8dp"
                 android:background="@drawable/shorts_follow_button_border"
                 android:text="Follow"
-                android:textColor="#FFF"
-                />
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#FFF" />
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="10dp"
-            >
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="10dp">
+
             <TextView
                 android:layout_width="wrap_content"
                 android:id="@+id/tvReadMoreLess"
                 android:textColor="@android:color/white"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
+                android:textSize="14sp"
+                android:shadowColor="#80000000"
+                android:shadowDx="0"
+                android:shadowDy="1"
+                android:shadowRadius="2"
                 android:layout_gravity="center"
                 android:text="HERE GIVE YOUR TEXT"/>
 
@@ -245,27 +347,32 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginBottom="30dp"
-            >
+            android:layout_marginBottom="30dp">
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Artist name + Song title"
+                android:text="🎵 Artist name + Song title"
                 android:textColor="@color/white"
-                android:textSize="16sp"
+                android:textSize="13sp"
                 android:layout_marginStart="8dp"
-                />
+                android:shadowColor="#80000000"
+                android:shadowDx="0"
+                android:shadowDy="1"
+                android:shadowRadius="2" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                >
+                android:layout_marginTop="4dp">
+
                 <androidx.cardview.widget.CardView
                     android:layout_width="34dp"
                     android:layout_height="34dp"
                     android:layout_marginStart="8dp"
-                    app:cardCornerRadius="8dp">
+                    app:cardCornerRadius="17dp"
+                    app:cardElevation="2dp">
 
                     <ImageView
                         android:layout_width="match_parent"
@@ -276,7 +383,6 @@
                         android:layout_gravity="center"/>
 
                 </androidx.cardview.widget.CardView>
-
 
                 <SeekBar
                     android:layout_width="0dp"
@@ -291,8 +397,8 @@
                     android:thumb="@null"
                     android:splitTrack="false"
                     android:visibility="visible"
-                    android:minHeight="4dp"
-                    android:maxHeight="4dp"
+                    android:minHeight="3dp"
+                    android:maxHeight="3dp"
                     android:layout_marginStart="8dp"
                     android:layout_marginEnd="8dp" />
 
