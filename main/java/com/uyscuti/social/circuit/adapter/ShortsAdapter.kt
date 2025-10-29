@@ -270,7 +270,9 @@ class StringViewHolder(
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
 
-) : ViewHolder<MyData>(itemView) {
+)
+
+    : ViewHolder<MyData>(itemView) {
 
     // UI COMPONENTS
     // Video components
@@ -816,7 +818,8 @@ class StringViewHolder(
     }
 
     private fun setupFollowButton(data: MyData, shortOwnerId: String) {
-        if (shortOwnerId == LocalStorage.getInstance(shortsProfileImage.context).getUserId()) {
+        if (shortOwnerId == LocalStorage.getInstance(shortsProfileImage
+                .context).getUserId()) {
             followButton.visibility = View.INVISIBLE
             Log.d(TAG, "onBind: short owner id == logged user id")
         } else {
@@ -840,10 +843,12 @@ class StringViewHolder(
             isFollowed = true
         } else {
             followButton.text = "Follow"
-            followButton.setBackgroundResource(R.drawable.shorts_following_button)
+            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
             isFollowed = false
         }
     }
+
+
 
     private fun setupContent(shortsEntity: ShortsEntity) {
         val caption = shortsEntity.content.toString()
