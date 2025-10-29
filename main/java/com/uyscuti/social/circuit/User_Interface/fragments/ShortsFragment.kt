@@ -1632,6 +1632,10 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     override fun onDestroyView() {
         super.onDestroyView()
+
+        // Clear preload cache
+        preloadHandler.removeCallbacksAndMessages(null)
+
         // Only pause, don't release
         exoPlayer?.pause()
 
@@ -2109,6 +2113,20 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         updateStatusBar()
     }
 
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        // Clear preload cache
+        preloadHandler.removeCallbacksAndMessages(null)
+
+        // Only pause, don't release
+        exoPlayer?.pause()
+
+        lifecycleScope.launch {
+            shortsViewModel.isResuming = true
+        }
+    }
 
 //    @SuppressLint("NotifyDataSetChanged")
 //    override fun onResume() {
