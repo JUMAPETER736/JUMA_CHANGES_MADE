@@ -1253,6 +1253,32 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
+    fun onPageScrollStateChanged(state: Int) {
+        super.onPageScrollStateChanged(state)
+        Log.d("onPageScrollStateChanged", "State: $state")
+
+        when (state) {
+            ViewPager2.SCROLL_STATE_IDLE -> {
+                // Scroll finished - ensure video plays
+                Log.d("onPageScrollStateChanged", "Scroll idle - playing video")
+                playVideoAtPosition(currentPosition)
+
+                // Preload adjacent videos
+                preloadVideosAround(currentPosition)
+
+                backPressCount = 0
+            }
+            ViewPager2.SCROLL_STATE_DRAGGING -> {
+                // User started dragging
+                Log.d("onPageScrollStateChanged", "User dragging")
+            }
+            ViewPager2.SCROLL_STATE_SETTLING -> {
+                // Scroll settling
+                Log.d("onPageScrollStateChanged", "Scroll settling")
+            }
+        }
+    }
+
     private fun convertFeedPostsToShortsEntity(
         feedPosts: List<com.uyscuti.social.network.api.response.posts.Post>
     ): List<ShortsEntity> {
