@@ -1183,6 +1183,76 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
+    @OptIn(UnstableApi::class)
+    private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
+        try {
+            val videoUri = Uri.parse(videoUrl)
+            Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri at position $position")
+
+            // CRITICAL: Ensure ViewHolder surface is properly attached
+            val currentHolder = shortsAdapter.getCurrentViewHolder()
+            currentHolder?.getSurface()?.let { playerView ->
+                playerView.post {
+                    playerView.visibility = View.VISIBLE
+                    playerView.player = null
+                    playerView.player = exoPlayer
+                    playerView.keepScreenOn = true
+                    playerView.useController = false
+
+                    // Force background color to prevent black screen
+                    playerView.setBackgroundColor(Color.BLACK)
+                    playerView.setShutterBackgroundColor(Color.BLACK)
+
+                    playerView.requestLayout()
+                    playerView.invalidate()
+                }
+            }
+
+            // Use cached MediaItem if available
+            val mediaItem = mediaItemCache[position] ?: MediaItem.Builder()
+                .setUri(videoUri)
+                .apply {
+                    val detectedMimeType = getMimeTypeFromUrl(videoUrl)
+                    if (detectedMimeType != MimeTypes.VIDEO_UNKNOWN) {
+                        setMimeType(detectedMimeType)
+                    }
+                }
+                .build().also {
+                    mediaItemCache[position] = it
+                }
+
+            val mediaSource = createEnhancedMediaSource(mediaItem, videoUrl)
+
+            // Remove old listener
+            currentPlayerListener?.let { oldListener ->
+                exoPlayer?.removeListener(oldListener)
+            }
+
+            currentPlayerListener = createPlayerListener(position)
+
+            exoPlayer?.let { player ->
+                // DON'T pause here - just switch media
+                player.clearMediaItems()
+                player.addListener(currentPlayerListener!!)
+                player.repeatMode = Player.REPEAT_MODE_ONE
+                player.setMediaSource(mediaSource, false) // false = don't reset position
+                player.prepare()
+
+                // Start playback immediately
+                player.playWhenReady = true
+                player.play()
+
+                Log.d("prepareAndPlayVideo", "Video prepared and playing at position: $position")
+            }
+
+            isPlayerPreparing = true
+        } catch (e: Exception) {
+            Log.e("prepareAndPlayVideo", "Error in prepareAndPlayVideo", e)
+            isPlayerPreparing = false
+            handlePlaybackError(position)
+        }
+    }
+
     private fun convertFeedPostsToShortsEntity(
         feedPosts: List<com.uyscuti.social.network.api.response.posts.Post>
     ): List<ShortsEntity> {
@@ -2012,57 +2082,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         validateAndPlayVideo(finalVideoUrl, position)
     }
 
-    private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
-        try {
-            val videoUri = Uri.parse(videoUrl)
-            Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
-
-            // CRITICAL: Ensure surface is visible before preparing
-            val currentHolder = shortsAdapter.getCurrentViewHolder()
-            currentHolder?.getSurface()?.let { playerView ->
-                playerView.visibility = View.VISIBLE
-                playerView.player = exoPlayer
-            }
-
-            val mediaItem = MediaItem.Builder()
-                .setUri(videoUri)
-                .apply {
-                    val detectedMimeType = getMimeTypeFromUrl(videoUrl)
-                    if (detectedMimeType != MimeTypes.VIDEO_UNKNOWN) {
-                        setMimeType(detectedMimeType)
-                    }
-                }
-                .build()
-
-            val mediaSource = createEnhancedMediaSource(mediaItem, videoUrl)
-
-            currentPlayerListener?.let { oldListener ->
-                exoPlayer?.removeListener(oldListener)
-            }
-
-            currentPlayerListener = createPlayerListener(position)
-
-            exoPlayer?.let { player ->
-                player.pause()
-                player.clearMediaItems()
-
-                player.addListener(currentPlayerListener!!)
-                player.repeatMode = Player.REPEAT_MODE_ONE
-                player.playWhenReady = true
-
-                player.setMediaSource(mediaSource)
-                player.prepare()
-
-                Log.d("prepareAndPlayVideo", "Video preparation started for position: $position")
-            }
-
-            isPlayerPreparing = true
-        } catch (e: Exception) {
-            Log.e("prepareAndPlayVideo", "Error in prepareAndPlayVideo", e)
-            isPlayerPreparing = false
-            handlePlaybackError(position)
-        }
-    }
 
     @SuppressLint("NotifyDataSetChanged")
     override fun onResume() {
