@@ -286,25 +286,18 @@ class ShortsAdapter(
         return shortsList.size
     }
 
-//    override fun onViewAttachedToWindow(holder: StringViewHolder) {
-//        super.onViewAttachedToWindow(holder)
-//        holder.onViewAttached()
-//
-//        // CRITICAL: Properly reattach player
-//        holder.reattachPlayer()
-//    }
+    override fun onViewAttachedToWindow(holder: StringViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        holder.onViewAttached()
+
+        // CRITICAL: Properly reattach player
+        holder.reattachPlayer()
+    }
 
     override fun onViewDetachedFromWindow(holder: StringViewHolder) {
         super.onViewDetachedFromWindow(holder)
         // Don't detach player completely, just pause updates
         holder.pauseUpdates()
-    }
-
-    override fun onViewAttachedToWindow(holder: StringViewHolder) {
-        super.onViewAttachedToWindow(holder as StringViewHolder)
-        if (holder is StringViewHolder) {
-            holder.reattachPlayer()   // <-- safe, idempotent
-        }
     }
 }
 
@@ -453,38 +446,38 @@ class StringViewHolder(
         followButton.text = newText
     }
 
-//    @SuppressLint("SetTextI18n")
-//    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
-//        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
-//            followButton.visibility = View.INVISIBLE
-//        } else {
-//            followButton.visibility = View.VISIBLE
-//            updateFollowButtonState(data.followItemEntity.isFollowing)
-//
-//            followButton.setOnClickListener {
-//                // Update UI immediately without rebinding
-//                isFollowed = !isFollowed
-//                updateFollowButtonState(isFollowed)
-//
-//                // Post event for backend update
-//                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, isFollowed)
-//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
-//            }
-//        }
-//    }
-//
-//    @SuppressLint("SetTextI18n")
-//    private fun updateFollowButtonState(isFollowing: Boolean) {
-//        isFollowed = isFollowing
-//        if (isFollowing) {
-//            followButton.text = "Following"
-//            followButton.isAllCaps = false
-//            followButton.setBackgroundResource(R.drawable.shorts_following_button)
-//        } else {
-//            followButton.text = "Follow"
-//            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
-//        }
-//    }
+    @SuppressLint("SetTextI18n")
+    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
+        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
+            followButton.visibility = View.INVISIBLE
+        } else {
+            followButton.visibility = View.VISIBLE
+            updateFollowButtonState(data.followItemEntity.isFollowing)
+
+            followButton.setOnClickListener {
+                // Update UI immediately without rebinding
+                isFollowed = !isFollowed
+                updateFollowButtonState(isFollowed)
+
+                // Post event for backend update
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, isFollowed)
+                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+            }
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun updateFollowButtonState(isFollowing: Boolean) {
+        isFollowed = isFollowing
+        if (isFollowing) {
+            followButton.text = "Following"
+            followButton.isAllCaps = false
+            followButton.setBackgroundResource(R.drawable.shorts_following_button)
+        } else {
+            followButton.text = "Follow"
+            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
+        }
+    }
 
     private fun setupContent(shortsEntity: ShortsEntity) {
         val caption = shortsEntity.content.toString()
@@ -667,76 +660,6 @@ class StringViewHolder(
         }
     }
 
-
-
-
-    fun reattachPlayer() {
-        // Only attach if not already attached
-        if (videoView.player == null) {
-            videoView.player = exoplayer
-            videoView.useController = false
-            videoView.keepScreenOn = true
-            Log.d(TAG, "Player attached in onViewAttachedToWindow")
-        }
-    }
-
-//    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
-//        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
-//            followButton.visibility = View.INVISIBLE
-//            return
-//        }
-//
-//        followButton.visibility = View.VISIBLE
-//        val currentFollowing = data.followItemEntity.isFollowing
-//        updateFollowButtonState(currentFollowing)
-//
-//        followButton.setOnClickListener {
-//            val newFollowing = !currentFollowing
-//            data.followItemEntity.isFollowing = newFollowing        // mutate source
-//            updateFollowButtonState(newFollowing)                   // UI flip
-//
-//            // Notify **only this item** → no full rebind
-//            notifyItemChanged(bindingAdapterPosition)
-//
-//            // Fire network request
-//            EventBus.getDefault().post(
-//                ShortsFollowButtonClicked(FollowUnFollowEntity(shortOwnerId, newFollowing))
-//            )
-//        }
-//    }
-
-    fun updateFollowButtonState(isFollowing: Boolean) {
-        if (isFollowing) {
-            followButton.text = "Following"
-            followButton.isAllCaps = false
-            followButton.setBackgroundResource(R.drawable.shorts_following_button)
-        } else {
-            followButton.text = "Follow"
-            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
-        }
-    }
-
-    // Replace setupFollowButton with this
-    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
-        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
-            followButton.visibility = View.INVISIBLE
-            return
-        }
-        followButton.visibility = View.VISIBLE
-        updateFollowButtonState(data.followItemEntity.isFollowing)
-
-        followButton.setOnClickListener {
-            val newState = !data.followItemEntity.isFollowing
-            data.followItemEntity.isFollowing = newState
-            updateFollowButtonState(newState)
-           // notifyItemChanged(bindingAdapterPosition) // or adapter.notifyItemChanged(pos, newState)
-            EventBus.getDefault().post(
-                ShortsFollowButtonClicked(FollowUnFollowEntity(shortOwnerId, newState)
-                )
-            )
-        }
-    }
-
 //    @OptIn(UnstableApi::class)
 //    @SuppressLint("SetTextI18n")
 //    override fun onBind(data: MyData) {
@@ -825,19 +748,19 @@ class StringViewHolder(
         isPlaying = false
     }
 
-//    fun reattachPlayer() {
-//        videoView.post {
-//            videoView.player = null
-//            videoView.player = exoplayer
-//            videoView.visibility = View.VISIBLE
-//            videoView.useController = false
-//            videoView.keepScreenOn = true
-//            videoView.requestLayout()
-//            videoView.invalidate()
-//
-//            Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
-//        }
-//    }
+    fun reattachPlayer() {
+        videoView.post {
+            videoView.player = null
+            videoView.player = exoplayer
+            videoView.visibility = View.VISIBLE
+            videoView.useController = false
+            videoView.keepScreenOn = true
+            videoView.requestLayout()
+            videoView.invalidate()
+
+            Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
+        }
+    }
 
     private fun setupPlayer() {
         player = exoplayer
