@@ -671,17 +671,27 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     }
                     override fun onPageScrollStateChanged(state: Int) {
                         super.onPageScrollStateChanged(state)
-                        Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
+                        Log.d("onPageScrollStateChanged", "State: $state")
 
-                        // Check if the scroll state is idle
-                        if (state == ViewPager.SCROLL_STATE_SETTLING) {
-                            Log.d(
-                                "onPageScrollStateChanged",
-                                "onPageScrollStateChanged: state $state"
-                            )
-                            // The scroll state is idle, play the video at the updated position
-                            playVideoAtPosition(currentPosition)
-                            backPressCount = 0
+                        when (state) {
+                            ViewPager2.SCROLL_STATE_IDLE -> {
+                                // Scroll finished - ensure video plays
+                                Log.d("onPageScrollStateChanged", "Scroll idle - playing video")
+                                playVideoAtPosition(currentPosition)
+
+                                // Preload adjacent videos
+                                preloadVideosAround(currentPosition)
+
+                                backPressCount = 0
+                            }
+                            ViewPager2.SCROLL_STATE_DRAGGING -> {
+                                // User started dragging
+                                Log.d("onPageScrollStateChanged", "User dragging")
+                            }
+                            ViewPager2.SCROLL_STATE_SETTLING -> {
+                                // Scroll settling
+                                Log.d("onPageScrollStateChanged", "Scroll settling")
+                            }
                         }
                     }
                 })
@@ -1253,32 +1263,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    fun onPageScrollStateChanged(state: Int) {
-        super.onPageScrollStateChanged(state)
-        Log.d("onPageScrollStateChanged", "State: $state")
-
-        when (state) {
-            ViewPager2.SCROLL_STATE_IDLE -> {
-                // Scroll finished - ensure video plays
-                Log.d("onPageScrollStateChanged", "Scroll idle - playing video")
-                playVideoAtPosition(currentPosition)
-
-                // Preload adjacent videos
-                preloadVideosAround(currentPosition)
-
-                backPressCount = 0
-            }
-            ViewPager2.SCROLL_STATE_DRAGGING -> {
-                // User started dragging
-                Log.d("onPageScrollStateChanged", "User dragging")
-            }
-            ViewPager2.SCROLL_STATE_SETTLING -> {
-                // Scroll settling
-                Log.d("onPageScrollStateChanged", "Scroll settling")
-            }
-        }
-    }
-
     private fun createPlayerListener(position: Int): Player.Listener {
         return object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -1615,8 +1599,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             Log.d("EventBus", "ShotsFragment unregistered")
         }
     }
-
-
 
     @SuppressLint("NotifyDataSetChanged")
     override fun onResume() {
