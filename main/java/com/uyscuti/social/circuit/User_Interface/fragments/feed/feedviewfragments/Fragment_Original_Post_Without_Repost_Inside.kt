@@ -131,9 +131,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private var _binding: FragmentOriginalPostWithoutRepostInsideBinding? = null
     private val binding get() = _binding!!
 
-    // Navigation flags
-    private var isNavigating = false
-    private var isNavigatingBack = false
 
     // Data
     private var post: Post? = null
@@ -192,8 +189,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private var isFollowing = false
 
     private fun handleFollowButtonClick() = toggleFollow()
-    private val navigationHandler = Handler(Looper.getMainLooper())
-    private var isNavigationInProgress = false
+
 
     private val mainActivity: MainActivity?
         @OptIn(UnstableApi::class)
@@ -604,6 +600,210 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
+    private fun setupClickListeners(data: Post) {
+        Log.d(TAG, "setupClickListeners - Data type: ${data::class.java.simpleName}, ID: ${data._id}")
+
+        cancelButton.setOnClickListener {
+            Log.d(TAG, "Cancel button clicked - immediate navigation")
+            it.isEnabled = false
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (isAdded) it.isEnabled = true
+            }, 100)
+        }
+        headerMenuButton.setOnClickListener { handleMenuButtonClick() }
+        mixedFilesCardView.setOnClickListener { handleOriginalMediaClick() }
+        originalFeedImage.setOnClickListener { handleOriginalFileClick() }
+        followButton.setOnClickListener { handleFollowButtonClick() }
+
+
+        originalPosterProfileImage.setOnClickListener {
+            navigateToUserProfile(
+                feedOwnerId = data.author?.account?._id ?: "",
+                feedOwnerName = data.author?.account?.username ?: "",
+                feedOwnerUsername = data.author?.account?.username ?: "",
+                profilePicUrl = data.author?.account?.avatar?.url ?: ""
+            )
+        }
+        originalPosterName.setOnClickListener {
+            navigateToUserProfile(
+                feedOwnerId = data.author?.account?._id ?: "",
+                feedOwnerName = data.author?.account?.username ?: "",
+                feedOwnerUsername = data.author?.account?.username ?: "",
+                profilePicUrl = data.author?.account?.avatar?.url ?: ""
+            )
+        }
+
+    }
+
+    private fun navigateToFragment(fragment: Fragment, tag: String) {
+        try {
+            val activity = activity
+            if (activity != null) {
+                val currentFragment = activity.supportFragmentManager.fragments.lastOrNull {
+                    it.isVisible && it.view != null
+                }
+                val fragmentManager = if (currentFragment != null &&
+                    currentFragment.childFragmentManager.fragments.isNotEmpty()
+                ) {
+                    currentFragment.childFragmentManager
+                } else {
+                    activity.supportFragmentManager
+                }
+                fragmentManager.beginTransaction()
+                    .setCustomAnimations(
+                        R.anim.slide_in_right,
+                        R.anim.slide_out_left,
+                        R.anim.slide_in_left,
+                        R.anim.slide_out_right
+                    )
+                    .replace(R.id.frame_layout, fragment)
+                    .addToBackStack(tag)
+                    .commit()
+                Log.d(TAG, "Successfully navigated to fragment: $tag")
+            } else {
+                Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error navigating to fragment: $tag", e)
+        }
+    }
+
+    private fun isViewsInitialized(): Boolean {
+        return try {
+            _binding != null &&
+                    ::itemView.isInitialized &&
+                    ::headerTitle.isInitialized &&
+                    ::originalPosterProfileImage.isInitialized &&
+                    ::originalPosterName.isInitialized &&
+                    ::recyclerViews.isInitialized &&
+                    ::multipleAudiosContainer.isInitialized &&
+                    ::mixedFilesCardView.isInitialized &&
+                    ::originalFeedImage.isInitialized &&
+                    ::cancelButton.isInitialized &&
+                    ::headerMenuButton.isInitialized &&
+                    ::quotedPostCard.isInitialized &&
+                    ::originalPostContainer.isInitialized &&
+                    ::tvQuotedUserHandle.isInitialized &&
+                    ::dateTime.isInitialized &&
+                    ::originalPostText.isInitialized &&
+                    ::tvQuotedHashtags.isInitialized &&
+                    ::ivQuotedPostImage.isInitialized &&
+                    ::likeSection.isInitialized &&
+                    ::likeButtonIcon.isInitialized &&
+                    ::likesCount.isInitialized &&
+                    ::commentSection.isInitialized &&
+                    ::commentButtonIcon.isInitialized &&
+                    ::commentCount.isInitialized &&
+                    ::favoriteSection.isInitialized &&
+                    ::favoritesButton.isInitialized &&
+                    ::favoriteCounts.isInitialized &&
+                    ::retweetSection.isInitialized &&
+                    ::repostPost.isInitialized &&
+                    ::repostCount.isInitialized &&
+                    ::shareSection.isInitialized &&
+                    ::shareButtonIcon.isInitialized &&
+                    ::shareCount.isInitialized &&
+                    ::followButton.isInitialized  // Add this line
+        } catch (e: Exception) {
+            Log.e(TAG, "Views initialization check failed: ${e.message}")
+            false
+        }
+    }
+
+    private fun initializeViews(view: View) {
+        itemView = view
+        try {
+            _binding?.let { safeBinding ->
+                cancelButton = safeBinding.cancelButton
+                headerTitle = safeBinding.headerTitle
+                headerMenuButton = safeBinding.headerMenuButton
+                quotedPostCard = safeBinding.quotedPostCard
+                originalPostContainer = safeBinding.originalPostContainer
+                originalPosterProfileImage = safeBinding.originalPosterProfileImage
+                originalPosterName = safeBinding.originalPosterName
+                tvQuotedUserHandle = safeBinding.tvQuotedUserHandle
+                dateTime = safeBinding.dateTime
+                originalPostText = safeBinding.originalPostText
+                tvQuotedHashtags = safeBinding.tvQuotedHashtags
+                mixedFilesCardView = safeBinding.mixedFilesCardView
+                originalFeedImage = safeBinding.originalFeedImage
+                multipleAudiosContainer = safeBinding.multipleAudiosContainer
+                recyclerViews = safeBinding.recyclerView
+                ivQuotedPostImage = safeBinding.ivQuotedPostImage
+
+                likeSection = safeBinding.likeLayout
+                likeButtonIcon = safeBinding.likeButtonIcon
+                likesCount = safeBinding.likesCount
+                commentSection = safeBinding.commentLayout
+                commentButtonIcon = safeBinding.commentButtonIcon
+                commentCount = safeBinding.commentCount
+                favoriteSection = safeBinding.favoriteSection
+                favoritesButton = safeBinding.favoritesButton
+                favoriteCounts = safeBinding.favoriteCounts
+                retweetSection = safeBinding.repostLayout
+                repostPost = safeBinding.repostPost
+                repostCount = safeBinding.repostCount
+                shareSection = safeBinding.shareLayout
+                shareButtonIcon = safeBinding.shareButton
+                shareCount = safeBinding.shareCount
+
+                followButton = safeBinding.followButton  // Add this line
+
+                Log.d(TAG, "All views initialized successfully")
+            } ?: run {
+                Log.e(TAG, "Binding is null, cannot initialize views")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing views: ${e.message}", e)
+        }
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun setupBackNavigation() {
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                cleanupAndGoBack()
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun cleanupAndGoBack() {
+        // Quick cleanup
+        _binding?.replyInput?.clearFocus()
+
+        // Hide keyboard
+        val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        imm?.hideSoftInputFromWindow(view?.windowToken, 0)
+
+        // Restore system bars
+        activity?.let { act ->
+            WindowCompat.setDecorFitsSystemWindows(act.window, true)
+            WindowInsetsControllerCompat(act.window, act.window.decorView)
+                .show(WindowInsetsCompat.Type.systemBars())
+
+            (act as? MainActivity)?.apply {
+                showAppBar()
+                showBottomNavigation()
+            }
+        }
+
+        // Just go back
+        parentFragmentManager.popBackStack()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy: Cleanup")
+    }
+
     private fun populatePostData(post: Post) {
         Log.d(TAG, "populatePostData: Starting to populate data for post ${post._id}")
         Log.d(TAG, "populatePostData: Post comments = ${post.comments}")
@@ -804,500 +1004,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
-    @OptIn(UnstableApi::class)
-    private fun setupBackNavigation() {
-        val callback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                Log.d(TAG, "Back pressed - navigating")
-                navigateBack()
-            }
-        }
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun navigateBack() {
-        // Prevent multiple simultaneous navigation attempts
-        if (isNavigationInProgress) {
-            Log.d(TAG, "Navigation already in progress, ignoring")
-            return
-        }
-
-        isNavigationInProgress = true
-
-        try {
-            Log.d(TAG, "Starting navigation back")
-
-            // Clean up resources first
-            cleanupResources()
-
-            // Restore system UI
-            restoreSystemBarsImmediately()
-
-            // Navigate back immediately on the main thread
-            view?.post {
-                performBackNavigation()
-            }
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in navigation", e)
-            isNavigationInProgress = false
-        }
-    }
-
-    private fun performBackNavigation() {
-        try {
-            // Check if fragment is still valid
-            if (!isAdded || isDetached || activity == null) {
-                Log.w(TAG, "Fragment not attached, cannot navigate back")
-                isNavigationInProgress = false
-                return
-            }
-
-            val fragmentManager = parentFragmentManager
-
-            // Check FragmentManager state
-            if (fragmentManager.isStateSaved || fragmentManager.isDestroyed) {
-                Log.w(TAG, "FragmentManager not ready, cannot navigate")
-                isNavigationInProgress = false
-                return
-            }
-
-            // Check if there's anything to pop
-            if (fragmentManager.backStackEntryCount <= 0) {
-                Log.d(TAG, "No back stack entries")
-                isNavigationInProgress = false
-                return
-            }
-
-            // Use regular popBackStack() instead of popBackStackImmediate()
-            // This allows FragmentManager to handle the transaction properly
-            fragmentManager.popBackStack()
-            Log.d(TAG, "Back navigation initiated")
-            isNavigationInProgress = false
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in performBackNavigation", e)
-            isNavigationInProgress = false
-        }
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun restoreSystemBarsImmediately() {
-        try {
-            val activity = activity ?: run {
-                Log.w(TAG, "Activity is null, skipping system bars restoration")
-                return
-            }
-
-            if (!isAdded) {
-                Log.w(TAG, "Fragment not added, skipping system bars restoration")
-                return
-            }
-
-            // Restore system bars
-            WindowCompat.setDecorFitsSystemWindows(activity.window, true)
-            WindowInsetsControllerCompat(activity.window, activity.window.decorView)
-                .show(WindowInsetsCompat.Type.systemBars())
-
-            // Restore MainActivity UI elements
-            (activity as? MainActivity)?.let { mainActivity ->
-                try {
-                    mainActivity.showAppBar()
-                    mainActivity.showBottomNavigation()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error showing MainActivity UI elements", e)
-                }
-            }
-
-            Log.d(TAG, "System bars restored")
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error restoring system bars", e)
-        }
-    }
-
-    private fun cleanupResources() {
-        try {
-            _binding?.let { binding ->
-                // Clear focus
-                binding.replyInput.clearFocus()
-
-                // Hide keyboard
-                val imm = requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.hideSoftInputFromWindow(binding.replyInput.windowToken, 0)
-            }
-
-            Log.d(TAG, "Resources cleaned up")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error during cleanup", e)
-        }
-    }
-
-    // For cancel button click listener
-    private fun setupClickListeners() {
-        binding.cancelButton.setOnClickListener {
-            Log.d(TAG, "Cancel button clicked")
-            navigateBack()
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        isNavigationInProgress = false
-        _binding = null
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun immediateNavigateBack() {
-        // Prevent multiple simultaneous navigation attempts
-        if (isNavigationInProgress) {
-            Log.d(TAG, "Navigation already in progress, ignoring")
-            return
-        }
-
-        isNavigationInProgress = true
-
-        try {
-            Log.d(TAG, "Starting immediate navigation back")
-
-            // Clean up resources first
-            cleanupResources()
-
-            // Restore system UI immediately
-            restoreSystemBarsImmediately()
-
-            // Don't use any delays - try to navigate immediately but safely
-            performSafeBackNavigation()
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in immediate navigation", e)
-            isNavigationInProgress = false
-        }
-    }
-
-    private fun performSafeBackNavigation() {
-        try {
-            // Check if fragment is still valid
-            if (!isAdded || isDetached || activity == null) {
-                Log.w(TAG, "Fragment not attached, cannot navigate back")
-                isNavigationInProgress = false
-                return
-            }
-
-            val fragmentManager = parentFragmentManager
-
-            // Multiple checks to ensure FragmentManager is ready
-            if (fragmentManager.isStateSaved || fragmentManager.isDestroyed) {
-                Log.w(TAG, "FragmentManager not ready, cannot navigate")
-                isNavigationInProgress = false
-                return
-            }
-
-            // Check if there's anything to pop
-            if (fragmentManager.backStackEntryCount <= 0) {
-                Log.d(TAG, "No back stack entries, staying in current state")
-                isNavigationInProgress = false
-                return
-            }
-
-            // Try immediate navigation first
-            try {
-                // Use a different approach: remove this fragment from the parent container
-                // This avoids ViewPager2 conflicts
-                val parentFragment = parentFragment
-                if (parentFragment != null) {
-                    // If we're in a ViewPager, handle it differently
-                    handleViewPagerNavigation()
-                } else {
-                    // Standard fragment navigation
-                    fragmentManager.popBackStackImmediate()
-                    Log.d(TAG, "Standard back navigation successful")
-                    isNavigationInProgress = false
-                }
-            } catch (e: IllegalStateException) {
-                Log.w(TAG, "Immediate navigation failed, trying alternative", e)
-                // Alternative approach: Post to a different thread
-                Thread {
-                    try {
-                        Thread.sleep(50) // Very short wait
-                        requireActivity().runOnUiThread {
-                            performDelayedNavigation()
-                        }
-                    } catch (e2: Exception) {
-                        Log.e(TAG, "Thread-based navigation failed", e2)
-                        requireActivity().runOnUiThread {
-                            isNavigationInProgress = false
-                        }
-                    }
-                }.start()
-            }
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in performSafeBackNavigation", e)
-            isNavigationInProgress = false
-        }
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun handleViewPagerNavigation() {
-        try {
-
-            val activity = activity as? MainActivity
-            if (activity != null) {
-
-                activity.runOnUiThread {
-                    try {
-
-                        activity.onBackPressedDispatcher.onBackPressed()
-                        Log.d(TAG, "ViewPager navigation delegated to activity")
-                        isNavigationInProgress = false
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Activity navigation failed", e)
-                        performDelayedNavigation()
-                    }
-                }
-            } else {
-                performDelayedNavigation()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "ViewPager navigation failed", e)
-            performDelayedNavigation()
-        }
-    }
-
-    private fun performDelayedNavigation() {
-        navigationHandler.postDelayed({
-            try {
-                if (!isAdded || isDetached || activity == null) {
-                    isNavigationInProgress = false
-                    return@postDelayed
-                }
-
-                val fragmentManager = parentFragmentManager
-
-                if (!fragmentManager.isStateSaved && !fragmentManager.isDestroyed) {
-                    if (fragmentManager.backStackEntryCount > 0) {
-                        try {
-                            fragmentManager.popBackStack()
-                            Log.d(TAG, "Delayed navigation successful")
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Delayed navigation failed", e)
-                            // Last resort: just hide the fragment
-                            hideFragmentManually()
-                        }
-                    }
-                }
-                isNavigationInProgress = false
-            } catch (e: Exception) {
-                Log.e(TAG, "Delayed navigation error", e)
-                isNavigationInProgress = false
-            }
-        }, 200) // Longer delay for ViewPager2 to settle
-    }
-
-    private fun hideFragmentManually() {
-        try {
-            if (!isAdded || activity == null) {
-                return
-            }
-
-            val fragmentManager = parentFragmentManager
-
-            if (!fragmentManager.isStateSaved) {
-                val transaction = fragmentManager.beginTransaction()
-                transaction.hide(this)
-                // Use commit instead of commitNow to avoid immediate execution conflicts
-                transaction.commit()
-                Log.d(TAG, "Fragment hidden manually")
-            }
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Manual fragment hiding failed", e)
-        }
-    }
-
-    private fun cancelPendingNavigations() {
-        try {
-            navigationHandler.removeCallbacksAndMessages(null)
-            isNavigationInProgress = false
-            Log.d(TAG, "Pending navigations cancelled")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error canceling pending navigations", e)
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        try {
-            Log.d(TAG, "onDestroy: Final cleanup")
-            cancelPendingNavigations()
-            isNavigating = false
-            isNavigatingBack = false
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in onDestroy", e)
-        }
-    }
-
-    private fun setupClickListeners(data: Post) {
-        Log.d(TAG, "setupClickListeners - Data type: ${data::class.java.simpleName}, ID: ${data._id}")
-
-        cancelButton.setOnClickListener {
-            Log.d(TAG, "Cancel button clicked - immediate navigation")
-            it.isEnabled = false
-            immediateNavigateBack()
-            Handler(Looper.getMainLooper()).postDelayed({
-                if (isAdded) it.isEnabled = true
-            }, 100)
-        }
-        headerMenuButton.setOnClickListener { handleMenuButtonClick() }
-        mixedFilesCardView.setOnClickListener { handleOriginalMediaClick() }
-        originalFeedImage.setOnClickListener { handleOriginalFileClick() }
-        followButton.setOnClickListener { handleFollowButtonClick() }
-
-
-        originalPosterProfileImage.setOnClickListener {
-            navigateToUserProfile(
-                feedOwnerId = data.author?.account?._id ?: "",
-                feedOwnerName = data.author?.account?.username ?: "",
-                feedOwnerUsername = data.author?.account?.username ?: "",
-                profilePicUrl = data.author?.account?.avatar?.url ?: ""
-            )
-        }
-        originalPosterName.setOnClickListener {
-            navigateToUserProfile(
-                feedOwnerId = data.author?.account?._id ?: "",
-                feedOwnerName = data.author?.account?.username ?: "",
-                feedOwnerUsername = data.author?.account?.username ?: "",
-                profilePicUrl = data.author?.account?.avatar?.url ?: ""
-            )
-        }
-
-    }
-
-    private fun navigateToFragment(fragment: Fragment, tag: String) {
-        try {
-            val activity = activity
-            if (activity != null) {
-                val currentFragment = activity.supportFragmentManager.fragments.lastOrNull {
-                    it.isVisible && it.view != null
-                }
-                val fragmentManager = if (currentFragment != null &&
-                    currentFragment.childFragmentManager.fragments.isNotEmpty()
-                ) {
-                    currentFragment.childFragmentManager
-                } else {
-                    activity.supportFragmentManager
-                }
-                fragmentManager.beginTransaction()
-                    .setCustomAnimations(
-                        R.anim.slide_in_right,
-                        R.anim.slide_out_left,
-                        R.anim.slide_in_left,
-                        R.anim.slide_out_right
-                    )
-                    .replace(R.id.frame_layout, fragment)
-                    .addToBackStack(tag)
-                    .commit()
-                Log.d(TAG, "Successfully navigated to fragment: $tag")
-            } else {
-                Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error navigating to fragment: $tag", e)
-        }
-    }
-
-    private fun isViewsInitialized(): Boolean {
-        return try {
-            _binding != null &&
-                    ::itemView.isInitialized &&
-                    ::headerTitle.isInitialized &&
-                    ::originalPosterProfileImage.isInitialized &&
-                    ::originalPosterName.isInitialized &&
-                    ::recyclerViews.isInitialized &&
-                    ::multipleAudiosContainer.isInitialized &&
-                    ::mixedFilesCardView.isInitialized &&
-                    ::originalFeedImage.isInitialized &&
-                    ::cancelButton.isInitialized &&
-                    ::headerMenuButton.isInitialized &&
-                    ::quotedPostCard.isInitialized &&
-                    ::originalPostContainer.isInitialized &&
-                    ::tvQuotedUserHandle.isInitialized &&
-                    ::dateTime.isInitialized &&
-                    ::originalPostText.isInitialized &&
-                    ::tvQuotedHashtags.isInitialized &&
-                    ::ivQuotedPostImage.isInitialized &&
-                    ::likeSection.isInitialized &&
-                    ::likeButtonIcon.isInitialized &&
-                    ::likesCount.isInitialized &&
-                    ::commentSection.isInitialized &&
-                    ::commentButtonIcon.isInitialized &&
-                    ::commentCount.isInitialized &&
-                    ::favoriteSection.isInitialized &&
-                    ::favoritesButton.isInitialized &&
-                    ::favoriteCounts.isInitialized &&
-                    ::retweetSection.isInitialized &&
-                    ::repostPost.isInitialized &&
-                    ::repostCount.isInitialized &&
-                    ::shareSection.isInitialized &&
-                    ::shareButtonIcon.isInitialized &&
-                    ::shareCount.isInitialized &&
-                    ::followButton.isInitialized  // Add this line
-        } catch (e: Exception) {
-            Log.e(TAG, "Views initialization check failed: ${e.message}")
-            false
-        }
-    }
-
-    private fun initializeViews(view: View) {
-        itemView = view
-        try {
-            _binding?.let { safeBinding ->
-                cancelButton = safeBinding.cancelButton
-                headerTitle = safeBinding.headerTitle
-                headerMenuButton = safeBinding.headerMenuButton
-                quotedPostCard = safeBinding.quotedPostCard
-                originalPostContainer = safeBinding.originalPostContainer
-                originalPosterProfileImage = safeBinding.originalPosterProfileImage
-                originalPosterName = safeBinding.originalPosterName
-                tvQuotedUserHandle = safeBinding.tvQuotedUserHandle
-                dateTime = safeBinding.dateTime
-                originalPostText = safeBinding.originalPostText
-                tvQuotedHashtags = safeBinding.tvQuotedHashtags
-                mixedFilesCardView = safeBinding.mixedFilesCardView
-                originalFeedImage = safeBinding.originalFeedImage
-                multipleAudiosContainer = safeBinding.multipleAudiosContainer
-                recyclerViews = safeBinding.recyclerView
-                ivQuotedPostImage = safeBinding.ivQuotedPostImage
-
-                likeSection = safeBinding.likeLayout
-                likeButtonIcon = safeBinding.likeButtonIcon
-                likesCount = safeBinding.likesCount
-                commentSection = safeBinding.commentLayout
-                commentButtonIcon = safeBinding.commentButtonIcon
-                commentCount = safeBinding.commentCount
-                favoriteSection = safeBinding.favoriteSection
-                favoritesButton = safeBinding.favoritesButton
-                favoriteCounts = safeBinding.favoriteCounts
-                retweetSection = safeBinding.repostLayout
-                repostPost = safeBinding.repostPost
-                repostCount = safeBinding.repostCount
-                shareSection = safeBinding.shareLayout
-                shareButtonIcon = safeBinding.shareButton
-                shareCount = safeBinding.shareCount
-
-                followButton = safeBinding.followButton  // Add this line
-
-                Log.d(TAG, "All views initialized successfully")
-            } ?: run {
-                Log.e(TAG, "Binding is null, cannot initialize views")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error initializing views: ${e.message}", e)
-        }
-    }
 
     private fun updateFollowButtonUI() {
         if (isFollowing) {
@@ -6344,7 +6050,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
     override fun onDetach() {
         super.onDetach()
-        isNavigating = false
+
     }
 
 
