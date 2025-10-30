@@ -311,8 +311,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             e.printStackTrace()
         }
     }
-
-
+    
     override fun onResume() {
         super.onResume()
 
