@@ -74,11 +74,13 @@ data class MyData(
 
 // MAIN ADAPTER CLASS
 class ShortsAdapter(
+
     private val commentsClickListener: OnCommentsClickListener,
     private var clickListeners: OnClickListeners,
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
+
 ) : RecyclerView.Adapter<StringViewHolder>() {
 
     // Properties
@@ -91,6 +93,32 @@ class ShortsAdapter(
     // Preloading management
     private val preloadedVideos = mutableSetOf<Int>()
     private val preloadHandler = Handler(Looper.getMainLooper())
+
+
+
+    override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
+        // Only set currentViewHolder and position, don't call onBind for follow updates
+        if (currentViewHolder != holder || currentActivePosition != position) {
+            currentViewHolder = holder
+            currentActivePosition = position
+            val data = shortsList[position]
+
+            val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
+                ?: ShortsEntityFollowList(
+                    followersId = data.author.account._id,
+                    isFollowing = false
+                )
+
+            val myData = MyData(data, isFollowingData)
+            ensureFollowDataExists(data)
+
+            Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
+            holder.onBind(myData)
+
+            // Preload adjacent videos
+            preloadVideosAround(position)
+        }
+    }
 
     @SuppressLint("NotifyDataSetChanged")
     fun addData(newData: List<ShortsEntity>) {
@@ -111,9 +139,9 @@ class ShortsAdapter(
         followingData.addAll(isFollowingData)
     }
 
-    fun updateBtn(text: String) {
-        currentViewHolder?.updateButton(text)
-    }
+//    fun updateBtn(text: String) {
+//        currentViewHolder?.updateButton(text)
+//    }
 
     // PRELOADING METHODS
     private fun preloadVideosAround(position: Int) {
@@ -238,26 +266,26 @@ class ShortsAdapter(
         return viewHolder
     }
 
-    override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
-        currentViewHolder = holder
-        currentActivePosition = position
-        val data = shortsList[position]
-
-        val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
-            ?: ShortsEntityFollowList(
-                followersId = data.author.account._id,
-                isFollowing = false
-            )
-
-        val myData = MyData(data, isFollowingData)
-        ensureFollowDataExists(data)
-
-        Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
-        holder.onBind(myData)
-
-        // Preload adjacent videos
-        preloadVideosAround(position)
-    }
+//    override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
+//        currentViewHolder = holder
+//        currentActivePosition = position
+//        val data = shortsList[position]
+//
+//        val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
+//            ?: ShortsEntityFollowList(
+//                followersId = data.author.account._id,
+//                isFollowing = false
+//            )
+//
+//        val myData = MyData(data, isFollowingData)
+//        ensureFollowDataExists(data)
+//
+//        Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
+//        holder.onBind(myData)
+//
+//        // Preload adjacent videos
+//        preloadVideosAround(position)
+//    }
 
     fun ensureFollowDataExists(shortsEntity: ShortsEntity) {
         val authorId = shortsEntity.author.account._id
@@ -299,7 +327,9 @@ class ShortsAdapter(
         // Don't detach player completely, just pause updates
         holder.pauseUpdates()
     }
+
 }
+
 
 class StringViewHolder(
 
