@@ -788,12 +788,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
         }
 
-        // Post navigation to avoid ViewPager2 transaction conflicts
-        view?.post {
-            if (isAdded && activity != null) {
-                parentFragmentManager.popBackStack()
-            }
-        }
+        // Just go back
+        parentFragmentManager.popBackStack()
     }
 
     override fun onDestroyView() {
