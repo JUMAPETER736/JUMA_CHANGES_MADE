@@ -1539,60 +1539,7 @@ class FeedMixedFilesViewAdapter(
             }
         }
 
-        private fun showPlusMoreOverlay(count: Int) {
-            // Show only the count text, not the overlay image
-            overlayImageView.visibility = View.GONE
-            countTextView.visibility = View.VISIBLE
-            countTextView.text = "+$count"
-
-            // Style the count text with rounded background
-            countTextView.textSize = 24f
-            countTextView.setPadding(
-                16.dpToPx(itemView.context),
-                8.dpToPx(itemView.context),
-                16.dpToPx(itemView.context),
-                8.dpToPx(itemView.context)
-            )
-            countTextView.setTextColor(Color.WHITE)
-            countTextView.gravity = Gravity.CENTER
-
-            // Create semi-transparent black rounded background
-            val background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = 20f  // More rounded
-                setColor(Color.parseColor("#CC000000"))  // Darker overlay (80% opacity)
-            }
-            countTextView.background = background
-
-            // Position at bottom-right corner
-            val overlayParams = countTextView.layoutParams as? FrameLayout.LayoutParams
-            if (overlayParams != null) {
-                overlayParams.gravity = Gravity.BOTTOM or Gravity.END
-                overlayParams.setMargins(
-                    0,
-                    0,
-                    12.dpToPx(itemView.context),  // Right margin
-                    12.dpToPx(itemView.context)   // Bottom margin
-                )
-                countTextView.layoutParams = overlayParams
-            } else {
-                // Fallback if not using FrameLayout
-                val params = countTextView.layoutParams as? ViewGroup.MarginLayoutParams
-                params?.setMargins(
-                    0,
-                    0,
-                    12.dpToPx(itemView.context),
-                    12.dpToPx(itemView.context)
-                )
-                countTextView.layoutParams = params
-            }
-
-            // Bring to front to ensure it's visible on top
-            countTextView.bringToFront()
-            countTextView.elevation = 8.dpToPx(itemView.context).toFloat()
-
-            Log.d(tag, "Showing overlay with count: +$count")
-        }
+  
 
         private fun hidePlusMoreOverlay() {
             overlayImageView.visibility = View.GONE
@@ -1740,38 +1687,131 @@ class FeedMixedFilesViewAdapter(
                 }
 
                 fileSize >= 3 -> {
-                    // Hide items at position 2 and beyond
-                    if (position >= 2) {
-                        Log.d(tag, "Hiding item at position $position")
+
+                    Log.d(TAG, "onBind: Document file size >= 3")
+
+                    // Hide additional items (index 2 and beyond)
+                    if (absoluteAdapterPosition >= 2) {
+                        Log.d(TAG, "onBind: position >= 2, hiding item view")
                         itemView.visibility = View.GONE
-                        itemView.layoutParams = RecyclerView.LayoutParams(0, 0)
+                        itemView.layoutParams = RecyclerView.LayoutParams(0, 0) // Prevent item from taking space
                         return
                     }
 
-                    val adaptiveHeight = getConstrainedHeight(context, (maxHeight * 0.70).toInt())
-                    val containerParams = documentContainer.layoutParams as ViewGroup.MarginLayoutParams
-                    containerParams.width = ViewGroup.LayoutParams.MATCH_PARENT
-                    containerParams.height = adaptiveHeight
+                    val cardView = itemView.findViewById<CardView>(R.id.documentContainer)
+                    val imageView = itemView.findViewById<ImageView>(R.id.pdfImageView)
 
-                    when (position) {
+                    // Use 70% of max height for multiple documents
+                    val adaptiveHeight = getConstrainedHeight(context, (maxHeight * 0.65).toInt())
+
+                    // Match CardView to parent with adaptive height
+                    val cardLayoutParams = cardView.layoutParams as ViewGroup.MarginLayoutParams
+                    cardLayoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+                    cardLayoutParams.height = adaptiveHeight // Adaptive height for all CardViews
+
+                    when (absoluteAdapterPosition) {
                         0 -> {
-                            containerParams.setMargins(0, 0, sideMargin, 0)
-                            Log.d(tag, "Position 0: No overlay")
+                            // First item: Touch left edge, gap on right
+                            cardLayoutParams.setMargins(0, 0, sideMargin, 0)
                         }
                         1 -> {
-                            containerParams.setMargins(sideMargin, 0, 0, 0)
-                            val remainingCount = fileSize - 2
-                            showPlusMoreOverlay(remainingCount)
-                            Log.d(tag, "Position 1: Showing overlay +$remainingCount")
+                            // Second item: Gap on left, touch right edge
+                            cardLayoutParams.setMargins(sideMargin, 0, 0, 0)
                         }
                     }
-                    documentContainer.layoutParams = containerParams
 
-                    val imageLayoutParams = pdfImageView.layoutParams
+                    cardView.layoutParams = cardLayoutParams
+
+                    // Set the ImageView height to match the CardView
+                    val imageLayoutParams = imageView.layoutParams as ViewGroup.MarginLayoutParams
                     imageLayoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
-                    imageLayoutParams.height = adaptiveHeight
-                    pdfImageView.layoutParams = imageLayoutParams
-                    pdfImageView.scaleType = ImageView.ScaleType.FIT_XY
+                    imageLayoutParams.height = cardLayoutParams.height // Match the height of the CardView
+                    imageView.layoutParams = imageLayoutParams
+
+                    // Ensure the image scales properly
+                    imageView.scaleType = ImageView.ScaleType.FIT_XY
+
+                    // Handle different cases for position 0 and position 1 (additional files)
+                    when (absoluteAdapterPosition) {
+
+                        0 -> {
+
+                            Log.d(TAG, "onBind: position 0 for document with additional files")
+
+                            // Remove any previously added overlays (from recycled views)
+                            val parent = imageView.parent as ViewGroup
+
+                            parent.findViewWithTag<View>("overlay_tag")?.let {
+                                parent.removeView(it)
+                            }
+                            parent.findViewWithTag<View>("text_overlay_container")?.let {
+                                parent.removeView(it)
+                            }
+                        }
+
+                        1 -> {
+
+                            Log.d(TAG, "onBind: position 1 for document with additional files")
+
+                            val remainingFilesCount = fileSize - 2
+                            val plusCountText = "+$remainingFilesCount"
+
+                            val parent = imageView.parent as ViewGroup
+
+                            // Add overlay only if not already added
+                            if (parent.findViewWithTag<View>("overlay_tag") == null) {
+                                // Create a FrameLayout to wrap the ImageView + Overlay + Text
+                                val imageWrapper = FrameLayout(context).apply {
+                                    layoutParams = imageView.layoutParams
+                                }
+
+                                // Remove the ImageView from its parent and re-add in wrapper
+                                val index = parent.indexOfChild(imageView)
+                                parent.removeView(imageView)
+                                imageWrapper.addView(imageView)
+
+                                // Create the container for the dim effect around the "+N" count text
+                                val overlayContainer = FrameLayout(context).apply {
+                                    // Create rounded dimmed background
+                                    background = GradientDrawable().apply {
+                                        shape = GradientDrawable.RECTANGLE
+                                        cornerRadius = 16f // Adjust the radius as needed
+                                        setColor(Color.parseColor("#80000000")) // Semi-transparent black
+                                    }
+
+                                    tag = "overlay_tag"
+
+                                    layoutParams = FrameLayout.LayoutParams(
+                                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                                        FrameLayout.LayoutParams.WRAP_CONTENT
+                                    ).apply {
+                                        gravity = Gravity.BOTTOM or Gravity.END
+                                        marginEnd = 8
+                                        bottomMargin = 8
+                                    }
+
+                                    setPadding(12, 4, 12, 4) // Padding around the text
+                                }
+
+                                // Create the "+N" TextView
+                                val textView = TextView(context).apply {
+                                    text = plusCountText
+                                    setTextColor(Color.WHITE)
+                                    textSize = 32f
+                                    gravity = Gravity.CENTER
+                                }
+
+                                // Add TextView to the container
+                                overlayContainer.addView(textView)
+
+                                // Add container to the image wrapper
+                                imageWrapper.addView(overlayContainer)
+
+                                // Add everything back to the original parent
+                                parent.addView(imageWrapper, index)
+                            }
+                        }
+                    }
                 }
             }
         }
