@@ -249,41 +249,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         feedListView.layoutManager = LinearLayoutManager(requireContext())
         Log.d("RecyclerViewDebug", "Adapter set: ${true}")
 
-
-        // Check if the data is empty before loading
-//        if (getFeedViewModel.getAllFeedData().isEmpty()) {
-//            getAllFeed(allFeedAdapter.startPage)
-//            // Pre-load the second page immediately
-//            lifecycleScope.launch(Dispatchers.Main) {
-//                delay(500) // Small delay to avoid overwhelming the server
-//                getAllFeed(allFeedAdapter.startPage + 1)
-//            }
-//        } else {
-//            // Don't fetch data again if the ViewModel already has data
-//            allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
-//            Log.d(TAG, "Data already available, using the cached data")
-//        }
-
-//        allFeedAdapter.setOnPaginationListener(object : FeedPaginatedAdapter.OnPaginationListener {
-//            override fun onCurrentPage(page: Int) {
-//                Log.d(TAG, "Feed Feed currentPage: page number $page")
-//            }
-//
-//            override fun onNextPage(page: Int) {
-//                lifecycleScope.launch(Dispatchers.Main) {
-//                    Log.d(TAG, "Feed Feed  onNextPage: page number $page")
-//                    getAllFeed(page)
-//                    // Pre-load the next page
-//                    getAllFeed(page + 1)
-//                }
-//            }
-//
-//            override fun onFinish() {
-//                Log.d(TAG, "Feed Feed  finished: page number")
-//            }
-//        })
-
-
         if (getFeedViewModel.getAllFeedData().isEmpty()) {
             getAllFeed(allFeedAdapter.startPage)
         } else {
@@ -593,6 +558,8 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 }
             }
         }
+
+        loadAllAvailablePages()
     }
 
     fun loadAllAvailablePages(maxPages: Int = 50) {
@@ -615,56 +582,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         allFeedAdapter.clearItems() // Add this to your adapter
         getAllFeed(allFeedAdapter.startPage)
     }
-
-//    fun getAllFeed(page: Int) {
-//        val TAG = "AllFeedTag"
-//        Log.d(
-//            TAG,
-//            "getAllFeed: page number $page"
-//        )
-//        CoroutineScope(Dispatchers.IO).launch {
-//            try {
-//                val response = retrofitInstance.apiService.getAllFeed(
-//                    page.toString()
-//                )
-//                val responseBody = response.body()
-//                Log.d(TAG, "Feed Feed getAllFeed feed: response  nse $response")
-//                Log.d(TAG, "Feed Feed getAllFeed feed: response message ${response.message()}")
-//                Log.d(
-//                    TAG,
-//                    "Feed Feed getAllFeed feed: response message error body ${response.errorBody()}"
-//                )
-//                Log.d(TAG, "Feed Feed getAllFeed feed: response body $responseBody")
-//
-//
-//
-//                Log.d(
-//                    "AllFeedTag",
-//                    "Feed Feed getAllFeed feed: response body message ${responseBody!!.message}"
-//                )
-//                val data = responseBody.data
-//                // Safely access the 4th element if it exists
-//                val posts = responseBody.data.data.posts
-//                if (posts.size > 4) {
-//                    Log.d(TAG, "Feed Feed getAllFeed feed: response body data ${posts[4]}")
-//                } else {
-//                    Log.d(TAG, "Feed Feed getAllFeed feed: Not enough posts, size=${posts.size}")
-//                }
-//                Log.d(TAG, "Feed Feed getAllFeed feed: response body data ${data.data.posts.size}")
-//                withContext(Dispatchers.Main) {
-//                    getFeedViewModel.addAllFeedData(data.data.posts.toMutableList())
-//                    allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
-//                    val posts = getFeedViewModel.getAllFeedData()
-//                    Log.d(TAG, "getAllFeed: posts :$posts")
-//                    allFeedAdapter.submitItems(posts)
-//                }
-//            } catch (e: Exception) {
-//                Log.e(TAG, "comment: $e")
-//                Log.e(TAG, "comment: ${e.message}")
-//                e.printStackTrace()
-//            }
-//        }
-//    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun successEvent(event: FeedUploadProgress) {
@@ -711,7 +628,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
         EventBus.getDefault().post(HideFeedFloatingActionButton())
         EventBus.getDefault().post(ShowAppBar(false))
-
+        refreshFeed()
     }
 
     override fun onDestroyView() {
