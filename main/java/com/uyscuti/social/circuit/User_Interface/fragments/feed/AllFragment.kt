@@ -226,33 +226,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         Log.d("RecyclerViewTwo", "Adapter set: $allFeedAdapter")
         feedListView.layoutManager = LinearLayoutManager(requireContext())
         Log.d("RecyclerViewDebug", "Adapter set: ${true}")
-        // Check if the data is empty before loading
-//        if (getFeedViewModel.getAllFeedData().isEmpty()) {
-//            getAllFeed(allFeedAdapter.startPage)
-//
-//        } else {
-//            // Don't fetch data again if the ViewModel already has data
-//            allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
-//            Log.d(TAG, "Data already available, using the cached data")
-//        }
-
-//
-//        allFeedAdapter.setOnPaginationListener(object : FeedPaginatedAdapter.OnPaginationListener {
-//            override fun onCurrentPage(page: Int) {
-//                Log.d(TAG, "Feed Feed currentPage: page number $page")
-//            }
-//
-//            override fun onNextPage(page: Int) {
-//                lifecycleScope.launch(Dispatchers.Main) {
-//                    Log.d(TAG, "Feed Feed  onNextPage: page number $page")
-//                    getAllFeed(page)
-//                }
-//            }
-//
-//            override fun onFinish() {
-//                Log.d(TAG, "Feed Feed  finished: page number")
-//            }
-//        })
 
 
         // Check if the data is empty before loading
@@ -358,44 +331,12 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 }
             }
 
-//            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-//                super.onScrolled(recyclerView, dx, dy)
-//
-//                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-//                val adapter = recyclerView.adapter
-//
-//                // Ensure there is data in the adapter before modifying FAB visibility
-//                if (adapter != null && adapter.itemCount > 0) {
-//                    val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
-//                    val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
-//
-//                    getFeedViewModel.allFeedDataLastViewPosition = firstVisibleItemPosition + 1
-//                    getFeedViewModel.allFeedDataLastViewPosition = lastVisibleItemPosition + 1
-//
-//                    if (dy > 5 && !isScrollingDown) {
-//                        // Scrolling down → Hide FAB & BottomNav
-//                        isScrollingDown = true
-//                        EventBus.getDefault().post(HideFeedFloatingActionButton())
-//                        EventBus.getDefault().post(HideBottomNav())
-//                    } else if (dy < -5 && isScrollingDown) {
-//                        // Scrolling up (slightly) → Show FAB & BottomNav immediately
-//                        isScrollingDown = false
-//                        EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
-//                        EventBus.getDefault().post(ShowBottomNav(false))
-//                    }
-//                } else {
-//                    // No data, make sure the FAB remains hidden
-//                    EventBus.getDefault().post(HideFeedFloatingActionButton())
-//                }
-//            }
-
-
         })
-        //      allFeedAdapterRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+
         lifecycleScope.launch(Dispatchers.Main) {
-            //            Log.d(TAG, "onCreateView: ${getFeedViewModel.getAllFeedData()}")
+
             if (getFeedViewModel.getAllFeedData().isEmpty()) {
-                //              Log.d(TAG, "onCreateView: get all feed data is empty")
+
                 getAllFeed(allFeedAdapter.startPage)
             } else {
                 Log.d(TAG, "onCreateView: get all feed data is not empty")
@@ -746,7 +687,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedUploadResponseEvent(event: FeedUploadResponseEvent) {
         Log.d("feedUploadResponseEvent", "feedUploadResponseEvent: ")
-//        val feedPosition = allFeedAdapter.getPositionById(event.data._id)
+
         val feedPost = getFeedViewModel.getSingleAllFeedData()
 
         feedPost._id = event.id
@@ -809,7 +750,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         followUnfollowLayout.visibility = View.GONE
         QuoteFeedLayout.setOnClickListener {
             val fragment = Fragment_Edit_Post_To_Repost(data)
-//            val fragment = NewRepostedPostFragment(data)
+
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
             transaction.replace(
                 R.id.frame_layout, fragment) // Ensure fragment_container is correct
@@ -842,9 +783,9 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             Log.d(TAG, "hidePostLayout: hide post clicked")
             hideSinglePost(position, data)
             dialog.dismiss()
-//          showDeleteConfirmationDialog(data._id, position)
+
         }
-//        val makeAddFavorite: View = view.findViewById(R.id.makeFavoriteLayout)
+
         val downloadOption: View = view.findViewById(R.id.downloadAction)
         if (data.isBookmarked) {
             data.isBookmarked = true
@@ -1031,11 +972,10 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         try {
             if (::allFeedAdapter.isInitialized) {
 
-//                feedListView.removeViewAt( position )
+
                 allFeedAdapter.removeItem(position)
                 allFeedAdapter.notifyItemRemoved(position)
-//                allFeedAdapter.notifyItemChanged(position)
-                // Optional: Add fade-out animation
+
                 val viewHolder = feedListView.findViewHolderForAdapterPosition(position)
                 if (viewHolder != null) {
                     viewHolder.itemView.animate()
@@ -1055,8 +995,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 // Show Snackbar with Undo button
                 Snackbar.make(feedListView, "Post hidden", Snackbar.LENGTH_LONG)
                     .setAction("Undo") {
-                        // Restore the post
-//                        favoriteFeedAdapter.restoreItem(position, data)
+
                         allFeedAdapter.notifyItemInserted(position)
                     }
                     .show()
@@ -1118,13 +1057,13 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         val customTitleView: View = inflater.inflate(
             R.layout.delete_title_custom_layout, null)
         val builder = AlertDialog.Builder(requireContext())
-//        builder.setTitle("Delete Feed Confirmation")
+
         builder.setCustomTitle(customTitleView)
         builder.setMessage("Are you sure you want to delete this feed?")
 
         // Positive Button
         builder.setPositiveButton("Delete") { dialog, which ->
-//             Handle delete action
+
 
             handleDeleteAction(feedId = feedId, position) { isSuccess, message ->
                 if (isSuccess) {
@@ -1153,8 +1092,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         position: Int,
         callback: (Boolean, String) -> Unit
     ) {
-        // Logic to delete the item
-        // e.g., remove it from a list or database
+
         Log.d(TAG, "handleDeleteAction: remove from database")
         lifecycleScope.launch {
             val response = retrofitInstance.apiService.deleteFeed(feedId)
@@ -1214,7 +1152,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                         } catch (e: Exception) {
                             e.printStackTrace()
                         }
-//                        getFeedViewModel.setRefreshMyData(pos, true)
+
                     } else {
                         Log.d(TAG, "handleDeleteAction: feed data not found for all fragment")
                     }
@@ -1279,9 +1217,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             putString("contentType", data.contentType) // Pass content type for handling
         }
         tappedFilesFragment.arguments = args
-
-        // Set listener if your fragment implements one
-        // tappedFilesFragment.setListener(this)
 
         // Replace fragment
         requireActivity().supportFragmentManager.beginTransaction()
