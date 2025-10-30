@@ -598,6 +598,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             followButton.visibility = View.INVISIBLE
         } else {
             followButton.visibility = View.VISIBLE
+
             // Set initial state from data
             updateFollowButtonState(data.followItemEntity.isFollowing)
 
@@ -610,39 +611,17 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
                 isFollowed = newFollowState
                 updateFollowButtonState(newFollowState)
 
-                // Update the data source
+                // Update the data source immediately
                 data.followItemEntity.isFollowing = newFollowState
 
-                // Post event for backend update
+                // Post event for backend update (but don't rebind the view)
                 val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, newFollowState)
                 EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+                Log.d(TAG, "Follow button clicked: userId=$shortOwnerId, newState=$newFollowState")
             }
         }
     }
-
-//    fun updateButton(newText: String) {
-//        followButton.text = newText
-//    }
-//
-//    @SuppressLint("SetTextI18n")
-//    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
-//        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
-//            followButton.visibility = View.INVISIBLE
-//        } else {
-//            followButton.visibility = View.VISIBLE
-//            updateFollowButtonState(data.followItemEntity.isFollowing)
-//
-//            followButton.setOnClickListener {
-//                // Update UI immediately without rebinding
-//                isFollowed = !isFollowed
-//                updateFollowButtonState(isFollowed)
-//
-//                // Post event for backend update
-//                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, isFollowed)
-//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
-//            }
-//        }
-//    }
 
     @SuppressLint("SetTextI18n")
     private fun updateFollowButtonState(isFollowing: Boolean) {
@@ -656,6 +635,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
         }
     }
+    
 
     private fun setupContent(shortsEntity: ShortsEntity) {
         val caption = shortsEntity.content.toString()
