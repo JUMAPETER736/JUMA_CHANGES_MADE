@@ -472,29 +472,57 @@ class StringViewHolder(
     }
 
 
-    fun updateButton(newText: String) {
-        followButton.text = newText
-    }
-
     @SuppressLint("SetTextI18n")
     private fun setupFollowButton(data: MyData, shortOwnerId: String) {
         if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
             followButton.visibility = View.INVISIBLE
         } else {
             followButton.visibility = View.VISIBLE
+            // Set initial state from data
             updateFollowButtonState(data.followItemEntity.isFollowing)
 
+            // Remove previous listener to avoid duplicates
+            followButton.setOnClickListener(null)
+
             followButton.setOnClickListener {
-                // Update UI immediately without rebinding
-                isFollowed = !isFollowed
-                updateFollowButtonState(isFollowed)
+                // Toggle state immediately for smooth UI
+                val newFollowState = !isFollowed
+                isFollowed = newFollowState
+                updateFollowButtonState(newFollowState)
+
+                // Update the data source
+                data.followItemEntity.isFollowing = newFollowState
 
                 // Post event for backend update
-                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, isFollowed)
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, newFollowState)
                 EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
             }
         }
     }
+
+//    fun updateButton(newText: String) {
+//        followButton.text = newText
+//    }
+//
+//    @SuppressLint("SetTextI18n")
+//    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
+//        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
+//            followButton.visibility = View.INVISIBLE
+//        } else {
+//            followButton.visibility = View.VISIBLE
+//            updateFollowButtonState(data.followItemEntity.isFollowing)
+//
+//            followButton.setOnClickListener {
+//                // Update UI immediately without rebinding
+//                isFollowed = !isFollowed
+//                updateFollowButtonState(isFollowed)
+//
+//                // Post event for backend update
+//                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, isFollowed)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+//            }
+//        }
+//    }
 
     @SuppressLint("SetTextI18n")
     private fun updateFollowButtonState(isFollowing: Boolean) {
