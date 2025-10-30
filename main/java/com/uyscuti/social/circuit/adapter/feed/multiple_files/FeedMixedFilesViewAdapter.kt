@@ -53,6 +53,11 @@ import com.uyscuti.social.network.api.response.posts.FileType
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.response.posts.ThumbnailX
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
 private const val VIEW_TYPE_IMAGE_FEED = 0
@@ -1016,12 +1021,62 @@ class FeedMixedFilesViewAdapter(
             return (this * context.resources.displayMetrics.density).toInt()
         }
 
+        private var preloadJob: Job? = null
         private val feedThumbnail: ImageView = itemView.findViewById(R.id.feedThumbnail)
         private val feedVideoDurationTextView: TextView =
             itemView.findViewById(R.id.feedVideoDurationTextView)
         private val cardView: CardView = itemView.findViewById(R.id.cardView)
         private val countTextView: TextView = itemView.findViewById(R.id.countTextView)
         private val imageView2: ImageView = itemView.findViewById(R.id.imageView2)
+
+        // Add this method to preload video
+        private fun preloadVideo(context: Context, videoUrl: String) {
+            preloadJob?.cancel() // Cancel any existing preload job
+
+            preloadJob = CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    // Preload with Glide's video frame loading
+                    Glide.with(context)
+                        .asFile()
+                        .load(videoUrl)
+                        .diskCacheStrategy(DiskCacheStrategy.DATA)
+                        .preload()
+
+                    Log.d(TAG, "Preloaded video: $videoUrl")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to preload video: ${e.message}")
+                }
+            }
+        }
+
+        // Add this method to preload multiple videos
+        private fun preloadMultipleVideos(context: Context, files: ArrayList<File>, startIndex: Int) {
+            CoroutineScope(Dispatchers.IO).launch {
+                // Preload current video and next 2 videos
+                val videosToPreload = minOf(3, files.size - startIndex)
+
+                for (i in 0 until videosToPreload) {
+                    val index = startIndex + i
+                    if (index < files.size) {
+                        val file = files[index]
+                        try {
+                            Glide.with(context)
+                                .asFile()
+                                .load(file.url)
+                                .diskCacheStrategy(DiskCacheStrategy.DATA)
+                                .preload()
+
+                            Log.d(TAG, "Preloaded video at index $index: ${file.url}")
+
+                            // Small delay between preloads to avoid overwhelming
+                            delay(100)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to preload video at index $index: ${e.message}")
+                        }
+                    }
+                }
+            }
+        }
 
         // Helper function to get adaptive heights based on screen size
         private fun getAdaptiveHeights(context: Context): Pair<Int, Int> {
@@ -1119,6 +1174,7 @@ class FeedMixedFilesViewAdapter(
             cardView.setCardBackgroundColor(Color.WHITE)
             itemView.setBackgroundColor(Color.TRANSPARENT)
             val fileIdToFind = data.fileIds[absoluteAdapterPosition]
+
 
             itemView.setOnClickListener {
                 navigateToTappedFilesFragment(
@@ -1488,10 +1544,14 @@ class FeedMixedFilesViewAdapter(
             countTextView.visibility = View.VISIBLE
             countTextView.text = "+$count"
 
-            // Style the count text similar to images
+            // Style the count text
             countTextView.textSize = 32f
-            countTextView.setPadding(12.dpToPx(itemView.context), 4.dpToPx(itemView.context),
-                12.dpToPx(itemView.context), 4.dpToPx(itemView.context))
+            countTextView.setPadding(
+                12.dpToPx(itemView.context),
+                4.dpToPx(itemView.context),
+                12.dpToPx(itemView.context),
+                4.dpToPx(itemView.context)
+            )
             countTextView.setTextColor(Color.WHITE)
             countTextView.gravity = Gravity.CENTER
             countTextView.background = GradientDrawable().apply {
@@ -1499,12 +1559,6 @@ class FeedMixedFilesViewAdapter(
                 cornerRadius = 16f
                 setColor("#80000000".toColorInt())
             }
-
-            // Position at bottom right corner
-            val overlayParams = countTextView.layoutParams as FrameLayout.LayoutParams
-            overlayParams.gravity = Gravity.BOTTOM or Gravity.END
-            overlayParams.setMargins(0, 0, 16.dpToPx(itemView.context), 16.dpToPx(itemView.context))
-            countTextView.layoutParams = overlayParams
 
             Log.d(tag, "Showing overlay with count: +$count")
         }
