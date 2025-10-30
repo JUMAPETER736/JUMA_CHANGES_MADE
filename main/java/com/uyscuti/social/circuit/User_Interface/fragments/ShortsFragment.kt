@@ -2116,7 +2116,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
             followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
                 shortsAdapter.addIsFollowingData(it)
-                shortsAdapter.notifyDataSetChanged()
+              //  shortsAdapter.notifyDataSetChanged()
                 Log.d("followButtonClicked", "followButtonClicked:$it ")
             }
         }
