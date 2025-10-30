@@ -135,6 +135,22 @@ private val PRELOAD_THRESHOLD = 10
 class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterface,
     ToggleFeedFloatingActionButton {
 
+
+
+    companion object {
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            AllFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+
+                }
+            }
+    }
+
+
         private var param1: String? = null
     private var param2: String? = null
     private var parentFragment: FeedFragment? = null // Reference to parent fragment
@@ -179,7 +195,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     private lateinit var feedUploadRepository: FeedUploadRepository
     private var positionFromShorts: SetAllFragmentScrollPosition? = null
     private var feedRepostMultipleImageFragment: FeedRepostMultipleImageFragment? = null
-
+    private var hasNotifiedDatasetChanged = false
     private var isFragmentOpen = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -463,8 +479,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         progressBar.progress = event.currentProgress
     }
 
-    private var hasNotifiedDatasetChanged = false
-
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedAdapterNotifyDatasetChanged(event: FeedAdapterNotifyDatasetChanged) {
@@ -492,7 +506,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     }
 
-
     override fun onResume() {
         super.onResume()
         getFeedViewModel.isResuming = true
@@ -508,7 +521,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     }
 
-
     override fun onDestroyView() {
         super.onDestroyView()
         Log.d(TAG, "onDestroyView: called")
@@ -522,7 +534,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     }
 
-
     private fun getCurrentFeedPosition(): Int? {
         val layoutManager = feedListView.layoutManager as LinearLayoutManager
         val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
@@ -532,21 +543,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         return firstVisibleItemPosition.takeIf { it <= lastVisibleItemPosition }
 
     }
-
-
-    companion object {
-
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            AllFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-
-                }
-            }
-    }
-
 
     override fun likeUnLikeFeed(position: Int, data: Post) {
 
@@ -620,19 +616,15 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-
     override fun feedCommentClicked(position: Int, data: Post) {
         //implemented in main activity kt
         Log.d(TAG, "feedCommentClick: this is the one listening")
         EventBus.getDefault().post(FeedCommentClicked(position, data))
     }
 
-
     private fun hidingBottomNav() {
         EventBus.getDefault().post(HideBottomNav())
     }
-
-
 
     override fun feedFavoriteClick(
         position: Int,
@@ -680,7 +672,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         getFeedViewModel.updateForAllFeedFragment(feedPosition, event.data)
     }
 
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedUploadResponseEvent(event: FeedUploadResponseEvent) {
         Log.d("feedUploadResponseEvent", "feedUploadResponseEvent: ")
@@ -694,7 +685,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         allFeedAdapter.updateItem(0, feedPost)
         getFeedViewModel.updateForAllFeedFragment(0, feedPost)
     }
-
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun likeFeedClick(event: FromFavoriteFragmentFeedLikeClick) {
@@ -1752,7 +1742,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         EventBus.getDefault().post(ShowBottomNav(false))
         allFeedAdapter.notifyDataSetChanged()
     }
-
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedAllFeedUpdateLike(event: AllFeedUpdateLike) {
