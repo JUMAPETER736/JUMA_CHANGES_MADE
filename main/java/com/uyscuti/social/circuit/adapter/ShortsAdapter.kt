@@ -660,47 +660,7 @@ class StringViewHolder(
         }
     }
 
-//    @OptIn(UnstableApi::class)
-//    @SuppressLint("SetTextI18n")
-//    override fun onBind(data: MyData) {
-//        val shortsEntity = data.shortsEntity
-//
-//        // Ensure clean state
-//        videoView.player = null
-//        videoView.visibility = View.VISIBLE
-//
-//        // Reattach player properly
-//        videoView.post {
-//            videoView.player = exoplayer
-//            videoView.useController = false
-//            videoView.keepScreenOn = true
-//            videoView.requestLayout()
-//            videoView.invalidate()
-//        }
-//
-//        val url = shortsEntity.images[0].url
-//        val shortOwnerId = shortsEntity.author.account._id
-//        val shortOwnerUsername = shortsEntity.author.account.username
-//        val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
-//        val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
-//
-//        totalComments = shortsEntity.comments
-//        totalLikes = shortsEntity.likes
-//        isLiked = shortsEntity.isLiked
-//        isFavorite = shortsEntity.isBookmarked
-//
-//        updateLikeButtonState()
-//        updateFavoriteButtonState()
-//
-//        setupEventBusEvents(shortsEntity)
-//        setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-//        setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-//        setupFollowButton(data, shortOwnerId)
-//        setupContent(shortsEntity)
-//
-//        bottomVideoSeekBar.progress = 0
-//        videoDuration = 0L
-//    }
+
 
     private fun updateLikeButtonState() {
         likeCount.text = totalLikes.toString()
@@ -921,19 +881,6 @@ class StringViewHolder(
         EventBus.getDefault().post(ShortsLikeUnLikeButton(shortsEntity, btnLike, isLiked, likeCount))
         EventBus.getDefault().post(ShortsBookmarkButton(shortsEntity, favorite))
     }
-
-//    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
-//        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
-//            followButton.visibility = View.INVISIBLE
-//        } else {
-//            followButton.visibility = View.VISIBLE
-//            updateFollowButtonState(data.followItemEntity.isFollowing)
-//
-//            followButton.setOnClickListener {
-//                handleFollowButtonClick(shortOwnerId)
-//            }
-//        }
-//    }
 
 
 
