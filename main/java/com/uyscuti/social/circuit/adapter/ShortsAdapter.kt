@@ -331,7 +331,8 @@ class ShortsAdapter(
 }
 
 
-class StringViewHolder(
+class StringViewHolder @OptIn(UnstableApi::class) constructor
+    (
 
     itemView: View,
     private val commentsClickListener: OnCommentsClickListener,
