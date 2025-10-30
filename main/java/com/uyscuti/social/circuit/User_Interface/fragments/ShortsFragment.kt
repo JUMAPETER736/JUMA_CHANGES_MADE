@@ -1629,7 +1629,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
 
-  
+
     @SuppressLint("SetTextI18n")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
@@ -1670,107 +1670,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             Log.d(tag, "No internet connection, saved locally only")
         }
     }
-
-//    @SuppressLint("SetTextI18n")
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    fun handleFollowButtonClick(event: HandleInShortsFollowButtonClick) {
-//        val tag = "handleFollowButtonClick"
-//        Log.d(tag, "handleFollowButtonClick: inside")
-//        val connectivityManager =
-//            requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-//
-//        val networkInfo = connectivityManager.activeNetworkInfo
-//        val isConnected = networkInfo != null && networkInfo.isConnected
-//
-//        event.followButton.setOnClickListener {
-//            Log.d(tag, "handleFollowButtonClick: button clicked")
-//            val isFollowing = event.followButton.text != "Following"
-//
-//            // Update the Room database with the new follow status
-//            val newFollowEntity = FollowUnFollowEntity(event.userId, isFollowing)
-//
-////            EventBus.getDefault().post(FeedFavoriteFollowUpdate(event.userId, isFollowing))
-//            followViewModel.insertOrUpdateFollow(newFollowEntity)
-//        }
-//
-//        // Observe the follow status and update UI accordingly
-//        followViewModel.getFollowStatus(event.userId)
-//            .observe(this) { followEntity ->
-//                followEntity?.let {
-//                    if (it.isFollowing) {
-//                        // User is currently following, update UI accordingly
-//                        event.followButton.text = "Following"
-////                        binding.followIcon.setImageResource(R.drawable.notifications_svgrepo_com_fill)
-//                        event.followButton.setBackgroundResource(R.drawable.shorts_following_button)
-//
-//                        if (!isConnected) {
-//                            Log.d(tag, "handleFollowButtonClick: no internet connection")
-//                        } else {
-//                            Log.d(tag, "handleFollowButtonClick: internet connected")
-//                            followUnFollowViewModel.followUnFollow(event.userId)
-//                            getOtherUsersProfileViewModel.viewModelScope.launch {
-//                                delay(500)
-//                                getOtherUsersProfileViewModel.getOtherUsersProfile(event.username)
-//                            }
-//                            followUnFollowViewModel.viewModelScope.launch {
-//                                val isDeleted = followViewModel.deleteFollowById(event.userId)
-//                                if (isDeleted) {
-//                                    // Deletion was successful, update UI or perform other actions
-//                                    Log.d(tag, "Follow deleted successfully.")
-//                                } else {
-//                                    // Deletion was not successful, handle accordingly
-//                                    Log.d(tag, "Failed to delete follow.")
-//                                }
-//                            }
-//                        }
-//
-//                    } else {
-//                        // User is not following, update UI accordingly
-//                        event.followButton.text = "Follow"
-//                        event.followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
-////                        binding.followIcon.setImageResource(R.drawable.notification_follow_bluejeans)
-//                        if (!isConnected) {
-//                            Log.d(tag, "handleFollowButtonClick: no internet connection")
-//                        } else {
-//                            Log.d(tag, "handleFollowButtonClick: internet connected")
-//                            followUnFollowViewModel.followUnFollow(event.userId)
-////                            viewModel.getOtherUsersProfile(fromShortsUserAccount!!.username)
-//
-//                            getOtherUsersProfileViewModel.viewModelScope.launch {
-//                                delay(500)
-//                                getOtherUsersProfileViewModel.getOtherUsersProfile(event.username)
-//                            }
-//
-//                            followUnFollowViewModel.viewModelScope.launch {
-//                                val isDeleted = followViewModel.deleteFollowById(event.userId)
-//                                if (isDeleted) {
-//                                    // Deletion was successful, update UI or perform other actions
-//                                    Log.d(tag, "Follow deleted successfully.")
-//                                } else {
-//                                    // Deletion was not successful, handle accordingly
-//                                    Log.d(tag, "Failed to delete follow.")
-//                                }
-//                            }
-//                        }
-//
-//                    }
-//                }
-//            }
-//
-//        getOtherUsersProfileViewModel.getUserProfileShortsObserver().observe(
-//            this
-//        ) { userProfileData ->
-//
-//            if (userProfileData!!.isFollowing) {
-//                event.followButton.text = "Following"
-//            } else {
-//                event.followButton.text = "Follow"
-//            }
-//
-//            Log.d(tag, "initUser followers count: ${userProfileData.followersCount}")
-//        }
-//    }
-
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onProgressEvent(event: ProgressEvent) {
