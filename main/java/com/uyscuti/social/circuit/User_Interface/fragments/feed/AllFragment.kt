@@ -329,9 +329,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    /**
-     * Load initial batch of pages aggressively
-     */
     private fun loadInitialBatch() {
         lifecycleScope.launch(Dispatchers.Main) {
             try {
@@ -372,9 +369,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    /**
-     * Continue loading pages in background
-     */
     private fun continueBackgroundLoading() {
         preloadScope.launch {
             var currentPage = INITIAL_PAGES_TO_LOAD + 1
@@ -402,9 +396,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    /**
-     * Preload next batch based on current position
-     */
     private fun preloadNextBatch(currentPage: Int) {
         preloadScope.launch {
             // Preload next 5 pages
@@ -415,18 +406,12 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    /**
-     * Ensure a specific page is loaded (fallback)
-     */
     private fun ensurePageLoaded(page: Int) {
         preloadScope.launch {
             loadPageSilently(page)
         }
     }
 
-    /**
-     * Load a page silently without blocking UI
-     */
     private suspend fun loadPageSilently(page: Int) {
         // Prevent duplicate loading
         synchronized(pageLock) {
@@ -484,18 +469,12 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    /**
-     * Original getAllFeed for compatibility (now calls loadPageSilently)
-     */
     fun getAllFeed(page: Int) {
         lifecycleScope.launch {
             loadPageSilently(page)
         }
     }
 
-    /**
-     * Refresh feed from beginning
-     */
     fun refreshFeed() {
         loadedPages.clear()
         loadingPages.clear()
@@ -528,17 +507,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         EventBus.getDefault().unregister(this)
     }
 
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//        val inflater = TransitionInflater.from(requireContext())
-//        exitTransition = inflater.inflateTransition(R.transition.feed_fragment_fade)
-//        arguments?.let {
-//            param1 = it.getString(ARG_PARAM1)
-//            param2 = it.getString(ARG_PARAM2)
-//        }
-//        EventBus.getDefault().register(this)
-//    }
-
     fun setPositionFromShorts(positionFromShorts: SetAllFragmentScrollPosition) {
         Log.d(TAG, "setPositionFromShorts: ${positionFromShorts.allFragmentFeedPosition}")
         this.positionFromShorts = positionFromShorts
@@ -552,361 +520,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         return inflater.inflate(R.layout.fragment_all, container, false)
     }
 
-//    @SuppressLint("NotifyDataSetChanged")
-//    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-//        super.onViewCreated(view, savedInstanceState)
-//        var isScrollingDown = false
-//        loadedPages.clear()
-//        loadingPages.clear()
-//        hasMorePages = true
-//
-//        feedUploadRepository = FeedUploadRepository()
-//        feedListView = view.findViewById(R.id.rv)
-//        progressBar = view.findViewById(R.id.progressBar)
-//        frameLayout = view.findViewById(R.id.feed_text_view_fragment)
-//        allFeedAdapter = FeedAdapter(
-//            requireActivity(),
-//            this@AllFragment
-//        )
-//        Log.d("RecyclerViewTwo", "Adapter set: $allFeedAdapter")
-//        feedListView.adapter = allFeedAdapter
-//        Log.d("RecyclerViewTwo", "Adapter set: $allFeedAdapter")
-//        feedListView.layoutManager = LinearLayoutManager(requireContext())
-//        Log.d("RecyclerViewDebug", "Adapter set: ${true}")
-//
-//        if (getFeedViewModel.getAllFeedData().isEmpty()) {
-//            getAllFeed(allFeedAdapter.startPage)
-//        } else {
-//            allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
-//            Log.d(TAG, "Data already available, using cached data")
-//        }
-//
-//        // Setup pagination listener
-//        allFeedAdapter.setOnPaginationListener(object : FeedPaginatedAdapter.OnPaginationListener {
-//            override fun onCurrentPage(page: Int) {
-//                Log.d(TAG, "onCurrentPage: $page")
-//            }
-//
-//            override fun onNextPage(page: Int) {
-//                Log.d(TAG, "onNextPage: $page")
-//                getAllFeed(page)
-//            }
-//
-//            override fun onFinish() {
-//                Log.d(TAG, "Pagination finished")
-//            }
-//        })
-//
-//        // Improved scroll listener
-//        feedListView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-//            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-//                super.onScrolled(recyclerView, dx, dy)
-//
-//                val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
-//                val adapter = recyclerView.adapter ?: return
-//
-//                if (adapter.itemCount == 0) return
-//
-//                val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
-//                val totalItemCount = adapter.itemCount
-//
-//                // Pre-load when user is near the end
-//                if (dy > 0 && !isLoadingNextPage && hasMorePages) {
-//                    if (lastVisibleItemPosition >= totalItemCount - PRELOAD_THRESHOLD) {
-//                        isLoadingNextPage = true
-//
-//                        // Calculate next page to load
-//                        val nextPage = (totalItemCount / 10) + 1 // Assuming 10 items per page
-//
-//                        Log.d(TAG, "Pre-loading page: $nextPage")
-//
-//                        lifecycleScope.launch {
-//                            getAllFeed(nextPage)
-//                            delay(1000)
-//                            isLoadingNextPage = false
-//                        }
-//                    }
-//                }
-//
-//                // Handle FAB visibility
-//                val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
-//
-//                if (dy > 5) {
-//                    EventBus.getDefault().post(HideFeedFloatingActionButton())
-//                    EventBus.getDefault().post(HideBottomNav())
-//                } else if (dy < -5) {
-//                    EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
-//                    EventBus.getDefault().post(ShowBottomNav(false))
-//                }
-//
-//                // Save scroll position
-//                getFeedViewModel.allFeedDataLastViewPosition = firstVisibleItemPosition + 1
-//            }
-//        })
-//
-//        allFeedAdapter.recyclerView = feedListView
-//        feedListView.itemAnimator = null
-//        feedListView.addOnChildAttachStateChangeListener(object :
-//            RecyclerView.OnChildAttachStateChangeListener {
-//            override fun onChildViewAttachedToWindow(view: View) {
-//                val position = feedListView.getChildAdapterPosition(view)
-//                Log.d("RecyclerView", "View attached at position: $position")
-//                // Handle the item being displayed
-//            }
-//
-//            override fun onChildViewDetachedFromWindow(view: View) {
-//                val position = feedListView.getChildAdapterPosition(view)
-//                Log.d("RecyclerView", "View detached from position: $position")
-//                // Handle the item being hidden
-//            }
-//        })
-//        feedListView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-//            private var totalDy = 0 // Track accumulated scroll distance
-//
-//            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-//                super.onScrollStateChanged(recyclerView, newState)
-//                // You can handle scroll state changes here if needed
-//                Log.d("RecyclerView", "Scroll state changed: $newState")
-//            }
-//
-//            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-//                super.onScrolled(recyclerView, dx, dy)
-//
-//                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-//                val adapter = recyclerView.adapter
-//
-//                // Ensure there is data in the adapter before modifying FAB visibility
-//                if (adapter != null && adapter.itemCount > 0) {
-//                    val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
-//                    val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
-//
-//                    getFeedViewModel.allFeedDataLastViewPosition = firstVisibleItemPosition + 1
-//                    getFeedViewModel.allFeedDataLastViewPosition = lastVisibleItemPosition + 1
-//
-//                    if (dy > 5 && !isScrollingDown) {
-//                        // Scrolling down → Hide FAB & BottomNav
-//                        isScrollingDown = true
-//                        EventBus.getDefault().post(HideFeedFloatingActionButton())
-//                        EventBus.getDefault().post(HideBottomNav())
-//                    } else if (dy < -5 && isScrollingDown) {
-//                        // Scrolling up (slightly) → Show FAB & BottomNav immediately
-//                        isScrollingDown = false
-//                        EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
-//                        EventBus.getDefault().post(ShowBottomNav(false))
-//                    }
-//
-//                    // Pre-load next page when user is 10 items away from the end
-//                    val totalItemCount = adapter.itemCount
-//                    if (!isLoadingNextPage && dy > 0 && lastVisibleItemPosition >= totalItemCount - PRELOAD_THRESHOLD) {
-//                        isLoadingNextPage = true
-//                        val currentPage = allFeedAdapter.currentPage
-//                        Log.d(TAG, "Pre-loading page: ${currentPage + 1}")
-//                        lifecycleScope.launch(Dispatchers.Main) {
-//                            getAllFeed(currentPage + 1)
-//                            delay(1000) // Prevent rapid consecutive loads
-//                            isLoadingNextPage = false
-//                        }
-//                    }
-//                } else {
-//                    // No data, make sure the FAB remains hidden
-//                    EventBus.getDefault().post(HideFeedFloatingActionButton())
-//                }
-//            }
-//
-//        })
-//
-//        lifecycleScope.launch(Dispatchers.Main) {
-//
-//            if (getFeedViewModel.getAllFeedData().isEmpty()) {
-//
-//                getAllFeed(allFeedAdapter.startPage)
-//            } else {
-//                Log.d(TAG, "onCreateView: get all feed data is not empty")
-//            }
-//            getFeedViewModel.isFeedDataAvailable.observe(viewLifecycleOwner)
-//            { isDataAvailable ->
-//                // Handle the updated value of isResuming here
-//                if (isDataAvailable) {
-//
-//                    allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
-//                    allFeedAdapter.addFollowList(getFeedViewModel.getFollowList())
-//                    allFeedAdapter.notifyDataSetChanged()
-//                    if (positionFromShorts?.setPosition == true) {
-//                        Log.i(
-//                            TAG,
-//                            "onCreateView: positionFromShorts!!.allFragmentFeedPosition " +
-//                                    "${positionFromShorts!!.allFragmentFeedPosition}"
-//                        )
-//                        feedListView.scrollToPosition(
-//                            positionFromShorts!!.allFragmentFeedPosition)
-//
-//                        val feedPostData =
-//                            getFeedViewModel.getAllFeedDataByPosition(
-//                                positionFromShorts!!.allFragmentFeedPosition)
-//                        feedFileClicked(
-//                            positionFromShorts!!.allFragmentFeedPosition, feedPostData)
-//                        val feedRepostData =
-//                            getFeedViewModel.getAllFeedRepostDataByPosition(
-//                                positionFromShorts!!.allFragmentFeedPosition)
-//                        feedRepostFileClicked(
-//                            positionFromShorts!!.allFragmentFeedPosition,
-//                            feedRepostData
-//                        )
-//
-//                    } else {
-//                        Log.i(
-//                            TAG,
-//                            "onCreateView: getFeedViewModel.allFeedDataLastViewPosition " +
-//                                    "${getFeedViewModel.allFeedDataLastViewPosition}"
-//                        )
-//
-//                        feedListView.scrollToPosition(
-//                            getFeedViewModel.allFeedDataLastViewPosition)
-//                    }
-//
-//                    getFeedViewModel.setIsDataAvailable(false)
-//                } else {
-//                    // Do something when isResuming is false
-//                    Log.d(TAG, "onCreateView: data not added")
-//                }
-//            }
-//
-//            getFeedViewModel.isSingleFeedAvailable.observe(
-//                viewLifecycleOwner) { isDataAvailable ->
-//                // Handle the updated value of isResuming here
-//                if (isDataAvailable) {
-//                    // Do something when isResuming is true
-//                    Log.d(TAG, "getPosts: data is available")
-//                    allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
-//                    allFeedAdapter.submitItem(getFeedViewModel.getSingleAllFeedData(), 0)
-//                    allFeedAdapter.addFollowList(getFeedViewModel.getFollowList())
-//                    feedListView.smoothScrollToPosition(0)
-//                    getFeedViewModel.setIsDataAvailable(false)
-//                } else {
-//                    // Do something when isResuming is false
-//                    Log.d(TAG, "onCreateView: data not added")
-//
-//                }
-//            }
-//        }
-//        Log.d(TAG, "onCreateView: currentAdapterPosition $currentAdapterPosition")
-//    }
-//
-//
-//    fun getAllFeed(page: Int) {
-//        val TAG = "AllFeedTag"
-//
-//        // Prevent duplicate loading
-//        synchronized(pageLock) {
-//            if (loadedPages.contains(page) || loadingPages.contains(page) || !hasMorePages) {
-//                Log.d(TAG, "getAllFeed: Skipping page $page (already loaded/loading or no more pages)")
-//                return
-//            }
-//            loadingPages.add(page)
-//        }
-//
-//        Log.d(TAG, "getAllFeed: Loading page $page")
-//
-//        lifecycleScope.launch(Dispatchers.IO) {
-//            try {
-//                val response = retrofitInstance.apiService.getAllFeed(page.toString())
-//
-//                Log.d(TAG, "getAllFeed: Response for page $page - ${response.code()}")
-//
-//                if (!response.isSuccessful) {
-//                    Log.e(TAG, "getAllFeed: Error ${response.code()} - ${response.message()}")
-//                    withContext(Dispatchers.Main) {
-//                        synchronized(pageLock) {
-//                            loadingPages.remove(page)
-//                        }
-//                    }
-//                    return@launch
-//                }
-//
-//                val responseBody = response.body()
-//                if (responseBody == null) {
-//                    Log.e(TAG, "getAllFeed: Response body is null")
-//                    withContext(Dispatchers.Main) {
-//                        synchronized(pageLock) {
-//                            loadingPages.remove(page)
-//                        }
-//                    }
-//                    return@launch
-//                }
-//
-//                val posts = responseBody.data.data.posts
-//
-//                Log.d(TAG, "getAllFeed: Page $page loaded with ${posts.size} posts")
-//
-//                // Check if we've reached the end
-//                if (posts.isEmpty()) {
-//                    Log.d(TAG, "getAllFeed: No more posts available")
-//                    synchronized(pageLock) {
-//                        hasMorePages = false
-//                        loadingPages.remove(page)
-//                    }
-//                    return@launch
-//                }
-//
-//                withContext(Dispatchers.Main) {
-//                    // Add data to ViewModel
-//                    getFeedViewModel.addAllFeedData(posts.toMutableList())
-//
-//                    // Update adapter
-//                    allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
-//
-//                    synchronized(pageLock) {
-//                        loadedPages.add(page)
-//                        loadingPages.remove(page)
-//                    }
-//
-//                    Log.d(TAG, "getAllFeed: Successfully loaded page $page. Total posts: ${getFeedViewModel.getAllFeedData().size}")
-//                }
-//
-//            } catch (e: Exception) {
-//                Log.e(TAG, "getAllFeed Exception on page $page: ${e.message}")
-//                e.printStackTrace()
-//
-//                withContext(Dispatchers.Main) {
-//                    synchronized(pageLock) {
-//                        loadingPages.remove(page)
-//                    }
-//
-//                    // Optionally show error to user
-//                    if (page == allFeedAdapter.startPage) {
-//                        Toast.makeText(
-//                            requireContext(),
-//                            "Failed to load feed. Please try again.",
-//                            Toast.LENGTH_SHORT
-//                        ).show()
-//                    }
-//                }
-//            }
-//        }
-//
-//        loadAllAvailablePages()
-//    }
-
-    fun loadAllAvailablePages(maxPages: Int = 50) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            for (page in allFeedAdapter.startPage until maxPages) {
-                if (!hasMorePages) break
-
-                getAllFeed(page)
-                delay(500) // Delay between requests to avoid overwhelming the server
-            }
-        }
-    }
-
-    // Helper function to refresh feed from beginning
-//    fun refreshFeed() {
-//        loadedPages.clear()
-//        loadingPages.clear()
-//        hasMorePages = true
-//        getFeedViewModel.clearAllFeedData() // Add this to your ViewModel
-//        allFeedAdapter.clearItems() // Add this to your adapter
-//        getAllFeed(allFeedAdapter.startPage)
-//    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun successEvent(event: FeedUploadProgress) {
@@ -914,47 +527,11 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         progressBar.progress = event.currentProgress
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun feedAdapterNotifyDatasetChanged(event: FeedAdapterNotifyDatasetChanged) {
-
-        Log.d(
-            TAG,
-            "FeedAdapterNotifyDatasetChanged: in feed adapter notify adapter: seh data set changed"
-        )
-        allFeedAdapter.notifyDataSetChanged()
-
-        // Set the flag to true after executing the function
-        hasNotifiedDatasetChanged = true
-    }
-
-//    override fun onDestroy() {
-//        super.onDestroy()
-//        Log.d(TAG, "onDestroy: called")
-//        isFragmentOpen = false
-//        EventBus.getDefault().unregister(this)
-//    }
-
     override fun onDetach() {
         super.onDetach()
         Log.d(TAG, "onDetach: called")
 
     }
-
-//    override fun onResume() {
-//        super.onResume()
-//        getFeedViewModel.isResuming = true
-//        Log.d("getCurrentLocation", "onResume: ${getFeedViewModel.isResuming}")
-//        Log.d(TAG, "onResume: currentAdapterPosition $currentAdapterPosition")
-//        Log.d(TAG, "onResume: called")
-//        feedListView.visibility = View.VISIBLE
-//        frameLayout.visibility = View.GONE
-//        EventBus.getDefault().post(ShowBottomNav(false))
-//
-//        EventBus.getDefault().post(HideFeedFloatingActionButton())
-//        EventBus.getDefault().post(ShowAppBar(false))
-//        refreshFeed()
-//    }
 
     override fun onDestroyView() {
         super.onDestroyView()
