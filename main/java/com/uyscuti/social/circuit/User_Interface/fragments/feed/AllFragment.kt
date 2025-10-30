@@ -160,7 +160,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     private val requestCode = 2024
     private val PICK_VIDEO_REQUEST = "video/*"
     private val WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 12
-
+    private var isLoadingNextPage = false
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
@@ -227,14 +227,14 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         feedListView.layoutManager = LinearLayoutManager(requireContext())
         Log.d("RecyclerViewDebug", "Adapter set: ${true}")
         // Check if the data is empty before loading
-        if (getFeedViewModel.getAllFeedData().isEmpty()) {
-            getAllFeed(allFeedAdapter.startPage)
-
-        } else {
-            // Don't fetch data again if the ViewModel already has data
-            allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
-            Log.d(TAG, "Data already available, using the cached data")
-        }
+//        if (getFeedViewModel.getAllFeedData().isEmpty()) {
+//            getAllFeed(allFeedAdapter.startPage)
+//
+//        } else {
+//            // Don't fetch data again if the ViewModel already has data
+//            allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
+//            Log.d(TAG, "Data already available, using the cached data")
+//        }
 
 //
 //        allFeedAdapter.setOnPaginationListener(object : FeedPaginatedAdapter.OnPaginationListener {
@@ -253,6 +253,21 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 //                Log.d(TAG, "Feed Feed  finished: page number")
 //            }
 //        })
+
+
+        // Check if the data is empty before loading
+        if (getFeedViewModel.getAllFeedData().isEmpty()) {
+            getAllFeed(allFeedAdapter.startPage)
+            // Pre-load the second page immediately
+            lifecycleScope.launch(Dispatchers.Main) {
+                delay(500) // Small delay to avoid overwhelming the server
+                getAllFeed(allFeedAdapter.startPage + 1)
+            }
+        } else {
+            // Don't fetch data again if the ViewModel already has data
+            allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
+            Log.d(TAG, "Data already available, using the cached data")
+        }
 
         allFeedAdapter.setOnPaginationListener(object : FeedPaginatedAdapter.OnPaginationListener {
             override fun onCurrentPage(page: Int) {
@@ -297,6 +312,50 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 super.onScrollStateChanged(recyclerView, newState)
                 // You can handle scroll state changes here if needed
                 Log.d("RecyclerView", "Scroll state changed: $newState")
+            }
+
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val adapter = recyclerView.adapter
+
+                // Ensure there is data in the adapter before modifying FAB visibility
+                if (adapter != null && adapter.itemCount > 0) {
+                    val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+                    val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
+
+                    getFeedViewModel.allFeedDataLastViewPosition = firstVisibleItemPosition + 1
+                    getFeedViewModel.allFeedDataLastViewPosition = lastVisibleItemPosition + 1
+
+                    if (dy > 5 && !isScrollingDown) {
+                        // Scrolling down → Hide FAB & BottomNav
+                        isScrollingDown = true
+                        EventBus.getDefault().post(HideFeedFloatingActionButton())
+                        EventBus.getDefault().post(HideBottomNav())
+                    } else if (dy < -5 && isScrollingDown) {
+                        // Scrolling up (slightly) → Show FAB & BottomNav immediately
+                        isScrollingDown = false
+                        EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
+                        EventBus.getDefault().post(ShowBottomNav(false))
+                    }
+
+                    // Pre-load next page when user is 10 items away from the end
+                    val totalItemCount = adapter.itemCount
+                    if (!isLoadingNextPage && dy > 0 && lastVisibleItemPosition >= totalItemCount - PRELOAD_THRESHOLD) {
+                        isLoadingNextPage = true
+                        val currentPage = allFeedAdapter.currentPage
+                        Log.d(TAG, "Pre-loading page: ${currentPage + 1}")
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            getAllFeed(currentPage + 1)
+                            delay(1000) // Prevent rapid consecutive loads
+                            isLoadingNextPage = false
+                        }
+                    }
+                } else {
+                    // No data, make sure the FAB remains hidden
+                    EventBus.getDefault().post(HideFeedFloatingActionButton())
+                }
             }
 
 //            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
