@@ -804,16 +804,16 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
-    @OptIn(UnstableApi::class)
-    private fun setupBackNavigation() {
-        val callback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                Log.d(TAG, "Back pressed - immediate navigation")
-                immediateNavigateBack()
-            }
-        }
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
-    }
+//    @OptIn(UnstableApi::class)
+//    private fun setupBackNavigation() {
+//        val callback = object : OnBackPressedCallback(true) {
+//            override fun handleOnBackPressed() {
+//                Log.d(TAG, "Back pressed - immediate navigation")
+//                immediateNavigateBack()
+//            }
+//        }
+//        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
+//    }
 
     @OptIn(UnstableApi::class)
     private fun immediateNavigateBack() {
@@ -984,6 +984,149 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
+//    @OptIn(UnstableApi::class)
+//    private fun restoreSystemBarsImmediately() {
+//        try {
+//            val activity = activity ?: run {
+//                Log.w(TAG, "Activity is null, skipping system bars restoration")
+//                return
+//            }
+//
+//            if (!isAdded) {
+//                Log.w(TAG, "Fragment not added, skipping system bars restoration")
+//                return
+//            }
+//
+//            // Restore system bars
+//            WindowCompat.setDecorFitsSystemWindows(activity.window, true)
+//            WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+//                .show(WindowInsetsCompat.Type.systemBars())
+//
+//            // Restore MainActivity UI elements with safety checks
+//            (activity as? MainActivity)?.let { mainActivity ->
+//                try {
+//                    mainActivity.showAppBar()
+//                    mainActivity.showBottomNavigation()
+//                } catch (e: Exception) {
+//                    Log.e(TAG, "Error showing MainActivity UI elements", e)
+//                }
+//            }
+//
+//            Log.d(TAG, "System bars restored immediately")
+//
+//        } catch (e: Exception) {
+//            Log.e(TAG, "Error restoring system bars immediately", e)
+//        }
+//    }
+//
+//    private fun cleanupResources() {
+//        try {
+//            _binding?.let { binding ->
+//                // Clear focus first
+//                binding.replyInput.clearFocus()
+//
+//                // Hide keyboard
+//                val imm = requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+//                imm.hideSoftInputFromWindow(binding.replyInput.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
+//            }
+//
+//            Log.d(TAG, "Resources cleaned up")
+//        } catch (e: Exception) {
+//            Log.e(TAG, "Error during cleanup", e)
+//        }
+//    }
+
+    private fun cancelPendingNavigations() {
+        try {
+            navigationHandler.removeCallbacksAndMessages(null)
+            isNavigationInProgress = false
+            Log.d(TAG, "Pending navigations cancelled")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error canceling pending navigations", e)
+        }
+    }
+
+
+    //////////////////////////
+
+    @OptIn(UnstableApi::class)
+    private fun setupBackNavigation() {
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                Log.d(TAG, "Back pressed - navigating")
+                navigateBack()
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun navigateBack() {
+        // Prevent multiple simultaneous navigation attempts
+        if (isNavigationInProgress) {
+            Log.d(TAG, "Navigation already in progress, ignoring")
+            return
+        }
+
+        isNavigationInProgress = true
+
+        try {
+            Log.d(TAG, "Starting navigation back")
+
+            // Clean up resources first
+            cleanupResources()
+
+            // Restore system UI
+            restoreSystemBarsImmediately()
+
+            // Navigate back immediately on the main thread
+            view?.post {
+                performBackNavigation()
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in navigation", e)
+            isNavigationInProgress = false
+        }
+    }
+
+    private fun performBackNavigation() {
+        try {
+            // Check if fragment is still valid
+            if (!isAdded || isDetached || activity == null) {
+                Log.w(TAG, "Fragment not attached, cannot navigate back")
+                isNavigationInProgress = false
+                return
+            }
+
+            val fragmentManager = parentFragmentManager
+
+            // Check FragmentManager state
+            if (fragmentManager.isStateSaved || fragmentManager.isDestroyed) {
+                Log.w(TAG, "FragmentManager not ready, cannot navigate")
+                isNavigationInProgress = false
+                return
+            }
+
+            // Check if there's anything to pop
+            if (fragmentManager.backStackEntryCount <= 0) {
+                Log.d(TAG, "No back stack entries")
+                isNavigationInProgress = false
+                return
+            }
+
+            // Use regular popBackStack() instead of popBackStackImmediate()
+            // This allows FragmentManager to handle the transaction properly
+            fragmentManager.popBackStack()
+            Log.d(TAG, "Back navigation initiated")
+            isNavigationInProgress = false
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in performBackNavigation", e)
+            isNavigationInProgress = false
+        }
+    }
+
     @OptIn(UnstableApi::class)
     private fun restoreSystemBarsImmediately() {
         try {
@@ -1002,7 +1145,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             WindowInsetsControllerCompat(activity.window, activity.window.decorView)
                 .show(WindowInsetsCompat.Type.systemBars())
 
-            // Restore MainActivity UI elements with safety checks
+            // Restore MainActivity UI elements
             (activity as? MainActivity)?.let { mainActivity ->
                 try {
                     mainActivity.showAppBar()
@@ -1012,22 +1155,22 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 }
             }
 
-            Log.d(TAG, "System bars restored immediately")
+            Log.d(TAG, "System bars restored")
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error restoring system bars immediately", e)
+            Log.e(TAG, "Error restoring system bars", e)
         }
     }
 
     private fun cleanupResources() {
         try {
             _binding?.let { binding ->
-                // Clear focus first
+                // Clear focus
                 binding.replyInput.clearFocus()
 
                 // Hide keyboard
                 val imm = requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.hideSoftInputFromWindow(binding.replyInput.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
+                imm.hideSoftInputFromWindow(binding.replyInput.windowToken, 0)
             }
 
             Log.d(TAG, "Resources cleaned up")
@@ -1036,28 +1179,34 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
-    private fun cancelPendingNavigations() {
-        try {
-            navigationHandler.removeCallbacksAndMessages(null)
-            isNavigationInProgress = false
-            Log.d(TAG, "Pending navigations cancelled")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error canceling pending navigations", e)
+    // For cancel button click listener
+    private fun setupClickListeners() {
+        binding.cancelButton.setOnClickListener {
+            Log.d(TAG, "Cancel button clicked")
+            navigateBack()
         }
     }
 
     override fun onDestroyView() {
-        cancelPendingNavigations()
         super.onDestroyView()
-        try {
-            Log.d(TAG, "onDestroyView: Cleaning up binding-dependent resources")
-            cleanupResources()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in onDestroyView cleanup", e)
-        } finally {
-            _binding = null
-        }
+        isNavigationInProgress = false
+        _binding = null
     }
+
+    ///////////////
+
+//    override fun onDestroyView() {
+//        cancelPendingNavigations()
+//        super.onDestroyView()
+//        try {
+//            Log.d(TAG, "onDestroyView: Cleaning up binding-dependent resources")
+//            cleanupResources()
+//        } catch (e: Exception) {
+//            Log.e(TAG, "Error in onDestroyView cleanup", e)
+//        } finally {
+//            _binding = null
+//        }
+//    }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -1071,7 +1220,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             Log.e(TAG, "Error in onDestroy", e)
         }
     }
-
 
     private fun setupClickListeners(data: Post) {
         Log.d(TAG, "setupClickListeners - Data type: ${data::class.java.simpleName}, ID: ${data._id}")
