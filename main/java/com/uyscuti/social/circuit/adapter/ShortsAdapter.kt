@@ -139,9 +139,21 @@ class ShortsAdapter(
         followingData.addAll(isFollowingData)
     }
 
-//    fun updateBtn(text: String) {
-//        currentViewHolder?.updateButton(text)
-//    }
+    fun updateFollowState(userId: String, isFollowing: Boolean) {
+        val followData = followingData.find { it.followersId == userId }
+        if (followData != null) {
+            followData.isFollowing = isFollowing
+            Log.d(TAG, "Updated follow state for user $userId to $isFollowing without rebinding")
+        } else {
+            followingData.add(
+                ShortsEntityFollowList(
+                    followersId = userId,
+                    isFollowing = isFollowing
+                )
+            )
+            Log.d(TAG, "Added new follow state for user $userId: $isFollowing")
+        }
+    }
 
     // PRELOADING METHODS
     private fun preloadVideosAround(position: Int) {
