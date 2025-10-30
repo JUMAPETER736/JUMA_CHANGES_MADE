@@ -1655,9 +1655,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             // Refresh user profile after a short delay
             getOtherUsersProfileViewModel.viewModelScope.launch {
                 delay(500)
-                // You'll need to pass the username somehow, or get it from the event
-                // For now, commenting this out since we don't have username in the event
-                // getOtherUsersProfileViewModel.getOtherUsersProfile(username)
+
             }
 
             // Clean up database after API call succeeds
