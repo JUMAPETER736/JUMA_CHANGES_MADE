@@ -133,6 +133,7 @@ private const val ARG_PARAM2 = "param2"
 
 private const val TAG = "AllFragment"
 private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
+private val PRELOAD_THRESHOLD = 10
 
 @AndroidEntryPoint
 class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterface,
@@ -159,6 +160,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     private val requestCode = 2024
     private val PICK_VIDEO_REQUEST = "video/*"
     private val WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 12
+
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
@@ -233,6 +235,25 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
             Log.d(TAG, "Data already available, using the cached data")
         }
+
+//
+//        allFeedAdapter.setOnPaginationListener(object : FeedPaginatedAdapter.OnPaginationListener {
+//            override fun onCurrentPage(page: Int) {
+//                Log.d(TAG, "Feed Feed currentPage: page number $page")
+//            }
+//
+//            override fun onNextPage(page: Int) {
+//                lifecycleScope.launch(Dispatchers.Main) {
+//                    Log.d(TAG, "Feed Feed  onNextPage: page number $page")
+//                    getAllFeed(page)
+//                }
+//            }
+//
+//            override fun onFinish() {
+//                Log.d(TAG, "Feed Feed  finished: page number")
+//            }
+//        })
+
         allFeedAdapter.setOnPaginationListener(object : FeedPaginatedAdapter.OnPaginationListener {
             override fun onCurrentPage(page: Int) {
                 Log.d(TAG, "Feed Feed currentPage: page number $page")
@@ -242,6 +263,8 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 lifecycleScope.launch(Dispatchers.Main) {
                     Log.d(TAG, "Feed Feed  onNextPage: page number $page")
                     getAllFeed(page)
+                    // Pre-load the next page
+                    getAllFeed(page + 1)
                 }
             }
 
@@ -249,6 +272,8 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 Log.d(TAG, "Feed Feed  finished: page number")
             }
         })
+
+
         allFeedAdapter.recyclerView = feedListView
         feedListView.itemAnimator = null
         feedListView.addOnChildAttachStateChangeListener(object :
