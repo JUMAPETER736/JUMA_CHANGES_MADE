@@ -1979,9 +1979,10 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
         followUnFollowViewModel.followUnFollow(event.followUnFollowEntity.userId)
-        followUnFollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) {
-            Log.d("followButtonClicked", "followButtonClicked: follow observer value $it")
-        }
+
+//        followUnFollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) {
+//            Log.d("followButtonClicked", "followButtonClicked: follow observer value $it")
+//        }
 
         val followListItem: List<ShortsEntityFollowList> = listOf(
             ShortsEntityFollowList(
