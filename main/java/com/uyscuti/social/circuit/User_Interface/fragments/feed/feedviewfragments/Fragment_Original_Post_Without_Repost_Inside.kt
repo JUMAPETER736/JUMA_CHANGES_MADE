@@ -604,13 +604,11 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         Log.d(TAG, "setupClickListeners - Data type: ${data::class.java.simpleName}, ID: ${data._id}")
 
         cancelButton.setOnClickListener {
-            Log.d(TAG, "Cancel button clicked - immediate navigation")
+            Log.d(TAG, "Cancel button clicked")
             it.isEnabled = false
-
-            Handler(Looper.getMainLooper()).postDelayed({
-                if (isAdded) it.isEnabled = true
-            }, 100)
+            cleanupAndGoBack()
         }
+
         headerMenuButton.setOnClickListener { handleMenuButtonClick() }
         mixedFilesCardView.setOnClickListener { handleOriginalMediaClick() }
         originalFeedImage.setOnClickListener { handleOriginalFileClick() }
@@ -798,7 +796,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         super.onDestroyView()
         _binding = null
     }
-    
+
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "onDestroy: Cleanup")
@@ -1003,7 +1001,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             Log.e(TAG, "Error populating original author info: ${e.message}", e)
         }
     }
-
 
     private fun updateFollowButtonUI() {
         if (isFollowing) {
