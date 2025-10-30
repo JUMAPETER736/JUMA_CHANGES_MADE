@@ -1539,7 +1539,7 @@ class FeedMixedFilesViewAdapter(
             }
         }
 
-  
+
 
         private fun hidePlusMoreOverlay() {
             overlayImageView.visibility = View.GONE
