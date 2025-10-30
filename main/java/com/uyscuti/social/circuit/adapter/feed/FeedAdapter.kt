@@ -141,6 +141,11 @@ class FeedAdapter(
     }
 
 
+    fun clearItems() {
+        submitItems(mutableListOf())
+        notifyDataSetChanged()
+    }
+
     private fun updatePostsForUser(userId: String) {
         for (i in 0 until itemCount) {
             val post = getItem(i) as? Post

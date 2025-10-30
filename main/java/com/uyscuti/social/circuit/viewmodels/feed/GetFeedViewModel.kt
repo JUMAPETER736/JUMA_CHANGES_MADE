@@ -55,6 +55,9 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
     fun setIsMyFeedDataAvailable(resuming: Boolean) {isMyFeedDataAvailable.value = resuming
     }
 
+    fun clearAllFeedData() {
+        allFeedData.clear()
+    }
 
 
     private var allFeedRepostData: MutableList<com.uyscuti.social.network.api.response.posts.OriginalPost> = mutableListOf()
