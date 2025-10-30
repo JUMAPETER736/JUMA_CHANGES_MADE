@@ -134,7 +134,8 @@ private val PRELOAD_THRESHOLD = 10
 @AndroidEntryPoint
 class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterface,
     ToggleFeedFloatingActionButton {
-    private var param1: String? = null
+
+        private var param1: String? = null
     private var param2: String? = null
     private var parentFragment: FeedFragment? = null // Reference to parent fragment
 
