@@ -1629,11 +1629,12 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
 
+  
     @SuppressLint("SetTextI18n")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
         val tag = "handleFollowButtonClick"
-        Log.d(tag, "handleFollowButtonClick: Follow state changed to: ${event.followUnFollowEntity.isFollowing}")
+        Log.d(tag, "Follow state changed to: ${event.followUnFollowEntity.isFollowing}")
 
         val userId = event.followUnFollowEntity.userId
         val isFollowing = event.followUnFollowEntity.isFollowing
@@ -1643,20 +1644,17 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         val networkInfo = connectivityManager.activeNetworkInfo
         val isConnected = networkInfo != null && networkInfo.isConnected
 
+        // Update the adapter's data source silently (without rebinding)
+        shortsAdapter.updateFollowState(userId, isFollowing)
+
         // Update the Room database immediately
         followViewModel.insertOrUpdateFollow(event.followUnFollowEntity)
 
         if (isConnected) {
-            Log.d(tag, "handleFollowButtonClick: internet connected, making API call")
+            Log.d(tag, "Internet connected, making API call")
 
             // Make the API call
             followUnFollowViewModel.followUnFollow(userId)
-
-            // Refresh user profile after a short delay
-            getOtherUsersProfileViewModel.viewModelScope.launch {
-                delay(500)
-
-            }
 
             // Clean up database after API call succeeds
             followUnFollowViewModel.viewModelScope.launch {
@@ -1669,7 +1667,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 }
             }
         } else {
-            Log.d(tag, "handleFollowButtonClick: no internet connection, saved locally only")
+            Log.d(tag, "No internet connection, saved locally only")
         }
     }
 

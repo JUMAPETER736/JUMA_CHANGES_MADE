@@ -635,7 +635,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
         }
     }
-    
+
 
     private fun setupContent(shortsEntity: ShortsEntity) {
         val caption = shortsEntity.content.toString()
