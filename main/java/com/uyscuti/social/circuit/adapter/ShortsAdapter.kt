@@ -118,6 +118,7 @@ class ShortsAdapter(
             // Preload adjacent videos
             preloadVideosAround(position)
         }
+
     }
 
     @SuppressLint("NotifyDataSetChanged")
