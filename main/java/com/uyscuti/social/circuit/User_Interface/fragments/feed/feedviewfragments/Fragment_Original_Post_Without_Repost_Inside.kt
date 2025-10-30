@@ -311,7 +311,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             e.printStackTrace()
         }
     }
-    
+
     override fun onResume() {
         super.onResume()
 
@@ -768,27 +768,38 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
     @OptIn(UnstableApi::class)
     private fun cleanupAndGoBack() {
-        // Quick cleanup
-        _binding?.replyInput?.clearFocus()
-
-        // Hide keyboard
-        val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-        imm?.hideSoftInputFromWindow(view?.windowToken, 0)
-
-        // Restore system bars
-        activity?.let { act ->
-            WindowCompat.setDecorFitsSystemWindows(act.window, true)
-            WindowInsetsControllerCompat(act.window, act.window.decorView)
-                .show(WindowInsetsCompat.Type.systemBars())
-
-            (act as? MainActivity)?.apply {
-                showAppBar()
-                showBottomNavigation()
+        // IMMEDIATE: Go back first - this is the priority
+        try {
+            if (isAdded && !parentFragmentManager.isStateSaved) {
+                parentFragmentManager.popBackStackImmediate()
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error popping back stack", e)
+            // If immediate fails, try regular popBackStack
+            parentFragmentManager.popBackStack()
         }
 
-        // Just go back
-        parentFragmentManager.popBackStack()
+        // Everything else happens AFTER we're already going back
+        view?.post {
+            // Clear focus
+            _binding?.replyInput?.clearFocus()
+
+            // Hide keyboard
+            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.hideSoftInputFromWindow(view?.windowToken, 0)
+
+            // Restore system bars
+            activity?.let { act ->
+                WindowCompat.setDecorFitsSystemWindows(act.window, true)
+                WindowInsetsControllerCompat(act.window, act.window.decorView)
+                    .show(WindowInsetsCompat.Type.systemBars())
+
+                (act as? MainActivity)?.apply {
+                    showAppBar()
+                    showBottomNavigation()
+                }
+            }
+        }
     }
 
     override fun onDestroyView() {
