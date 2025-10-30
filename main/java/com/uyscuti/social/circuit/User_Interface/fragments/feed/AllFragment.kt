@@ -125,11 +125,7 @@ import javax.inject.Inject
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [AllFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+
 
 private const val TAG = "AllFragment"
 private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
@@ -1474,7 +1470,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             )
         )
         lifecycleScope.launch(Dispatchers.IO) {
-//            delay(200)
+
             val uniqueFollowList = removeDuplicateFollowers(followListItem)
 
             followUnFollowViewModel.followUnFollow(followUnFollowEntity.userId)
@@ -1661,7 +1657,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     override fun onFeedFavoriteClickFromFeedTextViewFragment(position: Int, data: Post) {
         EventBus.getDefault().post(FeedFavoriteClick(position, data))
-//        EventBus.getDefault().post(FromFavoriteFragmentFeedFavoriteClick(position, data))
+
         val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
         if (!isMyFeedEmpty) {
             val myFeedData = getFeedViewModel.getMyFeedData()
@@ -1699,22 +1695,22 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     @SuppressLint("InflateParams")
     override fun onMoreOptionsClickFromFeedTextViewFragment(position: Int, data: Post) {
+
         val view: View = layoutInflater.inflate(R.layout.more_options_redesign_layout, null)
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(view)
         dialog.show()
         val reportOptionLayout: LinearLayout = view.findViewById(R.id.reportOption)
         val hidePostLayout: LinearLayout = view.findViewById(R.id.hidePostOption)
-//        val muteOptionLayout : LinearLayout = view.findViewById(R.id.muteOptionLayout)
         val followUnfollowLayout: LinearLayout = view.findViewById(R.id.followUnfollowOption)
         val notInterestedLayout: LinearLayout = view.findViewById(R.id.notInterestedOption)
         notInterestedLayout.visibility = View.GONE
         hidePostLayout.visibility = View.GONE
         followUnfollowLayout.visibility = View.GONE
-//        muteOptionLayout.visibility = View.GONE
+
         hidePostLayout.setOnClickListener {
             Log.d("HideLayout", "has been clicked")
-//            showDeleteConfirmationDialog(data._id, position)
+
         }
         reportOptionLayout.setOnClickListener {
             Log.d("reportUser", "has been clicked")
@@ -1759,7 +1755,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedAllFeedUpdateLike(event: AllFeedUpdateLike) {
-//        Log.d("AllFeedUpdateLike", "AllFeedUpdateLike: in all fragment")
+
         Log.d(
             "AllFeedUpdateLike",
             "AllFeedUpdateLike: event bus position ${event.position} isLiked ${event.data.isLiked} likes ${event.data.likes}"
