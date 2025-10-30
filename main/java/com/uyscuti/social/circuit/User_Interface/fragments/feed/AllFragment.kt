@@ -299,36 +299,36 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 Log.d("RecyclerView", "Scroll state changed: $newState")
             }
 
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-
-                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                val adapter = recyclerView.adapter
-
-                // Ensure there is data in the adapter before modifying FAB visibility
-                if (adapter != null && adapter.itemCount > 0) {
-                    val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
-                    val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
-
-                    getFeedViewModel.allFeedDataLastViewPosition = firstVisibleItemPosition + 1
-                    getFeedViewModel.allFeedDataLastViewPosition = lastVisibleItemPosition + 1
-
-                    if (dy > 5 && !isScrollingDown) {
-                        // Scrolling down → Hide FAB & BottomNav
-                        isScrollingDown = true
-                        EventBus.getDefault().post(HideFeedFloatingActionButton())
-                        EventBus.getDefault().post(HideBottomNav())
-                    } else if (dy < -5 && isScrollingDown) {
-                        // Scrolling up (slightly) → Show FAB & BottomNav immediately
-                        isScrollingDown = false
-                        EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
-                        EventBus.getDefault().post(ShowBottomNav(false))
-                    }
-                } else {
-                    // No data, make sure the FAB remains hidden
-                    EventBus.getDefault().post(HideFeedFloatingActionButton())
-                }
-            }
+//            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+//                super.onScrolled(recyclerView, dx, dy)
+//
+//                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+//                val adapter = recyclerView.adapter
+//
+//                // Ensure there is data in the adapter before modifying FAB visibility
+//                if (adapter != null && adapter.itemCount > 0) {
+//                    val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+//                    val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
+//
+//                    getFeedViewModel.allFeedDataLastViewPosition = firstVisibleItemPosition + 1
+//                    getFeedViewModel.allFeedDataLastViewPosition = lastVisibleItemPosition + 1
+//
+//                    if (dy > 5 && !isScrollingDown) {
+//                        // Scrolling down → Hide FAB & BottomNav
+//                        isScrollingDown = true
+//                        EventBus.getDefault().post(HideFeedFloatingActionButton())
+//                        EventBus.getDefault().post(HideBottomNav())
+//                    } else if (dy < -5 && isScrollingDown) {
+//                        // Scrolling up (slightly) → Show FAB & BottomNav immediately
+//                        isScrollingDown = false
+//                        EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
+//                        EventBus.getDefault().post(ShowBottomNav(false))
+//                    }
+//                } else {
+//                    // No data, make sure the FAB remains hidden
+//                    EventBus.getDefault().post(HideFeedFloatingActionButton())
+//                }
+//            }
 
 
         })
