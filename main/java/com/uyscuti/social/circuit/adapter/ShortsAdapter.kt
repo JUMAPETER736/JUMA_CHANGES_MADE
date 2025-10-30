@@ -416,6 +416,113 @@ class StringViewHolder(
         stopProgressUpdates()
     }
 
+    fun onViewRecycled() {
+        stopProgressUpdates()
+
+        commentsParentLayout.setOnClickListener(null)
+        btnLike.setOnClickListener(null)
+        favorite.setOnClickListener(null)
+        shareBtn.setOnClickListener(null)
+        downloadBtn.setOnClickListener(null)
+        username.setOnClickListener(null)
+        shortsProfileImage.setOnClickListener(null)
+        shortsViewPager.setOnClickListener(null)
+
+        videoDuration = 0L
+        bottomVideoSeekBar.progress = 0
+        isPlaying = false
+    }
+
+    fun reattachPlayer() {
+        videoView.post {
+            videoView.player = null
+            videoView.player = exoplayer
+            videoView.visibility = View.VISIBLE
+            videoView.useController = false
+            videoView.keepScreenOn = true
+            videoView.requestLayout()
+            videoView.invalidate()
+
+            Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
+        }
+    }
+
+    fun getUploadTopSeekBar(): SeekBar? = shortsUploadTopSeekBar
+
+    fun updateUploadProgress(progress: Int) {
+        shortsUploadTopSeekBar?.progress = progress
+    }
+
+    fun hideUploadProgress() {
+        shortsUploadTopSeekBar?.visibility = View.GONE
+        shortsUploadCancelButton.visibility = View.GONE
+    }
+
+    fun showUploadProgress() {
+        shortsUploadTopSeekBar?.visibility = View.VISIBLE
+        shortsUploadCancelButton.visibility = View.VISIBLE
+    }
+
+    fun updateSeekBarProgress(progress: Long) {
+        if (!isUserSeeking) {
+            val progressInSeconds = (progress / 1000).toInt()
+            bottomVideoSeekBar.progress = progressInSeconds
+        }
+    }
+
+    fun setSeekBarMaxValue(max: Int) {
+        bottomVideoSeekBar.max = max
+    }
+
+    fun onViewAttached() {
+        videoView.visibility = View.VISIBLE
+        if (videoView.player == null) {
+            videoView.player = exoplayer
+        }
+        if (isPlaying) {
+            startProgressUpdates()
+        }
+    }
+
+    fun getSurface(): PlayerView = videoView
+
+    fun setUploadCancelClickListener(listener: View.OnClickListener) {
+        shortsUploadCancelButton.setOnClickListener(listener)
+    }
+
+
+
+    @OptIn(UnstableApi::class)
+    @SuppressLint("SetTextI18n")
+    override fun onBind(data: MyData) {
+
+
+        val shortsEntity = data.shortsEntity
+        val url = shortsEntity.images[0].url
+        val shortOwnerId = shortsEntity.author.account._id
+        val shortOwnerUsername = shortsEntity.author.account.username
+        val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
+        val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
+
+        totalComments = shortsEntity.comments
+        totalLikes = shortsEntity.likes
+        isLiked = shortsEntity.isLiked
+        isFavorite = shortsEntity.isBookmarked
+
+        // UI that can change without killing the player
+        updateLikeButtonState()
+        updateFavoriteButtonState()
+        setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+        setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+        setupFollowButton(data, shortOwnerId)   // <-- this is the only thing that changes
+        setupContent(shortsEntity)
+
+        // Keep seek bar in sync (no player re-attachment)
+        if (exoplayer.duration > 0) {
+            bottomVideoSeekBar.max = (exoplayer.duration / 1000).toInt()
+        }
+    }
+
     @OptIn(UnstableApi::class)
     private fun setupClickListeners(
 
@@ -687,39 +794,6 @@ class StringViewHolder(
 
 
 
-    @OptIn(UnstableApi::class)
-    @SuppressLint("SetTextI18n")
-    override fun onBind(data: MyData) {
-
-
-        val shortsEntity = data.shortsEntity
-        val url = shortsEntity.images[0].url
-        val shortOwnerId = shortsEntity.author.account._id
-        val shortOwnerUsername = shortsEntity.author.account.username
-        val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
-        val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
-
-        totalComments = shortsEntity.comments
-        totalLikes = shortsEntity.likes
-        isLiked = shortsEntity.isLiked
-        isFavorite = shortsEntity.isBookmarked
-
-        // UI that can change without killing the player
-        updateLikeButtonState()
-        updateFavoriteButtonState()
-        setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-        setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-        setupFollowButton(data, shortOwnerId)   // <-- this is the only thing that changes
-        setupContent(shortsEntity)
-
-        // Keep seek bar in sync (no player re-attachment)
-        if (exoplayer.duration > 0) {
-            bottomVideoSeekBar.max = (exoplayer.duration / 1000).toInt()
-        }
-    }
-
-
-
     private fun updateLikeButtonState() {
         likeCount.text = totalLikes.toString()
         if (isLiked) {
@@ -746,37 +820,6 @@ class StringViewHolder(
                 ContextCompat.getColor(itemView.context, R.color.white)
             )
             favorite.setImageResource(R.drawable.favorite_svgrepo_com__1_)
-        }
-    }
-
-    fun onViewRecycled() {
-        stopProgressUpdates()
-
-        commentsParentLayout.setOnClickListener(null)
-        btnLike.setOnClickListener(null)
-        favorite.setOnClickListener(null)
-        shareBtn.setOnClickListener(null)
-        downloadBtn.setOnClickListener(null)
-        username.setOnClickListener(null)
-        shortsProfileImage.setOnClickListener(null)
-        shortsViewPager.setOnClickListener(null)
-
-        videoDuration = 0L
-        bottomVideoSeekBar.progress = 0
-        isPlaying = false
-    }
-
-    fun reattachPlayer() {
-        videoView.post {
-            videoView.player = null
-            videoView.player = exoplayer
-            videoView.visibility = View.VISIBLE
-            videoView.useController = false
-            videoView.keepScreenOn = true
-            videoView.requestLayout()
-            videoView.invalidate()
-
-            Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
         }
     }
 
@@ -874,26 +917,6 @@ class StringViewHolder(
         })
     }
 
-    fun getUploadTopSeekBar(): SeekBar? = shortsUploadTopSeekBar
-
-    fun updateUploadProgress(progress: Int) {
-        shortsUploadTopSeekBar?.progress = progress
-    }
-
-    fun hideUploadProgress() {
-        shortsUploadTopSeekBar?.visibility = View.GONE
-        shortsUploadCancelButton.visibility = View.GONE
-    }
-
-    fun showUploadProgress() {
-        shortsUploadTopSeekBar?.visibility = View.VISIBLE
-        shortsUploadCancelButton.visibility = View.VISIBLE
-    }
-
-    fun setUploadCancelClickListener(listener: View.OnClickListener) {
-        shortsUploadCancelButton.setOnClickListener(listener)
-    }
-
     private fun updateSeekBarProgress() {
         if (!isUserSeeking && exoplayer.duration > 0) {
             val currentPosition = exoplayer.currentPosition
@@ -912,35 +935,10 @@ class StringViewHolder(
         mainHandler.removeCallbacks(progressUpdateRunnable)
     }
 
-    fun updateSeekBarProgress(progress: Long) {
-        if (!isUserSeeking) {
-            val progressInSeconds = (progress / 1000).toInt()
-            bottomVideoSeekBar.progress = progressInSeconds
-        }
-    }
-
-    fun setSeekBarMaxValue(max: Int) {
-        bottomVideoSeekBar.max = max
-    }
-
-    fun onViewAttached() {
-        videoView.visibility = View.VISIBLE
-        if (videoView.player == null) {
-            videoView.player = exoplayer
-        }
-        if (isPlaying) {
-            startProgressUpdates()
-        }
-    }
-
-    fun getSurface(): PlayerView = videoView
-
     private fun setupEventBusEvents(shortsEntity: ShortsEntity) {
         EventBus.getDefault().post(ShortsLikeUnLikeButton(shortsEntity, btnLike, isLiked, likeCount))
         EventBus.getDefault().post(ShortsBookmarkButton(shortsEntity, favorite))
     }
-
-
 
     private fun shortsEntityToUserShortsEntity(serverResponseItem: ShortsEntity): UserShortsEntity {
         return UserShortsEntity(
