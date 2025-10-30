@@ -123,6 +123,8 @@ class FeedAdapter(
 
 
     companion object {
+
+        private const val PRELOAD_AHEAD_COUNT = 20
         // Static set to persist across adapter instances
         private var cachedFollowingUserIds: Set<String> = emptySet()
 
