@@ -958,4 +958,5 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             thumbnail = serverResponseItem.thumbnail
         )
     }
+
 }
