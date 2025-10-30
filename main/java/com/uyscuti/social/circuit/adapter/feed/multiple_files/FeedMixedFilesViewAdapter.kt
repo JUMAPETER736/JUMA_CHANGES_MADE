@@ -1487,6 +1487,25 @@ class FeedMixedFilesViewAdapter(
             overlayImageView.visibility = View.VISIBLE
             countTextView.visibility = View.VISIBLE
             countTextView.text = "+$count"
+
+            // Style the count text similar to images
+            countTextView.textSize = 32f
+            countTextView.setPadding(12.dpToPx(itemView.context), 4.dpToPx(itemView.context),
+                12.dpToPx(itemView.context), 4.dpToPx(itemView.context))
+            countTextView.setTextColor(Color.WHITE)
+            countTextView.gravity = Gravity.CENTER
+            countTextView.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 16f
+                setColor("#80000000".toColorInt())
+            }
+
+            // Position at bottom right corner
+            val overlayParams = countTextView.layoutParams as FrameLayout.LayoutParams
+            overlayParams.gravity = Gravity.BOTTOM or Gravity.END
+            overlayParams.setMargins(0, 0, 16.dpToPx(itemView.context), 16.dpToPx(itemView.context))
+            countTextView.layoutParams = overlayParams
+
             Log.d(tag, "Showing overlay with count: +$count")
         }
 
