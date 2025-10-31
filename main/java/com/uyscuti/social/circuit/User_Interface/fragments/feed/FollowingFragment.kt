@@ -625,6 +625,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
 
     }
+
     private fun loadPostsFromFollowing(page: Int) {
         isLoading = true
         progressBar.visibility = View.VISIBLE
@@ -634,6 +635,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 val currentUserId = getUserId(requireContext())
 
                 Log.d(TAG, "Loading page $page for ${followingUserIds.size} following users")
+                Log.d(TAG, "Following user IDs: ${followingUserIds.joinToString()}")
 
                 val response = retrofitInstance.apiService.getAllFeed(page.toString())
 
@@ -665,62 +667,48 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                 // STRICT FILTERING: Only posts from following users (including their reposts)
                 val followingPosts = allPosts.filter { post ->
-                    // Check if this is a repost (originalPost list is NOT empty)
+                    val authorId = post.author?.account?._id
+                    val authorUsername = post.author?.account?.username ?: "Unknown"
+
+                    // First check: Skip posts with null/empty author ID
+                    if (authorId.isNullOrEmpty()) {
+                        Log.d(TAG, "Skipped: Post with null/empty author ID")
+                        return@filter false
+                    }
+
+                    // Second check: Skip own posts
+                    if (authorId == currentUserId) {
+                        Log.d(TAG, "EXCLUDED: My own post (@$authorUsername)")
+                        return@filter false
+                    }
+
+                    // Third check: Is this a repost?
                     val isRepost = post.originalPost.isNotEmpty()
 
                     if (isRepost) {
-                        // For reposts, check the REPOSTER (post.author)
-                        val reposterId = post.author?.account?._id
-                        val reposterUsername = post.author?.account?.username ?: "Unknown"
-
-                        // Get original author info from the first item in originalPost list
-                        val originalAuthor = post.originalPost.firstOrNull()?.author
-                        val originalAuthorUsername = originalAuthor?.account?.username ?: "Unknown"
-
-                        if (reposterId.isNullOrEmpty()) {
-                            Log.d(TAG, "Skipped: Repost with null/empty reposter ID")
-                            return@filter false
-                        }
-
-                        if (reposterId == currentUserId) {
-                            Log.d(TAG, "EXCLUDED: My own repost")
-                            return@filter false
-                        }
-
-                        // MUST be following the REPOSTER (not the original author)
-                        val followingReposter = followingUserIds.contains(reposterId)
+                        // For reposts, MUST be following the REPOSTER (post.author)
+                        val followingReposter = followingUserIds.contains(authorId)
 
                         if (followingReposter) {
-                            Log.d(TAG, "INCLUDED REPOST: @$reposterUsername (following) reposted from @$originalAuthorUsername")
+                            val originalAuthor = post.originalPost.firstOrNull()?.author
+                            val originalAuthorUsername = originalAuthor?.account?.username ?: "Unknown"
+                            Log.d(TAG, "INCLUDED REPOST: @$authorUsername (FOLLOWING) reposted from @$originalAuthorUsername")
+                            return@filter true
                         } else {
-                            Log.d(TAG, "FILTERED OUT REPOST: @$reposterUsername (not following) - repost hidden")
+                            Log.d(TAG, "FILTERED OUT REPOST: @$authorUsername (NOT FOLLOWING) - repost hidden")
+                            return@filter false
                         }
-
-                        return@filter followingReposter
                     } else {
-                        // For regular posts, check the author
-                        val authorId = post.author?.account?._id
-                        val authorUsername = post.author?.account?.username ?: "Unknown"
-
-                        if (authorId.isNullOrEmpty()) {
-                            Log.d(TAG, "Skipped: Post with null/empty author ID")
-                            return@filter false
-                        }
-
-                        if (authorId == currentUserId) {
-                            Log.d(TAG, "EXCLUDED: My own post (@$authorUsername)")
-                            return@filter false
-                        }
-
+                        // For regular posts, MUST be following the author
                         val isFollowing = followingUserIds.contains(authorId)
 
                         if (isFollowing) {
-                            Log.d(TAG, "INCLUDED: @$authorUsername (ID: $authorId)")
+                            Log.d(TAG, "INCLUDED: @$authorUsername (ID: $authorId) - FOLLOWING ✓")
+                            return@filter true
                         } else {
-                            Log.d(TAG, "FILTERED OUT: @$authorUsername (ID: $authorId) - NOT FOLLOWING")
+                            Log.d(TAG, "FILTERED OUT: @$authorUsername (ID: $authorId) - NOT FOLLOWING ✗")
+                            return@filter false
                         }
-
-                        return@filter isFollowing
                     }
                 }
 
