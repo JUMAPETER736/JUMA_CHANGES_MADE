@@ -468,8 +468,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         shortsUploadCancelButton.setOnClickListener(listener)
     }
 
-
-
+    
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
     override fun onBind(data: MyData) {
@@ -480,22 +479,9 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
         val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
 
-        // CRITICAL: Load thumbnail immediately while video prepares
-        val thumbnailUrl = shortsEntity.thumbnail.firstOrNull()?.thumbnailUrl
-        if (!thumbnailUrl.isNullOrEmpty()) {
-            thumbnailImageView.visibility = View.VISIBLE
-            videoView.visibility = View.VISIBLE // CHANGED: Show video view immediately
-
-            Glide.with(itemView.context)
-                .load(thumbnailUrl)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .centerCrop()
-                .into(thumbnailImageView)
-        } else {
-            // No thumbnail available
-            thumbnailImageView.visibility = View.GONE
-            videoView.visibility = View.VISIBLE
-        }
+        // CHANGED: Don't show thumbnail during scroll/rebind - only video view
+        thumbnailImageView.visibility = View.GONE
+        videoView.visibility = View.VISIBLE
 
         totalComments = shortsEntity.comments
         totalLikes = shortsEntity.likes
