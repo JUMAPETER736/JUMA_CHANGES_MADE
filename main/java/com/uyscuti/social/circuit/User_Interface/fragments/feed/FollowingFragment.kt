@@ -1,5 +1,5 @@
 package com.uyscuti.social.circuit.User_Interface.fragments.feed
-import android.R.attr.delay
+
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -8,7 +8,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.media.MediaPlayer
-import android.net.http.HttpException
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -30,7 +29,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
-import com.google.gson.JsonSyntaxException
+
 import com.uyscuti.social.circuit.adapter.feed.FeedAdapter
 import com.uyscuti.social.circuit.adapter.feed.OnFeedClickListener
 import com.uyscuti.social.circuit.adapter.feed.ShareFeedPostAdapter
@@ -48,6 +47,7 @@ import com.uyscuti.social.circuit.model.feed.SetAllFragmentScrollPosition
 import com.uyscuti.social.circuit.User_Interface.feedactivities.FeedVideoViewFragment
 import com.uyscuti.social.circuit.User_Interface.feedactivities.ReportNotificationActivity2
 import com.uyscuti.social.circuit.User_Interface.fragments.FeedFragment
+
 import com.uyscut.flashdesign.ui.fragments.feed.feedRepostViewFragments.FeedRepostAudioViewFragment
 import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedRepostViewFragments.FeedRepostDocFragment
 import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedRepostViewFragments.FeedRepostImageFragment
@@ -67,7 +67,7 @@ import com.uyscuti.social.circuit.viewmodels.GetShortsByUsernameViewModel
 import com.uyscuti.social.circuit.viewmodels.feed.FeedUploadViewModel
 import com.uyscuti.social.circuit.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.User_Interface.Log_In_And_Register.LoginActivity.UserStorageHelper
+
 import com.uyscuti.social.circuit.User_Interface.Log_In_And_Register.LoginActivity.UserStorageHelper.getUserId
 import com.uyscuti.social.circuit.User_Interface.Log_In_And_Register.LoginActivity.UserStorageHelper.getUsername
 import com.uyscuti.social.circuit.adapter.feed.FeedPaginatedAdapter
@@ -79,15 +79,12 @@ import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.comment.allcomments.Comment
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
-import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -98,10 +95,6 @@ import kotlin.collections.MutableList
 
 
 
-
-
-
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
@@ -148,13 +141,10 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
     private val shortsViewModel: GetShortsByUsernameViewModel by activityViewModels()
     private lateinit var myFeedAdapter: FeedAdapter
-
     private lateinit var progressBar: ProgressBar
-
     var currentAdapterPosition = -1
     private lateinit var feedUploadRepository: FeedUploadRepository
     private var positionFromShorts: SetAllFragmentScrollPosition? = null
-
     private var feedVideoViewFragment: FeedVideoViewFragment? = null
     private var feedTextViewFragment: FeedTextViewFragment?= null
     private var feedAudioViewFragment: FeedAudioViewFragment? = null
@@ -162,7 +152,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
     private var feedDocsViewFragment: FeedDocumentViewFragment? = null
     private var feedImageViewFragment: FeedImageViewFragment? = null
-
     private var feedRepostDocFragment : FeedRepostDocFragment? = null
     private var feedRepostTextFragment : FeedRepostTextFragment? = null
     private var feedRepostVideoViewFragment : FeedRepostVideoViewFragment? = null
@@ -173,6 +162,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
@@ -186,6 +176,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         this.positionFromShorts = positionFromShorts
     }
     @SuppressLint("MissingInflatedId", "CutPasteId")
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -397,7 +388,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
     }
 
-
     fun forShow() {
         Log.d("forShow", "forShow: is called")
 
@@ -460,11 +450,12 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     }
 
     private suspend fun loadAllFollowingPostsInitially() {
+
         val currentUserId = getUserId(requireContext())
         val allFollowingPosts = mutableListOf<Post>()
         var pageNum = 1
-        val uniqueAuthors = mutableSetOf<String>()          // <-- authors we already saw
-        val maxPages = 20                                   // safety-net, never loop forever
+        val uniqueAuthors = mutableSetOf<String>()
+        val maxPages = 20
 
         withContext(Dispatchers.Main) { progressBar.visibility = View.VISIBLE }
 
@@ -484,15 +475,15 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 // ---- STRICT FILTER (same as pagination) ----
                 val filtered = pagePosts.filter { post ->
                     val authorId = post.author?.account?._id
-                    if (authorId.isNullOrBlank()) return@filter false          // skip broken posts
-                    if (authorId == currentUserId) return@filter false        // never show own posts
+                    if (authorId.isNullOrBlank()) return@filter false
+                    if (authorId == currentUserId) return@filter false
 
                     // repost ?
                     val isRepost = post.originalPost.isNotEmpty()
                     if (isRepost) {
-                        followingUserIds.contains(authorId)                     // must follow the *reposter*
+                        followingUserIds.contains(authorId)
                     } else {
-                        followingUserIds.contains(authorId)               // must follow the author
+                        followingUserIds.contains(authorId)
                     }
                 }
 
@@ -515,7 +506,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 }
 
                 pageNum++
-                delay(180)                      // be gentle to the server
+                delay(180)
             } catch (e: Exception) {
                 Log.e(TAG, "Initial load error on page $pageNum: ${e.message}", e)
                 break
@@ -541,6 +532,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     }
 
     private fun loadPostsFromFollowing(page: Int) {
+
         if (isLoading) return
         isLoading = true
         progressBar.visibility = View.VISIBLE
@@ -570,9 +562,9 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                     val isRepost = post.originalPost.isNotEmpty()
                     if (isRepost) {
-                        followingUserIds.contains(authorId)          // reposter must be followed
+                        followingUserIds.contains(authorId)
                     } else {
-                        followingUserIds.contains(authorId)          // author must be followed
+                        followingUserIds.contains(authorId)
                     }
                 }
 
@@ -651,6 +643,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     }
 
     private fun refreshFeedAfterUnfollow() {
+
         val currentUserId = getUserId(requireContext())
         val filteredData = getFeedViewModel.getAllFeedData().filter { post ->
             val authorId = post.author?.account?._id
@@ -1348,6 +1341,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
     @SuppressLint("CutPasteId", "InflateParams")
     override fun feedRepostPost(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
+
         val view: View = layoutInflater.inflate(
             R.layout.feed_moreoptions_bottomsheet_layout, null)
 
@@ -1361,6 +1355,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         val reportOptionLayout : MaterialCardView = view.findViewById(R.id.reportOptionLayout)
         val copyLinkLayout: MaterialCardView = view.findViewById(R.id.copyLinkLayout)
         val muteUser : MaterialCardView = view.findViewById(R.id.muteOptionLayout)
+
         download.visibility = View.GONE
         repostButton.visibility = View.GONE
         repostButton.visibility = View.GONE
@@ -1386,6 +1381,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             transaction.addToBackStack("NewRepostedPostFragment") // Name the back stack entry
             transaction.commit()
         }
+
     }
 
     override fun feedRepostPostClicked(
@@ -1404,6 +1400,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     }
 
     override fun backPressedFromFeedTextViewFragment() {
+
         Log.d(TAG, "backPressedFromFeedTextViewFragment: listening back pressed ")
         feedListView.visibility = View.VISIBLE
         frameLayout.visibility = View.GONE
@@ -1440,6 +1437,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             lifecycleScope.launch {
                 feedUploadViewModel.likeUnLikeFeed(data._id)
             }
+
             Log.d("likeUnLikeFeed", "likeUnLikeFeed: likes count is ${data.likes}")
             val updatedItems = getFeedViewModel.getAllFeedData()
             for (updatedItem in updatedItems) {
@@ -1452,6 +1450,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                     }
                 }
             }
+
             val isFavoriteFeedDataEmpty = getFeedViewModel.getAllFavoriteFeedData().isEmpty()
             if (!isFavoriteFeedDataEmpty) {
                 val favoriteFeedData = getFeedViewModel.getAllFavoriteFeedData()
@@ -1465,27 +1464,34 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             } else {
                 Log.i("likeUnLikeFeed", "likeUnLikeFeed: my feed data is empty")
             }
+
             followedPostsAdapter.updateItem(position, updatedComment)
             val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
+
             if (!isMyFeedEmpty) {
                 val myFeedData = getFeedViewModel.getMyFeedData()
                 val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
+
                 if (feedToUpdate != null) {
                     feedToUpdate.isLiked = data.isLiked
                     feedToUpdate.likes = data.likes
                     val myFeedDataPosition =
                         getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
                     getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
-                } else {
+                }
+                else {
                     Log.d(TAG, "likeUnLikeFeed: feed to update is not available in the list")
                 }
-            } else {
+            }
+            else {
                 Log.i(TAG, "likeUnLikeFeed: my feed data is empty")
             }
-        } catch (e: Exception) {
+        }
+        catch (e: Exception) {
             Log.e("likeUnLikeFeed", "likeUnLikeFeed: ${e.message}")
             e.printStackTrace()
         }
+
     }
 
     override fun onFeedFavoriteClickFromFeedTextViewFragment(
@@ -1495,6 +1501,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         EventBus.getDefault().post(FeedFavoriteClick(position, data))
 
         val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
+
         if (!isMyFeedEmpty) {
             val myFeedData = getFeedViewModel.getMyFeedData()
             val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
@@ -1502,14 +1509,18 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 feedToUpdate.isBookmarked = data.isBookmarked
                 val myFeedDataPosition = getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
                 getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
-            } else {
+            }
+            else {
                 Log.d(TAG, "feedFavoriteClick: feed to update is not available in the list")
             }
-        } else {
+        }
+        else {
             Log.i(TAG, "feedFavoriteClick: my feed data is empty")
         }
 
+
         val allFeed = getFeedViewModel.getAllFeedData().isEmpty()
+
         if (!allFeed) {
             Log.i(TAG, "onFeedFavoriteClickFromFeedTextViewFragment: allFeed is not empty")
             val allFeedPost = getFeedViewModel.getAllFeedData().find { it._id == data._id }
@@ -1521,7 +1532,8 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             } else {
                 Log.i(TAG, "onFeedFavoriteClickFromFeedTextViewFragment: allFeedPost is null")
             }
-        } else {
+        }
+        else {
             Log.e(TAG, "onFeedFavoriteClickFromFeedTextViewFragment: allFeed is empty")
         }
         lifecycleScope.launch {
