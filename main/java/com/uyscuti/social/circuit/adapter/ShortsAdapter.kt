@@ -278,27 +278,7 @@ class ShortsAdapter(
         viewHolderList.add(viewHolder)
         return viewHolder
     }
-
-//    override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
-//        currentViewHolder = holder
-//        currentActivePosition = position
-//        val data = shortsList[position]
-//
-//        val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
-//            ?: ShortsEntityFollowList(
-//                followersId = data.author.account._id,
-//                isFollowing = false
-//            )
-//
-//        val myData = MyData(data, isFollowingData)
-//        ensureFollowDataExists(data)
-//
-//        Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
-//        holder.onBind(myData)
-//
-//        // Preload adjacent videos
-//        preloadVideosAround(position)
-//    }
+    
 
     fun ensureFollowDataExists(shortsEntity: ShortsEntity) {
         val authorId = shortsEntity.author.account._id
@@ -430,22 +410,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         stopProgressUpdates()
     }
 
-//    fun onViewRecycled() {
-//        stopProgressUpdates()
-//
-//        commentsParentLayout.setOnClickListener(null)
-//        btnLike.setOnClickListener(null)
-//        favorite.setOnClickListener(null)
-//        shareBtn.setOnClickListener(null)
-//        downloadBtn.setOnClickListener(null)
-//        username.setOnClickListener(null)
-//        shortsProfileImage.setOnClickListener(null)
-//        shortsViewPager.setOnClickListener(null)
-//
-//        videoDuration = 0L
-//        bottomVideoSeekBar.progress = 0
-//        isPlaying = false
-//    }
 
     fun reattachPlayer() {
         videoView.post {
@@ -916,62 +880,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
-//    private fun setupPlayer() {
-//        player = exoplayer
-//
-//        videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-//            override fun onViewAttachedToWindow(v: View) {
-//                Log.d(TAG, "VideoView attached to window")
-//                if (videoView.player == null) {
-//                    videoView.player = exoplayer
-//                    videoView.visibility = View.VISIBLE
-//                }
-//            }
-//
-//            override fun onViewDetachedFromWindow(v: View) {
-//                Log.d(TAG, "VideoView detached from window")
-//            }
-//        })
-//
-//        exoplayer.addListener(object : Player.Listener {
-//            override fun onPlaybackStateChanged(playbackState: Int) {
-//                when (playbackState) {
-//                    Player.STATE_READY -> {
-//                        videoDuration = exoplayer.duration
-//                        if (videoDuration > 0) {
-//                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
-//                            bottomVideoSeekBar.secondaryProgress = 0
-//                            Log.d(TAG, "Video ready: ${videoDuration}ms")
-//                        }
-//                        videoView.visibility = View.VISIBLE
-//                        videoView.invalidate()
-//                    }
-//                    Player.STATE_BUFFERING -> {
-//                        Log.d(TAG, "Video buffering")
-//                    }
-//                    Player.STATE_ENDED -> {
-//                        stopProgressUpdates()
-//                    }
-//                }
-//            }
-//
-//            override fun onIsPlayingChanged(isPlaying: Boolean) {
-//                this@StringViewHolder.isPlaying = isPlaying
-//                if (isPlaying) {
-//                    startProgressUpdates()
-//                    videoView.visibility = View.VISIBLE
-//                } else {
-//                    stopProgressUpdates()
-//                }
-//                Log.d(TAG, "Player isPlaying: $isPlaying")
-//            }
-//
-//            override fun onRenderedFirstFrame() {
-//                Log.d(TAG, "First frame rendered - video is displaying")
-//                videoView.visibility = View.VISIBLE
-//            }
-//        })
-//    }
 
     private fun setupUploadComponents() {
         shortsUploadTopSeekBar = itemView.findViewById(R.id.uploadTopSeekBar)
