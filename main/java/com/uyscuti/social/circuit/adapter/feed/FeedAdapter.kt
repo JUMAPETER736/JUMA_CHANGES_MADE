@@ -2816,7 +2816,7 @@ class FeedAdapter(
             updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
             updateMetricDisplay(shareCounts, totalMixedShareCounts, "share")
 
-            setupFollowButton(feedOwnerId)
+            setupFollowButton()
             setupMoreOptionsButton(data)
             setupFileTapNavigation(data)
             finalizeClickSetup(data)
@@ -2825,26 +2825,22 @@ class FeedAdapter(
         }
 
 
-        private fun setupFollowButton(feedOwnerId: String) {
+        private fun setupFollowButton() {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
-            // Determine the actual user ID to check for follow status
-            val userToCheck = currentPost?.repostedUser?._id ?: currentPost?.author?.account?._id ?: feedOwnerId
+            // Determine the TRUE owner of this post card
+            val postOwnerId = currentPost?.repostedUser?._id
+                ?: currentPost?.author?.account?._id
+                ?: return
 
-            // Check multiple sources for following status - same as FeedPostViewHolder
-            val cachedFollowing = LocalStorage.getInstance(itemView.context).getFollowingList()
-            val isUserFollowing = cachedFollowing.contains(userToCheck) ||
-                    followingUserIds.contains(userToCheck) ||
-                    FeedAdapter.getCachedFollowingList().contains(userToCheck)
-
-            // Hide follow button if viewing own post OR already following
-            if (userToCheck == currentUserId || isFollowingUser || isUserFollowing) {
+            // Hide if it's my own post OR I'm already following them
+            if (postOwnerId == currentUserId || followingUserIds.contains(postOwnerId)) {
                 followButton.visibility = View.GONE
-                Log.d(TAG, "setupFollowButton: Hidden for user $userToCheck - Following: true")
+                Log.d(TAG, "Follow button HIDDEN for user: $postOwnerId (own post or already followed)")
                 return
             }
 
-            // Show follow button only for users we're NOT following
+            // Show "Follow" button
             followButton.visibility = View.VISIBLE
             followButton.text = "Follow"
             followButton.backgroundTintList = ContextCompat.getColorStateList(
@@ -2853,8 +2849,10 @@ class FeedAdapter(
             )
 
             followButton.setOnClickListener {
-                handleFollowButtonClick(userToCheck)
+                handleFollowButtonClick(postOwnerId)
             }
+
+            Log.d(TAG, "Follow button SHOWN for user: $postOwnerId")
         }
 
         @SuppressLint("SetTextI18n")
