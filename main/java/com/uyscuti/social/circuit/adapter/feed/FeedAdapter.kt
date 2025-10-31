@@ -616,6 +616,75 @@ class FeedAdapter(
             setupPostClickListeners(data)
         }
 
+        private fun setupFollowButton(data: Post) {
+            val feedOwnerId = data.author?.account?._id ?: return
+            val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
+
+            // Check multiple sources for following status
+            val isUserFollowing = followingUserIds.contains(feedOwnerId) ||
+                    FeedAdapter.getCachedFollowingList().contains(feedOwnerId)
+
+            // Hide follow button if viewing own post OR already following
+            if (feedOwnerId == currentUserId || isFollowingUser || isUserFollowing) {
+                followButton.visibility = View.GONE
+                Log.d(TAG, "setupFollowButton: Hidden for user $feedOwnerId - Following: true")
+                return
+            }
+
+            // Show follow button only for users we're NOT following
+            followButton.visibility = View.VISIBLE
+            followButton.text = "Follow"
+            followButton.backgroundTintList = ContextCompat.getColorStateList(
+                itemView.context,
+                R.color.blueJeans
+            )
+
+            followButton.setOnClickListener {
+                handleFollowButtonClick(feedOwnerId)
+            }
+        }
+
+        @SuppressLint("SetTextI18n")
+        private fun handleFollowButtonClick(feedOwnerId: String) {
+            YoYo.with(Techniques.Pulse)
+                .duration(300)
+                .playOn(followButton)
+
+            Log.d(TAG, "Follow button clicked for user: $feedOwnerId")
+
+            isFollowed = !isFollowed
+            val followEntity = FollowUnFollowEntity(feedOwnerId, isFollowed)
+
+            if (isFollowed) {
+                // Hide button immediately
+                followButton.visibility = View.GONE
+
+                // Add to adapter's following list AND persistent storage
+                (bindingAdapter as? FeedAdapter)?.addToFollowing(feedOwnerId)
+
+                // Also update via manager for consistency
+                FollowingManager(itemView.context).addToFollowing(feedOwnerId)
+
+                Log.d(TAG, "Now following user $feedOwnerId")
+            } else {
+                // Show button
+                followButton.text = "Follow"
+                followButton.visibility = View.VISIBLE
+
+                // Remove from adapter's following list AND persistent storage
+                (bindingAdapter as? FeedAdapter)?.removeFromFollowing(feedOwnerId)
+
+                // Also update via manager for consistency
+                FollowingManager(itemView.context).removeFromFollowing(feedOwnerId)
+
+                Log.d(TAG, "Unfollowed user $feedOwnerId")
+            }
+
+            // Notify listener
+            feedClickListener.followButtonClicked(followEntity, followButton)
+            EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
+        }
+
         private fun setupPostClickListeners(data: Post) {
             // Clear existing click listeners to avoid conflicts
             feedTextLayoutContainer.setOnClickListener(null)
@@ -1397,48 +1466,7 @@ class FeedAdapter(
                 caption.visibility = View.GONE
             }
         }
-
-        private fun setupFollowButton(data: Post) {
-            val feedOwnerId = data.author?.account?._id ?: return
-            val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
-
-            // Hide follow button if viewing own post OR already following
-            if (feedOwnerId == currentUserId || isFollowingUser) {
-                followButton.visibility = View.GONE
-                Log.d(TAG, "setupFollowButton: Hidden  Own post: ${feedOwnerId == currentUserId}, Already following: $isFollowingUser")
-                return
-            }
-
-            // Show follow button only for users we're NOT following
-            followButton.visibility = View.VISIBLE
-            followButton.text = "Follow"
-
-            followButton.setOnClickListener {
-                handleFollowButtonClick(feedOwnerId)
-            }
-        }
-        @SuppressLint("SetTextI18n")
-        private fun handleFollowButtonClick(feedOwnerId: String) {
-            YoYo.with(Techniques.Pulse)
-                .duration(300)
-                .playOn(followButton)
-            Log.d(TAG, "handleFollowButtonClick: Current follow state: $isFollowed")
-            isFollowed = !isFollowed
-            val followUnFollowEntity = FollowUnFollowEntity(feedOwnerId, isFollowed)
-            if (isFollowed) {
-                followButton.visibility = View.GONE
-                Log.d(TAG, "handleFollowButtonClick: Now following user")
-            } else {
-                followButton.text = "Follow"
-                followButton.visibility = View.VISIBLE
-                Log.d(TAG, "handleFollowButtonClick: Now unfollowing user")
-            }
-            feedClickListener.followButtonClicked(followUnFollowEntity, followButton)
-            EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
-        }
-
-
-
+        
         fun refreshCommentCountFromDatabase(postId: String) {
             Log.d(TAG, "refreshCommentCountFromDatabase: Refreshing count for post: $postId")
             RetrofitClient.commentService.getCommentCount(postId)
