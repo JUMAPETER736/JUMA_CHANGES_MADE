@@ -484,13 +484,17 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         val thumbnailUrl = shortsEntity.thumbnail.firstOrNull()?.thumbnailUrl
         if (!thumbnailUrl.isNullOrEmpty()) {
             thumbnailImageView.visibility = View.VISIBLE
-            videoView.visibility = View.GONE // Hide video view initially
+            videoView.visibility = View.VISIBLE // CHANGED: Show video view immediately
 
             Glide.with(itemView.context)
                 .load(thumbnailUrl)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .centerCrop()
                 .into(thumbnailImageView)
+        } else {
+            // No thumbnail available
+            thumbnailImageView.visibility = View.GONE
+            videoView.visibility = View.VISIBLE
         }
 
         totalComments = shortsEntity.comments
@@ -511,7 +515,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
-    // Update setupPlayer to hide thumbnail when video is ready
     private fun setupPlayer() {
         player = exoplayer
 
@@ -540,15 +543,14 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
                             Log.d(TAG, "Video ready: ${videoDuration}ms")
                         }
 
-                        // CRITICAL: Hide thumbnail when video is ready
+                        // CHANGED: Hide thumbnail immediately when video is ready
                         thumbnailImageView.visibility = View.GONE
                         videoView.visibility = View.VISIBLE
                         videoView.invalidate()
                     }
                     Player.STATE_BUFFERING -> {
                         Log.d(TAG, "Video buffering")
-                        // Keep thumbnail visible while buffering
-                        thumbnailImageView.visibility = View.VISIBLE
+                        // CHANGED: Don't show thumbnail during buffering, keep video view visible
                     }
                     Player.STATE_ENDED -> {
                         stopProgressUpdates()
@@ -578,13 +580,12 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         })
     }
 
-    // Update onViewRecycled to reset thumbnail visibility
     fun onViewRecycled() {
         stopProgressUpdates()
 
-        // Reset thumbnail visibility
-        thumbnailImageView.visibility = View.VISIBLE
-        videoView.visibility = View.GONE
+        // CHANGED: Keep video view visible, just show thumbnail on top
+        thumbnailImageView.visibility = View.GONE // Changed from VISIBLE
+        videoView.visibility = View.VISIBLE // Keep visible
 
         commentsParentLayout.setOnClickListener(null)
         btnLike.setOnClickListener(null)
