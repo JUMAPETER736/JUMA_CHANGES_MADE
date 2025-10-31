@@ -2793,23 +2793,30 @@ class FeedAdapter(
             setupOriginalPostAuthorClicks(data)
         }
 
-
         private fun setupFollowButton(feedOwnerId: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
             // Determine the actual user ID to check for follow status
             val userToCheck = currentPost?.repostedUser?._id ?: currentPost?.author?.account?._id ?: feedOwnerId
 
+            // Check multiple sources for following status
+            val isUserFollowing = followingUserIds.contains(userToCheck) ||
+                    FeedAdapter.getCachedFollowingList().contains(userToCheck)
+
             // Hide follow button if viewing own post OR already following
-            if (userToCheck == currentUserId || followingUserIds.contains(userToCheck)) {
+            if (userToCheck == currentUserId || isFollowingUser || isUserFollowing) {
                 followButton.visibility = View.GONE
-                Log.d(TAG, "setupFollowButton: Hidden - Own post: ${userToCheck == currentUserId}, Already following: ${followingUserIds.contains(userToCheck)}")
+                Log.d(TAG, "setupFollowButton: Hidden for user $userToCheck - Following: true")
                 return
             }
 
             // Show follow button only for users we're NOT following
             followButton.visibility = View.VISIBLE
             followButton.text = "Follow"
+            followButton.backgroundTintList = ContextCompat.getColorStateList(
+                itemView.context,
+                R.color.blueJeans
+            )
 
             followButton.setOnClickListener {
                 handleFollowButtonClick(userToCheck)
