@@ -468,7 +468,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         shortsUploadCancelButton.setOnClickListener(listener)
     }
 
-    
+
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
     override fun onBind(data: MyData) {
@@ -479,9 +479,27 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
         val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
 
-        // CHANGED: Don't show thumbnail during scroll/rebind - only video view
+        // CRITICAL: Hide thumbnail, show video view
         thumbnailImageView.visibility = View.GONE
         videoView.visibility = View.VISIBLE
+
+        // CRITICAL: Load the new video into ExoPlayer
+        val thumbnailUrl = shortsEntity.thumbnail.firstOrNull()?.thumbnailUrl
+        if (!thumbnailUrl.isNullOrEmpty()) {
+            // Show thumbnail briefly while new video loads
+            thumbnailImageView.visibility = View.VISIBLE
+            Glide.with(itemView.context)
+                .load(thumbnailUrl)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .centerCrop()
+                .into(thumbnailImageView)
+        }
+
+        // NEW: Prepare and set the new video source
+        val mediaItem = MediaItem.fromUri(url)
+        exoplayer.setMediaItem(mediaItem)
+        exoplayer.prepare()
+        // Don't auto-play yet - wait for fragment to call play
 
         totalComments = shortsEntity.comments
         totalLikes = shortsEntity.likes
