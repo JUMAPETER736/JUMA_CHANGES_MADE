@@ -1853,49 +1853,37 @@ class FeedMixedFilesViewAdapter(
         private fun setupCountTextViewStyling(context: Context, countText: String) {
             countTextView.visibility = View.VISIBLE
             countTextView.text = countText
-            countTextView.textSize = 28f  // Changed from 32f
+            countTextView.textSize = 32f
             countTextView.setTextColor(Color.WHITE)
-          //  countTextView.setTypeface(null, Typeface.BOLD)  // Make it bold
-            countTextView.setPadding(
-                20.dpToPx(context),  // Changed from 12
-                10.dpToPx(context),  // Changed from 4
-                20.dpToPx(context),  // Changed from 12
-                10.dpToPx(context)   // Changed from 4
-            )
+            countTextView.setPadding(12, 4, 12, 0)
 
             val background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = 24f  // Changed from 16f
-                setColor(Color.parseColor("#DD000000"))  // Changed from #80000000
+                cornerRadius = 16f
+                setColor(Color.parseColor("#80000000"))
             }
             countTextView.background = background
-
-            // Elevation for better visibility
-            countTextView.elevation = 12.dpToPx(context).toFloat()
 
             when (val params = countTextView.layoutParams) {
                 is ConstraintLayout.LayoutParams -> {
                     params.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
                     params.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
-                    params.marginEnd = 16.dpToPx(context)  // Changed from 8dp
-                    params.bottomMargin = 16.dpToPx(context)  // Changed from 8dp
+                    params.marginEnd = 8.dpToPx(context) // Matches XML layout_marginEnd="8dp"
+                    params.bottomMargin = 8.dpToPx(context) // Matches XML layout_marginBottom="8dp"
                     countTextView.layoutParams = params
                 }
                 is FrameLayout.LayoutParams -> {
                     params.gravity = Gravity.BOTTOM or Gravity.END
-                    params.marginEnd = 16.dpToPx(context)  // Changed from 8dp
-                    params.bottomMargin = 16.dpToPx(context)  // Changed from 8dp
+                    params.marginEnd = 8.dpToPx(context) // Matches XML layout_marginEnd="8dp"
+                    params.bottomMargin = 8.dpToPx(context) // Matches XML layout_marginBottom="8dp"
                     countTextView.layoutParams = params
                 }
                 is ViewGroup.MarginLayoutParams -> {
-                    params.marginEnd = 16.dpToPx(context)  // Changed from 8dp
-                    params.bottomMargin = 16.dpToPx(context)  // Changed from 8dp
+                    params.marginEnd = 8.dpToPx(context) // Matches XML layout_marginEnd="8dp"
+                    params.bottomMargin = 8.dpToPx(context) // Matches XML layout_marginBottom="8dp"
                     countTextView.layoutParams = params
                 }
             }
-
-            // Bring to front to ensure visibility
-            countTextView.bringToFront()
         }
 
         // Helper function to configure MaterialCardView with proper corner radius for ALL elements
