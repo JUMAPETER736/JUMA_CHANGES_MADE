@@ -462,139 +462,63 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     private suspend fun loadAllFollowingPostsInitially() {
         val currentUserId = getUserId(requireContext())
         val allFollowingPosts = mutableListOf<Post>()
-        val pagesToLoad = 5
-        val uniqueAuthors = mutableSetOf<String>()
+        var pageNum = 1
+        val uniqueAuthors = mutableSetOf<String>()          // <-- authors we already saw
+        val maxPages = 20                                   // safety-net, never loop forever
 
-        withContext(Dispatchers.Main) {
-            progressBar.visibility = View.VISIBLE
-        }
+        withContext(Dispatchers.Main) { progressBar.visibility = View.VISIBLE }
 
-        Log.d(
-            TAG,
-            "Starting to load $pagesToLoad pages for ${followingUserIds.size} following users..."
-        )
+        Log.d(TAG, "Starting initial load – need posts from ${followingUserIds.size} users")
 
-        for (pageNum in 1..pagesToLoad) {
+        while (uniqueAuthors.size < followingUserIds.size && pageNum <= maxPages) {
             try {
-                Log.d(TAG, "Loading page $pageNum...")
+                Log.d(TAG, "Initial load – fetching page $pageNum")
                 val response = retrofitInstance.apiService.getAllFeed(pageNum.toString())
-
-                if (response.isSuccessful && response.body() != null) {
-                    val allPosts = response.body()!!.data.data.posts
-                    Log.d(TAG, "Page $pageNum: Received ${allPosts.size} total posts from API")
-
-                    // Filter posts from followed users ONLY
-                    val followingPosts = allPosts.filter { post ->
-                        // Check if this is a repost (originalPost list is NOT empty)
-                        val isRepost = post.originalPost.isNotEmpty()
-
-                        if (isRepost) {
-                            // For reposts, check the REPOSTER (post.author)
-                            val reposterId = post.author?.account?._id
-                            val reposterUsername = post.author?.account?.username ?: "Unknown"
-
-                            // Get original author info from the first item in originalPost list
-                            val originalAuthor = post.originalPost.firstOrNull()?.author
-                            val originalAuthorUsername =
-                                originalAuthor?.account?.username ?: "Unknown"
-
-                            if (reposterId.isNullOrEmpty()) {
-                                Log.d(
-                                    TAG,
-                                    "Page $pageNum - Skipped: Repost with null/empty reposter ID"
-                                )
-                                return@filter false
-                            }
-
-                            // Exclude if reposter is current user
-                            if (reposterId == currentUserId) {
-                                Log.d(TAG, "Page $pageNum - EXCLUDED: My own repost")
-                                return@filter false
-                            }
-
-                            // MUST follow the REPOSTER to see their repost
-                            val followingReposter = followingUserIds.contains(reposterId)
-
-                            if (followingReposter) {
-                                uniqueAuthors.add(reposterId)
-                                Log.d(
-                                    TAG,
-                                    "Page $pageNum - INCLUDED REPOST: @$reposterUsername reposted from @$originalAuthorUsername"
-                                )
-                                return@filter true
-                            } else {
-                                Log.d(
-                                    TAG,
-                                    "Page $pageNum - FILTERED OUT REPOST: @$reposterUsername (not following reposter)"
-                                )
-                                return@filter false
-                            }
-                        } else {
-                            // For regular posts, check the author
-                            val authorId = post.author?.account?._id
-                            val authorUsername = post.author?.account?.username ?: "Unknown"
-
-                            if (authorId.isNullOrEmpty()) {
-                                Log.d(TAG, "Skipped: Post with null/empty author ID")
-                                return@filter false
-                            }
-
-                            // Exclude own posts
-                            if (authorId == currentUserId) {
-                                Log.d(
-                                    TAG,
-                                    "Page $pageNum - EXCLUDED: My own post (@$authorUsername)"
-                                )
-                                return@filter false
-                            }
-
-                            // ONLY include posts from users I'm following
-                            val isFollowing = followingUserIds.contains(authorId)
-
-                            if (isFollowing) {
-                                uniqueAuthors.add(authorId)
-                                Log.d(
-                                    TAG,
-                                    "Page $pageNum - INCLUDED: @$authorUsername (ID: $authorId)"
-                                )
-                            } else {
-                                Log.d(
-                                    TAG,
-                                    "Page $pageNum - FILTERED OUT: @$authorUsername - NOT FOLLOWING"
-                                )
-                            }
-
-                            return@filter isFollowing
-                        }
-                    }
-
-                    allFollowingPosts.addAll(followingPosts)
-                    Log.d(
-                        TAG,
-                        "Page $pageNum: Found ${followingPosts.size} posts from followed users"
-                    )
-                    Log.d(
-                        TAG,
-                        "Total so far: ${allFollowingPosts.size} posts from ${uniqueAuthors.size} unique users"
-                    )
-
-                    // Stop early if we found posts from all followed users
-                    if (uniqueAuthors.size >= followingUserIds.size) {
-                        Log.d(
-                            TAG,
-                            "Found posts from all ${followingUserIds.size} followed users! Stopping at page $pageNum"
-                        )
-                        break
-                    }
-
-                } else {
-                    Log.e(TAG, "Page $pageNum: API error ${response.code()}")
+                if (!response.isSuccessful || response.body() == null) {
+                    Log.e(TAG, "Initial page $pageNum failed: ${response.code()}")
+                    break
                 }
 
-                delay(200)
+                val pagePosts = response.body()!!.data.data.posts
 
+                // ---- STRICT FILTER (same as pagination) ----
+                val filtered = pagePosts.filter { post ->
+                    val authorId = post.author?.account?._id
+                    if (authorId.isNullOrBlank()) return@filter false          // skip broken posts
+                    if (authorId == currentUserId) return@filter false        // never show own posts
+
+                    // repost ?
+                    val isRepost = post.originalPost.isNotEmpty()
+                    if (isRepost) {
+                        followingUserIds.contains(authorId)                     // must follow the *reposter*
+                    } else {
+                        followingUserIds.contains(authorId)               // must follow the author
+                    }
+                }
+
+                // keep track of which followed users already gave us a post
+                filtered.forEach { post ->
+                    val authorId = post.author?.account?._id ?: return@forEach
+                    if (followingUserIds.contains(authorId)) uniqueAuthors.add(authorId)
+                    allFollowingPosts.add(post)
+                }
+
+                Log.d(TAG,
+                    "Page $pageNum → ${filtered.size} posts added " +
+                            "(total ${allFollowingPosts.size}, unique users ${uniqueAuthors.size})"
+                )
+
+                // stop early when we have at least one post from **every** followed user
+                if (uniqueAuthors.size >= followingUserIds.size) {
+                    Log.d(TAG, "Got posts from ALL followed users – stopping early")
+                    break
+                }
+
+                pageNum++
+                delay(180)                      // be gentle to the server
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading page $pageNum: ${e.message}", e)
+                Log.e(TAG, "Initial load error on page $pageNum: ${e.message}", e)
+                break
             }
         }
 
@@ -603,160 +527,75 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             isLoading = false
 
             if (allFollowingPosts.isEmpty()) {
-                Toast.makeText(
-                    requireContext(),
-                    "No posts from people you follow yet",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(),
+                    "No posts from people you follow yet", Toast.LENGTH_SHORT).show()
             } else {
-                Log.d(
-                    TAG,
-                    "FINAL: Loaded ${allFollowingPosts.size} posts from ${uniqueAuthors.size} users"
-                )
-                Log.d(
-                    TAG,
-                    "Users with posts: ${uniqueAuthors.joinToString { followingUserMap[it] ?: it }}"
-                )
-
-                // Add to ViewModel and display
                 getFeedViewModel.addAllFeedData(allFollowingPosts.toMutableList())
                 getFeedViewModel.filterOutUserPosts(currentUserId)
-
-                // Submit to adapter
                 followedPostsAdapter.submitItems(getFeedViewModel.getAllFeedData())
-
-                // Find users without posts
-                val usersWithoutPosts = followingUserIds.filterNot { uniqueAuthors.contains(it) }
-                if (usersWithoutPosts.isNotEmpty()) {
-                    Log.d(
-                        TAG,
-                        "Users you follow but no posts found: ${usersWithoutPosts.joinToString { followingUserMap[it] ?: it }}"
-                    )
-                }
+                Log.d(TAG, "INITIAL LOAD DONE → ${allFollowingPosts.size} posts from ${uniqueAuthors.size} users")
             }
 
             hasMoreData = allFollowingPosts.size >= 20
         }
-
     }
 
     private fun loadPostsFromFollowing(page: Int) {
+        if (isLoading) return
         isLoading = true
         progressBar.visibility = View.VISIBLE
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val currentUserId = getUserId(requireContext())
-
-                Log.d(TAG, "Loading page $page for ${followingUserIds.size} following users")
-                Log.d(TAG, "Following user IDs: ${followingUserIds.joinToString()}")
-
                 val response = retrofitInstance.apiService.getAllFeed(page.toString())
 
-                if (!response.isSuccessful) {
+                if (!response.isSuccessful || response.body() == null) {
                     withContext(Dispatchers.Main) {
                         progressBar.visibility = View.GONE
                         isLoading = false
-                        Toast.makeText(
-                            requireContext(),
-                            "Failed to load posts: ${response.code()}",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(requireContext(),
+                            "Failed to load page $page", Toast.LENGTH_SHORT).show()
                     }
                     return@launch
                 }
 
-                val responseBody = response.body()
-                if (responseBody == null) {
-                    withContext(Dispatchers.Main) {
-                        progressBar.visibility = View.GONE
-                        isLoading = false
-                        handleError("Empty response from server")
-                    }
-                    return@launch
-                }
+                val pagePosts = response.body()!!.data.data.posts
 
-                val allPosts = responseBody.data.data.posts
-                Log.d(TAG, "Received ${allPosts.size} total posts from API")
-
-                // STRICT FILTERING: Only posts from following users (including their reposts)
-                val followingPosts = allPosts.filter { post ->
+                // ---- SAME STRICT FILTER AS INITIAL LOAD ----
+                val filtered = pagePosts.filter { post ->
                     val authorId = post.author?.account?._id
-                    val authorUsername = post.author?.account?.username ?: "Unknown"
+                    if (authorId.isNullOrBlank()) return@filter false
+                    if (authorId == currentUserId) return@filter false
 
-                    // First check: Skip posts with null/empty author ID
-                    if (authorId.isNullOrEmpty()) {
-                        Log.d(TAG, "Skipped: Post with null/empty author ID")
-                        return@filter false
-                    }
-
-                    // Second check: Skip own posts
-                    if (authorId == currentUserId) {
-                        Log.d(TAG, "EXCLUDED: My own post (@$authorUsername)")
-                        return@filter false
-                    }
-
-                    // Third check: Is this a repost?
                     val isRepost = post.originalPost.isNotEmpty()
-
                     if (isRepost) {
-                        // For reposts, MUST be following the REPOSTER (post.author)
-                        val followingReposter = followingUserIds.contains(authorId)
-
-                        if (followingReposter) {
-                            val originalAuthor = post.originalPost.firstOrNull()?.author
-                            val originalAuthorUsername = originalAuthor?.account?.username ?: "Unknown"
-                            Log.d(TAG, "INCLUDED REPOST: @$authorUsername (FOLLOWING) reposted from @$originalAuthorUsername")
-                            return@filter true
-                        } else {
-                            Log.d(TAG, "FILTERED OUT REPOST: @$authorUsername (NOT FOLLOWING) - repost hidden")
-                            return@filter false
-                        }
+                        followingUserIds.contains(authorId)          // reposter must be followed
                     } else {
-                        // For regular posts, MUST be following the author
-                        val isFollowing = followingUserIds.contains(authorId)
-
-                        if (isFollowing) {
-                            Log.d(TAG, "INCLUDED: @$authorUsername (ID: $authorId) - FOLLOWING ✓")
-                            return@filter true
-                        } else {
-                            Log.d(TAG, "FILTERED OUT: @$authorUsername (ID: $authorId) - NOT FOLLOWING ✗")
-                            return@filter false
-                        }
+                        followingUserIds.contains(authorId)          // author must be followed
                     }
                 }
-
-                Log.d(TAG, "RESULT: ${followingPosts.size} posts from following users")
-                Log.d(TAG, "Filtered out: ${allPosts.size - followingPosts.size} posts")
 
                 withContext(Dispatchers.Main) {
                     progressBar.visibility = View.GONE
                     isLoading = false
 
-                    if (followingPosts.isNotEmpty()) {
-                        getFeedViewModel.addAllFeedData(followingPosts.toMutableList())
+                    if (filtered.isNotEmpty()) {
+                        getFeedViewModel.addAllFeedData(filtered.toMutableList())
                         getFeedViewModel.filterOutUserPosts(currentUserId)
-
-                        // Submit to adapter
                         followedPostsAdapter.submitItems(getFeedViewModel.getAllFeedData())
-
                     } else if (page == 1) {
-                        Toast.makeText(
-                            requireContext(),
-                            "No posts from people you follow yet",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(requireContext(),
+                            "No posts from people you follow yet", Toast.LENGTH_SHORT).show()
                     }
 
-                    hasMoreData = followingPosts.size >= 20
+                    hasMoreData = filtered.size >= 20
                 }
-
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading posts: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     progressBar.visibility = View.GONE
                     isLoading = false
-                    handleError("Error: ${e.message}")
+                    handleError("Error loading page $page: ${e.message}")
                 }
             }
         }
