@@ -80,7 +80,10 @@ import com.uyscuti.social.network.api.response.comment.allcomments.Comment
 import com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File
 import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.response.posts.AuthorX
+import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import org.greenrobot.eventbus.EventBus
 import retrofit2.Call
 import retrofit2.Callback
@@ -2820,6 +2823,7 @@ class FeedAdapter(
             setupRepostedUserProfileClicks(data)
             setupOriginalPostAuthorClicks(data)
         }
+        
 
         private fun setupFollowButton(feedOwnerId: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
@@ -2827,8 +2831,10 @@ class FeedAdapter(
             // Determine the actual user ID to check for follow status
             val userToCheck = currentPost?.repostedUser?._id ?: currentPost?.author?.account?._id ?: feedOwnerId
 
-            // Check multiple sources for following status
-            val isUserFollowing = followingUserIds.contains(userToCheck) ||
+            // Check multiple sources for following status - same as FeedPostViewHolder
+            val cachedFollowing = LocalStorage.getInstance(itemView.context).getFollowingList()
+            val isUserFollowing = cachedFollowing.contains(userToCheck) ||
+                    followingUserIds.contains(userToCheck) ||
                     FeedAdapter.getCachedFollowingList().contains(userToCheck)
 
             // Hide follow button if viewing own post OR already following
