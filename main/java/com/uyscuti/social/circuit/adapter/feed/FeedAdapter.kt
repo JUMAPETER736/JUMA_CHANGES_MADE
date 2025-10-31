@@ -2747,53 +2747,6 @@ class FeedAdapter(
         private val shareCounts: TextView = itemView.findViewById(R.id.shareCount)
 
 
-//        @OptIn(UnstableApi::class)
-//        @SuppressLint("SetTextI18n", "CheckResult", "SuspiciousIndentation")
-//        fun render(data: Post) {
-//
-//            currentPost = data
-//
-//            val feedOwnerId = data.author?.account?._id ?: "Unknown"
-//
-//
-//            isFollowingUser = followingUserIds.contains(feedOwnerId)
-//            Log.d(TAG, "render: User ${data.author?.account?.username} following status: $isFollowingUser")
-//
-//            totalMixedComments = data.comments
-//            totalMixedLikesCounts = data.likes
-//            totalMixedBookMarkCounts = data.bookmarkCount
-//            totalMixedShareCounts = data.shareCount
-//            totalMixedRePostCounts = data.repostCount
-//            totalRepostComments = totalMixedComments
-//
-//            // Setup all content first
-//            setupRepostedUser(data)
-//            setupOriginalPostContent(data)
-//            dateTimeCreate.text = formattedMongoDateTime(data.createdAt)
-//
-//            // Setup interaction buttons with the repost counts
-//            setupLikeButton(data)
-//            setupBookmarkButton(data)
-//            setupRepostButton(data)
-//            setupShareButton(data)
-//            setupCommentButton(data)
-//
-//            // Update the UI displays immediately with repost counts
-//            updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
-//            updateMetricDisplay(commentCount, totalMixedComments, "comment")
-//            updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
-//            updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
-//            updateMetricDisplay(shareCounts, totalMixedShareCounts, "share")
-//
-//            setupFollowButton(feedOwnerId)
-//            setupMoreOptionsButton(data)
-//            setupFileTapNavigation(data)
-//            finalizeClickSetup(data)
-//            setupRepostedUserProfileClicks(data)
-//            setupOriginalPostAuthorClicks(data)
-//        }
-
-
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "CheckResult", "SuspiciousIndentation")
         fun render(data: Post) {
@@ -2861,6 +2814,47 @@ class FeedAdapter(
             followButton.setOnClickListener {
                 handleFollowButtonClick(userToCheck)
             }
+        }
+
+        @SuppressLint("SetTextI18n")
+        private fun handleFollowButtonClick(feedOwnerId: String) {
+            YoYo.with(Techniques.Pulse)
+                .duration(300)
+                .playOn(followButton)
+
+            Log.d(TAG, "Follow button clicked for user: $feedOwnerId")
+
+            isFollowed = !isFollowed
+            val followEntity = FollowUnFollowEntity(feedOwnerId, isFollowed)
+
+            if (isFollowed) {
+                // Hide button immediately
+                followButton.visibility = View.GONE
+
+                // Add to adapter's following list AND persistent storage
+                (bindingAdapter as? FeedAdapter)?.addToFollowing(feedOwnerId)
+
+                // Also update via manager for consistency
+                FollowingManager(itemView.context).addToFollowing(feedOwnerId)
+
+                Log.d(TAG, "Now following user $feedOwnerId")
+            } else {
+                // Show button
+                followButton.text = "Follow"
+                followButton.visibility = View.VISIBLE
+
+                // Remove from adapter's following list AND persistent storage
+                (bindingAdapter as? FeedAdapter)?.removeFromFollowing(feedOwnerId)
+
+                // Also update via manager for consistency
+                FollowingManager(itemView.context).removeFromFollowing(feedOwnerId)
+
+                Log.d(TAG, "Unfollowed user $feedOwnerId")
+            }
+
+            // Notify listener
+            feedClickListener.followButtonClicked(followEntity, followButton)
+            EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
         }
 
         @SuppressLint("ClickableViewAccessibility")
@@ -3685,47 +3679,6 @@ class FeedAdapter(
                 repostButton.scaleX = 1.0f
                 repostButton.scaleY = 1.0f
             }
-        }
-
-
-//        private fun setupFollowButton(feedOwnerId: String) {
-//            val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
-//
-//            // Hide follow button if viewing own post OR already following
-//            if (feedOwnerId == currentUserId || isFollowingUser) {
-//                followButton.visibility = View.GONE
-//                Log.d(TAG, "setupFollowButton: Hidden  Own post: ${feedOwnerId == currentUserId}, Already following: $isFollowingUser")
-//                return
-//            }
-//
-//            // Show follow button only for users we're NOT following
-//            followButton.visibility = View.VISIBLE
-//            followButton.text = "Follow"
-//
-//            followButton.setOnClickListener {
-//                handleFollowButtonClick(feedOwnerId)
-//            }
-//        }
-
-        @SuppressLint("SetTextI18n")
-        private fun handleFollowButtonClick(feedOwnerId: String) {
-
-            YoYo.with(Techniques.Pulse)
-                .duration(300)
-                .playOn(followButton)
-            Log.d(TAG, "handleFollowButtonClick: Current follow state: $isFollowed")
-            isFollowed = !isFollowed
-            val followUnFollowEntity = FollowUnFollowEntity(feedOwnerId, isFollowed)
-            if (isFollowed) {
-                followButton.visibility = View.GONE
-                Log.d(TAG, "handleFollowButtonClick: Now following user")
-            } else {
-                followButton.text = "Follow"
-                followButton.visibility = View.VISIBLE
-                Log.d(TAG, "handleFollowButtonClick: Now unfollowing user")
-            }
-            feedClickListener.followButtonClicked(followUnFollowEntity, followButton)
-            EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
         }
 
         private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
