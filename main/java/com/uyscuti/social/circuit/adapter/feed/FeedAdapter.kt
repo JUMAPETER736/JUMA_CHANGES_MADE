@@ -2823,7 +2823,7 @@ class FeedAdapter(
             setupRepostedUserProfileClicks(data)
             setupOriginalPostAuthorClicks(data)
         }
-        
+
 
         private fun setupFollowButton(feedOwnerId: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
