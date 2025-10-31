@@ -2831,26 +2831,21 @@ class FeedAdapter(
                 ?: currentPost?.author?.account?._id
                 ?: return
 
-            // Safely get followingUserIds from adapter
+            // GET FROM ADAPTER
             val followingIds = (bindingAdapter as? FeedAdapter)?.followingUserIds ?: emptySet()
 
             if (postOwnerId == currentUserId || followingIds.contains(postOwnerId)) {
                 followButton.visibility = View.GONE
-                Log.d(TAG, "Follow button HIDDEN for user: $postOwnerId")
+                Log.d(TAG, "HIDDEN Follow button for $postOwnerId (own/followed)")
                 return
             }
 
             followButton.visibility = View.VISIBLE
             followButton.text = "Follow"
-            followButton.backgroundTintList = ContextCompat.getColorStateList(
-                itemView.context, R.color.blueJeans
-            )
+            followButton.backgroundTintList = ContextCompat.getColorStateList(itemView.context, R.color.blueJeans)
+            followButton.setOnClickListener { handleFollowButtonClick(postOwnerId) }
 
-            followButton.setOnClickListener {
-                handleFollowButtonClick(postOwnerId)
-            }
-
-            Log.d(TAG, "Follow button SHOWN for user: $postOwnerId")
+            Log.d(TAG, "SHOWN Follow button for $postOwnerId")
         }
 
         private fun handleFollowButtonClick(feedOwnerId: String) {
