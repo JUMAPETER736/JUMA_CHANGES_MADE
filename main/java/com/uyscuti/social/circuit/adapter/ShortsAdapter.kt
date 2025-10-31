@@ -3,7 +3,6 @@ package com.uyscuti.social.circuit.adapter
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.graphics.Color
-import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -23,6 +22,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -41,9 +43,6 @@ import com.uyscuti.social.core.common.data.room.entity.*
 import com.uyscuti.social.network.utils.LocalStorage
 import org.greenrobot.eventbus.EventBus
 import java.util.Date
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
-
 
 // Constants
 private const val TAG = "ShortsAdapter"
@@ -322,12 +321,6 @@ class ShortsAdapter(
         holder.pauseUpdates()
     }
 
-    fun getViewHolderAt(position: Int): StringViewHolder? {
-        return if (position >= 0 && position < viewHolderList.size) {
-            viewHolderList[position]
-        } else null
-    }
-
 }
 
 
@@ -389,8 +382,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     private var isUserSeeking = false
     private var isPlaying = false
     private var videoDuration = 0L
-    private var isThumbnailPrepared = false   // <-- NEW
-    private var lastUrl = ""
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private val progressUpdateRunnable = object : Runnable {
@@ -478,27 +469,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     }
 
 
-    fun onViewRecycled() {
-        stopProgressUpdates()
-
-        // CHANGED: Keep video view visible, just show thumbnail on top
-        thumbnailImageView.visibility = View.GONE // Changed from VISIBLE
-        videoView.visibility = View.VISIBLE // Keep visible
-
-        commentsParentLayout.setOnClickListener(null)
-        btnLike.setOnClickListener(null)
-        favorite.setOnClickListener(null)
-        shareBtn.setOnClickListener(null)
-        downloadBtn.setOnClickListener(null)
-        username.setOnClickListener(null)
-        shortsProfileImage.setOnClickListener(null)
-        shortsViewPager.setOnClickListener(null)
-
-        videoDuration = 0L
-        bottomVideoSeekBar.progress = 0
-        isPlaying = false
-    }
-
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
     override fun onBind(data: MyData) {
@@ -509,21 +479,15 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
         val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
 
+        // DON'T load thumbnail or prepare video here
+        // Just ensure views are in correct state
+        thumbnailImageView.visibility = View.GONE
+        videoView.visibility = View.VISIBLE
 
         totalComments = shortsEntity.comments
         totalLikes = shortsEntity.likes
         isLiked = shortsEntity.isLiked
         isFavorite = shortsEntity.isBookmarked
-
-        videoView.visibility = View.VISIBLE
-        thumbnailImageView.visibility = View.GONE
-
-        // 2. Load thumbnail **only if it is a different video**
-        if (url != lastUrl) {
-            lastUrl = url
-            isThumbnailPrepared = false
-            loadThumbnail(url)
-        }
 
         // Rest of your existing onBind code...
         updateLikeButtonState()
@@ -536,23 +500,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         if (exoplayer.duration > 0) {
             bottomVideoSeekBar.max = (exoplayer.duration / 1000).toInt()
         }
-    }
-
-    fun loadThumbnail(url: String) {
-        Glide.with(itemView.context)
-            .load(url)
-            .apply(RequestOptions.bitmapTransform(CircleCrop()))
-            .apply(RequestOptions.placeholderOf(R.drawable.flash21))
-            .diskCacheStrategy(DiskCacheStrategy.ALL)
-            .into(object : CustomTarget<Drawable>() {
-                override fun onResourceReady(resource: Drawable, transition: Transition<in Drawable>?) {
-                    thumbnailImageView.setImageDrawable(resource)
-                    isThumbnailPrepared = true
-                    // Keep hidden until first frame
-                    thumbnailImageView.visibility = View.GONE
-                }
-                override fun onLoadCleared(placeholder: Drawable?) = Unit
-            })
     }
 
     private fun setupPlayer() {
@@ -573,26 +520,72 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         })
 
         exoplayer.addListener(object : Player.Listener {
-            override fun onRenderedFirstFrame() {
-                // FIRST FRAME → hide thumbnail forever for this item
-                thumbnailImageView.visibility = View.GONE
-                videoView.visibility = View.VISIBLE
-                // stop any further thumbnail work for this holder
-                isThumbnailPrepared = false
-            }
-
             override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState) {
                     Player.STATE_READY -> {
-                        // video is ready → hide thumbnail (in case first frame
-                        // comes a little later)
+                        videoDuration = exoplayer.duration
+                        if (videoDuration > 0) {
+                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
+                            bottomVideoSeekBar.secondaryProgress = 0
+                            Log.d(TAG, "Video ready: ${videoDuration}ms")
+                        }
+
+                        // CHANGED: Hide thumbnail immediately when video is ready
                         thumbnailImageView.visibility = View.GONE
                         videoView.visibility = View.VISIBLE
+                        videoView.invalidate()
+                    }
+                    Player.STATE_BUFFERING -> {
+                        Log.d(TAG, "Video buffering")
+                        // CHANGED: Don't show thumbnail during buffering, keep video view visible
+                    }
+                    Player.STATE_ENDED -> {
+                        stopProgressUpdates()
                     }
                 }
             }
-        })
 
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                this@StringViewHolder.isPlaying = isPlaying
+                if (isPlaying) {
+                    startProgressUpdates()
+                    // Hide thumbnail when playing
+                    thumbnailImageView.visibility = View.GONE
+                    videoView.visibility = View.VISIBLE
+                } else {
+                    stopProgressUpdates()
+                }
+                Log.d(TAG, "Player isPlaying: $isPlaying")
+            }
+
+            override fun onRenderedFirstFrame() {
+                Log.d(TAG, "First frame rendered - video is displaying")
+                // Hide thumbnail once first frame is rendered
+                thumbnailImageView.visibility = View.GONE
+                videoView.visibility = View.VISIBLE
+            }
+        })
+    }
+
+    fun onViewRecycled() {
+        stopProgressUpdates()
+
+        // CHANGED: Keep video view visible, just show thumbnail on top
+        thumbnailImageView.visibility = View.GONE // Changed from VISIBLE
+        videoView.visibility = View.VISIBLE // Keep visible
+
+        commentsParentLayout.setOnClickListener(null)
+        btnLike.setOnClickListener(null)
+        favorite.setOnClickListener(null)
+        shareBtn.setOnClickListener(null)
+        downloadBtn.setOnClickListener(null)
+        username.setOnClickListener(null)
+        shortsProfileImage.setOnClickListener(null)
+        shortsViewPager.setOnClickListener(null)
+
+        videoDuration = 0L
+        bottomVideoSeekBar.progress = 0
+        isPlaying = false
     }
 
     @OptIn(UnstableApi::class)
