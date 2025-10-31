@@ -1466,7 +1466,7 @@ class FeedAdapter(
                 caption.visibility = View.GONE
             }
         }
-        
+
         fun refreshCommentCountFromDatabase(postId: String) {
             Log.d(TAG, "refreshCommentCountFromDatabase: Refreshing count for post: $postId")
             RetrofitClient.commentService.getCommentCount(postId)
