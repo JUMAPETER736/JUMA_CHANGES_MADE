@@ -385,7 +385,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     private val favoriteCount: TextView = itemView.findViewById(R.id.favoriteCounts)
     private val shareCount: TextView = itemView.findViewById(R.id.shareCount)
     private val downloadCount: TextView = itemView.findViewById(R.id.downloadCount)
-
+    private val thumbnailImageView: ImageView = itemView.findViewById(R.id.videoThumbnail)
     private val shortsViewPager: FrameLayout = itemView.findViewById(R.id.shortsViewPager)
     private val shortsUploadCancelButton: ImageButton = itemView.findViewById(R.id.shortsUploadCancelButton)
 
@@ -430,22 +430,22 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         stopProgressUpdates()
     }
 
-    fun onViewRecycled() {
-        stopProgressUpdates()
-
-        commentsParentLayout.setOnClickListener(null)
-        btnLike.setOnClickListener(null)
-        favorite.setOnClickListener(null)
-        shareBtn.setOnClickListener(null)
-        downloadBtn.setOnClickListener(null)
-        username.setOnClickListener(null)
-        shortsProfileImage.setOnClickListener(null)
-        shortsViewPager.setOnClickListener(null)
-
-        videoDuration = 0L
-        bottomVideoSeekBar.progress = 0
-        isPlaying = false
-    }
+//    fun onViewRecycled() {
+//        stopProgressUpdates()
+//
+//        commentsParentLayout.setOnClickListener(null)
+//        btnLike.setOnClickListener(null)
+//        favorite.setOnClickListener(null)
+//        shareBtn.setOnClickListener(null)
+//        downloadBtn.setOnClickListener(null)
+//        username.setOnClickListener(null)
+//        shortsProfileImage.setOnClickListener(null)
+//        shortsViewPager.setOnClickListener(null)
+//
+//        videoDuration = 0L
+//        bottomVideoSeekBar.progress = 0
+//        isPlaying = false
+//    }
 
     fun reattachPlayer() {
         videoView.post {
@@ -509,8 +509,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
     override fun onBind(data: MyData) {
-
-
         val shortsEntity = data.shortsEntity
         val url = shortsEntity.images[0].url
         val shortOwnerId = shortsEntity.author.account._id
@@ -518,23 +516,124 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
         val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
 
+        // CRITICAL: Load thumbnail immediately while video prepares
+        val thumbnailUrl = shortsEntity.thumbnail.firstOrNull()?.thumbnailUrl
+        if (!thumbnailUrl.isNullOrEmpty()) {
+            thumbnailImageView.visibility = View.VISIBLE
+            videoView.visibility = View.GONE // Hide video view initially
+
+            Glide.with(itemView.context)
+                .load(thumbnailUrl)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .centerCrop()
+                .into(thumbnailImageView)
+        }
+
         totalComments = shortsEntity.comments
         totalLikes = shortsEntity.likes
         isLiked = shortsEntity.isLiked
         isFavorite = shortsEntity.isBookmarked
 
-        // UI that can change without killing the player
+        // Rest of your existing onBind code...
         updateLikeButtonState()
         updateFavoriteButtonState()
         setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
         setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-        setupFollowButton(data, shortOwnerId)   // <-- this is the only thing that changes
+        setupFollowButton(data, shortOwnerId)
         setupContent(shortsEntity)
 
-        // Keep seek bar in sync (no player re-attachment)
         if (exoplayer.duration > 0) {
             bottomVideoSeekBar.max = (exoplayer.duration / 1000).toInt()
         }
+    }
+
+    // Update setupPlayer to hide thumbnail when video is ready
+    private fun setupPlayer() {
+        player = exoplayer
+
+        videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {
+                Log.d(TAG, "VideoView attached to window")
+                if (videoView.player == null) {
+                    videoView.player = exoplayer
+                    videoView.visibility = View.VISIBLE
+                }
+            }
+
+            override fun onViewDetachedFromWindow(v: View) {
+                Log.d(TAG, "VideoView detached from window")
+            }
+        })
+
+        exoplayer.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                when (playbackState) {
+                    Player.STATE_READY -> {
+                        videoDuration = exoplayer.duration
+                        if (videoDuration > 0) {
+                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
+                            bottomVideoSeekBar.secondaryProgress = 0
+                            Log.d(TAG, "Video ready: ${videoDuration}ms")
+                        }
+
+                        // CRITICAL: Hide thumbnail when video is ready
+                        thumbnailImageView.visibility = View.GONE
+                        videoView.visibility = View.VISIBLE
+                        videoView.invalidate()
+                    }
+                    Player.STATE_BUFFERING -> {
+                        Log.d(TAG, "Video buffering")
+                        // Keep thumbnail visible while buffering
+                        thumbnailImageView.visibility = View.VISIBLE
+                    }
+                    Player.STATE_ENDED -> {
+                        stopProgressUpdates()
+                    }
+                }
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                this@StringViewHolder.isPlaying = isPlaying
+                if (isPlaying) {
+                    startProgressUpdates()
+                    // Hide thumbnail when playing
+                    thumbnailImageView.visibility = View.GONE
+                    videoView.visibility = View.VISIBLE
+                } else {
+                    stopProgressUpdates()
+                }
+                Log.d(TAG, "Player isPlaying: $isPlaying")
+            }
+
+            override fun onRenderedFirstFrame() {
+                Log.d(TAG, "First frame rendered - video is displaying")
+                // Hide thumbnail once first frame is rendered
+                thumbnailImageView.visibility = View.GONE
+                videoView.visibility = View.VISIBLE
+            }
+        })
+    }
+
+    // Update onViewRecycled to reset thumbnail visibility
+    fun onViewRecycled() {
+        stopProgressUpdates()
+
+        // Reset thumbnail visibility
+        thumbnailImageView.visibility = View.VISIBLE
+        videoView.visibility = View.GONE
+
+        commentsParentLayout.setOnClickListener(null)
+        btnLike.setOnClickListener(null)
+        favorite.setOnClickListener(null)
+        shareBtn.setOnClickListener(null)
+        downloadBtn.setOnClickListener(null)
+        username.setOnClickListener(null)
+        shortsProfileImage.setOnClickListener(null)
+        shortsViewPager.setOnClickListener(null)
+
+        videoDuration = 0L
+        bottomVideoSeekBar.progress = 0
+        isPlaying = false
     }
 
     @OptIn(UnstableApi::class)
@@ -817,62 +916,62 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
-    private fun setupPlayer() {
-        player = exoplayer
-
-        videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) {
-                Log.d(TAG, "VideoView attached to window")
-                if (videoView.player == null) {
-                    videoView.player = exoplayer
-                    videoView.visibility = View.VISIBLE
-                }
-            }
-
-            override fun onViewDetachedFromWindow(v: View) {
-                Log.d(TAG, "VideoView detached from window")
-            }
-        })
-
-        exoplayer.addListener(object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                when (playbackState) {
-                    Player.STATE_READY -> {
-                        videoDuration = exoplayer.duration
-                        if (videoDuration > 0) {
-                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
-                            bottomVideoSeekBar.secondaryProgress = 0
-                            Log.d(TAG, "Video ready: ${videoDuration}ms")
-                        }
-                        videoView.visibility = View.VISIBLE
-                        videoView.invalidate()
-                    }
-                    Player.STATE_BUFFERING -> {
-                        Log.d(TAG, "Video buffering")
-                    }
-                    Player.STATE_ENDED -> {
-                        stopProgressUpdates()
-                    }
-                }
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                this@StringViewHolder.isPlaying = isPlaying
-                if (isPlaying) {
-                    startProgressUpdates()
-                    videoView.visibility = View.VISIBLE
-                } else {
-                    stopProgressUpdates()
-                }
-                Log.d(TAG, "Player isPlaying: $isPlaying")
-            }
-
-            override fun onRenderedFirstFrame() {
-                Log.d(TAG, "First frame rendered - video is displaying")
-                videoView.visibility = View.VISIBLE
-            }
-        })
-    }
+//    private fun setupPlayer() {
+//        player = exoplayer
+//
+//        videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+//            override fun onViewAttachedToWindow(v: View) {
+//                Log.d(TAG, "VideoView attached to window")
+//                if (videoView.player == null) {
+//                    videoView.player = exoplayer
+//                    videoView.visibility = View.VISIBLE
+//                }
+//            }
+//
+//            override fun onViewDetachedFromWindow(v: View) {
+//                Log.d(TAG, "VideoView detached from window")
+//            }
+//        })
+//
+//        exoplayer.addListener(object : Player.Listener {
+//            override fun onPlaybackStateChanged(playbackState: Int) {
+//                when (playbackState) {
+//                    Player.STATE_READY -> {
+//                        videoDuration = exoplayer.duration
+//                        if (videoDuration > 0) {
+//                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
+//                            bottomVideoSeekBar.secondaryProgress = 0
+//                            Log.d(TAG, "Video ready: ${videoDuration}ms")
+//                        }
+//                        videoView.visibility = View.VISIBLE
+//                        videoView.invalidate()
+//                    }
+//                    Player.STATE_BUFFERING -> {
+//                        Log.d(TAG, "Video buffering")
+//                    }
+//                    Player.STATE_ENDED -> {
+//                        stopProgressUpdates()
+//                    }
+//                }
+//            }
+//
+//            override fun onIsPlayingChanged(isPlaying: Boolean) {
+//                this@StringViewHolder.isPlaying = isPlaying
+//                if (isPlaying) {
+//                    startProgressUpdates()
+//                    videoView.visibility = View.VISIBLE
+//                } else {
+//                    stopProgressUpdates()
+//                }
+//                Log.d(TAG, "Player isPlaying: $isPlaying")
+//            }
+//
+//            override fun onRenderedFirstFrame() {
+//                Log.d(TAG, "First frame rendered - video is displaying")
+//                videoView.visibility = View.VISIBLE
+//            }
+//        })
+//    }
 
     private fun setupUploadComponents() {
         shortsUploadTopSeekBar = itemView.findViewById(R.id.uploadTopSeekBar)
