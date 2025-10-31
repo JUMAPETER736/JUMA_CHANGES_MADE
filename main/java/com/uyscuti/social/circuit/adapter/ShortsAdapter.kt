@@ -278,7 +278,7 @@ class ShortsAdapter(
         viewHolderList.add(viewHolder)
         return viewHolder
     }
-    
+
 
     fun ensureFollowDataExists(shortsEntity: ShortsEntity) {
         val authorId = shortsEntity.author.account._id
