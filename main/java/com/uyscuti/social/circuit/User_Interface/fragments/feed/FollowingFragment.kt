@@ -142,7 +142,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     private var isLoading = false
     private var hasMoreData = true
     private var parentFragment: FeedFragment? = null
-
+    private val followingUserMap = mutableMapOf<String, String>()
     var bitmap: Bitmap? = null
     private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
     private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
@@ -389,71 +389,143 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
     }
 
+
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     fun getAllFeed(page: Int) {
-
-        val TAG = "FollowingFragment"
+        Log.d(TAG, "════════════════════════════════════════")
         Log.d(TAG, "getAllFeed: page number $page")
+        Log.d(TAG, "Following ${followingUserIds.size} users")
+        Log.d(TAG, "════════════════════════════════════════")
 
         if (isLoading) {
             Log.d(TAG, "Already loading, skipping request")
             return
         }
 
+        // Ensure following list is loaded first
+        if (followingUserIds.isEmpty() && !hasLoadedFollowingList) {
+            Log.d(TAG, "Following list not loaded yet, loading now...")
+            lifecycleScope.launch {
+                loadFollowingUserIds()
+                if (followingUserIds.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        progressBar.visibility = View.GONE
+                        Toast.makeText(
+                            requireContext(),
+                            "You're not following anyone yet. Follow some users to see their posts here!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    return@launch
+                }
+                // Now load posts
+                loadPostsFromFollowing(page)
+            }
+            return
+        }
+
+        loadPostsFromFollowing(page)
+    }
+
+    private fun loadPostsFromFollowing(page: Int) {
         isLoading = true
         progressBar.visibility = View.VISIBLE
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                if (page == 1 && !hasLoadedFollowingList) {
-                    Log.d(TAG, "First load - fetching following list...")
-                    loadFollowingUserIds()
+                val currentUserId = getUserId(requireContext())
 
-                    delay(800)
+                Log.d(TAG, "────────────────────────────────────────")
+                Log.d(TAG, "Loading page $page for ${followingUserIds.size} following users")
+                Log.d(TAG, "────────────────────────────────────────")
 
-                    if (followingUserIds.isEmpty()) {
-                        withContext(Dispatchers.Main) {
-                            progressBar.visibility = View.GONE
-                            isLoading = false
-                            Toast.makeText(
-                                requireContext(),
-                                "You're not following anyone yet",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                        return@launch
+                val response = retrofitInstance.apiService.getAllFeed(page.toString())
+
+                if (!response.isSuccessful) {
+                    withContext(Dispatchers.Main) {
+                        progressBar.visibility = View.GONE
+                        isLoading = false
+                        Toast.makeText(
+                            requireContext(),
+                            "Failed to load posts: ${response.code()}",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
-
-                    // Load multiple pages initially to get posts from all followed users
-                    Log.d(TAG, "Loading multiple pages to find posts from all ${followingUserIds.size} followed users...")
-                    loadMultiplePagesInitially()
                     return@launch
                 }
 
-                // Regular single page load for pagination
-                loadSinglePage(page)
+                val responseBody = response.body()
+                if (responseBody == null) {
+                    withContext(Dispatchers.Main) {
+                        progressBar.visibility = View.GONE
+                        isLoading = false
+                        handleError("Empty response from server")
+                    }
+                    return@launch
+                }
 
-            } catch (e: JsonSyntaxException) {
-                Log.e(TAG, "JSON parsing error: ${e.message}", e)
+                val allPosts = responseBody.data.data.posts
+                Log.d(TAG, "📥 Received ${allPosts.size} total posts from API")
+
+                // STRICT FILTERING: Only posts from following users
+                val followingPosts = allPosts.filter { post ->
+                    val authorId = post.author?.account?._id
+                    val authorUsername = post.author?.account?.username ?: "Unknown"
+
+                    if (authorId.isNullOrEmpty()) {
+                        Log.d(TAG, "❌ Skipped: Post with null/empty author ID")
+                        return@filter false
+                    }
+
+                    if (authorId == currentUserId) {
+                        Log.d(TAG, "🚫 EXCLUDED: My own post (@$authorUsername)")
+                        return@filter false
+                    }
+
+                    val isFollowing = followingUserIds.contains(authorId)
+
+                    if (isFollowing) {
+                        Log.d(TAG, "✅ INCLUDED: @$authorUsername (ID: $authorId)")
+                    } else {
+                        Log.d(TAG, "❌ FILTERED OUT: @$authorUsername (ID: $authorId) - NOT FOLLOWING")
+                    }
+
+                    isFollowing
+                }
+
+                Log.d(TAG, "════════════════════════════════════════")
+                Log.d(TAG, "✨ RESULT: ${followingPosts.size} posts from following users")
+                Log.d(TAG, "📊 Filtered out: ${allPosts.size - followingPosts.size} posts")
+                Log.d(TAG, "════════════════════════════════════════")
+
                 withContext(Dispatchers.Main) {
                     progressBar.visibility = View.GONE
                     isLoading = false
-                    handleError("Invalid server response")
+
+                    if (followingPosts.isNotEmpty()) {
+                        getFeedViewModel.addAllFeedData(followingPosts.toMutableList())
+                        getFeedViewModel.filterOutUserPosts(currentUserId)
+
+                        // Double-check filtering before display
+                        val finalFilteredData = getFeedViewModel.getAllFeedData().filter { post ->
+                            val authorId = post.author?.account?._id
+                            !authorId.isNullOrEmpty() &&
+                                    authorId != currentUserId &&
+                                    followingUserIds.contains(authorId)
+                        }
+
+                        followedPostsAdapter.submitItems(finalFilteredData.toMutableList())
+                    } else if (page == 1) {
+                        Toast.makeText(
+                            requireContext(),
+                            "No posts from people you follow yet",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    hasMoreData = followingPosts.size >= 20
                 }
-            } catch (e: HttpException) {
-                Log.e(TAG, "HTTP error", e)
-                withContext(Dispatchers.Main) {
-                    progressBar.visibility = View.GONE
-                    isLoading = false
-                    handleError("Network error")
-                }
-            } catch (e: IOException) {
-                Log.e(TAG, "Network error: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    progressBar.visibility = View.GONE
-                    isLoading = false
-                    handleError("No internet connection")
-                }
+
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading posts: ${e.message}", e)
                 withContext(Dispatchers.Main) {
@@ -465,201 +537,17 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    // Load multiple pages initially
-    private suspend fun loadMultiplePagesInitially() {
-        val TAG = "FollowingFragment"
-        val currentUserId = getUserId(requireContext())
-        val allFollowingPosts = mutableListOf<Post>()
-        val pagesToLoad = 5 // Adjust this number based on your needs (5-10 pages recommended)
-        val uniqueAuthors = mutableSetOf<String>()
-
-        withContext(Dispatchers.Main) {
-            progressBar.visibility = View.VISIBLE
-        }
-
-        Log.d(TAG, "Starting to load $pagesToLoad pages...")
-
-        for (pageNum in 1..pagesToLoad) {
-            try {
-                Log.d(TAG, "Loading page $pageNum...")
-                val response = retrofitInstance.apiService.getAllFeed(pageNum.toString())
-
-                if (response.isSuccessful && response.body() != null) {
-                    val allPosts = response.body()!!.data.data.posts
-                    Log.d(TAG, "Page $pageNum: Received ${allPosts.size} total posts from API")
-
-                    // Filter posts from followed users
-                    val followingPosts = allPosts.filter { post ->
-                        val authorId = post.author?.account?._id
-                        val authorUsername = post.author?.account?.username
-
-                        if (authorId.isNullOrEmpty()) {
-                            Log.d(TAG, "Skipping post with null/empty author ID")
-                            return@filter false
-                        }
-
-                        // Exclude own posts
-                        if (authorId == currentUserId) {
-                            Log.d(TAG, "EXCLUDED: My own post (${authorUsername}, ID: $authorId)")
-                            return@filter false
-                        }
-
-                        // Only include posts from users I'm following
-                        val isFollowing = followingUserIds.contains(authorId)
-
-                        if (isFollowing) {
-                            uniqueAuthors.add(authorId)
-                            Log.d(TAG, "Page $pageNum - INCLUDED: $authorUsername (ID: $authorId)")
-                        } else {
-                            Log.d(TAG, "Page $pageNum - FILTERED OUT: $authorUsername (ID: $authorId) - not following")
-                        }
-
-                        isFollowing
-                    }
-
-                    allFollowingPosts.addAll(followingPosts)
-                    Log.d(TAG, "Page $pageNum: Found ${followingPosts.size} posts from followed users")
-                    Log.d(TAG, "Total so far: ${allFollowingPosts.size} posts from ${uniqueAuthors.size} unique users")
-
-                    // Optional: Stop early if we found posts from all followed users
-                    if (uniqueAuthors.size >= followingUserIds.size) {
-                        Log.d(TAG, "Found posts from all ${followingUserIds.size} followed users! Stopping early at page $pageNum")
-                        break
-                    }
-
-                } else {
-                    Log.e(TAG, "Page $pageNum: API error ${response.code()}")
-                }
-
-                // Small delay to avoid overwhelming the server
-                delay(200)
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading page $pageNum: ${e.message}", e)
-                // Continue to next page even if one fails
-            }
-        }
-
-        withContext(Dispatchers.Main) {
-            progressBar.visibility = View.GONE
-            isLoading = false
-
-            if (allFollowingPosts.isEmpty()) {
-                Toast.makeText(
-                    requireContext(),
-                    "No posts from people you follow yet",
-                    Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                Log.d(TAG, "FINAL RESULT: Loaded ${allFollowingPosts.size} posts from ${uniqueAuthors.size} different users")
-                Log.d(TAG, "Users with posts: $uniqueAuthors")
-                Log.d(TAG, "All followed users: $followingUserIds")
-
-                // Find users without posts
-                val usersWithoutPosts = followingUserIds.filterNot { uniqueAuthors.contains(it) }
-                if (usersWithoutPosts.isNotEmpty()) {
-                    Log.d(TAG, "Users you follow but have no posts (or posts are on later pages): $usersWithoutPosts")
-                }
-
-                getFeedViewModel.addAllFeedData(allFollowingPosts.toMutableList())
-                getFeedViewModel.filterOutUserPosts(currentUserId)
-                followedPostsAdapter.submitItems(getFeedViewModel.getAllFeedData())
-            }
-
-            hasMoreData = allFollowingPosts.size >= 20
-        }
-    }
-
-    //  Load a single page (for pagination)
-    private suspend fun loadSinglePage(page: Int) {
-        val TAG = "FollowingFragment"
-        val currentUserId = getUserId(requireContext())
-
-        Log.d(TAG, "Loading single page: $page")
-
-        val response = retrofitInstance.apiService.getAllFeed(page.toString())
-
-        if (!response.isSuccessful) {
-            withContext(Dispatchers.Main) {
-                progressBar.visibility = View.GONE
-                isLoading = false
-                Toast.makeText(
-                    requireContext(),
-                    "Failed to load posts: ${response.code()}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-            return
-        }
-
-        val responseBody = response.body()
-        if (responseBody == null) {
-            withContext(Dispatchers.Main) {
-                progressBar.visibility = View.GONE
-                isLoading = false
-                handleError("Empty response from server")
-            }
-            return
-        }
-
-        val allPosts = responseBody.data.data.posts
-        Log.d(TAG, "Total posts received from API: ${allPosts.size}")
-
-        // Filter: Exclude own posts AND only show posts from following users
-        val followingPosts = allPosts.filter { post ->
-            val authorId = post.author?.account?._id
-            val authorUsername = post.author?.account?.username
-
-            if (authorId.isNullOrEmpty()) {
-                Log.d(TAG, "❌ Skipping post with null/empty author ID")
-                return@filter false
-            }
-
-            // Exclude own posts
-            if (authorId == currentUserId) {
-                Log.d(TAG, "🚫 EXCLUDED: My own post (${authorUsername}, ID: $authorId)")
-                return@filter false
-            }
-
-            // Only include posts from users I'm following
-            val isFollowing = followingUserIds.contains(authorId)
-
-            Log.d(TAG, if (isFollowing) {
-                "✅ INCLUDED: $authorUsername (ID: $authorId)"
-            } else {
-                "❌ FILTERED OUT: $authorUsername (ID: $authorId) - not following"
-            })
-
-            isFollowing
-        }
-
-        Log.d(TAG, "Filtered to ${followingPosts.size} posts from following users (excluding own posts)")
-
-        withContext(Dispatchers.Main) {
-            progressBar.visibility = View.GONE
-            isLoading = false
-
-            if (followingPosts.isNotEmpty()) {
-                getFeedViewModel.addAllFeedData(followingPosts.toMutableList())
-                getFeedViewModel.filterOutUserPosts(currentUserId)
-                followedPostsAdapter.submitItems(getFeedViewModel.getAllFeedData())
-            }
-
-            hasMoreData = followingPosts.size >= 20
-        }
-    }
-
     private suspend fun loadFollowingUserIds() {
         try {
-            Log.d(TAG, "loadFollowingUserIds: Starting to load following list...")
+            Log.d(TAG, "════════════════════════════════════════")
+            Log.d(TAG, "🔄 Loading following list...")
+            Log.d(TAG, "════════════════════════════════════════")
 
             val myUsername = getUsername(requireContext())
             if (myUsername.isEmpty()) {
-                Log.e(TAG, "loadFollowingUserIds: Username is empty")
+                Log.e(TAG, "❌ Username is empty, cannot load following list")
                 return
             }
-
-            Log.d(TAG, "loadFollowingUserIds: Fetching for username: $myUsername")
 
             val response = retrofitInstance.apiService.getOtherUserFollowing(
                 username = myUsername,
@@ -671,30 +559,46 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 val followingUsers = response.body()!!.data
 
                 followingUserIds.clear()
+                followingUserMap.clear()
 
                 followingUsers?.forEach { user ->
                     val userId = user._id
-
-                    Log.d(TAG, "Processing user: ${user.username}")
-                    Log.d(TAG, "  - user._id: $userId")
+                    val username = user.username
 
                     if (userId.isNotEmpty()) {
                         followingUserIds.add(userId)
+                        followingUserMap[userId] = username
+                        Log.d(TAG, "  ✓ Following: @$username (ID: $userId)")
                     }
                 }
 
                 hasLoadedFollowingList = true
-                Log.d(TAG, "✅ Successfully loaded ${followingUserIds.size} following user IDs")
-                Log.d(TAG, "Following IDs: $followingUserIds")
+
+                Log.d(TAG, "════════════════════════════════════════")
+                Log.d(TAG, "✅ Successfully loaded ${followingUserIds.size} following users")
+                Log.d(TAG, "════════════════════════════════════════")
 
             } else {
-                Log.e(TAG, "API error: ${response.code()}")
-                Log.e(TAG, "Error body: ${response.errorBody()?.string()}")
+                Log.e(TAG, "❌ API error: ${response.code()}")
             }
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading following list: ${e.message}", e)
+            Log.e(TAG, "❌ Error loading following list: ${e.message}", e)
         }
+    }
+
+    private fun refreshFeedAfterUnfollow() {
+        val currentUserId = getUserId(requireContext())
+        val filteredData = getFeedViewModel.getAllFeedData().filter { post ->
+            val authorId = post.author?.account?._id
+            !authorId.isNullOrEmpty() &&
+                    authorId != currentUserId &&
+                    followingUserIds.contains(authorId)
+        }
+
+        followedPostsAdapter.submitItems(filteredData.toMutableList())
+
+        Log.d(TAG, "🔄 Refreshed feed: ${filteredData.size} posts remaining")
     }
 
     private fun handleError(message: String) {
@@ -745,7 +649,33 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
     }
 
+    @SuppressLint("SetTextI18n")
+    override fun followButtonClicked(
+        followUnFollowEntity: FollowUnFollowEntity,
+        followButton: AppCompatButton
+    ) {
+        followButton.setOnClickListener(null)
 
+        if (followUnFollowEntity.isFollowing) {
+            followButton.text = "Unfollow"
+            followButton.visibility = View.GONE
+
+            followButton.setOnClickListener {
+                followUnFollowEntity.isFollowing = false
+                followButton.visibility = View.GONE
+
+                // Remove user from following list
+                followingUserIds.remove(followUnFollowEntity.userId)
+                Log.d(TAG, "👋 Unfollowed user: ${followUnFollowEntity.userId}")
+                Log.d(TAG, "Now following ${followingUserIds.size} users")
+
+                // Refresh feed to remove their posts
+                refreshFeedAfterUnfollow()
+            }
+        } else {
+            followButton.visibility = View.GONE
+        }
+    }
 
     override fun likeUnLikeFeed(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         try {
@@ -1339,38 +1269,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
 
     }
-
-
-    @SuppressLint("SetTextI18n")
-    override fun followButtonClicked(
-        followUnFollowEntity: FollowUnFollowEntity,
-        followButton: AppCompatButton
-    ) {
-        followButton.setOnClickListener(null)
-
-        if (followUnFollowEntity.isFollowing) {
-            // Show "Un follow"
-            followButton.text = "Un follow"
-            followButton.visibility = View.VISIBLE
-            Log.d("FollowStatus",
-                "Showing 'Un follow' for followed user: ${followUnFollowEntity.userId}")
-
-            followButton.setOnClickListener {
-                // User unfollows
-                followUnFollowEntity.isFollowing = false
-                followButton.visibility = View.GONE  // Hide button instead of showing "Follow"
-                Log.d("FollowStatus",
-                    "User unfollowed and button hidden: ${followUnFollowEntity.userId}")
-
-
-            }
-        } else {
-            // If needed, handle the unfollowed user state — maybe keep button hidden?
-            // Or, if follow is allowed again, implement here
-            followButton.visibility = View.GONE
-        }
-    }
-
 
 
 

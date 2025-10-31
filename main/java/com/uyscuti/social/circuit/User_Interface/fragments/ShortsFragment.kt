@@ -660,7 +660,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                             backPressCount = 0
                         }
                     }
-                }) 
+                })
 
 
             }
