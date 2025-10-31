@@ -359,10 +359,24 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 }
             }
 
-            getFeedViewModel.isSingleFeedAvailable.observe(
-                viewLifecycleOwner) { isDataAvailable ->
+            getFeedViewModel.isFeedDataAvailable.observe(viewLifecycleOwner) { isDataAvailable ->
                 if (isDataAvailable) {
-                    Log.d(TAG, "getPosts: data is available")
+                    getFeedViewModel.filterOutUserPosts(currentUserId)
+
+                    val feedData = getFeedViewModel.getAllFeedData()
+
+                    // DEBUG: Log what's about to be displayed
+                    Log.d(TAG, "📱 DISPLAYING ${feedData.size} posts:")
+                    feedData.forEachIndexed { index, post ->
+                        val author = post.author?.account?.username ?: "Unknown"
+                        val authorId = post.author?.account?._id ?: "null"
+                        val isRepost = post.originalPost.isNotEmpty()
+                        Log.d(TAG, "  [$index] @$author (ID: $authorId) ${if (isRepost) "[REPOST]" else ""}")
+                    }
+
+                    followedPostsAdapter.submitItems(feedData)
+                    followedPostsAdapter.addFollowList(getFeedViewModel.getFollowList())
+
 
                     // Filter before displaying
                     getFeedViewModel.filterOutUserPosts(currentUserId)
