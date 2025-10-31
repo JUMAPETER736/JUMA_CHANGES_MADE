@@ -3,9 +3,9 @@ package com.uyscuti.social.circuit.adapter
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.os.Looper
-import android.transition.Transition
 import android.util.Log
 import android.view.LayoutInflater
 import androidx.core.content.ContextCompat
@@ -23,9 +23,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -44,6 +41,9 @@ import com.uyscuti.social.core.common.data.room.entity.*
 import com.uyscuti.social.network.utils.LocalStorage
 import org.greenrobot.eventbus.EventBus
 import java.util.Date
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
+
 
 // Constants
 private const val TAG = "ShortsAdapter"
@@ -538,23 +538,20 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
-    internal fun loadThumbnail(url: String) {
+    fun loadThumbnail(url: String) {
         Glide.with(itemView.context)
             .load(url)
-            .apply(RequestOptions.bitmapTransform(CircleCrop()).placeholder(R.drawable.flash21))
+            .apply(RequestOptions.bitmapTransform(CircleCrop()))
+            .apply(RequestOptions.placeholderOf(R.drawable.flash21))
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(object : CustomTarget<Drawable>() {
-                override fun onResourceReady(
-                    resource: Drawable,
-                    transition: Transition<in Drawable>?
-                ) {
-                    // thumbnail is ready – store it but **keep it hidden**
+                override fun onResourceReady(resource: Drawable, transition: Transition<in Drawable>?) {
                     thumbnailImageView.setImageDrawable(resource)
                     isThumbnailPrepared = true
+                    // Keep hidden until first frame
+                    thumbnailImageView.visibility = View.GONE
                 }
-
                 override fun onLoadCleared(placeholder: Drawable?) = Unit
-
             })
     }
 
