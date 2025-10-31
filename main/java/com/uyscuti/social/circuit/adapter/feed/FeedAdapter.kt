@@ -4089,44 +4089,33 @@ class FeedAdapter(
 
             val repostedUser = data.repostedUser
             if (repostedUser != null) {
-                // This is an actual repost - use reposted user data
-                feedOwnerId = repostedUser._id
-                profilePicUrl = repostedUser.avatar?.url
-                feedOwnerUsername = repostedUser.username
+                // ---- REPOSTED USER (the one who actually reposted) ----
+                feedOwnerId      = repostedUser._id
+                profilePicUrl    = repostedUser.avatar?.url
+                // ---- NEW: use firstName / lastName if they exist ----
+                feedOwnerUsername = when {
+                    repostedUser.firstName.isNotBlank() && repostedUser.lastName.isNotBlank() ->
+                        "${repostedUser.firstName} ${repostedUser.lastName}"
+                    repostedUser.firstName.isNotBlank() -> repostedUser.firstName
+                    repostedUser.lastName.isNotBlank()  -> repostedUser.lastName
+                    else -> repostedUser.username               // fallback
+                }
                 userHandle = "@${repostedUser.username}"
                 Log.d(tag, "Using reposted user: $feedOwnerUsername")
             } else {
-                // This is a regular post being shown in repost format - use main author
+                // ---- FALLBACK to the main author (same as before) ----
                 Log.w(tag, "RepostedUser is null for post ${data._id}, using main author")
                 val author = data.author
-                feedOwnerId = author._id
-                profilePicUrl = author.account.avatar?.url ?: author.account.avatar.url
-
-                // Build display name from author data
-                feedOwnerUsername = if (author.firstName.isNotBlank() && author.lastName.isNotBlank()) {
-                    "${author.firstName} ${author.lastName}"
-                } else if (author.firstName.isNotBlank()) {
-                    author.firstName
-                } else if (author.lastName.isNotBlank()) {
-                    author.lastName
-                } else if (author.account.username.isNotBlank()) {
-                    author.account.username
-                } else {
-                    "Unknown User"
-                }
-
-                userHandle = if (author.account.username.isNotBlank()) {
-                    "@${author.account.username}"
-                } else {
-                    "@unknown"
-                }
-
+                feedOwnerId      = author._id
+                profilePicUrl    = author.account.avatar?.url
+                feedOwnerUsername = buildDisplayName(author)          // existing helper
+                userHandle       = "@${author.account.username}"
                 Log.d(tag, "Using main author: $feedOwnerUsername $userHandle")
             }
 
-            // Set the UI elements
+            // ---- UI binding (unchanged) ----
             repostedUserName.text = feedOwnerUsername
-            tvUserHandle.text = userHandle
+            tvUserHandle.text     = userHandle
 
             if (!profilePicUrl.isNullOrBlank()) {
                 Glide.with(itemView.context)
@@ -4140,20 +4129,9 @@ class FeedAdapter(
                 userProfileImage.setImageResource(R.drawable.flash21)
             }
 
-            // Update the post tag text based on whether this is a repost or regular post
-            tvPostTag.text = if (repostedUser != null) {
-                "📱 Had to Repost This! 📱"
-            } else {
-                "📱 Shared a Post! 📱"
-            }
-
-            if (!data.content.isNullOrBlank()) {
-                userComment.visibility = View.VISIBLE
-                userComment.text = data.content
-            } else {
-                userComment.visibility = View.GONE
-            }
-
+            tvPostTag.text = if (repostedUser != null) "Had to Repost This!" else "Shared a Post!"
+            userComment.visibility = if (!data.content.isNullOrBlank()) View.VISIBLE else View.GONE
+            userComment.text = data.content
             setupRepostHashtags(data)
         }
 
