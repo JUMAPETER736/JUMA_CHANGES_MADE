@@ -452,10 +452,9 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
-// ULTRA-STRICT FOLLOWING FILTER
-// ONLY show posts where EVERYONE involved is in your following list
-// No strangers, no random people - ONLY people you follow
+// ═══════════════════════════════════════════════════════════════
+// SIMPLE RULE: Only show posts BY people I follow
+// I don't care who they repost from - if I don't follow the POSTER, HIDE IT
 // ═══════════════════════════════════════════════════════════════
 
     private suspend fun loadAllFollowingPostsInitially() {
@@ -468,9 +467,10 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         withContext(Dispatchers.Main) { progressBar.visibility = View.VISIBLE }
 
         Log.d(TAG, "═══════════════════════════════════════")
-        Log.d(TAG, "STRICT FOLLOWING-ONLY FEED")
+        Log.d(TAG, "SIMPLE FOLLOWING FEED RULE:")
         Log.d(TAG, "Following ${followingUserIds.size} users")
-        Log.d(TAG, "Will ONLY show posts from these ${followingUserIds.size} people")
+        Log.d(TAG, "ONLY show posts BY these ${followingUserIds.size} people")
+        Log.d(TAG, "Don't care about reposts content - only WHO posted it")
         Log.d(TAG, "═══════════════════════════════════════")
 
         while (uniqueAuthors.size < followingUserIds.size && pageNum <= maxPages) {
@@ -483,85 +483,49 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                 val filtered = pagePosts.mapNotNull { post ->
                     try {
-                        val authorAccountId = post.author?.account?._id
-                        val authorUsername = post.author?.account?.username?.trim()?.lowercase()
+                        // ═══════════════════════════════════════
+                        // STEP 1: WHO POSTED THIS?
+                        // ═══════════════════════════════════════
+
+                        val posterAccountId: String
+                        val posterUsername: String
+
+                        if (post.repostedUser != null) {
+                            // This is a REPOST - check who REPOSTED it (not original author)
+                            posterAccountId = post.repostedUser.owner
+                            posterUsername = post.repostedUser.username.trim().lowercase()
+                            Log.d(TAG, "  📌 REPOST by @${post.repostedUser.username} (ID: $posterAccountId)")
+                        } else {
+                            // This is an ORIGINAL POST - check the author
+                            posterAccountId = post.author?.account?._id ?: return@mapNotNull null
+                            posterUsername = post.author.account.username.trim().lowercase()
+                            Log.d(TAG, "  📌 ORIGINAL POST by @${post.author.account.username} (ID: $posterAccountId)")
+                        }
 
                         // Skip own posts
-                        if (authorAccountId.isNullOrBlank() || authorAccountId == currentUserId) {
+                        if (posterAccountId == currentUserId) {
+                            Log.d(TAG, "    ⊘ This is MY post - SKIPPING")
                             return@mapNotNull null
                         }
 
                         // ═══════════════════════════════════════
-                        // CASE 1: ORIGINAL POST
+                        // STEP 2: DO I FOLLOW THE POSTER?
                         // ═══════════════════════════════════════
-                        if (post.originalPost == null || post.originalPost.isEmpty()) {
-                            // Check if author is in YOUR following list
-                            val isFollowingById = followingUserIds.contains(authorAccountId)
-                            val isFollowingByUsername = authorUsername?.let { username ->
-                                followingUserMap.values.any { it.trim().lowercase() == username }
-                            } ?: false
 
-                            if (isFollowingById || isFollowingByUsername) {
-                                uniqueAuthors.add(authorAccountId)
-                                Log.d(TAG, "  ✅ ORIGINAL by @$authorUsername - IN YOUR FOLLOWING LIST")
-                                return@mapNotNull post
-                            } else {
-                                Log.d(TAG, "  ❌ ORIGINAL by @$authorUsername - NOT IN FOLLOWING LIST - EXCLUDED")
-                                return@mapNotNull null
-                            }
+                        val isFollowingById = followingUserIds.contains(posterAccountId)
+                        val isFollowingByUsername = followingUserMap.values.any {
+                            it.trim().lowercase() == posterUsername
                         }
 
-                        // ═══════════════════════════════════════
-                        // CASE 2: REPOST
-                        // Must check BOTH reposter AND original author
-                        // ═══════════════════════════════════════
+                        Log.d(TAG, "    • Do I follow this person by ID? $isFollowingById")
+                        Log.d(TAG, "    • Do I follow this person by username? $isFollowingByUsername")
 
-                        // Get reposter info
-                        val reposterAccountId = post.repostedUser?.owner ?: authorAccountId
-                        val reposterUsername = post.repostedUser?.username?.trim()?.lowercase()
-                            ?: authorUsername
-
-                        // Get original author info
-                        val originalAuthor = post.originalPost?.firstOrNull()?.author
-                        val originalAuthorAccountId = originalAuthor?.owner
-                        val originalAuthorUsername = originalAuthor?.account?.username?.trim()?.lowercase()
-
-                        Log.d(TAG, "  📌 REPOST ANALYSIS:")
-                        Log.d(TAG, "    • Reposter: @$reposterUsername (ID: $reposterAccountId)")
-                        Log.d(TAG, "    • Original Author: @$originalAuthorUsername (ID: $originalAuthorAccountId)")
-
-                        // ✅ Check if YOU follow the REPOSTER
-                        val followingReposterById = followingUserIds.contains(reposterAccountId)
-                        val followingReposterByUsername = reposterUsername?.let { username ->
-                            followingUserMap.values.any { it.trim().lowercase() == username }
-                        } ?: false
-                        val isFollowingReposter = followingReposterById || followingReposterByUsername
-
-                        // ✅ Check if YOU follow the ORIGINAL AUTHOR
-                        val followingOriginalById = originalAuthorAccountId?.let {
-                            followingUserIds.contains(it)
-                        } ?: false
-                        val followingOriginalByUsername = originalAuthorUsername?.let { username ->
-                            followingUserMap.values.any { it.trim().lowercase() == username }
-                        } ?: false
-                        val isFollowingOriginal = followingOriginalById || followingOriginalByUsername
-
-                        Log.d(TAG, "    • You follow reposter? $isFollowingReposter")
-                        Log.d(TAG, "    • You follow original author? $isFollowingOriginal")
-
-                        // ✅✅✅ CRITICAL: ONLY include if you follow BOTH people
-                        if (isFollowingReposter && isFollowingOriginal) {
-                            uniqueAuthors.add(reposterAccountId)
-                            Log.d(TAG, "  ✅✅ REPOST INCLUDED - YOU FOLLOW BOTH REPOSTER AND ORIGINAL AUTHOR")
+                        if (isFollowingById || isFollowingByUsername) {
+                            uniqueAuthors.add(posterAccountId)
+                            Log.d(TAG, "    ✅ YES, I follow @$posterUsername - INCLUDE THIS POST")
                             return@mapNotNull post
                         } else {
-                            Log.d(TAG, "  ❌❌ REPOST EXCLUDED - YOU DON'T FOLLOW BOTH PEOPLE")
-                            if (!isFollowingReposter) {
-                                Log.d(TAG, "      → Reposter @$reposterUsername is NOT in your following list")
-                            }
-                            if (!isFollowingOriginal) {
-                                Log.d(TAG, "      → Original author @$originalAuthorUsername is NOT in your following list")
-                            }
+                            Log.d(TAG, "    ❌ NO, I DON'T follow @$posterUsername - EXCLUDE THIS POST")
                             return@mapNotNull null
                         }
 
@@ -575,10 +539,9 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                 Log.d(TAG, "───────────────────────────────────────")
                 Log.d(TAG, "Page $pageNum Results:")
-                Log.d(TAG, "  Posts in page: ${pagePosts.size}")
-                Log.d(TAG, "  Posts included: ${filtered.size}")
-                Log.d(TAG, "  Posts excluded: ${pagePosts.size - filtered.size}")
-                Log.d(TAG, "  Total accumulated: ${allFollowingPosts.size}")
+                Log.d(TAG, "  Total posts: ${pagePosts.size}")
+                Log.d(TAG, "  Included: ${filtered.size}")
+                Log.d(TAG, "  Excluded: ${pagePosts.size - filtered.size}")
                 Log.d(TAG, "───────────────────────────────────────")
 
                 if (uniqueAuthors.size >= followingUserIds.size) break
@@ -595,10 +558,9 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             isLoading = false
 
             Log.d(TAG, "═══════════════════════════════════════")
-            Log.d(TAG, "FINAL RESULTS:")
-            Log.d(TAG, "Total posts loaded: ${allFollowingPosts.size}")
-            Log.d(TAG, "ALL posts are from people you follow")
-            Log.d(TAG, "NO strangers, NO random people")
+            Log.d(TAG, "LOADING COMPLETE:")
+            Log.d(TAG, "Total posts: ${allFollowingPosts.size}")
+            Log.d(TAG, "ALL posts are BY people you follow")
             Log.d(TAG, "═══════════════════════════════════════")
 
             if (allFollowingPosts.isEmpty()) {
@@ -617,7 +579,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    // Same strict logic for pagination
+    // Same simple logic for pagination
     private fun loadPostsFromFollowing(page: Int) {
         if (isLoading) return
         isLoading = true
@@ -640,44 +602,28 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                 val filtered = pagePosts.mapNotNull { post ->
                     try {
-                        val authorAccountId = post.author?.account?._id
-                        val authorUsername = post.author?.account?.username?.trim()?.lowercase()
+                        // WHO POSTED THIS?
+                        val posterAccountId: String
+                        val posterUsername: String
 
-                        if (authorAccountId.isNullOrBlank() || authorAccountId == currentUserId) {
-                            return@mapNotNull null
+                        if (post.repostedUser != null) {
+                            posterAccountId = post.repostedUser.owner
+                            posterUsername = post.repostedUser.username.trim().lowercase()
+                        } else {
+                            posterAccountId = post.author?.account?._id ?: return@mapNotNull null
+                            posterUsername = post.author.account.username.trim().lowercase()
                         }
 
-                        // ORIGINAL POST
-                        if (post.originalPost == null || post.originalPost.isEmpty()) {
-                            val isFollowingById = followingUserIds.contains(authorAccountId)
-                            val isFollowingByUsername = authorUsername?.let { username ->
-                                followingUserMap.values.any { it.trim().lowercase() == username }
-                            } ?: false
+                        // Skip own posts
+                        if (posterAccountId == currentUserId) return@mapNotNull null
 
-                            return@mapNotNull if (isFollowingById || isFollowingByUsername) post else null
+                        // DO I FOLLOW THE POSTER?
+                        val isFollowingById = followingUserIds.contains(posterAccountId)
+                        val isFollowingByUsername = followingUserMap.values.any {
+                            it.trim().lowercase() == posterUsername
                         }
 
-                        // REPOST - Check BOTH people
-                        val reposterAccountId = post.repostedUser?.owner ?: authorAccountId
-                        val reposterUsername = post.repostedUser?.username?.trim()?.lowercase() ?: authorUsername
-
-                        val originalAuthor = post.originalPost?.firstOrNull()?.author
-                        val originalAuthorAccountId = originalAuthor?.owner
-                        val originalAuthorUsername = originalAuthor?.account?.username?.trim()?.lowercase()
-
-                        val isFollowingReposter = followingUserIds.contains(reposterAccountId) ||
-                                (reposterUsername?.let { username ->
-                                    followingUserMap.values.any { it.trim().lowercase() == username }
-                                } ?: false)
-
-                        val isFollowingOriginal = (originalAuthorAccountId?.let {
-                            followingUserIds.contains(it)
-                        } ?: false) || (originalAuthorUsername?.let { username ->
-                            followingUserMap.values.any { it.trim().lowercase() == username }
-                        } ?: false)
-
-                        // ONLY include if you follow BOTH
-                        return@mapNotNull if (isFollowingReposter && isFollowingOriginal) post else null
+                        return@mapNotNull if (isFollowingById || isFollowingByUsername) post else null
 
                     } catch (e: Exception) {
                         return@mapNotNull null
@@ -705,7 +651,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    // Same strict logic for refresh after unfollow
+    // Same simple logic for refresh after unfollow
     private fun refreshFeedAfterUnfollow() {
         val currentUserId = getUserId(requireContext())
         val allPosts = getFeedViewModel.getAllFeedData()
@@ -713,49 +659,38 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         Log.d(TAG, "═══════════════════════════════════════")
         Log.d(TAG, "REFRESHING AFTER UNFOLLOW")
         Log.d(TAG, "Now following ${followingUserIds.size} users")
-        Log.d(TAG, "Filtering out posts from people you no longer follow")
         Log.d(TAG, "═══════════════════════════════════════")
 
         val filteredData = allPosts.mapNotNull { post ->
             try {
-                val authorAccountId = post.author?.account?._id
-                val authorUsername = post.author?.account?.username?.trim()?.lowercase()
+                // WHO POSTED THIS?
+                val posterAccountId: String
+                val posterUsername: String
 
-                if (authorAccountId.isNullOrBlank() || authorAccountId == currentUserId) {
+                if (post.repostedUser != null) {
+                    posterAccountId = post.repostedUser.owner
+                    posterUsername = post.repostedUser.username.trim().lowercase()
+                } else {
+                    posterAccountId = post.author?.account?._id ?: return@mapNotNull null
+                    posterUsername = post.author.account.username.trim().lowercase()
+                }
+
+                // Skip own posts
+                if (posterAccountId == currentUserId) return@mapNotNull null
+
+                // DO I FOLLOW THE POSTER?
+                val isFollowingById = followingUserIds.contains(posterAccountId)
+                val isFollowingByUsername = followingUserMap.values.any {
+                    it.trim().lowercase() == posterUsername
+                }
+
+                if (isFollowingById || isFollowingByUsername) {
+                    Log.d(TAG, "  ✓ Keeping post by @$posterUsername (I follow them)")
+                    return@mapNotNull post
+                } else {
+                    Log.d(TAG, "  ✗ Removing post by @$posterUsername (I don't follow them)")
                     return@mapNotNull null
                 }
-
-                // ORIGINAL POST
-                if (post.originalPost == null || post.originalPost.isEmpty()) {
-                    val isFollowingById = followingUserIds.contains(authorAccountId)
-                    val isFollowingByUsername = authorUsername?.let { username ->
-                        followingUserMap.values.any { it.trim().lowercase() == username }
-                    } ?: false
-
-                    return@mapNotNull if (isFollowingById || isFollowingByUsername) post else null
-                }
-
-                // REPOST - Check BOTH people
-                val reposterAccountId = post.repostedUser?.owner ?: authorAccountId
-                val reposterUsername = post.repostedUser?.username?.trim()?.lowercase() ?: authorUsername
-
-                val originalAuthor = post.originalPost?.firstOrNull()?.author
-                val originalAuthorAccountId = originalAuthor?.owner
-                val originalAuthorUsername = originalAuthor?.account?.username?.trim()?.lowercase()
-
-                val isFollowingReposter = followingUserIds.contains(reposterAccountId) ||
-                        (reposterUsername?.let { username ->
-                            followingUserMap.values.any { it.trim().lowercase() == username }
-                        } ?: false)
-
-                val isFollowingOriginal = (originalAuthorAccountId?.let {
-                    followingUserIds.contains(it)
-                } ?: false) || (originalAuthorUsername?.let { username ->
-                    followingUserMap.values.any { it.trim().lowercase() == username }
-                } ?: false)
-
-                // ONLY keep if you follow BOTH
-                return@mapNotNull if (isFollowingReposter && isFollowingOriginal) post else null
 
             } catch (e: Exception) {
                 return@mapNotNull null
@@ -770,7 +705,8 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         Log.d(TAG, "Removed: ${allPosts.size - filteredData.size} posts")
         Log.d(TAG, "═══════════════════════════════════════")
     }
-    
+
+
 
     private suspend fun loadFollowingUserIds() {
         try {
