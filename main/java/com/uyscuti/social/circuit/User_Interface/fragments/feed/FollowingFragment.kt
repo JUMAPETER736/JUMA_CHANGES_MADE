@@ -451,9 +451,9 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-// ✅ COMPLETE FIX: Show ONLY posts from following list
 
-    // CHANGE 1: loadAllFollowingPostsInitially() - Complete rewrite
+
+    //loadAllFollowingPostsInitially() - Complete rewrite
     private suspend fun loadAllFollowingPostsInitially() {
         val currentUserId = getUserId(requireContext())
         val allFollowingPosts = mutableListOf<Post>()
@@ -623,7 +623,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    // CHANGE 2: loadPostsFromFollowing() - Complete rewrite
+    //  loadPostsFromFollowing() - Complete rewrite
     private fun loadPostsFromFollowing(page: Int) {
         if (isLoading) return
         isLoading = true
@@ -731,7 +731,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    // CHANGE 3: refreshFeedAfterUnfollow() - Complete rewrite
+    //  refreshFeedAfterUnfollow() - Complete rewrite
     private fun refreshFeedAfterUnfollow() {
         val currentUserId = getUserId(requireContext())
 
@@ -803,7 +803,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         Log.d(TAG, "═══════════════════════════════════════")
     }
 
-    // ✅ CHANGE 1: Update loadFollowingUserIds() to also load usernames
+    //  Update loadFollowingUserIds() to also load usernames
     private suspend fun loadFollowingUserIds() {
         try {
             Log.d(TAG, "Loading following list...")
@@ -826,7 +826,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 followingUserIds.clear()
                 followingUserMap.clear()
 
-                // ✅ NEW: Create lists for both IDs and usernames
+                //  Create lists for both IDs and usernames
                 val followingIdsList = mutableListOf<String>()
                 val followingUsernamesList = mutableListOf<String>()
 
@@ -838,7 +838,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                         followingUserIds.add(userId)
                         followingUserMap[userId] = username
 
-                        // ✅ Add to both lists
+                        // Add to both lists
                         followingIdsList.add(userId)
                         followingUsernamesList.add(username)
 
@@ -848,7 +848,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                 hasLoadedFollowingList = true
 
-                // ✅ NEW: Update the adapter's cached lists
+                // Update the adapter's cached lists
                 if (::followedPostsAdapter.isInitialized) {
                     FeedAdapter.setCachedFollowingList(followingUserIds)
                     followedPostsAdapter.updateFollowingList(followingIdsList)
@@ -868,7 +868,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     }
 
 
-    // ✅ CHANGE 5: Update updateFollowingList() to sync with adapter
+    //  Update updateFollowingList() to sync with adapter
     fun updateFollowingList(followingIds: Set<String>) {
         Log.d("FollowingFragment", "Received ${followingIds.size} following IDs")
 
@@ -877,7 +877,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         this.followingUserIds.addAll(followingIds)
         this.hasLoadedFollowingList = true
 
-        // ✅ NEW: Extract usernames from followingUserMap
+        // Extract usernames from followingUserMap
         val followingUsernames = followingUserMap.values.toList()
 
         // Update adapter with BOTH IDs and usernames
