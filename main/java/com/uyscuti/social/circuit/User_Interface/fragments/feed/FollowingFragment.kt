@@ -395,7 +395,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
     }
 
-
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     fun getAllFeed(page: Int) {
 
@@ -452,11 +451,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-// ═══════════════════════════════════════════════════════════════
-// SIMPLE RULE: Only show posts BY people I follow
-// I don't care who they repost from - if I don't follow the POSTER, HIDE IT
-// ═══════════════════════════════════════════════════════════════
-
     private suspend fun loadAllFollowingPostsInitially() {
         val currentUserId = getUserId(requireContext())
         val allFollowingPosts = mutableListOf<Post>()
@@ -466,12 +460,12 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
         withContext(Dispatchers.Main) { progressBar.visibility = View.VISIBLE }
 
-        Log.d(TAG, "═══════════════════════════════════════")
+
         Log.d(TAG, "SIMPLE FOLLOWING FEED RULE:")
         Log.d(TAG, "Following ${followingUserIds.size} users")
         Log.d(TAG, "ONLY show posts BY these ${followingUserIds.size} people")
         Log.d(TAG, "Don't care about reposts content - only WHO posted it")
-        Log.d(TAG, "═══════════════════════════════════════")
+
 
         while (uniqueAuthors.size < followingUserIds.size && pageNum <= maxPages) {
             try {
@@ -479,7 +473,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 if (!response.isSuccessful || response.body() == null) break
 
                 val pagePosts = response.body()!!.data.data.posts
-                Log.d(TAG, "📦 Page $pageNum: ${pagePosts.size} posts")
+                Log.d(TAG, "Page $pageNum: ${pagePosts.size} posts")
 
                 val filtered = pagePosts.mapNotNull { post ->
                     try {
@@ -579,7 +573,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    // Same simple logic for pagination
     private fun loadPostsFromFollowing(page: Int) {
         if (isLoading) return
         isLoading = true
@@ -651,15 +644,14 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    // Same simple logic for refresh after unfollow
     private fun refreshFeedAfterUnfollow() {
         val currentUserId = getUserId(requireContext())
         val allPosts = getFeedViewModel.getAllFeedData()
 
-        Log.d(TAG, "═══════════════════════════════════════")
+
         Log.d(TAG, "REFRESHING AFTER UNFOLLOW")
         Log.d(TAG, "Now following ${followingUserIds.size} users")
-        Log.d(TAG, "═══════════════════════════════════════")
+
 
         val filteredData = allPosts.mapNotNull { post ->
             try {
@@ -699,14 +691,12 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
         followedPostsAdapter.submitItems(filteredData.toMutableList())
 
-        Log.d(TAG, "───────────────────────────────────────")
+
         Log.d(TAG, "Posts before: ${allPosts.size}")
         Log.d(TAG, "Posts after: ${filteredData.size}")
         Log.d(TAG, "Removed: ${allPosts.size - filteredData.size} posts")
-        Log.d(TAG, "═══════════════════════════════════════")
+
     }
-
-
 
     private suspend fun loadFollowingUserIds() {
         try {
@@ -771,8 +761,8 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    //  Update updateFollowingList() to sync with adapter
     fun updateFollowingList(followingIds: Set<String>) {
+
         Log.d("FollowingFragment", "Received ${followingIds.size} following IDs")
 
         // Update local set for filtering logic
@@ -827,8 +817,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         super.onDetach()
         Log.d(TAG, "onDetach: called")
     }
-
-
+    
     override fun onDestroyView() {
         super.onDestroyView()
         Log.d(TAG, "onDestroyView: called")
@@ -860,7 +849,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                 // Remove user from following list
                 followingUserIds.remove(followUnFollowEntity.userId)
-                Log.d(TAG, "👋 Unfollowed user: ${followUnFollowEntity.userId}")
+                Log.d(TAG, "Unfollowed user: ${followUnFollowEntity.userId}")
                 Log.d(TAG, "Now following ${followingUserIds.size} users")
 
                 // Refresh feed to remove their posts
@@ -995,6 +984,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     override fun moreOptionsClick(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
+
     ) {
         Log.d(TAG, "moreOptionsClick: More options clicked")
         val view: View = layoutInflater.inflate(
