@@ -2843,6 +2843,7 @@ class FeedAdapter(
             followButton.setOnClickListener { handleFollowButtonClick(feedOwnerId) }
         }
 
+        @SuppressLint("NotifyDataSetChanged")
         private fun handleFollowButtonClick(feedOwnerId: String) {
             YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
 
@@ -2856,7 +2857,7 @@ class FeedAdapter(
                 Log.d(TAG, "Now following $feedOwnerId")
             } else {
                 followButton.text = "Follow"
-                followButton.visibility = View.VISIBLE
+                followButton.visibility = View.GONE
                 (bindingAdapter as? FeedAdapter)?.removeFromFollowing(feedOwnerId)
                 FollowingManager(itemView.context).removeFromFollowing(feedOwnerId)
                 Log.d(TAG, "Unfollowed $feedOwnerId")
