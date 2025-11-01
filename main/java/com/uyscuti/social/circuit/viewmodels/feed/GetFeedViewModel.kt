@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.collections.remove
+import kotlin.text.clear
 
 private const val TAG = "GetFeedViewModel"
 

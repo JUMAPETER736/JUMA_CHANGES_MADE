@@ -458,14 +458,21 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         val uniqueAuthors = mutableSetOf<String>()
         val maxPages = 20
 
-        withContext(Dispatchers.Main) { progressBar.visibility = View.VISIBLE }
+        withContext(Dispatchers.Main) {
+            progressBar.visibility = View.VISIBLE
 
+            // ✅ CRITICAL: Clear old cached data before loading new data
+            getFeedViewModel.clearAllFeedData()
+            followedPostsAdapter.submitItems(mutableListOf())
+            Log.d(TAG, "🧹 CLEARED old cached posts from adapter and ViewModel")
+        }
 
+        Log.d(TAG, "═══════════════════════════════════════")
         Log.d(TAG, "SIMPLE FOLLOWING FEED RULE:")
         Log.d(TAG, "Following ${followingUserIds.size} users")
         Log.d(TAG, "ONLY show posts BY these ${followingUserIds.size} people")
         Log.d(TAG, "Don't care about reposts content - only WHO posted it")
-
+        Log.d(TAG, "═══════════════════════════════════════")
 
         while (uniqueAuthors.size < followingUserIds.size && pageNum <= maxPages) {
             try {
@@ -473,7 +480,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 if (!response.isSuccessful || response.body() == null) break
 
                 val pagePosts = response.body()!!.data.data.posts
-                Log.d(TAG, "Page $pageNum: ${pagePosts.size} posts")
+                Log.d(TAG, "📦 Page $pageNum: ${pagePosts.size} posts")
 
                 val filtered = pagePosts.mapNotNull { post ->
                     try {
@@ -558,21 +565,32 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             Log.d(TAG, "═══════════════════════════════════════")
 
             if (allFollowingPosts.isEmpty()) {
+                // ✅ Make sure adapter is empty
+                followedPostsAdapter.submitItems(mutableListOf())
                 Toast.makeText(
                     requireContext(),
                     "No posts yet from people you follow",
                     Toast.LENGTH_LONG
                 ).show()
             } else {
+                // ✅ CRITICAL: Clear old data first, then add new filtered data
+                getFeedViewModel.clearAllFeedData()
                 getFeedViewModel.addAllFeedData(allFollowingPosts.toMutableList())
                 getFeedViewModel.filterOutUserPosts(currentUserId)
-                followedPostsAdapter.submitItems(getFeedViewModel.getAllFeedData())
+
+                val finalPosts = getFeedViewModel.getAllFeedData()
+                Log.d(TAG, "📤 Submitting ${finalPosts.size} posts to adapter")
+                followedPostsAdapter.submitItems(finalPosts)
+
+                // ✅ Force adapter to refresh
+                followedPostsAdapter.notifyDataSetChanged()
             }
 
             hasMoreData = allFollowingPosts.size >= 20
         }
     }
 
+    // Same simple logic for pagination
     private fun loadPostsFromFollowing(page: Int) {
         if (isLoading) return
         isLoading = true
@@ -644,14 +662,15 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
+    // Same simple logic for refresh after unfollow
     private fun refreshFeedAfterUnfollow() {
         val currentUserId = getUserId(requireContext())
         val allPosts = getFeedViewModel.getAllFeedData()
 
-
+        Log.d(TAG, "═══════════════════════════════════════")
         Log.d(TAG, "REFRESHING AFTER UNFOLLOW")
         Log.d(TAG, "Now following ${followingUserIds.size} users")
-
+        Log.d(TAG, "═══════════════════════════════════════")
 
         val filteredData = allPosts.mapNotNull { post ->
             try {
@@ -691,11 +710,28 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
         followedPostsAdapter.submitItems(filteredData.toMutableList())
 
-
+        Log.d(TAG, "───────────────────────────────────────")
         Log.d(TAG, "Posts before: ${allPosts.size}")
         Log.d(TAG, "Posts after: ${filteredData.size}")
         Log.d(TAG, "Removed: ${allPosts.size - filteredData.size} posts")
+        Log.d(TAG, "═══════════════════════════════════════")
+    }
 
+    // ✅ Add this to your FollowingFragment - call it in onResume or when tab is selected
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
+    fun clearAndReloadFeed() {
+        Log.d(TAG, "🔄 Clearing and reloading Following feed")
+
+        // Clear all old data
+        getFeedViewModel.clearAllFeedData()
+        followedPostsAdapter.submitItems(mutableListOf())
+
+        // Reset state
+        hasLoadedFollowingList = false
+        isLoading = false
+
+        // Reload fresh data
+        getAllFeed(1)
     }
 
     private suspend fun loadFollowingUserIds() {
@@ -790,8 +826,14 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     override fun onResume() {
         super.onResume()
+
+        if (isVisible) {
+            clearAndReloadFeed()
+        }
+
         getFeedViewModel.isResuming = true
         Log.d("getCurrentLocation", "onResume: ${getFeedViewModel.isResuming}")
         Log.d(TAG, "onResume: currentAdapterPosition $currentAdapterPosition")
@@ -817,7 +859,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         super.onDetach()
         Log.d(TAG, "onDetach: called")
     }
-    
+
     override fun onDestroyView() {
         super.onDestroyView()
         Log.d(TAG, "onDestroyView: called")
