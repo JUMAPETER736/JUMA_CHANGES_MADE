@@ -76,6 +76,7 @@ import com.uyscuti.social.network.api.response.posts.FileType
 import java.text.SimpleDateFormat
 import java.util.*
 import com.uyscuti.social.business.retro.model.User
+import com.uyscuti.social.circuit.FollowingManager
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.circuit.model.FeedCommentClicked
 import com.uyscuti.social.network.utils.LocalStorage
@@ -83,6 +84,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import kotlin.math.abs
 import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
+import com.uyscuti.social.circuit.adapter.feed.FeedAdapter
 import com.uyscuti.social.circuit.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.social.circuit.model.GoToUserProfileFragment
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
@@ -137,6 +139,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private var originalPost: OriginalPost? = null
     private var currentPost: Post? = null
     private var currentPosition: Int = 0
+    private var followingUserIds: Set<String> = emptySet()
 
     // Counters
 
@@ -188,7 +191,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private lateinit var followButton: AppCompatButton
     private var isFollowing = false
 
-    private fun handleFollowButtonClick() = toggleFollow()
+
 
 
     private val mainActivity: MainActivity?
@@ -602,6 +605,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private fun setupClickListeners(data: Post) {
         Log.d(TAG, "setupClickListeners - Data type: ${data::class.java.simpleName}, ID: ${data._id}")
 
+        setupInitialFollowButtonState(data)
         cancelButton.setOnClickListener {
             Log.d(TAG, "Cancel button clicked")
             it.isEnabled = false
@@ -812,6 +816,16 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         Log.d(TAG, "onDestroy: Cleanup")
     }
 
+    private fun showRepostHeader(post: Post) {
+        // Show who reposted this
+        post.repostedUser?.let { repostedUser ->
+            // You might want to add a "Reposted by" section in your UI
+            Log.d("RepostInfo", "Reposted by: ${repostedUser.username}")
+
+
+        }
+    }
+
     private fun populatePostData(post: Post) {
         Log.d(TAG, "populatePostData: Starting to populate data for post ${post._id}")
         Log.d(TAG, "populatePostData: Post comments = ${post.comments}")
@@ -1012,6 +1026,132 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
+    private fun handleFollowButtonClick() {
+        post?.let { currentPost ->
+            // ✅ Extract ACCOUNT ID and USERNAME
+            val feedOwnerId: String
+            val feedOwnerUsername: String
+
+            when {
+                // Case 1: Reposted post - use original author's account ID
+                currentPost.originalPost.isNotEmpty() -> {
+                    val originalAuthor = currentPost.originalPost[0].author
+                    feedOwnerId = originalAuthor.owner  // ✅ Use owner field (account ID)
+                    feedOwnerUsername = originalAuthor.account.username
+                    Log.d(TAG, "Follow button - Original author ID: $feedOwnerId (@$feedOwnerUsername)")
+                }
+                // Case 2: Regular post - use main author's account ID
+                else -> {
+                    feedOwnerId = currentPost.author?.account?._id ?: ""
+                    feedOwnerUsername = currentPost.author?.account?.username ?: "unknown"
+                    Log.d(TAG, "Follow button - Main author ID: $feedOwnerId (@$feedOwnerUsername)")
+                }
+            }
+
+            val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
+
+            // Check following status by BOTH ID and USERNAME
+            val cachedFollowingList = FeedAdapter.getCachedFollowingList()
+            val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
+
+            val isAlreadyFollowing = followingUserIds.contains(feedOwnerId) ||
+                    cachedFollowingList.contains(feedOwnerId) ||
+                    cachedFollowingUsernames.contains(feedOwnerUsername)
+
+            // Hide button if it's own post OR already following
+            if (feedOwnerId == currentUserId || isAlreadyFollowing) {
+                followButton.visibility = View.GONE
+                Log.d(TAG, "Follow button hidden - Own post or already following")
+                return
+            }
+
+            // Toggle follow status
+            isFollowing = !isFollowing
+
+            if (isFollowing) {
+                // Hide button immediately
+                followButton.visibility = View.GONE
+
+                // Add to following lists
+                // Note: You'll need to get the adapter instance or use FollowingManager
+                FollowingManager(requireContext()).addToFollowing(feedOwnerId)
+
+                // Build display name for toast
+                val displayName = when {
+                    currentPost.originalPost.isNotEmpty() -> {
+                        val author = currentPost.originalPost[0].author
+                        when {
+                            author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
+                                "${author.firstName} ${author.lastName}"
+                            author.firstName.isNotBlank() -> author.firstName
+                            author.lastName.isNotBlank() -> author.lastName
+                            else -> author.account.username
+                        }
+                    }
+                    else -> {
+                        val author = currentPost.author
+                        when {
+                            author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
+                                "${author.firstName} ${author.lastName}"
+                            author.firstName.isNotBlank() -> author.firstName
+                            author.lastName.isNotBlank() -> author.lastName
+                            else -> author.account.username
+                        }
+                    }
+                }
+
+                showToast("Now following $displayName")
+                Log.d(TAG, "✓ Added account $feedOwnerId (@$feedOwnerUsername) to following list")
+            } else {
+                // Show button
+                followButton.visibility = View.VISIBLE
+                followButton.text = "Follow"
+
+                // Remove from following lists
+                FollowingManager(requireContext()).removeFromFollowing(feedOwnerId)
+
+                showToast("Unfollowed")
+                Log.d(TAG, "✓ Removed account $feedOwnerId (@$feedOwnerUsername) from following list")
+            }
+
+            updateFollowButtonUI()
+        }
+    }
+
+    private fun setupInitialFollowButtonState(data: Post) {
+        val feedOwnerId: String
+        val feedOwnerUsername: String
+
+        when {
+            data.originalPost.isNotEmpty() -> {
+                val originalAuthor = data.originalPost[0].author
+                feedOwnerId = originalAuthor.owner
+                feedOwnerUsername = originalAuthor.account.username
+            }
+            else -> {
+                feedOwnerId = data.author?.account?._id ?: ""
+                feedOwnerUsername = data.author?.account?.username ?: "unknown"
+            }
+        }
+
+        val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
+        val cachedFollowingList = FeedAdapter.getCachedFollowingList()
+        val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
+
+        val isAlreadyFollowing = followingUserIds.contains(feedOwnerId) ||
+                cachedFollowingList.contains(feedOwnerId) ||
+                cachedFollowingUsernames.contains(feedOwnerUsername)
+
+        if (feedOwnerId == currentUserId || isAlreadyFollowing) {
+            followButton.visibility = View.GONE
+            Log.d(TAG, "Initial setup: Follow button hidden for $feedOwnerId (@$feedOwnerUsername)")
+        } else {
+            followButton.visibility = View.VISIBLE
+            followButton.text = "Follow"
+            Log.d(TAG, "Initial setup: Follow button shown for $feedOwnerId (@$feedOwnerUsername)")
+        }
+    }
+
     private fun updateFollowButtonUI() {
         if (isFollowing) {
             // Hide the button when following
@@ -1021,28 +1161,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             followButton.visibility = View.VISIBLE
             followButton.text = "Follow"
             followButton.setBackgroundResource(R.drawable.shorts_following_button)
-        }
-    }
-
-    private fun toggleFollow() {
-        isFollowing = !isFollowing
-        updateFollowButtonUI()
-
-        // Assuming 'post' is your Post object variable name
-        post?.let { currentPost ->
-            val userToFollow = when {
-                currentPost.originalPost.isNotEmpty() -> {
-                    currentPost.originalPost[0].author.account.username
-                }
-                else -> {
-                    currentPost.author.account.username
-                }
-            }
-
-            showToast(
-                if (isFollowing) "Now following $userToFollow"
-                else "Unfollowed $userToFollow"
-            )
         }
     }
 
@@ -2008,16 +2126,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error updating bookmark button UI", e)
-        }
-    }
-
-    private fun showRepostHeader(post: Post) {
-        // Show who reposted this
-        post.repostedUser?.let { repostedUser ->
-            // You might want to add a "Reposted by" section in your UI
-            Log.d("RepostInfo", "Reposted by: ${repostedUser.username}")
-
-
         }
     }
 

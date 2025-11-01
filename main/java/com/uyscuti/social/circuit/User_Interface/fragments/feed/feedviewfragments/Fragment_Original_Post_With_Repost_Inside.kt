@@ -124,9 +124,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
     private var _binding: FragmentOriginalPostWithRepostInsideBinding? = null
     private val binding get() = _binding!!
-
+    private var followingUserIds: Set<String> = emptySet()
     private lateinit var itemView: View
-
     private var onImageClickListener: ((Int, List<File>, List<String>) -> Unit)? = null
 
     private var currentPost: Post? = null
