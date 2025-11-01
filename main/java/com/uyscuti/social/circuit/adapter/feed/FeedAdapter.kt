@@ -3483,7 +3483,7 @@ class FeedAdapter(
 
                 when {
                     currentPost?.repostedUser != null -> {
-                        feedReposterOwnerId = currentPost?.repostedUser?.owner ?: ""  // ✅ Use owner field
+                        feedReposterOwnerId = currentPost?.repostedUser?.owner ?: ""
                         feedReposterUsername = currentPost?.repostedUser?.username ?: "unknown"
                     }
                     currentPost?.author?.account != null -> {
