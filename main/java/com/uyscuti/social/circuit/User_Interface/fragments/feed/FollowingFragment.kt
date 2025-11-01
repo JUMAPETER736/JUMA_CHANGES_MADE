@@ -452,6 +452,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
+    // ✅ IMPROVED: More robust filtering with better ID and username matching
 
     private suspend fun loadAllFollowingPostsInitially() {
         val currentUserId = getUserId(requireContext())
@@ -544,7 +545,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                             Log.d(TAG, "    • repostedUser.owner (ACCOUNT ID): ${post.repostedUser.owner}")
                             Log.d(TAG, "    • repostedUser.username: @${post.repostedUser.username}")
                         } else {
-                            // Fallback if repostedUser is null
+                            // Fallback: Use main author if repostedUser is null
                             reposterAccountId = authorAccountId
                             reposterUsername = authorUsername ?: "unknown"
                             Log.d(TAG, "  ⚠️ No repostedUser data, using main author")
@@ -559,24 +560,27 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                         Log.d(TAG, "    • Reposter: @$reposterUsername (Account ID: $reposterAccountId)")
                         Log.d(TAG, "    • Original Author: @$originalAuthorUsername (Account ID: $originalAuthorAccountId)")
 
-                        // ✅ STRICT: Check if reposter's ID is in following list
+                        // ✅ CRITICAL FIX: Check if reposter's ID is EXACTLY in following list
                         val isFollowingReposterById = followingUserIds.contains(reposterAccountId)
 
-                        // ✅ STRICT: Check if reposter's username EXACTLY matches following list
+                        // ✅ CRITICAL FIX: Check if reposter's username EXACTLY matches following list
                         val isFollowingReposterByUsername = followingUserMap.values.any { followingUsername ->
                             followingUsername.trim().lowercase() == reposterUsername
                         }
 
-                        Log.d(TAG, "    • Following reposter by ID? $isFollowingReposterById")
-                        Log.d(TAG, "    • Following reposter by username? $isFollowingReposterByUsername")
+                        Log.d(TAG, "    • Reposter ID ($reposterAccountId) in following list? $isFollowingReposterById")
+                        Log.d(TAG, "    • Reposter username (@$reposterUsername) in following list? $isFollowingReposterByUsername")
+                        Log.d(TAG, "    • Following list IDs: ${followingUserIds.joinToString(", ")}")
+                        Log.d(TAG, "    • Following list usernames: ${followingUserMap.values.joinToString(", ")}")
 
-                        // ✅ CRITICAL: Only show repost if I follow the REPOSTER
+                        // ✅ STRICT: Only show repost if the REPOSTER is in my following list
                         if (isFollowingReposterById || isFollowingReposterByUsername) {
                             uniqueAuthors.add(reposterAccountId)
-                            Log.d(TAG, "  ✓ REPOST by @$reposterUsername - INCLUDED (Reposter is in following list)")
+                            Log.d(TAG, "  ✓ REPOST by @$reposterUsername - REPOSTER IS IN MY FOLLOWING LIST - INCLUDED")
                             return@mapNotNull post
                         } else {
-                            Log.d(TAG, "  ✗ REPOST by @$reposterUsername - REPOSTER NOT IN FOLLOWING LIST - EXCLUDED")
+                            Log.d(TAG, "  ✗✗✗ REPOST by @$reposterUsername - REPOSTER NOT IN MY FOLLOWING LIST - EXCLUDED")
+                            Log.d(TAG, "      (Even though original author @$originalAuthorUsername might be followed)")
                             return@mapNotNull null
                         }
 
@@ -828,9 +832,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         Log.d(TAG, "═══════════════════════════════════════")
     }
 
-
-
-    //  Update loadFollowingUserIds() to also load usernames
     private suspend fun loadFollowingUserIds() {
         try {
             Log.d(TAG, "Loading following list...")
@@ -894,7 +895,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-
     //  Update updateFollowingList() to sync with adapter
     fun updateFollowingList(followingIds: Set<String>) {
         Log.d("FollowingFragment", "Received ${followingIds.size} following IDs")
@@ -918,8 +918,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             Log.w("FollowingFragment", "Adapter not initialized yet")
         }
     }
-
-
 
     private fun handleError(message: String) {
         Log.e(TAG, message)
