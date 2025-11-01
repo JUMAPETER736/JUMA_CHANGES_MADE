@@ -402,8 +402,7 @@ class FeedAdapter(
         val contentType = item.contentType ?: ""
 
         if (item.isReposted) {
-//            Log.d(tag, "getItemViewType: reposted")
-//            Log.d(tag, "Repost : ${getItem(position)}")
+
             return VIEW_TPE_REPOST_POST
         }
 
@@ -467,6 +466,7 @@ class FeedAdapter(
     }
 
     override fun SetOnPaginationListener(onPaginationListener: OnPaginationListener) {
+
     }
 
 
@@ -4044,8 +4044,6 @@ class FeedAdapter(
             })
         }
 
-
-
         private fun setupMoreOptionsButton(data: Post) {
             moreOptionsButton.setOnClickListener {
                 feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
@@ -4288,8 +4286,6 @@ class FeedAdapter(
             }
         }
 
-
-
         private fun setupOriginalPostText(originalPostData: OriginalPost) {
             if (!originalPostData.content.isNullOrBlank()) {
                 originalPostText?.visibility = View.VISIBLE
@@ -4371,7 +4367,6 @@ class FeedAdapter(
                 "now"
             }
         }
-
 
 
     }
@@ -5612,7 +5607,7 @@ class FeedAdapter(
 interface OnClickListeners {
     fun onSeekBarChanged(progress: Int)
     fun onDownloadClick(url: String, fileLocation: String)
-//    fun onLikeButtonClick(position: Int, likeButton: View)
+
 }
 
 interface OnFeedClickListener {
