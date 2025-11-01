@@ -484,9 +484,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                 val filtered = pagePosts.mapNotNull { post ->
                     try {
-                        // ═══════════════════════════════════════
-                        // STEP 1: WHO POSTED THIS?
-                        // ═══════════════════════════════════════
+
 
                         val posterAccountId: String
                         val posterUsername: String
