@@ -461,7 +461,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         withContext(Dispatchers.Main) {
             progressBar.visibility = View.VISIBLE
 
-            // ✅ CRITICAL: Clear old cached data before loading new data
+            // Clear old cached data before loading new data
             getFeedViewModel.clearAllFeedData()
             followedPostsAdapter.submitItems(mutableListOf())
             Log.d(TAG, "🧹 CLEARED old cached posts from adapter and ViewModel")
@@ -590,7 +590,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    // Same simple logic for pagination
     private fun loadPostsFromFollowing(page: Int) {
         if (isLoading) return
         isLoading = true
@@ -662,7 +661,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    // Same simple logic for refresh after unfollow
     private fun refreshFeedAfterUnfollow() {
         val currentUserId = getUserId(requireContext())
         val allPosts = getFeedViewModel.getAllFeedData()
@@ -717,7 +715,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         Log.d(TAG, "═══════════════════════════════════════")
     }
 
-    // ✅ Add this to your FollowingFragment - call it in onResume or when tab is selected
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     fun clearAndReloadFeed() {
         Log.d(TAG, "🔄 Clearing and reloading Following feed")
