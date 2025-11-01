@@ -71,6 +71,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager2.widget.ViewPager2
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -570,95 +572,171 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 }
 
 
+//
+//                viewPager.registerOnPageChangeCallback(object :
+//                    ViewPager2.OnPageChangeCallback() {
+//
+//                    override fun onPageSelected(position: Int) {
+//                        shortsViewModel.shortIndex = position
+//
+//                        // DON'T stop the player - just pause it
+//                        exoPlayer?.let { player ->
+//                            player.pause()
+//                            // Don't call stop() or seekTo(0) here
+//                        }
+//
+//                        // Set track selection parameters
+//                        exoPlayer?.trackSelectionParameters = exoPlayer!!.trackSelectionParameters
+//                            .buildUpon()
+//                            .setMaxVideoSizeSd()
+//                            .build()
+//
+//                        playVideoAtPosition(position)
+//                    }
+//
+//                    override fun onPageScrolled(
+//                        position: Int,
+//                        positionOffset: Float,
+//                        positionOffsetPixels: Int
+//                    ) {
+//                        super.onPageScrolled(position, positionOffset, positionOffsetPixels)
+//
+//                        if (position > shortsViewModel.lastPosition) {
+//                            // User is scrolling down
+//                            // Handle scroll down logic
+//                            Log.d(
+//                                "showHideBottomNav",
+//                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
+//                            )
+//                            EventBus.getDefault().post(HideBottomNav())
+//                            EventBus.getDefault().post(HideFeedFloatingActionButton()) // Hide FAB
+//                            Log.d("showHideBottomNav", "event post scroll next")
+//                        } else if (position < shortsViewModel.lastPosition) {
+//                            // User is scrolling up
+//                            // Handle scroll up logic
+//                            Log.d(
+//                                "showHideBottomNav",
+//                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
+//                            )
+//                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false)) // Show FAB
+//                            EventBus.getDefault().post(ShowBottomNav(false))
+//                            Log.d("showHideBottomNav", "event post scroll previous")
+//                        }
+//                        if (position > shortsViewModel.lastPosition) {
+//                            // User is scrolling down
+//                            loadMoreVideosIfNeeded(position)
+//
+//                        }
+//
+//                        shortsViewModel.lastPosition = position
+//
+//                        if (positionOffset > 0.5) {
+//                            // User is scrolling towards the end, update the current position to the next video
+//                            currentPosition = position + 1
+//
+//
+//                        } else if (positionOffset < -0.5) {
+//
+//                            currentPosition = position - 1
+//
+//                        } else {
+//                            // User is in a stable position, update the current position to the current video
+//                            currentPosition = position
+//
+//
+//                        }
+//
+//                    }
+//                    override fun onPageScrollStateChanged(state: Int) {
+//                        super.onPageScrollStateChanged(state)
+//                        Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
+//
+//                        // Check if the scroll state is idle
+//                        if (state == ViewPager.SCROLL_STATE_SETTLING) {
+//                            Log.d(
+//                                "onPageScrollStateChanged",
+//                                "onPageScrollStateChanged: state $state"
+//                            )
+//                            // The scroll state is idle, play the video at the updated position
+//                            playVideoAtPosition(currentPosition)
+//                            backPressCount = 0
+//                        }
+//                    }
+//                })
 
-                viewPager.registerOnPageChangeCallback(object :
-                    ViewPager2.OnPageChangeCallback() {
+
+                viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+
+                    override fun onPageScrollStateChanged(state: Int) {
+                        super.onPageScrollStateChanged(state)
+
+                        when (state) {
+                            ViewPager2.SCROLL_STATE_DRAGGING -> {
+                                // User started dragging - show thumbnail of next video
+                                Log.d("PageScroll", "User started dragging")
+                            }
+                            ViewPager2.SCROLL_STATE_SETTLING -> {
+                                // Scroll is settling to final position
+                                Log.d("PageScroll", "Settling to position")
+                            }
+                            ViewPager2.SCROLL_STATE_IDLE -> {
+                                // Scroll finished - play video at current position
+                                Log.d("PageScroll", "Idle at position: $currentPosition")
+                                playVideoAtPosition(currentPosition)
+                                backPressCount = 0
+                            }
+                        }
+                    }
+
+                    override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+                        super.onPageScrolled(position, positionOffset, positionOffsetPixels)
+
+                        // Show thumbnail of the upcoming video during scroll
+                        if (positionOffset > 0.1f) {
+                            val nextPosition = position + 1
+                            if (nextPosition < shortsViewModel.mutableShortsList.size) {
+                                preloadThumbnailForPosition(nextPosition)
+                            }
+                        }
+
+                        // Handle navigation events
+                        if (position > shortsViewModel.lastPosition) {
+                            EventBus.getDefault().post(HideBottomNav())
+                            EventBus.getDefault().post(HideFeedFloatingActionButton())
+                        } else if (position < shortsViewModel.lastPosition) {
+                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
+                            EventBus.getDefault().post(ShowBottomNav(false))
+                        }
+
+                        if (position > shortsViewModel.lastPosition) {
+                            loadMoreVideosIfNeeded(position)
+                        }
+
+                        shortsViewModel.lastPosition = position
+
+                        // Update current position based on scroll
+                        currentPosition = when {
+                            positionOffset > 0.5 -> position + 1
+                            positionOffset < -0.5 -> position - 1
+                            else -> position
+                        }
+                    }
 
                     override fun onPageSelected(position: Int) {
                         shortsViewModel.shortIndex = position
 
-                        // DON'T stop the player - just pause it
+                        // Pause current video smoothly without stopping
                         exoPlayer?.let { player ->
                             player.pause()
-                            // Don't call stop() or seekTo(0) here
                         }
 
-                        // Set track selection parameters
+                        // Set track selection parameters for next video
                         exoPlayer?.trackSelectionParameters = exoPlayer!!.trackSelectionParameters
                             .buildUpon()
                             .setMaxVideoSizeSd()
                             .build()
 
-                        playVideoAtPosition(position)
-                    }
-
-                    override fun onPageScrolled(
-                        position: Int,
-                        positionOffset: Float,
-                        positionOffsetPixels: Int
-                    ) {
-                        super.onPageScrolled(position, positionOffset, positionOffsetPixels)
-
-                        if (position > shortsViewModel.lastPosition) {
-                            // User is scrolling down
-                            // Handle scroll down logic
-                            Log.d(
-                                "showHideBottomNav",
-                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
-                            )
-                            EventBus.getDefault().post(HideBottomNav())
-                            EventBus.getDefault().post(HideFeedFloatingActionButton()) // Hide FAB
-                            Log.d("showHideBottomNav", "event post scroll next")
-                        } else if (position < shortsViewModel.lastPosition) {
-                            // User is scrolling up
-                            // Handle scroll up logic
-                            Log.d(
-                                "showHideBottomNav",
-                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
-                            )
-                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false)) // Show FAB
-                            EventBus.getDefault().post(ShowBottomNav(false))
-                            Log.d("showHideBottomNav", "event post scroll previous")
-                        }
-                        if (position > shortsViewModel.lastPosition) {
-                            // User is scrolling down
-                            loadMoreVideosIfNeeded(position)
-
-                        }
-
-                        shortsViewModel.lastPosition = position
-
-                        if (positionOffset > 0.5) {
-                            // User is scrolling towards the end, update the current position to the next video
-                            currentPosition = position + 1
-
-
-                        } else if (positionOffset < -0.5) {
-
-                            currentPosition = position - 1
-
-                        } else {
-                            // User is in a stable position, update the current position to the current video
-                            currentPosition = position
-
-
-                        }
-
-                    }
-                    override fun onPageScrollStateChanged(state: Int) {
-                        super.onPageScrollStateChanged(state)
-                        Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
-
-                        // Check if the scroll state is idle
-                        if (state == ViewPager.SCROLL_STATE_SETTLING) {
-                            Log.d(
-                                "onPageScrollStateChanged",
-                                "onPageScrollStateChanged: state $state"
-                            )
-                            // The scroll state is idle, play the video at the updated position
-                            playVideoAtPosition(currentPosition)
-                            backPressCount = 0
-                        }
+                        // Don't call playVideoAtPosition here - let onPageScrollStateChanged handle it
                     }
                 })
 
@@ -787,6 +865,184 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             }
         }
         return view
+    }
+
+
+    @SuppressLint("NotifyDataSetChanged")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun feedFavoriteFollowUpdate(event: FeedFavoriteFollowUpdate) {
+        val tag = "feedFavoriteFollowUpdate"
+        Log.d(tag, "feedFavoriteFollowUpdate: from favorites or all feed in short fragment")
+
+        val userId = event.userId
+        val isFollowing = event.isFollowing
+
+        // Update adapter silently
+        shortsAdapter.updateFollowState(userId, isFollowing)
+
+        // Update ViewModel
+        val existingFollow = shortsViewModel.followList.find { it.followersId == userId }
+        if (existingFollow != null) {
+            existingFollow.isFollowing = isFollowing
+        } else {
+            shortsViewModel.followList.add(ShortsEntityFollowList(userId, isFollowing))
+        }
+
+        // Update Room database
+        lifecycleScope.launch(Dispatchers.IO) {
+            val followListItem = listOf(ShortsEntityFollowList(userId, isFollowing))
+            val uniqueFollowList = removeDuplicateFollowers(followListItem)
+            followShortsViewModel.insertFollowListItems(uniqueFollowList)
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun followButtonClicked(event: ShortsFollowButtonClicked) {
+        Log.d("followButtonClicked", "followButtonClicked: ${event.followUnFollowEntity}")
+
+        val userId = event.followUnFollowEntity.userId
+        val isFollowing = event.followUnFollowEntity.isFollowing
+
+        // Make API call
+        followUnFollowViewModel.followUnFollow(userId)
+
+        // Update adapter silently
+        shortsAdapter.updateFollowState(userId, isFollowing)
+
+        // Update ViewModel
+        val existingFollow = shortsViewModel.followList.find { it.followersId == userId }
+        if (existingFollow != null) {
+            existingFollow.isFollowing = isFollowing
+        } else {
+            shortsViewModel.followList.add(ShortsEntityFollowList(userId, isFollowing))
+        }
+
+        // Share with feed fragment
+        feesShortsSharedViewModel.setData(
+            FollowUnFollowEntity(userId, isFollowing)
+        )
+
+        // Update Room database
+        lifecycleScope.launch(Dispatchers.IO) {
+            val followListItem = listOf(ShortsEntityFollowList(userId, isFollowing))
+            val uniqueFollowList = removeDuplicateFollowers(followListItem)
+            followShortsViewModel.insertFollowListItems(uniqueFollowList)
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun feedInformShortsFragment(event: InformShortsFragment2) {
+        Log.d("feedInformShortsFragment", "InformShortsFragment2: shorts fragment informed")
+
+        val userId = event.userId
+        val isFollowing = event.isFollowing
+
+        // Update adapter silently
+        shortsAdapter.updateFollowState(userId, isFollowing)
+
+        // Update ViewModel
+        val existingFollow = shortsViewModel.followList.find { it.followersId == userId }
+        if (existingFollow != null) {
+            existingFollow.isFollowing = isFollowing
+        } else {
+            shortsViewModel.followList.add(ShortsEntityFollowList(userId, isFollowing))
+        }
+
+        // Update Room database
+        lifecycleScope.launch(Dispatchers.IO) {
+            val followListItem = listOf(ShortsEntityFollowList(userId, isFollowing))
+            val uniqueFollowList = removeDuplicateFollowers(followListItem)
+            followShortsViewModel.insertFollowListItems(uniqueFollowList)
+        }
+    }
+    @SuppressLint("SetTextI18n")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
+        val tag = "handleFollowButtonClick"
+        Log.d(tag, "Follow state changed to: ${event.followUnFollowEntity.isFollowing}")
+
+        val userId = event.followUnFollowEntity.userId
+        val isFollowing = event.followUnFollowEntity.isFollowing
+
+        val connectivityManager =
+            requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkInfo = connectivityManager.activeNetworkInfo
+        val isConnected = networkInfo != null && networkInfo.isConnected
+
+        // Update the adapter's data source silently WITHOUT notifyDataSetChanged
+        shortsAdapter.updateFollowState(userId, isFollowing)
+
+        // Update ViewModel data
+        val existingFollow = shortsViewModel.followList.find { it.followersId == userId }
+        if (existingFollow != null) {
+            existingFollow.isFollowing = isFollowing
+        } else {
+            shortsViewModel.followList.add(ShortsEntityFollowList(userId, isFollowing))
+        }
+
+        // Update the Room database immediately
+        followViewModel.insertOrUpdateFollow(event.followUnFollowEntity)
+
+        if (isConnected) {
+            Log.d(tag, "Internet connected, making API call")
+
+            // Make the API call
+            followUnFollowViewModel.followUnFollow(userId)
+
+            // Clean up database after API call succeeds
+            followUnFollowViewModel.viewModelScope.launch {
+                delay(1000)
+                val isDeleted = followViewModel.deleteFollowById(userId)
+                if (isDeleted) {
+                    Log.d(tag, "Follow record deleted successfully from local DB.")
+                } else {
+                    Log.d(tag, "Failed to delete follow record from local DB.")
+                }
+            }
+        } else {
+            Log.d(tag, "No internet connection, saved locally only")
+        }
+    }
+    private fun preloadThumbnailForPosition(position: Int) {
+        if (position < 0 || position >= shortsViewModel.mutableShortsList.size) return
+
+        val nextShort = shortsViewModel.mutableShortsList[position]
+        val thumbnailUrl = nextShort.thumbnail.firstOrNull()?.thumbnailUrl
+
+        if (!thumbnailUrl.isNullOrEmpty()) {
+            // Preload the thumbnail using Glide
+            Glide.with(this)
+                .load(thumbnailUrl)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .preload()
+        }
+    }
+
+
+
+
+    // Update the updateFollowState method to prevent blinking:
+    fun updateFollowState(userId: String, isFollowing: Boolean) {
+        val followData = followingData.find { it.followersId == userId }
+        if (followData != null) {
+            followData.isFollowing = isFollowing
+
+            // Update the UI directly without notifyDataSetChanged
+            currentViewHolder?.updateFollowButtonState(isFollowing)
+
+            Log.d(TAG, "Updated follow state for user $userId to $isFollowing without rebinding")
+        } else {
+            followingData.add(
+                ShortsEntityFollowList(
+                    followersId = userId,
+                    isFollowing = isFollowing
+                )
+            )
+            currentViewHolder?.updateFollowButtonState(isFollowing)
+            Log.d(TAG, "Added new follow state for user $userId: $isFollowing")
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -1633,46 +1889,46 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
 
-    @SuppressLint("SetTextI18n")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
-        val tag = "handleFollowButtonClick"
-        Log.d(tag, "Follow state changed to: ${event.followUnFollowEntity.isFollowing}")
-
-        val userId = event.followUnFollowEntity.userId
-        val isFollowing = event.followUnFollowEntity.isFollowing
-
-        val connectivityManager =
-            requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val networkInfo = connectivityManager.activeNetworkInfo
-        val isConnected = networkInfo != null && networkInfo.isConnected
-
-        // Update the adapter's data source silently (without rebinding)
-        shortsAdapter.updateFollowState(userId, isFollowing)
-
-        // Update the Room database immediately
-        followViewModel.insertOrUpdateFollow(event.followUnFollowEntity)
-
-        if (isConnected) {
-            Log.d(tag, "Internet connected, making API call")
-
-            // Make the API call
-            followUnFollowViewModel.followUnFollow(userId)
-
-            // Clean up database after API call succeeds
-            followUnFollowViewModel.viewModelScope.launch {
-                delay(1000) // Wait for API call to complete
-                val isDeleted = followViewModel.deleteFollowById(userId)
-                if (isDeleted) {
-                    Log.d(tag, "Follow record deleted successfully from local DB.")
-                } else {
-                    Log.d(tag, "Failed to delete follow record from local DB.")
-                }
-            }
-        } else {
-            Log.d(tag, "No internet connection, saved locally only")
-        }
-    }
+//    @SuppressLint("SetTextI18n")
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
+//        val tag = "handleFollowButtonClick"
+//        Log.d(tag, "Follow state changed to: ${event.followUnFollowEntity.isFollowing}")
+//
+//        val userId = event.followUnFollowEntity.userId
+//        val isFollowing = event.followUnFollowEntity.isFollowing
+//
+//        val connectivityManager =
+//            requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+//        val networkInfo = connectivityManager.activeNetworkInfo
+//        val isConnected = networkInfo != null && networkInfo.isConnected
+//
+//        // Update the adapter's data source silently (without rebinding)
+//        shortsAdapter.updateFollowState(userId, isFollowing)
+//
+//        // Update the Room database immediately
+//        followViewModel.insertOrUpdateFollow(event.followUnFollowEntity)
+//
+//        if (isConnected) {
+//            Log.d(tag, "Internet connected, making API call")
+//
+//            // Make the API call
+//            followUnFollowViewModel.followUnFollow(userId)
+//
+//            // Clean up database after API call succeeds
+//            followUnFollowViewModel.viewModelScope.launch {
+//                delay(1000) // Wait for API call to complete
+//                val isDeleted = followViewModel.deleteFollowById(userId)
+//                if (isDeleted) {
+//                    Log.d(tag, "Follow record deleted successfully from local DB.")
+//                } else {
+//                    Log.d(tag, "Failed to delete follow record from local DB.")
+//                }
+//            }
+//        } else {
+//            Log.d(tag, "No internet connection, saved locally only")
+//        }
+//    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onProgressEvent(event: ProgressEvent) {
@@ -1940,90 +2196,90 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun feedFavoriteFollowUpdate(event: FeedFavoriteFollowUpdate) {
-        val tag = "feedFavoriteFollowUpdate"
-        Log.d(tag, "feedFavoriteFollowUpdate: from favorites or all feed in short fragment")
-        val followListItem: List<ShortsEntityFollowList> = listOf(
-            ShortsEntityFollowList(
-                event.userId, event.isFollowing
-            )
-        )
-
-        lifecycleScope.launch(Dispatchers.IO) {
-
-            val uniqueFollowList = removeDuplicateFollowers(followListItem)
-
-            Log.d(
-                "followButtonClicked",
-                "followButtonClicked: Inserted uniqueFollowList $uniqueFollowList"
-            )
-            delay(100)
-            followShortsViewModel.insertFollowListItems(uniqueFollowList)
-
-        }
-
-        lifecycleScope.launch(Dispatchers.Main) {
-
-            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
-                shortsAdapter.addIsFollowingData(it)
-                shortsAdapter.notifyDataSetChanged()
-                Log.d("followButtonClicked", "followButtonClicked:$it ")
-            }
-        }
-
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun followButtonClicked(event: ShortsFollowButtonClicked) {
-        Log.d("followButtonClicked", "followButtonClicked: ${event.followUnFollowEntity}")
-
-
-        followUnFollowViewModel.followUnFollow(event.followUnFollowEntity.userId)
-
-//        followUnFollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) {
-//            Log.d("followButtonClicked", "followButtonClicked: follow observer value $it")
+//    @SuppressLint("NotifyDataSetChanged")
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    fun feedFavoriteFollowUpdate(event: FeedFavoriteFollowUpdate) {
+//        val tag = "feedFavoriteFollowUpdate"
+//        Log.d(tag, "feedFavoriteFollowUpdate: from favorites or all feed in short fragment")
+//        val followListItem: List<ShortsEntityFollowList> = listOf(
+//            ShortsEntityFollowList(
+//                event.userId, event.isFollowing
+//            )
+//        )
+//
+//        lifecycleScope.launch(Dispatchers.IO) {
+//
+//            val uniqueFollowList = removeDuplicateFollowers(followListItem)
+//
+//            Log.d(
+//                "followButtonClicked",
+//                "followButtonClicked: Inserted uniqueFollowList $uniqueFollowList"
+//            )
+//            delay(100)
+//            followShortsViewModel.insertFollowListItems(uniqueFollowList)
+//
 //        }
-
-        val followListItem: List<ShortsEntityFollowList> = listOf(
-            ShortsEntityFollowList(
-                event.followUnFollowEntity.userId, event.followUnFollowEntity.isFollowing
-            )
-        )
-
-        feesShortsSharedViewModel.setData(
-            FollowUnFollowEntity(
-                event.followUnFollowEntity.userId,
-                event.followUnFollowEntity.isFollowing
-            )
-        )
-
-        lifecycleScope.launch(Dispatchers.IO) {
-
-            val uniqueFollowList = removeDuplicateFollowers(followListItem)
-
-            Log.d(
-                "followButtonClicked",
-                "followButtonClicked: Inserted uniqueFollowList $uniqueFollowList"
-            )
-            delay(100)
-            followShortsViewModel.insertFollowListItems(uniqueFollowList)
-
-        }
-
-        lifecycleScope.launch(Dispatchers.Main) {
-
-            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
-                shortsAdapter.addIsFollowingData(it)
-                shortsAdapter.notifyDataSetChanged()
-                Log.d("followButtonClicked", "followButtonClicked:$it ")
-            }
-        }
-
-
-    }
+//
+//        lifecycleScope.launch(Dispatchers.Main) {
+//
+//            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
+//                shortsAdapter.addIsFollowingData(it)
+//                shortsAdapter.notifyDataSetChanged()
+//                Log.d("followButtonClicked", "followButtonClicked:$it ")
+//            }
+//        }
+//
+//    }
+//
+//    @SuppressLint("NotifyDataSetChanged")
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    fun followButtonClicked(event: ShortsFollowButtonClicked) {
+//        Log.d("followButtonClicked", "followButtonClicked: ${event.followUnFollowEntity}")
+//
+//
+//        followUnFollowViewModel.followUnFollow(event.followUnFollowEntity.userId)
+//
+////        followUnFollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) {
+////            Log.d("followButtonClicked", "followButtonClicked: follow observer value $it")
+////        }
+//
+//        val followListItem: List<ShortsEntityFollowList> = listOf(
+//            ShortsEntityFollowList(
+//                event.followUnFollowEntity.userId, event.followUnFollowEntity.isFollowing
+//            )
+//        )
+//
+//        feesShortsSharedViewModel.setData(
+//            FollowUnFollowEntity(
+//                event.followUnFollowEntity.userId,
+//                event.followUnFollowEntity.isFollowing
+//            )
+//        )
+//
+//        lifecycleScope.launch(Dispatchers.IO) {
+//
+//            val uniqueFollowList = removeDuplicateFollowers(followListItem)
+//
+//            Log.d(
+//                "followButtonClicked",
+//                "followButtonClicked: Inserted uniqueFollowList $uniqueFollowList"
+//            )
+//            delay(100)
+//            followShortsViewModel.insertFollowListItems(uniqueFollowList)
+//
+//        }
+//
+//        lifecycleScope.launch(Dispatchers.Main) {
+//
+//            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
+//                shortsAdapter.addIsFollowingData(it)
+//                shortsAdapter.notifyDataSetChanged()
+//                Log.d("followButtonClicked", "followButtonClicked:$it ")
+//            }
+//        }
+//
+//
+//    }
 
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -2878,31 +3134,31 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
 
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun feedInformShortsFragment(event: InformShortsFragment2) {
-        Log.d("feedInformShortsFragment", "InformShortsFragment2: shorts fragment informed")
-        val list: MutableList<ShortsEntityFollowList> = mutableListOf()
-        list.add(ShortsEntityFollowList(event.userId, event.isFollowing))
-        val followListItem: List<ShortsEntityFollowList> = listOf(
-            ShortsEntityFollowList(
-                event.userId, event.isFollowing
-            )
-        )
-        lifecycleScope.launch(Dispatchers.IO) {
-
-            val uniqueFollowList = removeDuplicateFollowers(followListItem)
-            Log.d(
-                "feedShortsSharedViewModel",
-                "feedShortsSharedViewModel: Inserted uniqueFollowList in shorts: $uniqueFollowList"
-            )
-            delay(100)
-            followShortsViewModel.insertFollowListItems(uniqueFollowList)
-            shortsViewModel.followList.add(ShortsEntityFollowList(event.userId, event.isFollowing))
-        }
-        shortsAdapter.addIsFollowingData(list)
-        shortsAdapter.notifyDataSetChanged()
-    }
+//    @SuppressLint("NotifyDataSetChanged")
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    fun feedInformShortsFragment(event: InformShortsFragment2) {
+//        Log.d("feedInformShortsFragment", "InformShortsFragment2: shorts fragment informed")
+//        val list: MutableList<ShortsEntityFollowList> = mutableListOf()
+//        list.add(ShortsEntityFollowList(event.userId, event.isFollowing))
+//        val followListItem: List<ShortsEntityFollowList> = listOf(
+//            ShortsEntityFollowList(
+//                event.userId, event.isFollowing
+//            )
+//        )
+//        lifecycleScope.launch(Dispatchers.IO) {
+//
+//            val uniqueFollowList = removeDuplicateFollowers(followListItem)
+//            Log.d(
+//                "feedShortsSharedViewModel",
+//                "feedShortsSharedViewModel: Inserted uniqueFollowList in shorts: $uniqueFollowList"
+//            )
+//            delay(100)
+//            followShortsViewModel.insertFollowListItems(uniqueFollowList)
+//            shortsViewModel.followList.add(ShortsEntityFollowList(event.userId, event.isFollowing))
+//        }
+//        shortsAdapter.addIsFollowingData(list)
+//        shortsAdapter.notifyDataSetChanged()
+//    }
 
 }
 
