@@ -2828,44 +2828,70 @@ class FeedAdapter(
         private fun setupFollowButton(feedOwnerId: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
+            // Check multiple sources for following status
             val isUserFollowing = followingUserIds.contains(feedOwnerId) ||
                     FeedAdapter.getCachedFollowingList().contains(feedOwnerId)
 
+            // Hide button if: it's current user's post, OR we're already following them
             if (feedOwnerId == currentUserId || isFollowingUser || isUserFollowing) {
                 followButton.visibility = View.GONE
-                Log.d(TAG, "HIDDEN Follow button for $feedOwnerId")
+                Log.d(TAG, "setupFollowButton: Hidden for user $feedOwnerId - Following: true")
                 return
             }
 
+            // Show follow button only for users we're NOT following
             followButton.visibility = View.VISIBLE
             followButton.text = "Follow"
-            followButton.backgroundTintList = ContextCompat.getColorStateList(itemView.context, R.color.blueJeans)
-            followButton.setOnClickListener { handleFollowButtonClick(feedOwnerId) }
+            followButton.backgroundTintList = ContextCompat.getColorStateList(
+                itemView.context,
+                R.color.blueJeans
+            )
+
+            // ✅ FIXED: Pass the correct feedOwnerId (not post ID)
+            followButton.setOnClickListener {
+                handleFollowButtonClick(feedOwnerId)
+            }
         }
 
         @SuppressLint("NotifyDataSetChanged")
         private fun handleFollowButtonClick(feedOwnerId: String) {
             YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
 
+            Log.d(TAG, "Follow button clicked for user: $feedOwnerId")
+
             isFollowed = !isFollowed
             val followEntity = FollowUnFollowEntity(feedOwnerId, isFollowed)
 
             if (isFollowed) {
+                // Hide button immediately
                 followButton.visibility = View.GONE
+
+                // Add to adapter's following list AND persistent storage
                 (bindingAdapter as? FeedAdapter)?.addToFollowing(feedOwnerId)
+
+                // Also update via manager for consistency
                 FollowingManager(itemView.context).addToFollowing(feedOwnerId)
-                Log.d(TAG, "Now following $feedOwnerId")
+
+                Log.d(TAG, "Now following user $feedOwnerId")
             } else {
+                // Show button
                 followButton.text = "Follow"
-                followButton.visibility = View.GONE
+                followButton.visibility = View.VISIBLE
+
+                // Remove from adapter's following list AND persistent storage
                 (bindingAdapter as? FeedAdapter)?.removeFromFollowing(feedOwnerId)
+
+                // Also update via manager for consistency
                 FollowingManager(itemView.context).removeFromFollowing(feedOwnerId)
-                Log.d(TAG, "Unfollowed $feedOwnerId")
+
+                Log.d(TAG, "Unfollowed user $feedOwnerId")
             }
 
+            // Notify listener
             feedClickListener.followButtonClicked(followEntity, followButton)
             EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
 
+            // Refresh adapter to update all instances
             (bindingAdapter as? FeedAdapter)?.notifyDataSetChanged()
         }
 
@@ -3241,10 +3267,15 @@ class FeedAdapter(
                 shareButton.performClick()
             }
 
-            // Follow button - prevent bubbling to parent containers
             followButton.setOnClickListener { view ->
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                handleFollowButtonClick(currentPost?._id ?: "")
+
+                // Get the correct user ID from current post
+                val feedReposterOwnerId = currentPost?.repostedUser?._id
+                    ?: currentPost?.author?.account?._id
+                    ?: ""
+
+                handleFollowButtonClick(feedReposterOwnerId)
             }
 
             // More options button - prevent bubbling to parent containers
