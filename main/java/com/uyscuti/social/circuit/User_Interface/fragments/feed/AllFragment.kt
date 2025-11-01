@@ -329,6 +329,21 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
+
+
+    fun updateFollowingList(followingIds: Set<String>) {
+        Log.d("AllFragment", "📥 Received ${followingIds.size} following IDs")
+
+        // Update the adapter if it's initialized
+        if (::allFeedAdapter.isInitialized) {
+            allFeedAdapter.updateFollowingList(followingIds)
+            allFeedAdapter.notifyDataSetChanged()
+            Log.d("AllFragment", "Updated adapter with following list")
+        } else {
+            Log.w("AllFragment", "⚠Adapter not initialized yet")
+        }
+    }
+
     private fun loadInitialBatch() {
         lifecycleScope.launch(Dispatchers.Main) {
             try {
@@ -555,6 +570,8 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         return firstVisibleItemPosition.takeIf { it <= lastVisibleItemPosition }
 
     }
+
+
 
     override fun likeUnLikeFeed(position: Int, data: Post) {
 

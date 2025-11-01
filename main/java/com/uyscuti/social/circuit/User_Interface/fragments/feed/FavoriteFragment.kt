@@ -112,6 +112,21 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
 @AndroidEntryPoint
  class FavoriteFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterface {
 
+
+
+    companion object {
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FavoriteFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
+
     private var param1: String? = null
     private var param2: String? = null
     private lateinit var myFeedAdapter: FeedAdapter
@@ -306,17 +321,18 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
         }
     }
 
-    companion object {
 
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FavoriteFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
+    fun updateFollowingList(followingIds: Set<String>) {
+        Log.d("FavoriteFragment", "Received ${followingIds.size} following IDs")
+
+        if (::favoriteFeedAdapter.isInitialized) {
+            favoriteFeedAdapter.updateFollowingList(followingIds)
+            favoriteFeedAdapter.notifyDataSetChanged()
+            Log.d("FavoriteFragment", "Updated adapter with following list")
+        } else {
+            Log.w("FavoriteFragment", "Adapter not initialized yet")
         }
+    }
 
 
     override fun likeUnLikeFeed(position: Int, data: Post) {

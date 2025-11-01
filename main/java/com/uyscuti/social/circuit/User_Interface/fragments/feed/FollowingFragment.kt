@@ -122,7 +122,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
 
     private var myUserId: String = ""
-    private val followingUserIds = mutableSetOf<String>()
+    private var followingUserIds = mutableSetOf<String>()
     private var hasLoadedFollowingList = false
     private var param1: String? = null
     private var param2: String? = null
@@ -159,6 +159,8 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     private var feedRepostImageFragment : FeedRepostImageFragment? = null
     private var feedRepostMultipleImageFragment: FeedRepostMultipleImageFragment? = null
     private var fragmentOriginalPostWithRepostInside: Fragment_Original_Post_With_Repost_Inside? = null
+
+
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
@@ -449,6 +451,25 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
+    fun updateFollowingList(followingIds: Set<String>) {
+        Log.d("FollowingFragment", "Received ${followingIds.size} following IDs")
+
+        // Update local set for filtering logic
+        this.followingUserIds.clear()
+        this.followingUserIds.addAll(followingIds)
+        this.hasLoadedFollowingList = true
+
+        // Update adapter
+        if (::followedPostsAdapter.isInitialized) {
+            followedPostsAdapter.updateFollowingList(followingIds)
+            followedPostsAdapter.notifyDataSetChanged()
+            Log.d("FollowingFragment", "Updated adapter with following list")
+        } else {
+            Log.w("FollowingFragment", "Adapter not initialized yet")
+        }
+    }
+
+
     private suspend fun loadAllFollowingPostsInitially() {
         val currentUserId = getUserId(requireContext())
         val allFollowingPosts = mutableListOf<Post>()
@@ -629,6 +650,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             Log.e(TAG, "Error loading following list: ${e.message}", e)
         }
     }
+
 
     private fun refreshFeedAfterUnfollow() {
         val currentUserId = getUserId(requireContext())

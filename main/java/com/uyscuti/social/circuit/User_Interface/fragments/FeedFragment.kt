@@ -206,7 +206,7 @@ class FeedFragment : Fragment(), Timer.OnTimeTickListener {
     private lateinit var settings: SharedPreferences
     private var param1: String? = null
     private var param2: String? = null
-
+    private var followingUserIds: Set<String> = emptySet()
 
 
     private val waveHandler = Handler(Looper.getMainLooper())
@@ -266,6 +266,8 @@ class FeedFragment : Fragment(), Timer.OnTimeTickListener {
         }
         feedPostPositionFromShorts = arguments?.getInt(FEED_POST_POSITION_FROM_SHORTS, -1)!!
         EventBus.getDefault().register(this)
+
+        loadFollowingListForFeed()
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
@@ -377,7 +379,65 @@ class FeedFragment : Fragment(), Timer.OnTimeTickListener {
         return view
     }
 
+    private fun loadFollowingListForFeed() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Loading following list for feed...")
 
+                // Get current user's username to fetch their following list
+                val currentUsername = LocalStorage.getInstance(requireContext()).getUsername()
+
+                val response = retrofitInterface.apiService.getOtherUserFollowing(
+                    username = currentUsername,
+                    page = 1,
+                    limit = 1000  // Get all following users
+                )
+
+                if (response.isSuccessful && response.body() != null) {
+                    val followingData = response.body()!!.data ?: emptyList()
+                    followingUserIds = followingData.map { it._id }.toSet()
+
+                    withContext(Dispatchers.Main) {
+                        Log.d(TAG, "Loaded ${followingUserIds.size} following users for feed")
+                        followingUserIds.forEach { id ->
+                            Log.d(TAG, "  ✓ Following ID: $id")
+                        }
+
+                        // Update child fragments with following list
+                        updateChildFragmentsWithFollowingList()
+                    }
+                } else {
+                    Log.e(TAG, "Failed to load following list: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading following list for feed: ${e.message}", e)
+            }
+        }
+    }
+
+    private fun updateChildFragmentsWithFollowingList() {
+        try {
+            // Get the current visible fragment from ViewPager2
+            val currentFragment = adapter.getFragment(viewPager2.currentItem)
+
+            when (currentFragment) {
+                is AllFragment -> {
+                    Log.d(TAG, "Updating AllFragment with ${followingUserIds.size} following IDs")
+                    currentFragment.updateFollowingList(followingUserIds)
+                }
+                is FollowingFragment -> {
+                    Log.d(TAG, "Updating FollowingFragment with ${followingUserIds.size} following IDs")
+                    currentFragment.updateFollowingList(followingUserIds)
+                }
+                is FavoriteFragment -> {
+                    Log.d(TAG, "Updating FavoriteFragment with ${followingUserIds.size} following IDs")
+                    currentFragment.updateFollowingList(followingUserIds)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating child fragments: ${e.message}", e)
+        }
+    }
 
     private fun onAddButtonClick() {
         setVisibility(clicked)

@@ -191,6 +191,16 @@ class FeedAdapter(
         }
     }
 
+
+    fun updateFollowingList(newFollowingIds: Set<String>) {
+        followingUserIds = newFollowingIds
+        cachedFollowingUserIds = newFollowingIds
+        Log.d("FeedAdapter", "Following list updated: ${followingUserIds.size} users")
+
+        // Save to storage
+        saveFollowingListToStorage(context, followingUserIds)
+    }
+
     fun isUserFollowing(userId: String): Boolean {
         return followingUserIds.contains(userId) || cachedFollowingUserIds.contains(userId)
     }
@@ -2782,14 +2792,27 @@ class FeedAdapter(
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "CheckResult", "SuspiciousIndentation")
         fun render(data: Post) {
-
             currentPost = data
 
             // Determine the correct user ID - reposted user takes priority
             val feedReposterOwnerId = data.repostedUser?._id ?: data.author?.account?._id ?: "Unknown"
 
-            isFollowingUser = followingUserIds.contains(feedReposterOwnerId)
-            Log.d(TAG, "render: User ${data.repostedUser?.username ?: data.author?.account?.username} following status: $isFollowingUser, feedReposterOwnerId: $feedReposterOwnerId")
+            // Enhanced following check with detailed logging
+            val cachedFollowingList = FeedAdapter.getCachedFollowingList()
+            isFollowingUser = followingUserIds.contains(feedReposterOwnerId) ||
+                    cachedFollowingList.contains(feedReposterOwnerId)
+
+            Log.d(TAG, "REPOST FOLLOW CHECK")
+            Log.d(TAG, "Post ID: ${data._id}")
+            Log.d(TAG, "Reposted User ID: ${data.repostedUser?._id}")
+            Log.d(TAG, "Main Author ID: ${data.author?.account?._id}")
+            Log.d(TAG, "Selected feedReposterOwnerId: $feedReposterOwnerId")
+            Log.d(TAG, "isFollowingUser: $isFollowingUser")
+            Log.d(TAG, "followingUserIds contains: ${followingUserIds.contains(feedReposterOwnerId)}")
+            Log.d(TAG, "cachedFollowingList contains: ${cachedFollowingList.contains(feedReposterOwnerId)}")
+            Log.d(TAG, "followingUserIds size: ${followingUserIds.size}")
+            Log.d(TAG, "cachedFollowingList size: ${cachedFollowingList.size}")
+
 
             totalMixedComments = data.comments
             totalMixedLikesCounts = data.likes
@@ -2817,6 +2840,7 @@ class FeedAdapter(
             updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
             updateMetricDisplay(shareCounts, totalMixedShareCounts, "share")
 
+            //  Setup follow button AFTER we've determined isFollowingUser
             setupFollowButton(feedReposterOwnerId)
             setupMoreOptionsButton(data)
             setupFileTapNavigation(data)
@@ -2828,14 +2852,28 @@ class FeedAdapter(
         private fun setupFollowButton(feedOwnerId: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
-            // Check multiple sources for following status
+            // Enhanced following check with multiple fallbacks
+            val cachedFollowingList = FeedAdapter.getCachedFollowingList()
             val isUserFollowing = followingUserIds.contains(feedOwnerId) ||
-                    FeedAdapter.getCachedFollowingList().contains(feedOwnerId)
+                    cachedFollowingList.contains(feedOwnerId)
 
-            // Hide button if: it's current user's post, OR we're already following them
+            Log.d(TAG, "SETUP FOLLOW BUTTON")
+            Log.d(TAG, "feedOwnerId: $feedOwnerId")
+            Log.d(TAG, "currentUserId: $currentUserId")
+            Log.d(TAG, "isFollowingUser (from render): $isFollowingUser")
+            Log.d(TAG, "isUserFollowing (local check): $isUserFollowing")
+            Log.d(TAG, "followingUserIds.contains: ${followingUserIds.contains(feedOwnerId)}")
+            Log.d(TAG, "cachedFollowingList.contains: ${cachedFollowingList.contains(feedOwnerId)}")
+
+            //  Hide button if: it's current user's post OR we're already following them
             if (feedOwnerId == currentUserId || isFollowingUser || isUserFollowing) {
                 followButton.visibility = View.GONE
-                Log.d(TAG, "setupFollowButton: Hidden for user $feedOwnerId - Following: true")
+                Log.d(TAG, "✓ Follow button HIDDEN - Reason: ${when {
+                    feedOwnerId == currentUserId -> "Own post"
+                    isFollowingUser -> "Already following (from render check)"
+                    isUserFollowing -> "Already following (from local check)"
+                    else -> "Unknown"
+                }}")
                 return
             }
 
@@ -2847,7 +2885,8 @@ class FeedAdapter(
                 R.color.blueJeans
             )
 
-            // ✅ FIXED: Pass the correct feedOwnerId (not post ID)
+            Log.d(TAG, "✓ Follow button VISIBLE for user: $feedOwnerId")
+
             followButton.setOnClickListener {
                 handleFollowButtonClick(feedOwnerId)
             }
