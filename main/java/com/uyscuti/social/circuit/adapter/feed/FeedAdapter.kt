@@ -2787,59 +2787,56 @@ class FeedAdapter(
         private val shareSection: LinearLayout = itemView.findViewById(R.id.share_layout)
         private val shareButton: ImageView = itemView.findViewById(R.id.shareButtonIcon)
         private val shareCounts: TextView = itemView.findViewById(R.id.shareCount)
-
+        
 
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "CheckResult", "SuspiciousIndentation")
         fun render(data: Post) {
             currentPost = data
 
-            // ✅ Extract account ID based on repost structure
-            // The key is: we need to get the ACCOUNT ID that matches what's in the following list
+            // Extract the CORRECT account ID
             val feedReposterOwnerId = when {
-                // Case 1: Someone reposted the content - use their account ID
+                // Case 1: Someone reposted - use their account ID
                 data.repostedUser != null -> {
-                    // repostedUser._id IS the account ID (same as following list format)
                     val accountId = data.repostedUser._id
-                    Log.d(TAG, "🔵 Case 1: RepostedUser account ID: $accountId")
+                    Log.d(TAG, "Case 1: RepostedUser ID: $accountId")
                     accountId
                 }
 
-                // Case 2: This is a repost showing original content - use original author's account ID
+                // Case 2: Original post - the author.owner field IS the account ID!
                 data.originalPost != null && data.originalPost.isNotEmpty() -> {
-                    // The account ID is stored in author.account._id
-                    val accountId = data.originalPost[0].author.account._id
-                    Log.d(TAG, "🔵 Case 2: Original author account ID: $accountId")
+                    val originalAuthor = data.originalPost[0].author
+                    // The owner field contains the account ID that matches following list
+                    val accountId = originalAuthor.owner
+                    Log.d(TAG, "Case 2: Original author.owner (account ID): $accountId")
+                    Log.d(TAG, "Case 2: Original author._id (profile ID): ${originalAuthor._id}")
+                    Log.d(TAG, "Case 2: Original author.account._id: ${originalAuthor.account._id}")
                     accountId
                 }
 
                 // Case 3: Regular post - use main author's account ID
                 else -> {
                     val accountId = data.author?.account?._id ?: "Unknown"
-                    Log.d(TAG, "🔵 Case 3: Main author account ID: $accountId")
+                    Log.d(TAG, "Case 3: Main author account ID: $accountId")
                     accountId
                 }
             }
 
-            // Check if we're following this user (same logic as FollowingFragment uses)
+            // Check following status
             val cachedFollowingList = FeedAdapter.getCachedFollowingList()
             isFollowingUser = followingUserIds.contains(feedReposterOwnerId) ||
                     cachedFollowingList.contains(feedReposterOwnerId)
 
-            Log.d(TAG, "═══════════════════════════════════════")
+
             Log.d(TAG, "REPOST FOLLOW CHECK")
             Log.d(TAG, "Post ID: ${data._id}")
-            Log.d(TAG, "RepostedUser ID: ${data.repostedUser?._id}")
-            Log.d(TAG, "OriginalPost Author Account ID: ${data.originalPost?.firstOrNull()?.author?.account?._id}")
-            Log.d(TAG, "Main Author Account ID: ${data.author?.account?._id}")
-            Log.d(TAG, ">>> Selected Account ID for follow check: $feedReposterOwnerId")
+            Log.d(TAG, ">>> Selected Account ID: $feedReposterOwnerId")
             Log.d(TAG, ">>> isFollowingUser: $isFollowingUser")
-            Log.d(TAG, ">>> followingUserIds.contains($feedReposterOwnerId): ${followingUserIds.contains(feedReposterOwnerId)}")
-            Log.d(TAG, ">>> cachedFollowingList.contains($feedReposterOwnerId): ${cachedFollowingList.contains(feedReposterOwnerId)}")
-            Log.d(TAG, "Following list size: ${followingUserIds.size}")
-            Log.d(TAG, "Cached list size: ${cachedFollowingList.size}")
-            Log.d(TAG, "Following IDs: ${followingUserIds.take(3).joinToString(", ")}${if (followingUserIds.size > 3) "..." else ""}")
-            Log.d(TAG, "═══════════════════════════════════════")
+            Log.d(TAG, ">>> In followingUserIds: ${followingUserIds.contains(feedReposterOwnerId)}")
+            Log.d(TAG, ">>> In cachedList: ${cachedFollowingList.contains(feedReposterOwnerId)}")
+            Log.d(TAG, "Following list has ${followingUserIds.size} users")
+            Log.d(TAG, "Following IDs: ${followingUserIds.joinToString(", ")}")
+
 
             totalMixedComments = data.comments
             totalMixedLikesCounts = data.likes
@@ -2848,26 +2845,22 @@ class FeedAdapter(
             totalMixedRePostCounts = data.repostCount
             totalRepostComments = totalMixedComments
 
-            // Setup all content
             setupRepostedUser(data)
             setupOriginalPostContent(data)
             dateTimeCreate.text = formattedMongoDateTime(data.createdAt)
 
-            // Setup interaction buttons
             setupLikeButton(data)
             setupBookmarkButton(data)
             setupRepostButton(data)
             setupShareButton(data)
             setupCommentButton(data)
 
-            // Update metric displays
             updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
             updateMetricDisplay(commentCount, totalMixedComments, "comment")
             updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
             updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
             updateMetricDisplay(shareCounts, totalMixedShareCounts, "share")
 
-            // Setup follow button AFTER determining the correct account ID
             setupFollowButton(feedReposterOwnerId)
             setupMoreOptionsButton(data)
             setupFileTapNavigation(data)
@@ -2879,12 +2872,11 @@ class FeedAdapter(
         private fun setupFollowButton(feedOwnerId: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
-            // Double-check following status (matching FollowingFragment pattern)
             val cachedFollowingList = FeedAdapter.getCachedFollowingList()
             val isUserFollowing = followingUserIds.contains(feedOwnerId) ||
                     cachedFollowingList.contains(feedOwnerId)
 
-            Log.d(TAG, "───────────────────────────────────────")
+
             Log.d(TAG, "SETUP FOLLOW BUTTON")
             Log.d(TAG, "Account ID to check: $feedOwnerId")
             Log.d(TAG, "Current user ID: $currentUserId")
@@ -2893,25 +2885,20 @@ class FeedAdapter(
             Log.d(TAG, "Match in followingUserIds: ${followingUserIds.contains(feedOwnerId)}")
             Log.d(TAG, "Match in cachedFollowingList: ${cachedFollowingList.contains(feedOwnerId)}")
 
-            // Hide button if ANY of these conditions are true:
-            // 1. It's the current user's own post
-            // 2. We're already following this user (checked in render)
-            // 3. We're already following this user (checked locally)
             val shouldHideButton = feedOwnerId == currentUserId || isFollowingUser || isUserFollowing
 
             if (shouldHideButton) {
                 followButton.visibility = View.GONE
-                Log.d(TAG, "✓✓✓ HIDING follow button - Reason: ${when {
-                    feedOwnerId == currentUserId -> "Own post (user ID matches)"
-                    isFollowingUser -> "Already following (render check)"
-                    isUserFollowing -> "Already following (local check)"
+                Log.d(TAG, "HIDING follow button - Reason: ${when {
+                    feedOwnerId == currentUserId -> "Own post"
+                    isFollowingUser -> "Already following (render)"
+                    isUserFollowing -> "Already following (local)"
                     else -> "Unknown"
                 }}")
-                Log.d(TAG, "───────────────────────────────────────")
+
                 return
             }
 
-            // Show follow button - this user is NOT being followed
             followButton.visibility = View.VISIBLE
             followButton.text = "Follow"
             followButton.backgroundTintList = ContextCompat.getColorStateList(
@@ -2919,8 +2906,7 @@ class FeedAdapter(
                 R.color.blueJeans
             )
 
-            Log.d(TAG, "✓✓✓ SHOWING follow button for account: $feedOwnerId")
-            Log.d(TAG, "───────────────────────────────────────")
+            Log.d(TAG, "SHOWING follow button for account: $feedOwnerId")
 
             followButton.setOnClickListener {
                 handleFollowButtonClick(feedOwnerId)
@@ -2935,7 +2921,6 @@ class FeedAdapter(
 
             val repostedUser = data.repostedUser
             if (repostedUser != null) {
-                // RepostedUser case: _id is the account ID
                 feedOwnerId = repostedUser._id
                 profilePicUrl = repostedUser.avatar?.url
 
@@ -2947,12 +2932,12 @@ class FeedAdapter(
                     else -> repostedUser.username
                 }
                 userHandle = "@${repostedUser.username}"
-                Log.d(tag, "📍 Reposted by: $feedOwnerUsername (Account: $feedOwnerId)")
+                Log.d(tag, "Reposted by: $feedOwnerUsername (Account: $feedOwnerId)")
 
             } else if (data.originalPost != null && data.originalPost.isNotEmpty()) {
-                // Original post case: get account ID from author.account._id
+                // Use author.owner which is the account ID
                 val originalAuthor = data.originalPost[0].author
-                feedOwnerId = originalAuthor.account._id  // ✅ This matches following list format
+                feedOwnerId = originalAuthor.owner  // This matches the following list!
                 profilePicUrl = originalAuthor.account.avatar.url
 
                 feedOwnerUsername = when {
@@ -2963,19 +2948,17 @@ class FeedAdapter(
                     else -> originalAuthor.account.username
                 }
                 userHandle = "@${originalAuthor.account.username}"
-                Log.d(tag, "📍 Original poster: $feedOwnerUsername (Account: $feedOwnerId)")
+                Log.d(tag, "Original author: $feedOwnerUsername (Owner/Account ID: $feedOwnerId)")
 
             } else {
-                // Fallback to main author
                 val author = data.author
                 feedOwnerId = author.account._id
                 profilePicUrl = author.account.avatar?.url
                 feedOwnerUsername = buildDisplayName(author)
                 userHandle = "@${author.account.username}"
-                Log.d(tag, "📍 Main author: $feedOwnerUsername (Account: $feedOwnerId)")
+                Log.d(tag, "Main author: $feedOwnerUsername (Account: $feedOwnerId)")
             }
 
-            // UI binding
             repostedUserName.text = feedOwnerUsername
             tvUserHandle.text = userHandle
 
@@ -3006,7 +2989,6 @@ class FeedAdapter(
 
             val repostedUser = data.repostedUser
             if (repostedUser != null) {
-                // RepostedUser: _id is account ID
                 feedOwnerId = repostedUser._id
                 feedOwnerName = when {
                     repostedUser.firstName.isNotBlank() && repostedUser.lastName.isNotBlank() ->
@@ -3019,22 +3001,21 @@ class FeedAdapter(
                 profilePicUrl = repostedUser.avatar?.url ?: ""
 
             } else if (data.originalPost != null && data.originalPost.isNotEmpty()) {
-                // Original post: use author.account._id (account ID)
+                //  Use owner field (account ID)
                 val originalAuthor = data.originalPost[0].author
-                feedOwnerId = originalAuthor.account._id
+                feedOwnerId = originalAuthor.owner
                 feedOwnerName = buildDisplayName(originalAuthor)
                 feedOwnerUsername = originalAuthor.account.username
                 profilePicUrl = originalAuthor.account.avatar.url
 
             } else {
-                // Fallback to main author
                 feedOwnerId = data.author.account._id
                 feedOwnerName = buildDisplayName(data.author)
                 feedOwnerUsername = data.author.account.username
                 profilePicUrl = data.author.account.avatar?.url ?: ""
             }
 
-            Log.d(tag, "🔵 Profile click setup for account: $feedOwnerId (@$feedOwnerUsername)")
+            Log.d(tag, "Profile click setup for account: $feedOwnerId (@$feedOwnerUsername)")
 
             userProfileImage.setOnClickListener { view ->
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
@@ -3049,6 +3030,67 @@ class FeedAdapter(
                     true
                 } else {
                     false
+                }
+            }
+        }
+
+        @SuppressLint("ClickableViewAccessibility")
+        private fun setupOriginalPostAuthorClicks(data: Post) {
+            if (data.originalPost != null && data.originalPost.isNotEmpty()) {
+                val originalPostData = data.originalPost[0]
+                val author = originalPostData.author
+
+                // Use owner field (account ID)
+                val feedOwnerId = author.owner
+                val feedOwnerName = buildDisplayName(author)
+                val feedOwnerUsername = author.account.username
+                val profilePicUrl = author.account.avatar.url
+
+                Log.d(tag, "Original author click - Account ID: $feedOwnerId (@$feedOwnerUsername)")
+
+                originalPosterProfileImage?.setOnClickListener { view ->
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
+                    true
+                }
+
+                originalPosterProfileImage?.setOnTouchListener { _, event ->
+                    if (event.action == MotionEvent.ACTION_UP) {
+                        originalPosterProfileImage.performClick()
+                        true
+                    } else {
+                        false
+                    }
+                }
+            } else {
+                val author = data.author
+                val feedOwnerId = author.account._id
+                val feedOwnerName = buildDisplayName(author)
+                val feedOwnerUsername = author.account.username
+                val profilePicUrl = author.account.avatar.url
+
+                Log.d(tag, "Main author click - Account ID: $feedOwnerId (@$feedOwnerUsername)")
+
+                val profileClickListener = View.OnClickListener {
+                    handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
+                }
+
+                originalPosterProfileImage?.setOnClickListener { view ->
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
+                    true
+                }
+
+                originalPosterName?.setOnClickListener(profileClickListener)
+                tvQuotedUserHandle?.setOnClickListener(profileClickListener)
+
+                originalPosterProfileImage?.setOnTouchListener { _, event ->
+                    if (event.action == MotionEvent.ACTION_UP) {
+                        originalPosterProfileImage.performClick()
+                        true
+                    } else {
+                        false
+                    }
                 }
             }
         }
@@ -3138,79 +3180,6 @@ class FeedAdapter(
             // For RecyclerView, let it handle its own touch events
             recyclerView?.setOnTouchListener { _, _ ->
                 false
-            }
-        }
-
-        @SuppressLint("ClickableViewAccessibility")
-        private fun setupOriginalPostAuthorClicks(data: Post) {
-            // Only set up if we have an original post
-            if (data.originalPost != null && data.originalPost.isNotEmpty()) {
-                val originalPostData = data.originalPost[0]
-                val author = originalPostData.author
-
-                val feedOwnerId = author._id
-                val feedOwnerName = buildDisplayName(author)
-                val feedOwnerUsername = author.account.username
-                val profilePicUrl = author.account.avatar.url
-
-
-
-
-                // Set click listener specifically for originalPosterProfileImage to only navigate to profile
-                originalPosterProfileImage?.setOnClickListener { view ->
-                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                    Log.d(tag, "originalPosterProfileImage clicked - ID: $feedOwnerId, Name: $feedOwnerName")
-                    handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
-                    // Consume the click event to prevent bubbling to parent containers
-                    true
-                }
-
-
-                // Prevent originalPosterProfileImage clicks from bubbling to parent containers
-                originalPosterProfileImage?.setOnTouchListener { _, event ->
-                    if (event.action == MotionEvent.ACTION_UP) {
-                        originalPosterProfileImage.performClick()
-                        true // Consume the touch event to prevent bubbling
-                    } else {
-                        false // Allow other touch events (e.g., long press) to pass through
-                    }
-                }
-            } else {
-                // If no original post, set up clicks for the main author in quoted section
-                val author = data.author
-                val feedOwnerId = author._id
-                val feedOwnerName = buildDisplayName(author)
-                val feedOwnerUsername = author.account.username
-                val profilePicUrl = author.account.avatar.url
-
-                // Click listener for profile navigation (used for name and handle)
-                val profileClickListener = View.OnClickListener {
-                    Log.d(tag, "Profile element clicked (main author) - ID: $feedOwnerId, Name: $feedOwnerName")
-                    handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
-                }
-
-                // Set click listener specifically for originalPosterProfileImage to only navigate to profile
-                originalPosterProfileImage?.setOnClickListener { view ->
-                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                    Log.d(tag, "originalPosterProfileImage clicked (main author) - ID: $feedOwnerId, Name: $feedOwnerName")
-                    handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
-                    // Consume the click event to prevent bubbling to parent containers
-                    true
-                }
-
-                // Set click listeners for other profile elements (name and handle)
-                originalPosterName?.setOnClickListener(profileClickListener)
-                tvQuotedUserHandle?.setOnClickListener(profileClickListener)
-
-                // Prevent originalPosterProfileImage clicks from bubbling to parent containers
-                originalPosterProfileImage?.setOnTouchListener { _, event ->
-                    if (event.action == MotionEvent.ACTION_UP) {
-                        originalPosterProfileImage.performClick()
-                        true // Consume the touch event to prevent bubbling
-                    } else {
-                        false // Allow other touch events (e.g., long press) to pass through
-                    }
-                }
             }
         }
 
