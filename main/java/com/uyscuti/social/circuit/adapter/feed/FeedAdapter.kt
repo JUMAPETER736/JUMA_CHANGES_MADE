@@ -2789,13 +2789,26 @@ class FeedAdapter(
         private val shareCounts: TextView = itemView.findViewById(R.id.shareCount)
 
 
+        // In your FeedRepostViewHolder class, replace the render() method:
+
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "CheckResult", "SuspiciousIndentation")
         fun render(data: Post) {
             currentPost = data
 
-            // Determine the correct user ID - reposted user takes priority
-            val feedReposterOwnerId = data.repostedUser?._id ?: data.author?.account?._id ?: "Unknown"
+            // ✅ FIX: Use the correct ID based on data structure
+            val feedReposterOwnerId = when {
+                // If there's a reposted user, use their ACCOUNT ID
+                data.repostedUser != null -> data.repostedUser._id
+
+                // If there's an original post, use the original AUTHOR's OWNER ID (account ID)
+                data.originalPost != null && data.originalPost.isNotEmpty() -> {
+                    data.originalPost[0].author.owner // This is the account ID
+                }
+
+                // Fallback to main author's account ID
+                else -> data.author?.account?._id ?: "Unknown"
+            }
 
             // Enhanced following check with detailed logging
             val cachedFollowingList = FeedAdapter.getCachedFollowingList()
@@ -2805,14 +2818,14 @@ class FeedAdapter(
             Log.d(TAG, "REPOST FOLLOW CHECK")
             Log.d(TAG, "Post ID: ${data._id}")
             Log.d(TAG, "Reposted User ID: ${data.repostedUser?._id}")
-            Log.d(TAG, "Main Author ID: ${data.author?.account?._id}")
+            Log.d(TAG, "Original Author Owner ID: ${data.originalPost?.firstOrNull()?.author?.owner}")
+            Log.d(TAG, "Main Author Account ID: ${data.author?.account?._id}")
             Log.d(TAG, "Selected feedReposterOwnerId: $feedReposterOwnerId")
             Log.d(TAG, "isFollowingUser: $isFollowingUser")
             Log.d(TAG, "followingUserIds contains: ${followingUserIds.contains(feedReposterOwnerId)}")
             Log.d(TAG, "cachedFollowingList contains: ${cachedFollowingList.contains(feedReposterOwnerId)}")
             Log.d(TAG, "followingUserIds size: ${followingUserIds.size}")
             Log.d(TAG, "cachedFollowingList size: ${cachedFollowingList.size}")
-
 
             totalMixedComments = data.comments
             totalMixedLikesCounts = data.likes
@@ -2826,21 +2839,21 @@ class FeedAdapter(
             setupOriginalPostContent(data)
             dateTimeCreate.text = formattedMongoDateTime(data.createdAt)
 
-            // Setup interaction buttons with the repost counts
+            // Setup interaction buttons
             setupLikeButton(data)
             setupBookmarkButton(data)
             setupRepostButton(data)
             setupShareButton(data)
             setupCommentButton(data)
 
-            // Update the UI displays immediately with repost counts
+            // Update displays
             updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
             updateMetricDisplay(commentCount, totalMixedComments, "comment")
             updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
             updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
             updateMetricDisplay(shareCounts, totalMixedShareCounts, "share")
 
-            //  Setup follow button AFTER we've determined isFollowingUser
+            // Setup follow button with correct ID
             setupFollowButton(feedReposterOwnerId)
             setupMoreOptionsButton(data)
             setupFileTapNavigation(data)
@@ -2849,10 +2862,11 @@ class FeedAdapter(
             setupOriginalPostAuthorClicks(data)
         }
 
+        // ✅ Also update setupFollowButton to handle both ID formats
         private fun setupFollowButton(feedOwnerId: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
-            // Enhanced following check with multiple fallbacks
+            // Enhanced following check
             val cachedFollowingList = FeedAdapter.getCachedFollowingList()
             val isUserFollowing = followingUserIds.contains(feedOwnerId) ||
                     cachedFollowingList.contains(feedOwnerId)
@@ -2865,7 +2879,7 @@ class FeedAdapter(
             Log.d(TAG, "followingUserIds.contains: ${followingUserIds.contains(feedOwnerId)}")
             Log.d(TAG, "cachedFollowingList.contains: ${cachedFollowingList.contains(feedOwnerId)}")
 
-            //  Hide button if: it's current user's post OR we're already following them
+            // Hide button if: it's current user's post OR we're already following them
             if (feedOwnerId == currentUserId || isFollowingUser || isUserFollowing) {
                 followButton.visibility = View.GONE
                 Log.d(TAG, "✓ Follow button HIDDEN - Reason: ${when {
@@ -2889,6 +2903,128 @@ class FeedAdapter(
 
             followButton.setOnClickListener {
                 handleFollowButtonClick(feedOwnerId)
+            }
+        }
+
+        // ✅ Update setupRepostedUser to use consistent ID
+        private fun setupRepostedUser(data: Post) {
+            var feedOwnerId = ""
+            var profilePicUrl: String? = null
+            var feedOwnerUsername = ""
+            var userHandle = ""
+
+            val repostedUser = data.repostedUser
+            if (repostedUser != null) {
+                // Use reposted user's ACCOUNT ID (this is what's in the following list)
+                feedOwnerId = repostedUser._id
+                profilePicUrl = repostedUser.avatar?.url
+
+                feedOwnerUsername = when {
+                    repostedUser.firstName.isNotBlank() && repostedUser.lastName.isNotBlank() ->
+                        "${repostedUser.firstName} ${repostedUser.lastName}"
+                    repostedUser.firstName.isNotBlank() -> repostedUser.firstName
+                    repostedUser.lastName.isNotBlank() -> repostedUser.lastName
+                    else -> repostedUser.username
+                }
+                userHandle = "@${repostedUser.username}"
+                Log.d(tag, "Using reposted user: $feedOwnerUsername (Account ID: $feedOwnerId)")
+            } else if (data.originalPost != null && data.originalPost.isNotEmpty()) {
+                // ✅ FIX: Use the OWNER ID (account ID) from original post author
+                val originalAuthor = data.originalPost[0].author
+                feedOwnerId = originalAuthor.owner // This is the account ID
+                profilePicUrl = originalAuthor.account.avatar.url
+
+                feedOwnerUsername = when {
+                    originalAuthor.firstName.isNotBlank() && originalAuthor.lastName.isNotBlank() ->
+                        "${originalAuthor.firstName} ${originalAuthor.lastName}"
+                    originalAuthor.firstName.isNotBlank() -> originalAuthor.firstName
+                    originalAuthor.lastName.isNotBlank() -> originalAuthor.lastName
+                    else -> originalAuthor.account.username
+                }
+                userHandle = "@${originalAuthor.account.username}"
+                Log.d(tag, "Using original post author: $feedOwnerUsername (Owner ID: $feedOwnerId)")
+            } else {
+                // Fallback to main author
+                val author = data.author
+                feedOwnerId = author.account._id // Use account ID
+                profilePicUrl = author.account.avatar?.url
+                feedOwnerUsername = buildDisplayName(author)
+                userHandle = "@${author.account.username}"
+                Log.d(tag, "Using main author: $feedOwnerUsername (Account ID: $feedOwnerId)")
+            }
+
+            // UI binding
+            repostedUserName.text = feedOwnerUsername
+            tvUserHandle.text = userHandle
+
+            if (!profilePicUrl.isNullOrBlank()) {
+                Glide.with(itemView.context)
+                    .load(profilePicUrl)
+                    .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .placeholder(R.drawable.flash21)
+                    .error(R.drawable.flash21)
+                    .into(userProfileImage)
+            } else {
+                userProfileImage.setImageResource(R.drawable.flash21)
+            }
+
+            tvPostTag.text = if (repostedUser != null) "Had to Repost This!" else "Shared a Post!"
+            userComment.visibility = if (!data.content.isNullOrBlank()) View.VISIBLE else View.GONE
+            userComment.text = data.content
+            setupRepostHashtags(data)
+        }
+
+        // ✅ Update profile click handlers to use consistent IDs
+        @SuppressLint("ClickableViewAccessibility")
+        private fun setupRepostedUserProfileClicks(data: Post) {
+            var feedOwnerId = ""
+            var feedOwnerName = ""
+            var feedOwnerUsername = ""
+            var profilePicUrl = ""
+
+            val repostedUser = data.repostedUser
+            if (repostedUser != null) {
+                feedOwnerId = repostedUser._id // Account ID
+                feedOwnerName = when {
+                    repostedUser.firstName.isNotBlank() && repostedUser.lastName.isNotBlank() ->
+                        "${repostedUser.firstName} ${repostedUser.lastName}"
+                    repostedUser.firstName.isNotBlank() -> repostedUser.firstName
+                    repostedUser.lastName.isNotBlank() -> repostedUser.lastName
+                    else -> repostedUser.username
+                }
+                feedOwnerUsername = repostedUser.username
+                profilePicUrl = repostedUser.avatar?.url ?: ""
+            } else if (data.originalPost != null && data.originalPost.isNotEmpty()) {
+                // ✅ Use owner ID for original post author
+                val originalAuthor = data.originalPost[0].author
+                feedOwnerId = originalAuthor.owner // Account ID
+                feedOwnerName = buildDisplayName(originalAuthor)
+                feedOwnerUsername = originalAuthor.account.username
+                profilePicUrl = originalAuthor.account.avatar.url
+            } else {
+                // Fallback
+                feedOwnerId = data.author.account._id
+                feedOwnerName = buildDisplayName(data.author)
+                feedOwnerUsername = data.author.account.username
+                profilePicUrl = data.author.account.avatar?.url ?: ""
+            }
+
+            userProfileImage.setOnClickListener { view ->
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                Log.d(tag, "userProfileImage clicked - ID: $feedOwnerId, Name: $feedOwnerName")
+                handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
+                view.isClickable = true
+                true
+            }
+
+            userProfileImage.setOnTouchListener { _, event ->
+                if (event.action == MotionEvent.ACTION_UP) {
+                    userProfileImage.performClick()
+                    true
+                } else {
+                    false
+                }
             }
         }
 
@@ -2979,51 +3115,51 @@ class FeedAdapter(
             }
         }
 
-        @SuppressLint("ClickableViewAccessibility")
-        private fun setupRepostedUserProfileClicks(data: Post) {
-            val repostedUser = data.repostedUser
-            val author = data.author
-
-            var feedOwnerId = ""
-            var feedOwnerName = ""
-            var feedOwnerUsername = ""
-            var profilePicUrl = ""
-
-            if (repostedUser != null) {
-                // This is an actual repost - use reposted user data
-                feedOwnerId = repostedUser._id
-                feedOwnerName = repostedUser.username // Or build full name if available
-                feedOwnerUsername = repostedUser.username
-                profilePicUrl = repostedUser.avatar?.url ?: ""
-            } else {
-                // Use main author data
-                feedOwnerId = author._id
-                feedOwnerName = buildDisplayName(author)
-                feedOwnerUsername = author.account.username
-                profilePicUrl = author.account.avatar?.url ?: ""
-            }
-
-
-            userProfileImage.setOnClickListener { view ->
-                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                Log.d(tag, "userProfileImage clicked - ID: $feedOwnerId, Name: $feedOwnerName")
-                handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
-                // Consume the click event to prevent it from bubbling to repostContainer
-                view.isClickable = true
-                true // Indicate the event is consumed
-            }
-
-
-            // Prevent userProfileImage clicks from bubbling to repostContainer
-            userProfileImage.setOnTouchListener { _, event ->
-                if (event.action == MotionEvent.ACTION_UP) {
-                    userProfileImage.performClick()
-                    true // Consume the touch event to prevent bubbling
-                } else {
-                    false // Allow other touch events (e.g., long press) to pass through
-                }
-            }
-        }
+//        @SuppressLint("ClickableViewAccessibility")
+//        private fun setupRepostedUserProfileClicks(data: Post) {
+//            val repostedUser = data.repostedUser
+//            val author = data.author
+//
+//            var feedOwnerId = ""
+//            var feedOwnerName = ""
+//            var feedOwnerUsername = ""
+//            var profilePicUrl = ""
+//
+//            if (repostedUser != null) {
+//                // This is an actual repost - use reposted user data
+//                feedOwnerId = repostedUser._id
+//                feedOwnerName = repostedUser.username // Or build full name if available
+//                feedOwnerUsername = repostedUser.username
+//                profilePicUrl = repostedUser.avatar?.url ?: ""
+//            } else {
+//                // Use main author data
+//                feedOwnerId = author._id
+//                feedOwnerName = buildDisplayName(author)
+//                feedOwnerUsername = author.account.username
+//                profilePicUrl = author.account.avatar?.url ?: ""
+//            }
+//
+//
+//            userProfileImage.setOnClickListener { view ->
+//                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+//                Log.d(tag, "userProfileImage clicked - ID: $feedOwnerId, Name: $feedOwnerName")
+//                handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
+//                // Consume the click event to prevent it from bubbling to repostContainer
+//                view.isClickable = true
+//                true // Indicate the event is consumed
+//            }
+//
+//
+//            // Prevent userProfileImage clicks from bubbling to repostContainer
+//            userProfileImage.setOnTouchListener { _, event ->
+//                if (event.action == MotionEvent.ACTION_UP) {
+//                    userProfileImage.performClick()
+//                    true // Consume the touch event to prevent bubbling
+//                } else {
+//                    false // Allow other touch events (e.g., long press) to pass through
+//                }
+//            }
+//        }
 
         @SuppressLint("ClickableViewAccessibility")
         private fun setupOriginalPostAuthorClicks(data: Post) {
@@ -4120,59 +4256,59 @@ class FeedAdapter(
             }
         }
 
-        private fun setupRepostedUser(data: Post) {
-            var feedOwnerId = ""
-            var profilePicUrl: String? = null
-            var feedOwnerUsername = ""
-            var userHandle = ""
-
-            val repostedUser = data.repostedUser
-            if (repostedUser != null) {
-                // ---- REPOSTED USER (the one who actually reposted) ----
-                feedOwnerId      = repostedUser._id
-                profilePicUrl    = repostedUser.avatar?.url
-                // ---- NEW: use firstName / lastName if they exist ----
-                feedOwnerUsername = when {
-                    repostedUser.firstName.isNotBlank() && repostedUser.lastName.isNotBlank() ->
-                        "${repostedUser.firstName} ${repostedUser.lastName}"
-                    repostedUser.firstName.isNotBlank() -> repostedUser.firstName
-                    repostedUser.lastName.isNotBlank()  -> repostedUser.lastName
-                    else -> repostedUser.username               // fallback
-                }
-                userHandle = "@${repostedUser.username}"
-                Log.d(tag, "Using reposted user: $feedOwnerUsername")
-            } else {
-                // ---- FALLBACK to the main author (same as before) ----
-                Log.w(tag, "RepostedUser is null for post ${data._id}, using main author")
-                val author = data.author
-                feedOwnerId      = author._id
-                profilePicUrl    = author.account.avatar?.url
-                feedOwnerUsername = buildDisplayName(author)          // existing helper
-                userHandle       = "@${author.account.username}"
-                Log.d(tag, "Using main author: $feedOwnerUsername $userHandle")
-            }
-
-            // ---- UI binding (unchanged) ----
-            repostedUserName.text = feedOwnerUsername
-            tvUserHandle.text     = userHandle
-
-            if (!profilePicUrl.isNullOrBlank()) {
-                Glide.with(itemView.context)
-                    .load(profilePicUrl)
-                    .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.drawable.flash21)
-                    .error(R.drawable.flash21)
-                    .into(userProfileImage)
-            } else {
-                userProfileImage.setImageResource(R.drawable.flash21)
-            }
-
-            tvPostTag.text = if (repostedUser != null) "Had to Repost This!" else "Shared a Post!"
-            userComment.visibility = if (!data.content.isNullOrBlank()) View.VISIBLE else View.GONE
-            userComment.text = data.content
-            setupRepostHashtags(data)
-        }
+//        private fun setupRepostedUser(data: Post) {
+//            var feedOwnerId = ""
+//            var profilePicUrl: String? = null
+//            var feedOwnerUsername = ""
+//            var userHandle = ""
+//
+//            val repostedUser = data.repostedUser
+//            if (repostedUser != null) {
+//                // ---- REPOSTED USER (the one who actually reposted) ----
+//                feedOwnerId      = repostedUser._id
+//                profilePicUrl    = repostedUser.avatar?.url
+//                // ---- NEW: use firstName / lastName if they exist ----
+//                feedOwnerUsername = when {
+//                    repostedUser.firstName.isNotBlank() && repostedUser.lastName.isNotBlank() ->
+//                        "${repostedUser.firstName} ${repostedUser.lastName}"
+//                    repostedUser.firstName.isNotBlank() -> repostedUser.firstName
+//                    repostedUser.lastName.isNotBlank()  -> repostedUser.lastName
+//                    else -> repostedUser.username               // fallback
+//                }
+//                userHandle = "@${repostedUser.username}"
+//                Log.d(tag, "Using reposted user: $feedOwnerUsername")
+//            } else {
+//                // ---- FALLBACK to the main author (same as before) ----
+//                Log.w(tag, "RepostedUser is null for post ${data._id}, using main author")
+//                val author = data.author
+//                feedOwnerId      = author._id
+//                profilePicUrl    = author.account.avatar?.url
+//                feedOwnerUsername = buildDisplayName(author)          // existing helper
+//                userHandle       = "@${author.account.username}"
+//                Log.d(tag, "Using main author: $feedOwnerUsername $userHandle")
+//            }
+//
+//            // ---- UI binding (unchanged) ----
+//            repostedUserName.text = feedOwnerUsername
+//            tvUserHandle.text     = userHandle
+//
+//            if (!profilePicUrl.isNullOrBlank()) {
+//                Glide.with(itemView.context)
+//                    .load(profilePicUrl)
+//                    .apply(RequestOptions.bitmapTransform(CircleCrop()))
+//                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+//                    .placeholder(R.drawable.flash21)
+//                    .error(R.drawable.flash21)
+//                    .into(userProfileImage)
+//            } else {
+//                userProfileImage.setImageResource(R.drawable.flash21)
+//            }
+//
+//            tvPostTag.text = if (repostedUser != null) "Had to Repost This!" else "Shared a Post!"
+//            userComment.visibility = if (!data.content.isNullOrBlank()) View.VISIBLE else View.GONE
+//            userComment.text = data.content
+//            setupRepostHashtags(data)
+//        }
 
         private fun setupOriginalPosterInfo(originalPostData: OriginalPost) {
             Log.d(tag, "ORIGINAL POSTER Details: ${originalPostData}")
