@@ -81,8 +81,10 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import com.uyscuti.social.business.retro.model.User
+import com.uyscuti.social.circuit.FollowingManager
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside
+import com.uyscuti.social.circuit.adapter.feed.FeedAdapter
 import com.uyscuti.social.circuit.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.social.circuit.model.GoToUserProfileFragment
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
@@ -152,7 +154,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     private lateinit var headerTitle: TextView
     private lateinit var headerMenuButton: ImageButton
     private lateinit var userReposterProfileImage: ImageView
-    private lateinit var repostedUserName: TextView
+    private lateinit var reposterFullName: TextView
     private lateinit var tvUserHandle: TextView
     private lateinit var dateTimeCreate: TextView
     private lateinit var followButton: AppCompatButton
@@ -503,6 +505,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     @OptIn(UnstableApi::class)
     private fun setupClickListeners(post: Post) {
 
+        setupInitialFollowButtonState(post)
+
         cancelButton.setOnClickListener { button ->
             Log.d(TAG, "Cancel button clicked - immediate navigation")
             button.isEnabled = false
@@ -666,6 +670,289 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
+
+    private fun populateReposterInfo(post: Post) {
+        try {
+            var profilePicUrl: String? = null
+            var feedOwnerUsername = ""
+            var feedOwnerDisplayName = "" // For full name display
+            var userHandle = ""
+            var feedOwnerId = "" // For follow check
+
+            if (post.repostedUser != null) {
+                // ✅ Use OWNER field (account ID), not _id (profile ID)
+                feedOwnerId = post.repostedUser.owner
+                profilePicUrl = post.repostedUser.avatar?.url
+
+                // ✅ Build full name with proper cascade
+                feedOwnerDisplayName = when {
+                    post.repostedUser.firstName.isNotBlank() && post.repostedUser.lastName.isNotBlank() ->
+                        "${post.repostedUser.firstName} ${post.repostedUser.lastName}"
+                    post.repostedUser.firstName.isNotBlank() -> post.repostedUser.firstName
+                    post.repostedUser.lastName.isNotBlank() -> post.repostedUser.lastName
+                    else -> post.repostedUser.username
+                }
+
+                feedOwnerUsername = post.repostedUser.username
+                userHandle = "@${post.repostedUser.username}"
+
+                Log.d(TAG, "📍 Reposted by: $feedOwnerDisplayName (Account/Owner: $feedOwnerId, Username: @$feedOwnerUsername)")
+
+            } else if (post.originalPost != null && post.originalPost.isNotEmpty()) {
+                // ✅ Use author.owner (the account ID)
+                val originalAuthor = post.originalPost[0].author
+                feedOwnerId = originalAuthor.owner // Account ID!
+                profilePicUrl = originalAuthor.account.avatar.url
+
+                // ✅ Build full name for AuthorX type
+                feedOwnerDisplayName = when {
+                    originalAuthor.firstName.isNotBlank() && originalAuthor.lastName.isNotBlank() ->
+                        "${originalAuthor.firstName} ${originalAuthor.lastName}"
+                    originalAuthor.firstName.isNotBlank() -> originalAuthor.firstName
+                    originalAuthor.lastName.isNotBlank() -> originalAuthor.lastName
+                    else -> originalAuthor.account.username
+                }
+
+                feedOwnerUsername = originalAuthor.account.username
+                userHandle = "@${originalAuthor.account.username}"
+
+                Log.d(TAG, "📍 Original author: $feedOwnerDisplayName (Account/Owner ID: $feedOwnerId, Username: @$feedOwnerUsername)")
+
+            } else {
+                // Fall back to main post author
+                val author = post.author
+                feedOwnerId = author.account._id // Account ID
+                profilePicUrl = author.account.avatar?.url
+
+                // ✅ Build full name for Author type
+                feedOwnerDisplayName = when {
+                    author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
+                        "${author.firstName} ${author.lastName}"
+                    author.firstName.isNotBlank() -> author.firstName
+                    author.lastName.isNotBlank() -> author.lastName
+                    author.account.username.isNotBlank() -> author.account.username
+                    else -> "Unknown User"
+                }
+
+                feedOwnerUsername = author.account.username
+                userHandle = if (author.account.username.isNotBlank()) {
+                    "@${author.account.username}"
+                } else {
+                    "@unknown"
+                }
+
+                Log.d(TAG, "📍 Main author: $feedOwnerDisplayName (Account: $feedOwnerId, Username: @$feedOwnerUsername)")
+            }
+
+            // ✅ Set UI elements with FULL NAME (not username)
+            if (::reposterFullName.isInitialized) {
+                reposterFullName.text = feedOwnerDisplayName // Show full name!
+            }
+            if (::tvUserHandle.isInitialized) {
+                tvUserHandle.text = userHandle
+            }
+            if (::userReposterProfileImage.isInitialized) {
+                loadProfileImage(profilePicUrl, userReposterProfileImage)
+            }
+
+            // ✅ Update follow button visibility
+            updateFollowButtonVisibility(feedOwnerId, feedOwnerUsername)
+
+            Log.d(TAG, "Handling media from reposter info with ${post.files?.size ?: 0} files")
+            handlePostMedia(post)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error populating reposter info: ${e.message}", e)
+            if (::reposterFullName.isInitialized) reposterFullName.text = "Unknown User"
+            if (::tvUserHandle.isInitialized) tvUserHandle.text = "@unknown"
+            if (::userReposterProfileImage.isInitialized) {
+                loadProfileImage(null, userReposterProfileImage)
+            }
+            // Hide follow button on error
+            if (::followButton.isInitialized) {
+                followButton.visibility = View.GONE
+            }
+        }
+    }
+
+
+    private fun updateFollowButtonVisibility(accountId: String, username: String) {
+        if (!::followButton.isInitialized) return
+
+        try {
+            val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
+
+            // Get cached following lists
+            val cachedFollowingList = FeedAdapter.getCachedFollowingList()
+            val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
+
+            // Check by BOTH ID and USERNAME
+            val isUserFollowing = cachedFollowingList.contains(accountId) ||
+                    cachedFollowingUsernames.contains(username)
+
+            Log.d(TAG, "═══════════════════════════════════════")
+            Log.d(TAG, "FOLLOW BUTTON VISIBILITY CHECK")
+            Log.d(TAG, "Account ID: $accountId")
+            Log.d(TAG, "Username: @$username")
+            Log.d(TAG, "Current user ID: $currentUserId")
+            Log.d(TAG, "Is following (by ID): ${cachedFollowingList.contains(accountId)}")
+            Log.d(TAG, "Is following (by username): ${cachedFollowingUsernames.contains(username)}")
+            Log.d(TAG, "═══════════════════════════════════════")
+
+            // Hide button if it's own post OR already following
+            val shouldHideButton = accountId == currentUserId || isUserFollowing
+
+            if (shouldHideButton) {
+                followButton.visibility = View.GONE
+                Log.d(TAG, "✓✓✓ HIDING follow button - Reason: ${when {
+                    accountId == currentUserId -> "Own post"
+                    cachedFollowingUsernames.contains(username) -> "Already following (by username: @$username)"
+                    cachedFollowingList.contains(accountId) -> "Already following (by ID: $accountId)"
+                    else -> "Unknown"
+                }}")
+            } else {
+                followButton.visibility = View.VISIBLE
+                followButton.text = "Follow"
+                Log.d(TAG, "✓✓✓ SHOWING follow button for account: $accountId (@$username)")
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating follow button visibility", e)
+            followButton.visibility = View.GONE
+        }
+    }
+
+
+    private fun handleFollowButtonClick() {
+        post?.let { currentPost ->
+            // ✅ Extract ACCOUNT ID and USERNAME
+            val feedOwnerId: String
+            val feedOwnerUsername: String
+
+            when {
+                // Case 1: Reposted post - use original author's account ID
+                currentPost.originalPost.isNotEmpty() -> {
+                    val originalAuthor = currentPost.originalPost[0].author
+                    feedOwnerId = originalAuthor.owner  // ✅ Use owner field (account ID)
+                    feedOwnerUsername = originalAuthor.account.username
+                    Log.d(TAG, "Follow button - Original author ID: $feedOwnerId (@$feedOwnerUsername)")
+                }
+                // Case 2: Regular post - use main author's account ID
+                else -> {
+                    feedOwnerId = currentPost.author?.account?._id ?: ""
+                    feedOwnerUsername = currentPost.author?.account?.username ?: "unknown"
+                    Log.d(TAG, "Follow button - Main author ID: $feedOwnerId (@$feedOwnerUsername)")
+                }
+            }
+
+            val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
+
+            // Check following status by BOTH ID and USERNAME
+            val cachedFollowingList = FeedAdapter.getCachedFollowingList()
+            val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
+
+            val isAlreadyFollowing = followingUserIds.contains(feedOwnerId) ||
+                    cachedFollowingList.contains(feedOwnerId) ||
+                    cachedFollowingUsernames.contains(feedOwnerUsername)
+
+            // Hide button if it's own post OR already following
+            if (feedOwnerId == currentUserId || isAlreadyFollowing) {
+                followButton.visibility = View.GONE
+                Log.d(TAG, "Follow button hidden - Own post or already following")
+                return
+            }
+
+            // Toggle follow status
+            isFollowing = !isFollowing
+
+            if (isFollowing) {
+                // Hide button immediately
+                followButton.visibility = View.GONE
+
+                // Add to following lists
+                // Note: You'll need to get the adapter instance or use FollowingManager
+                FollowingManager(requireContext()).addToFollowing(feedOwnerId)
+
+                // Build display name for toast
+                val displayName = when {
+                    currentPost.originalPost.isNotEmpty() -> {
+                        val author = currentPost.originalPost[0].author
+                        when {
+                            author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
+                                "${author.firstName} ${author.lastName}"
+                            author.firstName.isNotBlank() -> author.firstName
+                            author.lastName.isNotBlank() -> author.lastName
+                            else -> author.account.username
+                        }
+                    }
+                    else -> {
+                        val author = currentPost.author
+                        when {
+                            author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
+                                "${author.firstName} ${author.lastName}"
+                            author.firstName.isNotBlank() -> author.firstName
+                            author.lastName.isNotBlank() -> author.lastName
+                            else -> author.account.username
+                        }
+                    }
+                }
+
+                showToast("Now following $displayName")
+                Log.d(TAG, "✓ Added account $feedOwnerId (@$feedOwnerUsername) to following list")
+            } else {
+                // Show button
+                followButton.visibility = View.VISIBLE
+                followButton.text = "Follow"
+
+                // Remove from following lists
+                FollowingManager(requireContext()).removeFromFollowing(feedOwnerId)
+
+                showToast("Unfollowed")
+                Log.d(TAG, "✓ Removed account $feedOwnerId (@$feedOwnerUsername) from following list")
+            }
+
+            updateFollowButtonUI()
+        }
+    }
+
+    private fun setupInitialFollowButtonState(data: Post) {
+        val feedOwnerId: String
+        val feedOwnerUsername: String
+
+        when {
+            data.originalPost.isNotEmpty() -> {
+                val originalAuthor = data.originalPost[0].author
+                feedOwnerId = originalAuthor.owner
+                feedOwnerUsername = originalAuthor.account.username
+            }
+            else -> {
+                feedOwnerId = data.author?.account?._id ?: ""
+                feedOwnerUsername = data.author?.account?.username ?: "unknown"
+            }
+        }
+
+        val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
+        val cachedFollowingList = FeedAdapter.getCachedFollowingList()
+        val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
+
+        val isAlreadyFollowing = followingUserIds.contains(feedOwnerId) ||
+                cachedFollowingList.contains(feedOwnerId) ||
+                cachedFollowingUsernames.contains(feedOwnerUsername)
+
+        if (feedOwnerId == currentUserId || isAlreadyFollowing) {
+            followButton.visibility = View.GONE
+            Log.d(TAG, "Initial setup: Follow button hidden for $feedOwnerId (@$feedOwnerUsername)")
+        } else {
+            followButton.visibility = View.VISIBLE
+            followButton.text = "Follow"
+            Log.d(TAG, "Initial setup: Follow button shown for $feedOwnerId (@$feedOwnerUsername)")
+        }
+    }
+
+    private fun handleMenuButtonClick() = showToast("Options menu")
+
+    private fun handleMainPostClick() = showToast("Opening full post ...")
+
     private fun buildDisplayName(author: Author): String {
         return when {
             author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
@@ -761,7 +1048,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 ::itemView.isInitialized &&
                 ::headerTitle.isInitialized &&
                 ::userReposterProfileImage.isInitialized &&
-                ::repostedUserName.isInitialized
+                ::reposterFullName.isInitialized
     }
 
     private fun initializeViews(view: View) {
@@ -775,7 +1062,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
                 // Repost User Section Views
                 userReposterProfileImage = safeBinding.userReposterProfileImage
-                repostedUserName = safeBinding.repostedUserName
+                reposterFullName = safeBinding.reposterFullName
                 tvUserHandle = safeBinding.tvUserHandle
                 dateTimeCreate = safeBinding.dateTimeCreate
                 followButton = safeBinding.followButton
@@ -2278,60 +2565,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    private fun populateReposterInfo(post: Post) {
-        try {
-            var profilePicUrl: String? = null
-            var feedOwnerUsername = ""
-            var userHandle = ""
-
-            if (post.repostedUser != null) {
-                // Use reposter data
-                profilePicUrl = post.repostedUser.avatar?.url
-                feedOwnerUsername = post.repostedUser.username
-                userHandle = "@${post.repostedUser.username}"
-                Log.d(TAG, "Using reposted user: $feedOwnerUsername")
-            } else {
-                // Fall back to main post author
-                val author = post.author
-                profilePicUrl = author.account.avatar?.url
-                feedOwnerUsername = when {
-                    author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
-                        "${author.firstName} ${author.lastName}"
-                    author.firstName.isNotBlank() -> author.firstName
-                    author.lastName.isNotBlank() -> author.lastName
-                    author.account.username.isNotBlank() -> author.account.username
-                    else -> "Unknown User"
-                }
-                userHandle = if (author.account.username.isNotBlank()) {
-                    "@${author.account.username}"
-                } else {
-                    "@unknown"
-                }
-                Log.w(TAG, "RepostedUser is null for post ${post._id}, using main author: $feedOwnerUsername")
-            }
-
-            // Set UI elements
-            if (::repostedUserName.isInitialized) {
-                repostedUserName.text = feedOwnerUsername
-            }
-            if (::tvUserHandle.isInitialized) {
-                tvUserHandle.text = userHandle
-            }
-            if (::userReposterProfileImage.isInitialized) {
-                loadProfileImage(profilePicUrl, userReposterProfileImage)
-            }
-
-            Log.d(TAG, "Handling media from reposter info with ${post.files?.size ?: 0} files")
-            handlePostMedia(post)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error populating reposter info: ${e.message}", e)
-            if (::repostedUserName.isInitialized) repostedUserName.text = "Unknown User"
-            if (::tvUserHandle.isInitialized) tvUserHandle.text = "@unknown"
-            if (::userReposterProfileImage.isInitialized) {
-                loadProfileImage(null, userReposterProfileImage)
-            }
-        }
-    }
 
     @SuppressLint("SetTextI18n")
     private fun populateOriginalAuthorInfo(post: Post?) {
@@ -6319,9 +6552,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     }
 
 
-    private fun handleMenuButtonClick() = showToast("Options menu")
-    private fun handleFollowButtonClick() = toggleFollow()
-    private fun handleMainPostClick() = showToast("Opening full post ...")
 
 
 

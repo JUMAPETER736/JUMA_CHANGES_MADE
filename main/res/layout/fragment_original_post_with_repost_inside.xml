@@ -115,7 +115,7 @@
                             android:background="@color/white">
 
                             <TextView
-                                android:id="@+id/repostedUserName"
+                                android:id="@+id/reposterFullName"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Uy Scuti"
