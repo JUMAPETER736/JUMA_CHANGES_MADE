@@ -395,6 +395,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
     }
 
+
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     fun getAllFeed(page: Int) {
 
@@ -452,8 +453,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     }
 
 
-
-    //loadAllFollowingPostsInitially() - Complete rewrite
     private suspend fun loadAllFollowingPostsInitially() {
         val currentUserId = getUserId(requireContext())
         val allFollowingPosts = mutableListOf<Post>()
@@ -485,12 +484,12 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 val pagePosts = response.body()!!.data.data.posts
                 Log.d(TAG, "📦 Page $pageNum returned ${pagePosts.size} posts")
 
-                // ✅ STRICT FILTERING: Only show posts from following list
+                // ✅ IMPROVED FILTERING: Better matching logic
                 val filtered = pagePosts.mapNotNull { post ->
                     try {
-                        // Get author's account ID
+                        // Get author's account ID and username
                         val authorAccountId = post.author?.account?._id
-                        val authorUsername = post.author?.account?.username
+                        val authorUsername = post.author?.account?.username?.trim()?.lowercase()
 
                         // Skip if no author data
                         if (authorAccountId.isNullOrBlank()) {
@@ -506,18 +505,27 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                         // CASE 1: ORIGINAL POST (no repost)
                         if (post.originalPost == null || post.originalPost.isEmpty()) {
-                            // Check if I follow this author
+                            // ✅ STRICT: Must match EXACT ID from following list
                             val isFollowingById = followingUserIds.contains(authorAccountId)
-                            val isFollowingByUsername = authorUsername?.let {
-                                followingUserMap.containsValue(it)
-                            } ?: false
 
+                            // ✅ STRICT: Username must EXACTLY match one in following list (case-insensitive only)
+                            val isFollowingByUsername = if (authorUsername != null) {
+                                followingUserMap.values.any { followingUsername ->
+                                    followingUsername.trim().lowercase() == authorUsername
+                                }
+                            } else {
+                                false
+                            }
+
+                            // ✅ CRITICAL: Must match by ID OR username to be included
                             if (isFollowingById || isFollowingByUsername) {
                                 uniqueAuthors.add(authorAccountId)
                                 Log.d(TAG, "  ✓ ORIGINAL POST: @$authorUsername (ID: $authorAccountId) - INCLUDED")
+                                Log.d(TAG, "    • Matched by ID: $isFollowingById")
+                                Log.d(TAG, "    • Matched by username: $isFollowingByUsername")
                                 return@mapNotNull post
                             } else {
-                                Log.d(TAG, "  ✗ ORIGINAL POST: @$authorUsername (ID: $authorAccountId) - NOT FOLLOWING - SKIPPING")
+                                Log.d(TAG, "  ✗ ORIGINAL POST: @$authorUsername (ID: $authorAccountId) - NOT IN FOLLOWING LIST - EXCLUDED")
                                 return@mapNotNull null
                             }
                         }
@@ -527,9 +535,9 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                         val reposterUsername: String
 
                         if (post.repostedUser != null) {
-                            // ✅ CRITICAL: Use OWNER field (account ID), NOT _id
+                            // ✅ Use OWNER field (account ID), NOT _id
                             reposterAccountId = post.repostedUser.owner
-                            reposterUsername = post.repostedUser.username
+                            reposterUsername = post.repostedUser.username.trim().lowercase()
 
                             Log.d(TAG, "  📌 REPOST DATA:")
                             Log.d(TAG, "    • repostedUser._id (PROFILE ID): ${post.repostedUser._id}")
@@ -551,19 +559,24 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                         Log.d(TAG, "    • Reposter: @$reposterUsername (Account ID: $reposterAccountId)")
                         Log.d(TAG, "    • Original Author: @$originalAuthorUsername (Account ID: $originalAuthorAccountId)")
 
-                        // ✅ CRITICAL: Check if I follow the REPOSTER (not original author)
+                        // ✅ STRICT: Check if reposter's ID is in following list
                         val isFollowingReposterById = followingUserIds.contains(reposterAccountId)
-                        val isFollowingReposterByUsername = followingUserMap.containsValue(reposterUsername)
+
+                        // ✅ STRICT: Check if reposter's username EXACTLY matches following list
+                        val isFollowingReposterByUsername = followingUserMap.values.any { followingUsername ->
+                            followingUsername.trim().lowercase() == reposterUsername
+                        }
 
                         Log.d(TAG, "    • Following reposter by ID? $isFollowingReposterById")
                         Log.d(TAG, "    • Following reposter by username? $isFollowingReposterByUsername")
 
+                        // ✅ CRITICAL: Only show repost if I follow the REPOSTER
                         if (isFollowingReposterById || isFollowingReposterByUsername) {
                             uniqueAuthors.add(reposterAccountId)
-                            Log.d(TAG, "  ✓ REPOST by @$reposterUsername - INCLUDED (I follow the reposter)")
+                            Log.d(TAG, "  ✓ REPOST by @$reposterUsername - INCLUDED (Reposter is in following list)")
                             return@mapNotNull post
                         } else {
-                            Log.d(TAG, "  ✗ REPOST by @$reposterUsername - NOT FOLLOWING REPOSTER - SKIPPING")
+                            Log.d(TAG, "  ✗ REPOST by @$reposterUsername - REPOSTER NOT IN FOLLOWING LIST - EXCLUDED")
                             return@mapNotNull null
                         }
 
@@ -623,7 +636,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    //  loadPostsFromFollowing() - Complete rewrite
+    // ✅ IMPROVED: Pagination loading with better matching
     private fun loadPostsFromFollowing(page: Int) {
         if (isLoading) return
         isLoading = true
@@ -651,44 +664,51 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 val pagePosts = response.body()!!.data.data.posts
                 Log.d(TAG, "📦 Page $page returned ${pagePosts.size} posts")
 
-                // ✅ STRICT FILTERING: Only show posts from following list
+                // ✅ STRICT FILTERING: Only posts from exact following list
                 val filtered = pagePosts.mapNotNull { post ->
                     try {
                         val authorAccountId = post.author?.account?._id
-                        val authorUsername = post.author?.account?.username
+                        val authorUsername = post.author?.account?.username?.trim()?.lowercase()
 
                         if (authorAccountId.isNullOrBlank() || authorAccountId == currentUserId) {
                             return@mapNotNull null
                         }
 
-                        // ORIGINAL POST
+                        // ORIGINAL POST - Must be in following list
                         if (post.originalPost == null || post.originalPost.isEmpty()) {
                             val isFollowingById = followingUserIds.contains(authorAccountId)
-                            val isFollowingByUsername = authorUsername?.let {
-                                followingUserMap.containsValue(it)
+                            val isFollowingByUsername = authorUsername?.let { username ->
+                                followingUserMap.values.any { followingUsername ->
+                                    followingUsername.trim().lowercase() == username
+                                }
                             } ?: false
 
                             if (isFollowingById || isFollowingByUsername) {
-                                Log.d(TAG, "  ✓ Original post by @$authorUsername - INCLUDED")
+                                Log.d(TAG, "  ✓ Original post by @$authorUsername - IN FOLLOWING LIST")
                                 return@mapNotNull post
                             } else {
+                                Log.d(TAG, "  ✗ Original post by @$authorUsername - NOT IN FOLLOWING LIST - EXCLUDED")
                                 return@mapNotNull null
                             }
                         }
 
-                        // REPOST - Use OWNER field
+                        // REPOST - Reposter must be in following list
                         val reposterAccountId = post.repostedUser?.owner ?: authorAccountId
-                        val reposterUsername = post.repostedUser?.username ?: authorUsername
+                        val reposterUsername = post.repostedUser?.username?.trim()?.lowercase()
+                            ?: authorUsername
 
                         val isFollowingReposterById = followingUserIds.contains(reposterAccountId)
-                        val isFollowingReposterByUsername = reposterUsername?.let {
-                            followingUserMap.containsValue(it)
+                        val isFollowingReposterByUsername = reposterUsername?.let { username ->
+                            followingUserMap.values.any { followingUsername ->
+                                followingUsername.trim().lowercase() == username
+                            }
                         } ?: false
 
                         if (isFollowingReposterById || isFollowingReposterByUsername) {
-                            Log.d(TAG, "  ✓ Repost by @$reposterUsername - INCLUDED")
+                            Log.d(TAG, "  ✓ Repost by @$reposterUsername - REPOSTER IN FOLLOWING LIST")
                             return@mapNotNull post
                         } else {
+                            Log.d(TAG, "  ✗ Repost by @$reposterUsername - REPOSTER NOT IN FOLLOWING LIST - EXCLUDED")
                             return@mapNotNull null
                         }
 
@@ -731,7 +751,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    //  refreshFeedAfterUnfollow() - Complete rewrite
+    // ✅ IMPROVED: Refresh after unfollow with better matching
     private fun refreshFeedAfterUnfollow() {
         val currentUserId = getUserId(requireContext())
 
@@ -750,42 +770,47 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         val filteredData = allPosts.mapNotNull { post ->
             try {
                 val authorAccountId = post.author?.account?._id
-                val authorUsername = post.author?.account?.username
+                val authorUsername = post.author?.account?.username?.trim()?.lowercase()
 
                 if (authorAccountId.isNullOrBlank() || authorAccountId == currentUserId) {
                     return@mapNotNull null
                 }
 
-                // ORIGINAL POST
+                // ORIGINAL POST - Author must be in following list
                 if (post.originalPost == null || post.originalPost.isEmpty()) {
                     val isFollowingById = followingUserIds.contains(authorAccountId)
-                    val isFollowingByUsername = authorUsername?.let {
-                        followingUserMap.containsValue(it)
+                    val isFollowingByUsername = authorUsername?.let { username ->
+                        followingUserMap.values.any { followingUsername ->
+                            followingUsername.trim().lowercase() == username
+                        }
                     } ?: false
 
                     if (isFollowingById || isFollowingByUsername) {
-                        Log.d(TAG, "  ✓ Keeping original post by @$authorUsername")
+                        Log.d(TAG, "  ✓ Keeping original post by @$authorUsername (in following list)")
                         return@mapNotNull post
                     } else {
-                        Log.d(TAG, "  ✗ Removing original post by @$authorUsername (not following)")
+                        Log.d(TAG, "  ✗ Removing original post by @$authorUsername (NOT in following list)")
                         return@mapNotNull null
                     }
                 }
 
-                // REPOST - Use OWNER field
+                // REPOST - Reposter must be in following list
                 val reposterAccountId = post.repostedUser?.owner ?: authorAccountId
-                val reposterUsername = post.repostedUser?.username ?: authorUsername
+                val reposterUsername = post.repostedUser?.username?.trim()?.lowercase()
+                    ?: authorUsername
 
                 val isFollowingReposterById = followingUserIds.contains(reposterAccountId)
-                val isFollowingReposterByUsername = reposterUsername?.let {
-                    followingUserMap.containsValue(it)
+                val isFollowingReposterByUsername = reposterUsername?.let { username ->
+                    followingUserMap.values.any { followingUsername ->
+                        followingUsername.trim().lowercase() == username
+                    }
                 } ?: false
 
                 if (isFollowingReposterById || isFollowingReposterByUsername) {
-                    Log.d(TAG, "  ✓ Keeping repost by @$reposterUsername")
+                    Log.d(TAG, "  ✓ Keeping repost by @$reposterUsername (reposter in following list)")
                     return@mapNotNull post
                 } else {
-                    Log.d(TAG, "  ✗ Removing repost by @$reposterUsername (not following)")
+                    Log.d(TAG, "  ✗ Removing repost by @$reposterUsername (reposter NOT in following list)")
                     return@mapNotNull null
                 }
 
@@ -802,6 +827,8 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         Log.d(TAG, "Removed: ${allPosts.size - filteredData.size} posts")
         Log.d(TAG, "═══════════════════════════════════════")
     }
+
+
 
     //  Update loadFollowingUserIds() to also load usernames
     private suspend fun loadFollowingUserIds() {
