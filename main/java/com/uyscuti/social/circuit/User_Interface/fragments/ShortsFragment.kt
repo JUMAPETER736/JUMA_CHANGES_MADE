@@ -1024,26 +1024,26 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
     // Update the updateFollowState method to prevent blinking:
-    fun updateFollowState(userId: String, isFollowing: Boolean) {
-        val followData = followingData.find { it.followersId == userId }
-        if (followData != null) {
-            followData.isFollowing = isFollowing
-
-            // Update the UI directly without notifyDataSetChanged
-            currentViewHolder?.updateFollowButtonState(isFollowing)
-
-            Log.d(TAG, "Updated follow state for user $userId to $isFollowing without rebinding")
-        } else {
-            followingData.add(
-                ShortsEntityFollowList(
-                    followersId = userId,
-                    isFollowing = isFollowing
-                )
-            )
-            currentViewHolder?.updateFollowButtonState(isFollowing)
-            Log.d(TAG, "Added new follow state for user $userId: $isFollowing")
-        }
-    }
+//    fun updateFollowState(userId: String, isFollowing: Boolean) {
+//        val followData = followingData.find { it.followersId == userId }
+//        if (followData != null) {
+//            followData.isFollowing = isFollowing
+//
+//            // Update the UI directly without notifyDataSetChanged
+//            currentViewHolder?.updateFollowButtonState(isFollowing)
+//
+//            Log.d(TAG, "Updated follow state for user $userId to $isFollowing without rebinding")
+//        } else {
+//            followingData.add(
+//                ShortsEntityFollowList(
+//                    followersId = userId,
+//                    isFollowing = isFollowing
+//                )
+//            )
+//            currentViewHolder?.updateFollowButtonState(isFollowing)
+//            Log.d(TAG, "Added new follow state for user $userId: $isFollowing")
+//        }
+//    }
 
     @SuppressLint("NotifyDataSetChanged")
     private suspend fun loadMoreShorts(currentPage: Int) {
