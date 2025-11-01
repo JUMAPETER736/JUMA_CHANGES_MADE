@@ -3083,7 +3083,66 @@ class FeedAdapter(
             }
         }
 
+        @SuppressLint("ClickableViewAccessibility")
+        private fun setupOriginalPostAuthorClicks(data: Post) {
+            if (data.originalPost != null && data.originalPost.isNotEmpty()) {
+                val originalPostData = data.originalPost[0]
+                val author = originalPostData.author
 
+                // ✅ Use owner field (account ID)
+                val feedOwnerId = author.owner  // Account ID!
+                val feedOwnerName = buildDisplayName(author)
+                val feedOwnerUsername = author.account.username
+                val profilePicUrl = author.account.avatar.url
+
+                Log.d(tag, "🟢 Original poster click - Account ID: $feedOwnerId (@$feedOwnerUsername)")
+
+                originalPosterProfileImage?.setOnClickListener { view ->
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
+                    true
+                }
+
+                originalPosterProfileImage?.setOnTouchListener { _, event ->
+                    if (event.action == MotionEvent.ACTION_UP) {
+                        originalPosterProfileImage.performClick()
+                        true
+                    } else {
+                        false
+                    }
+                }
+            } else {
+                val author = data.author
+                val feedOwnerId = author.account._id
+                val feedOwnerName = buildDisplayName(author)
+                val feedOwnerUsername = author.account.username
+                val profilePicUrl = author.account.avatar.url
+
+                Log.d(tag, "🟢 Main author click - Account ID: $feedOwnerId (@$feedOwnerUsername)")
+
+                val profileClickListener = View.OnClickListener {
+                    handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
+                }
+
+                originalPosterProfileImage?.setOnClickListener { view ->
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
+                    true
+                }
+
+                originalPosterName?.setOnClickListener(profileClickListener)
+                tvQuotedUserHandle?.setOnClickListener(profileClickListener)
+
+                originalPosterProfileImage?.setOnTouchListener { _, event ->
+                    if (event.action == MotionEvent.ACTION_UP) {
+                        originalPosterProfileImage.performClick()
+                        true
+                    } else {
+                        false
+                    }
+                }
+            }
+        }
 
         @SuppressLint("ClickableViewAccessibility")
         private fun preventQuotedCardChildClickInterference() {
