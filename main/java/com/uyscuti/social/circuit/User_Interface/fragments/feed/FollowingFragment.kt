@@ -866,7 +866,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             Log.e(TAG, "Error loading following list: ${e.message}", e)
         }
     }
-    
+
 
     // ✅ CHANGE 5: Update updateFollowingList() to sync with adapter
     fun updateFollowingList(followingIds: Set<String>) {
