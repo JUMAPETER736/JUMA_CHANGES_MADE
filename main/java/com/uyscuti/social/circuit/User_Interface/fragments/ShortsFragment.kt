@@ -867,7 +867,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         return view
     }
 
-    
+
     private fun preloadThumbnailForPosition(position: Int) {
         if (position < 0 || position >= shortsViewModel.mutableShortsList.size) return
 
