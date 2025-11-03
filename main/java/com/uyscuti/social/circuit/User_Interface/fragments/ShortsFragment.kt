@@ -71,8 +71,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager2.widget.ViewPager2
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -239,7 +237,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     private lateinit var downloadProgressBarLayout: LinearLayout
 
     // UI Components - Media & Controls
-   // private lateinit var playerView: PlayerView
+    // private lateinit var playerView: PlayerView
     private lateinit var shortSeekBar: SeekBar
     private lateinit var shortsDownloadImageView: ImageView
 
@@ -572,171 +570,95 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 }
 
 
-//
-//                viewPager.registerOnPageChangeCallback(object :
-//                    ViewPager2.OnPageChangeCallback() {
-//
-//                    override fun onPageSelected(position: Int) {
-//                        shortsViewModel.shortIndex = position
-//
-//                        // DON'T stop the player - just pause it
-//                        exoPlayer?.let { player ->
-//                            player.pause()
-//                            // Don't call stop() or seekTo(0) here
-//                        }
-//
-//                        // Set track selection parameters
-//                        exoPlayer?.trackSelectionParameters = exoPlayer!!.trackSelectionParameters
-//                            .buildUpon()
-//                            .setMaxVideoSizeSd()
-//                            .build()
-//
-//                        playVideoAtPosition(position)
-//                    }
-//
-//                    override fun onPageScrolled(
-//                        position: Int,
-//                        positionOffset: Float,
-//                        positionOffsetPixels: Int
-//                    ) {
-//                        super.onPageScrolled(position, positionOffset, positionOffsetPixels)
-//
-//                        if (position > shortsViewModel.lastPosition) {
-//                            // User is scrolling down
-//                            // Handle scroll down logic
-//                            Log.d(
-//                                "showHideBottomNav",
-//                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
-//                            )
-//                            EventBus.getDefault().post(HideBottomNav())
-//                            EventBus.getDefault().post(HideFeedFloatingActionButton()) // Hide FAB
-//                            Log.d("showHideBottomNav", "event post scroll next")
-//                        } else if (position < shortsViewModel.lastPosition) {
-//                            // User is scrolling up
-//                            // Handle scroll up logic
-//                            Log.d(
-//                                "showHideBottomNav",
-//                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
-//                            )
-//                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false)) // Show FAB
-//                            EventBus.getDefault().post(ShowBottomNav(false))
-//                            Log.d("showHideBottomNav", "event post scroll previous")
-//                        }
-//                        if (position > shortsViewModel.lastPosition) {
-//                            // User is scrolling down
-//                            loadMoreVideosIfNeeded(position)
-//
-//                        }
-//
-//                        shortsViewModel.lastPosition = position
-//
-//                        if (positionOffset > 0.5) {
-//                            // User is scrolling towards the end, update the current position to the next video
-//                            currentPosition = position + 1
-//
-//
-//                        } else if (positionOffset < -0.5) {
-//
-//                            currentPosition = position - 1
-//
-//                        } else {
-//                            // User is in a stable position, update the current position to the current video
-//                            currentPosition = position
-//
-//
-//                        }
-//
-//                    }
-//                    override fun onPageScrollStateChanged(state: Int) {
-//                        super.onPageScrollStateChanged(state)
-//                        Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
-//
-//                        // Check if the scroll state is idle
-//                        if (state == ViewPager.SCROLL_STATE_SETTLING) {
-//                            Log.d(
-//                                "onPageScrollStateChanged",
-//                                "onPageScrollStateChanged: state $state"
-//                            )
-//                            // The scroll state is idle, play the video at the updated position
-//                            playVideoAtPosition(currentPosition)
-//                            backPressCount = 0
-//                        }
-//                    }
-//                })
 
-
-                viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-
-                    override fun onPageScrollStateChanged(state: Int) {
-                        super.onPageScrollStateChanged(state)
-
-                        when (state) {
-                            ViewPager2.SCROLL_STATE_DRAGGING -> {
-                                // User started dragging - show thumbnail of next video
-                                Log.d("PageScroll", "User started dragging")
-                            }
-                            ViewPager2.SCROLL_STATE_SETTLING -> {
-                                // Scroll is settling to final position
-                                Log.d("PageScroll", "Settling to position")
-                            }
-                            ViewPager2.SCROLL_STATE_IDLE -> {
-                                // Scroll finished - play video at current position
-                                Log.d("PageScroll", "Idle at position: $currentPosition")
-                                playVideoAtPosition(currentPosition)
-                                backPressCount = 0
-                            }
-                        }
-                    }
-
-                    override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-                        super.onPageScrolled(position, positionOffset, positionOffsetPixels)
-
-                        // Show thumbnail of the upcoming video during scroll
-                        if (positionOffset > 0.1f) {
-                            val nextPosition = position + 1
-                            if (nextPosition < shortsViewModel.mutableShortsList.size) {
-                                preloadThumbnailForPosition(nextPosition)
-                            }
-                        }
-
-                        // Handle navigation events
-                        if (position > shortsViewModel.lastPosition) {
-                            EventBus.getDefault().post(HideBottomNav())
-                            EventBus.getDefault().post(HideFeedFloatingActionButton())
-                        } else if (position < shortsViewModel.lastPosition) {
-                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
-                            EventBus.getDefault().post(ShowBottomNav(false))
-                        }
-
-                        if (position > shortsViewModel.lastPosition) {
-                            loadMoreVideosIfNeeded(position)
-                        }
-
-                        shortsViewModel.lastPosition = position
-
-                        // Update current position based on scroll
-                        currentPosition = when {
-                            positionOffset > 0.5 -> position + 1
-                            positionOffset < -0.5 -> position - 1
-                            else -> position
-                        }
-                    }
+                viewPager.registerOnPageChangeCallback(object :
+                    ViewPager2.OnPageChangeCallback() {
 
                     override fun onPageSelected(position: Int) {
                         shortsViewModel.shortIndex = position
 
-                        // Pause current video smoothly without stopping
+                        // DON'T stop the player - just pause it
                         exoPlayer?.let { player ->
                             player.pause()
+                            // Don't call stop() or seekTo(0) here
                         }
 
-                        // Set track selection parameters for next video
+                        // Set track selection parameters
                         exoPlayer?.trackSelectionParameters = exoPlayer!!.trackSelectionParameters
                             .buildUpon()
                             .setMaxVideoSizeSd()
                             .build()
 
-                        // Don't call playVideoAtPosition here - let onPageScrollStateChanged handle it
+                        playVideoAtPosition(position)
+                    }
+
+                    override fun onPageScrolled(
+                        position: Int,
+                        positionOffset: Float,
+                        positionOffsetPixels: Int
+                    ) {
+                        super.onPageScrolled(position, positionOffset, positionOffsetPixels)
+
+                        if (position > shortsViewModel.lastPosition) {
+                            // User is scrolling down
+                            // Handle scroll down logic
+                            Log.d(
+                                "showHideBottomNav",
+                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
+                            )
+                            EventBus.getDefault().post(HideBottomNav())
+                            EventBus.getDefault().post(HideFeedFloatingActionButton()) // Hide FAB
+                            Log.d("showHideBottomNav", "event post scroll next")
+                        } else if (position < shortsViewModel.lastPosition) {
+                            // User is scrolling up
+                            // Handle scroll up logic
+                            Log.d(
+                                "showHideBottomNav",
+                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
+                            )
+                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false)) // Show FAB
+                            EventBus.getDefault().post(ShowBottomNav(false))
+                            Log.d("showHideBottomNav", "event post scroll previous")
+                        }
+                        if (position > shortsViewModel.lastPosition) {
+                            // User is scrolling down
+                            loadMoreVideosIfNeeded(position)
+
+                        }
+
+                        shortsViewModel.lastPosition = position
+
+                        if (positionOffset > 0.5) {
+                            // User is scrolling towards the end, update the current position to the next video
+                            currentPosition = position + 1
+
+
+                        } else if (positionOffset < -0.5) {
+
+                            currentPosition = position - 1
+
+                        } else {
+                            // User is in a stable position, update the current position to the current video
+                            currentPosition = position
+
+
+                        }
+
+                    }
+                    override fun onPageScrollStateChanged(state: Int) {
+                        super.onPageScrollStateChanged(state)
+                        Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
+
+                        // Check if the scroll state is idle
+                        if (state == ViewPager.SCROLL_STATE_SETTLING) {
+                            Log.d(
+                                "onPageScrollStateChanged",
+                                "onPageScrollStateChanged: state $state"
+                            )
+                            // The scroll state is idle, play the video at the updated position
+                            playVideoAtPosition(currentPosition)
+                            backPressCount = 0
+                        }
                     }
                 })
 
@@ -866,27 +788,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
         return view
     }
-
-
-    private fun preloadThumbnailForPosition(position: Int) {
-        if (position < 0 || position >= shortsViewModel.mutableShortsList.size) return
-
-        val nextShort = shortsViewModel.mutableShortsList[position]
-        val thumbnailUrl = nextShort.thumbnail.firstOrNull()?.thumbnailUrl
-
-        if (!thumbnailUrl.isNullOrEmpty()) {
-            // Preload the thumbnail using Glide
-            Glide.with(this)
-                .load(thumbnailUrl)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .preload()
-        }
-    }
-
-
-
-
-
 
     @SuppressLint("NotifyDataSetChanged")
     private suspend fun loadMoreShorts(currentPage: Int) {
@@ -2887,7 +2788,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                             wifiAnimation =
                                 shortsDownloadImageView.background as AnimationDrawable
                             wifiAnimation!!.start()
-                                Log.d("Download", "Progress $downloadProgress")
+                            Log.d("Download", "Progress $downloadProgress")
                             shortsDownloadProgressBar.progress = downloadProgress
                         }
                         outputStream.write(buffer, 0, bytes)
@@ -3004,5 +2905,4 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
 }
-
 

@@ -43,9 +43,6 @@ import com.uyscuti.social.core.common.data.room.entity.*
 import com.uyscuti.social.network.utils.LocalStorage
 import org.greenrobot.eventbus.EventBus
 import java.util.Date
-import kotlin.compareTo
-import kotlin.div
-import kotlin.text.toInt
 
 // Constants
 private const val TAG = "ShortsAdapter"
@@ -97,7 +94,6 @@ class ShortsAdapter(
     private val preloadedVideos = mutableSetOf<Int>()
     private val preloadHandler = Handler(Looper.getMainLooper())
 
-    fun getShortsList(): List<ShortsEntity> = shortsList
 
 
     override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
@@ -386,7 +382,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     private var isUserSeeking = false
     private var isPlaying = false
     private var videoDuration = 0L
-    private var currentShortsData: ShortsEntity? = null
+
     private val mainHandler = Handler(Looper.getMainLooper())
     private val progressUpdateRunnable = object : Runnable {
         override fun run() {
@@ -471,8 +467,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     fun setUploadCancelClickListener(listener: View.OnClickListener) {
         shortsUploadCancelButton.setOnClickListener(listener)
     }
-
-
 
 
     @OptIn(UnstableApi::class)
@@ -572,9 +566,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             }
         })
     }
-
-
-
 
     fun onViewRecycled() {
         stopProgressUpdates()
