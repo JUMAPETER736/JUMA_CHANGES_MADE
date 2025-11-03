@@ -183,18 +183,41 @@ class PersonalChats : MainDialogsFragment(), DateFormatter.Formatter, OnBackPres
         dialogsList.setAdapter(dialogsAdapter)
     }
 
+//    private fun fromDialogEntity(entity: DialogEntity): Dialog {
+//        val users = convertUserEntitiesToUsers(entity.users)
+//
+//        val usersList: List<User> = users
+//        val usersArrayList: ArrayList<User> = ArrayList(usersList)
+//
+//        val lastMessage = entity.lastMessage?.let { convertMessageEntityToMessage(it) }
+//
+//        return Dialog(
+//            entity.id,
+//            entity.dialogName,
+//            entity.dialogPhoto,
+//            usersArrayList,
+//            lastMessage,
+//            entity.unreadCount
+//        )
+//    }
+
     private fun fromDialogEntity(entity: DialogEntity): Dialog {
         val users = convertUserEntitiesToUsers(entity.users)
-
         val usersList: List<User> = users
         val usersArrayList: ArrayList<User> = ArrayList(usersList)
-
         val lastMessage = entity.lastMessage?.let { convertMessageEntityToMessage(it) }
+
+        // For one-on-one chats, use the other user's avatar as the dialog photo
+        val dialogPhoto = if (entity.dialogPhoto.isNullOrEmpty() && usersArrayList.size == 1) {
+            usersArrayList[0].avatar // Use the user's avatar for personal chats
+        } else {
+            entity.dialogPhoto // Use the dialog photo for group chats
+        }
 
         return Dialog(
             entity.id,
             entity.dialogName,
-            entity.dialogPhoto,
+            dialogPhoto, // This should now contain the user's avatar
             usersArrayList,
             lastMessage,
             entity.unreadCount
