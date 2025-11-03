@@ -99,7 +99,9 @@ class ShortsAdapter(
 
     fun getShortsList(): List<ShortsEntity> = shortsList
 
+
     override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
+        // Only set currentViewHolder and position, don't call onBind for follow updates
         if (currentViewHolder != holder || currentActivePosition != position) {
             currentViewHolder = holder
             currentActivePosition = position
@@ -114,38 +116,14 @@ class ShortsAdapter(
             val myData = MyData(data, isFollowingData)
             ensureFollowDataExists(data)
 
-            holder.onBind(myData, position, shortsList)
+            Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
+            holder.onBind(myData)
 
             // Preload adjacent videos
             preloadVideosAround(position)
         }
+
     }
-
-
-//    override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
-//        // Only set currentViewHolder and position, don't call onBind for follow updates
-//        if (currentViewHolder != holder || currentActivePosition != position) {
-//            currentViewHolder = holder
-//            currentActivePosition = position
-//            val data = shortsList[position]
-//
-//            val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
-//                ?: ShortsEntityFollowList(
-//                    followersId = data.author.account._id,
-//                    isFollowing = false
-//                )
-//
-//            val myData = MyData(data, isFollowingData)
-//            ensureFollowDataExists(data)
-//
-//            Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
-//            holder.onBind(myData)
-//
-//            // Preload adjacent videos
-//            preloadVideosAround(position)
-//        }
-//
-//    }
 
     @SuppressLint("NotifyDataSetChanged")
     fun addData(newData: List<ShortsEntity>) {
@@ -495,37 +473,29 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     }
 
 
+
+
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
-    fun onBind(data: MyData, position: Int, allShorts: List<ShortsEntity>) {
+    override fun onBind(data: MyData) {
         val shortsEntity = data.shortsEntity
-        currentShortsData = shortsEntity
-
         val url = shortsEntity.images[0].url
         val shortOwnerId = shortsEntity.author.account._id
         val shortOwnerUsername = shortsEntity.author.account.username
         val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
         val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
 
-        // Show thumbnail of CURRENT video while preparing
-        val thumbnailUrl = shortsEntity.thumbnail.firstOrNull()?.thumbnailUrl
-        if (!thumbnailUrl.isNullOrEmpty()) {
-            thumbnailImageView.visibility = View.VISIBLE
-            videoView.visibility = View.VISIBLE
-
-            Glide.with(itemView.context)
-                .load(thumbnailUrl)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .into(thumbnailImageView)
-        } else {
-            thumbnailImageView.visibility = View.GONE
-        }
+        // DON'T load thumbnail or prepare video here
+        // Just ensure views are in correct state
+        thumbnailImageView.visibility = View.GONE
+        videoView.visibility = View.VISIBLE
 
         totalComments = shortsEntity.comments
         totalLikes = shortsEntity.likes
         isLiked = shortsEntity.isLiked
         isFavorite = shortsEntity.isBookmarked
 
+        // Rest of your existing onBind code...
         updateLikeButtonState()
         updateFavoriteButtonState()
         setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
@@ -538,111 +508,12 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
-//    @OptIn(UnstableApi::class)
-//    @SuppressLint("SetTextI18n")
-//    override fun onBind(data: MyData) {
-//        val shortsEntity = data.shortsEntity
-//        val url = shortsEntity.images[0].url
-//        val shortOwnerId = shortsEntity.author.account._id
-//        val shortOwnerUsername = shortsEntity.author.account.username
-//        val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
-//        val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
-//
-//        // DON'T load thumbnail or prepare video here
-//        // Just ensure views are in correct state
-//        thumbnailImageView.visibility = View.GONE
-//        videoView.visibility = View.VISIBLE
-//
-//        totalComments = shortsEntity.comments
-//        totalLikes = shortsEntity.likes
-//        isLiked = shortsEntity.isLiked
-//        isFavorite = shortsEntity.isBookmarked
-//
-//        // Rest of your existing onBind code...
-//        updateLikeButtonState()
-//        updateFavoriteButtonState()
-//        setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-//        setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-//        setupFollowButton(data, shortOwnerId)
-//        setupContent(shortsEntity)
-//
-//        if (exoplayer.duration > 0) {
-//            bottomVideoSeekBar.max = (exoplayer.duration / 1000).toInt()
-//        }
-//    }
-
-//    private fun setupPlayer() {
-//        player = exoplayer
-//
-//        videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-//            override fun onViewAttachedToWindow(v: View) {
-//                Log.d(TAG, "VideoView attached to window")
-//                if (videoView.player == null) {
-//                    videoView.player = exoplayer
-//                    videoView.visibility = View.VISIBLE
-//                }
-//            }
-//
-//            override fun onViewDetachedFromWindow(v: View) {
-//                Log.d(TAG, "VideoView detached from window")
-//            }
-//        })
-//
-//        exoplayer.addListener(object : Player.Listener {
-//            override fun onPlaybackStateChanged(playbackState: Int) {
-//                when (playbackState) {
-//                    Player.STATE_READY -> {
-//                        videoDuration = exoplayer.duration
-//                        if (videoDuration > 0) {
-//                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
-//                            bottomVideoSeekBar.secondaryProgress = 0
-//                            Log.d(TAG, "Video ready: ${videoDuration}ms")
-//                        }
-//
-//                        // CHANGED: Hide thumbnail immediately when video is ready
-//                        thumbnailImageView.visibility = View.GONE
-//                        videoView.visibility = View.VISIBLE
-//                        videoView.invalidate()
-//                    }
-//                    Player.STATE_BUFFERING -> {
-//                        Log.d(TAG, "Video buffering")
-//                        // CHANGED: Don't show thumbnail during buffering, keep video view visible
-//                    }
-//                    Player.STATE_ENDED -> {
-//                        stopProgressUpdates()
-//                    }
-//                }
-//            }
-//
-//            override fun onIsPlayingChanged(isPlaying: Boolean) {
-//                this@StringViewHolder.isPlaying = isPlaying
-//                if (isPlaying) {
-//                    startProgressUpdates()
-//                    // Hide thumbnail when playing
-//                    thumbnailImageView.visibility = View.GONE
-//                    videoView.visibility = View.VISIBLE
-//                } else {
-//                    stopProgressUpdates()
-//                }
-//                Log.d(TAG, "Player isPlaying: $isPlaying")
-//            }
-//
-//            override fun onRenderedFirstFrame() {
-//                Log.d(TAG, "First frame rendered - video is displaying")
-//                // Hide thumbnail once first frame is rendered
-//                thumbnailImageView.visibility = View.GONE
-//                videoView.visibility = View.VISIBLE
-//            }
-//        })
-//    }
-
-
     private fun setupPlayer() {
         player = exoplayer
 
         videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {
-                Log.d(com.uyscuti.social.circuit.User_Interface.fragments.TAG, "VideoView attached to window")
+                Log.d(TAG, "VideoView attached to window")
                 if (videoView.player == null) {
                     videoView.player = exoplayer
                     videoView.visibility = View.VISIBLE
@@ -650,7 +521,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             }
 
             override fun onViewDetachedFromWindow(v: View) {
-                Log.d(com.uyscuti.social.circuit.User_Interface.fragments.TAG, "VideoView detached from window")
+                Log.d(TAG, "VideoView detached from window")
             }
         })
 
@@ -662,24 +533,17 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
                         if (videoDuration > 0) {
                             bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
                             bottomVideoSeekBar.secondaryProgress = 0
-                            Log.d(com.uyscuti.social.circuit.User_Interface.fragments.TAG, "Video ready: ${videoDuration}ms")
+                            Log.d(TAG, "Video ready: ${videoDuration}ms")
                         }
 
-                        // Smooth fade transition from thumbnail to video
-                        thumbnailImageView.animate()
-                            .alpha(0f)
-                            .setDuration(200)
-                            .withEndAction {
-                                thumbnailImageView.visibility = View.GONE
-                                thumbnailImageView.alpha = 1f
-                            }
-                            .start()
-
+                        // CHANGED: Hide thumbnail immediately when video is ready
+                        thumbnailImageView.visibility = View.GONE
                         videoView.visibility = View.VISIBLE
+                        videoView.invalidate()
                     }
                     Player.STATE_BUFFERING -> {
-                        Log.d(com.uyscuti.social.circuit.User_Interface.fragments.TAG, "Video buffering")
-                        // Keep showing current video, don't show thumbnail during buffering
+                        Log.d(TAG, "Video buffering")
+                        // CHANGED: Don't show thumbnail during buffering, keep video view visible
                     }
                     Player.STATE_ENDED -> {
                         stopProgressUpdates()
@@ -691,38 +555,26 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
                 this@StringViewHolder.isPlaying = isPlaying
                 if (isPlaying) {
                     startProgressUpdates()
-                    // Ensure thumbnail is hidden when playing
-                    if (thumbnailImageView.visibility == View.VISIBLE) {
-                        thumbnailImageView.animate()
-                            .alpha(0f)
-                            .setDuration(200)
-                            .withEndAction {
-                                thumbnailImageView.visibility = View.GONE
-                                thumbnailImageView.alpha = 1f
-                            }
-                            .start()
-                    }
+                    // Hide thumbnail when playing
+                    thumbnailImageView.visibility = View.GONE
+                    videoView.visibility = View.VISIBLE
                 } else {
                     stopProgressUpdates()
                 }
-                Log.d(com.uyscuti.social.circuit.User_Interface.fragments.TAG, "Player isPlaying: $isPlaying")
+                Log.d(TAG, "Player isPlaying: $isPlaying")
             }
 
             override fun onRenderedFirstFrame() {
-                Log.d(com.uyscuti.social.circuit.User_Interface.fragments.TAG, "First frame rendered - video is displaying")
-                // Smooth transition on first frame
-                thumbnailImageView.animate()
-                    .alpha(0f)
-                    .setDuration(150)
-                    .withEndAction {
-                        thumbnailImageView.visibility = View.GONE
-                        thumbnailImageView.alpha = 1f
-                    }
-                    .start()
+                Log.d(TAG, "First frame rendered - video is displaying")
+                // Hide thumbnail once first frame is rendered
+                thumbnailImageView.visibility = View.GONE
                 videoView.visibility = View.VISIBLE
             }
         })
     }
+
+
+
 
     fun onViewRecycled() {
         stopProgressUpdates()

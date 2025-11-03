@@ -867,144 +867,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         return view
     }
 
-
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun feedFavoriteFollowUpdate(event: FeedFavoriteFollowUpdate) {
-        val tag = "feedFavoriteFollowUpdate"
-        Log.d(tag, "feedFavoriteFollowUpdate: from favorites or all feed in short fragment")
-
-        val userId = event.userId
-        val isFollowing = event.isFollowing
-
-        // Update adapter silently
-        shortsAdapter.updateFollowState(userId, isFollowing)
-
-        // Update ViewModel
-        val existingFollow = shortsViewModel.followList.find { it.followersId == userId }
-        if (existingFollow != null) {
-            existingFollow.isFollowing = isFollowing
-        } else {
-            shortsViewModel.followList.add(ShortsEntityFollowList(userId, isFollowing))
-        }
-
-        // Update Room database
-        lifecycleScope.launch(Dispatchers.IO) {
-            val followListItem = listOf(ShortsEntityFollowList(userId, isFollowing))
-            val uniqueFollowList = removeDuplicateFollowers(followListItem)
-            followShortsViewModel.insertFollowListItems(uniqueFollowList)
-        }
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun followButtonClicked(event: ShortsFollowButtonClicked) {
-        Log.d("followButtonClicked", "followButtonClicked: ${event.followUnFollowEntity}")
-
-        val userId = event.followUnFollowEntity.userId
-        val isFollowing = event.followUnFollowEntity.isFollowing
-
-        // Make API call
-        followUnFollowViewModel.followUnFollow(userId)
-
-        // Update adapter silently
-        shortsAdapter.updateFollowState(userId, isFollowing)
-
-        // Update ViewModel
-        val existingFollow = shortsViewModel.followList.find { it.followersId == userId }
-        if (existingFollow != null) {
-            existingFollow.isFollowing = isFollowing
-        } else {
-            shortsViewModel.followList.add(ShortsEntityFollowList(userId, isFollowing))
-        }
-
-        // Share with feed fragment
-        feesShortsSharedViewModel.setData(
-            FollowUnFollowEntity(userId, isFollowing)
-        )
-
-        // Update Room database
-        lifecycleScope.launch(Dispatchers.IO) {
-            val followListItem = listOf(ShortsEntityFollowList(userId, isFollowing))
-            val uniqueFollowList = removeDuplicateFollowers(followListItem)
-            followShortsViewModel.insertFollowListItems(uniqueFollowList)
-        }
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun feedInformShortsFragment(event: InformShortsFragment2) {
-        Log.d("feedInformShortsFragment", "InformShortsFragment2: shorts fragment informed")
-
-        val userId = event.userId
-        val isFollowing = event.isFollowing
-
-        // Update adapter silently
-        shortsAdapter.updateFollowState(userId, isFollowing)
-
-        // Update ViewModel
-        val existingFollow = shortsViewModel.followList.find { it.followersId == userId }
-        if (existingFollow != null) {
-            existingFollow.isFollowing = isFollowing
-        } else {
-            shortsViewModel.followList.add(ShortsEntityFollowList(userId, isFollowing))
-        }
-
-        // Update Room database
-        lifecycleScope.launch(Dispatchers.IO) {
-            val followListItem = listOf(ShortsEntityFollowList(userId, isFollowing))
-            val uniqueFollowList = removeDuplicateFollowers(followListItem)
-            followShortsViewModel.insertFollowListItems(uniqueFollowList)
-        }
-    }
-    @SuppressLint("SetTextI18n")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
-        val tag = "handleFollowButtonClick"
-        Log.d(tag, "Follow state changed to: ${event.followUnFollowEntity.isFollowing}")
-
-        val userId = event.followUnFollowEntity.userId
-        val isFollowing = event.followUnFollowEntity.isFollowing
-
-        val connectivityManager =
-            requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val networkInfo = connectivityManager.activeNetworkInfo
-        val isConnected = networkInfo != null && networkInfo.isConnected
-
-        // Update the adapter's data source silently WITHOUT notifyDataSetChanged
-        shortsAdapter.updateFollowState(userId, isFollowing)
-
-        // Update ViewModel data
-        val existingFollow = shortsViewModel.followList.find { it.followersId == userId }
-        if (existingFollow != null) {
-            existingFollow.isFollowing = isFollowing
-        } else {
-            shortsViewModel.followList.add(ShortsEntityFollowList(userId, isFollowing))
-        }
-
-        // Update the Room database immediately
-        followViewModel.insertOrUpdateFollow(event.followUnFollowEntity)
-
-        if (isConnected) {
-            Log.d(tag, "Internet connected, making API call")
-
-            // Make the API call
-            followUnFollowViewModel.followUnFollow(userId)
-
-            // Clean up database after API call succeeds
-            followUnFollowViewModel.viewModelScope.launch {
-                delay(1000)
-                val isDeleted = followViewModel.deleteFollowById(userId)
-                if (isDeleted) {
-                    Log.d(tag, "Follow record deleted successfully from local DB.")
-                } else {
-                    Log.d(tag, "Failed to delete follow record from local DB.")
-                }
-            }
-        } else {
-            Log.d(tag, "No internet connection, saved locally only")
-        }
-    }
+    
     private fun preloadThumbnailForPosition(position: Int) {
         if (position < 0 || position >= shortsViewModel.mutableShortsList.size) return
 
@@ -1023,27 +886,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
 
-    // Update the updateFollowState method to prevent blinking:
-//    fun updateFollowState(userId: String, isFollowing: Boolean) {
-//        val followData = followingData.find { it.followersId == userId }
-//        if (followData != null) {
-//            followData.isFollowing = isFollowing
-//
-//            // Update the UI directly without notifyDataSetChanged
-//            currentViewHolder?.updateFollowButtonState(isFollowing)
-//
-//            Log.d(TAG, "Updated follow state for user $userId to $isFollowing without rebinding")
-//        } else {
-//            followingData.add(
-//                ShortsEntityFollowList(
-//                    followersId = userId,
-//                    isFollowing = isFollowing
-//                )
-//            )
-//            currentViewHolder?.updateFollowButtonState(isFollowing)
-//            Log.d(TAG, "Added new follow state for user $userId: $isFollowing")
-//        }
-//    }
+
 
     @SuppressLint("NotifyDataSetChanged")
     private suspend fun loadMoreShorts(currentPage: Int) {
@@ -1889,46 +1732,46 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
 
-//    @SuppressLint("SetTextI18n")
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
-//        val tag = "handleFollowButtonClick"
-//        Log.d(tag, "Follow state changed to: ${event.followUnFollowEntity.isFollowing}")
-//
-//        val userId = event.followUnFollowEntity.userId
-//        val isFollowing = event.followUnFollowEntity.isFollowing
-//
-//        val connectivityManager =
-//            requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-//        val networkInfo = connectivityManager.activeNetworkInfo
-//        val isConnected = networkInfo != null && networkInfo.isConnected
-//
-//        // Update the adapter's data source silently (without rebinding)
-//        shortsAdapter.updateFollowState(userId, isFollowing)
-//
-//        // Update the Room database immediately
-//        followViewModel.insertOrUpdateFollow(event.followUnFollowEntity)
-//
-//        if (isConnected) {
-//            Log.d(tag, "Internet connected, making API call")
-//
-//            // Make the API call
-//            followUnFollowViewModel.followUnFollow(userId)
-//
-//            // Clean up database after API call succeeds
-//            followUnFollowViewModel.viewModelScope.launch {
-//                delay(1000) // Wait for API call to complete
-//                val isDeleted = followViewModel.deleteFollowById(userId)
-//                if (isDeleted) {
-//                    Log.d(tag, "Follow record deleted successfully from local DB.")
-//                } else {
-//                    Log.d(tag, "Failed to delete follow record from local DB.")
-//                }
-//            }
-//        } else {
-//            Log.d(tag, "No internet connection, saved locally only")
-//        }
-//    }
+    @SuppressLint("SetTextI18n")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
+        val tag = "handleFollowButtonClick"
+        Log.d(tag, "Follow state changed to: ${event.followUnFollowEntity.isFollowing}")
+
+        val userId = event.followUnFollowEntity.userId
+        val isFollowing = event.followUnFollowEntity.isFollowing
+
+        val connectivityManager =
+            requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkInfo = connectivityManager.activeNetworkInfo
+        val isConnected = networkInfo != null && networkInfo.isConnected
+
+        // Update the adapter's data source silently (without rebinding)
+        shortsAdapter.updateFollowState(userId, isFollowing)
+
+        // Update the Room database immediately
+        followViewModel.insertOrUpdateFollow(event.followUnFollowEntity)
+
+        if (isConnected) {
+            Log.d(tag, "Internet connected, making API call")
+
+            // Make the API call
+            followUnFollowViewModel.followUnFollow(userId)
+
+            // Clean up database after API call succeeds
+            followUnFollowViewModel.viewModelScope.launch {
+                delay(1000) // Wait for API call to complete
+                val isDeleted = followViewModel.deleteFollowById(userId)
+                if (isDeleted) {
+                    Log.d(tag, "Follow record deleted successfully from local DB.")
+                } else {
+                    Log.d(tag, "Failed to delete follow record from local DB.")
+                }
+            }
+        } else {
+            Log.d(tag, "No internet connection, saved locally only")
+        }
+    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onProgressEvent(event: ProgressEvent) {
@@ -2196,90 +2039,90 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     }
 
-//    @SuppressLint("NotifyDataSetChanged")
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    fun feedFavoriteFollowUpdate(event: FeedFavoriteFollowUpdate) {
-//        val tag = "feedFavoriteFollowUpdate"
-//        Log.d(tag, "feedFavoriteFollowUpdate: from favorites or all feed in short fragment")
-//        val followListItem: List<ShortsEntityFollowList> = listOf(
-//            ShortsEntityFollowList(
-//                event.userId, event.isFollowing
-//            )
-//        )
-//
-//        lifecycleScope.launch(Dispatchers.IO) {
-//
-//            val uniqueFollowList = removeDuplicateFollowers(followListItem)
-//
-//            Log.d(
-//                "followButtonClicked",
-//                "followButtonClicked: Inserted uniqueFollowList $uniqueFollowList"
-//            )
-//            delay(100)
-//            followShortsViewModel.insertFollowListItems(uniqueFollowList)
-//
+    @SuppressLint("NotifyDataSetChanged")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun feedFavoriteFollowUpdate(event: FeedFavoriteFollowUpdate) {
+        val tag = "feedFavoriteFollowUpdate"
+        Log.d(tag, "feedFavoriteFollowUpdate: from favorites or all feed in short fragment")
+        val followListItem: List<ShortsEntityFollowList> = listOf(
+            ShortsEntityFollowList(
+                event.userId, event.isFollowing
+            )
+        )
+
+        lifecycleScope.launch(Dispatchers.IO) {
+
+            val uniqueFollowList = removeDuplicateFollowers(followListItem)
+
+            Log.d(
+                "followButtonClicked",
+                "followButtonClicked: Inserted uniqueFollowList $uniqueFollowList"
+            )
+            delay(100)
+            followShortsViewModel.insertFollowListItems(uniqueFollowList)
+
+        }
+
+        lifecycleScope.launch(Dispatchers.Main) {
+
+            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
+                shortsAdapter.addIsFollowingData(it)
+                shortsAdapter.notifyDataSetChanged()
+                Log.d("followButtonClicked", "followButtonClicked:$it ")
+            }
+        }
+
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun followButtonClicked(event: ShortsFollowButtonClicked) {
+        Log.d("followButtonClicked", "followButtonClicked: ${event.followUnFollowEntity}")
+
+
+        followUnFollowViewModel.followUnFollow(event.followUnFollowEntity.userId)
+
+//        followUnFollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) {
+//            Log.d("followButtonClicked", "followButtonClicked: follow observer value $it")
 //        }
-//
-//        lifecycleScope.launch(Dispatchers.Main) {
-//
-//            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
-//                shortsAdapter.addIsFollowingData(it)
-//                shortsAdapter.notifyDataSetChanged()
-//                Log.d("followButtonClicked", "followButtonClicked:$it ")
-//            }
-//        }
-//
-//    }
-//
-//    @SuppressLint("NotifyDataSetChanged")
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    fun followButtonClicked(event: ShortsFollowButtonClicked) {
-//        Log.d("followButtonClicked", "followButtonClicked: ${event.followUnFollowEntity}")
-//
-//
-//        followUnFollowViewModel.followUnFollow(event.followUnFollowEntity.userId)
-//
-////        followUnFollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) {
-////            Log.d("followButtonClicked", "followButtonClicked: follow observer value $it")
-////        }
-//
-//        val followListItem: List<ShortsEntityFollowList> = listOf(
-//            ShortsEntityFollowList(
-//                event.followUnFollowEntity.userId, event.followUnFollowEntity.isFollowing
-//            )
-//        )
-//
-//        feesShortsSharedViewModel.setData(
-//            FollowUnFollowEntity(
-//                event.followUnFollowEntity.userId,
-//                event.followUnFollowEntity.isFollowing
-//            )
-//        )
-//
-//        lifecycleScope.launch(Dispatchers.IO) {
-//
-//            val uniqueFollowList = removeDuplicateFollowers(followListItem)
-//
-//            Log.d(
-//                "followButtonClicked",
-//                "followButtonClicked: Inserted uniqueFollowList $uniqueFollowList"
-//            )
-//            delay(100)
-//            followShortsViewModel.insertFollowListItems(uniqueFollowList)
-//
-//        }
-//
-//        lifecycleScope.launch(Dispatchers.Main) {
-//
-//            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
-//                shortsAdapter.addIsFollowingData(it)
-//                shortsAdapter.notifyDataSetChanged()
-//                Log.d("followButtonClicked", "followButtonClicked:$it ")
-//            }
-//        }
-//
-//
-//    }
+
+        val followListItem: List<ShortsEntityFollowList> = listOf(
+            ShortsEntityFollowList(
+                event.followUnFollowEntity.userId, event.followUnFollowEntity.isFollowing
+            )
+        )
+
+        feesShortsSharedViewModel.setData(
+            FollowUnFollowEntity(
+                event.followUnFollowEntity.userId,
+                event.followUnFollowEntity.isFollowing
+            )
+        )
+
+        lifecycleScope.launch(Dispatchers.IO) {
+
+            val uniqueFollowList = removeDuplicateFollowers(followListItem)
+
+            Log.d(
+                "followButtonClicked",
+                "followButtonClicked: Inserted uniqueFollowList $uniqueFollowList"
+            )
+            delay(100)
+            followShortsViewModel.insertFollowListItems(uniqueFollowList)
+
+        }
+
+        lifecycleScope.launch(Dispatchers.Main) {
+
+            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
+                shortsAdapter.addIsFollowingData(it)
+                shortsAdapter.notifyDataSetChanged()
+                Log.d("followButtonClicked", "followButtonClicked:$it ")
+            }
+        }
+
+
+    }
 
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -3134,31 +2977,31 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
 
-//    @SuppressLint("NotifyDataSetChanged")
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    fun feedInformShortsFragment(event: InformShortsFragment2) {
-//        Log.d("feedInformShortsFragment", "InformShortsFragment2: shorts fragment informed")
-//        val list: MutableList<ShortsEntityFollowList> = mutableListOf()
-//        list.add(ShortsEntityFollowList(event.userId, event.isFollowing))
-//        val followListItem: List<ShortsEntityFollowList> = listOf(
-//            ShortsEntityFollowList(
-//                event.userId, event.isFollowing
-//            )
-//        )
-//        lifecycleScope.launch(Dispatchers.IO) {
-//
-//            val uniqueFollowList = removeDuplicateFollowers(followListItem)
-//            Log.d(
-//                "feedShortsSharedViewModel",
-//                "feedShortsSharedViewModel: Inserted uniqueFollowList in shorts: $uniqueFollowList"
-//            )
-//            delay(100)
-//            followShortsViewModel.insertFollowListItems(uniqueFollowList)
-//            shortsViewModel.followList.add(ShortsEntityFollowList(event.userId, event.isFollowing))
-//        }
-//        shortsAdapter.addIsFollowingData(list)
-//        shortsAdapter.notifyDataSetChanged()
-//    }
+    @SuppressLint("NotifyDataSetChanged")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun feedInformShortsFragment(event: InformShortsFragment2) {
+        Log.d("feedInformShortsFragment", "InformShortsFragment2: shorts fragment informed")
+        val list: MutableList<ShortsEntityFollowList> = mutableListOf()
+        list.add(ShortsEntityFollowList(event.userId, event.isFollowing))
+        val followListItem: List<ShortsEntityFollowList> = listOf(
+            ShortsEntityFollowList(
+                event.userId, event.isFollowing
+            )
+        )
+        lifecycleScope.launch(Dispatchers.IO) {
+
+            val uniqueFollowList = removeDuplicateFollowers(followListItem)
+            Log.d(
+                "feedShortsSharedViewModel",
+                "feedShortsSharedViewModel: Inserted uniqueFollowList in shorts: $uniqueFollowList"
+            )
+            delay(100)
+            followShortsViewModel.insertFollowListItems(uniqueFollowList)
+            shortsViewModel.followList.add(ShortsEntityFollowList(event.userId, event.isFollowing))
+        }
+        shortsAdapter.addIsFollowingData(list)
+        shortsAdapter.notifyDataSetChanged()
+    }
 
 }
 
