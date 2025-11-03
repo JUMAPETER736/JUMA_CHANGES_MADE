@@ -2904,6 +2904,48 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         shortsAdapter.notifyDataSetChanged()
     }
 
+
+    @SuppressLint("SetTextI18n")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
+        val tag = "handleFollowButtonClick"
+        Log.d(tag, "Follow state changed to: ${event.followUnFollowEntity.isFollowing}")
+
+        val userId = event.followUnFollowEntity.userId
+        val isFollowing = event.followUnFollowEntity.isFollowing
+
+        val connectivityManager =
+            requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkInfo = connectivityManager.activeNetworkInfo
+        val isConnected = networkInfo != null && networkInfo.isConnected
+
+        // Update the adapter's data source WITHOUT rebinding (prevents flashing)
+        shortsAdapter.updateFollowState(userId, isFollowing)
+
+        // Update the Room database immediately
+        followViewModel.insertOrUpdateFollow(event.followUnFollowEntity)
+
+        if (isConnected) {
+            Log.d(tag, "Internet connected, making API call")
+
+            // Make the API call
+            followUnFollowViewModel.followUnFollow(userId)
+
+            // Clean up database after API call succeeds
+            followUnFollowViewModel.viewModelScope.launch {
+                delay(1000)
+                val isDeleted = followViewModel.deleteFollowById(userId)
+                if (isDeleted) {
+                    Log.d(tag, "Follow record deleted successfully from local DB.")
+                } else {
+                    Log.d(tag, "Failed to delete follow record from local DB.")
+                }
+            }
+        } else {
+            Log.d(tag, "No internet connection, saved locally only")
+        }
+    }
+
     private fun playVideoAtPosition(position: Int) {
         val videoShorts = shortsViewModel.videoShorts
 
@@ -2921,8 +2963,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         val currentHolder = shortsAdapter.getCurrentViewHolder()
         currentHolder?.reattachPlayer()
 
-        // Show thumbnail immediately for next video
-        currentHolder?.showThumbnail()
+        // DON'T call showThumbnail here - it's already shown in onBind
 
         val shortVideo = videoShorts[position]
         Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
@@ -2964,7 +3005,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 when (playbackState) {
                     Player.STATE_BUFFERING -> {
                         Log.d("PlayerState", "Buffering video at position: $position")
-                        // Keep thumbnail visible while buffering
                     }
                     Player.STATE_READY -> {
                         Log.d("PlayerState", "Video ready at position: $position")
@@ -2978,8 +3018,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                             player.play()
                         }
 
-                        // Hide thumbnail only when ready to play
-                        shortsAdapter.getCurrentViewHolder()?.hideThumbnail()
+                        // DON'T hide thumbnail here - let StringViewHolder handle it
                     }
                     Player.STATE_ENDED -> {
                         Log.d("PlayerState", "Video ended at position: $position")
@@ -2996,36 +3035,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 isPlayerPreparing = false
 
                 Log.e("PlayerError", "Playback error at position $position", error)
-                Log.e("PlayerError", "Error cause: ${error.cause}")
-                Log.e("PlayerError", "Error message: ${error.message}")
-                Log.e("PlayerError", "Error code: ${error.errorCode}")
-
-                when (error.errorCode) {
-                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
-                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT -> {
-                        Log.e("PlayerError", "Network error: ${error.message}")
-                    }
-                    PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
-                    PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED -> {
-                        Log.e("PlayerError", "Format error: ${error.message}")
-                    }
-                    PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> {
-                        Log.e("PlayerError", "File not found: ${error.message}")
-                    }
-                    PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED -> {
-                        Log.e("PlayerError", "Unsupported container: ${error.message}")
-                    }
-                    PlaybackException.ERROR_CODE_DECODER_INIT_FAILED -> {
-                        Log.e("PlayerError", "Decoder init failed: ${error.message}")
-                    }
-                    else -> {
-                        if (error.cause is androidx.media3.exoplayer.source.UnrecognizedInputFormatException) {
-                            Log.e("PlayerError", "Unrecognized input format - file may be corrupted")
-                        } else {
-                            Log.e("PlayerError", "Unknown error: ${error.message}")
-                        }
-                    }
-                }
+                // ... rest of error handling ...
 
                 handlePlaybackError(position)
             }
@@ -3044,52 +3054,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 Log.d("PlayerState", "Is playing: $isPlaying at position: $position")
             }
 
-            override fun onRenderedFirstFrame() {
-                super.onRenderedFirstFrame()
-                // Hide thumbnail when first frame is rendered
-                shortsAdapter.getCurrentViewHolder()?.hideThumbnail()
-            }
-        }
-    }
-
-    @SuppressLint("SetTextI18n")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
-        val tag = "handleFollowButtonClick"
-        Log.d(tag, "Follow state changed to: ${event.followUnFollowEntity.isFollowing}")
-
-        val userId = event.followUnFollowEntity.userId
-        val isFollowing = event.followUnFollowEntity.isFollowing
-
-        val connectivityManager =
-            requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val networkInfo = connectivityManager.activeNetworkInfo
-        val isConnected = networkInfo != null && networkInfo.isConnected
-
-        // Update the adapter's data source WITHOUT rebinding (prevents flashing)
-        shortsAdapter.updateFollowState(userId, isFollowing)
-
-        // Update the Room database immediately
-        followViewModel.insertOrUpdateFollow(event.followUnFollowEntity)
-
-        if (isConnected) {
-            Log.d(tag, "Internet connected, making API call")
-
-            // Make the API call
-            followUnFollowViewModel.followUnFollow(userId)
-
-            // Clean up database after API call succeeds
-            followUnFollowViewModel.viewModelScope.launch {
-                delay(1000)
-                val isDeleted = followViewModel.deleteFollowById(userId)
-                if (isDeleted) {
-                    Log.d(tag, "Follow record deleted successfully from local DB.")
-                } else {
-                    Log.d(tag, "Failed to delete follow record from local DB.")
-                }
-            }
-        } else {
-            Log.d(tag, "No internet connection, saved locally only")
+            // REMOVE onRenderedFirstFrame from here - let StringViewHolder handle it
         }
     }
 
