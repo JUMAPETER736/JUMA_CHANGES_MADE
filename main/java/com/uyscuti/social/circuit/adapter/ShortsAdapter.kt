@@ -95,7 +95,6 @@ class ShortsAdapter(
     private val preloadHandler = Handler(Looper.getMainLooper())
 
 
-
     override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
         // Only set currentViewHolder and position, don't call onBind for follow updates
         if (currentViewHolder != holder || currentActivePosition != position) {
@@ -113,13 +112,42 @@ class ShortsAdapter(
             ensureFollowDataExists(data)
 
             Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
+
+            // ADD THIS: Load thumbnail for smooth transition
+            holder.loadThumbnail(data.thumbnail.firstOrNull()?.thumbnailUrl)
+
             holder.onBind(myData)
 
             // Preload adjacent videos
             preloadVideosAround(position)
         }
-
     }
+
+
+//    override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
+//        // Only set currentViewHolder and position, don't call onBind for follow updates
+//        if (currentViewHolder != holder || currentActivePosition != position) {
+//            currentViewHolder = holder
+//            currentActivePosition = position
+//            val data = shortsList[position]
+//
+//            val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
+//                ?: ShortsEntityFollowList(
+//                    followersId = data.author.account._id,
+//                    isFollowing = false
+//                )
+//
+//            val myData = MyData(data, isFollowingData)
+//            ensureFollowDataExists(data)
+//
+//            Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
+//            holder.onBind(myData)
+//
+//            // Preload adjacent videos
+//            preloadVideosAround(position)
+//        }
+//
+//    }
 
     @SuppressLint("NotifyDataSetChanged")
     fun addData(newData: List<ShortsEntity>) {
@@ -468,6 +496,17 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         shortsUploadCancelButton.setOnClickListener(listener)
     }
 
+    fun loadThumbnail(thumbnailUrl: String?) {
+        if (thumbnailUrl != null && thumbnailUrl.isNotEmpty()) {
+            thumbnailImageView.visibility = View.VISIBLE
+            videoView.visibility = View.VISIBLE // Keep both visible
+
+            Glide.with(itemView.context)
+                .load(thumbnailUrl)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(thumbnailImageView)
+        }
+    }
 
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
@@ -479,9 +518,8 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
         val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
 
-        // DON'T load thumbnail or prepare video here
-        // Just ensure views are in correct state
-        thumbnailImageView.visibility = View.GONE
+        // CHANGED: Show thumbnail initially, will hide when video is ready
+        thumbnailImageView.visibility = View.VISIBLE
         videoView.visibility = View.VISIBLE
 
         totalComments = shortsEntity.comments
@@ -530,14 +568,13 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
                             Log.d(TAG, "Video ready: ${videoDuration}ms")
                         }
 
-                        // CHANGED: Hide thumbnail immediately when video is ready
-                        thumbnailImageView.visibility = View.GONE
-                        videoView.visibility = View.VISIBLE
-                        videoView.invalidate()
+                        // CHANGED: Keep thumbnail visible until first frame renders
+                        // Don't hide it here
                     }
                     Player.STATE_BUFFERING -> {
                         Log.d(TAG, "Video buffering")
-                        // CHANGED: Don't show thumbnail during buffering, keep video view visible
+                        // Keep thumbnail visible during buffering
+                        thumbnailImageView.visibility = View.VISIBLE
                     }
                     Player.STATE_ENDED -> {
                         stopProgressUpdates()
@@ -549,9 +586,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
                 this@StringViewHolder.isPlaying = isPlaying
                 if (isPlaying) {
                     startProgressUpdates()
-                    // Hide thumbnail when playing
-                    thumbnailImageView.visibility = View.GONE
-                    videoView.visibility = View.VISIBLE
+                    // Don't hide thumbnail here - wait for onRenderedFirstFrame
                 } else {
                     stopProgressUpdates()
                 }
@@ -559,20 +594,28 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             }
 
             override fun onRenderedFirstFrame() {
-                Log.d(TAG, "First frame rendered - video is displaying")
-                // Hide thumbnail once first frame is rendered
-                thumbnailImageView.visibility = View.GONE
+                Log.d(TAG, "First frame rendered - hiding thumbnail")
+                // ONLY hide thumbnail after first frame is rendered
+                thumbnailImageView.animate()
+                    .alpha(0f)
+                    .setDuration(150)
+                    .withEndAction {
+                        thumbnailImageView.visibility = View.GONE
+                        thumbnailImageView.alpha = 1f
+                    }
+                    .start()
                 videoView.visibility = View.VISIBLE
             }
         })
+
     }
 
     fun onViewRecycled() {
         stopProgressUpdates()
 
-        // CHANGED: Keep video view visible, just show thumbnail on top
-        thumbnailImageView.visibility = View.GONE // Changed from VISIBLE
-        videoView.visibility = View.VISIBLE // Keep visible
+        // CHANGED: Show thumbnail when recycling for smooth scrolling
+        thumbnailImageView.visibility = View.VISIBLE
+        videoView.visibility = View.VISIBLE
 
         commentsParentLayout.setOnClickListener(null)
         btnLike.setOnClickListener(null)

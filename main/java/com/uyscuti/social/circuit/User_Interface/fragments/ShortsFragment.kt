@@ -583,13 +583,10 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                             // Don't call stop() or seekTo(0) here
                         }
 
-                        // Set track selection parameters
-                        exoPlayer?.trackSelectionParameters = exoPlayer!!.trackSelectionParameters
-                            .buildUpon()
-                            .setMaxVideoSizeSd()
-                            .build()
-
-                        playVideoAtPosition(position)
+                        // ADDED: Small delay to allow thumbnail to show
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            playVideoAtPosition(position)
+                        }, 50)
                     }
 
                     override fun onPageScrolled(
