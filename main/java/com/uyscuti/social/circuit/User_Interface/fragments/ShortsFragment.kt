@@ -1094,54 +1094,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-//    private fun playVideoAtPosition(position: Int) {
-//        val videoShorts = shortsViewModel.videoShorts
-//
-//        if (position < 0 || position >= videoShorts.size) {
-//            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
-//            return
-//        }
-//
-//        if (isPlayerPreparing) {
-//            Log.d("playVideoAtPosition", "Player is already preparing, ignoring request")
-//            return
-//        }
-//
-//        // CRITICAL: Ensure the current ViewHolder's surface is properly attached
-//        val currentHolder = shortsAdapter.getCurrentViewHolder()
-//        currentHolder?.reattachPlayer()
-//
-//        val shortVideo = videoShorts[position]
-//        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
-//
-//        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
-//
-//        if (rawVideoUrl.isNullOrEmpty()) {
-//            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
-//            return
-//        }
-//
-//        val finalVideoUrl = when {
-//            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
-//                rawVideoUrl
-//            }
-//            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
-//                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
-//                serverBaseUrl + rawVideoUrl.trimStart('/')
-//            }
-//            else -> {
-//                val serverBaseUrl = "http://192.168.1.103:8080/"
-//                if (rawVideoUrl.startsWith("/")) {
-//                    serverBaseUrl + rawVideoUrl.trimStart('/')
-//                } else {
-//                    serverBaseUrl + rawVideoUrl
-//                }
-//            }
-//        }
-//
-//        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
-//        validateAndPlayVideo(finalVideoUrl, position)
-//    }
+
 
     private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
         try {
@@ -1633,46 +1586,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
 
-//    @SuppressLint("SetTextI18n")
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
-//        val tag = "handleFollowButtonClick"
-//        Log.d(tag, "Follow state changed to: ${event.followUnFollowEntity.isFollowing}")
-//
-//        val userId = event.followUnFollowEntity.userId
-//        val isFollowing = event.followUnFollowEntity.isFollowing
-//
-//        val connectivityManager =
-//            requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-//        val networkInfo = connectivityManager.activeNetworkInfo
-//        val isConnected = networkInfo != null && networkInfo.isConnected
-//
-//        // Update the adapter's data source silently (without rebinding)
-//        shortsAdapter.updateFollowState(userId, isFollowing)
-//
-//        // Update the Room database immediately
-//        followViewModel.insertOrUpdateFollow(event.followUnFollowEntity)
-//
-//        if (isConnected) {
-//            Log.d(tag, "Internet connected, making API call")
-//
-//            // Make the API call
-//            followUnFollowViewModel.followUnFollow(userId)
-//
-//            // Clean up database after API call succeeds
-//            followUnFollowViewModel.viewModelScope.launch {
-//                delay(1000) // Wait for API call to complete
-//                val isDeleted = followViewModel.deleteFollowById(userId)
-//                if (isDeleted) {
-//                    Log.d(tag, "Follow record deleted successfully from local DB.")
-//                } else {
-//                    Log.d(tag, "Failed to delete follow record from local DB.")
-//                }
-//            }
-//        } else {
-//            Log.d(tag, "No internet connection, saved locally only")
-//        }
-//    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onProgressEvent(event: ProgressEvent) {
@@ -1778,104 +1691,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-//    private fun createPlayerListener(position: Int): Player.Listener {
-//        return object : Player.Listener {
-//            override fun onPlaybackStateChanged(playbackState: Int) {
-//                super.onPlaybackStateChanged(playbackState)
-//
-//                when (playbackState) {
-//                    Player.STATE_BUFFERING -> {
-//                        Log.d("PlayerState", "Buffering video at position: $position")
-//
-//                    }
-//                    Player.STATE_READY -> {
-//                        Log.d("PlayerState", "Video ready at position: $position")
-//                        isPlayerPreparing = false
-//
-//
-//                        exoPlayer?.let { player ->
-//                            if (player.duration != C.TIME_UNSET) {
-//                                shortSeekBar.max = player.duration.toInt()
-//                                Log.d("PlayerState", "Duration set: ${player.duration}")
-//                            }
-//                            player.play()
-//                        }
-//                    }
-//                    Player.STATE_ENDED -> {
-//                        Log.d("PlayerState", "Video ended at position: $position")
-//                    }
-//                    Player.STATE_IDLE -> {
-//                        Log.d("PlayerState", "Player idle at position: $position")
-//                        isPlayerPreparing = false
-//                    }
-//                }
-//            }
-//
-//            override fun onPlayerError(error: PlaybackException) {
-//                super.onPlayerError(error)
-//                isPlayerPreparing = false
-//
-//                Log.e("PlayerError", "Playback error at position $position", error)
-//                Log.e("PlayerError", "Error cause: ${error.cause}")
-//                Log.e("PlayerError", "Error message: ${error.message}")
-//                Log.e("PlayerError", "Error code: ${error.errorCode}")
-//
-//                // Enhanced error handling with specific messages
-//                when (error.errorCode) {
-//                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
-//                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT -> {
-//
-//                        Log.e("PlayerError", "Network error: ${error.message}")
-//                    }
-//                    PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
-//                    PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED -> {
-//
-//                        Log.e("PlayerError", "Format error: ${error.message}")
-//                    }
-//                    PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> {
-//
-//                        Log.e("PlayerError", "File not found: ${error.message}")
-//                    }
-//                    PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED -> {
-//
-//                        Log.e("PlayerError", "Unsupported container: ${error.message}")
-//                    }
-//                    PlaybackException.ERROR_CODE_DECODER_INIT_FAILED -> {
-//
-//                        Log.e("PlayerError", "Decoder init failed: ${error.message}")
-//                    }
-//                    else -> {
-//                        // Check if it's the specific UnrecognizedInputFormatException
-//                        if (error.cause is androidx.media3.exoplayer.source.UnrecognizedInputFormatException) {
-//
-//                            Log.e("PlayerError", "Unrecognized input format - file may be corrupted")
-//                        } else {
-//
-//                            Log.e("PlayerError", "Unknown error: ${error.message}")
-//                        }
-//                    }
-//                }
-//
-//                // Enhanced recovery mechanism
-//                handlePlaybackError(position)
-//            }
-//
-//            override fun onPositionDiscontinuity(
-//                oldPosition: Player.PositionInfo,
-//                newPosition: Player.PositionInfo,
-//                reason: Int
-//            ) {
-//                super.onPositionDiscontinuity(oldPosition, newPosition, reason)
-//                updateSeekBar()
-//            }
-//
-//            override fun onIsPlayingChanged(isPlaying: Boolean) {
-//                super.onIsPlayingChanged(isPlaying)
-//                Log.d("PlayerState", "Is playing: $isPlaying at position: $position")
-//
-//            }
-//        }
-//    }
+
 
     private fun handlePlaybackError(position: Int) {
         lifecycleScope.launch {
@@ -1983,9 +1799,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         followUnFollowViewModel.followUnFollow(event.followUnFollowEntity.userId)
 
-//        followUnFollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) {
-//            Log.d("followButtonClicked", "followButtonClicked: follow observer value $it")
-//        }
+
 
         val followListItem: List<ShortsEntityFollowList> = listOf(
             ShortsEntityFollowList(
