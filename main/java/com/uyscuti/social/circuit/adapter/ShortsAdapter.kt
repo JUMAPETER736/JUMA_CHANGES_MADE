@@ -140,21 +140,21 @@ class ShortsAdapter(
         followingData.addAll(isFollowingData)
     }
 
-    fun updateFollowState(userId: String, isFollowing: Boolean) {
-        val followData = followingData.find { it.followersId == userId }
-        if (followData != null) {
-            followData.isFollowing = isFollowing
-            Log.d(TAG, "Updated follow state for user $userId to $isFollowing without rebinding")
-        } else {
-            followingData.add(
-                ShortsEntityFollowList(
-                    followersId = userId,
-                    isFollowing = isFollowing
-                )
-            )
-            Log.d(TAG, "Added new follow state for user $userId: $isFollowing")
-        }
-    }
+//    fun updateFollowState(userId: String, isFollowing: Boolean) {
+//        val followData = followingData.find { it.followersId == userId }
+//        if (followData != null) {
+//            followData.isFollowing = isFollowing
+//            Log.d(TAG, "Updated follow state for user $userId to $isFollowing without rebinding")
+//        } else {
+//            followingData.add(
+//                ShortsEntityFollowList(
+//                    followersId = userId,
+//                    isFollowing = isFollowing
+//                )
+//            )
+//            Log.d(TAG, "Added new follow state for user $userId: $isFollowing")
+//        }
+//    }
 
     // PRELOADING METHODS
     private fun preloadVideosAround(position: Int) {
@@ -321,6 +321,27 @@ class ShortsAdapter(
         holder.pauseUpdates()
     }
 
+    // Add this method to ShortsAdapter
+    fun updateFollowState(userId: String, isFollowing: Boolean) {
+        val followData = followingData.find { it.followersId == userId }
+        if (followData != null) {
+            followData.isFollowing = isFollowing
+
+            // Update the current ViewHolder's follow button without rebinding
+            currentViewHolder?.updateFollowButtonState(isFollowing)
+
+            Log.d(TAG, "Updated follow state for user $userId to $isFollowing without rebinding")
+        } else {
+            followingData.add(
+                ShortsEntityFollowList(
+                    followersId = userId,
+                    isFollowing = isFollowing
+                )
+            )
+            Log.d(TAG, "Added new follow state for user $userId: $isFollowing")
+        }
+    }
+
 }
 
 
@@ -469,124 +490,124 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     }
 
 
-    @OptIn(UnstableApi::class)
-    @SuppressLint("SetTextI18n")
-    override fun onBind(data: MyData) {
-        val shortsEntity = data.shortsEntity
-        val url = shortsEntity.images[0].url
-        val shortOwnerId = shortsEntity.author.account._id
-        val shortOwnerUsername = shortsEntity.author.account.username
-        val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
-        val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
+//    @OptIn(UnstableApi::class)
+//    @SuppressLint("SetTextI18n")
+//    override fun onBind(data: MyData) {
+//        val shortsEntity = data.shortsEntity
+//        val url = shortsEntity.images[0].url
+//        val shortOwnerId = shortsEntity.author.account._id
+//        val shortOwnerUsername = shortsEntity.author.account.username
+//        val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
+//        val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
+//
+//        // DON'T load thumbnail or prepare video here
+//        // Just ensure views are in correct state
+//        thumbnailImageView.visibility = View.GONE
+//        videoView.visibility = View.VISIBLE
+//
+//        totalComments = shortsEntity.comments
+//        totalLikes = shortsEntity.likes
+//        isLiked = shortsEntity.isLiked
+//        isFavorite = shortsEntity.isBookmarked
+//
+//        // Rest of your existing onBind code...
+//        updateLikeButtonState()
+//        updateFavoriteButtonState()
+//        setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+//        setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+//        setupFollowButton(data, shortOwnerId)
+//        setupContent(shortsEntity)
+//
+//        if (exoplayer.duration > 0) {
+//            bottomVideoSeekBar.max = (exoplayer.duration / 1000).toInt()
+//        }
+//    }
 
-        // DON'T load thumbnail or prepare video here
-        // Just ensure views are in correct state
-        thumbnailImageView.visibility = View.GONE
-        videoView.visibility = View.VISIBLE
+//    private fun setupPlayer() {
+//        player = exoplayer
+//
+//        videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+//            override fun onViewAttachedToWindow(v: View) {
+//                Log.d(TAG, "VideoView attached to window")
+//                if (videoView.player == null) {
+//                    videoView.player = exoplayer
+//                    videoView.visibility = View.VISIBLE
+//                }
+//            }
+//
+//            override fun onViewDetachedFromWindow(v: View) {
+//                Log.d(TAG, "VideoView detached from window")
+//            }
+//        })
+//
+//        exoplayer.addListener(object : Player.Listener {
+//            override fun onPlaybackStateChanged(playbackState: Int) {
+//                when (playbackState) {
+//                    Player.STATE_READY -> {
+//                        videoDuration = exoplayer.duration
+//                        if (videoDuration > 0) {
+//                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
+//                            bottomVideoSeekBar.secondaryProgress = 0
+//                            Log.d(TAG, "Video ready: ${videoDuration}ms")
+//                        }
+//
+//                        // CHANGED: Hide thumbnail immediately when video is ready
+//                        thumbnailImageView.visibility = View.GONE
+//                        videoView.visibility = View.VISIBLE
+//                        videoView.invalidate()
+//                    }
+//                    Player.STATE_BUFFERING -> {
+//                        Log.d(TAG, "Video buffering")
+//                        // CHANGED: Don't show thumbnail during buffering, keep video view visible
+//                    }
+//                    Player.STATE_ENDED -> {
+//                        stopProgressUpdates()
+//                    }
+//                }
+//            }
+//
+//            override fun onIsPlayingChanged(isPlaying: Boolean) {
+//                this@StringViewHolder.isPlaying = isPlaying
+//                if (isPlaying) {
+//                    startProgressUpdates()
+//                    // Hide thumbnail when playing
+//                    thumbnailImageView.visibility = View.GONE
+//                    videoView.visibility = View.VISIBLE
+//                } else {
+//                    stopProgressUpdates()
+//                }
+//                Log.d(TAG, "Player isPlaying: $isPlaying")
+//            }
+//
+//            override fun onRenderedFirstFrame() {
+//                Log.d(TAG, "First frame rendered - video is displaying")
+//                // Hide thumbnail once first frame is rendered
+//                thumbnailImageView.visibility = View.GONE
+//                videoView.visibility = View.VISIBLE
+//            }
+//        })
+//    }
 
-        totalComments = shortsEntity.comments
-        totalLikes = shortsEntity.likes
-        isLiked = shortsEntity.isLiked
-        isFavorite = shortsEntity.isBookmarked
-
-        // Rest of your existing onBind code...
-        updateLikeButtonState()
-        updateFavoriteButtonState()
-        setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-        setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-        setupFollowButton(data, shortOwnerId)
-        setupContent(shortsEntity)
-
-        if (exoplayer.duration > 0) {
-            bottomVideoSeekBar.max = (exoplayer.duration / 1000).toInt()
-        }
-    }
-
-    private fun setupPlayer() {
-        player = exoplayer
-
-        videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) {
-                Log.d(TAG, "VideoView attached to window")
-                if (videoView.player == null) {
-                    videoView.player = exoplayer
-                    videoView.visibility = View.VISIBLE
-                }
-            }
-
-            override fun onViewDetachedFromWindow(v: View) {
-                Log.d(TAG, "VideoView detached from window")
-            }
-        })
-
-        exoplayer.addListener(object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                when (playbackState) {
-                    Player.STATE_READY -> {
-                        videoDuration = exoplayer.duration
-                        if (videoDuration > 0) {
-                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
-                            bottomVideoSeekBar.secondaryProgress = 0
-                            Log.d(TAG, "Video ready: ${videoDuration}ms")
-                        }
-
-                        // CHANGED: Hide thumbnail immediately when video is ready
-                        thumbnailImageView.visibility = View.GONE
-                        videoView.visibility = View.VISIBLE
-                        videoView.invalidate()
-                    }
-                    Player.STATE_BUFFERING -> {
-                        Log.d(TAG, "Video buffering")
-                        // CHANGED: Don't show thumbnail during buffering, keep video view visible
-                    }
-                    Player.STATE_ENDED -> {
-                        stopProgressUpdates()
-                    }
-                }
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                this@StringViewHolder.isPlaying = isPlaying
-                if (isPlaying) {
-                    startProgressUpdates()
-                    // Hide thumbnail when playing
-                    thumbnailImageView.visibility = View.GONE
-                    videoView.visibility = View.VISIBLE
-                } else {
-                    stopProgressUpdates()
-                }
-                Log.d(TAG, "Player isPlaying: $isPlaying")
-            }
-
-            override fun onRenderedFirstFrame() {
-                Log.d(TAG, "First frame rendered - video is displaying")
-                // Hide thumbnail once first frame is rendered
-                thumbnailImageView.visibility = View.GONE
-                videoView.visibility = View.VISIBLE
-            }
-        })
-    }
-
-    fun onViewRecycled() {
-        stopProgressUpdates()
-
-        // CHANGED: Keep video view visible, just show thumbnail on top
-        thumbnailImageView.visibility = View.GONE // Changed from VISIBLE
-        videoView.visibility = View.VISIBLE // Keep visible
-
-        commentsParentLayout.setOnClickListener(null)
-        btnLike.setOnClickListener(null)
-        favorite.setOnClickListener(null)
-        shareBtn.setOnClickListener(null)
-        downloadBtn.setOnClickListener(null)
-        username.setOnClickListener(null)
-        shortsProfileImage.setOnClickListener(null)
-        shortsViewPager.setOnClickListener(null)
-
-        videoDuration = 0L
-        bottomVideoSeekBar.progress = 0
-        isPlaying = false
-    }
+//    fun onViewRecycled() {
+//        stopProgressUpdates()
+//
+//        // CHANGED: Keep video view visible, just show thumbnail on top
+//        thumbnailImageView.visibility = View.GONE // Changed from VISIBLE
+//        videoView.visibility = View.VISIBLE // Keep visible
+//
+//        commentsParentLayout.setOnClickListener(null)
+//        btnLike.setOnClickListener(null)
+//        favorite.setOnClickListener(null)
+//        shareBtn.setOnClickListener(null)
+//        downloadBtn.setOnClickListener(null)
+//        username.setOnClickListener(null)
+//        shortsProfileImage.setOnClickListener(null)
+//        shortsViewPager.setOnClickListener(null)
+//
+//        videoDuration = 0L
+//        bottomVideoSeekBar.progress = 0
+//        isPlaying = false
+//    }
 
     @OptIn(UnstableApi::class)
     private fun setupClickListeners(
@@ -643,50 +664,50 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
+//
+//    @SuppressLint("SetTextI18n")
+//    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
+//        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
+//            followButton.visibility = View.INVISIBLE
+//        } else {
+//            followButton.visibility = View.VISIBLE
+//
+//            // Set initial state from data
+//            updateFollowButtonState(data.followItemEntity.isFollowing)
+//
+//            // Remove previous listener to avoid duplicates
+//            followButton.setOnClickListener(null)
+//
+//            followButton.setOnClickListener {
+//                // Toggle state immediately for smooth UI
+//                val newFollowState = !isFollowed
+//                isFollowed = newFollowState
+//                updateFollowButtonState(newFollowState)
+//
+//                // Update the data source immediately
+//                data.followItemEntity.isFollowing = newFollowState
+//
+//                // Post event for backend update (but don't rebind the view)
+//                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, newFollowState)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+//
+//                Log.d(TAG, "Follow button clicked: userId=$shortOwnerId, newState=$newFollowState")
+//            }
+//        }
+//    }
 
-    @SuppressLint("SetTextI18n")
-    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
-        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
-            followButton.visibility = View.INVISIBLE
-        } else {
-            followButton.visibility = View.VISIBLE
-
-            // Set initial state from data
-            updateFollowButtonState(data.followItemEntity.isFollowing)
-
-            // Remove previous listener to avoid duplicates
-            followButton.setOnClickListener(null)
-
-            followButton.setOnClickListener {
-                // Toggle state immediately for smooth UI
-                val newFollowState = !isFollowed
-                isFollowed = newFollowState
-                updateFollowButtonState(newFollowState)
-
-                // Update the data source immediately
-                data.followItemEntity.isFollowing = newFollowState
-
-                // Post event for backend update (but don't rebind the view)
-                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, newFollowState)
-                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
-
-                Log.d(TAG, "Follow button clicked: userId=$shortOwnerId, newState=$newFollowState")
-            }
-        }
-    }
-
-    @SuppressLint("SetTextI18n")
-    private fun updateFollowButtonState(isFollowing: Boolean) {
-        isFollowed = isFollowing
-        if (isFollowing) {
-            followButton.text = "Following"
-            followButton.isAllCaps = false
-            followButton.setBackgroundResource(R.drawable.shorts_following_button)
-        } else {
-            followButton.text = "Follow"
-            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
-        }
-    }
+//    @SuppressLint("SetTextI18n")
+//    private fun updateFollowButtonState(isFollowing: Boolean) {
+//        isFollowed = isFollowing
+//        if (isFollowing) {
+//            followButton.text = "Following"
+//            followButton.isAllCaps = false
+//            followButton.setBackgroundResource(R.drawable.shorts_following_button)
+//        } else {
+//            followButton.text = "Follow"
+//            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
+//        }
+//    }
 
 
     private fun setupContent(shortsEntity: ShortsEntity) {
@@ -945,6 +966,187 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             updatedAt = serverResponseItem.updatedAt,
             thumbnail = serverResponseItem.thumbnail
         )
+    }
+
+
+
+
+    // Add these methods for thumbnail management
+    fun showThumbnail() {
+        thumbnailImageView.visibility = View.VISIBLE
+        videoView.visibility = View.VISIBLE // Keep both visible during transition
+    }
+
+    fun hideThumbnail() {
+        thumbnailImageView.animate()
+            .alpha(0f)
+            .setDuration(150)
+            .withEndAction {
+                thumbnailImageView.visibility = View.GONE
+                thumbnailImageView.alpha = 1f
+            }
+            .start()
+    }
+
+    // Make this method public so adapter can call it
+    fun updateFollowButtonState(isFollowing: Boolean) {
+        isFollowed = isFollowing
+        if (isFollowing) {
+            followButton.text = "Following"
+            followButton.isAllCaps = false
+            followButton.setBackgroundResource(R.drawable.shorts_following_button)
+        } else {
+            followButton.text = "Follow"
+            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
+        }
+    }
+
+    @OptIn(UnstableApi::class)
+    @SuppressLint("SetTextI18n")
+    override fun onBind(data: MyData) {
+        val shortsEntity = data.shortsEntity
+        val url = shortsEntity.images[0].url
+        val shortOwnerId = shortsEntity.author.account._id
+        val shortOwnerUsername = shortsEntity.author.account.username
+        val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
+        val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
+
+        // Load thumbnail immediately
+        val thumbnailUrl = shortsEntity.thumbnail.firstOrNull()?.thumbnailUrl
+        if (!thumbnailUrl.isNullOrEmpty()) {
+            Glide.with(itemView.context)
+                .load(thumbnailUrl)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(thumbnailImageView)
+            thumbnailImageView.visibility = View.VISIBLE
+        }
+
+        videoView.visibility = View.VISIBLE
+
+        totalComments = shortsEntity.comments
+        totalLikes = shortsEntity.likes
+        isLiked = shortsEntity.isLiked
+        isFavorite = shortsEntity.isBookmarked
+
+        updateLikeButtonState()
+        updateFavoriteButtonState()
+        setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+        setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+        setupFollowButton(data, shortOwnerId)
+        setupContent(shortsEntity)
+
+        if (exoplayer.duration > 0) {
+            bottomVideoSeekBar.max = (exoplayer.duration / 1000).toInt()
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
+        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
+            followButton.visibility = View.INVISIBLE
+        } else {
+            followButton.visibility = View.VISIBLE
+
+            // Set initial state from data
+            updateFollowButtonState(data.followItemEntity.isFollowing)
+
+            // Remove previous listener to avoid duplicates
+            followButton.setOnClickListener(null)
+
+            followButton.setOnClickListener {
+                // Toggle state immediately for smooth UI (no rebinding)
+                val newFollowState = !isFollowed
+                updateFollowButtonState(newFollowState)
+
+                // Update the data source
+                data.followItemEntity.isFollowing = newFollowState
+
+                // Post event for backend update
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, newFollowState)
+                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+                Log.d(TAG, "Follow button clicked: userId=$shortOwnerId, newState=$newFollowState")
+            }
+        }
+    }
+
+    private fun setupPlayer() {
+        player = exoplayer
+
+        videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {
+                Log.d(TAG, "VideoView attached to window")
+                if (videoView.player == null) {
+                    videoView.player = exoplayer
+                    videoView.visibility = View.VISIBLE
+                }
+            }
+
+            override fun onViewDetachedFromWindow(v: View) {
+                Log.d(TAG, "VideoView detached from window")
+            }
+        })
+
+        exoplayer.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                when (playbackState) {
+                    Player.STATE_READY -> {
+                        videoDuration = exoplayer.duration
+                        if (videoDuration > 0) {
+                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
+                            bottomVideoSeekBar.secondaryProgress = 0
+                            Log.d(TAG, "Video ready: ${videoDuration}ms")
+                        }
+                        // Don't hide thumbnail here - let onRenderedFirstFrame handle it
+                    }
+                    Player.STATE_BUFFERING -> {
+                        Log.d(TAG, "Video buffering")
+                        // Keep thumbnail visible during buffering
+                    }
+                    Player.STATE_ENDED -> {
+                        stopProgressUpdates()
+                    }
+                }
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                this@StringViewHolder.isPlaying = isPlaying
+                if (isPlaying) {
+                    startProgressUpdates()
+                } else {
+                    stopProgressUpdates()
+                }
+                Log.d(TAG, "Player isPlaying: $isPlaying")
+            }
+
+            override fun onRenderedFirstFrame() {
+                Log.d(TAG, "First frame rendered - hiding thumbnail smoothly")
+                // Hide thumbnail smoothly when first frame is rendered
+                hideThumbnail()
+            }
+        })
+    }
+
+    fun onViewRecycled() {
+        stopProgressUpdates()
+
+        // Show thumbnail when recycled
+        thumbnailImageView.visibility = View.VISIBLE
+        thumbnailImageView.alpha = 1f
+        videoView.visibility = View.VISIBLE
+
+        commentsParentLayout.setOnClickListener(null)
+        btnLike.setOnClickListener(null)
+        favorite.setOnClickListener(null)
+        shareBtn.setOnClickListener(null)
+        downloadBtn.setOnClickListener(null)
+        username.setOnClickListener(null)
+        shortsProfileImage.setOnClickListener(null)
+        shortsViewPager.setOnClickListener(null)
+
+        videoDuration = 0L
+        bottomVideoSeekBar.progress = 0
+        isPlaying = false
     }
 
 }
