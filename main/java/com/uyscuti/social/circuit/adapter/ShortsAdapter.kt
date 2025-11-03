@@ -140,7 +140,23 @@ class ShortsAdapter(
         followingData.addAll(isFollowingData)
     }
 
+    fun updateFollowState(userId: String, isFollowing: Boolean) {
+        val followData = followingData.find { it.followersId == userId }
+        if (followData != null) {
+            followData.isFollowing = isFollowing
+            Log.d(TAG, "Updated follow state for user $userId to $isFollowing without rebinding")
+        } else {
+            followingData.add(
+                ShortsEntityFollowList(
+                    followersId = userId,
+                    isFollowing = isFollowing
+                )
+            )
+            Log.d(TAG, "Added new follow state for user $userId: $isFollowing")
+        }
+    }
 
+    // PRELOADING METHODS
     private fun preloadVideosAround(position: Int) {
         preloadHandler.removeCallbacksAndMessages(null)
 
@@ -305,37 +321,21 @@ class ShortsAdapter(
         holder.pauseUpdates()
     }
 
-    // Add this method to ShortsAdapter
-    fun updateFollowState(userId: String, isFollowing: Boolean) {
-        val followData = followingData.find { it.followersId == userId }
-        if (followData != null) {
-            followData.isFollowing = isFollowing
-
-            // Update the current ViewHolder's follow button without rebinding
-            currentViewHolder?.updateFollowButtonState(isFollowing)
-
-            Log.d(TAG, "Updated follow state for user $userId to $isFollowing without rebinding")
-        } else {
-            followingData.add(
-                ShortsEntityFollowList(
-                    followersId = userId,
-                    isFollowing = isFollowing
-                )
-            )
-            Log.d(TAG, "Added new follow state for user $userId: $isFollowing")
-        }
-    }
-
 }
 
-class StringViewHolder @OptIn(UnstableApi::class) constructor(
+
+class StringViewHolder @OptIn(UnstableApi::class) constructor
+    (
+
     itemView: View,
     private val commentsClickListener: OnCommentsClickListener,
     private var onClickListeners: OnClickListeners,
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
-) : ViewHolder<MyData>(itemView) {
+
+)
+    : ViewHolder<MyData>(itemView) {
 
     companion object {
         private const val TAG = "StringViewHolder"
@@ -383,10 +383,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
     private var isPlaying = false
     private var videoDuration = 0L
 
-    // CRITICAL: Add flags to prevent multiple callbacks
-    private var hasHiddenThumbnail = false
-    private var isAttached = false
-
     private val mainHandler = Handler(Looper.getMainLooper())
     private val progressUpdateRunnable = object : Runnable {
         override fun run() {
@@ -400,9 +396,11 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         setupPlayer()
         setupUploadComponents()
 
+        // Ensure videoView is properly configured
         videoView.apply {
             useController = false
             keepScreenOn = true
+            // Set background to prevent black screen
             setBackgroundColor(Color.BLACK)
             setShutterBackgroundColor(Color.BLACK)
         }
@@ -412,19 +410,18 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         stopProgressUpdates()
     }
 
+
     fun reattachPlayer() {
-        if (!isAttached) {
-            isAttached = true
-            videoView.post {
-                videoView.player = null
-                videoView.player = exoplayer
-                videoView.visibility = View.VISIBLE
-                videoView.useController = false
-                videoView.keepScreenOn = true
-                videoView.requestLayout()
-                videoView.invalidate()
-                Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
-            }
+        videoView.post {
+            videoView.player = null
+            videoView.player = exoplayer
+            videoView.visibility = View.VISIBLE
+            videoView.useController = false
+            videoView.keepScreenOn = true
+            videoView.requestLayout()
+            videoView.invalidate()
+
+            Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
         }
     }
 
@@ -456,7 +453,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
     }
 
     fun onViewAttached() {
-        isAttached = true
         videoView.visibility = View.VISIBLE
         if (videoView.player == null) {
             videoView.player = exoplayer
@@ -472,36 +468,10 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         shortsUploadCancelButton.setOnClickListener(listener)
     }
 
-    // CRITICAL: Add method to show thumbnail
-    fun showThumbnail() {
-        thumbnailImageView.visibility = View.VISIBLE
-        thumbnailImageView.alpha = 1f
-        hasHiddenThumbnail = false
-    }
-
-    // CRITICAL: Fix the hide thumbnail method
-    fun hideThumbnail() {
-        // Only hide once per bind
-        if (!hasHiddenThumbnail && thumbnailImageView.visibility == View.VISIBLE) {
-            hasHiddenThumbnail = true
-            thumbnailImageView.animate()
-                .alpha(0f)
-                .setDuration(200)
-                .withEndAction {
-                    thumbnailImageView.visibility = View.GONE
-                    thumbnailImageView.alpha = 1f
-                }
-                .start()
-        }
-    }
 
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
     override fun onBind(data: MyData) {
-        // CRITICAL: Reset flags on new bind
-        hasHiddenThumbnail = false
-        isAttached = false
-
         val shortsEntity = data.shortsEntity
         val url = shortsEntity.images[0].url
         val shortOwnerId = shortsEntity.author.account._id
@@ -509,19 +479,9 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
         val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
 
-        // Load and show thumbnail immediately
-        val thumbnailUrl = shortsEntity.thumbnail.firstOrNull()?.thumbnailUrl
-        if (!thumbnailUrl.isNullOrEmpty()) {
-            Glide.with(itemView.context)
-                .load(thumbnailUrl)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .into(thumbnailImageView)
-            thumbnailImageView.visibility = View.VISIBLE
-            thumbnailImageView.alpha = 1f
-        } else {
-            thumbnailImageView.visibility = View.GONE
-        }
-
+        // DON'T load thumbnail or prepare video here
+        // Just ensure views are in correct state
+        thumbnailImageView.visibility = View.GONE
         videoView.visibility = View.VISIBLE
 
         totalComments = shortsEntity.comments
@@ -529,6 +489,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         isLiked = shortsEntity.isLiked
         isFavorite = shortsEntity.isBookmarked
 
+        // Rest of your existing onBind code...
         updateLikeButtonState()
         updateFavoriteButtonState()
         setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
@@ -555,7 +516,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
 
             override fun onViewDetachedFromWindow(v: View) {
                 Log.d(TAG, "VideoView detached from window")
-                isAttached = false
             }
         })
 
@@ -569,9 +529,15 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
                             bottomVideoSeekBar.secondaryProgress = 0
                             Log.d(TAG, "Video ready: ${videoDuration}ms")
                         }
+
+                        // CHANGED: Hide thumbnail immediately when video is ready
+                        thumbnailImageView.visibility = View.GONE
+                        videoView.visibility = View.VISIBLE
+                        videoView.invalidate()
                     }
                     Player.STATE_BUFFERING -> {
                         Log.d(TAG, "Video buffering")
+                        // CHANGED: Don't show thumbnail during buffering, keep video view visible
                     }
                     Player.STATE_ENDED -> {
                         stopProgressUpdates()
@@ -583,6 +549,9 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
                 this@StringViewHolder.isPlaying = isPlaying
                 if (isPlaying) {
                     startProgressUpdates()
+                    // Hide thumbnail when playing
+                    thumbnailImageView.visibility = View.GONE
+                    videoView.visibility = View.VISIBLE
                 } else {
                     stopProgressUpdates()
                 }
@@ -590,11 +559,10 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             }
 
             override fun onRenderedFirstFrame() {
-                // CRITICAL: Only log once and hide thumbnail once
-                if (!hasHiddenThumbnail) {
-                    Log.d(TAG, "First frame rendered - hiding thumbnail smoothly")
-                    hideThumbnail()
-                }
+                Log.d(TAG, "First frame rendered - video is displaying")
+                // Hide thumbnail once first frame is rendered
+                thumbnailImageView.visibility = View.GONE
+                videoView.visibility = View.VISIBLE
             }
         })
     }
@@ -602,14 +570,9 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
     fun onViewRecycled() {
         stopProgressUpdates()
 
-        // CRITICAL: Reset all flags
-        hasHiddenThumbnail = false
-        isAttached = false
-
-        // Show thumbnail for next use
-        thumbnailImageView.visibility = View.VISIBLE
-        thumbnailImageView.alpha = 1f
-        videoView.visibility = View.VISIBLE
+        // CHANGED: Keep video view visible, just show thumbnail on top
+        thumbnailImageView.visibility = View.GONE // Changed from VISIBLE
+        videoView.visibility = View.VISIBLE // Keep visible
 
         commentsParentLayout.setOnClickListener(null)
         btnLike.setOnClickListener(null)
@@ -625,53 +588,16 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         isPlaying = false
     }
 
-    // Make this method public
-    fun updateFollowButtonState(isFollowing: Boolean) {
-        isFollowed = isFollowing
-        followButton.post {
-            if (isFollowing) {
-                followButton.text = "Following"
-                followButton.isAllCaps = false
-                followButton.setBackgroundResource(R.drawable.shorts_following_button)
-            } else {
-                followButton.text = "Follow"
-                followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
-            }
-        }
-    }
-
-    @SuppressLint("SetTextI18n")
-    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
-        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
-            followButton.visibility = View.INVISIBLE
-        } else {
-            followButton.visibility = View.VISIBLE
-
-            updateFollowButtonState(data.followItemEntity.isFollowing)
-
-            followButton.setOnClickListener(null)
-
-            followButton.setOnClickListener {
-                val newFollowState = !isFollowed
-                updateFollowButtonState(newFollowState)
-                data.followItemEntity.isFollowing = newFollowState
-
-                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, newFollowState)
-                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
-
-                Log.d(TAG, "Follow button clicked: userId=$shortOwnerId, newState=$newFollowState")
-            }
-        }
-    }
-
-
+    @OptIn(UnstableApi::class)
     private fun setupClickListeners(
+
         data: MyData,
         url: String,
         shortOwnerId: String,
         shortOwnerName: String,
         shortOwnerUsername: String,
         shortOwnerProfilePic: String
+
     ) {
         commentsParentLayout.setOnClickListener(null)
         btnLike.setOnClickListener(null)
@@ -716,6 +642,52 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             EventBus.getDefault().post(PausePlayEvent(true))
         }
     }
+
+
+    @SuppressLint("SetTextI18n")
+    private fun setupFollowButton(data: MyData, shortOwnerId: String) {
+        if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
+            followButton.visibility = View.INVISIBLE
+        } else {
+            followButton.visibility = View.VISIBLE
+
+            // Set initial state from data
+            updateFollowButtonState(data.followItemEntity.isFollowing)
+
+            // Remove previous listener to avoid duplicates
+            followButton.setOnClickListener(null)
+
+            followButton.setOnClickListener {
+                // Toggle state immediately for smooth UI
+                val newFollowState = !isFollowed
+                isFollowed = newFollowState
+                updateFollowButtonState(newFollowState)
+
+                // Update the data source immediately
+                data.followItemEntity.isFollowing = newFollowState
+
+                // Post event for backend update (but don't rebind the view)
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, newFollowState)
+                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+                Log.d(TAG, "Follow button clicked: userId=$shortOwnerId, newState=$newFollowState")
+            }
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun updateFollowButtonState(isFollowing: Boolean) {
+        isFollowed = isFollowing
+        if (isFollowing) {
+            followButton.text = "Following"
+            followButton.isAllCaps = false
+            followButton.setBackgroundResource(R.drawable.shorts_following_button)
+        } else {
+            followButton.text = "Follow"
+            followButton.setBackgroundResource(R.drawable.shorts_follow_button_border)
+        }
+    }
+
 
     private fun setupContent(shortsEntity: ShortsEntity) {
         val caption = shortsEntity.content.toString()
@@ -865,6 +837,8 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             .into(shortsProfileImage)
     }
 
+
+
     private fun updateLikeButtonState() {
         likeCount.text = totalLikes.toString()
         if (isLiked) {
@@ -893,6 +867,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             favorite.setImageResource(R.drawable.favorite_svgrepo_com__1_)
         }
     }
+
 
     private fun setupUploadComponents() {
         shortsUploadTopSeekBar = itemView.findViewById(R.id.uploadTopSeekBar)
@@ -971,7 +946,5 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             thumbnail = serverResponseItem.thumbnail
         )
     }
-
-
 
 }
