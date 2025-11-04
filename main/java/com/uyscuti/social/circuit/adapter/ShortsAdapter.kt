@@ -484,6 +484,20 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
+    fun hideThumbnail() {
+        if (!thumbnailHiddenForCurrentVideo) {
+            thumbnailImageView.animate()
+                .alpha(0f)
+                .setDuration(200)
+                .withEndAction {
+                    thumbnailImageView.visibility = View.GONE
+                    thumbnailHiddenForCurrentVideo = true
+                    Log.d(TAG, "Thumbnail hidden for position $bindingAdapterPosition")
+                }
+                .start()
+        }
+    }
+
     private fun setupPlayer() {
         player = exoplayer
 
@@ -501,6 +515,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             }
         })
 
+        // Add ONLY these essential listeners to the ViewHolder
         exoplayer.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState) {
@@ -511,18 +526,9 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
                             bottomVideoSeekBar.secondaryProgress = 0
                             Log.d(TAG, "Video ready at position $bindingAdapterPosition: ${videoDuration}ms")
                         }
-                        // Keep thumbnail visible until first frame
                     }
                     Player.STATE_BUFFERING -> {
                         Log.d(TAG, "Video buffering at position $bindingAdapterPosition")
-                        // Ensure thumbnail is visible during buffering
-                        if (!thumbnailHiddenForCurrentVideo) {
-                            thumbnailImageView.visibility = View.VISIBLE
-                            thumbnailImageView.alpha = 1f
-                        }
-                    }
-                    Player.STATE_ENDED -> {
-                        stopProgressUpdates()
                     }
                 }
             }
@@ -537,36 +543,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
                 Log.d(TAG, "Player isPlaying: $isPlaying at position $bindingAdapterPosition")
             }
 
-            override fun onRenderedFirstFrame() {
-                // CRITICAL: Only hide thumbnail if this is the active holder
-                val adapter = (itemView.parent?.parent as? RecyclerView)?.adapter as? ShortsAdapter
-                val activePosition = adapter?.getActivePlaybackPosition() ?: -1
-
-                Log.d(TAG, "First frame rendered - holder position: $bindingAdapterPosition, active position: $activePosition")
-
-                // Only hide thumbnail if:
-                // 1. This holder's position matches the active playback position
-                // 2. Thumbnail hasn't been hidden yet for this video
-                if (bindingAdapterPosition == activePosition && !thumbnailHiddenForCurrentVideo) {
-                    Log.d(TAG, "Hiding thumbnail for active position $bindingAdapterPosition")
-                    thumbnailHiddenForCurrentVideo = true
-
-                    thumbnailImageView.animate()
-                        .alpha(0f)
-                        .setDuration(150)
-                        .withEndAction {
-                            // Double-check position still matches before hiding
-                            if (bindingAdapterPosition == adapter?.getActivePlaybackPosition()) {
-                                thumbnailImageView.visibility = View.GONE
-                                thumbnailImageView.alpha = 1f
-                            }
-                        }
-                        .start()
-                    videoView.visibility = View.VISIBLE
-                } else {
-                    Log.d(TAG, "Ignoring first frame render - not active position or already hidden")
-                }
-            }
+            // REMOVED: onRenderedFirstFrame() - handled in Fragment's listener
         })
     }
 
@@ -691,10 +668,17 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     fun onViewRecycled() {
         stopProgressUpdates()
 
-        // CRITICAL: Reset thumbnail state and clear Glide
+        // CRITICAL: Reset thumbnail state and show thumbnail for next bind
         thumbnailHiddenForCurrentVideo = false
+
+        // Cancel any ongoing animations
+        thumbnailImageView.animate().cancel()
+
+        // Clear Glide
         Glide.with(itemView.context).clear(thumbnailImageView)
         thumbnailImageView.setImageDrawable(null)
+
+        // Reset to visible state for next bind
         thumbnailImageView.alpha = 1f
         thumbnailImageView.visibility = View.VISIBLE
         videoView.visibility = View.VISIBLE

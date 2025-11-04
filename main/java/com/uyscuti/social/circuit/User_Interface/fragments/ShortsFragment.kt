@@ -1270,13 +1270,9 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                             currentHolder?.setSeekBarMaxValue((duration / 1000).toInt())
                             Log.d("PlayerListener", "SeekBar max set to: ${duration / 1000}s")
                         }
-
-                        // Video should auto-play because playWhenReady is true
-                        Log.d("PlayerListener", "Video should start playing now")
                     }
                     Player.STATE_ENDED -> {
                         Log.d("PlayerListener", "State: ENDED at position $position")
-                        // Loop will happen automatically due to REPEAT_MODE_ONE
                     }
                 }
             }
@@ -1287,6 +1283,18 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     Log.d("PlayerListener", "✅ Video is now playing at position $position")
                 } else {
                     Log.d("PlayerListener", "⏸️ Video paused at position $position")
+                }
+            }
+
+            // ADD THIS NEW OVERRIDE
+            override fun onRenderedFirstFrame() {
+                Log.d("PlayerListener", "✅ First frame rendered at position $position")
+
+                // CRITICAL: Hide thumbnail only when first frame is actually rendered
+                val currentHolder = shortsAdapter.getCurrentViewHolder()
+                if (currentHolder != null && shortsAdapter.getActivePlaybackPosition() == position) {
+                    currentHolder.hideThumbnail()
+                    Log.d("PlayerListener", "Hiding thumbnail for position $position")
                 }
             }
 
@@ -1312,7 +1320,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         // Implement video playback logic specific to ShotsFragment
         Log.d("ShotsFragment", "Setting up video playback for: $videoUrl")
     }
-    
+
     override fun onStart() {
         super.onStart()
         if (!EventBus.getDefault().isRegistered(this)) {
@@ -1841,8 +1849,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-
-
     fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
@@ -1928,10 +1934,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
         followUnFollowViewModel.followUnFollow(event.followUnFollowEntity.userId)
-
-//        followUnFollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) {
-//            Log.d("followButtonClicked", "followButtonClicked: follow observer value $it")
-//        }
 
         val followListItem: List<ShortsEntityFollowList> = listOf(
             ShortsEntityFollowList(
@@ -2292,13 +2294,11 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     }
 
-
     @SuppressLint("InflateParams")
     private fun showBottomSheet() {
 
 
     }
-
 
     private fun startPreLoadingService() {
         Log.d(SHORTS, "Preloading called")
@@ -2448,7 +2448,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
     }
-
 
     @SuppressLint("MissingInflatedId")
     override fun onShareClick(position: Int) {
