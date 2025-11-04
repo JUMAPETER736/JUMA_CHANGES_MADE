@@ -474,7 +474,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             Glide.with(itemView.context)
                 .load(thumbnailUrl)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .placeholder(R.drawable.flash21)
                 .into(thumbnailImageView)
         }
     }
