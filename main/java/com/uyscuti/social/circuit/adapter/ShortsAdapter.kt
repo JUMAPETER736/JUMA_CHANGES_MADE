@@ -325,14 +325,12 @@ class ShortsAdapter(
 
 class StringViewHolder @OptIn(UnstableApi::class) constructor
     (
-
     itemView: View,
     private val commentsClickListener: OnCommentsClickListener,
     private var onClickListeners: OnClickListeners,
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
-
 )
     : ViewHolder<MyData>(itemView) {
 
@@ -390,9 +388,53 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
+    private val playerListener = object : Player.Listener {
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            when (playbackState) {
+                Player.STATE_READY -> {
+                    videoDuration = exoplayer.duration
+                    if (videoDuration > 0) {
+                        bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
+                        bottomVideoSeekBar.secondaryProgress = 0
+                        Log.d(TAG, "Video ready: ${videoDuration}ms")
+                    }
+                }
+                Player.STATE_BUFFERING -> {
+                    Log.d(TAG, "Video buffering")
+                    thumbnailImageView.visibility = View.VISIBLE
+                }
+                Player.STATE_ENDED -> {
+                    stopProgressUpdates()
+                }
+            }
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            this@StringViewHolder.isPlaying = isPlaying
+            if (isPlaying) {
+                startProgressUpdates()
+            } else {
+                stopProgressUpdates()
+            }
+            Log.d(TAG, "Player isPlaying: $isPlaying")
+        }
+
+        override fun onRenderedFirstFrame() {
+            Log.d(TAG, "First frame rendered - hiding thumbnail")
+            thumbnailImageView.animate()
+                .alpha(0f)
+                .setDuration(150)
+                .withEndAction {
+                    thumbnailImageView.visibility = View.GONE
+                    thumbnailImageView.alpha = 1f
+                }
+                .start()
+            videoView.visibility = View.VISIBLE
+        }
+    }
+
     init {
         setupSeekBar()
-        setupPlayer()
         setupUploadComponents()
 
         // Ensure videoView is properly configured
@@ -403,6 +445,8 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             setBackgroundColor(Color.BLACK)
             setShutterBackgroundColor(Color.BLACK)
         }
+
+        exoplayer.repeatMode = Player.REPEAT_MODE_ONE // Loop like TikTok
     }
 
     fun pauseUpdates() {
@@ -418,6 +462,8 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             videoView.keepScreenOn = true
             videoView.requestLayout()
             videoView.invalidate()
+
+            exoplayer.addListener(playerListener)
 
             Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
         }
@@ -455,6 +501,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         if (videoView.player == null) {
             videoView.player = exoplayer
         }
+        exoplayer.addListener(playerListener)
         if (isPlaying) {
             startProgressUpdates()
         }
@@ -510,76 +557,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
-    private fun setupPlayer() {
-        player = exoplayer
-
-        videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) {
-                Log.d(TAG, "VideoView attached to window")
-                if (videoView.player == null) {
-                    videoView.player = exoplayer
-                    videoView.visibility = View.VISIBLE
-                }
-            }
-
-            override fun onViewDetachedFromWindow(v: View) {
-                Log.d(TAG, "VideoView detached from window")
-            }
-        })
-
-        exoplayer.addListener(object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                when (playbackState) {
-                    Player.STATE_READY -> {
-                        videoDuration = exoplayer.duration
-                        if (videoDuration > 0) {
-                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
-                            bottomVideoSeekBar.secondaryProgress = 0
-                            Log.d(TAG, "Video ready: ${videoDuration}ms")
-                        }
-
-                        // CHANGED: Keep thumbnail visible until first frame renders
-                        // Don't hide it here
-                    }
-                    Player.STATE_BUFFERING -> {
-                        Log.d(TAG, "Video buffering")
-                        // Keep thumbnail visible during buffering
-                        thumbnailImageView.visibility = View.VISIBLE
-                    }
-                    Player.STATE_ENDED -> {
-                        stopProgressUpdates()
-                    }
-                }
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                this@StringViewHolder.isPlaying = isPlaying
-                if (isPlaying) {
-                    startProgressUpdates()
-                    // Don't hide thumbnail here - wait for onRenderedFirstFrame
-                } else {
-                    stopProgressUpdates()
-                }
-                Log.d(TAG, "Player isPlaying: $isPlaying")
-            }
-
-            override fun onRenderedFirstFrame() {
-                Log.d(TAG, "First frame rendered - hiding thumbnail")
-                // ONLY hide thumbnail after first frame is rendered
-                thumbnailImageView.animate()
-                    .alpha(0f)
-                    .setDuration(150)
-                    .withEndAction {
-                        thumbnailImageView.visibility = View.GONE
-                        thumbnailImageView.alpha = 1f
-                    }
-                    .start()
-                videoView.visibility = View.VISIBLE
-            }
-        })
-
-    }
-
     fun onViewRecycled() {
         stopProgressUpdates()
 
@@ -599,6 +576,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         videoDuration = 0L
         bottomVideoSeekBar.progress = 0
         isPlaying = false
+        exoplayer.removeListener(playerListener)
     }
 
     @OptIn(UnstableApi::class)
