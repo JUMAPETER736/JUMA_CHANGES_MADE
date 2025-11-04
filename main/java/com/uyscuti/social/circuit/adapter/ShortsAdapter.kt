@@ -94,13 +94,15 @@ class ShortsAdapter(
     private val preloadedVideos = mutableSetOf<Int>()
     private val preloadHandler = Handler(Looper.getMainLooper())
 
-
     override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
-        // Only set currentViewHolder and position, don't call onBind for follow updates
+        val data = shortsList[position]
+
+        // ALWAYS load thumbnail first - even if holder is reused
+        holder.loadThumbnail(data.thumbnail.firstOrNull()?.thumbnailUrl)
+
         if (currentViewHolder != holder || currentActivePosition != position) {
             currentViewHolder = holder
             currentActivePosition = position
-            val data = shortsList[position]
 
             val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
                 ?: ShortsEntityFollowList(
@@ -111,43 +113,12 @@ class ShortsAdapter(
             val myData = MyData(data, isFollowingData)
             ensureFollowDataExists(data)
 
-            Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
-
-            // ADD THIS: Load thumbnail for smooth transition
-            holder.loadThumbnail(data.thumbnail.firstOrNull()?.thumbnailUrl)
-
             holder.onBind(myData)
-
-            // Preload adjacent videos
             preloadVideosAround(position)
         }
     }
 
 
-//    override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
-//        // Only set currentViewHolder and position, don't call onBind for follow updates
-//        if (currentViewHolder != holder || currentActivePosition != position) {
-//            currentViewHolder = holder
-//            currentActivePosition = position
-//            val data = shortsList[position]
-//
-//            val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
-//                ?: ShortsEntityFollowList(
-//                    followersId = data.author.account._id,
-//                    isFollowing = false
-//                )
-//
-//            val myData = MyData(data, isFollowingData)
-//            ensureFollowDataExists(data)
-//
-//            Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
-//            holder.onBind(myData)
-//
-//            // Preload adjacent videos
-//            preloadVideosAround(position)
-//        }
-//
-//    }
 
     @SuppressLint("NotifyDataSetChanged")
     fun addData(newData: List<ShortsEntity>) {
