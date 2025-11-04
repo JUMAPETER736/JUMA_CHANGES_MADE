@@ -1104,12 +1104,15 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             return
         }
 
-        // CRITICAL: Ensure the current ViewHolder's surface is properly attached
+        // CRITICAL: Set active playback position in adapter
+        shortsAdapter.setActivePlaybackPosition(position)
+
+        // Ensure the current ViewHolder's surface is properly attached
         val currentHolder = shortsAdapter.getCurrentViewHolder()
         currentHolder?.reattachPlayer()
 
         val shortVideo = videoShorts[position]
-        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
+        Log.d("playVideoAtPosition", "Playing video for position $position: ${shortVideo.author.account.username}")
 
         val rawVideoUrl = shortVideo.images.firstOrNull()?.url
 
