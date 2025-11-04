@@ -1091,7 +1091,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    // FIXED: playVideoAtPosition - Set active position BEFORE any other operations
     private fun playVideoAtPosition(position: Int) {
         val videoShorts = shortsViewModel.videoShorts
 
@@ -1146,7 +1145,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         validateAndPlayVideo(finalVideoUrl, position)
     }
 
-    // FIXED: validateAndPlayVideo - Remove unnecessary IO dispatcher and simplify
     private fun validateAndPlayVideo(videoUrl: String, position: Int) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -1185,7 +1183,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    // FIXED: prepareAndPlayVideo - Ensure playWhenReady is set correctly
     private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
         try {
             isPlayerPreparing = true
@@ -1251,7 +1248,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    // FIXED: createPlayerListener - Ensure proper state handling
     private fun createPlayerListener(position: Int): Player.Listener {
         return object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -1302,7 +1298,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    // Helper function to handle playback errors
     private fun handlePlaybackError(position: Int) {
         Log.e("handlePlaybackError", "Handling playback error at position: $position")
         isPlayerPreparing = false
@@ -1313,13 +1308,11 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         // You might want to try the next video or show a placeholder
     }
 
-
     private fun setupVideoPlaybackInShots(videoUrl: String) {
         // Implement video playback logic specific to ShotsFragment
         Log.d("ShotsFragment", "Setting up video playback for: $videoUrl")
     }
-
-
+    
     override fun onStart() {
         super.onStart()
         if (!EventBus.getDefault().isRegistered(this)) {
