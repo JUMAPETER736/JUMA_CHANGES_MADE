@@ -514,16 +514,19 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             }
 
 
-            shortsAdapter =
-                ShortsAdapter(requireActivity() as OnCommentsClickListener, this@ShotsFragment,
-                    exoPlayer!!, object :
-
-                        OnVideoPreparedListener {
-                        override fun onVideoPrepared(exoPlayerItem: ExoPlayerItem) {
-                            exoPlayerItems.add(exoPlayerItem)
-                        }
-                    }) { id, username, followButton ->
+            shortsAdapter = ShortsAdapter(
+                requireContext(), // Add context as first parameter
+                requireActivity() as OnCommentsClickListener,
+                this@ShotsFragment,
+                exoPlayer!!,
+                object : OnVideoPreparedListener {
+                    override fun onVideoPrepared(exoPlayerItem: ExoPlayerItem) {
+                        exoPlayerItems.add(exoPlayerItem)
+                    }
                 }
+            ) { id, username, followButton ->
+                // Your follow button click handling
+            }
 
             withContext(Dispatchers.Main) {
                 viewPager.adapter = shortsAdapter
