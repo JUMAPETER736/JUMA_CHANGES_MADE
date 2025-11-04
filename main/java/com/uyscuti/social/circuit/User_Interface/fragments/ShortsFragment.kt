@@ -71,8 +71,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager2.widget.ViewPager2
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -514,19 +512,16 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             }
 
 
-            shortsAdapter = ShortsAdapter(
-                requireContext(), // Add context as first parameter
-                requireActivity() as OnCommentsClickListener,
-                this@ShotsFragment,
-                exoPlayer!!,
-                object : OnVideoPreparedListener {
-                    override fun onVideoPrepared(exoPlayerItem: ExoPlayerItem) {
-                        exoPlayerItems.add(exoPlayerItem)
-                    }
+            shortsAdapter =
+                ShortsAdapter(requireActivity() as OnCommentsClickListener, this@ShotsFragment,
+                    exoPlayer!!, object :
+
+                        OnVideoPreparedListener {
+                        override fun onVideoPrepared(exoPlayerItem: ExoPlayerItem) {
+                            exoPlayerItems.add(exoPlayerItem)
+                        }
+                    }) { id, username, followButton ->
                 }
-            ) { id, username, followButton ->
-                // Your follow button click handling
-            }
 
             withContext(Dispatchers.Main) {
                 viewPager.adapter = shortsAdapter
@@ -579,74 +574,89 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 viewPager.registerOnPageChangeCallback(object :
                     ViewPager2.OnPageChangeCallback() {
 
-
-                    override fun onPageScrollStateChanged(state: Int) {
-                        super.onPageScrollStateChanged(state)
-                        Log.d("OnPageScrollStateChanged", "State: $state")
-
-                        when (state) {
-                            ViewPager.SCROLL_STATE_IDLE -> {
-                                // User finished scrolling - play video at final position
-                                Log.d("ScrollState", "IDLE - Playing video at position: $currentPosition")
-                                playVideoAtPosition(currentPosition)
-
-                                // Notify adapter about position change for preloading
-                                shortsAdapter.onPositionChanged(currentPosition)
-
-                                backPressCount = 0
-                            }
-
-                            ViewPager.SCROLL_STATE_DRAGGING -> {
-                                // User started dragging - pause current video
-                                Log.d("ScrollState", "DRAGGING - Pausing playback")
-                                exoPlayer?.pause()
-
-                                // Show thumbnail for current video
-                                shortsAdapter.getCurrentViewHolder()?.let { holder ->
-                                    holder.itemView.findViewById<ImageView>(R.id.videoThumbnail)?.let { thumb ->
-                                        thumb.visibility = View.VISIBLE
-                                        thumb.alpha = 1f
-                                    }
-                                }
-                            }
-
-                            ViewPager.SCROLL_STATE_SETTLING -> {
-                                // ViewPager is settling to final position
-                                Log.d("ScrollState", "SETTLING to position: $currentPosition")
-
-                                // Preload the next video's thumbnail
-                                if (currentPosition + 1 < shortsViewModel.videoShorts.size) {
-                                    preloadThumbnailForPosition(currentPosition + 1)
-                                }
-                            }
-                        }
-                    }
-
                     override fun onPageSelected(position: Int) {
-                        super.onPageSelected(position)
-                        Log.d("OnPageSelected", "Selected position: $position")
+                        shortsViewModel.shortIndex = position
 
-                        currentPosition = position
+                        // DON'T stop the player - just pause it
+                        exoPlayer?.let { player ->
+                            player.pause()
+                            // Don't call stop() or seekTo(0) here
+                        }
 
-                        // Update adapter about the new position
-                        shortsAdapter.onPositionChanged(position)
-
-                        // Preload adjacent content
-                        preloadAdjacentContent(position)
+                        // ADDED: Small delay to allow thumbnail to show
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            playVideoAtPosition(position)
+                        }, 50)
                     }
 
-                    override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+                    override fun onPageScrolled(
+                        position: Int,
+                        positionOffset: Float,
+                        positionOffsetPixels: Int
+                    ) {
                         super.onPageScrolled(position, positionOffset, positionOffsetPixels)
 
-                        // Optional: Show next video's thumbnail as user scrolls
-                        if (positionOffset > 0.3f) { // When 30% scrolled
-                            val nextPosition = position + 1
-                            if (nextPosition < shortsViewModel.videoShorts.size) {
-                                preloadThumbnailForPosition(nextPosition)
-                            }
+                        if (position > shortsViewModel.lastPosition) {
+                            // User is scrolling down
+                            // Handle scroll down logic
+                            Log.d(
+                                "showHideBottomNav",
+                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
+                            )
+                            EventBus.getDefault().post(HideBottomNav())
+                            EventBus.getDefault().post(HideFeedFloatingActionButton()) // Hide FAB
+                            Log.d("showHideBottomNav", "event post scroll next")
+                        } else if (position < shortsViewModel.lastPosition) {
+                            // User is scrolling up
+                            // Handle scroll up logic
+                            Log.d(
+                                "showHideBottomNav",
+                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
+                            )
+                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false)) // Show FAB
+                            EventBus.getDefault().post(ShowBottomNav(false))
+                            Log.d("showHideBottomNav", "event post scroll previous")
+                        }
+                        if (position > shortsViewModel.lastPosition) {
+                            // User is scrolling down
+                            loadMoreVideosIfNeeded(position)
+
+                        }
+
+                        shortsViewModel.lastPosition = position
+
+                        if (positionOffset > 0.5) {
+                            // User is scrolling towards the end, update the current position to the next video
+                            currentPosition = position + 1
+
+
+                        } else if (positionOffset < -0.5) {
+
+                            currentPosition = position - 1
+
+                        } else {
+                            // User is in a stable position, update the current position to the current video
+                            currentPosition = position
+
+
+                        }
+
+                    }
+                    override fun onPageScrollStateChanged(state: Int) {
+                        super.onPageScrollStateChanged(state)
+                        Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
+
+                        // Check if the scroll state is idle
+                        if (state == ViewPager.SCROLL_STATE_SETTLING) {
+                            Log.d(
+                                "onPageScrollStateChanged",
+                                "onPageScrollStateChanged: state $state"
+                            )
+                            // The scroll state is idle, play the video at the updated position
+                            playVideoAtPosition(currentPosition)
+                            backPressCount = 0
                         }
                     }
-
                 })
 
 
@@ -775,7 +785,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
         return view
     }
-
 
     @SuppressLint("NotifyDataSetChanged")
     private suspend fun loadMoreShorts(currentPage: Int) {
@@ -1082,106 +1091,106 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-//    private fun playVideoAtPosition(position: Int) {
-//        val videoShorts = shortsViewModel.videoShorts
-//
-//        if (position < 0 || position >= videoShorts.size) {
-//            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
-//            return
-//        }
-//
-//        if (isPlayerPreparing) {
-//            Log.d("playVideoAtPosition", "Player is already preparing, ignoring request")
-//            return
-//        }
-//
-//        // CRITICAL: Ensure the current ViewHolder's surface is properly attached
-//        val currentHolder = shortsAdapter.getCurrentViewHolder()
-//        currentHolder?.reattachPlayer()
-//
-//        val shortVideo = videoShorts[position]
-//        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
-//
-//        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
-//
-//        if (rawVideoUrl.isNullOrEmpty()) {
-//            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
-//            return
-//        }
-//
-//        val finalVideoUrl = when {
-//            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
-//                rawVideoUrl
-//            }
-//            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
-//                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
-//                serverBaseUrl + rawVideoUrl.trimStart('/')
-//            }
-//            else -> {
-//                val serverBaseUrl = "http://192.168.1.103:8080/"
-//                if (rawVideoUrl.startsWith("/")) {
-//                    serverBaseUrl + rawVideoUrl.trimStart('/')
-//                } else {
-//                    serverBaseUrl + rawVideoUrl
-//                }
-//            }
-//        }
-//
-//        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
-//        validateAndPlayVideo(finalVideoUrl, position)
-//    }
-//
-//    private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
-//        try {
-//            val videoUri = Uri.parse(videoUrl)
-//            Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
-//
-//            // CRITICAL: Ensure surface is visible before preparing
-//            val currentHolder = shortsAdapter.getCurrentViewHolder()
-//            currentHolder?.getSurface()?.let { playerView ->
-//                playerView.visibility = View.VISIBLE
-//                playerView.player = exoPlayer
-//            }
-//
-//            val mediaItem = MediaItem.Builder()
-//                .setUri(videoUri)
-//                .apply {
-//                    val detectedMimeType = getMimeTypeFromUrl(videoUrl)
-//                    if (detectedMimeType != MimeTypes.VIDEO_UNKNOWN) {
-//                        setMimeType(detectedMimeType)
-//                    }
-//                }
-//                .build()
-//
-//            val mediaSource = createEnhancedMediaSource(mediaItem, videoUrl)
-//
-//            currentPlayerListener?.let { oldListener ->
-//                exoPlayer?.removeListener(oldListener)
-//            }
-//
-//            currentPlayerListener = createPlayerListener(position)
-//
-//            exoPlayer?.let { player ->
-//                player.pause()
-//                player.clearMediaItems()
-//
-//                player.addListener(currentPlayerListener!!)
-//                player.repeatMode = Player.REPEAT_MODE_ONE
-//                player.playWhenReady = true
-//
-//                player.setMediaSource(mediaSource)
-//                player.prepare()
-//
-//                Log.d("prepareAndPlayVideo", "Video preparation started for position: $position")
-//            }
-//
-//            isPlayerPreparing = true
-//        } catch (e: Exception) {
-//            Log.e("prepareAndPlayVideo", "Error in prepareAndPlayVideo", e)
-//            isPlayerPreparing = false
-//            handlePlaybackError(position)
-//        }
-//    }
+    private fun playVideoAtPosition(position: Int) {
+        val videoShorts = shortsViewModel.videoShorts
+
+        if (position < 0 || position >= videoShorts.size) {
+            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
+            return
+        }
+
+        if (isPlayerPreparing) {
+            Log.d("playVideoAtPosition", "Player is already preparing, ignoring request")
+            return
+        }
+
+        // CRITICAL: Ensure the current ViewHolder's surface is properly attached
+        val currentHolder = shortsAdapter.getCurrentViewHolder()
+        currentHolder?.reattachPlayer()
+
+        val shortVideo = videoShorts[position]
+        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
+
+        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
+
+        if (rawVideoUrl.isNullOrEmpty()) {
+            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
+            return
+        }
+
+        val finalVideoUrl = when {
+            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
+                rawVideoUrl
+            }
+            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
+                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
+                serverBaseUrl + rawVideoUrl.trimStart('/')
+            }
+            else -> {
+                val serverBaseUrl = "http://192.168.1.103:8080/"
+                if (rawVideoUrl.startsWith("/")) {
+                    serverBaseUrl + rawVideoUrl.trimStart('/')
+                } else {
+                    serverBaseUrl + rawVideoUrl
+                }
+            }
+        }
+
+        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
+        validateAndPlayVideo(finalVideoUrl, position)
+    }
+
+    private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
+        try {
+            val videoUri = Uri.parse(videoUrl)
+            Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
+
+            // CRITICAL: Ensure surface is visible before preparing
+            val currentHolder = shortsAdapter.getCurrentViewHolder()
+            currentHolder?.getSurface()?.let { playerView ->
+                playerView.visibility = View.VISIBLE
+                playerView.player = exoPlayer
+            }
+
+            val mediaItem = MediaItem.Builder()
+                .setUri(videoUri)
+                .apply {
+                    val detectedMimeType = getMimeTypeFromUrl(videoUrl)
+                    if (detectedMimeType != MimeTypes.VIDEO_UNKNOWN) {
+                        setMimeType(detectedMimeType)
+                    }
+                }
+                .build()
+
+            val mediaSource = createEnhancedMediaSource(mediaItem, videoUrl)
+
+            currentPlayerListener?.let { oldListener ->
+                exoPlayer?.removeListener(oldListener)
+            }
+
+            currentPlayerListener = createPlayerListener(position)
+
+            exoPlayer?.let { player ->
+                player.pause()
+                player.clearMediaItems()
+
+                player.addListener(currentPlayerListener!!)
+                player.repeatMode = Player.REPEAT_MODE_ONE
+                player.playWhenReady = true
+
+                player.setMediaSource(mediaSource)
+                player.prepare()
+
+                Log.d("prepareAndPlayVideo", "Video preparation started for position: $position")
+            }
+
+            isPlayerPreparing = true
+        } catch (e: Exception) {
+            Log.e("prepareAndPlayVideo", "Error in prepareAndPlayVideo", e)
+            isPlayerPreparing = false
+            handlePlaybackError(position)
+        }
+    }
 
     private fun setupVideoPlaybackInShots(videoUrl: String) {
         // Implement video playback logic specific to ShotsFragment
@@ -1235,183 +1244,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     prepareAndPlayVideo(videoUrl, position)
                 }
             }
-        }
-    }
-
-
-    private fun preloadThumbnailForPosition(position: Int) {
-        if (position < 0 || position >= shortsViewModel.videoShorts.size) return
-
-        val shortVideo = shortsViewModel.videoShorts[position]
-        val thumbnailUrl = shortVideo.thumbnail.firstOrNull()?.thumbnailUrl
-
-        if (!thumbnailUrl.isNullOrEmpty()) {
-            // Preload into Glide cache
-            Glide.with(requireContext())
-                .load(thumbnailUrl)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .preload()
-
-            Log.d("ThumbnailPreload", "Preloaded thumbnail for position: $position")
-        }
-    }
-
-    // NEW METHOD: Preload adjacent content (videos + thumbnails)
-    private fun preloadAdjacentContent(currentPosition: Int) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            // Preload next 2 positions
-            for (i in 1..2) {
-                val nextPos = currentPosition + i
-                if (nextPos < shortsViewModel.videoShorts.size) {
-                    val shortVideo = shortsViewModel.videoShorts[nextPos]
-
-                    // Preload thumbnail
-                    val thumbnailUrl = shortVideo.thumbnail.firstOrNull()?.thumbnailUrl
-                    if (!thumbnailUrl.isNullOrEmpty()) {
-                        withContext(Dispatchers.Main) {
-                            Glide.with(requireContext())
-                                .load(thumbnailUrl)
-                                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                .preload()
-                        }
-                    }
-
-                    // Preload video URL validation
-                    val videoUrl = shortVideo.images.firstOrNull()?.url
-                    if (!videoUrl.isNullOrEmpty()) {
-                        try {
-                            // Optional: Validate URL is accessible
-                            val connection = URL(videoUrl).openConnection()
-                            connection.connectTimeout = 3000
-                            connection.connect()
-                            Log.d("VideoPreload", "Validated video at position: $nextPos")
-                        } catch (e: Exception) {
-                            Log.e("VideoPreload", "Failed to validate position $nextPos: ${e.message}")
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // IMPROVED: Play video with thumbnail handling
-    private fun playVideoAtPosition(position: Int) {
-        val videoShorts = shortsViewModel.videoShorts
-
-        if (position < 0 || position >= videoShorts.size) {
-            Log.e("playVideoAtPosition", "Invalid position: $position")
-            return
-        }
-
-        if (isPlayerPreparing) {
-            Log.d("playVideoAtPosition", "Player already preparing, queuing position: $position")
-            return
-        }
-
-        // Get the ViewHolder and ensure thumbnail is visible
-        val currentHolder = shortsAdapter.getCurrentViewHolder()
-        currentHolder?.let { holder ->
-            // Show thumbnail immediately
-            holder.itemView.findViewById<ImageView>(R.id.videoThumbnail)?.let { thumb ->
-                val shortVideo = videoShorts[position]
-                val thumbnailUrl = shortVideo.thumbnail.firstOrNull()?.thumbnailUrl
-
-                if (!thumbnailUrl.isNullOrEmpty()) {
-                    thumb.visibility = View.VISIBLE
-                    thumb.alpha = 1f
-
-                    // Load thumbnail
-                    Glide.with(requireContext())
-                        .load(thumbnailUrl)
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .into(thumb)
-                }
-            }
-
-            // Reattach player
-            holder.reattachPlayer()
-        }
-
-        val shortVideo = videoShorts[position]
-        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
-
-        if (rawVideoUrl.isNullOrEmpty()) {
-            Log.e("playVideoAtPosition", "Video URL is null at position $position")
-            return
-        }
-
-        val finalVideoUrl = buildFinalVideoUrl(rawVideoUrl)
-        Log.d("playVideoAtPosition", "Playing: $finalVideoUrl")
-
-        validateAndPlayVideo(finalVideoUrl, position)
-    }
-
-    // HELPER: Build final video URL
-    private fun buildFinalVideoUrl(rawVideoUrl: String): String {
-        return when {
-            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
-                rawVideoUrl
-            }
-            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
-                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
-                serverBaseUrl + rawVideoUrl.trimStart('/')
-            }
-            else -> {
-                val serverBaseUrl = "http://192.168.1.103:8080/"
-                serverBaseUrl + rawVideoUrl.trimStart('/')
-            }
-        }
-    }
-
-    // IMPROVED: Video preparation with thumbnail handling
-    private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
-        try {
-            val videoUri = Uri.parse(videoUrl)
-            Log.d("prepareAndPlayVideo", "Preparing: $videoUri")
-
-            // Ensure surface is visible and thumbnail is shown
-            val currentHolder = shortsAdapter.getCurrentViewHolder()
-            currentHolder?.getSurface()?.let { playerView ->
-                playerView.visibility = View.VISIBLE
-                playerView.player = exoPlayer
-            }
-
-            val mediaItem = MediaItem.Builder()
-                .setUri(videoUri)
-                .apply {
-                    val detectedMimeType = getMimeTypeFromUrl(videoUrl)
-                    if (detectedMimeType != MimeTypes.VIDEO_UNKNOWN) {
-                        setMimeType(detectedMimeType)
-                    }
-                }
-                .build()
-
-            val mediaSource = createEnhancedMediaSource(mediaItem, videoUrl)
-
-            // Remove old listener
-            currentPlayerListener?.let { oldListener ->
-                exoPlayer?.removeListener(oldListener)
-            }
-
-            currentPlayerListener = createPlayerListener(position)
-
-            exoPlayer?.let { player ->
-                player.pause()
-                player.clearMediaItems()
-                player.addListener(currentPlayerListener!!)
-                player.repeatMode = Player.REPEAT_MODE_ONE
-                player.playWhenReady = true
-                player.setMediaSource(mediaSource)
-                player.prepare()
-
-                Log.d("prepareAndPlayVideo", "Preparation started for position: $position")
-            }
-
-            isPlayerPreparing = true
-        } catch (e: Exception) {
-            Log.e("prepareAndPlayVideo", "Error preparing video", e)
-            isPlayerPreparing = false
-            handlePlaybackError(position)
         }
     }
 
