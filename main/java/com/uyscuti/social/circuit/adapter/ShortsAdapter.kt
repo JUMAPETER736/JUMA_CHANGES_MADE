@@ -96,7 +96,6 @@ class ShortsAdapter(
 
 
     override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
-        // Only set currentViewHolder and position, don't call onBind for follow updates
         if (currentViewHolder != holder || currentActivePosition != position) {
             currentViewHolder = holder
             currentActivePosition = position
@@ -113,8 +112,11 @@ class ShortsAdapter(
 
             Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
 
-            // ADD THIS: Load thumbnail for smooth transition
-            holder.loadThumbnail(data.thumbnail.firstOrNull()?.thumbnailUrl)
+            // CRITICAL: Load thumbnail FIRST before onBind
+            // This ensures the correct thumbnail is loaded for this position
+            val thumbnailUrl = data.thumbnail.firstOrNull()?.thumbnailUrl
+            Log.d(TAG2, "onBindViewHolder: Loading thumbnail for position $position: $thumbnailUrl")
+            holder.loadThumbnail(thumbnailUrl)
 
             holder.onBind(myData)
 
@@ -122,32 +124,6 @@ class ShortsAdapter(
             preloadVideosAround(position)
         }
     }
-
-
-//    override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
-//        // Only set currentViewHolder and position, don't call onBind for follow updates
-//        if (currentViewHolder != holder || currentActivePosition != position) {
-//            currentViewHolder = holder
-//            currentActivePosition = position
-//            val data = shortsList[position]
-//
-//            val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
-//                ?: ShortsEntityFollowList(
-//                    followersId = data.author.account._id,
-//                    isFollowing = false
-//                )
-//
-//            val myData = MyData(data, isFollowingData)
-//            ensureFollowDataExists(data)
-//
-//            Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
-//            holder.onBind(myData)
-//
-//            // Preload adjacent videos
-//            preloadVideosAround(position)
-//        }
-//
-//    }
 
     @SuppressLint("NotifyDataSetChanged")
     fun addData(newData: List<ShortsEntity>) {
@@ -497,14 +473,26 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     }
 
     fun loadThumbnail(thumbnailUrl: String?) {
-        if (thumbnailUrl != null && thumbnailUrl.isNotEmpty()) {
-            thumbnailImageView.visibility = View.VISIBLE
-            videoView.visibility = View.VISIBLE // Keep both visible
+        // CRITICAL: Clear previous image IMMEDIATELY and SYNCHRONOUSLY
+        Glide.with(itemView.context).clear(thumbnailImageView)
+        thumbnailImageView.setImageDrawable(null)
+        thumbnailImageView.alpha = 1f
+        thumbnailImageView.visibility = View.VISIBLE
+        videoView.visibility = View.VISIBLE
 
+        if (thumbnailUrl != null && thumbnailUrl.isNotEmpty()) {
             Glide.with(itemView.context)
                 .load(thumbnailUrl)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .placeholder(R.drawable.flash21) // Placeholder while loading
+                .error(R.drawable.flash21) // Show if loading fails
                 .into(thumbnailImageView)
+
+            Log.d(TAG, "Loading thumbnail: $thumbnailUrl")
+        } else {
+            // If no thumbnail URL, show a default placeholder
+            thumbnailImageView.setImageResource(R.drawable.flash21)
+            Log.d(TAG, "No thumbnail URL provided, using placeholder")
         }
     }
 
@@ -518,9 +506,8 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
         val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
 
-        // CHANGED: Show thumbnail initially, will hide when video is ready
-        thumbnailImageView.visibility = View.VISIBLE
-        videoView.visibility = View.VISIBLE
+        // REMOVED: Don't manipulate thumbnail here - it's handled in loadThumbnail()
+        // The thumbnail has already been loaded in onBindViewHolder BEFORE this method
 
         totalComments = shortsEntity.comments
         totalLikes = shortsEntity.likes
@@ -613,7 +600,10 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     fun onViewRecycled() {
         stopProgressUpdates()
 
-        // CHANGED: Show thumbnail when recycling for smooth scrolling
+        // CRITICAL: Clear Glide and thumbnail completely when recycling
+        Glide.with(itemView.context).clear(thumbnailImageView)
+        thumbnailImageView.setImageDrawable(null)
+        thumbnailImageView.alpha = 1f
         thumbnailImageView.visibility = View.VISIBLE
         videoView.visibility = View.VISIBLE
 
