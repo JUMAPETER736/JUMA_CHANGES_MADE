@@ -94,6 +94,8 @@ class ShortsAdapter(
     private val preloadedVideos = mutableSetOf<Int>()
     private val preloadHandler = Handler(Looper.getMainLooper())
 
+
+
     override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
         val data = shortsList[position]
 
@@ -117,8 +119,6 @@ class ShortsAdapter(
             preloadVideosAround(position)
         }
     }
-
-
 
     @SuppressLint("NotifyDataSetChanged")
     fun addData(newData: List<ShortsEntity>) {
@@ -409,7 +409,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         stopProgressUpdates()
     }
 
-
     fun reattachPlayer() {
         videoView.post {
             videoView.player = null
@@ -475,6 +474,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             Glide.with(itemView.context)
                 .load(thumbnailUrl)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .placeholder(R.drawable.flash21)
                 .into(thumbnailImageView)
         }
     }
@@ -587,7 +587,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         // CHANGED: Show thumbnail when recycling for smooth scrolling
         thumbnailImageView.visibility = View.VISIBLE
         videoView.visibility = View.VISIBLE
-
+        thumbnailImageView.setImageDrawable(null)
         commentsParentLayout.setOnClickListener(null)
         btnLike.setOnClickListener(null)
         favorite.setOnClickListener(null)
