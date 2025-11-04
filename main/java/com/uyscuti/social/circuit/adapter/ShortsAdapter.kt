@@ -90,16 +90,13 @@ class ShortsAdapter(
     private var currentViewHolder: StringViewHolder? = null
     private var currentActivePosition: Int = 0
 
+    // Preloading management
     private val preloadedVideos = mutableSetOf<Int>()
     private val preloadHandler = Handler(Looper.getMainLooper())
 
-    fun getActivePlaybackPosition(): Int = activePlaybackPosition
-
-    @Volatile
-    private var activePlaybackPosition: Int = -1
 
     override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
-
+        // Only set currentViewHolder and position, don't call onBind for follow updates
         if (currentViewHolder != holder || currentActivePosition != position) {
             currentViewHolder = holder
             currentActivePosition = position
@@ -114,27 +111,43 @@ class ShortsAdapter(
             val myData = MyData(data, isFollowingData)
             ensureFollowDataExists(data)
 
-            // CRITICAL: Load thumbnail FIRST and make it visible
-            val thumbnailUrl = data.thumbnail.firstOrNull()?.thumbnailUrl
-            Log.d(TAG, "onBindViewHolder: Loading thumbnail for position $position: $thumbnailUrl")
+            Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
 
-            // NEW: Pass position to loadThumbnail
-            holder.loadThumbnail(thumbnailUrl, position)
-
-            // NEW: Set the position this holder represents
-            holder.setHolderPosition(position)
+            // ADD THIS: Load thumbnail for smooth transition
+            holder.loadThumbnail(data.thumbnail.firstOrNull()?.thumbnailUrl)
 
             holder.onBind(myData)
 
+            // Preload adjacent videos
             preloadVideosAround(position)
         }
     }
 
-    fun setActivePlaybackPosition(position: Int) {
-        activePlaybackPosition = position
-        Log.d(TAG, "Active playback position set to: $position")
-    }
 
+//    override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
+//        // Only set currentViewHolder and position, don't call onBind for follow updates
+//        if (currentViewHolder != holder || currentActivePosition != position) {
+//            currentViewHolder = holder
+//            currentActivePosition = position
+//            val data = shortsList[position]
+//
+//            val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
+//                ?: ShortsEntityFollowList(
+//                    followersId = data.author.account._id,
+//                    isFollowing = false
+//                )
+//
+//            val myData = MyData(data, isFollowingData)
+//            ensureFollowDataExists(data)
+//
+//            Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
+//            holder.onBind(myData)
+//
+//            // Preload adjacent videos
+//            preloadVideosAround(position)
+//        }
+//
+//    }
 
     @SuppressLint("NotifyDataSetChanged")
     fun addData(newData: List<ShortsEntity>) {
@@ -406,146 +419,25 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
-
-    private var bindingAdapterPosition: Int = -1
-
-    // NEW: Track if thumbnail has been hidden for this video
-    private var thumbnailHiddenForCurrentVideo = false
-
-
     init {
         setupSeekBar()
         setupPlayer()
         setupUploadComponents()
 
+        // Ensure videoView is properly configured
         videoView.apply {
             useController = false
             keepScreenOn = true
+            // Set background to prevent black screen
             setBackgroundColor(Color.BLACK)
             setShutterBackgroundColor(Color.BLACK)
         }
     }
 
-    // NEW: Set this holder's position
-    fun setHolderPosition(position: Int) {
-        bindingAdapterPosition = position
-        // Reset thumbnail state when position changes
-        thumbnailHiddenForCurrentVideo = false
-        Log.d(TAG, "Holder position set to: $position")
+    fun pauseUpdates() {
+        stopProgressUpdates()
     }
 
-    fun loadThumbnail(thumbnailUrl: String?, position: Int) {
-        // CRITICAL: Always show thumbnail when loading new content
-        thumbnailHiddenForCurrentVideo = false
-
-        // Clear previous image IMMEDIATELY
-        Glide.with(itemView.context).clear(thumbnailImageView)
-        thumbnailImageView.setImageDrawable(null)
-
-        // Make thumbnail VISIBLE and OPAQUE
-        thumbnailImageView.alpha = 1f
-        thumbnailImageView.visibility = View.VISIBLE
-        videoView.visibility = View.VISIBLE
-
-        if (thumbnailUrl != null && thumbnailUrl.isNotEmpty()) {
-            Log.d(TAG, "Loading thumbnail for position $position: $thumbnailUrl")
-
-            Glide.with(itemView.context)
-                .load(thumbnailUrl)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .placeholder(R.drawable.flash21)
-                .error(R.drawable.flash21)
-                .listener(object : com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable> {
-                    override fun onLoadFailed(
-                        e: com.bumptech.glide.load.engine.GlideException?,
-                        model: Any?,
-                        target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>?,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        Log.e(TAG, "Thumbnail load failed for position $position", e)
-                        return false
-                    }
-
-                    override fun onResourceReady(
-                        resource: android.graphics.drawable.Drawable?,
-                        model: Any?,
-                        target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>?,
-                        dataSource: com.bumptech.glide.load.DataSource?,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        Log.d(TAG, "Thumbnail loaded successfully for position $position")
-                        return false
-                    }
-                })
-                .into(thumbnailImageView)
-        } else {
-            thumbnailImageView.setImageResource(R.drawable.flash21)
-            Log.d(TAG, "No thumbnail URL for position $position, using placeholder")
-        }
-    }
-
-    fun hideThumbnail() {
-        if (!thumbnailHiddenForCurrentVideo) {
-            thumbnailImageView.animate()
-                .alpha(0f)
-                .setDuration(200)
-                .withEndAction {
-                    thumbnailImageView.visibility = View.GONE
-                    thumbnailHiddenForCurrentVideo = true
-                    Log.d(TAG, "Thumbnail hidden for position $bindingAdapterPosition")
-                }
-                .start()
-        }
-    }
-
-    private fun setupPlayer() {
-        player = exoplayer
-
-        videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) {
-                Log.d(TAG, "VideoView attached to window at position $bindingAdapterPosition")
-                if (videoView.player == null) {
-                    videoView.player = exoplayer
-                    videoView.visibility = View.VISIBLE
-                }
-            }
-
-            override fun onViewDetachedFromWindow(v: View) {
-                Log.d(TAG, "VideoView detached from window at position $bindingAdapterPosition")
-            }
-        })
-
-        // Add ONLY these essential listeners to the ViewHolder
-        exoplayer.addListener(object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                when (playbackState) {
-                    Player.STATE_READY -> {
-                        videoDuration = exoplayer.duration
-                        if (videoDuration > 0) {
-                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
-                            bottomVideoSeekBar.secondaryProgress = 0
-                            Log.d(TAG, "Video ready at position $bindingAdapterPosition: ${videoDuration}ms")
-                        }
-                    }
-                    Player.STATE_BUFFERING -> {
-                        Log.d(TAG, "Video buffering at position $bindingAdapterPosition")
-                    }
-                }
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                this@StringViewHolder.isPlaying = isPlaying
-                if (isPlaying) {
-                    startProgressUpdates()
-                } else {
-                    stopProgressUpdates()
-                }
-                Log.d(TAG, "Player isPlaying: $isPlaying at position $bindingAdapterPosition")
-            }
-
-            // REMOVED: onRenderedFirstFrame() - handled in Fragment's listener
-        })
-    }
 
     fun reattachPlayer() {
         videoView.post {
@@ -557,13 +449,8 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             videoView.requestLayout()
             videoView.invalidate()
 
-            Log.d(TAG, "Player reattached at position $bindingAdapterPosition, visibility: ${videoView.visibility}")
+            Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
         }
-    }
-
-
-    fun pauseUpdates() {
-        stopProgressUpdates()
     }
 
     fun getUploadTopSeekBar(): SeekBar? = shortsUploadTopSeekBar
@@ -610,26 +497,14 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     }
 
     fun loadThumbnail(thumbnailUrl: String?) {
-        // CRITICAL: Clear previous image IMMEDIATELY and SYNCHRONOUSLY
-        Glide.with(itemView.context).clear(thumbnailImageView)
-        thumbnailImageView.setImageDrawable(null)
-        thumbnailImageView.alpha = 1f
-        thumbnailImageView.visibility = View.VISIBLE
-        videoView.visibility = View.VISIBLE
-
         if (thumbnailUrl != null && thumbnailUrl.isNotEmpty()) {
+            thumbnailImageView.visibility = View.VISIBLE
+            videoView.visibility = View.VISIBLE // Keep both visible
+
             Glide.with(itemView.context)
                 .load(thumbnailUrl)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .placeholder(R.drawable.flash21) // Placeholder while loading
-                .error(R.drawable.flash21) // Show if loading fails
                 .into(thumbnailImageView)
-
-            Log.d(TAG, "Loading thumbnail: $thumbnailUrl")
-        } else {
-            // If no thumbnail URL, show a default placeholder
-            thumbnailImageView.setImageResource(R.drawable.flash21)
-            Log.d(TAG, "No thumbnail URL provided, using placeholder")
         }
     }
 
@@ -643,8 +518,9 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
         val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
 
-        // REMOVED: Don't manipulate thumbnail here - it's handled in loadThumbnail()
-        // The thumbnail has already been loaded in onBindViewHolder BEFORE this method
+        // CHANGED: Show thumbnail initially, will hide when video is ready
+        thumbnailImageView.visibility = View.VISIBLE
+        videoView.visibility = View.VISIBLE
 
         totalComments = shortsEntity.comments
         totalLikes = shortsEntity.likes
@@ -664,36 +540,98 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
+    private fun setupPlayer() {
+        player = exoplayer
+
+        videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {
+                Log.d(TAG, "VideoView attached to window")
+                if (videoView.player == null) {
+                    videoView.player = exoplayer
+                    videoView.visibility = View.VISIBLE
+                }
+            }
+
+            override fun onViewDetachedFromWindow(v: View) {
+                Log.d(TAG, "VideoView detached from window")
+            }
+        })
+
+        exoplayer.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                when (playbackState) {
+                    Player.STATE_READY -> {
+                        videoDuration = exoplayer.duration
+                        if (videoDuration > 0) {
+                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
+                            bottomVideoSeekBar.secondaryProgress = 0
+                            Log.d(TAG, "Video ready: ${videoDuration}ms")
+                        }
+
+                        // CHANGED: Keep thumbnail visible until first frame renders
+                        // Don't hide it here
+                    }
+                    Player.STATE_BUFFERING -> {
+                        Log.d(TAG, "Video buffering")
+                        // Keep thumbnail visible during buffering
+                        thumbnailImageView.visibility = View.VISIBLE
+                    }
+                    Player.STATE_ENDED -> {
+                        stopProgressUpdates()
+                    }
+                }
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                this@StringViewHolder.isPlaying = isPlaying
+                if (isPlaying) {
+                    startProgressUpdates()
+                    // Don't hide thumbnail here - wait for onRenderedFirstFrame
+                } else {
+                    stopProgressUpdates()
+                }
+                Log.d(TAG, "Player isPlaying: $isPlaying")
+            }
+
+            override fun onRenderedFirstFrame() {
+                Log.d(TAG, "First frame rendered - hiding thumbnail")
+                // ONLY hide thumbnail after first frame is rendered
+                thumbnailImageView.animate()
+                    .alpha(0f)
+                    .setDuration(150)
+                    .withEndAction {
+                        thumbnailImageView.visibility = View.GONE
+                        thumbnailImageView.alpha = 1f
+                    }
+                    .start()
+                videoView.visibility = View.VISIBLE
+            }
+        })
+
+    }
 
     fun onViewRecycled() {
         stopProgressUpdates()
 
-        // CRITICAL: Reset thumbnail state and show thumbnail for next bind
-        thumbnailHiddenForCurrentVideo = false
-
-        // Cancel any ongoing animations
-        thumbnailImageView.animate().cancel()
-
-        // Clear Glide
-        Glide.with(itemView.context).clear(thumbnailImageView)
-        thumbnailImageView.setImageDrawable(null)
-
-        // Reset to visible state for next bind
-        thumbnailImageView.alpha = 1f
+        // CHANGED: Show thumbnail when recycling for smooth scrolling
         thumbnailImageView.visibility = View.VISIBLE
         videoView.visibility = View.VISIBLE
 
-        // Clear listeners
         commentsParentLayout.setOnClickListener(null)
         btnLike.setOnClickListener(null)
-        // ... clear other listeners ...
+        favorite.setOnClickListener(null)
+        shareBtn.setOnClickListener(null)
+        downloadBtn.setOnClickListener(null)
+        username.setOnClickListener(null)
+        shortsProfileImage.setOnClickListener(null)
+        shortsViewPager.setOnClickListener(null)
 
         videoDuration = 0L
         bottomVideoSeekBar.progress = 0
         isPlaying = false
     }
 
-        @OptIn(UnstableApi::class)
+    @OptIn(UnstableApi::class)
     private fun setupClickListeners(
 
         data: MyData,
