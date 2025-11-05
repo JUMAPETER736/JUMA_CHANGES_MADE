@@ -96,41 +96,27 @@ class ShortsAdapter(
 
 
 
-    // In ShortsAdapter class, replace the onBindViewHolder method:
-
     override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
         val data = shortsList[position]
 
-        // CRITICAL FIX: Always load thumbnail for the current position
+        // ALWAYS load thumbnail first - even if holder is reused
         holder.loadThumbnail(data.thumbnail.firstOrNull()?.thumbnailUrl)
 
-        // Reset visibility states for smooth transitions
-        holder.resetVideoState()
-
-        // Always bind data when position changes
-        val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
-            ?: ShortsEntityFollowList(
-                followersId = data.author.account._id,
-                isFollowing = false
-            )
-
-        val myData = MyData(data, isFollowingData)
-        ensureFollowDataExists(data)
-
-        holder.onBind(myData)
-
-        // Update current tracking
-        if (currentActivePosition != position) {
-            currentActivePosition = position
+        if (currentViewHolder != holder || currentActivePosition != position) {
             currentViewHolder = holder
-            preloadVideosAround(position)
-        }
-    }
+            currentActivePosition = position
 
-    // Add this method to force refresh when swiping
-    fun refreshCurrentItem(position: Int) {
-        if (position >= 0 && position < shortsList.size) {
-            notifyItemChanged(position)
+            val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
+                ?: ShortsEntityFollowList(
+                    followersId = data.author.account._id,
+                    isFollowing = false
+                )
+
+            val myData = MyData(data, isFollowingData)
+            ensureFollowDataExists(data)
+
+            holder.onBind(myData)
+            preloadVideosAround(position)
         }
     }
 
@@ -402,9 +388,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
-
-
-
     private val playerListener = object : Player.Listener {
         override fun onPlaybackStateChanged(playbackState: Int) {
             when (playbackState) {
@@ -436,26 +419,19 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             Log.d(TAG, "Player isPlaying: $isPlaying")
         }
 
-        override  fun onRenderedFirstFrame() {
-            Log.d(TAG, "Frame rendered - hiding thumbnail")
-
-            // Add delay to ensure smooth transition
-            mainHandler.postDelayed({
-                thumbnailImageView.animate()
-                    .alpha(0f)
-                    .setDuration(200)
-                    .withEndAction {
-                        thumbnailImageView.visibility = View.GONE
-                        thumbnailImageView.alpha = 1f
-                    }
-                    .start()
-            }, 100)
-
+        override fun onRenderedFirstFrame() {
+            Log.d(TAG, "First frame rendered - hiding thumbnail")
+            thumbnailImageView.animate()
+                .alpha(0f)
+                .setDuration(150)
+                .withEndAction {
+                    thumbnailImageView.visibility = View.GONE
+                    thumbnailImageView.alpha = 1f
+                }
+                .start()
             videoView.visibility = View.VISIBLE
         }
     }
-
-
 
     init {
         setupSeekBar()
@@ -475,76 +451,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
 
     fun pauseUpdates() {
         stopProgressUpdates()
-    }
-
-    fun resetVideoState() {
-        // Show thumbnail immediately
-        thumbnailImageView.visibility = View.VISIBLE
-        thumbnailImageView.alpha = 1f
-        videoView.visibility = View.VISIBLE
-
-        // Clear any pending animations
-        thumbnailImageView.clearAnimation()
-
-        // Stop any ongoing progress updates
-        stopProgressUpdates()
-    }
-
-    // Update the loadThumbnail method:
-    fun loadThumbnail(thumbnailUrl: String?) {
-        if (thumbnailUrl != null && thumbnailUrl.isNotEmpty()) {
-            // Clear previous image first
-            thumbnailImageView.setImageDrawable(null)
-
-            // Show thumbnail immediately
-            thumbnailImageView.visibility = View.VISIBLE
-            thumbnailImageView.alpha = 1f
-            videoView.visibility = View.VISIBLE
-
-            Glide.with(itemView.context)
-                .load(thumbnailUrl)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .placeholder(R.drawable.flash21) // Add placeholder
-                .into(thumbnailImageView)
-
-            Log.d(TAG, "Thumbnail loaded: $thumbnailUrl")
-        } else {
-            // Show black background if no thumbnail
-            thumbnailImageView.visibility = View.VISIBLE
-            thumbnailImageView.setBackgroundColor(Color.BLACK)
-        }
-    }
-
-
-
-
-    // Update onViewRecycled:
-    fun onViewRecycled() {
-        stopProgressUpdates()
-
-        // Reset thumbnail visibility
-        thumbnailImageView.visibility = View.VISIBLE
-        thumbnailImageView.alpha = 1f
-        videoView.visibility = View.VISIBLE
-
-        // Clear thumbnail image
-        Glide.with(itemView.context).clear(thumbnailImageView)
-        thumbnailImageView.setImageDrawable(null)
-
-        // Clear listeners
-        commentsParentLayout.setOnClickListener(null)
-        btnLike.setOnClickListener(null)
-        favorite.setOnClickListener(null)
-        shareBtn.setOnClickListener(null)
-        downloadBtn.setOnClickListener(null)
-        username.setOnClickListener(null)
-        shortsProfileImage.setOnClickListener(null)
-        shortsViewPager.setOnClickListener(null)
-
-        videoDuration = 0L
-        bottomVideoSeekBar.progress = 0
-        isPlaying = false
-        exoplayer.removeListener(playerListener)
     }
 
     fun reattachPlayer() {
@@ -607,7 +513,17 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         shortsUploadCancelButton.setOnClickListener(listener)
     }
 
+    fun loadThumbnail(thumbnailUrl: String?) {
+        if (thumbnailUrl != null && thumbnailUrl.isNotEmpty()) {
+            thumbnailImageView.visibility = View.VISIBLE
+            videoView.visibility = View.VISIBLE // Keep both visible
 
+            Glide.with(itemView.context)
+                .load(thumbnailUrl)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(thumbnailImageView)
+        }
+    }
 
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
@@ -641,6 +557,27 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
+    fun onViewRecycled() {
+        stopProgressUpdates()
+
+        // CHANGED: Show thumbnail when recycling for smooth scrolling
+        thumbnailImageView.visibility = View.VISIBLE
+        videoView.visibility = View.VISIBLE
+        thumbnailImageView.setImageDrawable(null)
+        commentsParentLayout.setOnClickListener(null)
+        btnLike.setOnClickListener(null)
+        favorite.setOnClickListener(null)
+        shareBtn.setOnClickListener(null)
+        downloadBtn.setOnClickListener(null)
+        username.setOnClickListener(null)
+        shortsProfileImage.setOnClickListener(null)
+        shortsViewPager.setOnClickListener(null)
+
+        videoDuration = 0L
+        bottomVideoSeekBar.progress = 0
+        isPlaying = false
+        exoplayer.removeListener(playerListener)
+    }
 
     @OptIn(UnstableApi::class)
     private fun setupClickListeners(
