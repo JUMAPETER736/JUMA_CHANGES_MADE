@@ -332,6 +332,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
 )
+
     : ViewHolder<MyData>(itemView) {
 
     companion object {
