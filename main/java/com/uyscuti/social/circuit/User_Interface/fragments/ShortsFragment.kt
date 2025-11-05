@@ -1104,7 +1104,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             return
         }
 
-        // CRITICAL: Ensure the current ViewHolder's surface is properly attached
+        // Ensure the current ViewHolder's surface is properly attached
         val currentHolder = shortsAdapter.getCurrentViewHolder()
         currentHolder?.reattachPlayer()
 
@@ -1145,7 +1145,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             val videoUri = Uri.parse(videoUrl)
             Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
 
-            // CRITICAL: Ensure surface is visible before preparing
+            // Ensure surface is visible before preparing
             val currentHolder = shortsAdapter.getCurrentViewHolder()
             currentHolder?.getSurface()?.let { playerView ->
                 playerView.visibility = View.VISIBLE

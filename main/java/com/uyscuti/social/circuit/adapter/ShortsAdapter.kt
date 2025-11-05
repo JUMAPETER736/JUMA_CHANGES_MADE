@@ -420,7 +420,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
 
         override fun onRenderedFirstFrame() {
-            Log.d(TAG, "First frame rendered - hiding thumbnail")
+            Log.d(TAG, "Frame rendered - hiding thumbnail")
             thumbnailImageView.animate()
                 .alpha(0f)
                 .setDuration(150)
