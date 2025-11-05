@@ -6544,7 +6544,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         }
     }
 
-    // Fixed addCommentVN - uploads VN comment to server from Room DB
+ 
     private fun addCommentVN() {
         val TAG = "addCommentVN"
 
@@ -6628,7 +6628,6 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         }
     }
 
-    // Observe comment submission status to handle success/failure
     private fun observeCommentSubmissionStatus(commentFile: CommentsFilesEntity) {
         val TAG = "observeCommentSubmissionStatus"
 
@@ -6670,7 +6669,6 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         }
     }
 
-    // Helper extension function for observing LiveData once
     fun <T> LiveData<T>.observeOnce(owner: LifecycleOwner, observer: (T) -> Unit) {
         observe(owner, object : Observer<T> {
             override fun onChanged(value: T) {
@@ -6679,235 +6677,6 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             }
         })
     }
-
-
-
-    // Fixed uploadVnComment - creates the comment in UI and Room DB
-//    @RequiresApi(Build.VERSION_CODES.O)
-//    private fun uploadVnComment(
-//        vnToUpload: String,
-//        fileName: String,
-//        durationString: String,
-//        fileType: String,
-//        placeholder: Boolean = false,
-//        update: Boolean = false
-//    ) {
-//        Log.d("uploadVnComment", "uploadVnComment: update=$update, placeholder=$placeholder")
-//
-//        val mongoDbTimeStamp = generateMongoDBTimestamp()
-//        val localUpdateId = generateRandomId()
-//        val uploadId = generateRandomId()
-//        val file = File(vnToUpload)
-//
-//        if (file.exists()) {
-//            Log.d(TAG, "File exists, creating comment.......")
-//
-//            val profilePic2 = settings.getString("profile_pic", "").toString()
-//            val avatar = Avatar("", "", url = profilePic2)
-//            val account = Account(_id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername())
-//            val author = Author(_id = "12", account = account, firstName = "", lastName = "", avatar = null)
-//            val vnFile = CommentFiles(_id = "124", url = vnToUpload, localPath = vnToUpload)
-//
-//            val comment = com.uyscuti.social.circuit.data.model.Comment(
-//                __v = 1,
-//                _id = adapter!!.itemCount.toString(),
-//                author = author,
-//                content = "",
-//                createdAt = mongoDbTimeStamp,
-//                isLiked = false,
-//                likes = 0,
-//                postId = postId,
-//                updatedAt = mongoDbTimeStamp,
-//                replyCount = 0,
-//                images = mutableListOf(),
-//                audios = mutableListOf(vnFile),
-//                docs = mutableListOf(),
-//                gifs = "",
-//                thumbnail = mutableListOf(),
-//                videos = mutableListOf(),
-//                contentType = "audio",
-//                isPlaying = data?.isPlaying ?: false,
-//                progress = data?.progress ?: 0f,
-//                localUpdateId = localUpdateId,
-//                fileName = fileName,
-//                duration = durationString,
-//                fileType = fileType,
-//                uploadId = uploadId
-//            )
-//
-//            // Insert to Room DB for later upload to server
-//            if (!placeholder) {
-//                val newCommentEntity = CommentsFilesEntity(
-//                    postId,
-//                    "audio",
-//                    vnToUpload,
-//                    isReply = 0,
-//                    localUpdateId,
-//                    fileName = fileName,
-//                    duration = durationString,
-//                    fileType = fileType,
-//                    isFeedComment = isFeedComment,
-//                    uploadId = uploadId
-//                )
-//                commentFilesViewModel.insertCommentFile(newCommentEntity)
-//                Log.d(TAG, "uploadVnComment: inserted comment to Room DB $newCommentEntity")
-//            }
-//
-//            if (update) {
-//                Log.d("uploadVnComment", "updatePosition: $updatePosition")
-//                if (updatePosition >= 0 && updatePosition < listOfReplies.size) {
-//                    listOfReplies[updatePosition] = comment
-//                    updateAdapter(comment, updatePosition)
-//                }
-//                updatePosition = -1
-//                updateUI(false)
-//            } else {
-//                // Add new comment to UI
-//                listOfReplies.add(comment)
-//                updatePosition = adapter!!.itemCount
-//                adapter!!.submitItem(comment, adapter!!.itemCount)
-//                updateUI(false)
-//
-//                // Update comment count
-//                if (!isFeedComment) {
-//                    shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
-//                    Log.d(TAG, "uploadVnComment: count before ${shortToComment?.comments}")
-//
-//                    if (shortToComment != null) {
-//                        shortToComment!!.comments += 1
-//                        shortsViewModel.mutableShortsList.forEach { short ->
-//                            if (short._id == postId) {
-//                                short.comments = shortToComment!!.comments
-//                            }
-//                        }
-//                        EventBus.getDefault().post(ShortAdapterNotifyDatasetChanged())
-//                    }
-//                } else {
-//                    val feedToComment = feedViewModel.getAllFeedData().find { it._id == postId }
-//                    val myFeedToComment = feedViewModel.getMyFeedData().find { it._id == postId }
-//                    val favoriteFeedToComment = feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//
-//                    myFeedToComment?.let {
-//                        feedViewModel.getMyFeedData().forEach { feed ->
-//                            if (feed._id == postId) {
-//                                feed.comments = it.comments
-//                            }
-//                        }
-//                    }
-//
-//                    favoriteFeedToComment?.let {
-//                        feedViewModel.getAllFavoriteFeedData().forEach { feed ->
-//                            if (feed._id == postId) {
-//                                feed.comments = it.comments
-//                            }
-//                        }
-//                    }
-//
-//                    feedToComment?.let {
-//                        feedViewModel.getAllFeedData().forEach { feed ->
-//                            if (feed._id == postId) {
-//                                feed.comments = it.comments
-//                            }
-//                        }
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
-//                    }
-//                }
-//            }
-//
-//            Log.d(TAG, "uploadVnComment: comment added to UI")
-//            recordedAudioFiles.clear()
-//
-//        } else {
-//            Log.e(TAG, "File does not exist: $vnToUpload")
-//            Toast.makeText(this, "Voice note file not found", Toast.LENGTH_SHORT).show()
-//        }
-//    }
-
-    // Fixed addCommentVN - uploads VN comment to server from Room DB
-//    private fun addCommentVN() {
-//        val TAG = "addCommentVN"
-//
-//        Log.d(TAG, "addCommentVN: called for uploading to server")
-//
-//        if (isInternetAvailable(this)) {
-//            // Get all pending comments from Room DB
-//            commentFilesViewModel.allCommentFiles.observeOnce(this) { commentFiles ->
-//                Log.d(TAG, "Comments in Room DB: ${commentFiles.size}")
-//
-//                if (commentFiles.isNotEmpty()) {
-//                    for (commentFile in commentFiles) {
-//                        // Only process audio comments that are not replies
-//                        if (commentFile.localPath == "audio" && commentFile.isReply == 0) {
-//                            val file = File(commentFile.url)
-//                            Log.d(TAG, "Processing audio file: ${commentFile.url}")
-//
-//                            if (file.exists()) {
-//                                val requestFile = file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
-//
-//                                val filePart = MultipartBody.Part.createFormData("audio", file.name, requestFile)
-//                                val video = MultipartBody.Part.createFormData("video", file.name, requestFile)
-//                                val image = MultipartBody.Part.createFormData("image", file.name, requestFile)
-//                                val docs = MultipartBody.Part.createFormData("docs", file.name, requestFile)
-//                                val gif = MultipartBody.Part.createFormData("gif", file.name, requestFile)
-//                                val thumbnail = MultipartBody.Part.createFormData("thumbnail", file.name, requestFile)
-//
-//                                Log.d(TAG, "Uploading audio comment to server for postId: $postId")
-//
-//                                // Upload to server
-//                                commentsViewModel.commentAudio(
-//                                    postId,
-//                                    "",
-//                                    "audio",
-//                                    filePart,
-//                                    video,
-//                                    image,
-//                                    docs,
-//                                    gif,
-//                                    thumbnail,
-//                                    commentFile.localUpdateId,
-//                                    fileName = commentFile.fileName,
-//                                    fileType = commentFile.fileType,
-//                                    duration = commentFile.duration,
-//                                    isFeedComment = commentFile.isFeedComment
-//                                )
-//
-//                                // Delete from Room DB after upload attempt
-//                                commentFilesViewModel.viewModelScope.launch {
-//                                    val isDeleted = commentFilesViewModel.deleteCommentById(commentFile.id)
-//                                    if (isDeleted) {
-//                                        Log.d(TAG, "Comment deleted from Room DB after upload")
-//                                    } else {
-//                                        Log.e(TAG, "Failed to delete comment from Room DB")
-//                                    }
-//                                }
-//                            } else {
-//                                Log.e(TAG, "File does not exist: ${commentFile.url}")
-//                                // Delete non-existent file entry
-//                                commentFilesViewModel.viewModelScope.launch {
-//                                    commentFilesViewModel.deleteCommentById(commentFile.id)
-//                                }
-//                            }
-//                        }
-//                    }
-//                } else {
-//                    Log.d(TAG, "No pending comments to upload")
-//                }
-//            }
-//        } else {
-//            Log.d(TAG, "No internet connection - comment will be uploaded when online")
-//            Toast.makeText(this, "No internet. Comment saved and will upload when online", Toast.LENGTH_SHORT).show()
-//        }
-//    }
-
-    // Helper extension to observe LiveData only once
-//    fun <T> LiveData<T>.observeOnce(lifecycleOwner: LifecycleOwner, observer: (T) -> Unit) {
-//        observe(lifecycleOwner, object : Observer<T> {
-//            override fun onChanged(value: T) {
-//                observer(value)
-//                removeObserver(this)
-//            }
-//        })
-//    }
 
 
     private var updatePosition = -1
