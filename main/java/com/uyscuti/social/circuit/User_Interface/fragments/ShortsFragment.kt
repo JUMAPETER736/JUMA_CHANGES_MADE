@@ -571,20 +571,21 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
 
-                viewPager.registerOnPageChangeCallback(object :
-                    ViewPager2.OnPageChangeCallback() {
+                // Replace the ViewPager2 page change callback in onCreateView:
+
+                viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
 
                     override fun onPageSelected(position: Int) {
                         shortsViewModel.shortIndex = position
 
-                        // DON'T stop the player - just pause it
+                        // Pause current player
                         exoPlayer?.let { player ->
                             player.pause()
-                            // Don't call stop() or seekTo(0) here
                         }
 
-                        // ADDED: Small delay to allow thumbnail to show
+                        // CRITICAL FIX: Force refresh the adapter item to load new thumbnail
                         Handler(Looper.getMainLooper()).postDelayed({
+                            shortsAdapter.refreshCurrentItem(position)
                             playVideoAtPosition(position)
                         }, 50)
                     }
@@ -597,64 +598,59 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         super.onPageScrolled(position, positionOffset, positionOffsetPixels)
 
                         if (position > shortsViewModel.lastPosition) {
-                            // User is scrolling down
-                            // Handle scroll down logic
+                            // Scrolling down
                             Log.d(
                                 "showHideBottomNav",
                                 "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
                             )
                             EventBus.getDefault().post(HideBottomNav())
-                            EventBus.getDefault().post(HideFeedFloatingActionButton()) // Hide FAB
+                            EventBus.getDefault().post(HideFeedFloatingActionButton())
                             Log.d("showHideBottomNav", "event post scroll next")
                         } else if (position < shortsViewModel.lastPosition) {
-                            // User is scrolling up
-                            // Handle scroll up logic
+                            // Scrolling up
                             Log.d(
                                 "showHideBottomNav",
                                 "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
                             )
-                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false)) // Show FAB
+                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
                             EventBus.getDefault().post(ShowBottomNav(false))
                             Log.d("showHideBottomNav", "event post scroll previous")
                         }
-                        if (position > shortsViewModel.lastPosition) {
-                            // User is scrolling down
-                            loadMoreVideosIfNeeded(position)
 
+                        if (position > shortsViewModel.lastPosition) {
+                            loadMoreVideosIfNeeded(position)
                         }
 
                         shortsViewModel.lastPosition = position
 
-                        if (positionOffset > 0.5) {
-                            // User is scrolling towards the end, update the current position to the next video
-                            currentPosition = position + 1
-
-
-                        } else if (positionOffset < -0.5) {
-
-                            currentPosition = position - 1
-
-                        } else {
-                            // User is in a stable position, update the current position to the current video
-                            currentPosition = position
-
-
+                        // Update current position based on scroll offset
+                        currentPosition = when {
+                            positionOffset > 0.5 -> position + 1
+                            positionOffset < -0.5 -> position - 1
+                            else -> position
                         }
-
                     }
+
                     override fun onPageScrollStateChanged(state: Int) {
                         super.onPageScrollStateChanged(state)
                         Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
 
-                        // Check if the scroll state is idle
-                        if (state == ViewPager.SCROLL_STATE_SETTLING) {
-                            Log.d(
-                                "onPageScrollStateChanged",
-                                "onPageScrollStateChanged: state $state"
-                            )
-                            // The scroll state is idle, play the video at the updated position
-                            playVideoAtPosition(currentPosition)
-                            backPressCount = 0
+                        // When scroll settles, ensure thumbnail is shown for current position
+                        when (state) {
+                            ViewPager2.SCROLL_STATE_SETTLING -> {
+                                Log.d("onPageScrollStateChanged", "SETTLING: state $state")
+                                playVideoAtPosition(currentPosition)
+                                backPressCount = 0
+                            }
+                            ViewPager2.SCROLL_STATE_DRAGGING -> {
+                                // Show thumbnail when user starts dragging
+                                Log.d("onPageScrollStateChanged", "DRAGGING: state $state")
+                            }
+                            ViewPager2.SCROLL_STATE_IDLE -> {
+                                // Ensure correct item is shown when idle
+                                Log.d("onPageScrollStateChanged", "IDLE: state $state")
+                                shortsAdapter.refreshCurrentItem(currentPosition)
+                            }
                         }
                     }
                 })
