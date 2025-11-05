@@ -96,6 +96,8 @@ public class Dialog implements IDialog<Message>, Parcelable {
         isSelected = in.readByte() != 0;
     }
 
+
+
     public static final Creator<Dialog> CREATOR = new Creator<Dialog>() {
         @Override
         public Dialog createFromParcel(Parcel in) {

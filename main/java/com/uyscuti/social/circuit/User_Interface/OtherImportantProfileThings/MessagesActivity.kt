@@ -248,11 +248,32 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     companion object {
         fun open(context: Context, dialogName: String, dialog: Dialog, temporally: Boolean) {
             val intent = Intent(context, MessagesActivity::class.java)
-            intent.putExtra("Dialog_Extra", dialog)
-            intent.putExtra("temporally", temporally)
-            context.startActivity(intent)
 
-//            context.startActivity(Intent(context, MessagesActivity::class.java))
+            // Instead of passing the whole Dialog object
+            // intent.putExtra("Dialog_Extra", dialog)
+
+            // Pass individual fields
+            intent.putExtra("chatId", dialog.id)
+            intent.putExtra("dialogName", dialog.dialogName)
+            intent.putExtra("dialogPhoto", dialog.dialogPhoto)
+            intent.putExtra("isGroup", dialog.users.size > 1)
+            intent.putExtra("temporally", temporally)
+
+            // Pass user info as JSON string or separate fields
+            // For simplicity, let's pass the first user's ID
+            if (dialog.users.isNotEmpty()) {
+                intent.putExtra("firstUserId", dialog.users.first().id)
+                intent.putExtra("firstUserName", dialog.users.first().name)
+                intent.putExtra("firstUserAvatar", dialog.users.first().avatar)
+            }
+
+            // Pass last message ID if exists
+            dialog.lastMessage?.let {
+                intent.putExtra("lastMessageId", it.id)
+                intent.putExtra("lastMessageUserId", it.user.id)
+            }
+
+            context.startActivity(intent)
         }
     }
 
@@ -3140,13 +3161,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-//    private fun sendSeenReport(chatId: String,senderId: String){
-//        try {
-//            coreChatSocketClient.sendMessageOpenedReport(chatId,senderId)
-//        } catch (e:Exception){
-//            e.printStackTrace()
-//        }
-//    }
 
     override fun onDeliveryReport() {
         CoroutineScope(Dispatchers.IO).launch {
