@@ -286,7 +286,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 //        }
 //    }
 
-
     private fun initMessages() {
         firstLoad = false
         CoroutineScope(Dispatchers.IO).launch {
@@ -296,6 +295,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                 // Add null check here
                 if (message == null) {
                     Log.e("LoadMessages", "No message found")
+                    // Don't crash - just return silently
                     return@launch
                 }
 
@@ -311,82 +311,62 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         it.online,
                         it.lastSeen
                     )
-                } ?: User(userId, "Unknown", "", false, null)
+                } ?: run {
+                    Log.e("LoadMessages", "Message user is null")
+                    return@launch
+                }
 
+                // Rest of your code...
                 val date = Date(message.createdAt)
 
-                // Check if the text is "None" and imageUrl is not null
-                val messageContent = if (message.imageUrl != null) {
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
-                        setImage(Message.Image(message.imageUrl!!))
-                        setStatus(status)
+                val messageContent = when {
+                    message.imageUrl != null -> {
+                        Message(message.id, user, null, date).apply {
+                            setImage(Message.Image(message.imageUrl!!))
+                            setStatus(status)
+                        }
                     }
-                } else if (message.videoUrl != null) {
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
-                        setVideo(Message.Video(message.videoUrl!!))
-                        setStatus(status)
+                    message.videoUrl != null -> {
+                        Message(message.id, user, null, date).apply {
+                            setVideo(Message.Video(message.videoUrl!!))
+                            setStatus(status)
+                        }
                     }
-                } else if (message.audioUrl != null) {
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
-                        setAudio(
-                            Message.Audio(
-                                message.audioUrl!!,
-                                0,
-                                getNameFromUrl(message.audioUrl!!)
+                    message.audioUrl != null -> {
+                        Message(message.id, user, null, date).apply {
+                            setAudio(
+                                Message.Audio(
+                                    message.audioUrl!!,
+                                    0,
+                                    getNameFromUrl(message.audioUrl!!)
+                                )
                             )
-                        )
-                        setStatus(status)
+                            setStatus(status)
+                        }
                     }
-                } else if (message.voiceUrl != null) {
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
-                        setVoice(Message.Voice(message.voiceUrl!!, 10000))
-                        setStatus(status)
+                    message.voiceUrl != null -> {
+                        Message(message.id, user, null, date).apply {
+                            setVoice(Message.Voice(message.voiceUrl!!, 10000))
+                            setStatus(status)
+                        }
                     }
-                } else if (message.docUrl != null) {
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
-                        val size = getFileSize(message.docUrl!!)
-                        setDocument(
-                            Message.Document(
-                                message.docUrl!!,
-                                getNameFromUrl(message.docUrl!!),
-                                formatFileSize(size)
+                    message.docUrl != null -> {
+                        Message(message.id, user, null, date).apply {
+                            val size = getFileSize(message.docUrl!!)
+                            setDocument(
+                                Message.Document(
+                                    message.docUrl!!,
+                                    getNameFromUrl(message.docUrl!!),
+                                    formatFileSize(size)
+                                )
                             )
-                        )
-                        setStatus(status)
+                            setStatus(status)
+                        }
                     }
-                } else {
-                    Message(
-                        message.id,
-                        user,
-                        message.text,
-                        date
-                    ).apply {
-                        setStatus(status)
+                    else -> {
+                        Message(message.id, user, message.text, date).apply {
+                            setStatus(status)
+                        }
                     }
                 }
 

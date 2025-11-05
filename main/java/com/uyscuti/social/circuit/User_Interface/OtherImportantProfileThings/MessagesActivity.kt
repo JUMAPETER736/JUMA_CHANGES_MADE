@@ -3140,13 +3140,13 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-    private fun sendSeenReport(chatId: String,senderId: String){
-        try {
-            coreChatSocketClient.sendMessageOpenedReport(chatId,senderId)
-        } catch (e:Exception){
-            e.printStackTrace()
-        }
-    }
+//    private fun sendSeenReport(chatId: String,senderId: String){
+//        try {
+//            coreChatSocketClient.sendMessageOpenedReport(chatId,senderId)
+//        } catch (e:Exception){
+//            e.printStackTrace()
+//        }
+//    }
 
     override fun onDeliveryReport() {
         CoroutineScope(Dispatchers.IO).launch {
@@ -4686,9 +4686,17 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         this.chatId = newDialogId
         trigger()
     }
-//    override fun onSupportNavigateUp(): Boolean {
-//        val navController = findNavController(R.id.nav_host_fragment_content_messages)
-//        return navController.navigateUp(appBarConfiguration)
-//                || super.onSupportNavigateUp()
-//    }
+
+
+    private fun sendSeenReport(chatId: String, senderId: String) {
+        try {
+            // Make sure socket client is initialized and connected
+            coreChatSocketClient?.sendMessageOpenedReport(chatId, senderId)
+        } catch (e: Exception) {
+            Log.e("SendSeenReport", "Error sending seen report: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+
 }
