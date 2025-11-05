@@ -175,26 +175,148 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
         this.retrofitInterface = retrofitInstance
     }
 
+//    private fun initMessages() {
+//        firstLoad = false
+//        CoroutineScope(Dispatchers.IO).launch {
+//            try {
+//                val message = messageViewModel.getLastMessage(chatId, myId)
+//
+//                val userId = if (message?.userId == myId) "0" else "1"
+//                val status = message?.status
+//                val user = User(
+//                    userId,
+//                    message?.user?.name,
+//                    message!!.user.avatar,
+//                    message.user.online,
+//                    message.user.lastSeen
+//                )
+//                val date = Date(message.createdAt)
+//
+//                // Check if the text is "None" and imageUrl is not null
+//                val messageContent = if (message.imageUrl != null) {
+////                        user.id = "0"
+//                    Message(
+//                        message.id,
+//                        user,
+//                        null,
+//                        date
+//                    ).apply {
+//                        setImage(Message.Image(message.imageUrl!!))
+//                        setStatus(status)
+//                    }
+//                } else if (message.videoUrl != null) {
+////                        user.id = "0"
+//                    Message(
+//                        message.id,
+//                        user,
+//                        null,
+//                        date
+//                    ).apply {
+//                        setVideo(Message.Video(message.videoUrl!!))
+//                        setStatus(status)
+//                    }
+//                } else if (message.audioUrl != null) {
+////                        user.id = "0"
+//                    Message(
+//                        message.id,
+//                        user,
+//                        null,
+//                        date
+//                    ).apply {
+//                        setAudio(
+//                            Message.Audio(
+//                                message.audioUrl!!,
+//                                0,
+//                                getNameFromUrl(message.audioUrl!!)
+//                            )
+//                        )
+//                        setStatus(status)
+//                    }
+//                } else if (message.voiceUrl != null) {
+////                        user.id = "0"
+//                    Message(
+//                        message.id,
+//                        user,
+//                        null,
+//                        date
+//                    ).apply {
+//                        setVoice(Message.Voice(message.voiceUrl!!, 10000))
+//                        setStatus(status)
+//                    }
+//                } else if (message.docUrl != null) {
+////                        user.id = "0"
+//                    Message(
+//                        message.id,
+//                        user,
+//                        null,
+//                        date
+//                    ).apply {
+//
+//                        val size = getFileSize(message.docUrl!!)
+//                        setDocument(
+//                            Message.Document(
+//                                message.docUrl!!,
+//                                getNameFromUrl(message.docUrl!!),
+//                                formatFileSize(size)
+//                            )
+//                        )
+//                        setStatus(status)
+//                    }
+//                } else {
+//                    Message(
+//                        message.id,
+//                        user,
+//                        message.text,
+//                        date
+//                    ).apply {
+//                        setStatus(status)
+//                    }
+//                }
+//                withContext(Dispatchers.Main) {
+//
+//                    if (!message.deleted ){
+//                        messagesAdapter?.addToStart(messageContent, true)
+//                    }
+//                }
+//
+//            } catch (e: Exception) {
+//                Log.e("LoadMessages", "Failure : ${e.message}")
+//                e.printStackTrace()
+//            }
+//        }
+//    }
+
+
     private fun initMessages() {
         firstLoad = false
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val message = messageViewModel.getLastMessage(chatId, myId)
 
-                val userId = if (message?.userId == myId) "0" else "1"
-                val status = message?.status
-                val user = User(
-                    userId,
-                    message?.user?.name,
-                    message!!.user.avatar,
-                    message.user.online,
-                    message.user.lastSeen
-                )
+                // Add null check here
+                if (message == null) {
+                    Log.e("LoadMessages", "No message found")
+                    return@launch
+                }
+
+                val userId = if (message.userId == myId) "0" else "1"
+                val status = message.status
+
+                // Add null check for user
+                val user = message.user?.let {
+                    User(
+                        userId,
+                        it.name,
+                        it.avatar,
+                        it.online,
+                        it.lastSeen
+                    )
+                } ?: User(userId, "Unknown", "", false, null)
+
                 val date = Date(message.createdAt)
 
                 // Check if the text is "None" and imageUrl is not null
                 val messageContent = if (message.imageUrl != null) {
-//                        user.id = "0"
                     Message(
                         message.id,
                         user,
@@ -205,7 +327,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 } else if (message.videoUrl != null) {
-//                        user.id = "0"
                     Message(
                         message.id,
                         user,
@@ -216,7 +337,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 } else if (message.audioUrl != null) {
-//                        user.id = "0"
                     Message(
                         message.id,
                         user,
@@ -233,7 +353,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 } else if (message.voiceUrl != null) {
-//                        user.id = "0"
                     Message(
                         message.id,
                         user,
@@ -244,14 +363,12 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 } else if (message.docUrl != null) {
-//                        user.id = "0"
                     Message(
                         message.id,
                         user,
                         null,
                         date
                     ).apply {
-
                         val size = getFileSize(message.docUrl!!)
                         setDocument(
                             Message.Document(
@@ -272,9 +389,9 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 }
-                withContext(Dispatchers.Main) {
 
-                    if (!message.deleted ){
+                withContext(Dispatchers.Main) {
+                    if (!message.deleted) {
                         messagesAdapter?.addToStart(messageContent, true)
                     }
                 }
