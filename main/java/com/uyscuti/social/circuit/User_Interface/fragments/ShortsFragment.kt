@@ -358,8 +358,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 //        initializeShortsViewModel()
         if (savedInstanceState == null) {
-            // Register the observer only when the fragment is created, not recreated
-            // observeShortsViewModel()
+
             Log.d("ViewModel", "onViewCreated: view not created")
         } else {
             Log.d("ViewModel", "onViewCreated: view already created")
@@ -1089,8 +1088,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    // In ShotsFragment, replace the playVideoAtPosition method:
-
     private fun playVideoAtPosition(position: Int) {
         val videoShorts = shortsViewModel.videoShorts
 
@@ -1150,56 +1147,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
         validateAndPlayVideo(finalVideoUrl, position)
     }
-
-//    private fun playVideoAtPosition(position: Int) {
-//
-//        val videoShorts = shortsViewModel.videoShorts
-//
-//        if (position < 0 || position >= videoShorts.size) {
-//            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
-//            return
-//        }
-//
-//        if (isPlayerPreparing) {
-//            Log.d("playVideoAtPosition", "Player is already preparing, ignoring request")
-//            return
-//        }
-//
-//        // CRITICAL: Ensure the current ViewHolder's surface is properly attached
-//        val currentHolder = shortsAdapter.getCurrentViewHolder()
-//        currentHolder?.reattachPlayer()
-//
-//        val shortVideo = videoShorts[position]
-//        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
-//
-//        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
-//
-//        if (rawVideoUrl.isNullOrEmpty()) {
-//            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
-//            return
-//        }
-//
-//        val finalVideoUrl = when {
-//            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
-//                rawVideoUrl
-//            }
-//            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
-//                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
-//                serverBaseUrl + rawVideoUrl.trimStart('/')
-//            }
-//            else -> {
-//                val serverBaseUrl = "http://192.168.1.103:8080/"
-//                if (rawVideoUrl.startsWith("/")) {
-//                    serverBaseUrl + rawVideoUrl.trimStart('/')
-//                } else {
-//                    serverBaseUrl + rawVideoUrl
-//                }
-//            }
-//        }
-//
-//        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
-//        validateAndPlayVideo(finalVideoUrl, position)
-//    }
 
     private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
 
