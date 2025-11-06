@@ -248,7 +248,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     // Media Player & ExoPlayer
     private var exoPlayer: ExoPlayer? = null
     private var currentPlayerListener: Player.Listener? = null
-    private var isPlayerPreparing = false
+    //private var isPlayerPreparing = false
     private var isUserSeeking = false
 
     // ExoPlayer Data Sources
@@ -310,7 +310,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     val count = 0
 
 
-    // Add this initialization in onCreate() or onCreateView()
     init {
         // Increase cache size for better performance
         simpleCache.release() // Clear if needed
@@ -459,7 +458,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             DefaultMediaSourceFactory(requireContext())
                 .setDataSourceFactory(dataSourceFactory) // Use direct factory without cache
 
-        // FIXED: Optimized ExoPlayer initialization for faster loading
         exoPlayer = ExoPlayer.Builder(requireActivity())
             .setMediaSourceFactory(mediaSourceFactory)
             .setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
@@ -467,20 +465,19 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             .setLoadControl(
                 DefaultLoadControl.Builder()
                     .setBufferDurationsMs(
-                        2000,  // Min buffer - reduced for faster start
-                        30000, // Max buffer
-                        1000,  // Buffer for playback - reduced
-                        1500   // Buffer for playback after rebuffer - reduced
+                        1500,  // minBufferMs - MUST be >= bufferForPlaybackAfterRebufferMs
+                        15000, // maxBufferMs
+                        1000,  // bufferForPlaybackMs
+                        1000   // bufferForPlaybackAfterRebufferMs
                     )
-                    .setPrioritizeTimeOverSizeThresholds(true) // Prioritize fast start
+                    .setPrioritizeTimeOverSizeThresholds(true)
                     .build()
             )
             .build()
 
-        // Configure player defaults
         exoPlayer?.apply {
             repeatMode = Player.REPEAT_MODE_ONE
-            playWhenReady = false
+            playWhenReady = false // Will be set to true in prepareAndPlayVideoImmediately
         }
 
         val tag = "handleFollowButtonClick"
@@ -555,19 +552,20 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     }
                 }
 
+
                 viewPager.registerOnPageChangeCallback(object :
                     ViewPager2.OnPageChangeCallback() {
 
                     override fun onPageSelected(position: Int) {
                         shortsViewModel.shortIndex = position
 
-                        // FIXED: Immediately stop current video and play next
+                        // Stop current video immediately
                         exoPlayer?.let { player ->
                             player.stop()
                             player.clearMediaItems()
                         }
 
-                        // Play next video immediately - no delay
+                        // Play next video immediately
                         playVideoAtPosition(position)
                     }
 
@@ -579,21 +577,11 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         super.onPageScrolled(position, positionOffset, positionOffsetPixels)
 
                         if (position > shortsViewModel.lastPosition) {
-                            Log.d(
-                                "showHideBottomNav",
-                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
-                            )
                             EventBus.getDefault().post(HideBottomNav())
                             EventBus.getDefault().post(HideFeedFloatingActionButton())
-                            Log.d("showHideBottomNav", "event post scroll next")
                         } else if (position < shortsViewModel.lastPosition) {
-                            Log.d(
-                                "showHideBottomNav",
-                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
-                            )
                             EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
                             EventBus.getDefault().post(ShowBottomNav(false))
-                            Log.d("showHideBottomNav", "event post scroll previous")
                         }
 
                         if (position > shortsViewModel.lastPosition) {
@@ -615,11 +603,8 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         super.onPageScrollStateChanged(state)
                         Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
 
-                        if (state == ViewPager.SCROLL_STATE_SETTLING) {
-                            Log.d(
-                                "onPageScrollStateChanged",
-                                "onPageScrollStateChanged: state $state"
-                            )
+                        if (state == ViewPager.SCROLL_STATE_IDLE) {
+                            Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
                             playVideoAtPosition(currentPosition)
                             backPressCount = 0
                         }
@@ -735,6 +720,171 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
 
         return view
+    }
+
+
+    // 2. REPLACE playVideoAtPosition function:
+    private fun playVideoAtPosition(position: Int) {
+        val videoShorts = shortsViewModel.videoShorts
+
+        if (position < 0 || position >= videoShorts.size) {
+            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
+            return
+        }
+
+        val shortVideo = videoShorts[position]
+        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
+
+        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
+
+        if (rawVideoUrl.isNullOrEmpty()) {
+            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
+            return
+        }
+
+        val finalVideoUrl = when {
+            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
+                rawVideoUrl
+            }
+            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
+                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
+                serverBaseUrl + rawVideoUrl.trimStart('/')
+            }
+            else -> {
+                val serverBaseUrl = "http://192.168.1.103:8080/"
+                if (rawVideoUrl.startsWith("/")) {
+                    serverBaseUrl + rawVideoUrl.trimStart('/')
+                } else {
+                    serverBaseUrl + rawVideoUrl
+                }
+            }
+        }
+
+        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
+
+        // Play immediately
+        prepareAndPlayVideoImmediately(finalVideoUrl, position)
+    }
+
+    // 3. REPLACE prepareAndPlayVideo with this optimized version:
+    private fun prepareAndPlayVideoImmediately(videoUrl: String, position: Int) {
+        try {
+            val videoUri = Uri.parse(videoUrl)
+            Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
+
+            // Ensure surface is ready
+            val currentHolder = shortsAdapter.getCurrentViewHolder()
+            currentHolder?.getSurface()?.let { playerView ->
+                playerView.visibility = View.VISIBLE
+                playerView.player = exoPlayer
+            }
+
+            val mediaItem = MediaItem.Builder()
+                .setUri(videoUri)
+                .apply {
+                    val detectedMimeType = getMimeTypeFromUrl(videoUrl)
+                    if (detectedMimeType != MimeTypes.VIDEO_UNKNOWN) {
+                        setMimeType(detectedMimeType)
+                    }
+                }
+                .build()
+
+            // Remove old listener
+            currentPlayerListener?.let { oldListener ->
+                exoPlayer?.removeListener(oldListener)
+            }
+
+            currentPlayerListener = createPlayerListener(position)
+
+            exoPlayer?.let { player ->
+                // Stop and clear previous media
+                player.stop()
+                player.clearMediaItems()
+
+                // Add new listener
+                player.addListener(currentPlayerListener!!)
+                player.repeatMode = Player.REPEAT_MODE_ONE
+                player.playWhenReady = true // Set to play immediately
+
+                // Set media and prepare
+                player.setMediaItem(mediaItem, true) // Reset position
+                player.prepare()
+
+                Log.d("prepareAndPlayVideo", "Video preparation started for position: $position")
+            }
+
+        } catch (e: Exception) {
+            Log.e("prepareAndPlayVideo", "Error in prepareAndPlayVideo", e)
+            handlePlaybackError(position)
+        }
+    }
+
+    private fun createPlayerListener(position: Int): Player.Listener {
+        return object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                super.onPlaybackStateChanged(playbackState)
+
+                when (playbackState) {
+                    Player.STATE_BUFFERING -> {
+                        Log.d("PlayerState", "Buffering video at position: $position")
+                    }
+                    Player.STATE_READY -> {
+                        Log.d("PlayerState", "Video ready at position: $position")
+
+                        exoPlayer?.let { player ->
+                            if (player.duration != C.TIME_UNSET) {
+                                shortSeekBar.max = player.duration.toInt()
+                                Log.d("PlayerState", "Duration set: ${player.duration}")
+                            }
+                            // playWhenReady already handles playback
+                        }
+                    }
+                    Player.STATE_ENDED -> {
+                        Log.d("PlayerState", "Video ended at position: $position")
+                    }
+                    Player.STATE_IDLE -> {
+                        Log.d("PlayerState", "Player idle at position: $position")
+                    }
+                }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                super.onPlayerError(error)
+
+                Log.e("PlayerError", "Playback error at position $position", error)
+                Log.e("PlayerError", "Error code: ${error.errorCode}")
+
+                when (error.errorCode) {
+                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
+                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT -> {
+                        Log.e("PlayerError", "Network error: ${error.message}")
+                    }
+                    PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
+                    PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED -> {
+                        Log.e("PlayerError", "Format error: ${error.message}")
+                    }
+                    else -> {
+                        Log.e("PlayerError", "Unknown error: ${error.message}")
+                    }
+                }
+
+                handlePlaybackError(position)
+            }
+
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int
+            ) {
+                super.onPositionDiscontinuity(oldPosition, newPosition, reason)
+                updateSeekBar()
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                super.onIsPlayingChanged(isPlaying)
+                Log.d("PlayerState", "Is playing: $isPlaying at position: $position")
+            }
+        }
     }
 
 
@@ -1044,53 +1194,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    private fun playVideoAtPosition(position: Int) {
-        val videoShorts = shortsViewModel.videoShorts
-
-        if (position < 0 || position >= videoShorts.size) {
-            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
-            return
-        }
-
-        if (isPlayerPreparing) {
-            Log.d("playVideoAtPosition", "Player is already preparing, ignoring request")
-            return
-        }
-
-        val shortVideo = videoShorts[position]
-        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
-
-        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
-
-        if (rawVideoUrl.isNullOrEmpty()) {
-            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
-            return
-        }
-
-        val finalVideoUrl = when {
-            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
-                rawVideoUrl
-            }
-            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
-                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
-                serverBaseUrl + rawVideoUrl.trimStart('/')
-            }
-            else -> {
-                val serverBaseUrl = "http://192.168.1.103:8080/"
-                if (rawVideoUrl.startsWith("/")) {
-                    serverBaseUrl + rawVideoUrl.trimStart('/')
-                } else {
-                    serverBaseUrl + rawVideoUrl
-                }
-            }
-        }
-
-        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
-
-        // REMOVED: validateAndPlayVideo - play immediately without validation
-        prepareAndPlayVideo(finalVideoUrl, position)
-    }
-
     private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
         try {
             val videoUri = Uri.parse(videoUrl)
@@ -1135,10 +1238,10 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 Log.d("prepareAndPlayVideo", "Video preparation started for position: $position")
             }
 
-            isPlayerPreparing = true
+
         } catch (e: Exception) {
             Log.e("prepareAndPlayVideo", "Error in prepareAndPlayVideo", e)
-            isPlayerPreparing = false
+
             handlePlaybackError(position)
         }
     }
@@ -1645,8 +1748,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             // Create a more robust data source factory
             val dataSourceFactory = createRobustDataSourceFactory()
 
-            // Try different media source factories based on URL characteristics
-            // For most MP4 files, use ProgressiveMediaSource
+
             ProgressiveMediaSource.Factory(dataSourceFactory)
                 .createMediaSource(mediaItem)
         } catch (e: Exception) {
@@ -1674,105 +1776,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         } catch (e: Exception) {
             Log.e("createRobustDataSourceFactory", "Error creating robust data source factory", e)
             DefaultDataSource.Factory(requireContext())
-        }
-    }
-
-    private fun createPlayerListener(position: Int): Player.Listener {
-        return object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                super.onPlaybackStateChanged(playbackState)
-
-                when (playbackState) {
-                    Player.STATE_BUFFERING -> {
-                        Log.d("PlayerState", "Buffering video at position: $position")
-
-                    }
-                    Player.STATE_READY -> {
-                        Log.d("PlayerState", "Video ready at position: $position")
-                        isPlayerPreparing = false
-
-
-                        exoPlayer?.let { player ->
-                            if (player.duration != C.TIME_UNSET) {
-                                shortSeekBar.max = player.duration.toInt()
-                                Log.d("PlayerState", "Duration set: ${player.duration}")
-                            }
-                            player.play()
-                        }
-                    }
-                    Player.STATE_ENDED -> {
-                        Log.d("PlayerState", "Video ended at position: $position")
-                    }
-                    Player.STATE_IDLE -> {
-                        Log.d("PlayerState", "Player idle at position: $position")
-                        isPlayerPreparing = false
-                    }
-                }
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                super.onPlayerError(error)
-                isPlayerPreparing = false
-
-                Log.e("PlayerError", "Playback error at position $position", error)
-                Log.e("PlayerError", "Error cause: ${error.cause}")
-                Log.e("PlayerError", "Error message: ${error.message}")
-                Log.e("PlayerError", "Error code: ${error.errorCode}")
-
-                // Enhanced error handling with specific messages
-                when (error.errorCode) {
-                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
-                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT -> {
-
-                        Log.e("PlayerError", "Network error: ${error.message}")
-                    }
-                    PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
-                    PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED -> {
-
-                        Log.e("PlayerError", "Format error: ${error.message}")
-                    }
-                    PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND -> {
-
-                        Log.e("PlayerError", "File not found: ${error.message}")
-                    }
-                    PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED -> {
-
-                        Log.e("PlayerError", "Unsupported container: ${error.message}")
-                    }
-                    PlaybackException.ERROR_CODE_DECODER_INIT_FAILED -> {
-
-                        Log.e("PlayerError", "Decoder init failed: ${error.message}")
-                    }
-                    else -> {
-                        // Check if it's the specific UnrecognizedInputFormatException
-                        if (error.cause is androidx.media3.exoplayer.source.UnrecognizedInputFormatException) {
-
-                            Log.e("PlayerError", "Unrecognized input format - file may be corrupted")
-                        } else {
-
-                            Log.e("PlayerError", "Unknown error: ${error.message}")
-                        }
-                    }
-                }
-
-                // Enhanced recovery mechanism
-                handlePlaybackError(position)
-            }
-
-            override fun onPositionDiscontinuity(
-                oldPosition: Player.PositionInfo,
-                newPosition: Player.PositionInfo,
-                reason: Int
-            ) {
-                super.onPositionDiscontinuity(oldPosition, newPosition, reason)
-                updateSeekBar()
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                super.onIsPlayingChanged(isPlaying)
-                Log.d("PlayerState", "Is playing: $isPlaying at position: $position")
-
-            }
         }
     }
 
@@ -1821,8 +1824,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             }
         }
     }
-
-
 
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
