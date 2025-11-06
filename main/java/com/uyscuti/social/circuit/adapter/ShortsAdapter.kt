@@ -28,6 +28,7 @@ import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.Priority
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
@@ -100,9 +101,30 @@ class ShortsAdapter(
     override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
         val data = shortsList[position]
 
-        // CRITICAL: Load thumbnail FIRST before any other operations
+        // CRITICAL: Load thumbnail IMMEDIATELY with priority
         val thumbnailUrl = data.thumbnail.firstOrNull()?.thumbnailUrl
         holder.loadThumbnail(thumbnailUrl)
+
+        // Prefetch adjacent thumbnails
+        if (position + 1 < shortsList.size) {
+            val nextThumb = shortsList[position + 1].thumbnail.firstOrNull()?.thumbnailUrl
+            if (!nextThumb.isNullOrEmpty()) {
+                Glide.with(holder.itemView.context)
+                    .load(nextThumb)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .preload()
+            }
+        }
+
+        if (position - 1 >= 0) {
+            val prevThumb = shortsList[position - 1].thumbnail.firstOrNull()?.thumbnailUrl
+            if (!prevThumb.isNullOrEmpty()) {
+                Glide.with(holder.itemView.context)
+                    .load(prevThumb)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .preload()
+            }
+        }
 
         Log.d(TAG, "Binding position $position with thumbnail: $thumbnailUrl")
 
@@ -123,6 +145,33 @@ class ShortsAdapter(
             preloadVideosAround(position)
         }
     }
+
+//    override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
+//        val data = shortsList[position]
+//
+//        // CRITICAL: Load thumbnail FIRST before any other operations
+//        val thumbnailUrl = data.thumbnail.firstOrNull()?.thumbnailUrl
+//        holder.loadThumbnail(thumbnailUrl)
+//
+//        Log.d(TAG, "Binding position $position with thumbnail: $thumbnailUrl")
+//
+//        if (currentViewHolder != holder || currentActivePosition != position) {
+//            currentViewHolder = holder
+//            currentActivePosition = position
+//
+//            val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
+//                ?: ShortsEntityFollowList(
+//                    followersId = data.author.account._id,
+//                    isFollowing = false
+//                )
+//
+//            val myData = MyData(data, isFollowingData)
+//            ensureFollowDataExists(data)
+//
+//            holder.onBind(myData)
+//            preloadVideosAround(position)
+//        }
+//    }
 
     override fun onViewRecycled(holder: StringViewHolder) {
         super.onViewRecycled(holder)
@@ -395,15 +444,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     private var isPlaying = false
     private var videoDuration = 0L
 
-    private val mainHandler = Handler(Looper.getMainLooper())
-
-    private val progressUpdateRunnable = object : Runnable {
-        override fun run() {
-            updateSeekBarProgress()
-            mainHandler.postDelayed(this, PROGRESS_UPDATE_INTERVAL)
-        }
-    }
-
     init {
 
         setupSeekBar()
@@ -420,6 +460,85 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
 
         exoplayer.repeatMode = Player.REPEAT_MODE_ONE // Loop like TikTok
     }
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    private val progressUpdateRunnable = object : Runnable {
+        override fun run() {
+            updateSeekBarProgress()
+            mainHandler.postDelayed(this, PROGRESS_UPDATE_INTERVAL)
+        }
+    }
+
+    // Update the player listener to handle thumbnail hiding smoothly
+    private val playerListener = object : Player.Listener {
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            when (playbackState) {
+                Player.STATE_READY -> {
+                    videoDuration = exoplayer.duration
+                    if (videoDuration > 0) {
+                        bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
+                        bottomVideoSeekBar.secondaryProgress = 0
+                        Log.d(TAG, "Video ready: ${videoDuration}ms")
+                    }
+                }
+                Player.STATE_BUFFERING -> {
+                    Log.d(TAG, "Video buffering - keeping thumbnail visible")
+                    // Keep thumbnail visible while buffering
+                    thumbnailImageView.visibility = View.VISIBLE
+                }
+                Player.STATE_ENDED -> {
+                    stopProgressUpdates()
+                }
+            }
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            this@StringViewHolder.isPlaying = isPlaying
+            if (isPlaying) {
+                startProgressUpdates()
+            } else {
+                stopProgressUpdates()
+            }
+            Log.d(TAG, "Player isPlaying: $isPlaying")
+        }
+
+//        override fun onRenderedFirstFrame() {
+//            Log.d(TAG, "First frame rendered - hiding thumbnail smoothly")
+//            // Only hide thumbnail after first frame is actually rendered
+//            thumbnailImageView.animate()
+//                .alpha(0f)
+//                .setDuration(200)
+//                .withEndAction {
+//                    thumbnailImageView.visibility = View.GONE
+//                    thumbnailImageView.alpha = 1f // Reset for next use
+//                }
+//                .start()
+//            videoView.visibility = View.VISIBLE
+//        }
+
+        // Update onRenderedFirstFrame to wait longer before hiding
+        override fun onRenderedFirstFrame() {
+            Log.d(TAG, "First frame rendered - hiding thumbnail after delay")
+
+            // Wait a bit longer to ensure video is actually playing
+            Handler(Looper.getMainLooper()).postDelayed({
+                thumbnailImageView.animate()
+                    .alpha(0f)
+                    .setDuration(250) // Slightly longer fade
+                    .withEndAction {
+                        thumbnailImageView.visibility = View.GONE
+                        thumbnailImageView.alpha = 1f
+                    }
+                    .start()
+            }, 100) // 100ms delay before starting fade
+
+            videoView.visibility = View.VISIBLE
+        }
+
+    }
+
+
 
     fun pauseUpdates() {
         stopProgressUpdates()
@@ -490,25 +609,52 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     // In StringViewHolder class, update these methods:
 
     fun loadThumbnail(thumbnailUrl: String?) {
+        // Cancel any pending hide animations
+        thumbnailImageView.animate().cancel()
+
         if (thumbnailUrl != null && thumbnailUrl.isNotEmpty()) {
-            // CRITICAL: Always show thumbnail immediately for smooth transitions
+            // Force thumbnail visible immediately
             thumbnailImageView.alpha = 1f
             thumbnailImageView.visibility = View.VISIBLE
+            thumbnailImageView.bringToFront() // Ensure it's on top
             videoView.visibility = View.VISIBLE
 
             Glide.with(itemView.context)
                 .load(thumbnailUrl)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .placeholder(R.drawable.flash21) // Add placeholder for loading
+                .placeholder(R.drawable.flash21)
+                .priority(Priority.IMMEDIATE) // HIGH priority for current thumbnail
+                .override(thumbnailImageView.width, thumbnailImageView.height) // Optimize size
                 .into(thumbnailImageView)
 
-            Log.d(TAG, "Thumbnail loaded: $thumbnailUrl")
+            Log.d(TAG, "Thumbnail loaded with IMMEDIATE priority: $thumbnailUrl")
         } else {
-            // Show placeholder if no thumbnail
-            thumbnailImageView.setImageResource(R.drawable.flash21)
+            thumbnailImageView.alpha = 1f
             thumbnailImageView.visibility = View.VISIBLE
+            thumbnailImageView.setImageResource(R.drawable.flash21)
         }
     }
+
+//    fun loadThumbnail(thumbnailUrl: String?) {
+//        if (thumbnailUrl != null && thumbnailUrl.isNotEmpty()) {
+//            // CRITICAL: Always show thumbnail immediately for smooth transitions
+//            thumbnailImageView.alpha = 1f
+//            thumbnailImageView.visibility = View.VISIBLE
+//            videoView.visibility = View.VISIBLE
+//
+//            Glide.with(itemView.context)
+//                .load(thumbnailUrl)
+//                .diskCacheStrategy(DiskCacheStrategy.ALL)
+//                .placeholder(R.drawable.flash21) // Add placeholder for loading
+//                .into(thumbnailImageView)
+//
+//            Log.d(TAG, "Thumbnail loaded: $thumbnailUrl")
+//        } else {
+//            // Show placeholder if no thumbnail
+//            thumbnailImageView.setImageResource(R.drawable.flash21)
+//            thumbnailImageView.visibility = View.VISIBLE
+//        }
+//    }
 
     // Update onBind to ensure thumbnail is visible at start
     @OptIn(UnstableApi::class)
@@ -569,53 +715,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         exoplayer.removeListener(playerListener)
     }
 
-    // Update the player listener to handle thumbnail hiding smoothly
-    private val playerListener = object : Player.Listener {
-        override fun onPlaybackStateChanged(playbackState: Int) {
-            when (playbackState) {
-                Player.STATE_READY -> {
-                    videoDuration = exoplayer.duration
-                    if (videoDuration > 0) {
-                        bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
-                        bottomVideoSeekBar.secondaryProgress = 0
-                        Log.d(TAG, "Video ready: ${videoDuration}ms")
-                    }
-                }
-                Player.STATE_BUFFERING -> {
-                    Log.d(TAG, "Video buffering - keeping thumbnail visible")
-                    // Keep thumbnail visible while buffering
-                    thumbnailImageView.visibility = View.VISIBLE
-                }
-                Player.STATE_ENDED -> {
-                    stopProgressUpdates()
-                }
-            }
-        }
-
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-            this@StringViewHolder.isPlaying = isPlaying
-            if (isPlaying) {
-                startProgressUpdates()
-            } else {
-                stopProgressUpdates()
-            }
-            Log.d(TAG, "Player isPlaying: $isPlaying")
-        }
-
-        override fun onRenderedFirstFrame() {
-            Log.d(TAG, "First frame rendered - hiding thumbnail smoothly")
-            // Only hide thumbnail after first frame is actually rendered
-            thumbnailImageView.animate()
-                .alpha(0f)
-                .setDuration(200)
-                .withEndAction {
-                    thumbnailImageView.visibility = View.GONE
-                    thumbnailImageView.alpha = 1f // Reset for next use
-                }
-                .start()
-            videoView.visibility = View.VISIBLE
-        }
-    }
 
     @OptIn(UnstableApi::class)
     private fun setupClickListeners(
