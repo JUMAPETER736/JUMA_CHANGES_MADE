@@ -67,9 +67,6 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import androidx.media3.ui.PlayerView
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager2.widget.ViewPager2
 import com.daimajia.androidanimations.library.Techniques
@@ -376,10 +373,8 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     @RequiresApi(Build.VERSION_CODES.Q)
     @OptIn(androidx.media3.common.util.UnstableApi::class)
     override fun onCreateView(
-
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-
     ): View? {
 
         val TAG = "onCreateView"
@@ -389,8 +384,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         // Set the navigation bar color dynamically
         activity?.window?.navigationBarColor =
             ContextCompat.getColor(requireContext(), R.color.black)
-
-
 
         myProfileRepository =
             ProfileRepository(ChatDatabase.getInstance(requireActivity()).profileDao())
@@ -403,24 +396,18 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         shortSeekBar = view.findViewById(R.id.shortSeekBar)
         shortsMenu = view.findViewById(R.id.shortsMenu)
 
-
         shortsMenu.setOnClickListener {
             val popupMenu = PopupMenu(context, shortsMenu)
             popupMenu.menuInflater.inflate(R.menu.shorts_menu_item, popupMenu.menu)
             popupMenu.setOnMenuItemClickListener { menuItem ->
-                // Handle menu item click here
                 when (menuItem.itemId) {
                     R.id.menu_setting -> {
-                        // Handle menu item 1 click
                         true
                     }
-
                     R.id.logout -> {
-                        // Handle menu item 2 click
                         performLogout()
                         true
                     }
-                    // Handle other menu items if needed
                     else -> false
                 }
             }
@@ -429,25 +416,19 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         shortSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                // Update playback position when user drags the SeekBar
                 if (fromUser) {
                     exoPlayer?.seekTo(progress.toLong())
                 }
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
-                // User starts seeking
                 isUserSeeking = true
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                // User stops seeking
                 isUserSeeking = false
             }
         })
-
-
-//        getAllShorts()
 
         // Initialize the launcher
         getContentLauncher =
@@ -461,24 +442,24 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         viewPager = view.findViewById(R.id.shortsViewPager)
 
+        // FIXED: Improved HTTP data source factory with timeouts
         httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setAllowCrossProtocolRedirects(true)
+            .setConnectTimeoutMs(8000)
+            .setReadTimeoutMs(8000)
 
-        defaultDataSourceFactory = DefaultDataSourceFactory(
-            requireContext(), httpDataSourceFactory
+
+
+        val dataSourceFactory = DefaultDataSource.Factory(
+            requireContext(),
+            httpDataSourceFactory
         )
-
-
-        cacheDataSourceFactory = CacheDataSource.Factory()
-            .setCache(simpleCache)
-            .setUpstreamDataSourceFactory(httpDataSourceFactory)
-            .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
 
         val mediaSourceFactory: MediaSource.Factory =
             DefaultMediaSourceFactory(requireContext())
-                .setDataSourceFactory(cacheDataSourceFactory)
+                .setDataSourceFactory(dataSourceFactory) // Use direct factory without cache
 
-        // Proper ExoPlayer initialization with aggressive buffering
+        // FIXED: Optimized ExoPlayer initialization for faster loading
         exoPlayer = ExoPlayer.Builder(requireActivity())
             .setMediaSourceFactory(mediaSourceFactory)
             .setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
@@ -486,11 +467,12 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             .setLoadControl(
                 DefaultLoadControl.Builder()
                     .setBufferDurationsMs(
-                        15000,
-                        50000,
-                        1500,
-                        2000
+                        2000,  // Min buffer - reduced for faster start
+                        30000, // Max buffer
+                        1000,  // Buffer for playback - reduced
+                        1500   // Buffer for playback after rebuffer - reduced
                     )
+                    .setPrioritizeTimeOverSizeThresholds(true) // Prioritize fast start
                     .build()
             )
             .build()
@@ -510,28 +492,24 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         lifecycleScope.launch(Dispatchers.IO) {
 
-
             val followEntity = followShortsViewModel.allShortsList
 
             withContext(Dispatchers.Main) {
                 shortsViewModel.allShortsList.observe(viewLifecycleOwner, Observer {
-                    // Update your UI with the shortsList
                     for (entity in it) {
                         Log.d("PreLoad", "onCreateView: $it ")
-
                     }
                 })
             }
+
             if (!shortsViewModel.isResuming) {
                 loadMoreShortsPage1(1)
                 Log.d("Resume", "onCreateView: ! ${!shortsViewModel.isResuming}")
             }
 
-
             shortsAdapter =
                 ShortsAdapter(requireActivity() as OnCommentsClickListener, this@ShotsFragment,
                     exoPlayer!!, object :
-
                         OnVideoPreparedListener {
                         override fun onVideoPrepared(exoPlayerItem: ExoPlayerItem) {
                             exoPlayerItems.add(exoPlayerItem)
@@ -547,9 +525,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     loadMoreShortsPage1(1)
                 } else if (shortsViewModel.isResuming) {
 
-
                     lifecycleScope.launch {
-
                         Log.d(
                             "Resume",
                             "onCreateView: shorts view model size ${shortsViewModel.followList.size}"
@@ -557,18 +533,14 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
                         shortsAdapter.addData(shortsViewModel.mutableShortsList)
                         shortsAdapter.addIsFollowingData(shortsViewModel.followList)
-
-
                     }
 
                     currentPosition = shortsViewModel.shortIndex
 
                     if(feedShortsBusinessId != "default_value" ) {
-
                         loadMoreShortsByFeedShortsBusinessId(feedShortsBusinessId)
 
                         val handler = Handler(Looper.getMainLooper())
-
                         handler.postDelayed({
                             viewPager.setCurrentItem(shortsViewModel.mutableShortsList.size, false)
                             playVideoAtPosition(shortsViewModel.mutableShortsList.size)
@@ -577,15 +549,11 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         for(i in shortsViewModel.mutableShortsList){
                             Log.d("feedShortsBusinessId", "feedShortsBusinessId(i): ${i.feedShortsBusinessId}")
                         }
-
-                    }else {
+                    } else {
                         viewPager.setCurrentItem(currentPosition, false)
                         playVideoAtPosition(currentPosition)
                     }
-
                 }
-
-
 
                 viewPager.registerOnPageChangeCallback(object :
                     ViewPager2.OnPageChangeCallback() {
@@ -593,7 +561,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     override fun onPageSelected(position: Int) {
                         shortsViewModel.shortIndex = position
 
-                        // Immediately stop current video
+                        // FIXED: Immediately stop current video and play next
                         exoPlayer?.let { player ->
                             player.stop()
                             player.clearMediaItems()
@@ -611,95 +579,73 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         super.onPageScrolled(position, positionOffset, positionOffsetPixels)
 
                         if (position > shortsViewModel.lastPosition) {
-                            // User is scrolling down
-                            // Handle scroll down logic
                             Log.d(
                                 "showHideBottomNav",
                                 "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
                             )
                             EventBus.getDefault().post(HideBottomNav())
-                            EventBus.getDefault().post(HideFeedFloatingActionButton()) // Hide FAB
+                            EventBus.getDefault().post(HideFeedFloatingActionButton())
                             Log.d("showHideBottomNav", "event post scroll next")
                         } else if (position < shortsViewModel.lastPosition) {
-                            // User is scrolling up
-                            // Handle scroll up logic
                             Log.d(
                                 "showHideBottomNav",
                                 "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
                             )
-                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false)) // Show FAB
+                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
                             EventBus.getDefault().post(ShowBottomNav(false))
                             Log.d("showHideBottomNav", "event post scroll previous")
                         }
-                        if (position > shortsViewModel.lastPosition) {
-                            // User is scrolling down
-                            loadMoreVideosIfNeeded(position)
 
+                        if (position > shortsViewModel.lastPosition) {
+                            loadMoreVideosIfNeeded(position)
                         }
 
                         shortsViewModel.lastPosition = position
 
                         if (positionOffset > 0.5) {
-                            // User is scrolling towards the end, update the current position to the next video
                             currentPosition = position + 1
-
-
                         } else if (positionOffset < -0.5) {
-
                             currentPosition = position - 1
-
                         } else {
-                            // User is in a stable position, update the current position to the current video
                             currentPosition = position
-
-
                         }
-
                     }
+
                     override fun onPageScrollStateChanged(state: Int) {
                         super.onPageScrollStateChanged(state)
                         Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
 
-                        // Check if the scroll state is idle
                         if (state == ViewPager.SCROLL_STATE_SETTLING) {
                             Log.d(
                                 "onPageScrollStateChanged",
                                 "onPageScrollStateChanged: state $state"
                             )
-                            // The scroll state is idle, play the video at the updated position
                             playVideoAtPosition(currentPosition)
                             backPressCount = 0
                         }
                     }
                 })
-
-
             }
         }
+
         // Find FloatingActionButton
         fabAction = view.findViewById(R.id.fabAction)
 
         // Set up FloatingActionButton click listener
         fabAction.setOnClickListener {
-
             getContentLauncher?.launch(PICK_VIDEO_REQUEST)
         }
 
         val onBackPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-
                 if(feedOnBackPressedData) {
                     Log.d("handleOnBackPressed", "handleOnBackPressed: feedPostPosition $feedPostPosition")
                     EventBus.getDefault().post(GoToFeedFragment(feedPostPosition))
-                }else {
+                } else {
                     if (backPressCount == 0) {
-
-
                         EventBus.getDefault().post(ShowBottomNav(false))
                         backPressCount++
-
                         Log.d("handleOnBackPressed", "handleOnBackPressed: 1 - display bottom nav ")
-
                     }
                     else if (backPressCount == 1) {
                         backPressCount++
@@ -708,7 +654,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                             "handleOnBackPressed: current position $currentPosition"
                         )
                         shortsViewModel.lastPosition = currentPosition + 2
-
                         currentPosition += 1
                         Log.d(
                             "handleOnBackPressed",
@@ -722,7 +667,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         viewPager.setCurrentItem(currentPosition, false)
                         playVideoAtPosition(currentPosition)
 
-
                         Log.d("handleOnBackPressed", "handleOnBackPressed: 2 - next short")
                     }
                     else if (backPressCount == 2) {
@@ -734,29 +678,24 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         backPressCount++
 
                         if (backPressCount >= doubleBackPressThreshold) {
-                            // Reset back press count
                             backPressCount = 0
-                            // Finish the activity to exit the app
                             requireActivity().finish()
                         }
-
                     }
                     else {
                         Log.d("handleOnBackPressed", "handleOnBackPressed: else")
-
                     }
                 }
-
             }
         }
+
         // Add the callback to the onBackPressedDispatcher
         requireActivity().onBackPressedDispatcher.addCallback(
             viewLifecycleOwner,
             onBackPressedCallback
         )
 
-
-// Observe data from ViewModel
+        // Observe data from ViewModel
         feesShortsSharedViewModel.data.observe(viewLifecycleOwner) { newData ->
             Log.d("feedShortsSharedViewModel", "feedShortsSharedViewModel: in shorts $newData")
 
@@ -767,7 +706,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             )
 
             lifecycleScope.launch(Dispatchers.IO) {
-
                 val uniqueFollowList = removeDuplicateFollowers(followListItem)
 
                 Log.d(
@@ -782,11 +720,9 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         newData.isFollowing
                     )
                 )
-
             }
 
             lifecycleScope.launch(Dispatchers.Main) {
-
                 followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
                     shortsAdapter.addIsFollowingData(it)
                     shortsAdapter.notifyDataSetChanged()
@@ -797,6 +733,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 }
             }
         }
+
         return view
     }
 
