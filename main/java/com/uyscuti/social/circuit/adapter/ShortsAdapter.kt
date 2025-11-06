@@ -324,6 +324,7 @@ class ShortsAdapter(
 
 
 class StringViewHolder @OptIn(UnstableApi::class) constructor
+
     (
     itemView: View,
     private val commentsClickListener: OnCommentsClickListener,
@@ -948,7 +949,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             updatedAt = serverResponseItem.updatedAt,
             thumbnail = serverResponseItem.thumbnail
         )
-        
+
     }
 
 }
