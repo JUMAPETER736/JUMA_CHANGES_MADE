@@ -166,6 +166,7 @@ private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 const val SHORTS = "ShortsFragment"
 
+
 @UnstableApi
 @AndroidEntryPoint
 class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
@@ -570,23 +571,10 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
 
+                // In ShotsFragment, update the ViewPager2 page change callback:
+
                 viewPager.registerOnPageChangeCallback(object :
                     ViewPager2.OnPageChangeCallback() {
-
-                    override fun onPageSelected(position: Int) {
-                        shortsViewModel.shortIndex = position
-
-                        // DON'T stop the player - just pause it
-                        exoPlayer?.let { player ->
-                            player.pause()
-                            // Don't call stop() or seekTo(0) here
-                        }
-
-                        // ADDED: Small delay to allow thumbnail to show
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            playVideoAtPosition(position)
-                        }, 50)
-                    }
 
                     override fun onPageScrolled(
                         position: Int,
@@ -595,63 +583,74 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     ) {
                         super.onPageScrolled(position, positionOffset, positionOffsetPixels)
 
+                        // CRITICAL: Preload thumbnail for next/previous page during scroll
+                        if (positionOffset > 0) {
+                            val nextPosition = position + 1
+                            if (nextPosition < shortsViewModel.videoShorts.size) {
+                                val nextHolder = shortsAdapter.getCurrentViewHolder()
+                                // Ensure next video's thumbnail is loaded
+                                val nextShort = shortsViewModel.videoShorts[nextPosition]
+                                Log.d("PageScroll", "Preloading thumbnail for position: $nextPosition")
+                            }
+                        }
+
                         if (position > shortsViewModel.lastPosition) {
                             // User is scrolling down
-                            // Handle scroll down logic
-                            Log.d(
-                                "showHideBottomNav",
-                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
-                            )
+                            Log.d("showHideBottomNav", "onPageScrolled: scrolling down")
                             EventBus.getDefault().post(HideBottomNav())
-                            EventBus.getDefault().post(HideFeedFloatingActionButton()) // Hide FAB
-                            Log.d("showHideBottomNav", "event post scroll next")
+                            EventBus.getDefault().post(HideFeedFloatingActionButton())
                         } else if (position < shortsViewModel.lastPosition) {
                             // User is scrolling up
-                            // Handle scroll up logic
-                            Log.d(
-                                "showHideBottomNav",
-                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
-                            )
-                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false)) // Show FAB
+                            Log.d("showHideBottomNav", "onPageScrolled: scrolling up")
+                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
                             EventBus.getDefault().post(ShowBottomNav(false))
-                            Log.d("showHideBottomNav", "event post scroll previous")
                         }
-                        if (position > shortsViewModel.lastPosition) {
-                            // User is scrolling down
-                            loadMoreVideosIfNeeded(position)
 
+                        if (position > shortsViewModel.lastPosition) {
+                            loadMoreVideosIfNeeded(position)
                         }
 
                         shortsViewModel.lastPosition = position
 
                         if (positionOffset > 0.5) {
-                            // User is scrolling towards the end, update the current position to the next video
                             currentPosition = position + 1
-
-
                         } else if (positionOffset < -0.5) {
-
                             currentPosition = position - 1
-
                         } else {
-                            // User is in a stable position, update the current position to the current video
                             currentPosition = position
+                        }
+                    }
 
+                    override fun onPageSelected(position: Int) {
+                        shortsViewModel.shortIndex = position
 
+                        // DON'T hide thumbnail immediately - let it show while loading
+                        Log.d("PageSelected", "Page selected: $position")
+
+                        // Pause current video
+                        exoPlayer?.let { player ->
+                            player.pause()
                         }
 
+                        // REDUCED delay for smoother experience
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            playVideoAtPosition(position)
+                        }, 100) // Reduced from 50ms to 100ms for better thumbnail visibility
                     }
+
                     override fun onPageScrollStateChanged(state: Int) {
                         super.onPageScrollStateChanged(state)
-                        Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
+                        Log.d("onPageScrollStateChanged", "State: $state")
 
-                        // Check if the scroll state is idle
                         if (state == ViewPager.SCROLL_STATE_SETTLING) {
-                            Log.d(
-                                "onPageScrollStateChanged",
-                                "onPageScrollStateChanged: state $state"
-                            )
-                            // The scroll state is idle, play the video at the updated position
+                            // Ensure thumbnail is visible for current position
+                            val currentHolder = shortsAdapter.getCurrentViewHolder()
+                            if (currentHolder != null && currentPosition < shortsViewModel.videoShorts.size) {
+                                val currentShort = shortsViewModel.videoShorts[currentPosition]
+                                val thumbnailUrl = currentShort.thumbnail.firstOrNull()?.thumbnailUrl
+                                currentHolder.loadThumbnail(thumbnailUrl)
+                            }
+
                             playVideoAtPosition(currentPosition)
                             backPressCount = 0
                         }
@@ -1090,8 +1089,9 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    private fun playVideoAtPosition(position: Int) {
+    // In ShotsFragment, replace the playVideoAtPosition method:
 
+    private fun playVideoAtPosition(position: Int) {
         val videoShorts = shortsViewModel.videoShorts
 
         if (position < 0 || position >= videoShorts.size) {
@@ -1104,9 +1104,20 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             return
         }
 
-        // CRITICAL: Ensure the current ViewHolder's surface is properly attached
+        // CRITICAL: Get current holder and ensure thumbnail is visible
         val currentHolder = shortsAdapter.getCurrentViewHolder()
-        currentHolder?.reattachPlayer()
+        if (currentHolder != null) {
+            val shortVideo = videoShorts[position]
+            val thumbnailUrl = shortVideo.thumbnail.firstOrNull()?.thumbnailUrl
+
+            // Show thumbnail while preparing video
+            currentHolder.loadThumbnail(thumbnailUrl)
+
+            // Ensure surface is ready
+            currentHolder.reattachPlayer()
+
+            Log.d("playVideoAtPosition", "Thumbnail shown for: ${shortVideo.author.account.username}")
+        }
 
         val shortVideo = videoShorts[position]
         Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
@@ -1139,6 +1150,56 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
         validateAndPlayVideo(finalVideoUrl, position)
     }
+
+//    private fun playVideoAtPosition(position: Int) {
+//
+//        val videoShorts = shortsViewModel.videoShorts
+//
+//        if (position < 0 || position >= videoShorts.size) {
+//            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
+//            return
+//        }
+//
+//        if (isPlayerPreparing) {
+//            Log.d("playVideoAtPosition", "Player is already preparing, ignoring request")
+//            return
+//        }
+//
+//        // CRITICAL: Ensure the current ViewHolder's surface is properly attached
+//        val currentHolder = shortsAdapter.getCurrentViewHolder()
+//        currentHolder?.reattachPlayer()
+//
+//        val shortVideo = videoShorts[position]
+//        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
+//
+//        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
+//
+//        if (rawVideoUrl.isNullOrEmpty()) {
+//            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
+//            return
+//        }
+//
+//        val finalVideoUrl = when {
+//            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
+//                rawVideoUrl
+//            }
+//            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
+//                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
+//                serverBaseUrl + rawVideoUrl.trimStart('/')
+//            }
+//            else -> {
+//                val serverBaseUrl = "http://192.168.1.103:8080/"
+//                if (rawVideoUrl.startsWith("/")) {
+//                    serverBaseUrl + rawVideoUrl.trimStart('/')
+//                } else {
+//                    serverBaseUrl + rawVideoUrl
+//                }
+//            }
+//        }
+//
+//        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
+//        validateAndPlayVideo(finalVideoUrl, position)
+//    }
 
     private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
 
