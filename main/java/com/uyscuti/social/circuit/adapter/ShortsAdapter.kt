@@ -503,19 +503,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             Log.d(TAG, "Player isPlaying: $isPlaying")
         }
 
-//        override fun onRenderedFirstFrame() {
-//            Log.d(TAG, "First frame rendered - hiding thumbnail smoothly")
-//            // Only hide thumbnail after first frame is actually rendered
-//            thumbnailImageView.animate()
-//                .alpha(0f)
-//                .setDuration(200)
-//                .withEndAction {
-//                    thumbnailImageView.visibility = View.GONE
-//                    thumbnailImageView.alpha = 1f // Reset for next use
-//                }
-//                .start()
-//            videoView.visibility = View.VISIBLE
-//        }
+
 
         // Update onRenderedFirstFrame to wait longer before hiding
         override fun onRenderedFirstFrame() {
@@ -634,27 +622,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             thumbnailImageView.setImageResource(R.drawable.flash21)
         }
     }
-
-//    fun loadThumbnail(thumbnailUrl: String?) {
-//        if (thumbnailUrl != null && thumbnailUrl.isNotEmpty()) {
-//            // CRITICAL: Always show thumbnail immediately for smooth transitions
-//            thumbnailImageView.alpha = 1f
-//            thumbnailImageView.visibility = View.VISIBLE
-//            videoView.visibility = View.VISIBLE
-//
-//            Glide.with(itemView.context)
-//                .load(thumbnailUrl)
-//                .diskCacheStrategy(DiskCacheStrategy.ALL)
-//                .placeholder(R.drawable.flash21) // Add placeholder for loading
-//                .into(thumbnailImageView)
-//
-//            Log.d(TAG, "Thumbnail loaded: $thumbnailUrl")
-//        } else {
-//            // Show placeholder if no thumbnail
-//            thumbnailImageView.setImageResource(R.drawable.flash21)
-//            thumbnailImageView.visibility = View.VISIBLE
-//        }
-//    }
 
     // Update onBind to ensure thumbnail is visible at start
     @OptIn(UnstableApi::class)

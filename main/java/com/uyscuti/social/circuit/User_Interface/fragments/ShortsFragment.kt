@@ -632,10 +632,20 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         prefetchThumbnailForPosition(position - 1)
                         prefetchThumbnailForPosition(position + 1)
 
-                        // Shorter delay for immediate response
+                        // Start playing new video with very short delay
                         Handler(Looper.getMainLooper()).postDelayed({
                             playVideoAtPosition(position)
-                        }, 50) // Very short delay
+
+                            // Double-check playback starts after preparation
+                            Handler(Looper.getMainLooper()).postDelayed({
+                                exoPlayer?.let { player ->
+                                    if (player.playbackState == Player.STATE_READY && !player.isPlaying) {
+                                        player.play()
+                                        Log.d("PageSelected", "Force-playing video at position: $position")
+                                    }
+                                }
+                            }, 500)
+                        }, 50)
                     }
 
                     override fun onPageScrollStateChanged(state: Int) {
