@@ -173,6 +173,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
     companion object {
+
         const val REQUEST_UPLOAD_SHORTS_ACTIVITY = 123 // You can use any unique value
         private const val FEED_ARG_DATA = "feed_arg_data"
         private const val FEED_POST_POSITION = "feed_post_position"
@@ -189,7 +190,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             }
 
 
-        //        fun willReturnToFeedInstance(data: String? = null): ShotsFragment {
         fun willReturnToFeedInstance(
             data: Boolean = false, feedPostPosition: Int = -1,
             feedShortsBusinessId:String, feedShortsBusinessFileId: String
@@ -440,7 +440,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         })
 
 
-//        getAllShorts()
 
         // Initialize the launcher
         getContentLauncher =
@@ -742,7 +741,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         )
 
 
-// Observe data from ViewModel
+        // Observe data from ViewModel
         feesShortsSharedViewModel.data.observe(viewLifecycleOwner) { newData ->
             Log.d("feedShortsSharedViewModel", "feedShortsSharedViewModel: in shorts $newData")
 
@@ -1092,6 +1091,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
     private fun playVideoAtPosition(position: Int) {
+
         val videoShorts = shortsViewModel.videoShorts
 
         if (position < 0 || position >= videoShorts.size) {
@@ -1141,6 +1141,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
     private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
+
         try {
             val videoUri = Uri.parse(videoUrl)
             Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
@@ -1723,7 +1724,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-
     private fun getMimeTypeFromUrl(url: String): String {
         val lowerUrl = url.lowercase()
         return when {
@@ -1921,7 +1921,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
 
-
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun informAdapter(event: InformAdapter) {
@@ -1980,9 +1979,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         followUnFollowViewModel.followUnFollow(event.followUnFollowEntity.userId)
 
-//        followUnFollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) {
-//            Log.d("followButtonClicked", "followButtonClicked: follow observer value $it")
-//        }
 
         val followListItem: List<ShortsEntityFollowList> = listOf(
             ShortsEntityFollowList(
@@ -2343,13 +2339,11 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     }
 
-
     @SuppressLint("InflateParams")
     private fun showBottomSheet() {
 
 
     }
-
 
     private fun startPreLoadingService() {
         Log.d(SHORTS, "Preloading called")
@@ -2499,7 +2493,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
     }
-
 
     @SuppressLint("MissingInflatedId")
     override fun onShareClick(position: Int) {
