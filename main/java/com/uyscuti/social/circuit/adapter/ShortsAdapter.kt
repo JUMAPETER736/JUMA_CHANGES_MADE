@@ -435,6 +435,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     }
 
     init {
+
         setupSeekBar()
         setupUploadComponents()
 
@@ -455,6 +456,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     }
 
     fun reattachPlayer() {
+
         videoView.post {
             videoView.player = null
             videoView.player = exoplayer
@@ -468,6 +470,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
 
             Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
         }
+
     }
 
     fun getUploadTopSeekBar(): SeekBar? = shortsUploadTopSeekBar
@@ -832,6 +835,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
 
 
     private fun updateLikeButtonState() {
+
         likeCount.text = totalLikes.toString()
         if (isLiked) {
             btnLike.imageTintList = ColorStateList.valueOf(
@@ -844,9 +848,11 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             )
             btnLike.setImageResource(R.drawable.favorite_svgrepo_com)
         }
+
     }
 
     private fun updateFavoriteButtonState() {
+
         if (isFavorite) {
             favorite.imageTintList = ColorStateList.valueOf(
                 ContextCompat.getColor(itemView.context, R.color.bluejeans)
@@ -858,6 +864,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             )
             favorite.setImageResource(R.drawable.favorite_svgrepo_com__1_)
         }
+
     }
 
 
@@ -870,6 +877,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     }
 
     private fun setupSeekBar() {
+
         bottomVideoSeekBar.apply {
             secondaryProgress = 0
             splitTrack = false
@@ -877,6 +885,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
 
         bottomVideoSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
                     Log.d(TAG, "User seeking to: $progress")
@@ -896,6 +905,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
                 Log.d(TAG, "User stopped seeking")
             }
         })
+
     }
 
     private fun updateSeekBarProgress() {
@@ -922,6 +932,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     }
 
     private fun shortsEntityToUserShortsEntity(serverResponseItem: ShortsEntity): UserShortsEntity {
+
         return UserShortsEntity(
             __v = serverResponseItem.__v,
             _id = serverResponseItem._id,
@@ -937,6 +948,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             updatedAt = serverResponseItem.updatedAt,
             thumbnail = serverResponseItem.thumbnail
         )
+        
     }
 
 }
