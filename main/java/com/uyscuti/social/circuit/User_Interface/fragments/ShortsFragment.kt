@@ -71,8 +71,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager2.widget.ViewPager2
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -123,7 +121,6 @@ import com.uyscuti.social.circuit.viewmodels.FeedShortsViewModel
 import com.uyscuti.social.circuit.viewmodels.FollowUnfollowViewModel
 import com.uyscuti.social.circuit.viewmodels.FollowViewModel
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.StringViewHolder
 import com.uyscuti.social.core.common.data.room.database.ChatDatabase
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
@@ -169,7 +166,6 @@ private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 const val SHORTS = "ShortsFragment"
 
-
 @UnstableApi
 @AndroidEntryPoint
 class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
@@ -177,7 +173,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
     companion object {
-
         const val REQUEST_UPLOAD_SHORTS_ACTIVITY = 123 // You can use any unique value
         private const val FEED_ARG_DATA = "feed_arg_data"
         private const val FEED_POST_POSITION = "feed_post_position"
@@ -194,6 +189,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             }
 
 
+        //        fun willReturnToFeedInstance(data: String? = null): ShotsFragment {
         fun willReturnToFeedInstance(
             data: Boolean = false, feedPostPosition: Int = -1,
             feedShortsBusinessId:String, feedShortsBusinessFileId: String
@@ -361,7 +357,8 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 //        initializeShortsViewModel()
         if (savedInstanceState == null) {
-
+            // Register the observer only when the fragment is created, not recreated
+            // observeShortsViewModel()
             Log.d("ViewModel", "onViewCreated: view not created")
         } else {
             Log.d("ViewModel", "onViewCreated: view already created")
@@ -372,8 +369,10 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     @RequiresApi(Build.VERSION_CODES.Q)
     @OptIn(androidx.media3.common.util.UnstableApi::class)
     override fun onCreateView(
+
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
+
     ): View? {
 
         val TAG = "onCreateView"
@@ -384,16 +383,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         activity?.window?.navigationBarColor =
             ContextCompat.getColor(requireContext(), R.color.black)
 
-        viewPager = view.findViewById(R.id.shortsViewPager)
-        viewPager.offscreenPageLimit = 2
 
-        (viewPager.getChildAt(0) as? RecyclerView)?.apply {
-            itemAnimator = null
-            setItemViewCacheSize(4) // Cache 4 views
-        }
-
-        // REMOVED: viewPager.adapter = shortsAdapter  // ❌ This was causing the crash
-        viewPager.orientation = ViewPager2.ORIENTATION_VERTICAL
 
         myProfileRepository =
             ProfileRepository(ChatDatabase.getInstance(requireActivity()).profileDao())
@@ -450,6 +440,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         })
 
 
+//        getAllShorts()
 
         // Initialize the launcher
         getContentLauncher =
@@ -460,6 +451,8 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             }
 
         (activity as? MainActivity)?.hideAppBar()
+
+        viewPager = view.findViewById(R.id.shortsViewPager)
 
         httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setAllowCrossProtocolRedirects(true)
@@ -487,6 +480,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         // Configure player defaults
         exoPlayer?.apply {
+
             repeatMode = Player.REPEAT_MODE_ONE
             playWhenReady = false
         }
@@ -500,6 +494,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         lifecycleScope.launch(Dispatchers.IO) {
 
+
             val followEntity = followShortsViewModel.allShortsList
 
             withContext(Dispatchers.Main) {
@@ -507,29 +502,28 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     // Update your UI with the shortsList
                     for (entity in it) {
                         Log.d("PreLoad", "onCreateView: $it ")
+
                     }
                 })
             }
-
             if (!shortsViewModel.isResuming) {
                 loadMoreShortsPage1(1)
                 Log.d("Resume", "onCreateView: ! ${!shortsViewModel.isResuming}")
             }
 
-            // ✅ NOW initialize the adapter with ExoPlayer ready
-            shortsAdapter = ShortsAdapter(
-                requireActivity() as OnCommentsClickListener,
-                this@ShotsFragment,
-                exoPlayer!!,
-                object : OnVideoPreparedListener {
-                    override fun onVideoPrepared(exoPlayerItem: ExoPlayerItem) {
-                        exoPlayerItems.add(exoPlayerItem)
-                    }
+
+            shortsAdapter =
+                ShortsAdapter(requireActivity() as OnCommentsClickListener, this@ShotsFragment,
+                    exoPlayer!!, object :
+
+                        OnVideoPreparedListener {
+                        override fun onVideoPrepared(exoPlayerItem: ExoPlayerItem) {
+                            exoPlayerItems.add(exoPlayerItem)
+                        }
+                    }) { id, username, followButton ->
                 }
-            ) { id, username, followButton -> }
 
             withContext(Dispatchers.Main) {
-                // ✅ Set adapter AFTER it's initialized
                 viewPager.adapter = shortsAdapter
                 viewPager.orientation = ViewPager2.ORIENTATION_VERTICAL
 
@@ -537,7 +531,9 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     loadMoreShortsPage1(1)
                 } else if (shortsViewModel.isResuming) {
 
+
                     lifecycleScope.launch {
+
                         Log.d(
                             "Resume",
                             "onCreateView: shorts view model size ${shortsViewModel.followList.size}"
@@ -545,6 +541,8 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
                         shortsAdapter.addData(shortsViewModel.mutableShortsList)
                         shortsAdapter.addIsFollowingData(shortsViewModel.followList)
+
+
                     }
 
                     currentPosition = shortsViewModel.shortIndex
@@ -568,11 +566,28 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         viewPager.setCurrentItem(currentPosition, false)
                         playVideoAtPosition(currentPosition)
                     }
+
                 }
 
-                // In ShotsFragment, update the ViewPager2 page change callback:
+
+
                 viewPager.registerOnPageChangeCallback(object :
                     ViewPager2.OnPageChangeCallback() {
+
+                    override fun onPageSelected(position: Int) {
+                        shortsViewModel.shortIndex = position
+
+                        // DON'T stop the player - just pause it
+                        exoPlayer?.let { player ->
+                            player.pause()
+                            // Don't call stop() or seekTo(0) here
+                        }
+
+                        // ADDED: Small delay to allow thumbnail to show
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            playVideoAtPosition(position)
+                        }, 50)
+                    }
 
                     override fun onPageScrolled(
                         position: Int,
@@ -581,105 +596,78 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     ) {
                         super.onPageScrolled(position, positionOffset, positionOffsetPixels)
 
-                        // CRITICAL: Prefetch thumbnails for adjacent pages during SLOW scroll
-                        if (positionOffset > 0.05f) { // Detect even slight scrolling
-                            // User is scrolling to next page
-                            val nextPosition = position + 1
-                            if (nextPosition < shortsViewModel.videoShorts.size) {
-                                prefetchThumbnailForPosition(nextPosition)
-                            }
-                        } else if (positionOffset < -0.05f) {
-                            // User is scrolling to previous page
-                            val prevPosition = position - 1
-                            if (prevPosition >= 0) {
-                                prefetchThumbnailForPosition(prevPosition)
-                            }
-                        }
-
-                        // Original navigation code
                         if (position > shortsViewModel.lastPosition) {
+                            // User is scrolling down
+                            // Handle scroll down logic
+                            Log.d(
+                                "showHideBottomNav",
+                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
+                            )
                             EventBus.getDefault().post(HideBottomNav())
-                            EventBus.getDefault().post(HideFeedFloatingActionButton())
+                            EventBus.getDefault().post(HideFeedFloatingActionButton()) // Hide FAB
+                            Log.d("showHideBottomNav", "event post scroll next")
                         } else if (position < shortsViewModel.lastPosition) {
-                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
+                            // User is scrolling up
+                            // Handle scroll up logic
+                            Log.d(
+                                "showHideBottomNav",
+                                "onPageScrolled: pos $position:::last pos::${shortsViewModel.lastPosition} "
+                            )
+                            EventBus.getDefault().post(ShowFeedFloatingActionButton(false)) // Show FAB
                             EventBus.getDefault().post(ShowBottomNav(false))
+                            Log.d("showHideBottomNav", "event post scroll previous")
                         }
-
                         if (position > shortsViewModel.lastPosition) {
+                            // User is scrolling down
                             loadMoreVideosIfNeeded(position)
+
                         }
 
                         shortsViewModel.lastPosition = position
 
                         if (positionOffset > 0.5) {
+                            // User is scrolling towards the end, update the current position to the next video
                             currentPosition = position + 1
+
+
                         } else if (positionOffset < -0.5) {
+
                             currentPosition = position - 1
+
                         } else {
+                            // User is in a stable position, update the current position to the current video
                             currentPosition = position
-                        }
-                    }
 
-                    override fun onPageSelected(position: Int) {
-                        shortsViewModel.shortIndex = position
 
-                        // Pause current video but keep thumbnail visible
-                        exoPlayer?.let { player ->
-                            player.pause()
                         }
 
-                        // Prefetch thumbnails for surrounding pages
-                        prefetchThumbnailForPosition(position - 1)
-                        prefetchThumbnailForPosition(position + 1)
-
-                        // Start playing new video with very short delay
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            playVideoAtPosition(position)
-
-                            // Double-check playback starts after preparation
-                            Handler(Looper.getMainLooper()).postDelayed({
-                                exoPlayer?.let { player ->
-                                    if (player.playbackState == Player.STATE_READY && !player.isPlaying) {
-                                        player.play()
-                                        Log.d("PageSelected", "Force-playing video at position: $position")
-                                    }
-                                }
-                            }, 500)
-                        }, 50)
                     }
-
                     override fun onPageScrollStateChanged(state: Int) {
                         super.onPageScrollStateChanged(state)
+                        Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
 
-                        when (state) {
-                            ViewPager2.SCROLL_STATE_DRAGGING -> {
-                                // User started dragging - prefetch adjacent thumbnails immediately
-                                Log.d("PageScroll", "User started dragging")
-                                prefetchThumbnailForPosition(currentPosition + 1)
-                                prefetchThumbnailForPosition(currentPosition - 1)
-                            }
-                            ViewPager2.SCROLL_STATE_SETTLING -> {
-                                // Page is settling to final position
-                                Log.d("PageScroll", "Page settling")
-                                ensureThumbnailVisible(currentPosition)
-                            }
-                            ViewPager2.SCROLL_STATE_IDLE -> {
-                                // Page scroll completed
-                                Log.d("PageScroll", "Page idle")
-                                playVideoAtPosition(currentPosition)
-                                backPressCount = 0
-                            }
+                        // Check if the scroll state is idle
+                        if (state == ViewPager.SCROLL_STATE_SETTLING) {
+                            Log.d(
+                                "onPageScrollStateChanged",
+                                "onPageScrollStateChanged: state $state"
+                            )
+                            // The scroll state is idle, play the video at the updated position
+                            playVideoAtPosition(currentPosition)
+                            backPressCount = 0
                         }
                     }
                 })
+
+
             }
         }
-
         // Find FloatingActionButton
         fabAction = view.findViewById(R.id.fabAction)
 
         // Set up FloatingActionButton click listener
         fabAction.setOnClickListener {
+
             getContentLauncher?.launch(PICK_VIDEO_REQUEST)
         }
 
@@ -691,6 +679,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     EventBus.getDefault().post(GoToFeedFragment(feedPostPosition))
                 }else {
                     if (backPressCount == 0) {
+
 
                         EventBus.getDefault().post(ShowBottomNav(false))
                         backPressCount++
@@ -719,6 +708,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         viewPager.setCurrentItem(currentPosition, false)
                         playVideoAtPosition(currentPosition)
 
+
                         Log.d("handleOnBackPressed", "handleOnBackPressed: 2 - next short")
                     }
                     else if (backPressCount == 2) {
@@ -739,11 +729,12 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     }
                     else {
                         Log.d("handleOnBackPressed", "handleOnBackPressed: else")
+
                     }
                 }
+
             }
         }
-
         // Add the callback to the onBackPressedDispatcher
         requireActivity().onBackPressedDispatcher.addCallback(
             viewLifecycleOwner,
@@ -751,7 +742,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         )
 
 
-        // Observe data from ViewModel
+// Observe data from ViewModel
         feesShortsSharedViewModel.data.observe(viewLifecycleOwner) { newData ->
             Log.d("feedShortsSharedViewModel", "feedShortsSharedViewModel: in shorts $newData")
 
@@ -792,7 +783,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 }
             }
         }
-
         return view
     }
 
@@ -1114,20 +1104,9 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             return
         }
 
-        // CRITICAL: Get current holder and ensure thumbnail is visible
+        // CRITICAL: Ensure the current ViewHolder's surface is properly attached
         val currentHolder = shortsAdapter.getCurrentViewHolder()
-        if (currentHolder != null) {
-            val shortVideo = videoShorts[position]
-            val thumbnailUrl = shortVideo.thumbnail.firstOrNull()?.thumbnailUrl
-
-            // Show thumbnail while preparing video
-            currentHolder.loadThumbnail(thumbnailUrl)
-
-            // Ensure surface is ready
-            currentHolder.reattachPlayer()
-
-            Log.d("playVideoAtPosition", "Thumbnail shown for: ${shortVideo.author.account.username}")
-        }
+        currentHolder?.reattachPlayer()
 
         val shortVideo = videoShorts[position]
         Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
@@ -1162,7 +1141,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
     private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
-
         try {
             val videoUri = Uri.parse(videoUrl)
             Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
@@ -1266,57 +1244,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     prepareAndPlayVideo(videoUrl, position)
                 }
             }
-        }
-    }
-
-    private fun prefetchThumbnailForPosition(position: Int) {
-        if (position < 0 || position >= shortsViewModel.videoShorts.size) {
-            return
-        }
-
-        try {
-            val shortVideo = shortsViewModel.videoShorts[position]
-            val thumbnailUrl = shortVideo.thumbnail.firstOrNull()?.thumbnailUrl
-
-            if (!thumbnailUrl.isNullOrEmpty()) {
-                // Preload thumbnail into Glide cache
-                Glide.with(requireContext())
-                    .load(thumbnailUrl)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .preload()
-
-                Log.d("PrefetchThumb", "Prefetched thumbnail for position: $position")
-            }
-        } catch (e: Exception) {
-            Log.e("PrefetchThumb", "Error prefetching thumbnail: ${e.message}")
-        }
-    }
-
-    // Ensure thumbnail is visible for current position
-    private fun ensureThumbnailVisible(position: Int) {
-        if (position < 0 || position >= shortsViewModel.videoShorts.size) {
-            return
-        }
-
-        try {
-            // Get all ViewHolders in range
-            val recyclerView = viewPager.getChildAt(0) as? RecyclerView
-            recyclerView?.let { rv ->
-                for (i in 0 until rv.childCount) {
-                    val child = rv.getChildAt(i)
-                    val holder = rv.getChildViewHolder(child) as? StringViewHolder
-
-                    if (holder?.bindingAdapterPosition == position) {
-                        val shortVideo = shortsViewModel.videoShorts[position]
-                        val thumbnailUrl = shortVideo.thumbnail.firstOrNull()?.thumbnailUrl
-                        holder.loadThumbnail(thumbnailUrl)
-                        Log.d("EnsureThumb", "Ensured thumbnail visible at position: $position")
-                        break
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("EnsureThumb", "Error ensuring thumbnail: ${e.message}")
         }
     }
 
@@ -1796,6 +1723,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
+
     private fun getMimeTypeFromUrl(url: String): String {
         val lowerUrl = url.lowercase()
         return when {
@@ -1993,6 +1921,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
 
+
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun informAdapter(event: InformAdapter) {
@@ -2050,7 +1979,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
         followUnFollowViewModel.followUnFollow(event.followUnFollowEntity.userId)
-
 
         val followListItem: List<ShortsEntityFollowList> = listOf(
             ShortsEntityFollowList(
@@ -2411,11 +2339,13 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     }
 
+
     @SuppressLint("InflateParams")
     private fun showBottomSheet() {
 
 
     }
+
 
     private fun startPreLoadingService() {
         Log.d(SHORTS, "Preloading called")
@@ -2565,6 +2495,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
     }
+
 
     @SuppressLint("MissingInflatedId")
     override fun onShareClick(position: Int) {

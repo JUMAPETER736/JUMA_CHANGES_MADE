@@ -28,7 +28,6 @@ import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.Priority
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
@@ -96,37 +95,12 @@ class ShortsAdapter(
     private val preloadHandler = Handler(Looper.getMainLooper())
 
 
-    // In ShortsAdapter class, update onBindViewHolder:
 
     override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
         val data = shortsList[position]
 
-        // CRITICAL: Load thumbnail IMMEDIATELY with priority
-        val thumbnailUrl = data.thumbnail.firstOrNull()?.thumbnailUrl
-        holder.loadThumbnail(thumbnailUrl)
-
-        // Prefetch adjacent thumbnails
-        if (position + 1 < shortsList.size) {
-            val nextThumb = shortsList[position + 1].thumbnail.firstOrNull()?.thumbnailUrl
-            if (!nextThumb.isNullOrEmpty()) {
-                Glide.with(holder.itemView.context)
-                    .load(nextThumb)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .preload()
-            }
-        }
-
-        if (position - 1 >= 0) {
-            val prevThumb = shortsList[position - 1].thumbnail.firstOrNull()?.thumbnailUrl
-            if (!prevThumb.isNullOrEmpty()) {
-                Glide.with(holder.itemView.context)
-                    .load(prevThumb)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .preload()
-            }
-        }
-
-        Log.d(TAG, "Binding position $position with thumbnail: $thumbnailUrl")
+        // ALWAYS load thumbnail first - even if holder is reused
+        holder.loadThumbnail(data.thumbnail.firstOrNull()?.thumbnailUrl)
 
         if (currentViewHolder != holder || currentActivePosition != position) {
             currentViewHolder = holder
@@ -145,57 +119,6 @@ class ShortsAdapter(
             preloadVideosAround(position)
         }
     }
-
-//    override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
-//        val data = shortsList[position]
-//
-//        // CRITICAL: Load thumbnail FIRST before any other operations
-//        val thumbnailUrl = data.thumbnail.firstOrNull()?.thumbnailUrl
-//        holder.loadThumbnail(thumbnailUrl)
-//
-//        Log.d(TAG, "Binding position $position with thumbnail: $thumbnailUrl")
-//
-//        if (currentViewHolder != holder || currentActivePosition != position) {
-//            currentViewHolder = holder
-//            currentActivePosition = position
-//
-//            val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
-//                ?: ShortsEntityFollowList(
-//                    followersId = data.author.account._id,
-//                    isFollowing = false
-//                )
-//
-//            val myData = MyData(data, isFollowingData)
-//            ensureFollowDataExists(data)
-//
-//            holder.onBind(myData)
-//            preloadVideosAround(position)
-//        }
-//    }
-
-    override fun onViewRecycled(holder: StringViewHolder) {
-        super.onViewRecycled(holder)
-        holder.onViewRecycled()
-
-        if (holder.bindingAdapterPosition == getCurrentActivePosition()) {
-            currentViewHolder = holder
-        }
-    }
-
-    override fun onViewAttachedToWindow(holder: StringViewHolder) {
-        super.onViewAttachedToWindow(holder)
-
-        // Ensure thumbnail is visible when view attaches
-        val position = holder.bindingAdapterPosition
-        if (position != RecyclerView.NO_POSITION && position < shortsList.size) {
-            val thumbnailUrl = shortsList[position].thumbnail.firstOrNull()?.thumbnailUrl
-            holder.loadThumbnail(thumbnailUrl)
-        }
-
-        holder.onViewAttached()
-        holder.reattachPlayer()
-    }
-
 
     @SuppressLint("NotifyDataSetChanged")
     fun addData(newData: List<ShortsEntity>) {
@@ -370,11 +293,26 @@ class ShortsAdapter(
         }
     }
 
+    override fun onViewRecycled(holder: StringViewHolder) {
+        super.onViewRecycled(holder)
+        holder.onViewRecycled()
+
+        if (holder.bindingAdapterPosition == getCurrentActivePosition()) {
+            currentViewHolder = holder
+        }
+    }
 
     override fun getItemCount(): Int {
         return shortsList.size
     }
 
+    override fun onViewAttachedToWindow(holder: StringViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        holder.onViewAttached()
+
+        // CRITICAL: Properly reattach player
+        holder.reattachPlayer()
+    }
 
     override fun onViewDetachedFromWindow(holder: StringViewHolder) {
         super.onViewDetachedFromWindow(holder)
@@ -386,7 +324,6 @@ class ShortsAdapter(
 
 
 class StringViewHolder @OptIn(UnstableApi::class) constructor
-
     (
     itemView: View,
     private val commentsClickListener: OnCommentsClickListener,
@@ -444,8 +381,60 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     private var isPlaying = false
     private var videoDuration = 0L
 
-    init {
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val progressUpdateRunnable = object : Runnable {
+        override fun run() {
+            updateSeekBarProgress()
+            mainHandler.postDelayed(this, PROGRESS_UPDATE_INTERVAL)
+        }
+    }
 
+    private val playerListener = object : Player.Listener {
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            when (playbackState) {
+                Player.STATE_READY -> {
+                    videoDuration = exoplayer.duration
+                    if (videoDuration > 0) {
+                        bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
+                        bottomVideoSeekBar.secondaryProgress = 0
+                        Log.d(TAG, "Video ready: ${videoDuration}ms")
+                    }
+                }
+                Player.STATE_BUFFERING -> {
+                    Log.d(TAG, "Video buffering")
+                    thumbnailImageView.visibility = View.VISIBLE
+                }
+                Player.STATE_ENDED -> {
+                    stopProgressUpdates()
+                }
+            }
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            this@StringViewHolder.isPlaying = isPlaying
+            if (isPlaying) {
+                startProgressUpdates()
+            } else {
+                stopProgressUpdates()
+            }
+            Log.d(TAG, "Player isPlaying: $isPlaying")
+        }
+
+        override fun onRenderedFirstFrame() {
+            Log.d(TAG, "First frame rendered - hiding thumbnail")
+            thumbnailImageView.animate()
+                .alpha(0f)
+                .setDuration(150)
+                .withEndAction {
+                    thumbnailImageView.visibility = View.GONE
+                    thumbnailImageView.alpha = 1f
+                }
+                .start()
+            videoView.visibility = View.VISIBLE
+        }
+    }
+
+    init {
         setupSeekBar()
         setupUploadComponents()
 
@@ -458,115 +447,27 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             setShutterBackgroundColor(Color.BLACK)
         }
 
-        // Player listener will be created when needed
-        exoplayer.repeatMode = Player.REPEAT_MODE_ONE
-    }
-
-    private val mainHandler = Handler(Looper.getMainLooper())
-
-    private val progressUpdateRunnable = object : Runnable {
-        override fun run() {
-            updateSeekBarProgress()
-            mainHandler.postDelayed(this, PROGRESS_UPDATE_INTERVAL)
-        }
-    }
-
-    private var playerListener: Player.Listener? = null
-
-    private fun createPlayerListener(): Player.Listener {
-        return object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                when (playbackState) {
-                    Player.STATE_READY -> {
-                        videoDuration = exoplayer.duration
-                        if (videoDuration > 0) {
-                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
-                            bottomVideoSeekBar.secondaryProgress = 0
-                            Log.d(TAG, "Video ready: ${videoDuration}ms")
-                        }
-                    }
-                    Player.STATE_BUFFERING -> {
-                        Log.d(TAG, "Video buffering")
-                    }
-                    Player.STATE_ENDED -> {
-                        stopProgressUpdates()
-                        exoplayer.seekTo(0)
-                        exoplayer.play()
-                        Log.d(TAG, "Video ended - looping")
-                    }
-                }
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                this@StringViewHolder.isPlaying = isPlaying
-                if (isPlaying) {
-                    startProgressUpdates()
-                } else {
-                    stopProgressUpdates()
-                }
-                Log.d(TAG, "Player isPlaying: $isPlaying")
-            }
-
-            override fun onRenderedFirstFrame() {
-                // Only hide thumbnail once per bind
-                if (thumbnailImageView.visibility == View.VISIBLE) {
-                    Log.d(TAG, "First frame rendered - hiding thumbnail")
-                    mainHandler.postDelayed({
-                        thumbnailImageView.animate()
-                            .alpha(0f)
-                            .setDuration(250)
-                            .withEndAction {
-                                thumbnailImageView.visibility = View.GONE
-                                thumbnailImageView.alpha = 1f
-                            }
-                            .start()
-                    }, 100)
-                }
-                videoView.visibility = View.VISIBLE
-            }
-        }
-    }
-
-// Add this NEW method to StringViewHolder to properly attach player:
-
-    fun attachPlayerToSurface(player: ExoPlayer?) {
-        player?.let {
-            // Remove from any previous surface
-            videoView.player = null
-
-            // Ensure view is ready
-            videoView.visibility = View.VISIBLE
-            videoView.keepScreenOn = true
-
-            // Attach to this surface
-            videoView.player = it
-
-            // Force layout update
-            videoView.post {
-                videoView.requestLayout()
-                videoView.invalidate()
-            }
-
-            Log.d(TAG, "Player attached to surface, visibility: ${videoView.visibility}")
-        }
-    }
-
-    fun reattachPlayer() {
-        videoView.post {
-            // Remove old listener first
-            playerListener?.let { exoplayer.removeListener(it) }
-
-            // Create and add new listener
-            playerListener = createPlayerListener()
-            exoplayer.addListener(playerListener!!)
-
-            attachPlayerToSurface(exoplayer)
-            Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
-        }
+        exoplayer.repeatMode = Player.REPEAT_MODE_ONE // Loop like TikTok
     }
 
     fun pauseUpdates() {
         stopProgressUpdates()
+    }
+
+    fun reattachPlayer() {
+        videoView.post {
+            videoView.player = null
+            videoView.player = exoplayer
+            videoView.visibility = View.VISIBLE
+            videoView.useController = false
+            videoView.keepScreenOn = true
+            videoView.requestLayout()
+            videoView.invalidate()
+
+            exoplayer.addListener(playerListener)
+
+            Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
+        }
     }
 
     fun getUploadTopSeekBar(): SeekBar? = shortsUploadTopSeekBar
@@ -596,7 +497,16 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         bottomVideoSeekBar.max = max
     }
 
-
+    fun onViewAttached() {
+        videoView.visibility = View.VISIBLE
+        if (videoView.player == null) {
+            videoView.player = exoplayer
+        }
+        exoplayer.addListener(playerListener)
+        if (isPlaying) {
+            startProgressUpdates()
+        }
+    }
 
     fun getSurface(): PlayerView = videoView
 
@@ -604,36 +514,18 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         shortsUploadCancelButton.setOnClickListener(listener)
     }
 
-    // In StringViewHolder class, update these methods:
-
     fun loadThumbnail(thumbnailUrl: String?) {
-        // Cancel any pending hide animations
-        thumbnailImageView.animate().cancel()
-
         if (thumbnailUrl != null && thumbnailUrl.isNotEmpty()) {
-            // Force thumbnail visible immediately
-            thumbnailImageView.alpha = 1f
             thumbnailImageView.visibility = View.VISIBLE
-            thumbnailImageView.bringToFront() // Ensure it's on top
-            videoView.visibility = View.VISIBLE
+            videoView.visibility = View.VISIBLE // Keep both visible
 
             Glide.with(itemView.context)
                 .load(thumbnailUrl)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .placeholder(R.drawable.flash21)
-                .priority(Priority.IMMEDIATE) // HIGH priority for current thumbnail
-                .override(thumbnailImageView.width, thumbnailImageView.height) // Optimize size
                 .into(thumbnailImageView)
-
-            Log.d(TAG, "Thumbnail loaded with IMMEDIATE priority: $thumbnailUrl")
-        } else {
-            thumbnailImageView.alpha = 1f
-            thumbnailImageView.visibility = View.VISIBLE
-            thumbnailImageView.setImageResource(R.drawable.flash21)
         }
     }
 
-    // Update onBind to ensure thumbnail is visible at start
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
     override fun onBind(data: MyData) {
@@ -644,8 +536,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
         val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
 
-        // CRITICAL: Ensure thumbnail is visible when binding
-        thumbnailImageView.alpha = 1f
+        // CHANGED: Show thumbnail initially, will hide when video is ready
         thumbnailImageView.visibility = View.VISIBLE
         videoView.visibility = View.VISIBLE
 
@@ -654,6 +545,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         isLiked = shortsEntity.isLiked
         isFavorite = shortsEntity.isBookmarked
 
+        // Rest of your existing onBind code...
         updateLikeButtonState()
         updateFavoriteButtonState()
         setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
@@ -669,21 +561,10 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     fun onViewRecycled() {
         stopProgressUpdates()
 
-        // Remove listener to prevent memory leaks
-        playerListener?.let {
-            exoplayer.removeListener(it)
-            playerListener = null
-        }
-
-        // Reset thumbnail state
-        thumbnailImageView.alpha = 1f
+        // CHANGED: Show thumbnail when recycling for smooth scrolling
         thumbnailImageView.visibility = View.VISIBLE
         videoView.visibility = View.VISIBLE
-
-        // Clear the image
-        Glide.with(itemView.context).clear(thumbnailImageView)
-
-        // Clear click listeners
+        thumbnailImageView.setImageDrawable(null)
         commentsParentLayout.setOnClickListener(null)
         btnLike.setOnClickListener(null)
         favorite.setOnClickListener(null)
@@ -696,23 +577,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         videoDuration = 0L
         bottomVideoSeekBar.progress = 0
         isPlaying = false
-    }
-
-    fun onViewAttached() {
-        videoView.visibility = View.VISIBLE
-        if (videoView.player == null) {
-            videoView.player = exoplayer
-        }
-
-        // Only add listener if not already added
-        if (playerListener == null) {
-            playerListener = createPlayerListener()
-            exoplayer.addListener(playerListener!!)
-        }
-
-        if (isPlaying) {
-            startProgressUpdates()
-        }
+        exoplayer.removeListener(playerListener)
     }
 
     @OptIn(UnstableApi::class)
@@ -967,7 +832,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
 
 
     private fun updateLikeButtonState() {
-
         likeCount.text = totalLikes.toString()
         if (isLiked) {
             btnLike.imageTintList = ColorStateList.valueOf(
@@ -980,11 +844,9 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             )
             btnLike.setImageResource(R.drawable.favorite_svgrepo_com)
         }
-
     }
 
     private fun updateFavoriteButtonState() {
-
         if (isFavorite) {
             favorite.imageTintList = ColorStateList.valueOf(
                 ContextCompat.getColor(itemView.context, R.color.bluejeans)
@@ -996,7 +858,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             )
             favorite.setImageResource(R.drawable.favorite_svgrepo_com__1_)
         }
-
     }
 
 
@@ -1009,7 +870,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     }
 
     private fun setupSeekBar() {
-
         bottomVideoSeekBar.apply {
             secondaryProgress = 0
             splitTrack = false
@@ -1017,7 +877,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
 
         bottomVideoSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
                     Log.d(TAG, "User seeking to: $progress")
@@ -1037,7 +896,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
                 Log.d(TAG, "User stopped seeking")
             }
         })
-
     }
 
     private fun updateSeekBarProgress() {
@@ -1064,7 +922,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     }
 
     private fun shortsEntityToUserShortsEntity(serverResponseItem: ShortsEntity): UserShortsEntity {
-
         return UserShortsEntity(
             __v = serverResponseItem.__v,
             _id = serverResponseItem._id,
@@ -1080,7 +937,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             updatedAt = serverResponseItem.updatedAt,
             thumbnail = serverResponseItem.thumbnail
         )
-
     }
 
 }
