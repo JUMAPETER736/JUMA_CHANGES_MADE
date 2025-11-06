@@ -372,10 +372,8 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     @RequiresApi(Build.VERSION_CODES.Q)
     @OptIn(androidx.media3.common.util.UnstableApi::class)
     override fun onCreateView(
-
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-
     ): View? {
 
         val TAG = "onCreateView"
@@ -394,7 +392,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             setItemViewCacheSize(4) // Cache 4 views
         }
 
-        viewPager.adapter = shortsAdapter
+        // REMOVED: viewPager.adapter = shortsAdapter  // ❌ This was causing the crash
         viewPager.orientation = ViewPager2.ORIENTATION_VERTICAL
 
         myProfileRepository =
@@ -463,8 +461,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         (activity as? MainActivity)?.hideAppBar()
 
-        viewPager = view.findViewById(R.id.shortsViewPager)
-
         httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setAllowCrossProtocolRedirects(true)
 
@@ -491,7 +487,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         // Configure player defaults
         exoPlayer?.apply {
-
             repeatMode = Player.REPEAT_MODE_ONE
             playWhenReady = false
         }
@@ -505,7 +500,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         lifecycleScope.launch(Dispatchers.IO) {
 
-
             val followEntity = followShortsViewModel.allShortsList
 
             withContext(Dispatchers.Main) {
@@ -513,28 +507,29 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     // Update your UI with the shortsList
                     for (entity in it) {
                         Log.d("PreLoad", "onCreateView: $it ")
-
                     }
                 })
             }
+
             if (!shortsViewModel.isResuming) {
                 loadMoreShortsPage1(1)
                 Log.d("Resume", "onCreateView: ! ${!shortsViewModel.isResuming}")
             }
 
-
-            shortsAdapter =
-                ShortsAdapter(requireActivity() as OnCommentsClickListener, this@ShotsFragment,
-                    exoPlayer!!, object :
-
-                        OnVideoPreparedListener {
-                        override fun onVideoPrepared(exoPlayerItem: ExoPlayerItem) {
-                            exoPlayerItems.add(exoPlayerItem)
-                        }
-                    }) { id, username, followButton ->
+            // ✅ NOW initialize the adapter with ExoPlayer ready
+            shortsAdapter = ShortsAdapter(
+                requireActivity() as OnCommentsClickListener,
+                this@ShotsFragment,
+                exoPlayer!!,
+                object : OnVideoPreparedListener {
+                    override fun onVideoPrepared(exoPlayerItem: ExoPlayerItem) {
+                        exoPlayerItems.add(exoPlayerItem)
+                    }
                 }
+            ) { id, username, followButton -> }
 
             withContext(Dispatchers.Main) {
+                // ✅ Set adapter AFTER it's initialized
                 viewPager.adapter = shortsAdapter
                 viewPager.orientation = ViewPager2.ORIENTATION_VERTICAL
 
@@ -542,9 +537,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     loadMoreShortsPage1(1)
                 } else if (shortsViewModel.isResuming) {
 
-
                     lifecycleScope.launch {
-
                         Log.d(
                             "Resume",
                             "onCreateView: shorts view model size ${shortsViewModel.followList.size}"
@@ -552,8 +545,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
                         shortsAdapter.addData(shortsViewModel.mutableShortsList)
                         shortsAdapter.addIsFollowingData(shortsViewModel.followList)
-
-
                     }
 
                     currentPosition = shortsViewModel.shortIndex
@@ -577,10 +568,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         viewPager.setCurrentItem(currentPosition, false)
                         playVideoAtPosition(currentPosition)
                     }
-
                 }
-
-
 
                 // In ShotsFragment, update the ViewPager2 page change callback:
                 viewPager.registerOnPageChangeCallback(object :
@@ -674,16 +662,14 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         }
                     }
                 })
-
-
             }
         }
+
         // Find FloatingActionButton
         fabAction = view.findViewById(R.id.fabAction)
 
         // Set up FloatingActionButton click listener
         fabAction.setOnClickListener {
-
             getContentLauncher?.launch(PICK_VIDEO_REQUEST)
         }
 
@@ -695,7 +681,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     EventBus.getDefault().post(GoToFeedFragment(feedPostPosition))
                 }else {
                     if (backPressCount == 0) {
-
 
                         EventBus.getDefault().post(ShowBottomNav(false))
                         backPressCount++
@@ -724,7 +709,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                         viewPager.setCurrentItem(currentPosition, false)
                         playVideoAtPosition(currentPosition)
 
-
                         Log.d("handleOnBackPressed", "handleOnBackPressed: 2 - next short")
                     }
                     else if (backPressCount == 2) {
@@ -745,12 +729,11 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     }
                     else {
                         Log.d("handleOnBackPressed", "handleOnBackPressed: else")
-
                     }
                 }
-
             }
         }
+
         // Add the callback to the onBackPressedDispatcher
         requireActivity().onBackPressedDispatcher.addCallback(
             viewLifecycleOwner,
@@ -799,6 +782,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 }
             }
         }
+
         return view
     }
 
