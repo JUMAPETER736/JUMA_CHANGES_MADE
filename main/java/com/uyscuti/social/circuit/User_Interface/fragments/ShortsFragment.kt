@@ -371,7 +371,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     @SuppressLint("NotifyDataSetChanged", "MissingInflatedId")
     @RequiresApi(Build.VERSION_CODES.Q)
-    @OptIn(androidx.media3.common.util.UnstableApi::class)
+    @OptIn(UnstableApi::class)
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
