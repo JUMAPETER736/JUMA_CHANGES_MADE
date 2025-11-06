@@ -62,6 +62,7 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.SimpleCache
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
@@ -312,6 +313,12 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     val count = 0
 
 
+    // Add this initialization in onCreate() or onCreateView()
+    init {
+        // Increase cache size for better performance
+        simpleCache.release() // Clear if needed
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -471,16 +478,25 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             DefaultMediaSourceFactory(requireContext())
                 .setDataSourceFactory(cacheDataSourceFactory)
 
-        // Proper ExoPlayer initialization with video rendering config
+        // Proper ExoPlayer initialization with aggressive buffering
         exoPlayer = ExoPlayer.Builder(requireActivity())
             .setMediaSourceFactory(mediaSourceFactory)
             .setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
             .setHandleAudioBecomingNoisy(true)
+            .setLoadControl(
+                DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(
+                        15000,
+                        50000,
+                        1500,
+                        2000
+                    )
+                    .build()
+            )
             .build()
 
         // Configure player defaults
         exoPlayer?.apply {
-
             repeatMode = Player.REPEAT_MODE_ONE
             playWhenReady = false
         }
@@ -577,16 +593,14 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     override fun onPageSelected(position: Int) {
                         shortsViewModel.shortIndex = position
 
-                        // DON'T stop the player - just pause it
+                        // Immediately stop current video
                         exoPlayer?.let { player ->
-                            player.pause()
-                            // Don't call stop() or seekTo(0) here
+                            player.stop()
+                            player.clearMediaItems()
                         }
 
-                        // ADDED: Small delay to allow thumbnail to show
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            playVideoAtPosition(position)
-                        }, 50)
+                        // Play next video immediately - no delay
+                        playVideoAtPosition(position)
                     }
 
                     override fun onPageScrolled(
@@ -785,6 +799,8 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
         return view
     }
+
+
 
     @SuppressLint("NotifyDataSetChanged")
     private suspend fun loadMoreShorts(currentPage: Int) {
@@ -1104,10 +1120,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             return
         }
 
-        // CRITICAL: Ensure the current ViewHolder's surface is properly attached
-        val currentHolder = shortsAdapter.getCurrentViewHolder()
-        currentHolder?.reattachPlayer()
-
         val shortVideo = videoShorts[position]
         Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
 
@@ -1137,7 +1149,9 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
 
         Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
-        validateAndPlayVideo(finalVideoUrl, position)
+
+        // REMOVED: validateAndPlayVideo - play immediately without validation
+        prepareAndPlayVideo(finalVideoUrl, position)
     }
 
     private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
@@ -1145,7 +1159,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             val videoUri = Uri.parse(videoUrl)
             Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
 
-            // CRITICAL: Ensure surface is visible before preparing
+            // Ensure surface is ready
             val currentHolder = shortsAdapter.getCurrentViewHolder()
             currentHolder?.getSurface()?.let { playerView ->
                 playerView.visibility = View.VISIBLE
@@ -1171,15 +1185,15 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             currentPlayerListener = createPlayerListener(position)
 
             exoPlayer?.let { player ->
-                player.pause()
+                // Don't pause - go straight to preparation
                 player.clearMediaItems()
-
                 player.addListener(currentPlayerListener!!)
                 player.repeatMode = Player.REPEAT_MODE_ONE
-                player.playWhenReady = true
+                player.playWhenReady = true // Set to true immediately
 
-                player.setMediaSource(mediaSource)
+                player.setMediaSource(mediaSource, true) // Reset position
                 player.prepare()
+                player.play() // Start playing immediately after prepare
 
                 Log.d("prepareAndPlayVideo", "Video preparation started for position: $position")
             }
@@ -1197,55 +1211,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         Log.d("ShotsFragment", "Setting up video playback for: $videoUrl")
     }
 
-    private fun validateAndPlayVideo(videoUrl: String, position: Int) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val urlConnection = URL(videoUrl).openConnection()
-                urlConnection.connectTimeout = 5000
-                urlConnection.readTimeout = 5000
-
-                val contentType = urlConnection.contentType
-                val contentLength = urlConnection.contentLength
-
-                Log.d("VideoValidation", "URL: $videoUrl")
-                Log.d("VideoValidation", "Content-Type: $contentType")
-                Log.d("VideoValidation", "Content-Length: $contentLength")
-
-                // Check if content type indicates a video
-                if (contentType != null && !contentType.startsWith("video/")) {
-                    Log.e("VideoValidation", "Content is not a video: $contentType")
-                    withContext(Dispatchers.Main) {
-                        handlePlaybackError(position)
-                    }
-                    return@launch
-                }
-
-                // FIX: If content length is -1, skip validation and try to play anyway
-                // Some servers don't send Content-Length for streaming video
-                if (contentLength > 0 && contentLength < 1024) {
-                    Log.e("VideoValidation", "Content length too small: $contentLength")
-                    withContext(Dispatchers.Main) {
-                        handlePlaybackError(position)
-                    }
-                    return@launch
-                }
-
-                // If content length is -1 or valid, proceed with playback
-                withContext(Dispatchers.Main) {
-                    isPlayerPreparing = true
-                    prepareAndPlayVideo(videoUrl, position)
-                }
-
-            } catch (e: Exception) {
-                Log.e("VideoValidation", "URL validation failed for: $videoUrl", e)
-                // FIX: Try to play anyway - validation failure doesn't mean video is invalid
-                withContext(Dispatchers.Main) {
-                    isPlayerPreparing = true
-                    prepareAndPlayVideo(videoUrl, position)
-                }
-            }
-        }
-    }
 
     override fun onStart() {
         super.onStart()

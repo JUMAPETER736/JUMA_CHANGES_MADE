@@ -95,29 +95,31 @@ class ShortsAdapter(
     private val preloadHandler = Handler(Looper.getMainLooper())
 
 
-
     override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
         val data = shortsList[position]
 
-        // ALWAYS load thumbnail first - even if holder is reused
+        // Load thumbnail immediately for smooth scrolling
         holder.loadThumbnail(data.thumbnail.firstOrNull()?.thumbnailUrl)
 
-        if (currentViewHolder != holder || currentActivePosition != position) {
+        // Always bind fresh data
+        val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
+            ?: ShortsEntityFollowList(
+                followersId = data.author.account._id,
+                isFollowing = false
+            )
+
+        val myData = MyData(data, isFollowingData)
+        ensureFollowDataExists(data)
+
+        holder.onBind(myData)
+
+        // Update current holder reference
+        if (currentActivePosition == position) {
             currentViewHolder = holder
-            currentActivePosition = position
-
-            val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
-                ?: ShortsEntityFollowList(
-                    followersId = data.author.account._id,
-                    isFollowing = false
-                )
-
-            val myData = MyData(data, isFollowingData)
-            ensureFollowDataExists(data)
-
-            holder.onBind(myData)
-            preloadVideosAround(position)
         }
+
+        // Preload adjacent videos
+        preloadVideosAround(position)
     }
 
     @SuppressLint("NotifyDataSetChanged")
