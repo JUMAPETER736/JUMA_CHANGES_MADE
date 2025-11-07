@@ -69,7 +69,7 @@ class UserProfileShortsAdapter(
 
 
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.shorts_view_pager_item, parent, false)
+            .inflate(R.layout.shorts_fragment, parent, false)
 
         val viewHolder = UserProfileShortsViewHolder(view, commentsClickListener, clickListeners)
         viewHolderList.add(viewHolder)
