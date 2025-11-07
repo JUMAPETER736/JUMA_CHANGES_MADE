@@ -250,7 +250,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             val intent = Intent(context, MessagesActivity::class.java)
 
             // Instead of passing the whole Dialog object
-            // intent.putExtra("Dialog_Extra", dialog)
+            intent.putExtra("Dialog_Extra", dialog)
 
             // Pass individual fields
             intent.putExtra("chatId", dialog.id)
@@ -281,14 +281,13 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
 
-//        installFonts()
 
 
         binding = ActivityMessagesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         messagesList = binding.messagesList
-//        coreChatSocketClient.chatListener = this
+
         EventBus.getDefault().register(this)
 
 
@@ -302,9 +301,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         remoteMessageRepository = RemoteMessageRepositoryImpl(retrofitIns)
 
-        // Set slide-up animation
-//        overridePendingTransition(R.anim.slide_up, R.anim.stay)
-
         handler = Handler(Looper.getMainLooper())
 
         runnable = Runnable {
@@ -316,10 +312,22 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         installTwitter()
 
+        dialog = intent.getParcelableExtra("Dialog_Extra")
+        chatId = dialog?.id ?: intent.getStringExtra("chatId") ?: ""
+        chatName = dialog?.dialogName ?: intent.getStringExtra("dialogName") ?: ""
+
+        if (chatId.isEmpty()) {
+            Log.e(TAG, "Missing chat ID")
+            finish()
+            return
+        }
+
+        isGroup = (dialog?.users?.size ?: 0) > 1
+        supportActionBar?.title = dialog?.dialogName ?: chatName
+
         val name = intent.getStringExtra("dialogName")
         val image = intent.getStringExtra("dialogPic")
-//        isGroup = intent.getBooleanExtra("isGroup", true)
-//        val dialog = MessagesFixtures.getDialog(name)
+
         isTemporally = intent.getBooleanExtra("temporally", false)
 
         dialog = intent.getParcelableExtra("Dialog_Extra")
@@ -328,7 +336,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         setChatId(chatId)
         setMyId(myId)
-//        setDependencies(localStorage,retrofitIns)
+
 
         dialog?.let { setDialog(it) }
 
@@ -354,26 +362,17 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                 // Format date without GMT using DateTimeFormatter
                 val groupCreatedAtt = group.createdAt
-//                val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
+
                 val form = SimpleDateFormat("dd-MM-yyyy HH:mm:ss")
                 form.timeZone = TimeZone.getTimeZone("UTC")
-//                val formattedDate = LocalDateTime.ofInstant(
-//                    Instant.ofEpochMilli(groupCreatedAtt),
-//                    ZoneId.systemDefault()
-//                ).format(formatter)
 
-//                val date = form.parse(groupCreatedAt)
                 val date = Date(groupCreatedAtt)
 
                 groupCreatedAt = formatDate(date)
             }
-        } else {
+        }
+        else {
 
-
-//                    val friend = dialog!!.users.first()
-//                    val lastSeen = friend.lastSeen
-//                    supportActionBar?.subtitle = "Last Seen $lastSeen"
-//                    binding.toolbar.setSubtitleTextColor(resources.getColor(com.uyscut.chatsuit.R.color.white_two))
 
             val friend = dialog!!.users.first()
 
@@ -383,9 +382,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                 Log.d("UserStatus", "UserStatus In Massages Activity, :$userStatus")
 
-//                if (userStatus != null) {
-//                    updateStatus(userStatus)
-//                }
+
 
                 if (userStatus != null) {
                     runOnUiThread {
@@ -404,55 +401,10 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 }
             }
 
-//            userStatusManager?.start()
-
-//
-//                    // Call this from your activity or fragment
-//                    GetUserStatusTask(retrofitInstance) { result ->
-//                        if (result != null) {
-//                            // Handle the result
-//
-//                            Log.d(TAG,"User Status Retrieved Successfully, : $result")
-//                            if(result.isOnline){
-//                                // Update the subtitle of the toolbar
-//                                supportActionBar?.subtitle = "online"
-//                                binding.toolbar.setSubtitleTextColor(resources.getColor(com.uyscuti.social.chatsuit.R.color.white_two))
-//                            } else {
-//                                // Format the last seen date
-//                                val formattedLastSeen = formatLastSeenDate(result.lastSeen)
-//                                // Update the subtitle of the toolbar
-//                                supportActionBar?.subtitle = formattedLastSeen
-//                                binding.toolbar.setSubtitleTextColor(resources.getColor(com.uyscuti.social.chatsuit.R.color.white_two))
-//                            }
-//
-////                            Toast.makeText(this, "User Status", Toast.LENGTH_SHORT).show()
-//                        } else {
-//                            // Handle the error
-//                            Log.d(TAG, "Failed To Retrieve User Status")
-//                        }
-//                    }.execute(friend.id)
-
-
-//                    // Use the getLastSeen function to get the last seen information
-//                    getLastSeen(friend.id) { lastSeen, errorMessage ->
-//                        if (lastSeen != null) {
-//                            // Format the last seen date
-//                            val formattedLastSeen = formatLastSeenDate(lastSeen)
-//
-//                            // Update the subtitle of the toolbar
-//                            supportActionBar?.subtitle = formattedLastSeen
-//                            binding.toolbar.setSubtitleTextColor(resources.getColor(com.uyscuti.social.chatsuit.R.color.white_two))
-//                        } else {
-//                            // Handle the case where getting the last seen information failed
-//                            // You can log the error message or handle it as appropriate for your app
-//                            println("Error: $errorMessage")
-//                        }
-//                    }
-
         }
 
 
-//        binding.toolbar.setNavigationIcon(R.drawable.baseline_arrow_back_ios_24)
+
 
         val size =
             TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics)
@@ -460,7 +412,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         permit()
 
-//        val drawable = Drawable()
+
 
         val navigationIcon = ContextCompat.getDrawable(this, com.uyscuti.social.circuit.R.drawable.baseline_arrow_back_ios_24)
 
@@ -493,7 +445,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 ) {
                     val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
 
-//                    drawable.cornerRadius = resources.getDimension(R.dimen.icon_radius)
+
 
                     drawable.isCircular = true
 
@@ -504,7 +456,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         binding.toolbar.setContentInsetsRelative(0, 0)
 
-//        binding.toolbar.setLogo(drawable)
 
         binding.toolbar.setNavigationOnClickListener {
             onBackPressed()
@@ -532,10 +483,10 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             observeTemporallyMessages(chatName)
         }
 
-//        observeThisDialog(chatName)
+
 
         if (isTemporally) {
-//            observeThisDialog(chatName)
+
         }
 
         // Observe the LiveData in the activity
@@ -550,25 +501,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         })
 
 
-//        CoroutineScope(Dispatchers.IO).launch {
-//            messageViewModel.getPendingMessages(chatId)
-//        }
-
-
-//        initEmoji()
-//        binding.input.emojiButton.setOnClickListener {
-//            initV()
-//        }
-//
-//        val navController = findNavController(R.id.nav_host_fragment_content_messages)
-//        appBarConfiguration = AppBarConfiguration(navController.graph)
-//        setupActionBarWithNavController(navController, appBarConfiguration)
-
-//        binding.fab.setOnClickListener { view ->
-//            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                .setAnchorView(R.id.fab)
-//                .setAction("Action", null).show()
-//        }
     }
 
 
