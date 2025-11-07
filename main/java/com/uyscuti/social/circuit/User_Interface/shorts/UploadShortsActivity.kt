@@ -43,7 +43,7 @@ import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.ShortsAdapter
+import com.uyscuti.social.circuit.User_Interface.fragments.ShortsAdapter
 import com.uyscuti.social.circuit.adapter.feed.FeedAdapter
 import com.uyscuti.social.circuit.adapter.feed.multiple_files.FeedVideoThumbnailAdapter
 import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleFeedAudioAdapter

@@ -27,6 +27,8 @@ import com.uyscuti.social.circuit.model.ShortsCommentButtonClicked
 import com.uyscuti.social.circuit.model.ShortsLikeUnLikeButton2
 import com.uyscuti.social.chatsuit.commons.ViewHolder
 import com.uyscuti.social.circuit.R
+import com.uyscuti.social.circuit.User_Interface.fragments.OnClickListeners
+import com.uyscuti.social.circuit.User_Interface.fragments.OnCommentsClickListener
 import com.uyscuti.social.circuit.data.model.Dialog
 import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
 import org.greenrobot.eventbus.EventBus

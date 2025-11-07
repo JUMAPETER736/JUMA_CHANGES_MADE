@@ -53,8 +53,8 @@ import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
 import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
 import com.uyscuti.social.circuit.FlashApplication
 import com.uyscuti.social.circuit.adapter.CommentAdapter
-import com.uyscuti.social.circuit.adapter.OnClickListeners
-import com.uyscuti.social.circuit.adapter.OnCommentsClickListener
+import com.uyscuti.social.circuit.User_Interface.fragments.OnClickListeners
+import com.uyscuti.social.circuit.User_Interface.fragments.OnCommentsClickListener
 import com.uyscuti.social.circuit.adapter.UserProfileShortsAdapter
 import com.uyscuti.social.circuit.data.model.Comment
 import com.uyscuti.social.circuit.model.FeedAdapterNotifyDatasetChanged

@@ -36,8 +36,8 @@ import androidx.viewpager2.widget.ViewPager2
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.uyscuti.social.circuit.FlashApplication
-import com.uyscuti.social.circuit.adapter.OnClickListeners
-import com.uyscuti.social.circuit.adapter.OnCommentsClickListener
+import com.uyscuti.social.circuit.User_Interface.fragments.OnClickListeners
+import com.uyscuti.social.circuit.User_Interface.fragments.OnCommentsClickListener
 import com.uyscuti.social.circuit.adapter.UserProfileShortsAdapter
 import com.uyscuti.social.circuit.model.PlayPauseEvent
 import com.uyscuti.social.circuit.model.ShortsBookmarkButton2
