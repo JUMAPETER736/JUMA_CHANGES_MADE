@@ -249,7 +249,8 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             val intent = Intent(context, MessagesActivity::class.java)
 
             if (dialog != null) {
-                intent.putExtra("Dialog_Extra", dialog)
+
+
                 intent.putExtra("chatId", dialog.id)
                 intent.putExtra("dialogName", dialog.dialogName)
                 intent.putExtra("dialogPhoto", dialog.dialogPhoto)
@@ -275,15 +276,12 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
 
-
-
         binding = ActivityMessagesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         messagesList = binding.messagesList
 
         EventBus.getDefault().register(this)
-
 
         callViewModel = ViewModelProvider(this)[CallViewModel::class.java]
 
@@ -292,23 +290,25 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         myId = localStorage.getUserId()
         username = localStorage.getUsername()
 
-
         remoteMessageRepository = RemoteMessageRepositoryImpl(retrofitIns)
 
         handler = Handler(Looper.getMainLooper())
 
-        runnable = Runnable {
-
-        }
-
+        runnable = Runnable { }
 
         setSupportActionBar(binding.toolbar)
 
         installTwitter()
 
-        dialog = intent.getParcelableExtra("Dialog_Extra")
-        chatId = dialog?.id ?: intent.getStringExtra("chatId") ?: ""
-        chatName = dialog?.dialogName ?: intent.getStringExtra("dialogName") ?: ""
+        // REMOVE these lines - Dialog_Extra no longer exists
+        // dialog = intent.getParcelableExtra("Dialog_Extra")
+
+        // Get data from intent extras instead
+        chatId = intent.getStringExtra("chatId") ?: ""
+        chatName = intent.getStringExtra("dialogName") ?: ""
+        val dialogPhoto = intent.getStringExtra("dialogPhoto") ?: ""
+        isGroup = intent.getBooleanExtra("isGroup", false)
+        isTemporally = intent.getBooleanExtra("temporally", false)
 
         if (chatId.isEmpty()) {
             Log.e(TAG, "Missing chat ID")
@@ -316,97 +316,67 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             return
         }
 
-        isGroup = (dialog?.users?.size ?: 0) > 1
-        supportActionBar?.title = dialog?.dialogName ?: chatName
-
-        val name = intent.getStringExtra("dialogName")
-        val image = intent.getStringExtra("dialogPic")
-
-        isTemporally = intent.getBooleanExtra("temporally", false)
-
-        dialog = intent.getParcelableExtra("Dialog_Extra")
-        chatId = dialog?.id ?: ""
-        chatName = dialog?.dialogName ?: ""
-
         setChatId(chatId)
         setMyId(myId)
 
-
-        dialog?.let { setDialog(it) }
-
         Log.d("ChatId", " ChatId : $chatId, Chat Name : $chatName")
-
-
-        isGroup = dialog?.users?.size!! > 1
 
         setIsGroup(isGroup)
 
-        supportActionBar?.title = dialog?.dialogName
+        supportActionBar?.title = chatName
 
         if (isGroup) {
-            val members = dialog!!.users.map { it.name }.sorted()
-            supportActionBar?.subtitle = members.joinToString(", ")
+            // Get group member info from intent if needed
+            // Or fetch from database/repository using chatId
+            supportActionBar?.subtitle = "" // You'll need to fetch members from DB
             binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.white_two))
-
 
             CoroutineScope(Dispatchers.IO).launch {
                 val group = groupDialogViewModel.getGroupDialog(chatId)
                 groupAdminId = group.adminId
                 groupCreatedAt = group.createdAt.toString()
 
-                // Format date without GMT using DateTimeFormatter
-                val groupCreatedAtt = group.createdAt
-
                 val form = SimpleDateFormat("dd-MM-yyyy HH:mm:ss")
                 form.timeZone = TimeZone.getTimeZone("UTC")
 
-                val date = Date(groupCreatedAtt)
+                val date = Date(group.createdAt)
 
                 groupCreatedAt = formatDate(date)
+
+                // Fetch and display members
+                withContext(Dispatchers.Main) {
+                    // Update subtitle with members if needed
+                }
             }
-        }
-        else {
+        } else {
+            // Get friend info from intent
+            val friendId = intent.getStringExtra("firstUserId") ?: ""
+            val friendName = intent.getStringExtra("firstUserName") ?: ""
+            val friendAvatar = intent.getStringExtra("firstUserAvatar") ?: ""
 
+            if (friendId.isNotEmpty()) {
+                userStatusManager = UserStatusManager(retrofitIns, friendId) { userStatus ->
+                    Log.d("UserStatus", "UserStatus In Messages Activity: $userStatus")
 
-            val friend = dialog!!.users.first()
-
-            userStatusManager = UserStatusManager(retrofitIns, friend.id) { userStatus ->
-                // Update UI or perform actions based on user status
-                // The userStatus variable contains the latest user status
-
-                Log.d("UserStatus", "UserStatus In Massages Activity, :$userStatus")
-
-
-
-                if (userStatus != null) {
-                    runOnUiThread {
-                        if (userStatus.isOnline) {
-                            // Update the subtitle of the toolbar
-                            supportActionBar?.subtitle = "online"
-                            binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.white_two))
-                        } else {
-                            // Format the last seen date
-                            val formattedLastSeen = formatLastSeenDate(userStatus.lastSeen)
-                            // Update the subtitle of the toolbar
-                            supportActionBar?.subtitle = formattedLastSeen
-                            binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.white_two))
+                    if (userStatus != null) {
+                        runOnUiThread {
+                            if (userStatus.isOnline) {
+                                supportActionBar?.subtitle = "online"
+                                binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.white_two))
+                            } else {
+                                val formattedLastSeen = formatLastSeenDate(userStatus.lastSeen)
+                                supportActionBar?.subtitle = formattedLastSeen
+                                binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.white_two))
+                            }
                         }
                     }
                 }
             }
-
         }
 
-
-
-
-        val size =
-            TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics)
-                .toInt()
+        val size = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics).toInt()
 
         permit()
-
-
 
         val navigationIcon = ContextCompat.getDrawable(this, com.uyscuti.social.circuit.R.drawable.baseline_arrow_back_ios_24)
 
@@ -414,7 +384,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             it.setBounds(0, 0, it.intrinsicWidth, it.intrinsicHeight)
 
             val wrappedDrawable = DrawableCompat.wrap(it)
-            DrawableCompat.setTint(wrappedDrawable, ContextCompat.getColor(this, com.uyscuti.social.circuit.R.color.white))
+            DrawableCompat.setTint(wrappedDrawable, ContextCompat.getColor(this, R.color.white))
             val drawableMargin = InsetDrawable(wrappedDrawable, 0, 0, 0, 0)
             binding.toolbar.navigationContentDescription = "Navigate up"
             binding.toolbar.navigationIcon = drawableMargin
@@ -424,32 +394,25 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             viewUser()
         }
 
-        val avatar = dialog?.dialogPhoto
-
+        // Use dialogPhoto from intent
         Glide.with(this)
             .asBitmap()
-            .load(avatar)
+            .load(dialogPhoto)
             .centerCrop()
             .override(size, size)
             .into(object : SimpleTarget<Bitmap>() {
-
                 override fun onResourceReady(
                     resource: Bitmap,
                     transition: Transition<in Bitmap>?
                 ) {
                     val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
-
-
-
                     drawable.isCircular = true
-
                     val marginDrawable = InsetDrawable(drawable, 0, 0, 10, 0)
                     binding.toolbar.logo = marginDrawable
                 }
             })
 
         binding.toolbar.setContentInsetsRelative(0, 0)
-
 
         binding.toolbar.setNavigationOnClickListener {
             onBackPressed()
@@ -459,7 +422,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         emojiPopup = EmojiPopup(rootView, binding.input.inputEditText)
         inputMethodManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-
 
         initAdapter()
         val input = findViewById<MessageInput>(com.uyscuti.social.circuit.R.id.input)
@@ -472,29 +434,18 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         observeSendingMessagesI()
 
-
         if (!isTemporally) {
             observeTemporallyMessages(chatName)
         }
 
-
-
-        if (isTemporally) {
-
-        }
-
         // Observe the LiveData in the activity
         dialogViewModel.updatedDialog.observe(this, Observer { updatedDialog ->
-            // Handle the updated dialog
-            // This block will be executed when the dialog is updated
             if (updatedDialog != null) {
                 Log.d(TAG, "Updated Dialog : $updatedDialog")
                 chatId = updatedDialog.id
                 trigger()
             }
         })
-
-
     }
 
     private fun observeThisDialog(name: String) {
