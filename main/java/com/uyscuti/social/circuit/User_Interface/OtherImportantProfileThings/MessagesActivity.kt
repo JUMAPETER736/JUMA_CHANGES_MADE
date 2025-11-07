@@ -252,7 +252,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
 
             intent.putExtra("Dialog_Extra", dialog)
-            
+
             intent.putExtra("chatId", dialog.id)
             intent.putExtra("dialogName", dialog.dialogName)
             intent.putExtra("dialogPhoto", dialog.dialogPhoto)
