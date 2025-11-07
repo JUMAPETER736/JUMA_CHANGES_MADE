@@ -392,7 +392,7 @@ class ShortsAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StringViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(
-            R.layout.shorts_fragment, parent, false
+            R.layout.shorts_view_pager_item, parent, false
         )
         val viewHolder = StringViewHolder(
             view,
