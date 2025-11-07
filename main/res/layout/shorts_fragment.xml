@@ -390,7 +390,7 @@
         <!-- Download Button -->
         <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="51dp"
+            android:layout_height="55dp"
             android:layout_gravity="bottom|end"
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="100dp"
@@ -592,7 +592,7 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
         android:layout_marginEnd="20dp"
-        android:layout_marginBottom="50dp"
+        android:layout_marginBottom="30dp"
         android:background="@drawable/fab_bg"
         android:tint="@color/white"
         app:backgroundTint="@color/bluejeans"
