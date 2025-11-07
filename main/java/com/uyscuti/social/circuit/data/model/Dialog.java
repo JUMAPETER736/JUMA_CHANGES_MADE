@@ -7,6 +7,8 @@ import android.os.Parcelable;
 
 import com.uyscuti.social.chatsuit.commons.models.IDialog;
 
+
+
 public class Dialog implements IDialog<Message>, Parcelable {
 
     private String id;
