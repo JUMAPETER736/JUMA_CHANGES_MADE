@@ -52,6 +52,7 @@ import androidx.emoji.text.EmojiCompat
 import androidx.emoji.text.FontRequestEmojiCompatConfig
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.loader.content.CursorLoader
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.ui.AppBarConfiguration
@@ -94,6 +95,8 @@ import com.uyscuti.social.core.common.data.api.RemoteMessageRepository
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepositoryImpl
 import com.uyscuti.social.core.common.data.api.Result
 import com.uyscuti.social.core.common.data.room.entity.CallLogEntity
+import com.uyscuti.social.core.common.data.room.entity.DialogEntity
+import com.uyscuti.social.core.common.data.room.entity.GroupDialogEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.UserEntity
 import com.uyscuti.social.core.local.utils.FileType
@@ -137,6 +140,7 @@ import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
 import kotlin.random.Random
+
 
 @AndroidEntryPoint
 class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
@@ -249,28 +253,23 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         fun open(context: Context, dialogName: String, dialog: Dialog, temporally: Boolean) {
             val intent = Intent(context, MessagesActivity::class.java)
 
-            // Instead of passing the whole Dialog object
-            intent.putExtra("Dialog_Extra", dialog)
-
-            // Pass individual fields
+            // DON'T pass Dialog as Parcelable - only pass primitive data
             intent.putExtra("chatId", dialog.id)
             intent.putExtra("dialogName", dialog.dialogName)
             intent.putExtra("dialogPhoto", dialog.dialogPhoto)
             intent.putExtra("isGroup", dialog.users.size > 1)
             intent.putExtra("temporally", temporally)
 
-            // Pass user info as JSON string or separate fields
-            // For simplicity, let's pass the first user's ID
+            // Pass first user info for temporary chats
             if (dialog.users.isNotEmpty()) {
-                intent.putExtra("firstUserId", dialog.users.first().id)
-                intent.putExtra("firstUserName", dialog.users.first().name)
-                intent.putExtra("firstUserAvatar", dialog.users.first().avatar)
+                intent.putExtra("firstUserId", dialog.users[0].id)
+                intent.putExtra("firstUserName", dialog.users[0].name)
+                intent.putExtra("firstUserAvatar", dialog.users[0].avatar)
             }
 
             // Pass last message ID if exists
-            dialog.lastMessage?.let {
-                intent.putExtra("lastMessageId", it.id)
-                intent.putExtra("lastMessageUserId", it.user.id)
+            if (dialog.lastMessage != null) {
+                intent.putExtra("lastMessageId", dialog.lastMessage.id)
             }
 
             context.startActivity(intent)
@@ -281,15 +280,12 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
 
-
-
         binding = ActivityMessagesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         messagesList = binding.messagesList
 
         EventBus.getDefault().register(this)
-
 
         callViewModel = ViewModelProvider(this)[CallViewModel::class.java]
 
@@ -298,23 +294,22 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         myId = localStorage.getUserId()
         username = localStorage.getUsername()
 
-
         remoteMessageRepository = RemoteMessageRepositoryImpl(retrofitIns)
 
         handler = Handler(Looper.getMainLooper())
 
-        runnable = Runnable {
-
-        }
-
+        runnable = Runnable { }
 
         setSupportActionBar(binding.toolbar)
 
         installTwitter()
 
-        dialog = intent.getParcelableExtra("Dialog_Extra")
-        chatId = dialog?.id ?: intent.getStringExtra("chatId") ?: ""
-        chatName = dialog?.dialogName ?: intent.getStringExtra("dialogName") ?: ""
+        // Extract primitive data from intent (NO Parcelable)
+        chatId = intent.getStringExtra("chatId") ?: ""
+        chatName = intent.getStringExtra("dialogName") ?: ""
+        val dialogPhoto = intent.getStringExtra("dialogPhoto") ?: ""
+        isTemporally = intent.getBooleanExtra("temporally", false)
+        isGroup = intent.getBooleanExtra("isGroup", false)
 
         if (chatId.isEmpty()) {
             Log.e(TAG, "Missing chat ID")
@@ -322,105 +317,82 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             return
         }
 
-        isGroup = (dialog?.users?.size ?: 0) > 1
-        supportActionBar?.title = dialog?.dialogName ?: chatName
-
-        val name = intent.getStringExtra("dialogName")
-        val image = intent.getStringExtra("dialogPic")
-
-        isTemporally = intent.getBooleanExtra("temporally", false)
-
-        dialog = intent.getParcelableExtra("Dialog_Extra")
-        chatId = dialog?.id ?: ""
-        chatName = dialog?.dialogName ?: ""
+        Log.d("ChatId", " ChatId : $chatId, Chat Name : $chatName")
 
         setChatId(chatId)
         setMyId(myId)
-
-
-        dialog?.let { setDialog(it) }
-
-        Log.d("ChatId", " ChatId : $chatId, Chat Name : $chatName")
-
-
-        isGroup = dialog?.users?.size!! > 1
-
         setIsGroup(isGroup)
 
-        supportActionBar?.title = dialog?.dialogName
+        supportActionBar?.title = chatName
 
-        if (isGroup) {
-            val members = dialog!!.users.map { it.name }.sorted()
-            supportActionBar?.subtitle = members.joinToString(", ")
-            binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.white_two))
-
-
-            CoroutineScope(Dispatchers.IO).launch {
-                val group = groupDialogViewModel.getGroupDialog(chatId)
-                groupAdminId = group.adminId
-                groupCreatedAt = group.createdAt.toString()
-
-                // Format date without GMT using DateTimeFormatter
-                val groupCreatedAtt = group.createdAt
-
-                val form = SimpleDateFormat("dd-MM-yyyy HH:mm:ss")
-                form.timeZone = TimeZone.getTimeZone("UTC")
-
-                val date = Date(groupCreatedAtt)
-
-                groupCreatedAt = formatDate(date)
-            }
-        }
-        else {
-
-
-            val friend = dialog!!.users.first()
-
-            userStatusManager = UserStatusManager(retrofitIns, friend.id) { userStatus ->
-                // Update UI or perform actions based on user status
-                // The userStatus variable contains the latest user status
-
-                Log.d("UserStatus", "UserStatus In Massages Activity, :$userStatus")
-
-
-
-                if (userStatus != null) {
-                    runOnUiThread {
-                        if (userStatus.isOnline) {
-                            // Update the subtitle of the toolbar
-                            supportActionBar?.subtitle = "online"
-                            binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.white_two))
-                        } else {
-                            // Format the last seen date
-                            val formattedLastSeen = formatLastSeenDate(userStatus.lastSeen)
-                            // Update the subtitle of the toolbar
-                            supportActionBar?.subtitle = formattedLastSeen
-                            binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.white_two))
-                        }
+        // Load dialog from database or create temporary one
+        lifecycleScope.launch {
+            try {
+                dialog = if (isGroup) {
+                    withContext(Dispatchers.IO) {
+                        val groupDialog = groupDialogViewModel.getGroupDialog(chatId)
+                        groupDialog?.toDialog()
+                    }
+                } else {
+                    withContext(Dispatchers.IO) {
+                        val userDialog = dialogViewModel.getDialog(chatId)
+                        userDialog?.toDialog()
                     }
                 }
-            }
 
+                // If dialog not found in database (temporary chat), create it
+                if (dialog == null) {
+                    val userId = intent.getStringExtra("firstUserId") ?: ""
+                    val userName = intent.getStringExtra("firstUserName") ?: chatName
+                    val userAvatar = intent.getStringExtra("firstUserAvatar") ?: dialogPhoto
+
+                    val user = User(userId, userName, userAvatar, false, Date())
+                    dialog = Dialog(chatId, chatName, dialogPhoto, arrayListOf(user), null, 0)
+                }
+
+                // Setup UI with loaded dialog
+                dialog?.let { loadedDialog ->
+                    setDialog(loadedDialog)
+                    setupDialogUI(loadedDialog)
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading dialog: ${e.message}", e)
+
+                // Fallback: create minimal dialog
+                val userId = intent.getStringExtra("firstUserId") ?: ""
+                val userName = intent.getStringExtra("firstUserName") ?: chatName
+                val userAvatar = intent.getStringExtra("firstUserAvatar") ?: dialogPhoto
+
+                val user = User(userId, userName, userAvatar, false, Date())
+                dialog = Dialog(chatId, chatName, dialogPhoto, arrayListOf(user), null, 0)
+
+                dialog?.let { fallbackDialog ->
+                    setDialog(fallbackDialog)
+                    setupDialogUI(fallbackDialog)
+                }
+            }
         }
 
-
-
-
-        val size =
-            TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics)
-                .toInt()
+        val size = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics
+        ).toInt()
 
         permit()
 
-
-
-        val navigationIcon = ContextCompat.getDrawable(this, com.uyscuti.social.circuit.R.drawable.baseline_arrow_back_ios_24)
+        val navigationIcon = ContextCompat.getDrawable(
+            this,
+            com.uyscuti.social.circuit.R.drawable.baseline_arrow_back_ios_24
+        )
 
         navigationIcon?.let {
             it.setBounds(0, 0, it.intrinsicWidth, it.intrinsicHeight)
 
             val wrappedDrawable = DrawableCompat.wrap(it)
-            DrawableCompat.setTint(wrappedDrawable, ContextCompat.getColor(this, com.uyscuti.social.circuit.R.color.white))
+            DrawableCompat.setTint(
+                wrappedDrawable,
+                ContextCompat.getColor(this, R.color.white)
+            )
             val drawableMargin = InsetDrawable(wrappedDrawable, 0, 0, 0, 0)
             binding.toolbar.navigationContentDescription = "Navigate up"
             binding.toolbar.navigationIcon = drawableMargin
@@ -430,32 +402,25 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             viewUser()
         }
 
-        val avatar = dialog?.dialogPhoto
-
+        // Load avatar
         Glide.with(this)
             .asBitmap()
-            .load(avatar)
+            .load(dialogPhoto)
             .centerCrop()
             .override(size, size)
             .into(object : SimpleTarget<Bitmap>() {
-
                 override fun onResourceReady(
                     resource: Bitmap,
                     transition: Transition<in Bitmap>?
                 ) {
                     val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
-
-
-
                     drawable.isCircular = true
-
                     val marginDrawable = InsetDrawable(drawable, 0, 0, 10, 0)
                     binding.toolbar.logo = marginDrawable
                 }
             })
 
         binding.toolbar.setContentInsetsRelative(0, 0)
-
 
         binding.toolbar.setNavigationOnClickListener {
             onBackPressed()
@@ -466,9 +431,8 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         emojiPopup = EmojiPopup(rootView, binding.input.inputEditText)
         inputMethodManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
 
-
         initAdapter()
-        val input = findViewById<MessageInput>(com.uyscuti.social.circuit.R.id.input)
+        val input = findViewById<MessageInput>(R.id.messageInput)
         input.setInputListener(this)
         input.setAttachmentsListener(this)
         input.setVoiceListener(this)
@@ -478,31 +442,71 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         observeSendingMessagesI()
 
-
         if (!isTemporally) {
             observeTemporallyMessages(chatName)
         }
 
-
-
-        if (isTemporally) {
-
-        }
-
-        // Observe the LiveData in the activity
+        // Observe dialog updates
         dialogViewModel.updatedDialog.observe(this, Observer { updatedDialog ->
-            // Handle the updated dialog
-            // This block will be executed when the dialog is updated
             if (updatedDialog != null) {
                 Log.d(TAG, "Updated Dialog : $updatedDialog")
                 chatId = updatedDialog.id
                 trigger()
             }
         })
-
-
     }
 
+    private fun setupDialogUI(dialog: Dialog) {
+        supportActionBar?.title = dialog.dialogName
+
+        if (isGroup) {
+            val members = dialog.users.map { it.name }.sorted()
+            supportActionBar?.subtitle = members.joinToString(", ")
+            binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.white_two))
+
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val group = groupDialogViewModel.getGroupDialog(chatId)
+                    groupAdminId = group.adminId
+                    groupCreatedAt = group.createdAt.toString()
+
+                    val groupCreatedAtt = group.createdAt
+                    val form = SimpleDateFormat("dd-MM-yyyy HH:mm:ss")
+                    form.timeZone = TimeZone.getTimeZone("UTC")
+                    val date = Date(groupCreatedAtt)
+
+                    groupCreatedAt = formatDate(date)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error loading group info: ${e.message}")
+                }
+            }
+        } else {
+            if (dialog.users.isNotEmpty()) {
+                val friend = dialog.users[0]
+
+                userStatusManager = UserStatusManager(retrofitIns, friend.id) { userStatus ->
+                    Log.d("UserStatus", "UserStatus In Messages Activity: $userStatus")
+
+                    if (userStatus != null) {
+                        runOnUiThread {
+                            if (userStatus.isOnline) {
+                                supportActionBar?.subtitle = "online"
+                                binding.toolbar.setSubtitleTextColor(
+                                    resources.getColor(R.color.white_two)
+                                )
+                            } else {
+                                val formattedLastSeen = formatLastSeenDate(userStatus.lastSeen)
+                                supportActionBar?.subtitle = formattedLastSeen
+                                binding.toolbar.setSubtitleTextColor(
+                                    resources.getColor(R.color.white_two)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     private fun observeThisDialog(name: String) {
         CoroutineScope(Dispatchers.Main).launch {
@@ -4644,5 +4648,58 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+
+    // Extension function for UserEntity to User
+    fun UserEntity.toUser(): User {
+        return User(
+            this.id,
+            this.name,
+            this.avatar,
+            this.online,
+            this.lastSeen
+        )
+    }
+
+    // Extension function for MessageEntity to Message
+    fun MessageEntity.toMessage(): Message {
+        return Message(
+            this.id,
+            this.user.toUser(),
+            this.text
+        )
+    }
+
+    // Extension function for DialogEntity to Dialog
+    fun DialogEntity.toDialog(): Dialog {
+        return Dialog(
+            this.id,
+            this.dialogName,
+            this.dialogPhoto,
+            ArrayList(this.users.map { it.toUser() }),
+            this.lastMessage?.toMessage() ?: createDefaultMessage(),
+            this.unreadCount
+        )
+    }
+
+    // Extension function for GroupDialogEntity to Dialog
+    fun GroupDialogEntity.toDialog(): Dialog {
+        return Dialog(
+            this.id,
+            this.dialogName,
+            this.dialogPhoto,
+            ArrayList(this.users.map { it.toUser() }),
+            this.lastMessage.toMessage(),
+            this.unreadCount
+        )
+    }
+
+    // Helper function to create a default Message when lastMessage is null
+    private fun createDefaultMessage(): Message {
+        return Message(
+            "",
+            User("", "", "", false, Date()),
+            ""
+        )
+    }
 
 }
