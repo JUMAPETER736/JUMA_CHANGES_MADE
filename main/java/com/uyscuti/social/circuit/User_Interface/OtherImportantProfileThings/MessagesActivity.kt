@@ -376,7 +376,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         val size = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics).toInt()
 
-        permit()
+       // permit()
 
         val navigationIcon = ContextCompat.getDrawable(this, com.uyscuti.social.circuit.R.drawable.baseline_arrow_back_ios_24)
 
@@ -2414,29 +2414,29 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
     }
 
-    private fun permit() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Log.d("DeviceVersion", "Higher Than 11")
-
-            if (Environment.isExternalStorageManager()) {
-                // Permission already granted
-                // Continue with your file operations
-                Log.d("DeviceVersion", "Access Already Permitted")
-
-            } else {
-                Log.d("DeviceVersion", "Access Not Permitted, Please Grant Manually")
-
-                // Request the permission
-                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                intent.data = Uri.parse("package:$packageName")
-                startActivityForResult(intent, MY_MANAGE_EXTERNAL_STORAGE_REQUEST_CODE)
-            }
-        } else {
-            // Device is not running Android 11 or higher
-            // Continue with your file operations
-            Log.d("DeviceVersion", "Lower Than 11")
-        }
-    }
+//    private fun permit() {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+//            Log.d("DeviceVersion", "Higher Than 11")
+//
+//            if (Environment.isExternalStorageManager()) {
+//                // Permission already granted
+//                // Continue with your file operations
+//                Log.d("DeviceVersion", "Access Already Permitted")
+//
+//            } else {
+//                Log.d("DeviceVersion", "Access Not Permitted, Please Grant Manually")
+//
+//                // Request the permission
+//                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+//                intent.data = Uri.parse("package:$packageName")
+//                startActivityForResult(intent, MY_MANAGE_EXTERNAL_STORAGE_REQUEST_CODE)
+//            }
+//        } else {
+//            // Device is not running Android 11 or higher
+//            // Continue with your file operations
+//            Log.d("DeviceVersion", "Lower Than 11")
+//        }
+//    }
 
 
     private fun copyFileToInternalStorage(
