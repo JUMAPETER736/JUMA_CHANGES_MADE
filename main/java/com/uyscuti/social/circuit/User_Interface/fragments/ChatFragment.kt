@@ -34,20 +34,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [ChatFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+
 
 @AndroidEntryPoint
 class ChatFragment : Fragment(), ChatNavigationController {
-    // TODO: Rename and change types of parameters
+
     private var param1: String? = null
     private var param2: String? = null
 
@@ -85,15 +80,10 @@ class ChatFragment : Fragment(), ChatNavigationController {
             activity?.window?.navigationBarColor =
                 ContextCompat.getColor(requireContext(), R.color.white)
         }
-//        val decor: View? = activity?.window?.decorView
-//
-//        if(decor!!.systemUiVisibility != View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
-//            decor.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-//        else
-//            decor.systemUiVisibility = 0
+
 
         return binding.root
-//        return inflater.inflate(R.layout.fragment_chat, container, false)
+
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -114,7 +104,7 @@ class ChatFragment : Fragment(), ChatNavigationController {
         viewPager.adapter = adapter
 
         viewPager.offscreenPageLimit = 4
-//        viewPager.setCurrentItem(0, true)
+
 
         // Connect the TabLayout and ViewPager
         tabLayout.setupWithViewPager(viewPager)
@@ -132,7 +122,7 @@ class ChatFragment : Fragment(), ChatNavigationController {
                 CoroutineScope(Dispatchers.Main).launch {
                     adapter.updateUnreadCount(0, unread)
                 }
-//               getChatNavigationController()?.unreadCount(0,unread)
+
             }
 
             groupDialogViewModel.allUnreadGroupDialogsCount.observe(viewLifecycleOwner) { unread ->
@@ -144,15 +134,7 @@ class ChatFragment : Fragment(), ChatNavigationController {
     }
 
     companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment ChatFragment.
-         */
-        // TODO: Rename and change types and number of parameters
+
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
             ChatFragment().apply {
@@ -210,7 +192,7 @@ class ChatFragment : Fragment(), ChatNavigationController {
         fabAction.setOnClickListener {
             val intent = Intent(requireContext(), CreateGroupChat::class.java)
             startActivity(intent)
-//            Toast.makeText(requireContext(),"Create Group Chat", Toast.LENGTH_LONG).show()
+
         }
     }
 
@@ -221,7 +203,7 @@ class ChatFragment : Fragment(), ChatNavigationController {
         fabAction.setOnClickListener {
             val intent = Intent(requireContext(), MakeCallActivity::class.java)
             startActivity(intent)
-//            Toast.makeText(requireContext(),"Make A Call", Toast.LENGTH_LONG).show()
+
 
         }
     }
@@ -265,7 +247,7 @@ class ChatFragment : Fragment(), ChatNavigationController {
 
             "business" -> {
                fabAction.visibility = View.INVISIBLE
-//                binding.fabAction.setImageResource(R.drawable.baseline_add_24)
+
             }
 
             else -> {
@@ -283,11 +265,7 @@ class ChatFragment : Fragment(), ChatNavigationController {
     override fun onGetLayoutInflater(
         savedInstanceState: Bundle?
     ): LayoutInflater {
-        // Use a custom theme for the fragment layout
-//        val themeId = if (someCondition) {
-//            R.style.FragmentLightTheme
-//        } else {
-//        }
+
 
         return super.onGetLayoutInflater(savedInstanceState).cloneInContext(
             ContextThemeWrapper(
@@ -304,16 +282,9 @@ class ChatFragment : Fragment(), ChatNavigationController {
     private fun updateStatusBar() {
         val decor: View? = activity?.window?.decorView
 
-        // Your logic to determine the status bar appearance based on the fragment's theme
-//        val isLightTheme = // Your logic to determine if the fragment has a light theme
-//            decor?.systemUiVisibility = 0
+
         decor?.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
 
-//            if (isLightTheme) {
-//                // Light theme
-//            } else {
-//                // Dark theme
-//                decor?.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-//            }
+
     }
 }
