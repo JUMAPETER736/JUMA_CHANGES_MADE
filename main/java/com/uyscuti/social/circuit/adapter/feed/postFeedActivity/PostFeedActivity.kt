@@ -20,8 +20,8 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
-import com.uyscuti.social.circuit.adapter.OnClickListeners
-import com.uyscuti.social.circuit.adapter.OnCommentsClickListener
+import com.uyscuti.social.circuit.User_Interface.fragments.OnClickListeners
+import com.uyscuti.social.circuit.User_Interface.fragments.OnCommentsClickListener
 import com.uyscuti.social.circuit.data.model.Comment
 import com.uyscuti.social.circuit.service.VideoPreLoadingService
 import com.uyscuti.social.circuit.utils.Constants
