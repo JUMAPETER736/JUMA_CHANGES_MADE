@@ -130,7 +130,7 @@ import com.uyscuti.social.circuit.User_Interface.uploads.AudioActivity
 import com.uyscuti.social.circuit.User_Interface.uploads.CameraActivity
 import com.uyscuti.social.circuit.User_Interface.uploads.VideosActivity
 import com.uyscuti.social.circuit.adapter.CommentsRecyclerViewAdapter
-import com.uyscuti.social.circuit.adapter.OnCommentsClickListener
+import com.uyscuti.social.circuit.User_Interface.fragments.OnCommentsClickListener
 import com.uyscuti.social.circuit.adapter.OnViewRepliesClickListener
 import com.uyscuti.social.circuit.adapter.feed.FeedAdapter
 import com.uyscuti.social.circuit.adapter.notifications.AdPaginatedAdapter
