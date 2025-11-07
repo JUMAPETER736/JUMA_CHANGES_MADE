@@ -244,31 +244,27 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
     private lateinit var myId: String
 
-
     companion object {
-
-        fun open(context: Context, dialogName: String, dialog: Dialog, temporally: Boolean) {
+        fun open(context: Context, dialogName: String, dialog: Dialog?, temporally: Boolean) {
             val intent = Intent(context, MessagesActivity::class.java)
 
+            if (dialog != null) {
+                intent.putExtra("Dialog_Extra", dialog)
+                intent.putExtra("chatId", dialog.id)
+                intent.putExtra("dialogName", dialog.dialogName)
+                intent.putExtra("dialogPhoto", dialog.dialogPhoto)
+                intent.putExtra("isGroup", dialog.users.size > 1)
+                intent.putExtra("temporally", temporally)
 
-            intent.putExtra("Dialog_Extra", dialog)
+                if (dialog.users.isNotEmpty()) {
+                    intent.putExtra("firstUserId", dialog.users.first().id)
+                    intent.putExtra("firstUserName", dialog.users.first().name)
+                    intent.putExtra("firstUserAvatar", dialog.users.first().avatar)
+                }
 
-            intent.putExtra("chatId", dialog.id)
-            intent.putExtra("dialogName", dialog.dialogName)
-            intent.putExtra("dialogPhoto", dialog.dialogPhoto)
-            intent.putExtra("isGroup", dialog.users.size > 1)
-            intent.putExtra("temporally", temporally)
-
-            // Pass user info if needed
-            if (dialog.users.isNotEmpty()) {
-                intent.putExtra("firstUserId", dialog.users.first().id)
-                intent.putExtra("firstUserName", dialog.users.first().name)
-                intent.putExtra("firstUserAvatar", dialog.users.first().avatar)
-            }
-
-            // Pass last message info if exists
-            dialog.lastMessage?.let {
-                intent.putExtra("lastMessageId", it.id)
+                dialog.lastMessage?.let {
+                    intent.putExtra("lastMessageId", it.id)
+                }
             }
 
             context.startActivity(intent)
@@ -500,7 +496,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
 
     }
-
 
     private fun observeThisDialog(name: String) {
         CoroutineScope(Dispatchers.Main).launch {
