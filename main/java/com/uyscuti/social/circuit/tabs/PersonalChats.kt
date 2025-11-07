@@ -276,7 +276,7 @@ class PersonalChats : MainDialogsFragment(), DateFormatter.Formatter, OnBackPres
     }
 
     companion object {
-        
+
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
             PersonalChats().apply {
