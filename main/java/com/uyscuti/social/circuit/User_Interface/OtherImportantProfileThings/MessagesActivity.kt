@@ -376,7 +376,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         val size = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics).toInt()
 
-       // permit()
+        //permit()
 
         val navigationIcon = ContextCompat.getDrawable(this, com.uyscuti.social.circuit.R.drawable.baseline_arrow_back_ios_24)
 
