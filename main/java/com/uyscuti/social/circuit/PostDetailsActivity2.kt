@@ -90,8 +90,8 @@ import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 
-import com.uyscuti.social.circuit.adapter.OnClickListeners
-import com.uyscuti.social.circuit.adapter.OnCommentsClickListener
+import com.uyscuti.social.circuit.User_Interface.fragments.OnClickListeners
+import com.uyscuti.social.circuit.User_Interface.fragments.OnCommentsClickListener
 
 import com.uyscuti.social.circuit.calls.viewmodel.CallViewModel
 
