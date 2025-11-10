@@ -1278,6 +1278,8 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
+
+
     // Fragment Parameters
     private var param1: String? = null
     private var param2: String? = null
