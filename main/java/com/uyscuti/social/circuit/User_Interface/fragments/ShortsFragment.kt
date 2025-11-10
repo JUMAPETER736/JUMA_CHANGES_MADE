@@ -205,7 +205,9 @@ class ShortsAdapter(
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
-) : RecyclerView.Adapter<StringViewHolder>() {
+)
+
+    : RecyclerView.Adapter<StringViewHolder>() {
 
     // Properties
     private val viewHolderList = mutableListOf<StringViewHolder>()
@@ -475,7 +477,9 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
-) : ViewHolder<MyData>(itemView) {
+)
+
+    : ViewHolder<MyData>(itemView) {
 
     companion object {
         private const val TAG = "StringViewHolder"
