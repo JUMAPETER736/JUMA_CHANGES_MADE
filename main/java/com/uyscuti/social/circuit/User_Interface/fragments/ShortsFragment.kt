@@ -166,7 +166,7 @@ import retrofit2.Response
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.signature.ObjectKey
 import android.graphics.drawable.Drawable
-
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
 
 
 private const val ARG_PARAM1 = "param1"
@@ -200,16 +200,12 @@ data class MyData(
 
 // MAIN ADAPTER CLASS
 class ShortsAdapter(
-
     private val commentsClickListener: OnCommentsClickListener,
     private var clickListeners: OnClickListeners,
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
-
-)
-
-    : RecyclerView.Adapter<StringViewHolder>() {
+) : RecyclerView.Adapter<StringViewHolder>() {
 
     // Properties
     private val viewHolderList = mutableListOf<StringViewHolder>()
@@ -222,14 +218,9 @@ class ShortsAdapter(
     private val preloadedVideos = mutableSetOf<Int>()
     private val preloadHandler = Handler(Looper.getMainLooper())
 
-
     override fun onBindViewHolder(holder: StringViewHolder, position: Int) {
         val data = shortsList[position]
 
-        // REMOVED: Don't load thumbnail here
-        // Let playVideoAtPosition handle it for the active item only
-
-        // Always bind fresh data
         val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
             ?: ShortsEntityFollowList(
                 followersId = data.author.account._id,
@@ -241,12 +232,10 @@ class ShortsAdapter(
 
         holder.onBind(myData)
 
-        // Update current holder reference
         if (currentActivePosition == position) {
             currentViewHolder = holder
         }
 
-        // Preload adjacent videos
         preloadVideosAround(position)
     }
 
@@ -267,7 +256,6 @@ class ShortsAdapter(
 
         if (startPosition == 0) {
             notifyDataSetChanged()
-            // Preload first batch
             preloadVideosAround(0)
         } else {
             notifyItemRangeInserted(startPosition, newData.size)
@@ -294,6 +282,36 @@ class ShortsAdapter(
         }
     }
 
+    // ✅ NEW: Comment count management methods
+    fun updateCommentCountForPosition(position: Int, newCount: Int) {
+        if (position in 0 until shortsList.size) {
+            shortsList[position].comments = newCount
+            viewHolderList.getOrNull(position)?.updateCommentCount(newCount)
+            Log.d(TAG, "Updated comment count for position $position to $newCount")
+        }
+    }
+
+    fun incrementCommentCountForPosition(position: Int) {
+        if (position in 0 until shortsList.size) {
+            val newCount = shortsList[position].comments + 1
+            updateCommentCountForPosition(position, newCount)
+        }
+    }
+
+    fun decrementCommentCountForPosition(position: Int) {
+        if (position in 0 until shortsList.size) {
+            val newCount = maxOf(0, shortsList[position].comments - 1)
+            updateCommentCountForPosition(position, newCount)
+        }
+    }
+
+    fun refreshCommentCountFromDatabase(position: Int) {
+        if (position in 0 until shortsList.size) {
+            val shortsId = shortsList[position]._id
+            viewHolderList.getOrNull(position)?.refreshCommentCountFromDatabase(shortsId)
+        }
+    }
+
     // PRELOADING METHODS
     private fun preloadVideosAround(position: Int) {
         preloadHandler.removeCallbacksAndMessages(null)
@@ -308,7 +326,6 @@ class ShortsAdapter(
                 }
             }
 
-            // Clear old preloaded videos that are too far away
             val iterator = preloadedVideos.iterator()
             while (iterator.hasNext()) {
                 val preloadedPos = iterator.next()
@@ -326,10 +343,7 @@ class ShortsAdapter(
         try {
             val videoUrl = shortsList[position].images[0].url
             val mediaItem = MediaItem.fromUri(videoUrl)
-
-            // Mark as preloaded
             preloadedVideos.add(position)
-
             Log.d(TAG, "Preloading video at position: $position")
         } catch (e: Exception) {
             Log.e(TAG, "Error preloading video at position $position: ${e.message}")
@@ -417,7 +431,6 @@ class ShortsAdapter(
         return viewHolder
     }
 
-
     fun ensureFollowDataExists(shortsEntity: ShortsEntity) {
         val authorId = shortsEntity.author.account._id
         val exists = followingData.any { it.followersId == authorId }
@@ -432,7 +445,6 @@ class ShortsAdapter(
         }
     }
 
-
     override fun getItemCount(): Int {
         return shortsList.size
     }
@@ -440,31 +452,30 @@ class ShortsAdapter(
     override fun onViewAttachedToWindow(holder: StringViewHolder) {
         super.onViewAttachedToWindow(holder)
         holder.onViewAttached()
-
-        // CRITICAL: Properly reattach player
         holder.reattachPlayer()
     }
 
     override fun onViewDetachedFromWindow(holder: StringViewHolder) {
         super.onViewDetachedFromWindow(holder)
-        // Don't detach player completely, just pause updates
         holder.pauseUpdates()
     }
 
+    companion object {
+        private const val TAG = "ShortsAdapter"
+        private const val PRELOAD_COUNT = 2
+    }
 }
 
 
-class StringViewHolder @OptIn(UnstableApi::class) constructor
-    (
+// VIEWHOLDER CLASS
+class StringViewHolder @OptIn(UnstableApi::class) constructor(
     itemView: View,
     private val commentsClickListener: OnCommentsClickListener,
     private var onClickListeners: OnClickListeners,
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
-)
-
-    : ViewHolder<MyData>(itemView) {
+) : ViewHolder<MyData>(itemView) {
 
     companion object {
         private const val TAG = "StringViewHolder"
@@ -498,7 +509,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     private val shortsViewPager: FrameLayout = itemView.findViewById(R.id.shortsViewPager)
     private val shortsUploadCancelButton: ImageButton = itemView.findViewById(R.id.shortsUploadCancelButton)
 
-    private var currentThumbnailUrl: String? = null // ADD THIS to track current thumbnail
+    private var currentThumbnailUrl: String? = null
 
     // PROPERTIES
     private var player: ExoPlayer? = null
@@ -514,6 +525,11 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     private var isPlaying = false
     private var videoDuration = 0L
 
+    // ✅ NEW: Comment count state variables
+    private var serverCommentCount = 0
+    private var loadedCommentCount = 0
+    private var currentShorts: ShortsEntity? = null
+
     private val mainHandler = Handler(Looper.getMainLooper())
     private val progressUpdateRunnable = object : Runnable {
         override fun run() {
@@ -523,8 +539,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     }
 
     private val playerListener = object : Player.Listener {
-
-
         override fun onPlaybackStateChanged(playbackState: Int) {
             when (playbackState) {
                 Player.STATE_READY -> {
@@ -534,11 +548,9 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
                         bottomVideoSeekBar.secondaryProgress = 0
                         Log.d(TAG, "Video ready: ${videoDuration}ms")
                     }
-                    // Don't hide thumbnail here - let onRenderedFirstFrame handle it
                 }
                 Player.STATE_BUFFERING -> {
                     Log.d(TAG, "Video buffering")
-                    // Keep thumbnail visible during buffering
                     if (currentThumbnailUrl != null) {
                         thumbnailImageView.visibility = View.VISIBLE
                     }
@@ -561,38 +573,32 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
 
         override fun onRenderedFirstFrame() {
             Log.d(TAG, "Top video thumbnail visible and the bottom coming video thumbnail")
-
-            // Only hide if thumbnail matches current video
             thumbnailImageView.animate()
                 .alpha(0f)
-                .setDuration(200) // Slightly longer for smoother transition
+                .setDuration(200)
                 .withEndAction {
                     thumbnailImageView.visibility = View.GONE
-                    thumbnailImageView.setImageDrawable(null) // Clear image
-                    thumbnailImageView.alpha = 1f // Reset for next use
+                    thumbnailImageView.setImageDrawable(null)
+                    thumbnailImageView.alpha = 1f
                     currentThumbnailUrl = null
                 }
                 .start()
             videoView.visibility = View.VISIBLE
         }
-
-
     }
 
     init {
         setupSeekBar()
         setupUploadComponents()
 
-        // Ensure videoView is properly configured
         videoView.apply {
             useController = false
             keepScreenOn = true
-            // Set background to prevent black screen
             setBackgroundColor(Color.BLACK)
             setShutterBackgroundColor(Color.BLACK)
         }
 
-        exoplayer.repeatMode = Player.REPEAT_MODE_ONE // Loop like TikTok
+        exoplayer.repeatMode = Player.REPEAT_MODE_ONE
     }
 
     fun pauseUpdates() {
@@ -600,13 +606,12 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
     }
 
     fun loadThumbnail(thumbnailUrl: String?) {
-        // Clear previous thumbnail immediately to prevent flickering
         thumbnailImageView.setImageDrawable(null)
 
         if (thumbnailUrl != null && thumbnailUrl.isNotEmpty()) {
             currentThumbnailUrl = thumbnailUrl
             thumbnailImageView.visibility = View.VISIBLE
-            thumbnailImageView.alpha = 1f // Ensure full opacity
+            thumbnailImageView.alpha = 1f
             videoView.visibility = View.VISIBLE
 
             Glide.with(itemView.context)
@@ -618,7 +623,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
                         resource: Drawable,
                         transition: com.bumptech.glide.request.transition.Transition<in Drawable>?
                     ) {
-                        // Only set if this is still the current thumbnail (prevent race conditions)
                         if (currentThumbnailUrl == thumbnailUrl) {
                             thumbnailImageView.setImageDrawable(resource)
                         }
@@ -633,7 +637,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             currentThumbnailUrl = null
         }
     }
-
 
     fun reattachPlayer() {
         videoView.post {
@@ -705,21 +708,22 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
         val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
 
-        // REMOVED: Don't load thumbnail here for all items
-        // Only load when this item is about to be displayed
-        val thumbnailUrl = shortsEntity.thumbnail.firstOrNull()?.thumbnailUrl
-        currentThumbnailUrl = thumbnailUrl // Store for later use
+        // Store current shorts reference
+        currentShorts = shortsEntity
 
-        // Hide thumbnail by default - it will be shown when needed
+        val thumbnailUrl = shortsEntity.thumbnail.firstOrNull()?.thumbnailUrl
+        currentThumbnailUrl = thumbnailUrl
+
         thumbnailImageView.visibility = View.GONE
         videoView.visibility = View.VISIBLE
 
-        totalComments = shortsEntity.comments
+        // ✅ NEW: Initialize comment counts
+        initializeCommentCounts(shortsEntity)
+
         totalLikes = shortsEntity.likes
         isLiked = shortsEntity.isLiked
         isFavorite = shortsEntity.isBookmarked
 
-        // Rest of your existing onBind code...
         updateLikeButtonState()
         updateFavoriteButtonState()
         setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
@@ -732,11 +736,109 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
+    // ✅ NEW: Comment count initialization
+    private fun initializeCommentCounts(shortsEntity: ShortsEntity) {
+        serverCommentCount = shortsEntity.comments
+        totalComments = serverCommentCount
+        loadedCommentCount = 0
+        Log.d(TAG, "Initialized comment counts - Server: $serverCommentCount, Total: $totalComments")
+    }
+
+    // ✅ NEW: Update comment count display
+    private fun updateCommentCountDisplay() {
+        commentsCount.text = formatCount(totalComments)
+        commentsCount.visibility = View.VISIBLE
+        Log.d(TAG, "Updated comment count display: ${commentsCount.text}")
+    }
+
+    // ✅ NEW: Public method to update comment count
+    fun updateCommentCount(newCount: Int) {
+        Log.d(TAG, "updateCommentCount: Updating comment count from $totalComments to $newCount")
+        totalComments = if (newCount < 0) {
+            Log.w(TAG, "updateCommentCount: Negative count received, setting to 0")
+            0
+        } else {
+            newCount
+        }
+
+        currentShorts?.let { shorts ->
+            shorts.comments = totalComments
+        }
+
+        updateCommentCountDisplay()
+
+        // Add animation
+        YoYo.with(Techniques.Pulse)
+            .duration(500)
+            .playOn(commentsCount)
+    }
+
+    // ✅ NEW: Decrement comment count
+    fun decrementCommentCount() {
+        val newCount = maxOf(0, totalComments - 1)
+        Log.d(TAG, "decrementCommentCount: Decrementing from $totalComments to $newCount")
+        updateCommentCount(newCount)
+    }
+
+    // ✅ NEW: Increment comment count
+    fun incrementCommentCount() {
+        val newCount = totalComments + 1
+        Log.d(TAG, "incrementCommentCount: Incrementing from $totalComments to $newCount")
+        updateCommentCount(newCount)
+    }
+
+    // ✅ NEW: Refresh comment count from database
+    fun refreshCommentCountFromDatabase(shortsId: String) {
+        Log.d(TAG, "refreshCommentCountFromDatabase: Refreshing count for shorts: $shortsId")
+        RetrofitClient.commentService.getCommentCount(shortsId)
+            .enqueue(object : Callback<CommentCountResponse> {
+                override fun onResponse(call: Call<CommentCountResponse>, response: Response<CommentCountResponse>) {
+                    if (response.isSuccessful) {
+                        response.body()?.let { countResponse ->
+                            val newCount = countResponse.count
+                            Log.d(TAG, "refreshCommentCountFromDatabase: Got count: $newCount")
+                            updateCommentCount(newCount)
+                            currentShorts?.let { shorts ->
+                                shorts.comments = newCount
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "refreshCommentCountFromDatabase: Failed with code: ${response.code()}")
+                    }
+                }
+                override fun onFailure(call: Call<CommentCountResponse>, t: Throwable) {
+                    Log.e(TAG, "refreshCommentCountFromDatabase: Network error", t)
+                }
+            })
+    }
+
+    // ✅ NEW: Format count for display
+    @SuppressLint("DefaultLocale")
+    private fun formatCount(count: Int): String {
+        return when {
+            count >= 1_000_000 -> {
+                val millions = count / 1_000_000.0
+                if (millions == millions.toInt().toDouble()) {
+                    "${millions.toInt()}M"
+                } else {
+                    String.format("%.1fM", millions)
+                }
+            }
+            count >= 1_000 -> {
+                val thousands = count / 1_000.0
+                if (thousands == thousands.toInt().toDouble()) {
+                    "${thousands.toInt()}K"
+                } else {
+                    String.format("%.1fK", thousands)
+                }
+            }
+            else -> count.toString()
+        }
+    }
 
     fun onViewRecycled() {
         stopProgressUpdates()
 
-        // Clear thumbnail completely when recycling
         thumbnailImageView.animate().cancel()
         thumbnailImageView.visibility = View.GONE
         thumbnailImageView.setImageDrawable(null)
@@ -745,7 +847,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
 
         videoView.visibility = View.VISIBLE
 
-        // Clear click listeners
         commentsParentLayout.setOnClickListener(null)
         btnLike.setOnClickListener(null)
         favorite.setOnClickListener(null)
@@ -759,18 +860,19 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         bottomVideoSeekBar.progress = 0
         isPlaying = false
         exoplayer.removeListener(playerListener)
+
+        // ✅ NEW: Clear shorts reference
+        currentShorts = null
     }
 
     @OptIn(UnstableApi::class)
     private fun setupClickListeners(
-
         data: MyData,
         url: String,
         shortOwnerId: String,
         shortOwnerName: String,
         shortOwnerUsername: String,
         shortOwnerProfilePic: String
-
     ) {
         commentsParentLayout.setOnClickListener(null)
         btnLike.setOnClickListener(null)
@@ -784,6 +886,13 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         commentsParentLayout.setOnClickListener {
             Log.d(TAG, "onBind: Posting for main activity to open comments")
             val userShortsEntity = shortsEntityToUserShortsEntity(data.shortsEntity)
+
+            // ✅ Add animation for comment button click
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(commentsCount)
+
             commentsClickListener.onCommentsClick(bindingAdapterPosition, userShortsEntity)
         }
 
@@ -816,7 +925,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
-
     @SuppressLint("SetTextI18n")
     private fun setupFollowButton(data: MyData, shortOwnerId: String) {
         if (shortOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
@@ -824,22 +932,17 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         } else {
             followButton.visibility = View.VISIBLE
 
-            // Set initial state from data
             updateFollowButtonState(data.followItemEntity.isFollowing)
 
-            // Remove previous listener to avoid duplicates
             followButton.setOnClickListener(null)
 
             followButton.setOnClickListener {
-                // Toggle state immediately for smooth UI
                 val newFollowState = !isFollowed
                 isFollowed = newFollowState
                 updateFollowButtonState(newFollowState)
 
-                // Update the data source immediately
                 data.followItemEntity.isFollowing = newFollowState
 
-                // Post event for backend update (but don't rebind the view)
                 val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, newFollowState)
                 EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
 
@@ -861,7 +964,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
     }
 
-
     private fun setupContent(shortsEntity: ShortsEntity) {
         val caption = shortsEntity.content.toString()
         if (caption.isNotEmpty()) {
@@ -869,11 +971,11 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
 
         username.text = shortsEntity.author.account.username
-        commentsCount.text = totalComments.toString()
-        likeCount.text = totalLikes.toString()
-        favoriteCount.text = totalFavorites.toString()
-        shareCount.text = totalShares.toString()
-        downloadCount.text = totalDownloads.toString()
+        commentsCount.text = formatCount(totalComments)  // ✅ Use formatCount
+        likeCount.text = formatCount(totalLikes)  // ✅ Use formatCount
+        favoriteCount.text = formatCount(totalFavorites)  // ✅ Use formatCount
+        shareCount.text = formatCount(totalShares)  // ✅ Use formatCount
+        downloadCount.text = formatCount(totalDownloads)  // ✅ Use formatCount
     }
 
     private fun handleLikeClick(shortOwnerId: String) {
