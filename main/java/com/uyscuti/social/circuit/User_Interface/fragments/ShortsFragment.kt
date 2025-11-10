@@ -1278,7 +1278,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-
+    
 
     // Fragment Parameters
     private var param1: String? = null
@@ -1786,7 +1786,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         return view
     }
-
+    
 
     private fun playVideoAtPosition(position: Int) {
         val videoShorts = shortsViewModel.videoShorts
