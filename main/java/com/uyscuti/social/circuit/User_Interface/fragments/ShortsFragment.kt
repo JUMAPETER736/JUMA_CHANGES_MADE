@@ -226,9 +226,8 @@ class ShortsAdapter(
     override fun onBindViewHolder(holder: StringViewHolder, position: Int) {
         val data = shortsList[position]
 
-        // CRITICAL: Load thumbnail IMMEDIATELY for instant feedback
-        val thumbnailUrl = data.thumbnail.firstOrNull()?.thumbnailUrl
-        holder.loadThumbnail(thumbnailUrl)
+        // REMOVED: Don't load thumbnail here
+        // Let playVideoAtPosition handle it for the active item only
 
         // Always bind fresh data
         val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
@@ -561,7 +560,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         }
 
         override fun onRenderedFirstFrame() {
-            Log.d(TAG, "First frame rendered - hiding thumbnail")
+            Log.d(TAG, "Top video thumbnail visible and the bottom coming video thumbnail")
 
             // Only hide if thumbnail matches current video
             thumbnailImageView.animate()
@@ -613,8 +612,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
             Glide.with(itemView.context)
                 .load(thumbnailUrl)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .signature(ObjectKey(thumbnailUrl)) // Force unique cache key
-                .placeholder(R.drawable.flash21) // Optional: show placeholder while loading
+                .signature(ObjectKey(thumbnailUrl))
                 .into(object : CustomTarget<Drawable>() {
                     override fun onResourceReady(
                         resource: Drawable,
@@ -649,7 +647,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
 
             exoplayer.addListener(playerListener)
 
-            Log.d(TAG, "Player reattached, visibility: ${videoView.visibility}")
+            Log.d(TAG, "Player reattached, showing the bottom coming video: ${videoView.visibility}")
         }
     }
 
@@ -707,12 +705,13 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor
         val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
         val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
 
-        // CRITICAL: Load thumbnail FIRST before any other UI updates
+        // REMOVED: Don't load thumbnail here for all items
+        // Only load when this item is about to be displayed
         val thumbnailUrl = shortsEntity.thumbnail.firstOrNull()?.thumbnailUrl
-        loadThumbnail(thumbnailUrl)
+        currentThumbnailUrl = thumbnailUrl // Store for later use
 
-        // Set visibility for smooth UX
-        thumbnailImageView.visibility = View.VISIBLE
+        // Hide thumbnail by default - it will be shown when needed
+        thumbnailImageView.visibility = View.GONE
         videoView.visibility = View.VISIBLE
 
         totalComments = shortsEntity.comments
@@ -1682,7 +1681,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
 
-    // 2. REPLACE playVideoAtPosition function:
     private fun playVideoAtPosition(position: Int) {
         val videoShorts = shortsViewModel.videoShorts
 
@@ -1693,6 +1691,11 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         val shortVideo = videoShorts[position]
         Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
+
+        // Load thumbnail for current position ONLY
+        val currentHolder = shortsAdapter.getCurrentViewHolder()
+        val thumbnailUrl = shortVideo.thumbnail.firstOrNull()?.thumbnailUrl
+        currentHolder?.loadThumbnail(thumbnailUrl)
 
         val rawVideoUrl = shortVideo.images.firstOrNull()?.url
 
