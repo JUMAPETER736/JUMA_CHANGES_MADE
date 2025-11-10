@@ -2859,9 +2859,6 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         )
     }
 
-
-
-
     private fun observerAction() {
         mainViewModel.selectedDialogsCount.observe(this, Observer { count ->
             if (count != null && count > 0) {
