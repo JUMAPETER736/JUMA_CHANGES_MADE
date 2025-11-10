@@ -5578,67 +5578,13 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                         }
                     }
 
-
-//                    if (filePath != null) {
-//
-//                        val file = File(filePath)
-//                        if (file.exists()) {
-//                            var fileSizeInBytes = file.length()
-//                            var fileSizeInKB = fileSizeInBytes / 1024
-//                            var fileSizeInMB = fileSizeInKB / 1024
-//                            Log.d("PhotoPicker", "File size: $fileSizeInMB MB")
-//
-//                            val fileSizeInGB = fileSizeInMB / 1024 // Conversion from MB to GB
-////                            Log.d("VideoPicker", "File size: $fileSizeInGB GB")
-//
-//                            if (fileSizeInGB.toInt() == 1) {
-//                                showToast(this, "File size too large")
-//                            } else if (fileSizeInMB > 0.5) {
-//                                Log.d("PhotoPicker", "File size: greater than $fileSizeInMB MB")
-////                                Log.d("cameraLauncher", "Uri $uri")
-////                                Log.d("cameraLauncher", "v Uri $vUri")
-////
-//                                if (!isReply) {
-//                                    uploadImageComment(filePath, placeholder = true)
-//                                } else {
-//                                    uploadReplyImageComment(filePath, placeholder = true)
-//                                }
-////                                if (vUri != null) {
-////                                toCompressUris.add(uri)
-//////                                }
-////                                compressShorts("", fileType = "image")
-//                            } else {
-//                                Log.d("PhotoPicker", "File size: less than $fileSizeInMB MB")
-//
-//
-////                                if (filePath != null && !isReply) {
-////                                    uploadImageComment(filePath)
-////                                } else {
-////                                    if (filePath != null) {
-////                                        uploadReplyImageComment(filePath)
-////                                    }
-////                                }
-//                            }
-//
-//
-//                        } else {
-//                            Log.d("PhotoPicker", "File does not exists ")
-//                        }
-//
-//
-//                        val url = resolveContentUriToFilePath(Uri.parse(filePath))
-//                        Log.d("PhotoPicker", "camera image path $url")
-//
-//                    }
-
-
                 }
 
             } else {
                 Log.d("PhotoPicker", "No media selected")
             }
         }
-    
+
 
 
     private fun uploadPendingComments() {
