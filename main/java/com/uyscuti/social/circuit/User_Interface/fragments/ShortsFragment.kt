@@ -220,6 +220,9 @@ class ShortsAdapter(
     private val preloadedVideos = mutableSetOf<Int>()
     private val preloadHandler = Handler(Looper.getMainLooper())
 
+
+
+
     override fun onBindViewHolder(holder: StringViewHolder, position: Int) {
         val data = shortsList[position]
 
@@ -477,9 +480,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
-)
-
-    : ViewHolder<MyData>(itemView) {
+) : ViewHolder<MyData>(itemView) {
 
     companion object {
         private const val TAG = "StringViewHolder"
@@ -529,7 +530,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
     private var isPlaying = false
     private var videoDuration = 0L
 
-    // ✅ NEW: Comment count state variables
+    // Comment count state variables
     private var serverCommentCount = 0
     private var loadedCommentCount = 0
     private var currentShorts: ShortsEntity? = null
@@ -721,7 +722,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         thumbnailImageView.visibility = View.GONE
         videoView.visibility = View.VISIBLE
 
-        // ✅ NEW: Initialize comment counts
+        // Initialize comment counts
         initializeCommentCounts(shortsEntity)
 
         totalLikes = shortsEntity.likes
@@ -740,7 +741,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         }
     }
 
-    // ✅ NEW: Comment count initialization
+    // ✅ Comment count initialization
     private fun initializeCommentCounts(shortsEntity: ShortsEntity) {
         serverCommentCount = shortsEntity.comments
         totalComments = serverCommentCount
@@ -748,14 +749,14 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         Log.d(TAG, "Initialized comment counts - Server: $serverCommentCount, Total: $totalComments")
     }
 
-    // ✅ NEW: Update comment count display
+    // ✅ Update comment count display
     private fun updateCommentCountDisplay() {
         commentsCount.text = formatCount(totalComments)
         commentsCount.visibility = View.VISIBLE
         Log.d(TAG, "Updated comment count display: ${commentsCount.text}")
     }
 
-    // ✅ NEW: Public method to update comment count
+    // ✅ Public method to update comment count (called from adapter)
     fun updateCommentCount(newCount: Int) {
         Log.d(TAG, "updateCommentCount: Updating comment count from $totalComments to $newCount")
         totalComments = if (newCount < 0) {
@@ -777,21 +778,21 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             .playOn(commentsCount)
     }
 
-    // ✅ NEW: Decrement comment count
+    // ✅ Decrement comment count
     fun decrementCommentCount() {
         val newCount = maxOf(0, totalComments - 1)
         Log.d(TAG, "decrementCommentCount: Decrementing from $totalComments to $newCount")
         updateCommentCount(newCount)
     }
 
-    // ✅ NEW: Increment comment count
+    // ✅ Increment comment count
     fun incrementCommentCount() {
         val newCount = totalComments + 1
         Log.d(TAG, "incrementCommentCount: Incrementing from $totalComments to $newCount")
         updateCommentCount(newCount)
     }
 
-    // ✅ NEW: Refresh comment count from database
+    // ✅ Refresh comment count from database (called from adapter)
     fun refreshCommentCountFromDatabase(shortsId: String) {
         Log.d(TAG, "refreshCommentCountFromDatabase: Refreshing count for shorts: $shortsId")
         RetrofitClient.commentService.getCommentCount(shortsId)
@@ -816,7 +817,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             })
     }
 
-    // ✅ NEW: Format count for display
+    // ✅ Format count for display
     @SuppressLint("DefaultLocale")
     private fun formatCount(count: Int): String {
         return when {
@@ -865,7 +866,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         isPlaying = false
         exoplayer.removeListener(playerListener)
 
-        // ✅ NEW: Clear shorts reference
+        // Clear shorts reference
         currentShorts = null
     }
 
@@ -891,7 +892,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             Log.d(TAG, "onBind: Posting for main activity to open comments")
             val userShortsEntity = shortsEntityToUserShortsEntity(data.shortsEntity)
 
-            // ✅ Add animation for comment button click
+            // Add animation for comment button click
             YoYo.with(Techniques.Tada)
                 .duration(700)
                 .repeat(1)
@@ -975,11 +976,11 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         }
 
         username.text = shortsEntity.author.account.username
-        commentsCount.text = formatCount(totalComments)  // ✅ Use formatCount
-        likeCount.text = formatCount(totalLikes)  // ✅ Use formatCount
-        favoriteCount.text = formatCount(totalFavorites)  // ✅ Use formatCount
-        shareCount.text = formatCount(totalShares)  // ✅ Use formatCount
-        downloadCount.text = formatCount(totalDownloads)  // ✅ Use formatCount
+        commentsCount.text = formatCount(totalComments)
+        likeCount.text = formatCount(totalLikes)
+        favoriteCount.text = formatCount(totalFavorites)
+        shareCount.text = formatCount(totalShares)
+        downloadCount.text = formatCount(totalDownloads)
     }
 
     private fun handleLikeClick(shortOwnerId: String) {
@@ -1116,8 +1117,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             .into(shortsProfileImage)
     }
 
-
-
     private fun updateLikeButtonState() {
         likeCount.text = totalLikes.toString()
         if (isLiked) {
@@ -1146,7 +1145,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             favorite.setImageResource(R.drawable.favorite_svgrepo_com__1_)
         }
     }
-
 
     private fun setupUploadComponents() {
         shortsUploadTopSeekBar = itemView.findViewById(R.id.uploadTopSeekBar)
@@ -1225,7 +1223,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             thumbnail = serverResponseItem.thumbnail
         )
     }
-
 }
 
 @UnstableApi
