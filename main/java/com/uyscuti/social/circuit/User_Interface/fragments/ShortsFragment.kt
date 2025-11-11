@@ -178,8 +178,7 @@ import retrofit2.http.Query
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 const val SHORTS = "ShortsFragment"
-private const val PROGRESS_UPDATE_INTERVAL = 100L
-private const val PRELOAD_COUNT = 10
+
 
 // INTERFACES
 interface OnCommentsClickListener {
