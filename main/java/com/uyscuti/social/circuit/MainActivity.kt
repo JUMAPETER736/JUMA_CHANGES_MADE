@@ -4464,14 +4464,15 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     }
 
     private var isFeedComment = false
-    override fun onCommentsClick(position: Int, data: UserShortsEntity) {
+
+    override fun onCommentsClick(position: Int, data: UserShortsEntity, isFeedComment: Boolean ) {
         val TAG = "allShortComments"
 
         postId = data._id
         commentCount = data.comments
 //        commentId = data.images
 
-        isFeedComment = false
+ //       isFeedComment = false
 
         Log.d("showBottomSheet", "showBottomSheet: inside show bottom sheet")
         val items = generateSampleData(50)
