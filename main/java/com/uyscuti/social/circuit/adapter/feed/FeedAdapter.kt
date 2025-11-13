@@ -3240,7 +3240,7 @@ class FeedAdapter(
                     return
                 }
 
-                // ✅ Use owner field (account ID) with null safety
+                // Use owner field (account ID) with null safety
                 val feedOwnerId = author.owner
                 if (feedOwnerId.isNullOrEmpty()) {
                     Log.w(tag, "Original post owner ID is null or empty")
