@@ -1068,7 +1068,7 @@ class UserProfileShortsPlayerFragment : Fragment(), OnCommentsClickListener,
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
-    override fun onCommentsClick(position: Int, data: UserShortsEntity) {
+    override fun onCommentsClick(position: Int, data: UserShortsEntity, isFeedComment: Boolean ) {
 
     }
 
