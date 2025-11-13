@@ -265,7 +265,11 @@ class PostFeedActivity : AppCompatActivity(),CommentsInput.EmojiListener, OnComm
         TODO("Not yet implemented")
     }
 
-    override fun onCommentsClick(position: Int, data: UserShortsEntity) {
+    override fun onCommentsClick(
+        position: Int,
+        data: UserShortsEntity,
+        isFeedComment: Boolean
+    ) {
         TODO("Not yet implemented")
     }
 }

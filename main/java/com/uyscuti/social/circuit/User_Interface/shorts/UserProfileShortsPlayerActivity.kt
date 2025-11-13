@@ -1137,9 +1137,7 @@ class UserProfileShortsPlayerActivity : AppCompatActivity(), OnCommentsClickList
         try {
             val response = retrofitIns.apiService.favoriteShort(postId)
 
-//            Log.d("likeUnLikeShort", "likeUnLikeShort: response: $response")
-//            Log.d("likeUnLikeShort", "likeUnLikeShort: response body: ${response.body()}")
-//            Log.d("likeUnLikeShort", "likeUnLikeShort: response error body: ${response.errorBody()}")
+
             if (response.isSuccessful) {
                 val responseBody = response.body()
                 Log.d(
