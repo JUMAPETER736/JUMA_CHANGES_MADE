@@ -2426,7 +2426,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             }
             try {
 
-                val commentsWithReplies = commentViewModel.fetchShortComments(postId, page)
+                val commentsWithReplies = commentViewModel.fetchAllComments(postId, page)
 
                 Log.d("commentsWithReplies", "allShortComments: size ${commentsWithReplies.size}")
                 withContext(Dispatchers.Main) {

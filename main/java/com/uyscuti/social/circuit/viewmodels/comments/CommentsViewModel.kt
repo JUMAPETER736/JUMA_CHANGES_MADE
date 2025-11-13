@@ -13,6 +13,8 @@ import javax.inject.Inject
 private const val TAG = "CommentsViewModel"
 @HiltViewModel
 class CommentsViewModel @Inject constructor(private val retrofitInstance: RetrofitInstance) : ViewModel() {
+
+
     suspend fun fetchShortComments(postId: String, page: Int): List<Comment> {
         Log.d(TAG, "fetchShortComments: inside")
         return withContext(Dispatchers.IO) {
@@ -62,6 +64,8 @@ class CommentsViewModel @Inject constructor(private val retrofitInstance: Retrof
             }
         }
     }
+
+
     suspend fun fetchFeedComments(postId: String, page: Int): List<Comment> {
         Log.d(TAG, "fetchFeedComments: inside")
         return withContext(Dispatchers.IO) {
@@ -112,6 +116,48 @@ class CommentsViewModel @Inject constructor(private val retrofitInstance: Retrof
         }
     }
 
+    // Add this NEW method to fetch ALL comments from BOTH endpoints
+    suspend fun fetchAllComments(postId: String, page: Int): List<Comment> {
+        Log.d(TAG, "fetchAllComments: Fetching from BOTH endpoints for postId: $postId")
+
+        return withContext(Dispatchers.IO) {
+            try {
+                val allComments = mutableListOf<Comment>()
+
+                // Fetch shorts comments
+                try {
+                    val shortsComments = fetchShortComments(postId, page)
+                    allComments.addAll(shortsComments)
+                    Log.d(TAG, "fetchAllComments: Got ${shortsComments.size} shorts comments")
+                } catch (e: Exception) {
+                    Log.e(TAG, "fetchAllComments: Error fetching shorts comments", e)
+                }
+
+                // Fetch feed comments
+                try {
+                    val feedComments = fetchFeedComments(postId, page)
+                    allComments.addAll(feedComments)
+                    Log.d(TAG, "fetchAllComments: Got ${feedComments.size} feed comments")
+                } catch (e: Exception) {
+                    Log.e(TAG, "fetchAllComments: Error fetching feed comments", e)
+                }
+
+                // Remove duplicates based on comment ID
+                val uniqueComments = allComments.distinctBy { it._id }
+
+                // Sort by creation date (newest first)
+                val sortedComments = uniqueComments.sortedByDescending { it.createdAt }
+
+                Log.d(TAG, "fetchAllComments: Total unique comments: ${sortedComments.size}")
+
+                sortedComments
+
+            } catch (e: Exception) {
+                Log.e(TAG, "fetchAllComments: Fatal error", e)
+                emptyList()
+            }
+        }
+    }
 
 
 }
