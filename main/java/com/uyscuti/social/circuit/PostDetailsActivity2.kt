@@ -6512,7 +6512,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         }.start()
     }
 
-    override fun onCommentsClick(position: Int, data: UserShortsEntity) {
+    override fun onCommentsClick(position: Int, data: UserShortsEntity, isFeedComment: Boolean) {
         Log.d("showBottomSheet", "showBottomSheet: inside show bottom sheet")
         adapter = CommentsRecyclerViewAdapter(this, this@PostDetailsActivity2)
         toggleMotionLayoutVisibility()
