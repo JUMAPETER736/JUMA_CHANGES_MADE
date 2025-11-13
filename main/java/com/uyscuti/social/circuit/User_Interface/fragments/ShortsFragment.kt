@@ -182,7 +182,12 @@ const val SHORTS = "ShortsFragment"
 
 // INTERFACES
 interface OnCommentsClickListener {
-    fun onCommentsClick(position: Int, data: UserShortsEntity)
+    fun onCommentsClick(
+        position: Int,
+        data: UserShortsEntity,
+        isFeedComment: Boolean = false
+    )
+
 }
 
 interface OnClickListeners {
@@ -190,6 +195,7 @@ interface OnClickListeners {
     fun onDownloadClick(url: String, fileLocation: String)
     fun onShareClick(position: Int)
     fun onUploadCancelClick()
+
 }
 
 interface OnVideoPreparedListener {
@@ -898,7 +904,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         shortsViewPager.setOnClickListener(null)
 
         commentsParentLayout.setOnClickListener {
-            Log.d(TAG, "onBind: Posting for main activity to open comments")
+            Log.d(TAG, "onBind: Opening comments for shorts")
             val userShortsEntity = shortsEntityToUserShortsEntity(data.shortsEntity)
 
             // Add animation for comment button click
@@ -907,7 +913,12 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
                 .repeat(1)
                 .playOn(commentsCount)
 
-            commentsClickListener.onCommentsClick(bindingAdapterPosition, userShortsEntity)
+            // Pass the shorts entity with isFeedComment flag set to false for shorts
+            commentsClickListener.onCommentsClick(
+                bindingAdapterPosition,
+                userShortsEntity,
+                isFeedComment = false  // ✅ NEW: Indicate this is a shorts comment
+            )
         }
 
         btnLike.setOnClickListener {
@@ -3314,7 +3325,11 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     }
 
-    override fun onCommentsClick(position: Int, data: UserShortsEntity) {
+    override fun onCommentsClick(
+        position: Int,
+        data: UserShortsEntity,
+        isFeedComment: Boolean
+    ) {
 
         showBottomSheet()
 
@@ -3877,5 +3892,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         shortsAdapter.addIsFollowingData(list)
         shortsAdapter.notifyDataSetChanged()
     }
+
+
 
 }
