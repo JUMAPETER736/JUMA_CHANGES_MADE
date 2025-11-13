@@ -901,7 +901,12 @@ class OtherUserProfileShortsPlayerFragment : Fragment(), OnCommentsClickListener
             }
     }
 
-    override fun onCommentsClick(position: Int, data: UserShortsEntity) {
+    override fun onCommentsClick(
+        position: Int,
+        data: UserShortsEntity,
+        isFeedComment: Boolean
+
+    ) {
 
     }
 
