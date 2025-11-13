@@ -1615,7 +1615,7 @@ class FeedAdapter(
                     diffInMonths == 1L -> "a month ago"
                     diffInMonths < 12 -> "${diffInMonths}months"
                     diffInYears == 1L -> "1y"
-                    else -> "${diffInYears}y"
+                    else -> "${diffInYears}years"
                 }
             } catch (e: Exception) {
                 Log.w("DateFormat", "Failed to format date: $dateTimeString", e)
@@ -2747,7 +2747,7 @@ class FeedAdapter(
                     diffInMonths == 1L -> "a month ago"
                     diffInMonths < 12 -> "${diffInMonths}months"
                     diffInYears == 1L -> "1y"
-                    else -> "${diffInYears}y"
+                    else -> "${diffInYears}years"
                 }
             } catch (e: Exception) {
                 Log.w("DateFormat", "Failed to format date: $dateTimeString", e)
@@ -4558,7 +4558,7 @@ class FeedAdapter(
                     diffInMonths == 1L -> "a month ago"
                     diffInMonths < 12 -> "${diffInMonths}months"
                     diffInYears == 1L -> "1y"
-                    else -> "${diffInYears}y"
+                    else -> "${diffInYears}years"
                 }
             } catch (e: Exception) {
                 Log.w("DateFormat", "Failed to format date: $dateTimeString", e)
@@ -5683,7 +5683,7 @@ class FeedAdapter(
                     diffInMonths == 1L -> "a month ago"
                     diffInMonths < 12 -> "${diffInMonths}months"
                     diffInYears == 1L -> "1y"
-                    else -> "${diffInYears}y"
+                    else -> "${diffInYears}years"
                 }
             } catch (e: Exception) {
                 Log.w("DateFormat", "Failed to format date: $dateTimeString", e)

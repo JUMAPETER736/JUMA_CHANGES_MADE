@@ -142,9 +142,9 @@ class CommentsRecyclerViewAdapter(
                     diffInWeeks == 1L -> "1w"
                     diffInWeeks < 4 -> "${diffInWeeks}w"
                     diffInMonths == 1L -> "a month ago"
-                    diffInMonths < 12 -> "${diffInMonths}m"
+                    diffInMonths < 12 -> "${diffInMonths}months"
                     diffInYears == 1L -> "1y"
-                    else -> "${diffInYears}y"
+                    else -> "${diffInYears}years"
                 }
             } catch (e: Exception) {
                 Log.w("CommentViewHolder", "Failed to format timestamp: $dateTimeString", e)
@@ -478,9 +478,9 @@ class CommentsRecyclerViewAdapter(
                     diffInWeeks == 1L -> "1w"
                     diffInWeeks < 4 -> "${diffInWeeks}w"
                     diffInMonths == 1L -> "a month ago"
-                    diffInMonths < 12 -> "${diffInMonths}m"
+                    diffInMonths < 12 -> "${diffInMonths}months"
                     diffInYears == 1L -> "1y"
-                    else -> "${diffInYears}y"
+                    else -> "${diffInYears}years"
                 }
             } catch (e: Exception) {
                 Log.w("CommentViewHolder", "Failed to format timestamp: $dateTimeString", e)
@@ -720,9 +720,9 @@ class CommentsRecyclerViewAdapter(
                     diffInWeeks == 1L -> "1w"
                     diffInWeeks < 4 -> "${diffInWeeks}w"
                     diffInMonths == 1L -> "a month ago"
-                    diffInMonths < 12 -> "${diffInMonths}m"
+                    diffInMonths < 12 -> "${diffInMonths}months"
                     diffInYears == 1L -> "1y"
-                    else -> "${diffInYears}y"
+                    else -> "${diffInYears}years"
                 }
             } catch (e: Exception) {
                 Log.w("CommentViewHolder", "Failed to format timestamp: $dateTimeString", e)
@@ -1039,9 +1039,9 @@ class CommentsRecyclerViewAdapter(
                     diffInWeeks == 1L -> "1w"
                     diffInWeeks < 4 -> "${diffInWeeks}w"
                     diffInMonths == 1L -> "a month ago"
-                    diffInMonths < 12 -> "${diffInMonths}m"
+                    diffInMonths < 12 -> "${diffInMonths}months"
                     diffInYears == 1L -> "1y"
-                    else -> "${diffInYears}y"
+                    else -> "${diffInYears}years"
                 }
             } catch (e: Exception) {
                 Log.w("CommentViewHolder", "Failed to format timestamp: $dateTimeString", e)
@@ -1642,9 +1642,9 @@ class CommentsRecyclerViewAdapter(
                     diffInWeeks == 1L -> "1w"
                     diffInWeeks < 4 -> "${diffInWeeks}w"
                     diffInMonths == 1L -> "a month ago"
-                    diffInMonths < 12 -> "${diffInMonths}m"
+                    diffInMonths < 12 -> "${diffInMonths}months"
                     diffInYears == 1L -> "1y"
-                    else -> "${diffInYears}y"
+                    else -> "${diffInYears}years"
                 }
             } catch (e: Exception) {
                 Log.w("CommentViewHolder", "Failed to format timestamp: $dateTimeString", e)
@@ -1978,9 +1978,9 @@ class CommentsRecyclerViewAdapter(
                     diffInWeeks == 1L -> "1w"
                     diffInWeeks < 4 -> "${diffInWeeks}w"
                     diffInMonths == 1L -> "a month ago"
-                    diffInMonths < 12 -> "${diffInMonths}m"
+                    diffInMonths < 12 -> "${diffInMonths}months"
                     diffInYears == 1L -> "1y"
-                    else -> "${diffInYears}y"
+                    else -> "${diffInYears}years"
                 }
             } catch (e: Exception) {
                 Log.w("CommentViewHolder", "Failed to format timestamp: $dateTimeString", e)
