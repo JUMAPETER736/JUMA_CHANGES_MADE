@@ -168,6 +168,7 @@ import com.bumptech.glide.signature.ObjectKey
 import android.graphics.drawable.Drawable
 import com.uyscuti.social.core.common.data.api.Retrofit
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
 import com.uyscuti.social.network.api.response.comment.allcomments.AllShortComments
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
@@ -323,10 +324,11 @@ class ShortsAdapter(
         }
     }
 
-    fun refreshCommentCountFromDatabase(position: Int) {
+    // ✅ Update in ShortsAdapter class
+    fun refreshCommentCountFromDatabase(position: Int, isFeedComment: Boolean = false) {
         if (position in 0 until shortsList.size) {
             val shortsId = shortsList[position]._id
-            viewHolderList.getOrNull(position)?.refreshCommentCountFromDatabase(shortsId)
+            viewHolderList.getOrNull(position)?.refreshCommentCountFromDatabase(shortsId, isFeedComment)
         }
     }
 
@@ -807,29 +809,36 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         updateCommentCount(newCount)
     }
 
-    // ✅ Refresh comment count from database (called from adapter)
-    fun refreshCommentCountFromDatabase(shortsId: String) {
-        Log.d(TAG, "refreshCommentCountFromDatabase: Refreshing count for shorts: $shortsId")
-        RetrofitClient.commentService.getCommentCount(shortsId)
-            .enqueue(object : Callback<CommentCountResponse> {
-                override fun onResponse(call: Call<CommentCountResponse>, response: Response<CommentCountResponse>) {
-                    if (response.isSuccessful) {
-                        response.body()?.let { countResponse ->
-                            val newCount = countResponse.count
-                            Log.d(TAG, "refreshCommentCountFromDatabase: Got count: $newCount")
-                            updateCommentCount(newCount)
-                            currentShorts?.let { shorts ->
-                                shorts.comments = newCount
-                            }
+    // ✅ Updated method that works for both Shorts and Feed comments
+    fun refreshCommentCountFromDatabase(shortsId: String, isFeedComment: Boolean = false) {
+        Log.d(TAG, "refreshCommentCountFromDatabase: Refreshing count for ${if (isFeedComment) "feed" else "shorts"}: $shortsId")
+
+        // Choose the appropriate endpoint based on the flag
+        val call = if (isFeedComment) {
+            RetrofitClient.commentService.getFeedComments(shortsId, page = 1, limit = 1)
+        } else {
+            RetrofitClient.commentService.getShortsComments(shortsId, page = 1, limit = 1)
+        }
+
+        call.enqueue(object : Callback<CommentsResponse> {
+            override fun onResponse(call: Call<CommentsResponse>, response: Response<CommentsResponse>) {
+                if (response.isSuccessful) {
+                    response.body()?.let { commentsResponse ->
+                        val newCount = commentsResponse.totalCount
+                        Log.d(TAG, "refreshCommentCountFromDatabase: Got count: $newCount from ${if (isFeedComment) "feed" else "shorts"} endpoint")
+                        updateCommentCount(newCount)
+                        currentShorts?.let { shorts ->
+                            shorts.comments = newCount
                         }
-                    } else {
-                        Log.e(TAG, "refreshCommentCountFromDatabase: Failed with code: ${response.code()}")
                     }
+                } else {
+                    Log.e(TAG, "refreshCommentCountFromDatabase: Failed with code: ${response.code()}")
                 }
-                override fun onFailure(call: Call<CommentCountResponse>, t: Throwable) {
-                    Log.e(TAG, "refreshCommentCountFromDatabase: Network error", t)
-                }
-            })
+            }
+            override fun onFailure(call: Call<CommentsResponse>, t: Throwable) {
+                Log.e(TAG, "refreshCommentCountFromDatabase: Network error", t)
+            }
+        })
     }
 
     // ✅ Format count for display
