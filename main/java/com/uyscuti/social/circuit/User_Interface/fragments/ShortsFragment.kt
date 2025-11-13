@@ -802,14 +802,14 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         updateCommentCount(newCount)
     }
 
-    // ✅ Increment comment count
+    // Increment comment count
     fun incrementCommentCount() {
         val newCount = totalComments + 1
         Log.d(TAG, "incrementCommentCount: Incrementing from $totalComments to $newCount")
         updateCommentCount(newCount)
     }
 
-    // ✅ Updated method that works for both Shorts and Feed comments
+    // Updated method that works for both Shorts and Feed comments
     fun refreshCommentCountFromDatabase(shortsId: String, isFeedComment: Boolean = false) {
         Log.d(TAG, "refreshCommentCountFromDatabase: Refreshing count for ${if (isFeedComment) "feed" else "shorts"}: $shortsId")
 
