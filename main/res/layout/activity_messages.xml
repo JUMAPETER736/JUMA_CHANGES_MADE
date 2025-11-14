@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
+    android:background="@drawable/personal_chat_defualt_background"
     tools:context=".User_Interface.OtherImportantProfileThings.MessagesActivity">
 
     <RelativeLayout
@@ -35,7 +36,7 @@
             android:layout_height="match_parent"
             android:layout_below="@id/toolbar_layout"
             android:layout_above="@+id/inputContainer"
-            android:background="#ECE5DD"
+            android:background="@android:color/transparent"
             app:dateHeaderFormat="dd MMMM yyyy"
             app:incomingDefaultBubbleColor="@color/white"
             app:incomingDefaultBubblePressedColor="#F0F0F0"

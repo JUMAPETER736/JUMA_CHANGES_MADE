@@ -721,12 +721,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-// Also update stopRecordingVoiceNote to hide the VN layout:
-// Find this line in stopRecordingVoiceNote():
-// binding.VNLayout.visibility = View.GONE
-
-// Add after it:
-// binding.inputContainer.visibility = View.VISIBLE
 
     @SuppressLint("DefaultLocale")
     private fun updateRecordingTimer() {
@@ -5570,6 +5564,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onAddVoiceNote() {
         isVnRecording = if (!isVnRecording) {
             startRecording()
