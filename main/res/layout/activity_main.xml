@@ -488,8 +488,11 @@
                         android:background="@drawable/ic_ripple_disabled"
                         android:layout_marginEnd="16dp" />
                 </LinearLayout>
+
             </LinearLayout>
+
         </androidx.cardview.widget.CardView>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
