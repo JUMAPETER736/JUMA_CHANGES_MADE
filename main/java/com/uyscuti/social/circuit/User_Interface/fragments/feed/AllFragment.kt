@@ -156,7 +156,8 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     }
 
 
-        private var param1: String? = null
+
+    private var param1: String? = null
     private var param2: String? = null
     private var parentFragment: FeedFragment? = null // Reference to parent fragment
 
@@ -332,7 +333,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
 
     fun updateFollowingList(followingIds: Set<String>) {
-        Log.d("AllFragment", "📥 Received ${followingIds.size} following IDs")
+        Log.d("AllFragment", "Received ${followingIds.size} following IDs")
 
         // Update the adapter if it's initialized
         if (::allFeedAdapter.isInitialized) {
@@ -340,7 +341,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             allFeedAdapter.notifyDataSetChanged()
             Log.d("AllFragment", "Updated adapter with following list")
         } else {
-            Log.w("AllFragment", "⚠Adapter not initialized yet")
+            Log.w("AllFragment", "Adapter not initialized yet")
         }
     }
 
