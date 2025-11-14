@@ -304,10 +304,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         installTwitter()
 
-        // REMOVE these lines - Dialog_Extra no longer exists
-        // dialog = intent.getParcelableExtra("Dialog_Extra")
-
-        // Get data from intent extras instead
         chatId = intent.getStringExtra("chatId") ?: ""
         chatName = intent.getStringExtra("dialogName") ?: ""
         val dialogPhoto = intent.getStringExtra("dialogPhoto") ?: ""
@@ -330,9 +326,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         supportActionBar?.title = chatName
 
         if (isGroup) {
-            // Get group member info from intent if needed
-            // Or fetch from database/repository using chatId
-            supportActionBar?.subtitle = "" // You'll need to fetch members from DB
+            supportActionBar?.subtitle = ""
             binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.white_two))
 
             CoroutineScope(Dispatchers.IO).launch {
@@ -347,13 +341,11 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                 groupCreatedAt = formatDate(date)
 
-                // Fetch and display members
                 withContext(Dispatchers.Main) {
                     // Update subtitle with members if needed
                 }
             }
         } else {
-            // Get friend info from intent
             val friendId = intent.getStringExtra("firstUserId") ?: ""
             val friendName = intent.getStringExtra("firstUserName") ?: ""
             val friendAvatar = intent.getStringExtra("firstUserAvatar") ?: ""
@@ -380,8 +372,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         val size = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics).toInt()
 
-        //permit()
-
         val navigationIcon = ContextCompat.getDrawable(this, com.uyscuti.social.circuit.R.drawable.baseline_arrow_back_ios_24)
 
         navigationIcon?.let {
@@ -398,7 +388,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             viewUser()
         }
 
-        // Use dialogPhoto from intent
         Glide.with(this)
             .asBitmap()
             .load(dialogPhoto)
@@ -424,8 +413,9 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         val rootView = binding.container
 
-        val inputEditText = findViewById<EmojiEditText>(R.id.messageInput)
-        emojiPopup = EmojiPopup(rootView, inputEditText)
+        // Setup emoji popup
+        val emojiEditText = binding.inputEditText
+        emojiPopup = EmojiPopup(rootView, emojiEditText)
         inputMethodManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
 
         initAdapter()
@@ -439,7 +429,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             observeTemporallyMessages(chatName)
         }
 
-        // Observe the LiveData in the activity
         dialogViewModel.updatedDialog.observe(this, Observer { updatedDialog ->
             if (updatedDialog != null) {
                 Log.d(TAG, "Updated Dialog : $updatedDialog")
@@ -449,16 +438,21 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         })
     }
 
-    @SuppressLint("WrongViewCast")
     private fun setupMessageInput() {
-        // Find all the views
-        val inputEditText = findViewById<EmojiEditText>(R.id.messageText)
-        val sendBtn = findViewById<ImageView>(com.uyscuti.social.circuit.R.id.sendBtn)
-        val sendCard = findViewById<CardView>(com.uyscuti.social.circuit.R.id.sendCard)
-        val vnCard = findViewById<CardView>(R.id.voiceNote)
-        val voiceNote = findViewById<ImageView>(R.id.voiceNote)
-        val attachment = findViewById<ImageView>(R.id.attachmentButton)
-        val emoji = findViewById<ImageView>(com.uyscuti.social.circuit.R.id.emoji)
+        // Access views through binding object
+        val inputEditText = binding.inputEditText
+        val sendBtn = binding.sendBtn
+        val sendCard = binding.sendCard
+        val vnCard = binding.vnCard
+        val voiceNote = binding.voiceNote
+        val attachment = binding.attachment
+        val emoji = binding.emoji
+
+        // Add null checks for safety
+        if (inputEditText == null) {
+            Log.e(TAG, "inputEditText is null - check your layout file")
+            return
+        }
 
         // Show/hide send button based on text
         inputEditText.addTextChangedListener(object : TextWatcher {
@@ -466,13 +460,13 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (s?.length ?: 0 > 0) {
-                    sendCard.visibility = View.VISIBLE
-                    sendBtn.visibility = View.VISIBLE
-                    vnCard.visibility = View.GONE
+                    sendCard?.visibility = View.VISIBLE
+                    sendBtn?.visibility = View.VISIBLE
+                    vnCard?.visibility = View.GONE
                 } else {
-                    sendCard.visibility = View.GONE
-                    sendBtn.visibility = View.GONE
-                    vnCard.visibility = View.VISIBLE
+                    sendCard?.visibility = View.GONE
+                    sendBtn?.visibility = View.GONE
+                    vnCard?.visibility = View.VISIBLE
                 }
             }
 
@@ -480,7 +474,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         })
 
         // Send button click
-        sendBtn.setOnClickListener {
+        sendBtn?.setOnClickListener {
             val text = inputEditText.text.toString()
             if (text.isNotEmpty()) {
                 onSubmit(text)
@@ -489,17 +483,17 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
 
         // Voice note click
-        voiceNote.setOnClickListener {
+        voiceNote?.setOnClickListener {
             onAddVoiceNote()
         }
 
         // Attachment click
-        attachment.setOnClickListener {
+        attachment?.setOnClickListener {
             onAddAttachments()
         }
 
         // Emoji click
-        emoji.setOnClickListener {
+        emoji?.setOnClickListener {
             onAddEmoji()
         }
     }

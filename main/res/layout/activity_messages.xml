@@ -34,7 +34,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_below="@id/toolbar_layout"
-            android:layout_above="@+id/input"
+            android:layout_above="@+id/inputContainer"
             android:background="#ECE5DD"
             app:dateHeaderFormat="dd MMMM yyyy"
             app:incomingDefaultBubbleColor="@color/white"
