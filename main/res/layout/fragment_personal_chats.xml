@@ -4,19 +4,41 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@android:color/white"
     tools:context=".tabs.PersonalChats">
 
     <com.uyscuti.social.chatsuit.dialogs.DialogsList
         android:id="@+id/dialogsList"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:dialogDividerLeftPadding="0dp"
-        app:dialogMessageTextSize="17sp"
-        app:dialogTitleTextStyle="bold"
-        app:dialogUnreadBubbleBackgroundColor="@color/bluejeans"
-        app:dialogUnreadItemBackground="@color/gray_transparent"
-        app:dialogUnreadTitleTextStyle="bold" />
-
-
+        android:clipToPadding="false"
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:scrollbars="none"
+        app:dialogAvatarSize="56dp"
+        app:dialogDividerEnabled="true"
+        app:dialogDividerColor="#F0F0F0"
+        app:dialogDividerLeftPadding="76dp"
+        app:dialogDividerRightPadding="16dp"
+        app:dialogItemPadding="12dp"
+        app:dialogMessageTextColor="#667781"
+        app:dialogMessageTextSize="15sp"
+        app:dialogTitleTextColor="#111B21"
+        app:dialogTitleTextSize="17sp"
+        app:dialogTitleTextStyle="normal"
+        app:dialogDateTextColor="#667781"
+        app:dialogDateTextSize="13sp"
+        app:dialogUnreadBubbleBackgroundColor="#25D366"
+        app:dialogUnreadBubbleTextColor="@android:color/white"
+        app:dialogUnreadBubbleTextSize="12sp"
+        app:dialogUnreadItemBackground="@android:color/transparent"
+        app:dialogUnreadTitleTextStyle="bold"
+        app:dialogUnreadMessageTextStyle="normal"
+        app:dialogUnreadTitleTextColor="#111B21"
+        app:dialogUnreadMessageTextColor="#111B21"
+        app:dialogAvatarBorderColor="@android:color/transparent"
+        app:dialogAvatarBorderWidth="0dp"
+        app:dialogItemBackgroundColor="@android:color/white"
+        app:dialogItemSelectedBackgroundColor="#E7F8EE" />
 
 </FrameLayout>
