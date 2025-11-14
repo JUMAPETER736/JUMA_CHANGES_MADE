@@ -88,7 +88,7 @@
                         app:tint="@color/bluejeans" />
 
                     <com.vanniktech.emoji.EmojiEditText
-                        android:id="@+id/messageEdit"
+                        android:id="@+id/inputEditText"
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="wrap_content"
