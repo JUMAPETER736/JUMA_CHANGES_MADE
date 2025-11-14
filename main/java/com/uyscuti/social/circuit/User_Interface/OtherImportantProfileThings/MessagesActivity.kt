@@ -566,10 +566,16 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+    // Replace the handleVoiceNoteClick() method with this updated version:
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun handleVoiceNoteClick() {
         when (voiceNoteState) {
             VoiceNoteState.IDLE -> {
+                // Show the VN recording layout
+                binding.VNLayout.visibility = View.VISIBLE
+                binding.inputContainer.visibility = View.GONE
+
                 // Start recording
                 startRecording()
             }
@@ -591,6 +597,136 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             }
         }
     }
+
+// Add this method to handle starting recording with permissions:
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun startRecording() {
+        // Check for microphone permission
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.RECORD_AUDIO),
+                REQUEST_RECORD_AUDIO_PERMISSION
+            )
+            return
+        }
+
+        try {
+            // Initialize recording state
+            isRecording = true
+            isPaused = false
+            isListeningToAudio = true
+            recordingStartTime = System.currentTimeMillis()
+            recordingElapsedTime = 0L
+
+            // Clear previous recordings
+            recordedAudioFiles.clear()
+
+            // Create new output file
+            outputFile = com.uyscuti.social.circuit.utils.getOutputFilePath("rec")
+            recordedAudioFiles.add(outputFile)
+
+            // Setup MediaRecorder
+            mediaRecorder = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setOutputFile(outputFile)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioEncodingBitRate(128000)
+                setAudioSamplingRate(44100)
+                prepare()
+                start()
+            }
+
+            // Update UI
+            updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
+            binding.recordVN.setImageResource(com.uyscuti.social.circuit.R.drawable.baseline_pause_white_24)
+            binding.sendVN.setBackgroundResource(com.uyscuti.social.circuit.R.drawable.ic_ripple)
+            binding.sendVN.isClickable = true
+
+            // Initialize waveform
+            initializeDottedWaveform()
+
+            // Start timer
+            updateRecordingTimer()
+
+            // Start audio listening in background thread
+            Thread {
+                listenToAudio()
+            }.start()
+
+            Log.d("Recording", "Recording started successfully")
+
+        } catch (e: Exception) {
+            Log.e("Recording", "Error starting recording: ${e.message}", e)
+            Toast.makeText(this, "Failed to start recording", Toast.LENGTH_SHORT).show()
+            isRecording = false
+            binding.VNLayout.visibility = View.GONE
+            binding.inputContainer.visibility = View.VISIBLE
+        }
+    }
+
+// Update the deleteRecording method to also hide the VN layout:
+
+    private fun deleteRecording() {
+        val TAG = "Recording"
+        try {
+            isListeningToAudio = false
+
+            // Stop all timers
+            timerHandler.removeCallbacksAndMessages(null)
+            playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
+
+            mediaRecorder?.apply {
+                try {
+                    stop()
+                    release()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error stopping recorder: $e")
+                }
+            }
+            mediaRecorder = null
+
+            isRecording = false
+            isPaused = false
+            isAudioVNPlaying = false
+
+            // Reset timer variables
+            recordingStartTime = 0L
+            recordingElapsedTime = 0L
+
+            binding.recordVN.setImageResource(com.uyscuti.social.circuit.R.drawable.mic_2)
+            binding.sendVN.setBackgroundResource(com.uyscuti.social.circuit.R.drawable.ic_ripple_disabled)
+            binding.sendVN.isClickable = false
+
+            updateVoiceNoteUserInterfaceState(VoiceNoteState.IDLE)
+
+            binding.recordingTimerTv.text = "00:00"
+            binding.pausedTimerTv.text = "00:00"
+
+            // Hide VN layout and show input container
+            binding.VNLayout.visibility = View.GONE
+            binding.inputContainer.visibility = View.VISIBLE
+
+            Log.d(TAG, "Recordings deleted: ${recordedAudioFiles.size}")
+            deleteVn()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e(TAG, "Error deleting recording: $e")
+        }
+    }
+
+// Also update stopRecordingVoiceNote to hide the VN layout:
+// Find this line in stopRecordingVoiceNote():
+// binding.VNLayout.visibility = View.GONE
+
+// Add after it:
+// binding.inputContainer.visibility = View.VISIBLE
 
     @SuppressLint("DefaultLocale")
     private fun updateRecordingTimer() {
@@ -1326,49 +1462,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-    private fun deleteRecording() {
-        val TAG = "Recording"
-        try {
-            isListeningToAudio = false
 
-            // Stop all timers
-            timerHandler.removeCallbacksAndMessages(null)
-            playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
-
-            mediaRecorder?.apply {
-                try {
-                    stop()
-                    release()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error stopping recorder: $e")
-                }
-            }
-            mediaRecorder = null
-
-            isRecording = false
-            isPaused = false
-            isAudioVNPlaying = false
-
-            // Reset timer variables
-            recordingStartTime = 0L
-            recordingElapsedTime = 0L
-
-            binding.recordVN.setImageResource(com.uyscuti.social.circuit.R.drawable.mic_2)
-            binding.sendVN.setBackgroundResource(com.uyscuti.social.circuit.R.drawable.ic_ripple_disabled)
-            binding.sendVN.isClickable = false
-
-            updateVoiceNoteUserInterfaceState(VoiceNoteState.IDLE)
-
-            binding.recordingTimerTv.text = "00:00"
-            binding.pausedTimerTv.text = "00:00"
-
-            Log.d(TAG, "Recordings deleted: ${recordedAudioFiles.size}")
-            deleteVn()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e(TAG, "Error deleting recording: $e")
-        }
-    }
 
     private fun deleteVn() {
         recordedAudioFiles.clear()
@@ -5459,24 +5553,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         return File(storageDirectory, fileName).absolutePath
     }
 
-    private fun startRecording() {
-        try {
-            outputFile = getOutputFilePath(applicationContext)
-            audioRecorder = MediaRecorder().apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-                setOutputFile(outputFile)
-                prepare()
-                start()
-            }
-            Log.d("VNFile", outputFile)
-            // Add any UI changes or notifications indicating recording has started
-        } catch (e: Exception) {
-            e.printStackTrace()
-            // Handle exceptions as needed
-        }
-    }
+
 
     private fun stopRecording() {
         try {
