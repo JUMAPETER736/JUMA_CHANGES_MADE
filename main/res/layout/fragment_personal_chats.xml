@@ -17,15 +17,6 @@
         app:dialogUnreadItemBackground="@color/gray_transparent"
         app:dialogUnreadTitleTextStyle="bold" />
 
-<!--    &lt;!&ndash; Floating Action Button for making a new call &ndash;&gt;-->
-<!--    <com.google.android.material.floatingactionbutton.FloatingActionButton-->
-<!--        android:id="@+id/fabNewChat"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_gravity="bottom|end"-->
-<!--        android:layout_margin="16dp"-->
-<!--        app:srcCompat="@drawable/baseline_add_24"-->
-<!--        android:tint="@color/white"-->
-<!--        app:backgroundTint="@color/flash" />-->
+
 
 </FrameLayout>
