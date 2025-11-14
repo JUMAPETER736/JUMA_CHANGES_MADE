@@ -56,7 +56,7 @@
             app:textAutoLink="all" />
 
         <RelativeLayout
-            android:id="@+id/input"
+            android:id="@+id/inputContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"

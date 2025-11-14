@@ -1,6 +1,7 @@
 package com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.ContentValues
 import android.content.Context
@@ -21,7 +22,8 @@ import android.os.Looper
 import android.os.ResultReceiver
 import android.provider.MediaStore
 import android.provider.OpenableColumns
-import android.provider.Settings
+import android.text.TextWatcher
+import android.text.Editable
 import android.text.format.DateUtils
 import android.util.Log
 import android.util.TypedValue
@@ -40,6 +42,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
+import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NavUtils
 import androidx.core.content.ContextCompat
@@ -102,6 +105,7 @@ import com.uyscuti.social.network.api.models.Notification
 import com.uyscuti.social.network.api.response.userstatus.UserStatusResponse
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.eventmodels.DirectReplyEvent
+import com.vanniktech.emoji.EmojiEditText
 import com.vanniktech.emoji.EmojiManager
 import com.vanniktech.emoji.EmojiPopup
 import com.vanniktech.emoji.facebook.FacebookEmojiProvider
@@ -420,15 +424,12 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         val rootView = binding.container
 
-        emojiPopup = EmojiPopup(rootView, binding.inputEditText)
+        val inputEditText = findViewById<EmojiEditText>(R.id.messageInput)
+        emojiPopup = EmojiPopup(rootView, inputEditText)
         inputMethodManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
 
         initAdapter()
-        val input = findViewById<MessageInput>(com.uyscuti.social.circuit.R.id.input)
-        input.setInputListener(this)
-        input.setAttachmentsListener(this)
-        input.setVoiceListener(this)
-        input.setEmojiListener(this)
+        setupMessageInput()
 
         getFilePath()
 
@@ -446,6 +447,61 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 trigger()
             }
         })
+    }
+
+    @SuppressLint("WrongViewCast")
+    private fun setupMessageInput() {
+        // Find all the views
+        val inputEditText = findViewById<EmojiEditText>(R.id.messageText)
+        val sendBtn = findViewById<ImageView>(com.uyscuti.social.circuit.R.id.sendBtn)
+        val sendCard = findViewById<CardView>(com.uyscuti.social.circuit.R.id.sendCard)
+        val vnCard = findViewById<CardView>(R.id.voiceNote)
+        val voiceNote = findViewById<ImageView>(R.id.voiceNote)
+        val attachment = findViewById<ImageView>(R.id.attachmentButton)
+        val emoji = findViewById<ImageView>(com.uyscuti.social.circuit.R.id.emoji)
+
+        // Show/hide send button based on text
+        inputEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                if (s?.length ?: 0 > 0) {
+                    sendCard.visibility = View.VISIBLE
+                    sendBtn.visibility = View.VISIBLE
+                    vnCard.visibility = View.GONE
+                } else {
+                    sendCard.visibility = View.GONE
+                    sendBtn.visibility = View.GONE
+                    vnCard.visibility = View.VISIBLE
+                }
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        // Send button click
+        sendBtn.setOnClickListener {
+            val text = inputEditText.text.toString()
+            if (text.isNotEmpty()) {
+                onSubmit(text)
+                inputEditText.setText("")
+            }
+        }
+
+        // Voice note click
+        voiceNote.setOnClickListener {
+            onAddVoiceNote()
+        }
+
+        // Attachment click
+        attachment.setOnClickListener {
+            onAddAttachments()
+        }
+
+        // Emoji click
+        emoji.setOnClickListener {
+            onAddEmoji()
+        }
     }
 
     private fun observeThisDialog(name: String) {
