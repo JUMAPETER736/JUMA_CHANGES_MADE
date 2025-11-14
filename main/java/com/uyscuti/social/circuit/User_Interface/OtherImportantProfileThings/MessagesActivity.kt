@@ -566,6 +566,32 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun handleVoiceNoteClick() {
+        when (voiceNoteState) {
+            VoiceNoteState.IDLE -> {
+                // Start recording
+                startRecording()
+            }
+            VoiceNoteState.RECORDING -> {
+                // Pause recording
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    pauseRecording()
+                }
+            }
+            VoiceNoteState.PAUSED -> {
+                // Resume recording
+                resumeRecording()
+            }
+            VoiceNoteState.PLAYING -> {
+                // Pause playback
+                val currentProgress = player?.currentPosition ?: vnRecordProgress
+                vnRecordProgress = currentProgress
+                pauseVn(currentProgress)
+            }
+        }
+    }
+
     @SuppressLint("DefaultLocale")
     private fun updateRecordingTimer() {
         timerHandler.post(object : kotlinx.coroutines.Runnable {
@@ -649,32 +675,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     scrollAnimator.start()
                     binding.waveformScrollView.tag = scrollAnimator
                 }
-            }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun handleVoiceNoteClick() {
-        when (voiceNoteState) {
-            VoiceNoteState.IDLE -> {
-                // Start recording
-                startRecording()
-            }
-            VoiceNoteState.RECORDING -> {
-                // Pause recording
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    pauseRecording()
-                }
-            }
-            VoiceNoteState.PAUSED -> {
-                // Resume recording
-                resumeRecording()
-            }
-            VoiceNoteState.PLAYING -> {
-                // Pause playback
-                val currentProgress = player?.currentPosition ?: vnRecordProgress
-                vnRecordProgress = currentProgress
-                pauseVn(currentProgress)
             }
         }
     }
