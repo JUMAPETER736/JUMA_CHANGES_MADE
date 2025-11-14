@@ -1,6 +1,8 @@
 package com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings
 
 import android.Manifest
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.ContentValues
@@ -9,7 +11,10 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
+import android.media.AudioRecord
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.media.MediaScannerConnection
@@ -29,7 +34,9 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.MenuItem
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AnimationUtils
+import android.view.animation.LinearInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -42,6 +49,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresExtension
 import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NavUtils
@@ -55,6 +63,7 @@ import androidx.emoji.text.EmojiCompat
 import androidx.emoji.text.FontRequestEmojiCompatConfig
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.loader.content.CursorLoader
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.ui.AppBarConfiguration
@@ -64,6 +73,7 @@ import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
+import com.uyscuti.social.business.MainActivity
 import com.uyscuti.social.call.models.DataModel
 import com.uyscuti.social.call.models.DataModelType
 import com.uyscuti.social.call.repository.MainRepository
@@ -73,7 +83,6 @@ import com.uyscuti.social.chatsuit.messages.MessageInput
 import com.uyscuti.social.chatsuit.messages.MessagesList
 import com.uyscuti.social.chatsuit.messages.MessagesListAdapter
 import com.uyscuti.social.chatsuit.utils.DateFormatter
-import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.MainMessagesActivity
 import com.uyscuti.social.circuit.calls.viewmodel.CallViewModel
 import com.uyscuti.social.circuit.data.model.Dialog
@@ -91,8 +100,15 @@ import com.uyscuti.social.circuit.User_Interface.uploads.CameraActivity
 import com.uyscuti.social.circuit.User_Interface.uploads.DocumentsActivity
 import com.uyscuti.social.circuit.User_Interface.uploads.ImagesActivity
 import com.uyscuti.social.circuit.User_Interface.uploads.VideosActivity
+import com.uyscuti.social.circuit.model.PauseShort
+import com.uyscuti.social.circuit.utils.AudioDurationHelper.getFormattedDuration
 import com.uyscuti.social.circuit.utils.ChatManager
+import com.uyscuti.social.circuit.utils.Timer
 import com.uyscuti.social.circuit.utils.UserStatusManager
+import com.uyscuti.social.circuit.utils.audio_compressor.FFMPEG_AudioCompressor
+import com.uyscuti.social.circuit.utils.audiomixer.AudioMixer
+import com.uyscuti.social.circuit.utils.audiomixer.input.GeneralAudioInput
+import com.uyscuti.social.circuit.utils.deleteFiles
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepository
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepositoryImpl
 import com.uyscuti.social.core.common.data.api.Result
@@ -131,6 +147,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.lang.Math.sqrt
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLDecoder
@@ -142,8 +159,10 @@ import java.util.TimeZone
 import javax.inject.Inject
 import kotlin.random.Random
 
+@UnstableApi
 @AndroidEntryPoint
 class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
+
     MessageInput.EmojiListener, MessageInput.VoiceListener, MessageInput.AttachmentsListener,
     DateFormatter.Formatter, CoreChatSocketClient.ChatSocketEvents,
     MessagesListAdapter.MessageSentListener<Message>,
@@ -176,6 +195,10 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     private val REQUEST_CODE = 558
     private val WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 12
     private val MY_MANAGE_EXTERNAL_STORAGE_REQUEST_CODE = 202
+    private val IMAGES_REQUEST_CODE = 2023
+    private val READ_EXTERNAL_STORAGE_REQUEST_CODE = 101
+    private val REQUEST_RECORD_AUDIO_PERMISSION = 200
+
 
 
     private var mediaPlayer: MediaPlayer? = null
@@ -212,8 +235,42 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
     private var currentAudio: String? = null
 
-//    @Inject
-//    lateinit var localStorage: LocalStorage
+    private var voiceNoteState: VoiceNoteState = VoiceNoteState.IDLE
+    private var isPaused = false
+    private var isAudioVNPlaying = false
+    private var vnRecordAudioPlaying = false
+    private var vnRecordProgress = 0
+    private var sending = false
+    private var wasPaused = false
+    private var player: MediaPlayer? = null
+    private var outputVnFile = ""
+    private val recordedAudioFiles = mutableListOf<String>()
+    private val waveBars = mutableListOf<View>()
+
+    private var playbackTimerRunnable: Runnable? = null
+    private var recordingStartTime = 0L
+    private var recordingElapsedTime = 0L
+    private var isListeningToAudio = false
+    private var audioRecord: AudioRecord? = null
+    private val maxWaveBars = 100
+    private var mixingCompleted = false
+    private var isAudioVNPaused = false
+    private var isDurationOnPause = false
+    private var isOnRecordDurationOnPause = false
+    private var totalRecordedDuration = 0L
+
+    // TIMERS & HANDLERS
+
+    private lateinit var timer: Timer
+    private var currentHandler: Handler? = null
+    private val timerHandler = Handler(Looper.getMainLooper())
+
+    internal enum class VoiceNoteState {
+        IDLE,
+        RECORDING,
+        PLAYING,
+        PAUSED
+    }
 
     @Inject
     lateinit var mainRepository: MainRepository
@@ -276,6 +333,12 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
@@ -438,6 +501,8 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         })
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun setupMessageInput() {
         // Access views through binding object
         val inputEditText = binding.inputEditText
@@ -482,10 +547,13 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             }
         }
 
-        // Voice note click
+        // Voice note click - MAIN RECORDING CONTROL
         voiceNote?.setOnClickListener {
-            onAddVoiceNote()
+            handleVoiceNoteClick()
         }
+
+        // Setup voice note control buttons
+        setupVoiceNoteControls()
 
         // Attachment click
         attachment?.setOnClickListener {
@@ -495,6 +563,828 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         // Emoji click
         emoji?.setOnClickListener {
             onAddEmoji()
+        }
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun updateRecordingTimer() {
+        timerHandler.post(object : kotlinx.coroutines.Runnable {
+            override fun run() {
+                if (isRecording && !isPaused) {
+                    val currentTime = System.currentTimeMillis()
+                    val elapsed = recordingElapsedTime + (currentTime - recordingStartTime)
+
+                    val seconds = (elapsed / 1000) % 60
+                    val minutes = (elapsed / 1000) / 60
+
+                    val formatted = String.format("%02d:%02d", minutes, seconds)
+                    binding.recordingTimerTv.text = formatted
+
+                    timerHandler.postDelayed(this, 100) // Update every 100ms
+                }
+            }
+        })
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun updatePlaybackTimer() {
+        // Remove any existing callbacks first
+        playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
+
+        playbackTimerRunnable = object : kotlinx.coroutines.Runnable {
+            override fun run() {
+                if (isAudioVNPlaying && player != null) {
+                    try {
+                        val currentPosition = player?.currentPosition ?: 0
+                        val currentMinutes = (currentPosition / 1000) / 60
+                        val currentSeconds = (currentPosition / 1000) % 60
+                        binding.pausedTimerTv.text = String.format("%02d:%02d", currentMinutes, currentSeconds)
+                        timerHandler.postDelayed(this, 100)
+                    } catch (e: Exception) {
+                        Log.e("PlaybackTimer", "Error updating timer: ${e.message}")
+                    }
+                }
+            }
+        }
+        timerHandler.post(playbackTimerRunnable!!)
+    }
+
+    private fun animatePlaybackWaves() {
+        val duration = player?.duration?.toLong() ?: 0L
+        if (duration > 0) {
+            // Animate existing waveforms during playback
+            waveBars.forEachIndexed { index, bar ->
+                val storedHeight = bar.tag as? Float ?: 1.0f
+                val heights = floatArrayOf(
+                    storedHeight * 0.8f,
+                    storedHeight * 1.0f,
+                    storedHeight * 0.9f,
+                    storedHeight * 1.1f,
+                    storedHeight * 0.8f
+                )
+                val animator = ObjectAnimator.ofFloat(bar, "scaleY", *heights).apply {
+                    this.duration = 800 + (index * 20L)
+                    repeatCount = ObjectAnimator.INFINITE
+                    repeatMode = ObjectAnimator.RESTART
+                    interpolator = AccelerateDecelerateInterpolator()
+                }
+                animator.start()
+                bar.tag = animator
+            }
+
+            // Scroll animation from right to left
+            binding.waveformScrollView.post {
+                val maxScroll = (binding.waveDotsContainer.width - binding.waveformScrollView.width).coerceAtLeast(0)
+                if (maxScroll > 0) {
+                    val scrollAnimator = ValueAnimator.ofInt(maxScroll, 0).apply {
+                        this.duration = duration
+                        interpolator = LinearInterpolator()
+                        addUpdateListener { animation ->
+                            if (isAudioVNPlaying) {
+                                val scrollX = animation.animatedValue as Int
+                                binding.waveformScrollView.scrollTo(scrollX, 0)
+                            }
+                        }
+                    }
+                    scrollAnimator.start()
+                    binding.waveformScrollView.tag = scrollAnimator
+                }
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun handleVoiceNoteClick() {
+        when (voiceNoteState) {
+            VoiceNoteState.IDLE -> {
+                // Start recording
+                startRecording()
+            }
+            VoiceNoteState.RECORDING -> {
+                // Pause recording
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    pauseRecording()
+                }
+            }
+            VoiceNoteState.PAUSED -> {
+                // Resume recording
+                resumeRecording()
+            }
+            VoiceNoteState.PLAYING -> {
+                // Pause playback
+                val currentProgress = player?.currentPosition ?: vnRecordProgress
+                vnRecordProgress = currentProgress
+                pauseVn(currentProgress)
+            }
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
+    private fun setupVoiceNoteControls() {
+        // Play/Pause button for recorded audio
+        binding.playVnAudioBtn?.setOnClickListener {
+            Log.d("playVnAudioBtn", "Play VN button clicked")
+            when {
+                !isAudioVNPlaying -> {
+                    Log.d("playVnAudioBtn", "Starting playback")
+                    startPlaying(outputVnFile)
+                }
+                else -> {
+                    Log.d("playVnAudioBtn", "Pausing VN")
+                    vnRecordAudioPlaying = true
+                    val currentProgress = player?.currentPosition ?: vnRecordProgress
+                    vnRecordProgress = currentProgress
+                    pauseVn(currentProgress)
+                }
+            }
+        }
+
+        // Delete button
+        binding.deleteVN?.setOnClickListener {
+            deleteRecording()
+        }
+
+        // Send button for voice note
+        binding.sendVN?.setOnClickListener {
+            if (!sending && (isRecording || isPaused || wasPaused)) {
+                sending = true
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    stopRecordingVoiceNote()
+                }
+            }
+        }
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
+    private fun stopRecordingVoiceNote() {
+        val TAG = "StopRecording"
+        try {
+
+
+
+            // Stop media recorder
+            if (mediaRecorder != null) {
+                mediaRecorder?.apply {
+                    stop()
+                    release()
+                }
+                mediaRecorder = null
+            }
+
+            isRecording = false
+            isPaused = false
+            stopWaveDotsAnimation()
+            binding.recordingLayout.visibility = View.GONE
+            binding.recordingTimerTv?.text = "00:00"
+            binding.recordVN?.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
+            binding.sendVN?.setBackgroundResource(com.uyscuti.social.circuit.R.drawable.ic_ripple_disabled)
+            binding.sendVN?.isClickable = false
+            timer.stop()
+
+            if (player?.isPlaying == true) {
+                stopPlaying()
+            }
+
+            Log.d(TAG, "stopRecording: recorded files size ${recordedAudioFiles.size}")
+
+            // Select appropriate audio file
+            val audioFilePath = if (mixingCompleted && File(outputVnFile).exists()) {
+                Log.d(TAG, "Using mixed audio file: $outputVnFile")
+                outputVnFile
+            } else {
+                Log.d(TAG, "Using single recording file: $outputFile")
+                outputFile
+            }
+
+            val file = File(audioFilePath)
+            if (!file.exists()) {
+                Log.e(TAG, "Audio file not found: $audioFilePath")
+                Toast.makeText(this, "Voice note file not found", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            // Get duration and filename
+            val durationString = getFormattedDuration(audioFilePath)
+            val fileName = file.name
+
+            Log.d(TAG, "Voice note prepared - File: $fileName, Duration: $durationString, Path: $audioFilePath")
+
+            // Check file size and compress if needed
+            val fileSizeInBytes = file.length()
+            val fileSizeInKB = fileSizeInBytes / 1024
+            val fileSizeInMB = fileSizeInKB / 1024
+
+            Log.d(TAG, "Voice note file size: $fileSizeInKB KB, $fileSizeInMB MB")
+
+            if (fileSizeInMB > 2) {
+                Log.d(TAG, "Voice note needs compression")
+                val outputFileName = "compressed_audio_${System.currentTimeMillis()}.mp3"
+                val outputFilePath = File(cacheDir, outputFileName)
+
+                lifecycleScope.launch(Dispatchers.IO) {
+
+
+                    // Compress audio in background
+                    val compressor = FFMPEG_AudioCompressor()
+                    val isCompressionSuccessful = compressor.compress(audioFilePath, outputFilePath.absolutePath)
+
+                    if (isCompressionSuccessful) {
+                        Log.d(TAG, "Voice note compression successful")
+                        val compressedSizeInBytes = outputFilePath.length()
+                        val compressedSizeInKB = compressedSizeInBytes / 1024
+                        val compressedSizeInMB = compressedSizeInKB / 1024
+                        Log.d(TAG, "Compressed file size: $compressedSizeInKB KB, $compressedSizeInMB MB")
+
+
+                    } else {
+                        Log.e(TAG, "Voice note compression failed - using original file")
+                        withContext(Dispatchers.Main) {
+                            // Trigger upload with original file
+
+                        }
+                    }
+                }
+            } else {
+                // File is small enough, upload directly
+                Log.d(TAG, "Voice note doesn't need compression, uploading directly")
+
+            }
+
+            // Hide VN recording UI, keep comment section visible
+            binding.VNLayout.visibility = View.GONE
+
+            // Clean up recording state
+            wasPaused = false
+            mixingCompleted = false
+            recordedAudioFiles.clear()
+            sending = false
+
+            Log.d(TAG, "Voice note comment processing completed")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in stopRecording: ${e.message}", e)
+            Toast.makeText(this, "", Toast.LENGTH_SHORT).show()
+            sending = false
+        }
+    }
+
+    private fun stopPlaying() {
+        val scrollAnimator = binding.waveformScrollView.tag as? ValueAnimator
+        scrollAnimator?.cancel()
+
+        binding.playVnAudioBtn.setImageResource(com.uyscuti.social.circuit.R.drawable.play_svgrepo_com)
+        player?.release()
+        player = null
+        isAudioVNPlaying = false
+        vnRecordAudioPlaying = false
+        isOnRecordDurationOnPause = false
+
+        stopWaveDotsAnimation()
+        updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
+
+        stopPlaybackTimerRunnable()
+        vnRecordProgress = 0
+    }
+
+    private fun stopWaveDotsAnimation() {
+        waveBars.forEach { bar ->
+            (bar.tag as? ObjectAnimator)?.cancel()
+        }
+    }
+
+    private fun stopPlaybackTimerRunnable() {
+        playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
+        playbackTimerRunnable = null
+    }
+
+    @OptIn(androidx.media3.common.util.UnstableApi::class)
+    private fun updateVoiceNoteUserInterfaceState(newState: VoiceNoteState) {
+        voiceNoteState = newState
+
+        when (newState) {
+            VoiceNoteState.RECORDING -> {
+                binding.recordingTimerTv.visibility = View.VISIBLE
+                binding.playVNRecorded.visibility = View.GONE
+                binding.waveformScrollView.visibility = View.VISIBLE
+                binding.waveDotsContainer.visibility = View.VISIBLE
+            }
+
+            VoiceNoteState.PLAYING -> {
+                binding.recordingTimerTv.visibility = View.GONE
+                binding.playVNRecorded.visibility = View.VISIBLE
+                binding.playVnAudioBtn.setImageResource(com.uyscuti.social.circuit.R.drawable.baseline_pause_black)
+                binding.waveformScrollView.visibility = View.VISIBLE
+                binding.waveDotsContainer.visibility = View.VISIBLE
+            }
+
+            VoiceNoteState.PAUSED -> {
+                binding.recordingTimerTv.visibility = View.GONE
+                binding.playVNRecorded.visibility = View.VISIBLE
+                binding.playVnAudioBtn.setImageResource(com.uyscuti.social.circuit.R.drawable.play_svgrepo_com)
+                binding.waveformScrollView.visibility = View.VISIBLE
+                binding.waveDotsContainer.visibility = View.VISIBLE
+
+                // Scroll to left to show full waveform when paused
+                binding.waveformScrollView.post {
+                    binding.waveformScrollView.scrollTo(0, 0)
+                }
+            }
+
+            VoiceNoteState.IDLE -> {
+                binding.recordingLayout.visibility = View.GONE
+                clearWaveform()
+            }
+        }
+    }
+
+    private fun clearWaveform() {
+        waveBars.forEach { bar ->
+            (bar.tag as? ObjectAnimator)?.cancel()
+        }
+        binding.waveDotsContainer.removeAllViews()
+        waveBars.clear()
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun pauseVn(progress: Int) {
+        val scrollAnimator = binding.waveformScrollView.tag as? ValueAnimator
+        scrollAnimator?.cancel()
+
+        player?.pause()
+        player?.seekTo(progress)
+
+        isAudioVNPlaying = false
+        isAudioVNPaused = true
+
+        stopPlaybackTimerRunnable()
+
+        // Stop animations but keep waveforms visible
+        waveBars.forEach { bar ->
+            (bar.tag as? ObjectAnimator)?.cancel()
+            val storedHeight = bar.tag as? Float ?: 1.0f
+            bar.scaleY = storedHeight
+        }
+
+        // Show current playback position
+        val currentMinutes = (progress / 1000) / 60
+        val currentSeconds = (progress / 1000) % 60
+        binding.pausedTimerTv.text = String.format("%02d:%02d", currentMinutes, currentSeconds)
+
+        updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun pauseRecording() {
+        if (isRecording && !isPaused) {
+            try {
+                isListeningToAudio = false
+
+                // Calculate elapsed time before stopping
+                val currentTime = System.currentTimeMillis()
+                recordingElapsedTime += (currentTime - recordingStartTime)
+
+                mediaRecorder?.let { recorder ->
+                    try {
+                        recorder.stop()
+                        recorder.release()
+                    } catch (e: Exception) {
+                        Log.e("pauseRecording", "Error: $e")
+                    }
+                }
+                mediaRecorder = null
+            } catch (e: Exception) {
+                Log.d("pauseRecording", "Error: $e")
+                e.printStackTrace()
+            }
+
+            isPaused = true
+
+            // Stop the recording timer
+            timerHandler.removeCallbacksAndMessages(null)
+
+            // Update both timers to show the current recorded duration
+            runOnUiThread {
+                val seconds = (recordingElapsedTime / 1000) % 60
+                val minutes = (recordingElapsedTime / 1000) / 60
+                val formatted = String.format("%02d:%02d", minutes, seconds)
+                binding.recordingTimerTv.text = formatted
+                binding.pausedTimerTv.text = formatted
+            }
+
+            updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
+            binding.recordVN.setImageResource(com.uyscuti.social.circuit.R.drawable.mic_2)
+
+            Log.d("pauseRecording", "Recordings: ${recordedAudioFiles.size}")
+            mixVoiceNote()
+        }
+    }
+
+    private fun mixVoiceNote() {
+        val TAG = "mixVN"
+        try {
+            wasPaused = true
+            Log.d(TAG, "pauseRecording: outputFile: $outputVnFile")
+
+            val audioMixer = AudioMixer(outputVnFile)
+            for (input in recordedAudioFiles) {
+                val ai = GeneralAudioInput(input)
+                audioMixer.addDataSource(ai)
+            }
+            audioMixer.mixingType = AudioMixer.MixingType.SEQUENTIAL
+
+            audioMixer.setProcessingListener(object : AudioMixer.ProcessingListener {
+                override fun onProgress(progress: Double) {}
+
+                override fun onEnd() {
+                    runOnUiThread {
+                        audioMixer.release()
+                        mixingCompleted = true
+                        val file = File(outputVnFile)
+                        Log.d(TAG, "onEnd: output vn file exists ${file.exists()}")
+                        Log.d(TAG, "onEnd: media muxed success")
+
+                        binding.waveformScrollView.visibility = View.VISIBLE
+                        binding.waveDotsContainer.visibility = View.VISIBLE
+                        binding.wave.visibility = View.GONE
+
+                        binding.playVnAudioBtn.setOnClickListener {
+                            Log.d("playVnAudioBtn", "onEnd: play vn button clicked")
+                            when {
+                                !isAudioVNPlaying -> {
+                                    Log.d("playVnAudioBtn", "play vn")
+                                    startPlaying(outputVnFile)
+                                }
+                                else -> {
+                                    Log.d("playVnAudioBtn", "pause VN")
+                                    vnRecordAudioPlaying = true
+                                    val currentProgress = player?.currentPosition ?: vnRecordProgress
+                                    vnRecordProgress = currentProgress
+                                    pauseVn(currentProgress)
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+
+            try {
+                audioMixer.start()
+                audioMixer.processAsync()
+            } catch (e: IOException) {
+                audioMixer.release()
+                e.printStackTrace()
+                Log.d(TAG, "pauseRecording: exception 1 $e")
+                Log.d(TAG, "pauseRecording: exception 1 ${e.message}")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.d(TAG, "pauseRecording: exception 2 $e")
+            Log.d(TAG, "pauseRecording: exception 2 ${e.message}")
+        }
+    }
+
+    private fun listenToAudio() {
+        try {
+            val minBufferSize = AudioRecord.getMinBufferSize(
+                44100,
+                android.media.AudioFormat.CHANNEL_IN_MONO,
+                android.media.AudioFormat.ENCODING_PCM_16BIT
+            )
+
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.RECORD_AUDIO
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.RECORD_AUDIO),
+                    REQUEST_RECORD_AUDIO_PERMISSION
+                )
+                return
+            }
+
+            audioRecord = AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                44100,
+                android.media.AudioFormat.CHANNEL_IN_MONO,
+                android.media.AudioFormat.ENCODING_PCM_16BIT,
+                minBufferSize * 2
+            )
+
+            audioRecord?.startRecording()
+            val buffer = ShortArray(minBufferSize)
+
+            while (isListeningToAudio && isRecording) {
+                val readSize = audioRecord?.read(buffer, 0, minBufferSize) ?: 0
+
+                if (readSize > 0) {
+                    // Calculate RMS (Root Mean Square) for better amplitude detection
+                    var sum = 0.0
+                    for (i in 0 until readSize) {
+                        sum += (buffer[i].toDouble() * buffer[i].toDouble())
+                    }
+                    val rms = sqrt(sum / readSize)
+
+                    // Normalize amplitude to 0-1 range (adjust 5000.0 for sensitivity)
+                    val normalizedAmplitude = (rms / 5000.0).coerceIn(0.0, 1.0).toFloat()
+
+                    runOnUiThread {
+                        if (normalizedAmplitude > 0.05f) { // Sound detected threshold
+                            // Map amplitude to height multiplier (0.3 to 2.5)
+                            val heightMultiplier = 0.3f + (normalizedAmplitude * 2.2f)
+                            addWaveBarForSound(heightMultiplier)
+                        } else { // No sound or very quiet
+                            addIdleDottedBarAtEnd()
+                        }
+                        scrollToRight()
+                    }
+                }
+
+                Thread.sleep(50) // Update every 50ms for smooth animation
+            }
+
+            audioRecord?.release()
+            audioRecord = null
+        } catch (e: Exception) {
+            Log.e("ListenToAudio", "Error: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    private fun addWaveBarForSound(heightMultiplier: Float) {
+        val bar = View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                dpToPx(4), // 4dp width
+                dpToPx(48) // 48dp max height
+            ).apply {
+                marginEnd = dpToPx(6) // 6dp spacing between bars
+                gravity = android.view.Gravity.CENTER_VERTICAL
+            }
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(Color.parseColor("#2563EB")) // Blue color
+                cornerRadius = dpToPx(2).toFloat() // Rounded corners
+            }
+            // Apply height multiplier with clamping
+            scaleY = heightMultiplier.coerceIn(0.2f, 2.5f)
+            alpha = 1.0f
+            tag = heightMultiplier // Store original height
+        }
+
+        binding.waveDotsContainer.addView(bar)
+        waveBars.add(bar)
+
+        // Remove old bars from START (left side) if exceeding limit
+        if (waveBars.size > maxWaveBars) {
+            binding.waveDotsContainer.removeViewAt(0)
+            waveBars.removeAt(0)
+        }
+
+        scrollToRight()
+    }
+
+    private fun addIdleDottedBarAtEnd() {
+        val bar = View(this).apply {
+            val dotSize = dpToPx(5) // 5dp circular dot
+            layoutParams = LinearLayout.LayoutParams(
+                dotSize,
+                dotSize
+            ).apply {
+                marginEnd = dpToPx(3) // 3dp spacing between dots
+                gravity = android.view.Gravity.CENTER_VERTICAL
+            }
+
+            // Create circular dot with blue color
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor("#2563EB")) // Same blue as bars
+            }
+
+            scaleY = 1.0f
+            alpha = 1.0f
+            tag = "idle_dot" // Mark as idle dot
+        }
+
+        binding.waveDotsContainer.addView(bar)
+        waveBars.add(bar)
+
+        // Remove old bars from START (left side) if exceeding limit
+        if (waveBars.size > maxWaveBars) {
+            binding.waveDotsContainer.removeViewAt(0)
+            waveBars.removeAt(0)
+        }
+    }
+
+    private fun initializeDottedWaveform() {
+        binding.waveDotsContainer.removeAllViews()
+        waveBars.clear()
+
+        val barsToFill = calculateBarsNeededForFullWidth()
+        repeat(barsToFill) {
+            addIdleDottedBarAtEnd()
+        }
+
+        // Scroll to right after initialization
+        binding.waveformScrollView.post {
+            val maxScroll = (binding.waveDotsContainer.width - binding.waveformScrollView.width).coerceAtLeast(0)
+            if (maxScroll > 0) {
+                binding.waveformScrollView.scrollTo(maxScroll, 0)
+            }
+        }
+    }
+
+    private fun calculateBarsNeededForFullWidth(): Int {
+        val screenWidth = resources.displayMetrics.widthPixels
+        val barWidth = dpToPx(4)
+        val barMargin = dpToPx(6)
+        val totalBarWidth = barWidth + barMargin
+        return (screenWidth / totalBarWidth) + 5 // Add extra for smooth scrolling
+    }
+
+    private fun scrollToRight() {
+        binding.waveformScrollView.post {
+            val maxScroll = (binding.waveDotsContainer.width - binding.waveformScrollView.width).coerceAtLeast(0)
+            if (maxScroll > 0) {
+                binding.waveformScrollView.smoothScrollTo(maxScroll, 0)
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun resumeRecording() {
+        if (isPaused) {
+            // Create new recording file for this segment
+            outputFile = com.uyscuti.social.circuit.utils.getOutputFilePath("rec")
+
+            mediaRecorder = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setOutputFile(outputFile)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioEncodingBitRate(128000)
+                setAudioSamplingRate(44100)
+                prepare()
+                start()
+            }
+
+            isPaused = false
+            isListeningToAudio = true
+            isRecording = true
+
+            // Resume timer from where it left off
+            recordingStartTime = System.currentTimeMillis()
+            updateRecordingTimer()
+
+            binding.playVNRecorded.visibility = View.GONE
+            binding.recordingTimerTv.visibility = View.VISIBLE
+
+            binding.playVnAudioBtn.setImageResource(com.uyscuti.social.circuit.R.drawable.play_svgrepo_com)
+            binding.recordVN.setImageResource(com.uyscuti.social.circuit.R.drawable.baseline_pause_white_24)
+
+            updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
+
+            recordedAudioFiles.add(outputFile)
+
+            // Resume audio listening
+            Thread {
+                listenToAudio()
+            }.start()
+        }
+    }
+
+    private fun startPlaying(vnAudio: String) {
+        EventBus.getDefault().post(PauseShort(true))
+        isAudioVNPlaying = true
+        vnRecordAudioPlaying = true
+
+        updateVoiceNoteUserInterfaceState(VoiceNoteState.PLAYING)
+
+        isOnRecordDurationOnPause = false
+
+        if (isAudioVNPaused) {
+            if (vnRecordProgress != 0) {
+                player?.seekTo(vnRecordProgress)
+            }
+            player?.start()
+        } else {
+            player = MediaPlayer().apply {
+                try {
+                    setDataSource(vnAudio)
+                    prepare()
+                    totalRecordedDuration = duration.toLong()
+                    if (vnRecordProgress != 0) {
+                        seekTo(vnRecordProgress)
+                    }
+                    start()
+                    setOnCompletionListener {
+                        isAudioVNPaused = false
+                        isAudioVNPlaying = false
+                        stopPlayingOnCompletion()
+                    }
+                } catch (e: IOException) {
+                    Log.e("MediaRecorder", "prepare() failed")
+                }
+            }
+        }
+
+        animatePlaybackWaves()
+        updatePlaybackTimer() // This will now work correctly
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun stopPlayingOnCompletion() {
+        val scrollAnimator = binding.waveformScrollView.tag as? ValueAnimator
+        scrollAnimator?.cancel()
+
+        val totalDuration = player?.duration ?: 0
+
+        player?.release()
+        player = null
+
+        isAudioVNPlaying = false
+        isAudioVNPaused = false
+        vnRecordAudioPlaying = false
+
+        stopPlaybackTimerRunnable()
+        stopWaveDotsAnimation()
+
+        // Return to paused state showing total duration and PLAY icon
+        updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
+
+        binding.playVnAudioBtn.setImageResource(com.uyscuti.social.circuit.R.drawable.play_svgrepo_com)
+
+        val totalMinutes = (totalDuration / 1000) / 60
+        val totalSeconds = (totalDuration / 1000) % 60
+        binding.pausedTimerTv.text = String.format("%02d:%02d", totalMinutes, totalSeconds)
+
+        vnRecordProgress = 0
+
+        // Scroll back to start
+        binding.waveformScrollView.post {
+            binding.waveformScrollView.scrollTo(0, 0)
+        }
+    }
+
+    private fun deleteRecording() {
+        val TAG = "Recording"
+        try {
+            isListeningToAudio = false
+
+            // Stop all timers
+            timerHandler.removeCallbacksAndMessages(null)
+            playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
+
+            mediaRecorder?.apply {
+                try {
+                    stop()
+                    release()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error stopping recorder: $e")
+                }
+            }
+            mediaRecorder = null
+
+            isRecording = false
+            isPaused = false
+            isAudioVNPlaying = false
+
+            // Reset timer variables
+            recordingStartTime = 0L
+            recordingElapsedTime = 0L
+
+            binding.recordVN.setImageResource(com.uyscuti.social.circuit.R.drawable.mic_2)
+            binding.sendVN.setBackgroundResource(com.uyscuti.social.circuit.R.drawable.ic_ripple_disabled)
+            binding.sendVN.isClickable = false
+
+            updateVoiceNoteUserInterfaceState(VoiceNoteState.IDLE)
+
+            binding.recordingTimerTv.text = "00:00"
+            binding.pausedTimerTv.text = "00:00"
+
+            Log.d(TAG, "Recordings deleted: ${recordedAudioFiles.size}")
+            deleteVn()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e(TAG, "Error deleting recording: $e")
+        }
+    }
+
+    private fun deleteVn() {
+        recordedAudioFiles.clear()
+        val isDeleted = deleteFiles(recordedAudioFiles)
+        val outputVnFileList = mutableListOf<String>().apply { add(outputVnFile) }
+        val deleteMixVn = deleteFiles(outputVnFileList)
+        if (isDeleted) {
+            Log.d(TAG, "File record deleted successfully")
+        } else {
+            println("Failed to delete file.")
+        }
+
+        if (deleteMixVn) {
+            Log.d(TAG, "File mix vn deleted successfully")
+        } else {
+            println("Failed to delete file.")
         }
     }
 

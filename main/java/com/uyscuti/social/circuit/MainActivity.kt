@@ -651,7 +651,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         }
     }
 
-    private enum class VoiceNoteState {
+    internal enum class VoiceNoteState {
         IDLE,
         RECORDING,
         PLAYING,
