@@ -51,10 +51,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Adapter for {@link MessagesList}.
- */
-@SuppressWarnings("WeakerAccess")
+
 public class MessagesListAdapter<MESSAGE extends IMessage>
         extends RecyclerView.Adapter<ViewHolder>
         implements RecyclerScrollMoreListener.OnLoadMoreListener
@@ -102,13 +99,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         this(senderId, new MessageHolders(), imageLoader );
     }
 
-    /**
-     * For default list item layout and view holder.
-     *
-     * @param senderId    identifier of sender.
-     * @param holders     custom layouts and view holders. See {@link MessageHolders} documentation for details
-     * @param imageLoader image loading method.
-     */
+
     public MessagesListAdapter(String senderId, MessageHolders holders,
                                ImageLoader imageLoader) {
         this.senderId = senderId;
@@ -175,7 +166,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         return count;
     }
 
-// Add this to your MessageHolders class or BaseMessageViewHolder
+
 
     // Constants for message status
     public static final String STATUS_SENT = "Sent";
@@ -321,8 +312,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         items.addAll(newItems);
         generateDateHeaders(messages);
 
-//        notifyItemRangeInserted(0, items.size());
-//        notifyDataSetChanged();
+
     }
 
 
@@ -332,35 +322,14 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
     public void modifyMessageStatus(MESSAGE message) {
         if (message != null) {
             // Modify the status of the message
-//            message.(newStatus); // Assuming a setStatus method exists in the Message class
 
-            // Notify the adapter that the data has changed
-
-            // Get the position of the message in the adapter
             update(message);
         }
     }
 
-//    public void addToStartS(MESSAGE message, boolean isSent, boolean scroll) {
-//        boolean isNewMessageToday = !isPreviousSameDate(0, message.getCreatedAt());
-//        if (isNewMessageToday) {
-//            items.add(0, new IWrapper<>(message.getCreatedAt(),));
-//        }
-//        IWrapper<MESSAGE> element = new IWrapper<>(message, isSent);
-//        items.add(0, element);
-//        notifyItemRangeInserted(0, isNewMessageToday ? 2 : 1);
-//        if (layoutManager != null && scroll) {
-//            layoutManager.scrollToPosition(0);
-//        }
-//    }
 
 
-    /**
-     * Adds messages list in chronological order. Use this method to add history.
-     *
-     * @param messages messages from history.
-     * @param reverse  {@code true} if need to reverse messages before adding.
-     */
+
     public void addToEnd(List<MESSAGE> messages, boolean reverse) {
         if (messages.isEmpty()) return;
 
@@ -382,21 +351,12 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         notifyItemRangeInserted(oldSize, items.size() - oldSize);
     }
 
-    /**
-     * Updates message by its id.
-     *
-     * @param message updated message object.
-     */
+
     public boolean update(MESSAGE message) {
         return update(message.getId(), message);
     }
 
-    /**
-     * Updates message by old identifier (use this method if id has changed). Otherwise use {@link #update(IMessage)}
-     *
-     * @param oldId      an identifier of message to update.
-     * @param newMessage new message object.
-     */
+
     public boolean update(String oldId, MESSAGE newMessage) {
         int position = getMessagePositionById(oldId);
         if (position >= 0) {
@@ -409,11 +369,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
     }
 
-    /**
-     * Moves the elements position from current to start
-     *
-     * @param newMessage new message object.
-     */
+   
     public void updateAndMoveToStart(MESSAGE newMessage) {
         int position = getMessagePositionById(newMessage.getId());
         if (position >= 0) {

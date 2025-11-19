@@ -2754,16 +2754,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     }
 
 
-//    private fun initAdapter() {
-//        super.messagesAdapter = MessagesListAdapter(super.senderId, super.imageLoader)
-//        super.messagesAdapter.enableSelectionMode(this)
-//        super.messagesAdapter.setLoadMoreListener(this)
-//        super.messagesAdapter.setMessageSentListener(this)
-//
-//        super.messagesAdapter.enableDateListener(this)
-//        super.messagesAdapter.setDateHeadersFormatter(this)
-//        messagesList.setAdapter(super.messagesAdapter)
-//    }
 
 
     override fun onFormatDate(date: Date?): String {
