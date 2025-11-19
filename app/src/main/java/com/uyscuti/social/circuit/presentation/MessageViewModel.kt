@@ -62,6 +62,19 @@ class MessageViewModel @Inject constructor(
         }
     }
 
+    suspend fun updateMessageStatus(messageId: String, newStatus: String) {
+        try {
+            val message = messageRepository.getMessageByMessageId(messageId)
+            if (message != null) {
+                message.status = newStatus
+                messageRepository.updateMessageStatus(message)
+            }
+        } catch (e: Exception){
+            Log.e("MessageViewModel", "Error updating message status: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
     suspend fun markMessagesDeleted(ids: List<String>){
         try {
             messageRepository.markMessagesDeleted(ids)

@@ -82,6 +82,8 @@ import com.uyscuti.social.chatsuit.R
 import com.uyscuti.social.chatsuit.messages.MessageInput
 import com.uyscuti.social.chatsuit.messages.MessagesList
 import com.uyscuti.social.chatsuit.messages.MessagesListAdapter
+import com.uyscuti.social.chatsuit.messages.MessagesListAdapter.STATUS_DELIVERED
+import com.uyscuti.social.chatsuit.messages.MessagesListAdapter.STATUS_SENT
 import com.uyscuti.social.chatsuit.utils.DateFormatter
 import com.uyscuti.social.circuit.MainMessagesActivity
 import com.uyscuti.social.circuit.calls.viewmodel.CallViewModel
@@ -859,6 +861,11 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 }
             }
         }
+
+    }
+
+    private fun isVoiceNoteReady(): Boolean {
+        return !sending && (isRecording || isPaused || wasPaused)
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
@@ -1119,6 +1126,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
             updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
             binding.recordVN.setImageResource(com.uyscuti.social.circuit.R.drawable.mic_2)
+            binding.sendVN.isClickable = true
 
             Log.d("pauseRecording", "Recordings: ${recordedAudioFiles.size}")
             mixVoiceNote()
@@ -1861,9 +1869,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         message.status = "Sending"
 
-//        super.messagesAdapter.addToStart(
-//            MessagesFixtures.getTextMessage(input.toString()), true
-//        )
+
 
         val userEntity = UserEntity(
             "0",
@@ -1897,26 +1903,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             updateLastMessage(isGroup, chatId, textMessage)
 
 
-//            messageViewModel.getPendingMessages(chatId)
 
-//            withContext(NonCancellable) {
-//                when (val result = remoteMessageRepository.sendMessage(chatId, input.toString())) {
-//                    is Result.Success -> {
-//                        // Message sent successfully, update the UI as needed
-//                        withContext(Dispatchers.Main) {
-//                            showToast("Message sent successfully")
-//                            super.messagesAdapter.notifyMessageSent(message)
-//                        }
-//                    }
-//
-//                    is Result.Error -> {
-//                        // Handle the error
-//                        withContext(Dispatchers.Main) {
-//                            showToast("Message sending failed: ${result.exception.message}")
-//                        }
-//                    }
-//                }
-//            }
         }
 
         super.messagesAdapter?.addToStart(message, true)
@@ -1931,8 +1918,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     is Result.Success -> {
                         // Message sent successfully, update the UI as needed
                         withContext(Dispatchers.Main) {
-//                            showToast("Message sent successfully")
-//                            Log.d("MessageSent", "Message sent successfully : ${message.text} ${message.id}")
+
                             super.messagesAdapter?.notifyMessageSent(message)
                         }
                         messageViewModel.updateMessageStatus(dBMessage)
@@ -1940,10 +1926,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     }
 
                     is Result.Error -> {
-                        // Handle the error
-//                        withContext(Dispatchers.Main) {
-//                            showToast("Message sending failed: ${result.exception.message}")
-//                        }
+
                         callback(false)
                     }
 
@@ -2901,6 +2884,25 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     }
 
 
+//    private fun observeSendingMessagesI() {
+//        CoroutineScope(Dispatchers.Main).launch {
+//            messageViewModel.observePendingMessages(chatId)
+//                .observe(this@MessagesActivity, Observer { sendingMessages ->
+//                    val filteredMessages =
+//                        sendingMessages.filter { !observedMessages.contains(it.id) }
+//                    filteredMessages.map { observedMessages.add(it.id) }
+//
+//                    if (isGroup) {
+//                        sendPendingMessagesWithRetry(filteredMessages)
+//                    } else {
+//                        val filtered = filteredMessages.filter { it.chatId != dialog?.dialogName }
+//                        sendPendingMessagesWithRetry(filtered)
+//                    }
+//                })
+//        }
+//    }
+
+
     private fun observeSendingMessagesI() {
         CoroutineScope(Dispatchers.Main).launch {
             messageViewModel.observePendingMessages(chatId)
@@ -2916,6 +2918,30 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         sendPendingMessagesWithRetry(filtered)
                     }
                 })
+        }
+    }
+
+    // Add this new method to handle successful message send
+    private fun onMessageSendSuccess(messageId: String) {
+        CoroutineScope(Dispatchers.Main).launch {
+            // Update message status in adapter to "Sent"
+            messagesAdapter?.updateMessageStatus(messageId, STATUS_SENT)
+
+            // Update in database
+            CoroutineScope(Dispatchers.IO).launch {
+                messageViewModel.updateMessageStatus(messageId, STATUS_SENT)
+            }
+        }
+    }
+
+    // Add this method to handle delivered status
+    private fun onMessageDelivered(messageId: String) {
+        CoroutineScope(Dispatchers.Main).launch {
+            messagesAdapter?.updateMessageStatus(messageId, STATUS_DELIVERED)
+
+            CoroutineScope(Dispatchers.IO).launch {
+                messageViewModel.updateMessageStatus(messageId, STATUS_DELIVERED)
+            }
         }
     }
 
@@ -3274,12 +3300,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                 // Existing code for a successful response...
                                 val responseData =
                                     response.body() // This will contain the response data from the server
-                                // Handle the response data as needed
-//                        Log.d(TAG, "file response data: $responseData")
-//                        val jsonResponse = response.body()?.toString()
-//                        Log.d(TAG, "Response JSON: $jsonResponse")
-//                        Log.d(TAG, "Response Status Code: ${response.code()}")
-//                        Log.d(TAG, "Response Headers: ${response.headers()}")
+
                                 CoroutineScope(Dispatchers.IO).launch {
                                     messageViewModel.updateMessageStatus(message)
                                 }
@@ -3303,7 +3324,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                 val messageContent = if (message.imageUrl != null) {
 
                                     Log.d("File Sent", "Image found ${message.imageUrl}")
-//                        user.id = "0"
+
                                     Message(
                                         message.id,
                                         user,
@@ -3314,7 +3335,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                                     }
                                 } else if (message.videoUrl != null) {
-//                        user.id = "0"
+
                                     Message(
                                         message.id,
                                         user,
@@ -3324,7 +3345,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                         setVideo(Message.Video(message.videoUrl!!))
                                     }
                                 } else if (message.audioUrl != null) {
-//                        user.id = "0"
+
                                     Message(
                                         message.id,
                                         user,
@@ -3340,7 +3361,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                         )
                                     }
                                 } else if (message.text == "None" && message.voiceUrl != null) {
-//                        user.id = "0"
+
                                     Message(
                                         message.id,
                                         user,
@@ -3350,7 +3371,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                         setVoice(Message.Voice(message.voiceUrl!!, 10000))
                                     }
                                 } else if (message.docUrl != null) {
-//                        user.id = "0"
+
                                     Message(
                                         message.id,
                                         user,
@@ -3378,7 +3399,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                                 runOnUiThread {
                                     showToast("File Sent")
-//                            messagesAdapter?.notifyMessageSent(messageContent )
+
                                     messageContent.status = "Sent"
                                     messagesAdapter?.notifyMessageSent(messageContent)
                                 }
