@@ -224,12 +224,14 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                             setStatus(status)
                         }
                     }
+
                     message.voiceUrl != null -> {
-                        Message(message.id, user, null, date).apply {
-                            setVoice(Message.Voice(message.voiceUrl!!, 10000))
+                        Message(message.id, user, "Voice Note", date).apply {
+                            setVoice(Message.Voice(message.voiceUrl!!, message.voiceDuration ?: 10000))
                             setStatus(status)
                         }
                     }
+
                     message.docUrl != null -> {
                         Message(message.id, user, null, date).apply {
                             val size = getFileSize(message.docUrl!!)
@@ -412,18 +414,14 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         )
                         setStatus(status)
                     }
-                } else if (message.voiceUrl != null) {
-
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
-                        setVoice(Message.Voice(message.voiceUrl!!, 10000))
+                }
+                else if (message.voiceUrl != null) {
+                    Message(message.id, user, "🎤 Voice Note", date).apply {
+                        setVoice(Message.Voice(message.voiceUrl!!, message.voiceDuration ?: 10000))
                         setStatus(status)
                     }
-                } else if (message.docUrl != null) {
+                }
+                else if (message.docUrl != null) {
 
                     Message(
                         message.id,
@@ -531,18 +529,14 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                             )
                             setStatus(status)
                         }
-                    } else if (message.voiceUrl != null) {
-
-                        Message(
-                            message.id,
-                            user,
-                            null,
-                            date
-                        ).apply {
-                            setVoice(Message.Voice(message.voiceUrl!!, 10000))
+                    }
+                    else if (message.voiceUrl != null) {
+                        Message(message.id, user, "🎤 Voice Note", date).apply {
+                            setVoice(Message.Voice(message.voiceUrl!!, message.voiceDuration ?: 10000))
                             setStatus(status)
                         }
-                    } else if (message.docUrl != null) {
+                    }
+                    else if (message.docUrl != null) {
 
                         Message(
                             message.id,
