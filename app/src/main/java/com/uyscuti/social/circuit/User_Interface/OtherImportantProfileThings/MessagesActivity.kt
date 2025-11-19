@@ -1064,13 +1064,15 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 return
             }
 
-            // Get duration in seconds - FIXED: Added the missing method
+            // Get duration in seconds
             val durationMs = getDurationFromMediaMetadata(audioFilePath)
             val durationSeconds = (durationMs / 1000).toInt()
             Log.d(TAG, "Voice note duration: $durationSeconds seconds")
 
-            // Create message entities
-            val messageId = "VoiceNote_${Random.Default.nextInt()}"
+            // Create message entities - SAME as text message flow
+            val messageId = "rec${Random.Default.nextInt()}"
+            Log.d("MessageSent", "Message Id : $messageId")
+
             val date = Date(System.currentTimeMillis())
             val avatar = settings.getString("avatar", "avatar").toString()
 
@@ -1082,8 +1084,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 date
             )
             message.status = "Sending"
-
-            // FIXED: Set voice note using setter method instead of direct access
             message.setVoice(Message.Voice(audioFilePath, durationSeconds))
 
             val userEntity = UserEntity(
@@ -1112,49 +1112,45 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 fileSize = file.length()
             )
 
-            // Add to UI immediately (like text messages)
-            super.messagesAdapter?.addToStart(message, true)
-
-            // Insert into database
+            // SAME flow as text messages: Insert to DB and add to UI
             CoroutineScope(Dispatchers.IO).launch {
                 insertMessage(voiceMessageEntity)
                 updateLastMessage(isGroup, chatId, voiceMessageEntity)
             }
 
+            super.messagesAdapter?.addToStart(message, true)
+
             // Hide VN recording UI
             binding.VNLayout.visibility = View.GONE
             binding.inputContainer.visibility = View.VISIBLE
 
-            // Check file size and process
+            // Check if compression is needed
             val fileSizeInMB = file.length() / (1024 * 1024)
             Log.d(TAG, "Voice note file size: $fileSizeInMB MB")
 
             if (fileSizeInMB > 2) {
                 Log.d(TAG, "Voice note needs compression")
-                val outputFileName = "compressed_audio_${System.currentTimeMillis()}.mp3"
+                val outputFileName = "AUD${System.currentTimeMillis()}.mp3"
                 val outputFilePath = File(cacheDir, outputFileName)
 
                 lifecycleScope.launch(Dispatchers.IO) {
-                    // Compress audio
                     val compressor = FFMPEG_AudioCompressor()
                     val isCompressionSuccessful = compressor.compress(audioFilePath, outputFilePath.absolutePath)
 
-                    if (isCompressionSuccessful) {
-                        Log.d(TAG, "Voice note compression successful")
-                        val compressedSizeInMB = outputFilePath.length() / (1024 * 1024)
-                        Log.d(TAG, "Compressed file size: $compressedSizeInMB MB")
-
-                        // Send compressed file
-                        sendVoiceNoteMessage(outputFilePath, message, voiceMessageEntity)
+                    val fileToSend = if (isCompressionSuccessful) {
+                        Log.d(TAG, "Compression successful, using compressed file")
+                        outputFilePath
                     } else {
-                        Log.e(TAG, "Voice note compression failed - using original file")
-                        // Send original file
-                        sendVoiceNoteMessage(file, message, voiceMessageEntity)
+                        Log.e(TAG, "Compression failed, using original file")
+                        file
                     }
+
+                    // Send through the unified pipeline
+                    sendVoiceNoteMessage(fileToSend, message, voiceMessageEntity)
                 }
             } else {
-                // File is small enough, send directly
-                Log.d(TAG, "Voice note doesn't need compression, sending directly")
+                // Send directly without compression
+                Log.d(TAG, "Voice note doesn't need compression")
                 lifecycleScope.launch(Dispatchers.IO) {
                     sendVoiceNoteMessage(file, message, voiceMessageEntity)
                 }
@@ -1176,6 +1172,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+    // Method to get audio duration
     private fun getDurationFromMediaMetadata(audioFilePath: String): Long {
         return try {
             val retriever = MediaMetadataRetriever()
@@ -1189,6 +1186,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+
     private fun sendVoiceNoteMessage(
         file: File,
         message: Message,
@@ -1197,7 +1195,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         CoroutineScope(Dispatchers.IO).launch {
             withContext(NonCancellable) {
                 try {
-                    // Create MultipartBody.Part from file
+                    // Create MultipartBody.Part
                     val requestFile = file.asRequestBody("audio/mp3".toMediaTypeOrNull())
                     val body = MultipartBody.Part.createFormData(
                         "attachments",
@@ -1207,41 +1205,29 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                     Log.d(TAG, "Sending voice note: ${file.name}, size: ${file.length()} bytes")
 
-                    // Use your existing sendAttachment method
+                    // SAME as sendTextMessage - use repository
                     when (val result = remoteMessageRepository.sendAttachment(
                         chatId = chatId,
                         message = null,
                         filePath = body
                     )) {
                         is Result.Success -> {
-                            // Voice note sent successfully
                             Log.d(TAG, "Voice note sent successfully")
+
+                            // SAME as text: notify adapter
                             withContext(Dispatchers.Main) {
                                 super.messagesAdapter?.notifyMessageSent(message)
                             }
 
-                            // Update message status in database
+                            // SAME as text: update status in DB
                             messageViewModel.updateMessageStatus(dBMessage)
-
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(
-                                    this@MessagesActivity,
-                                    "Voice note sent",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
                         }
 
                         is Result.Error -> {
-                            Log.e(TAG, "Error sending voice note: ${result.exception.message}")
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(
-                                    this@MessagesActivity,
-                                    "Failed to send voice note",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                            Log.e(TAG, "Failed to send voice note: ${result.exception.message}")
 
-                                // Update message status to failed
+                            // SAME as text: handle error
+                            withContext(Dispatchers.Main) {
                                 message.status = "Failed"
                                 dBMessage.status = "Failed"
                                 messageViewModel.updateMessageStatus(dBMessage)
@@ -1252,13 +1238,9 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 } catch (e: Exception) {
                     Log.e(TAG, "Exception sending voice note: ${e.message}", e)
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            this@MessagesActivity,
-                            "Error sending voice note",
-                            Toast.LENGTH_SHORT
-                        ).show()
                         message.status = "Failed"
                         dBMessage.status = "Failed"
+                        messageViewModel.updateMessageStatus(dBMessage)
                         super.messagesAdapter?.notifyDataSetChanged()
                     }
                 } finally {
