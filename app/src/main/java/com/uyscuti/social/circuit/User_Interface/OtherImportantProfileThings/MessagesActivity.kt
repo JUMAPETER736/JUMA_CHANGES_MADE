@@ -1095,7 +1095,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         binding.playVnAudioBtn?.visibility = View.GONE
         // Reset any other UI elements as needed
     }
-    
+
     private fun stopPlaying() {
         val scrollAnimator = binding.waveformScrollView.tag as? ValueAnimator
         scrollAnimator?.cancel()
