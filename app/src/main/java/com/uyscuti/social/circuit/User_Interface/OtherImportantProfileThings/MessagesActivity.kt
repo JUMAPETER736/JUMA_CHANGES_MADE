@@ -175,6 +175,49 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     MessagesListAdapter.OnMediaClickListener<Message>,
     MessagesListAdapter.OnAudioPlayListener<Message> , ChatManager.ChatManagerListener{
 
+    private val MAX_RETRY_COUNT = 3
+    private val REQUEST_CODE = 558
+    private val WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 12
+    private val MY_MANAGE_EXTERNAL_STORAGE_REQUEST_CODE = 202
+    private val IMAGES_REQUEST_CODE = 2023
+    private val READ_EXTERNAL_STORAGE_REQUEST_CODE = 101
+    private val REQUEST_RECORD_AUDIO_PERMISSION = 200
+
+
+    companion object {
+
+        const val SENT = 1
+        const val DELIVERED = 2
+        const val READ = 3
+
+
+        fun open(context: Context, dialogName: String, dialog: Dialog?, temporally: Boolean) {
+            val intent = Intent(context, MessagesActivity::class.java)
+
+            if (dialog != null) {
+
+
+                intent.putExtra("chatId", dialog.id)
+                intent.putExtra("dialogName", dialog.dialogName)
+                intent.putExtra("dialogPhoto", dialog.dialogPhoto)
+                intent.putExtra("isGroup", dialog.users.size > 1)
+                intent.putExtra("temporally", temporally)
+
+                if (dialog.users.isNotEmpty()) {
+                    intent.putExtra("firstUserId", dialog.users.first().id)
+                    intent.putExtra("firstUserName", dialog.users.first().name)
+                    intent.putExtra("firstUserAvatar", dialog.users.first().avatar)
+                }
+
+                dialog.lastMessage?.let {
+                    intent.putExtra("lastMessageId", it.id)
+                }
+            }
+
+            context.startActivity(intent)
+        }
+    }
+
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMessagesBinding
 
@@ -190,20 +233,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     private val dialogViewModel: DialogViewModel by viewModels()
     private val groupDialogViewModel: GroupDialogViewModel by viewModels()
 
-    private val PREFS_NAME = "LocalSettings" // Change this to a unique name for your app
-
-
-    private val MAX_RETRY_COUNT = 3 // Define the maximum number of retry attempts
-
-
-    private val REQUEST_CODE = 558
-    private val WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 12
-    private val MY_MANAGE_EXTERNAL_STORAGE_REQUEST_CODE = 202
-    private val IMAGES_REQUEST_CODE = 2023
-    private val READ_EXTERNAL_STORAGE_REQUEST_CODE = 101
-    private val REQUEST_RECORD_AUDIO_PERMISSION = 200
-
-
+    private val PREFS_NAME = "LocalSettings"
 
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var runnable: Runnable
@@ -315,41 +345,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             SENT -> tickImageView.setImageResource(R.drawable.ic_tick_single)
             DELIVERED -> tickImageView.setImageResource(R.drawable.ic_tick_double)
             READ -> tickImageView.setImageResource(R.drawable.ic_tick_double_blue)
-        }
-    }
-
-
-    companion object {
-
-        const val SENT = 1
-        const val DELIVERED = 2
-        const val READ = 3
-
-
-        fun open(context: Context, dialogName: String, dialog: Dialog?, temporally: Boolean) {
-            val intent = Intent(context, MessagesActivity::class.java)
-
-            if (dialog != null) {
-
-
-                intent.putExtra("chatId", dialog.id)
-                intent.putExtra("dialogName", dialog.dialogName)
-                intent.putExtra("dialogPhoto", dialog.dialogPhoto)
-                intent.putExtra("isGroup", dialog.users.size > 1)
-                intent.putExtra("temporally", temporally)
-
-                if (dialog.users.isNotEmpty()) {
-                    intent.putExtra("firstUserId", dialog.users.first().id)
-                    intent.putExtra("firstUserName", dialog.users.first().name)
-                    intent.putExtra("firstUserAvatar", dialog.users.first().avatar)
-                }
-
-                dialog.lastMessage?.let {
-                    intent.putExtra("lastMessageId", it.id)
-                }
-            }
-
-            context.startActivity(intent)
         }
     }
 
