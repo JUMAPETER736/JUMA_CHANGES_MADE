@@ -369,7 +369,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
     }
 
-   
+
     public void updateAndMoveToStart(MESSAGE newMessage) {
         int position = getMessagePositionById(newMessage.getId());
         if (position >= 0) {
