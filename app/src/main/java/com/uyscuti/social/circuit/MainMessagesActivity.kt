@@ -515,7 +515,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                             setStatus(status)
                         }
                     } else if (message.audioUrl != null) {
-//                        user.id = "0"
+
                         Message(
                             message.id,
                             user,
@@ -532,7 +532,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                             setStatus(status)
                         }
                     } else if (message.voiceUrl != null) {
-//                        user.id = "0"
+
                         Message(
                             message.id,
                             user,
@@ -619,17 +619,15 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                 // It's a local file
                 val file = File(uri)
                 if (file.exists()) {
-//                    Log.d("Attachment File Size", "File Size is : ${file.length()}")
+
                     return file.length()
                 }
             } else if (uri.scheme == "http" || uri.scheme == "https") {
-                // It's a remote URL, you can handle it differently or return an appropriate value
-//                Log.d("Attachment File Size", "Remote URL detected")
+
                 return 0L // Or handle it according to your requirements
             }
         } catch (e: IllegalArgumentException) {
-            // Handle invalid URIs here if needed
-//            Log.e("Attachment File Size", "Invalid URI: $filePath")
+
             e.printStackTrace()
         }
 
@@ -757,19 +755,18 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     }
 
     override fun onDelete(deletedItems: MutableList<String>?) {
-//        Log.d("OnDelete", "Messages : ${deletedItems?.size}")
-//        Log.d("OnDelete", "last Message id : $lastMessageId ")
+
         CoroutineScope(Dispatchers.IO).launch {
             if (deletedItems != null) {
 
-//                Log.d("onDelete", "Deleting Messages")
+
 
                 val isLast = deletedItems.contains(lastMessageId)
 
 
                 if (isGroup) {
                     messageViewModel.markMessagesDeleted(deletedItems)
-//                    Log.d("onDelete", "Deleting Messages : ${deletedItems.size}")
+
 
                 } else {
 
@@ -788,19 +785,15 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                     }
                 }
 
-//                val lastMessage = notifyMessageDeletion()
-
-
-
                 if (isLast) {
                     if (isGroup) {
                         val groupDG = groupDialogRepository.getDialog(chatId)
                         val empty = setEmptyMessage(groupDG)
-//                        val dialog = groupDialogRepository.getDialog(chatId)
+
                         groupDialogRepository.updateLastMessageForThisChat(chatId, empty)
-//                        .updateLastMessageForThisChat(chatId,empty)
+
                     } else {
-//                        dialogViewModel.updateLastMessageForThisChat(chatId, lastMessage)
+
                     }
                 }
             }

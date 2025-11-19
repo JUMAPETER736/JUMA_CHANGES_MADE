@@ -678,7 +678,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-    // New method to stop all voice note activities
     private fun stopAllVoiceNoteActivities() {
         try {
             isListeningToAudio = false
@@ -754,7 +753,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-    // Updated sendVoiceNoteDirectly method
     private fun sendVoiceNoteDirectly(vnPath: String) {
         try {
             val newFile = File(vnPath)
@@ -845,7 +843,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-    // Updated resetVoiceNoteUI method
     private fun resetVoiceNoteUI() {
         try {
             // Reset state
@@ -889,7 +886,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-    // Helper method to stop wave animation
     private fun stopWaveDotsAnimation() {
         try {
             waveBars.forEach { bar ->
@@ -1270,7 +1266,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         stopPlaybackTimerRunnable()
         vnRecordProgress = 0
     }
-
 
     private fun stopPlaybackTimerRunnable() {
         playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
@@ -4188,7 +4183,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-
     override fun onDeliveryReport() {
         CoroutineScope(Dispatchers.IO).launch {
             val deliveredMessage = messageViewModel.getMyLastMessageByChat(chatId)
@@ -4297,7 +4291,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-
     private fun com.uyscuti.social.network.api.models.Message.toMessageEntity(): MessageEntity {
 
         val createdAt = convertIso8601ToUnixTimestamp(createdAt)
@@ -4330,7 +4323,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         )
     }
 
-
     private fun convertIso8601ToUnixTimestamp(iso8601Date: String): Long {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
         sdf.timeZone = TimeZone.getTimeZone("UTC")
@@ -4338,7 +4330,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         val date = sdf.parse(iso8601Date)
         return date?.time ?: 0
     }
-
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val itemName = when (item.itemId) {
@@ -4828,7 +4819,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun downld(
         mUrl: String,
@@ -5299,8 +5289,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         return if (fileNameParts.isNotEmpty()) fileNameParts[fileNameParts.size - 1] else ""
     }
 
-
-
     private fun togglePlayPause(
         url: String,
         seekBar: SeekBar?,
@@ -5530,8 +5518,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         return File(storageDirectory, fileName).absolutePath
     }
-
-
 
     private fun stopRecording() {
         try {

@@ -381,23 +381,14 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
     }
 
-    /**
-     * Updates message by its id if it exists, add to start if not
-     *
-     * @param message message object to insert or update.
-     */
+
     public void upsert(MESSAGE message) {
         if (!update(message)) {
             addToStart(message, false);
         }
     }
 
-    /**
-     * Updates and moves to start if message by its id exists and if specified move to start, if not
-     * specified the item stays at current position and updated
-     *
-     * @param message message object to insert or update.
-     */
+
     public void upsert(MESSAGE message, boolean moveToStartIfUpdate) {
         if (moveToStartIfUpdate) {
             if (getMessagePositionById(message.getId()) > 0) {
@@ -410,20 +401,12 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
     }
 
-    /**
-     * Deletes message.
-     *
-     * @param message message to delete.
-     */
+
     public void delete(MESSAGE message) {
         deleteById(message.getId());
     }
 
-    /**
-     * Deletes messages list.
-     *
-     * @param messages messages list to delete.
-     */
+
     public void delete(List<MESSAGE> messages) {
         boolean result = false;
         for (MESSAGE message : messages) {
@@ -439,11 +422,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
     }
 
-    /**
-     * Deletes message by its identifier.
-     *
-     * @param id identifier of message to delete.
-     */
+
     public void deleteById(String id) {
         int index = getMessagePositionById(id);
         if (index >= 0) {
@@ -453,11 +432,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
     }
 
-    /**
-     * Deletes messages by its identifiers.
-     *
-     * @param ids array of identifiers of messages to delete.
-     */
     public void deleteByIds(String[] ids) {
         boolean result = false;
         for (String id : ids) {
@@ -473,25 +447,15 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
     }
 
-    /**
-     * Returns {@code true} if, and only if, messages count in adapter is non-zero.
-     *
-     * @return {@code true} if size is 0, otherwise {@code false}
-     */
+
     public boolean isEmpty() {
         return items.isEmpty();
     }
 
-    /**
-     * Clears the messages list. With notifyDataSetChanged
-     */
     public void clear() {
         clear(true);
     }
 
-    /**
-     * Clears the messages list.
-     */
     public void clear(boolean notifyDataSetChanged) {
         if (items != null) {
             items.clear();
@@ -501,11 +465,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
     }
 
-    /**
-     * Enables selection mode.
-     *
-     * @param selectionListener listener for selected items count. To get selected messages use {@link #getSelectedMessages()}.
-     */
+
     public void enableSelectionMode(SelectionListener selectionListener) {
         if (selectionListener == null) {
             throw new IllegalArgumentException("SelectionListener must not be null. Use `disableSelectionMode()` if you want tp disable selection mode");
@@ -520,20 +480,13 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
 
 
 
-    /**
-     * Disables selection mode and removes {@link SelectionListener}.
-     */
+
     public void disableSelectionMode() {
         this.selectionListener = null;
         unselectAllItems();
     }
 
-    /**
-     * Returns the list of selected messages.
-     *
-     * @return list of selected messages. Empty list if nothing was selected or selection mode is disabled.
-     */
-    @SuppressWarnings("unchecked")
+
     public ArrayList<MESSAGE> getSelectedMessages() {
         ArrayList<MESSAGE> selectedMessages = new ArrayList<>();
         for (Wrapper wrapper : items) {
@@ -582,29 +535,13 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         return deliveredMessages;
     }
 
-
-
-    /**
-     * Returns selected messages text and do {@link #unselectAllItems()} for you.
-     *
-     * @param formatter The formatter that allows you to format your message model when copying.
-     * @param reverse   Change ordering when copying messages.
-     * @return formatted text by {@link Formatter}. If it's {@code null} - {@code MESSAGE#toString()} will be used.
-     */
     public String getSelectedMessagesText(Formatter<MESSAGE> formatter, boolean reverse) {
         String copiedText = getSelectedText(formatter, reverse);
         unselectAllItems();
         return copiedText;
     }
 
-    /**
-     * Copies text to device clipboard and returns selected messages text. Also it does {@link #unselectAllItems()} for you.
-     *
-     * @param context   The context.
-     * @param formatter The formatter that allows you to format your message model when copying.
-     * @param reverse   Change ordering when copying messages.
-     * @return formatted text by {@link Formatter}. If it's {@code null} - {@code MESSAGE#toString()} will be used.
-     */
+
     public String copySelectedMessagesText(Context context, Formatter<MESSAGE> formatter, boolean reverse) {
         String copiedText = getSelectedText(formatter, reverse);
         copyToClipboard(context, copiedText);
@@ -612,9 +549,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         return copiedText;
     }
 
-    /**
-     * Unselect all of the selected messages. Notifies {@link SelectionListener} with zero count.
-     */
+
     public void unselectAllItems() {
         for (int i = 0; i < items.size(); i++) {
             Wrapper wrapper = items.get(i);
@@ -628,10 +563,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         notifySelectionChanged();
     }
 
-    /**
-     * Deletes all of the selected messages and disables selection mode.
-     * Call {@link #getSelectedMessages()} before calling this method to delete messages from your data source.
-     */
     public void deleteSelectedMessages() {
         List<MESSAGE> selectedMessages = getSelectedMessages();
         delete(selectedMessages);
@@ -654,39 +585,21 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
     }
 
 
-    /**
-     * Sets click listener for item. Fires ONLY if list is not in selection mode.
-     *
-     * @param onMessageClickListener click listener.
-     */
     public void setOnMessageClickListener(OnMessageClickListener<MESSAGE> onMessageClickListener) {
         this.onMessageClickListener = onMessageClickListener;
     }
 
-    /**
-     * Sets click listener for message view. Fires ONLY if list is not in selection mode.
-     *
-     * @param onMessageViewClickListener click listener.
-     */
+
     public void setOnMessageViewClickListener(OnMessageViewClickListener<MESSAGE> onMessageViewClickListener) {
         this.onMessageViewClickListener = onMessageViewClickListener;
     }
 
-    /**
-     * Registers click listener for view by id
-     *
-     * @param viewId                     view
-     * @param onMessageViewClickListener click listener.
-     */
+
     public void registerViewClickListener(int viewId, OnMessageViewClickListener<MESSAGE> onMessageViewClickListener) {
         this.viewClickListenersArray.append(viewId, onMessageViewClickListener);
     }
 
-    /**
-     * Sets long click listener for item. Fires only if selection mode is disabled.
-     *
-     * @param onMessageLongClickListener long click listener.
-     */
+
     public void setOnMessageLongClickListener(OnMessageLongClickListener<MESSAGE> onMessageLongClickListener) {
         this.onMessageLongClickListener = onMessageLongClickListener;
     }
@@ -695,20 +608,11 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         this.messageSentListener = onMessageSentListener;
     }
 
-    /**
-     * Sets long click listener for message view. Fires ONLY if selection mode is disabled.
-     *
-     * @param onMessageViewLongClickListener long click listener.
-     */
     public void setOnMessageViewLongClickListener(OnMessageViewLongClickListener<MESSAGE> onMessageViewLongClickListener) {
         this.onMessageViewLongClickListener = onMessageViewLongClickListener;
     }
 
-    /**
-     * Set callback to be invoked when list scrolled to top.
-     *
-     * @param loadMoreListener listener.
-     */
+
     public void setLoadMoreListener(OnLoadMoreListener loadMoreListener) {
         this.loadMoreListener = loadMoreListener;
     }
@@ -770,12 +674,11 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
                 MESSAGE nextMessage = messages.get(i + 1);
                 if (!DateFormatter.isSameDay(message.getCreatedAt(), nextMessage.getCreatedAt())) {
                     this.items.add(new Wrapper<>(message.getCreatedAt()));
-//                    Log.d("MessageListAdapter", "Date Header : " + message.getCreatedAt());
+
                 }
             } else {
                 this.items.add(new Wrapper<>(message.getCreatedAt()));
-//                Log.d("MessageListAdapter", "Date Headers" + items);
-//                Log.d("MessageListAdapter", "The Date Headers Size Is " + items.size());
+
             }
         }
     }
@@ -953,25 +856,13 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
             this.isSent = isSent;
         }
 
-        // Constructors and other methods
+
     }
 
 
-    /*
-     * LISTENERS
-     * */
-
-    /**
-     * Interface definition for a callback to be invoked when next part of messages need to be loaded.
-     */
     public interface OnLoadMoreListener {
 
-        /**
-         * Fires when user scrolled to the end of list.
-         *
-         * @param page            next page to download.
-         * @param totalItemsCount current items count.
-         */
+
         void onLoadMore(int page, int totalItemsCount);
     }
 
@@ -979,16 +870,10 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         String onFormatDate(Date date);
     }
 
-    /**
-     * Interface definition for a callback to be invoked when selected messages count is changed.
-     */
+
     public interface SelectionListener {
 
-        /**
-         * Fires when selected items count is changed.
-         *
-         * @param count count of selected items.
-         */
+
         void onSelectionChanged(int count);
     }
 
@@ -1000,7 +885,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
     public interface MessageSentListener<MESSAGE extends IMessage> {
         void onMessageSent(MESSAGE message);
 
-//        void onMessageDelivered(MESSAGE message);
+
     }
 
 
@@ -1009,55 +894,30 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
     }
 
 
-    /**
-     * Interface definition for a callback to be invoked when message item is clicked.
-     */
+
     public interface OnMessageClickListener<MESSAGE extends IMessage> {
 
-        /**
-         * Fires when message is clicked.
-         *
-         * @param message clicked message.
-         */
+
         void onMessageClick(MESSAGE message);
     }
 
-    /**
-     * Interface definition for a callback to be invoked when message view is clicked.
-     */
+
     public interface OnMessageViewClickListener<MESSAGE extends IMessage> {
 
-        /**
-         * Fires when message view is clicked.
-         *
-         * @param message clicked message.
-         */
+
         void onMessageViewClick(View view, MESSAGE message);
     }
 
-    /**
-     * Interface definition for a callback to be invoked when message item is long clicked.
-     */
     public interface OnMessageLongClickListener<MESSAGE extends IMessage> {
 
-        /**
-         * Fires when message is long clicked.
-         *
-         * @param message clicked message.
-         */
+
         void onMessageLongClick(MESSAGE message);
     }
 
-    /**
-     * Interface definition for a callback to be invoked when message view is long clicked.
-     */
+
     public interface OnMessageViewLongClickListener<MESSAGE extends IMessage> {
 
-        /**
-         * Fires when message view is long clicked.
-         *
-         * @param message clicked message.
-         */
+
         void onMessageViewLongClick(View view, MESSAGE message);
     }
 
@@ -1072,9 +932,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
     public interface OnDeleteListener {
         void onDelete(List<String> deletedItems);
     }
-
-
-
 
 
     public interface OnDownloadListener<MESSAGE extends IMessage>{
@@ -1102,141 +959,84 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         );
     }
 
-    /**
-     * Interface used to format your message model when copying.
-     */
     public interface Formatter<MESSAGE> {
 
-        /**
-         * Formats an string representation of the message object.
-         *
-         * @param message The object that should be formatted.
-         * @return Formatted text.
-         */
+
         String format(MESSAGE message);
     }
 
-    /**
-     * This class is deprecated. Use {@link MessageHolders} instead.
-     */
+
     @Deprecated
     public static class HoldersConfig extends MessageHolders {
 
-        /**
-         * This method is deprecated. Use {@link MessageHolders#setIncomingTextConfig(Class, int)} instead.
-         *
-         * @param holder holder class.
-         * @param layout layout resource.
-         */
+
         @Deprecated
         public void setIncoming(Class<? extends MessagesListAdapter.BaseMessageViewHolder<? extends IMessage>> holder, @LayoutRes int layout) {
             super.setIncomingTextConfig(holder, layout);
         }
 
-        /**
-         * This method is deprecated. Use {@link MessageHolders#setIncomingTextHolder(Class)} instead.
-         *
-         * @param holder holder class.
-         */
+
         @Deprecated
         public void setIncomingHolder(Class<? extends MessagesListAdapter.BaseMessageViewHolder<? extends IMessage>> holder) {
             super.setIncomingTextHolder(holder);
         }
 
-        /**
-         * This method is deprecated. Use {@link MessageHolders#setIncomingTextLayout(int)} instead.
-         *
-         * @param layout layout resource.
-         */
+
         @Deprecated
         public void setIncomingLayout(@LayoutRes int layout) {
             super.setIncomingTextLayout(layout);
         }
 
-        /**
-         * This method is deprecated. Use {@link MessageHolders#setOutcomingTextConfig(Class, int)} instead.
-         *
-         * @param holder holder class.
-         * @param layout layout resource.
-         */
+
         @Deprecated
         public void setOutcoming(Class<? extends MessagesListAdapter.BaseMessageViewHolder<? extends IMessage>> holder, @LayoutRes int layout) {
             super.setOutcomingTextConfig(holder, layout);
         }
 
-        /**
-         * This method is deprecated. Use {@link MessageHolders#setOutcomingTextHolder(Class)} instead.
-         *
-         * @param holder holder class.
-         */
+
         @Deprecated
         public void setOutcomingHolder(Class<? extends MessagesListAdapter.BaseMessageViewHolder<? extends IMessage>> holder) {
             super.setOutcomingTextHolder(holder);
         }
 
-        /**
-         * This method is deprecated. Use {@link MessageHolders#setOutcomingTextLayout(int)} instead.
-         *
-         * @param layout layout resource.
-         */
+
         @Deprecated
         public void setOutcomingLayout(@LayoutRes int layout) {
             this.setOutcomingTextLayout(layout);
         }
 
-        /**
-         * This method is deprecated. Use {@link MessageHolders#setDateHeaderConfig(Class, int)} instead.
-         *
-         * @param holder holder class.
-         * @param layout layout resource.
-         */
+
         @Deprecated
         public void setDateHeader(Class<? extends ViewHolder<Date>> holder, @LayoutRes int layout) {
             super.setDateHeaderConfig(holder, layout);
         }
     }
 
-    /**
-     * This class is deprecated. Use {@link MessageHolders.BaseMessageViewHolder} instead.
-     */
+
     @Deprecated
     public static abstract class BaseMessageViewHolder<MESSAGE extends IMessage>
             extends MessageHolders.BaseMessageViewHolder<MESSAGE> {
 
         private boolean isSelected;
 
-        /**
-         * Callback for implementing images loading in message list
-         */
+
         protected ImageLoader imageLoader;
 
         public BaseMessageViewHolder(View itemView) {
             super(itemView);
         }
 
-        /**
-         * Returns whether is item selected
-         *
-         * @return weather is item selected.
-         */
+
         public boolean isSelected() {
             return isSelected;
         }
 
-        /**
-         * Returns weather is selection mode enabled
-         *
-         * @return weather is selection mode enabled.
-         */
+
         public boolean isSelectionModeEnabled() {
             return isSelectionModeEnabled;
         }
 
-        /**
-         * Getter for {@link #imageLoader}
-         *
-         * @return image loader interface.
-         */
+
         public ImageLoader getImageLoader() {
             return imageLoader;
         }
@@ -1279,17 +1079,14 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         @Override
         public void onBind(Date date) {
 
-//            Log.d("Formatter", "Binding Date Header Before Checking Text");
 
             if (text != null) {
 
-//                Log.d("Formatter", "Binding Date Header After Checking Text");
 
                 String formattedDate = null;
-//                if (dateHeadersFormatter != null) formattedDate = dateHeadersFormatter.format(date);
 
                 if(dateListener != null ) formattedDate = dateListener.onFormatDate(date);
-//                text.setText(formattedDate == null ? DateFormatter.format(date, dateFormat) : formattedDate);
+
 
                 Log.d("Formatter", "Binding Date Header");
                 text.setText(R.string.app_name);
