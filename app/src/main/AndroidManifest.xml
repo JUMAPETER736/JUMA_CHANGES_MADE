@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Feature declarations -->
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+
+    <application
+        android:name=".FlashApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:requestLegacyExternalStorage="true"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.FlashDesign"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="31"
+        tools:ignore="ExtraText">
+
+
+        <meta-data android:name="com.facebook.sdk.ApplicationId"
+            android:value="@string/facebook_app_id"/>
+        <meta-data android:name="com.facebook.sdk.ClientToken"
+            android:value="@string/facebook_client_token"/>
+
+
+
+        <!-- Main/Launcher Activity -->
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.SplashScreen"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- MainActivity - No longer the launcher -->
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="navigation|orientation"
+            android:exported="false"
+            android:theme="@style/AppThemeWithLightStatusBar"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Authentication Activities -->
+
+        <!-- LoginActivity - Now the DEFAULT LAUNCHER -->
+        <activity
+            android:name=".User_Interface.Log_In_And_Register.LoginActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".User_Interface.Log_In_And_Register.RegisterActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".User_Interface.Log_In_And_Register.RegisterActivity"
+            android:exported="false"
+            tools:ignore="DuplicateActivity" />
+
+        <activity
+            android:name=".User_Interface.Log_In_And_Register.Forgot_Password"
+            android:exported="false" />
+
+        <activity
+            android:name=".User_Interface.Log_In_And_Register.Verification_Code"
+            android:exported="false" />
+
+        <activity
+            android:name=".User_Interface.Log_In_And_Register.Create_New_Password"
+            android:exported="false" />
+
+        <activity
+            android:name=".User_Interface.Log_In_And_Register.Password_Reset_Success"
+            android:exported="false" />
+
+        <!-- Facebook Activity -->
+        <activity
+            android:name="com.facebook.FacebookActivity"
+            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+            tools:ignore="MissingClass" />
+
+        <activity
+            android:name="com.facebook.CustomTabActivity"
+            android:exported="true"
+            tools:ignore="MissingClass">
+
+            <intent-filter>
+
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="@string/fb_login_protocol_scheme"
+                    tools:ignore="AppLinkUrlError" />
+
+            </intent-filter>
+
+        </activity>
+
+
+        <activity
+            android:name=".GoogleOAuth"
+            android:exported="false" />
+
+        <!-- Profile Activities -->
+
+
+        <activity
+            android:name="com.uyscuti.social.circuit.User_Interface.OtherUserProfile.UserFollowersFragment"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+
+        <activity
+            android:name="com.uyscuti.social.circuit.User_Interface.OtherUserProfile.UserFollowingFragment"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+
+
+        <activity
+            android:name="com.uyscuti.social.circuit.User_Interface.MyUserProfile.UserFollowersFragment"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+
+        <activity
+            android:name="com.uyscuti.social.circuit.User_Interface.MyUserProfile.UserFollowingFragment"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+
+        <activity
+            android:name="com.uyscuti.social.circuit.User_Interface.MyUserProfile.MyUserAnalyticsFragment"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+
+
+        <activity
+            android:name="com.uyscuti.social.circuit.User_Interface.OtherUserProfile.AllOtherUsersPostsFragment"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+
+
+
+        <activity
+            android:name="com.uyscuti.social.circuit.User_Interface.MyUserProfile.MyUserProfileAccount"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+
+
+        <activity
+            android:name="com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+
+
+
+
+
+        <!-- Settings Activities -->
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.SettingsActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.PrivacySettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.NotificationsSettingsActivity"
+            android:exported="false" />
+
+        <!-- Chat/Messaging Activities -->
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.MessagesActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.CreateChatActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.CreateUserChat"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.CreateGroupChat"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.CreateGroupActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.ConfirmGroupActivity"
+            android:exported="false" />
+
+        <!-- Group Activities -->
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.GroupProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.GroupSettingsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_group_settings"
+            android:theme="@style/Theme.FlashDesign" />
+
+        <!-- Call Activities -->
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.MakeCallActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+        <activity
+            android:name=".calls.CallInfoActivity"
+            android:theme="@style/Base.Theme.FlashDesign" />
+
+        <!-- Feed Activities -->
+        <activity
+            android:name=".adapter.feed.postFeedActivity.PostFeedActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.fragments.feed.UploadFeedActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.fragments.feed.feedviewfragments.RepostingPostActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.feedactivities.FeedShareActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.feedactivities.FeedTextViewActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.feedactivities.FeedImageViewActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.feedactivities.ReportNotificationActivity2"
+            android:exported="false" />
+
+        <!-- Upload Activities -->
+        <activity
+            android:name=".User_Interface.uploads.ImagesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.uploads.VideosActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.uploads.DocumentsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.uploads.AudioActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.uploads.LocationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.uploads.CameraActivity"
+            android:exported="false"
+            android:theme="@style/DarkTheme" />
+        <activity
+            android:name=".User_Interface.uploads.feed_uploads.FeedSelectVideoActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.uploads.feed_uploads.FeedAudioActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.uploads.adapter.Docs"
+            android:exported="false" />
+
+        <!-- Media Activities -->
+        <activity
+            android:name=".User_Interface.media.ViewImagesActivity"
+            android:exported="false"
+            android:theme="@style/DarkTheme" />
+        <activity
+            android:name=".User_Interface.media.PlayVideoActivity"
+            android:exported="false"
+            android:theme="@style/DarkTheme" />
+        <activity
+            android:name=".User_Interface.media.CommentVideoPlayerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.media.PlayCommentVideoActivity"
+            android:exported="false" />
+
+        <!-- Shorts Activities -->
+        <activity
+            android:name=".User_Interface.shorts.UploadShortsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.shorts.TopicsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.shorts.UserProfileShortsPlayerActivity"
+            android:exported="false"
+            android:theme="@style/DarkTheme" />
+
+        <!-- Other Activities -->
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.ChoosePhoto"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.GifActivity"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.SearchShortActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feed_demo.AnyFileFullScreenActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+
+        <!-- File Providers -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.uyscuti.social.circuit.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths" />
+        </provider>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.uyscuti.social.circuit.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/filepaths" />
+        </provider>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Startup Provider (disabled) -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            tools:node="remove" />
+
+        <!-- Broadcast Receivers -->
+        <receiver
+            android:name=".receiver.ConnectivityReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action
+                    android:name="android.net.conn.CONNECTIVITY_CHANGE"
+                    tools:ignore="BatteryLife" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Services -->
+        <service
+            android:name=".callbacks.NetworkConnectivityService"
+            android:foregroundServiceType="mediaProjection" />
+        <service
+            android:name=".callbacks.SocketJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <service android:name=".service.VideoPreLoadingService" />
+
+
+
+
+    </application>
+
+</manifest>

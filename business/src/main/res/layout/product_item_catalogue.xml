@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools">
+
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="24dp"
+        tools:ignore="MissingConstraints"
+        tools:layout_editor_absoluteX="0dp"
+        tools:layout_editor_absoluteY="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="55dp"
+            android:background="@drawable/gray_background"
+            android:orientation="vertical"
+            android:padding="24dp"
+            tools:ignore="MissingConstraints">
+            <!-- Price -->
+            <TextView
+                android:fontFamily="@font/regular_font"
+                android:id="@+id/itemname_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:paddingStart="4dp"
+                android:text="Item name"
+                android:textSize="14sp" />
+            <!-- Availability -->
+            <EditText
+                android:fontFamily="@font/regular_font"
+                android:id="@+id/name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/style_edit_text"
+                android:hint="Item name"
+                android:padding="8dp"
+                android:paddingStart="13dp"
+                android:textSize="13sp" />
+
+            <TextView
+                android:fontFamily="@font/regular_font"
+                android:id="@+id/description_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:paddingStart="4dp"
+                android:text="Description"
+                android:textSize="14sp" />
+
+            <EditText
+                android:fontFamily="@font/regular_font"
+                android:id="@+id/description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/style_edit_text"
+                android:hint="Description"
+                android:padding="8dp"
+                android:paddingStart="13dp"
+                android:textSize="13sp" />
+
+            <TextView
+                android:fontFamily="@font/regular_font"
+                android:id="@+id/price_text2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:paddingStart="4dp"
+                android:text="Price"
+                android:textSize="14sp" />
+
+            <EditText
+                android:fontFamily="@font/regular_font"
+                android:id="@+id/price_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/style_edit_text"
+                android:hint="Price"
+                android:inputType="number"
+                android:maxLength="7"
+                android:padding="8dp"
+                android:paddingStart="13dp"
+                android:textSize="13sp" />
+
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

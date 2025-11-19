@@ -1,0 +1,1317 @@
+package com.uyscut.flashdesign
+
+
+
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.os.Environment
+import android.os.Handler
+import android.provider.Settings
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.widget.ImageView
+import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ActionMode
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.Observer
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.CircleCrop
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
+import com.google.android.material.badge.BadgeDrawable
+import com.google.android.material.behavior.HideBottomViewOnScrollBehavior
+//import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.uyscut.core.common.data.room.database.ChatDatabase
+import com.uyscut.core.common.data.room.entity.CallLogEntity
+import com.uyscut.core.common.data.room.entity.GroupDialogEntity
+import com.uyscut.core.common.data.room.entity.MessageEntity
+import com.uyscut.core.common.data.room.entity.ProfileEntity
+import com.uyscut.core.common.data.room.entity.UserEntity
+import com.uyscut.core.common.data.room.repository.ProfileRepository
+import com.uyscut.core.pushnotifications.socket.chatsocket.CoreChatSocketClient
+import com.uyscut.core.service.DirectReplyService
+import com.uyscut.flashcall.repository.MainRepository
+import com.uyscut.flashcall.service.MainServiceRepository
+import com.uyscuti.social.circuit.callbacks.ChatSocketWorker
+import com.uyscuti.social.circuit.callbacks.CombinedWorker
+import com.uyscuti.social.circuit.calls.viewmodel.CallViewModel
+import com.uyscut.flashdesign.common.data.model.Dialog
+import com.uyscut.flashdesign.databinding.ActivityMainBinding
+import com.uyscuti.social.circuit.interfaces.OnBackPressedListener
+import com.uyscuti.social.circuit.model.ShortsCacheEvent
+import com.uyscuti.social.circuit.presentation.DialogViewModel
+import com.uyscuti.social.circuit.presentation.GroupDialogViewModel
+import com.uyscuti.social.circuit.presentation.MainViewModel
+import com.uyscuti.social.circuit.presentation.MessageViewModel
+import com.uyscuti.social.circuit.ui.Log_In_And_Register.LoginActivity
+import com.uyscuti.social.circuit.ui.SettingsActivity
+import com.uyscuti.social.circuit.ui.fragments.ChatFragment
+import com.uyscuti.social.circuit.ui.fragments.FeedFragment
+import com.uyscuti.social.circuit.ui.fragments.NotificationsFragment
+import com.uyscuti.social.circuit.ui.fragments.ShotsFragment
+import com.uyscuti.social.circuit.ui.fragments.UserProfileFragment
+import com.uyscuti.social.circuit.utils.ChatManager
+import com.uyscuti.social.circuit.utils.NavigationController
+import com.uyscuti.social.circuit.utils.getNavigationController
+import com.uyscut.network.api.retrofit.instance.RetrofitInstance
+import com.uyscut.network.interfaces.DirectReplyListener
+import com.uyscut.network.utils.LocalStorage
+import com.vplibs.colorimagebottomnav.BottomNavigationView
+import com.vplibs.colorimagebottomnav.NavigationItem
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
+import retrofit2.HttpException
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.Date
+import java.util.UUID
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import kotlin.random.Random
+
+
+@AndroidEntryPoint
+class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListener {
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var bottomNavigation: BottomNavigationView
+    private lateinit var myProfileRepository: ProfileRepository
+    private lateinit var settings: SharedPreferences
+    private val onBackPressedListeners: MutableList<OnBackPressedListener> = mutableListOf()
+    private val PREFS_NAME = "LocalSettings"
+    private val WORKER_TAG = "flash_socket_worker"
+
+
+    private lateinit var directReplyListener: DirectReplyListener
+
+    @Inject
+    lateinit var retrofitInterface: RetrofitInstance
+
+    @Inject
+    lateinit var coreChatSocketClient: CoreChatSocketClient
+
+    @Inject // or another appropriate scope
+    lateinit var chatManager: ChatManager
+
+    @Inject
+    lateinit var mainRepository: MainRepository
+
+    @Inject
+    lateinit var chatDatabase: ChatDatabase
+
+    var count = 2
+
+    @Inject
+    lateinit var localStorage: LocalStorage
+
+    private lateinit var myId: String
+
+    @Inject
+    lateinit var mainServiceRepository: MainServiceRepository
+
+    private val messageViewModel: MessageViewModel by viewModels()
+    private val dialogViewModel: DialogViewModel by viewModels()
+    private val groupDialogViewModel: GroupDialogViewModel by viewModels()
+
+    private val mainViewModel: MainViewModel by viewModels()
+
+    private val callViewModel: CallViewModel by viewModels()
+
+    private var actionMode: ActionMode? = null
+    private lateinit var badge: BadgeDrawable
+    private var job: Job? = null
+
+//    private val requestPermissionLauncher =
+//        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+//            if (isGranted) {
+//                // Permission is granted, you can proceed with starting the service
+//                startForegroundService()
+//            } else {
+//                // Permission is denied
+//                // You may want to inform the user or handle it accordingly
+//            }
+//        }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+//        setDarkTheme()
+
+        setContentView(binding.root)
+
+        directReplyListener = this
+
+//        EventBus.getDefault().register(this)
+        startDirectReplyService()
+
+//        bottomNavigation = binding.bottomNavigationView
+
+        val item = NavigationItem(this@MainActivity, R.drawable.nav_notification_icon)
+        val item1 = NavigationItem(this@MainActivity, R.drawable.chat_round_svgrepo_com)
+        val item2 = NavigationItem(this@MainActivity, R.drawable.play_svgrepo_com)
+        val item3 = NavigationItem(this@MainActivity, R.drawable.scroll_text_line_svgrepo_com)
+        val item4 = NavigationItem(this@MainActivity, R.drawable.bottom_nav_profile)
+        binding.bottomNavigationView.addItem(item);
+        binding.bottomNavigationView.addItem(item1);
+        binding.bottomNavigationView.addItem(item2);
+        binding.bottomNavigationView.addItem(item3);
+        // Get the badge for a specific menu item (e.g., the first item)
+//        badge = bottomNavigation.getOrCreateBadge(R.id.notifications)
+//        badge.isVisible = true
+
+        // Set the badge value
+//        badge.number = 3
+        updateBadgeValue()
+
+
+        // (Optional) Customize badge appearance
+//        badge.backgroundColor = getColor(R.color.colorAccent)
+//        badge.badgeTextColor = getColor(R.color.white)
+        myProfileRepository = ProfileRepository(ChatDatabase.getInstance(this).profileDao())
+
+        settings = getSharedPreferences(PREFS_NAME, 0)
+        val accessToken = settings.getString("token", "").toString()
+//        binding.toolbar.setLogo(R.drawable.flash)
+
+        myId = localStorage.getUserId()
+
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        supportActionBar?.title = ""
+        bottomNavigation.selectedItemId = R.id.shorts
+        replaceFragment(ShotsFragment.newInstance("init", "init"))
+
+        if (Settings.canDrawOverlays(this)) {
+            // Permission is allowed, you can perform the overlay action
+        } else {
+            // Permission is not allowed, request it
+            val permissionIntent =
+                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+            startActivity(permissionIntent)
+        }
+
+        // Find the menu item by ID
+        val editMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_edit)
+        val settingsMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_setting)
+        val logoutMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.logout)
+
+//        // Set a click listener for the edit menu item
+//        editMenuItem?.setOnMenuItemClickListener {
+//            val intent = Intent(this@MainActivity, OtherUserProfile::class.java)
+//            startActivity(intent)
+//            true // indicate that the event was handled
+//        }
+
+        settingsMenuItem?.setOnMenuItemClickListener {
+
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+            true
+        }
+
+        logoutMenuItem?.setOnMenuItemClickListener {
+            showLogoutConfirmationDialog()
+            true
+        }
+
+//        mainViewModel.selectedDialogsCount.observe(this, Observer{
+//            if (it != null && it > 0){
+//                binding.toolbar.visibility = View.GONE
+//                val actionMode = startSupportActionMode(callback)
+//                actionMode?.title = "$it selected"
+//            } else {
+//                binding.toolbar.visibility = View.VISIBLE
+//            }
+//        })
+
+//        observerAction()
+        observeMediator()
+
+
+        val flashDir = "Flash"
+        val storageDirectory = File(
+            Environment.getExternalStorageDirectory(),
+            flashDir
+        )
+
+
+// Ensure that the directory exists
+        if (!storageDirectory.exists()) {
+            storageDirectory.mkdirs()
+        }
+
+        Log.d("Download", "directory path - $storageDirectory")
+
+
+//        setUpTabs()
+        setNavigationListener()
+        getUserProfile()
+
+
+        val menuItem: MenuItem = bottomNavigation.menu.findItem(R.id.profile)
+        val profilePic = settings.getString("avatar", "").toString()
+        val profilePic2 = settings.getString("profile_pic", "").toString()
+
+        Log.d("ProfilePic", "Avatar path: $profilePic")
+        Log.d("ProfilePic", "Avatar path2: $profilePic2")
+//        downloadAndSaveImage(profilePic, "ProfilePic.png", menuItem)
+//        // Use Picasso to load the image into the MenuItem's icon
+//        Picasso.get().load(profilePic).into(object : com.squareup.picasso.Target {
+//            override fun onBitmapLoaded(bitmap: Bitmap?, from: Picasso.LoadedFrom?) {
+//                menuItem.icon = BitmapDrawable(resources, bitmap)
+//                Log.d("Picasso", "onBitmapLoaded")
+//            }
+//
+//            override fun onBitmapFailed(e: Exception?, errorDrawable: Drawable?) {
+//                // Handle failure
+//                Log.d("Picasso", "onBitmapFailed")
+//
+//            }
+//
+//            override fun onPrepareLoad(placeHolderDrawable: Drawable?) {
+//                // Handle loading
+//                Log.d("Picasso", "onPrepareLoad")
+//
+//            }
+//        })
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            menuItem.setIconTintList(null)
+            menuItem.setIconTintMode(null)
+        }
+
+
+
+
+//        menuItem.setIcon(profilePic)
+//        startCombinedWorker()
+        startCombinedWorkerPeriodic()
+//        initializeCallService()
+//        startChatSocketWorker()
+
+//        startCallWorker()
+//        startPeriodicCallWorker()
+
+//        launchOauth()
+        // Start the coroutine for periodic updates
+        job = CoroutineScope(Dispatchers.Main).launch {
+            while (isActive) {
+                delay(2 * 60 * 1000) // Delay for 2 minutes
+                updateBadgeValue()
+            }
+        }
+    }
+
+    private var newBadgeValue = 0
+    private fun updateBadgeValue() {
+
+        newBadgeValue += 2
+
+        // Update the badge value
+        badge.isVisible = true
+        badge.number = newBadgeValue
+    }
+
+//    private fun requestPermissions() {
+//        // Check if the permission is already granted
+//        if (ContextCompat.checkSelfPermission(
+//                this,
+//                Manifest.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION
+//            ) == PackageManager.PERMISSION_GRANTED
+//        ) {
+//            // Permission is already granted, you can proceed with starting the service
+//            startForegroundService()
+//        } else {
+//            // Permission is not granted, request it
+//            requestPermissionLauncher.launch(Manifest.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION)
+//        }
+//    }
+
+    private fun startCombinedWorker() {
+        val workManager = WorkManager.getInstance(this)
+
+        val existingWorkPolicy = if (workManager.getWorkInfosByTag(WORKER_TAG).get().isEmpty()) {
+            ExistingWorkPolicy.REPLACE
+        } else {
+            Log.d(WORKER_TAG, "Combined Work already exists, Replacing.......")
+
+            ExistingWorkPolicy.REPLACE
+//            return
+        }
+
+        val request = OneTimeWorkRequestBuilder<CombinedWorker>()
+            .setBackoffCriteria(BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS)
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .addTag(WORKER_TAG)
+            .build()
+
+        try {
+            workManager.enqueueUniqueWork(WORKER_TAG, existingWorkPolicy, request)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e(WORKER_TAG, "Error enqueuing work: ${e.message}")
+        }
+
+        observeWorkStatus(request.id)
+    }
+
+    private fun downloadAndSaveImage(
+        mUrl: String,
+        fileName: String,
+        menuItem: MenuItem
+    ) {
+        Log.d("Download", "downloadAndSaveImage")
+        GlobalScope.launch(Dispatchers.IO) {
+            val url = URL(mUrl)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept-Encoding", "identity")
+            connection.connect()
+
+            try {
+                if (connection.responseCode in 200..299) {
+                    val inputStream = connection.inputStream
+                    val internalStoragePath = File(filesDir, "images")
+                    if (!internalStoragePath.exists()) {
+                        internalStoragePath.mkdirs()
+                    }
+
+                    val destinationFile = File(internalStoragePath, fileName)
+
+                    val outputStream = FileOutputStream(destinationFile)
+
+                    var bytesCopied: Long = 0
+                    val buffer = ByteArray(1024)
+                    var bytes = inputStream.read(buffer)
+                    while (bytes >= 0) {
+                        bytesCopied += bytes
+                        outputStream.write(buffer, 0, bytes)
+                        bytes = inputStream.read(buffer)
+                    }
+
+                    Log.d("Download", "File Downloaded: ${destinationFile.absolutePath}")
+                    Glide.with(applicationContext)
+                        .asBitmap()
+                        .load(destinationFile)
+                        .transform(CircleCrop())
+                        .placeholder(R.drawable.google)
+//            .apply(RequestOptions.bitmapTransform(CircleCrop()))
+//            .apply(RequestOptions.placeholderOf(R.drawable.google))
+                        .error(R.drawable.error_drawable) // Drawable to display on load failure
+                        .fallback(R.drawable.fallback_drawable)
+                        .into(object : CustomTarget<Bitmap>() {
+                            override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                menuItem.icon = BitmapDrawable(resources, resource)
+                                Log.d("ProfilePic", "onResourceReady")
+                                Log.d("BitmapSize", "Width: ${resource.width}, Height: ${resource.height}")
+//                    resource.
+                            }
+
+                            override fun onLoadCleared(placeholder: Drawable?) {
+                                // Handle when the drawable is cleared
+                                menuItem.icon = placeholder
+                                Log.d("ProfilePic", "onLoadCleared")
+                            }
+
+                            override fun onLoadFailed(errorDrawable: Drawable?) {
+                                // Handle failure
+                                menuItem.icon = errorDrawable
+                                Log.d("ProfilePic", "onLoadFailed")
+
+                            }
+                        })
+                    outputStream.close()
+                    inputStream.close()
+                } else {
+                    Log.e("DownloadFailed", "HTTP response code: ${connection.responseCode}")
+                }
+            } catch (e: Exception) {
+                Log.e("DownloadFailed", e.message.toString())
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun startCombinedWorkerPeriodic() {
+        Log.d(WORKER_TAG, "Creating Work Instance")
+        try {
+            val workManager = WorkManager.getInstance(this)
+
+            // Add constraints for internet connection or unmetered network
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED) // Requires an internet connection
+                .build()
+
+            // Schedule the worker to run every 10 minutes with a flex interval of 5 minutes
+            val request = PeriodicWorkRequestBuilder<CombinedWorker>(
+                repeatInterval = 10, // Repeat every 10 minutes
+                repeatIntervalTimeUnit = TimeUnit.MINUTES,
+                flexTimeInterval = 5,
+                flexTimeIntervalUnit = TimeUnit.MINUTES
+            )
+                .addTag("Flash_Master_Periodic_second")
+                .build()
+
+            try {
+                workManager.enqueueUniquePeriodicWork(
+                    "Flash_Master_Periodic_second",
+                    ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
+                    request
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.e(WORKER_TAG, "Error enqueuing work: ${e.message}")
+            }
+
+            // observeWorkStatus(request.id)
+        } catch (e: Exception) {
+            Log.d(WORKER_TAG, "Error creating Work Instance: ${e.message}")
+        }
+    }
+
+    private fun observeWorkStatus(id: UUID) {
+        val workManager = WorkManager.getInstance(this)
+
+        workManager.getWorkInfoByIdLiveData(id).observe(this, Observer {
+            Log.d(WORKER_TAG, "Work Status: ${it.state}")
+        })
+    }
+
+    private fun startChatSocketWorker() {
+        val request = OneTimeWorkRequestBuilder<ChatSocketWorker>()
+            .setBackoffCriteria(
+                BackoffPolicy.LINEAR,
+                10,
+                TimeUnit.SECONDS
+            ) // Customize backoff criteria
+            .build()
+
+        WorkManager.getInstance(applicationContext).enqueue(request)
+    }
+
+    private fun startDirectReplyService() {
+        val serviceIntent = Intent(this, DirectReplyService::class.java)
+        startService(serviceIntent)
+    }
+
+    private fun startCallWorker() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val request = OneTimeWorkRequestBuilder<FlashWorker>()
+//            .setConstraints(constraints)
+            .setInitialDelay(10, TimeUnit.SECONDS)
+            .setBackoffCriteria(
+                BackoffPolicy.LINEAR,
+                10,
+                TimeUnit.SECONDS
+            ) // Customize backoff criteria
+            .build()
+
+        WorkManager.getInstance(applicationContext).enqueue(request)
+
+    }
+
+    private fun startPeriodicCallWorker() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val request = PeriodicWorkRequestBuilder<FlashWorker>(
+            repeatInterval = 20, // 20 minutes
+            repeatIntervalTimeUnit = TimeUnit.MINUTES
+        )
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                BackoffPolicy.LINEAR,
+                10,
+                TimeUnit.SECONDS
+            ) // Customize backoff criteria
+            .build()
+
+        WorkManager.getInstance(applicationContext).enqueue(request)
+    }
+
+
+    private fun launchOauth() {
+        val handler = Handler()
+        handler.postDelayed(
+            {
+                val intent = Intent(this, GoogleOAuth::class.java)
+                startActivity(intent)
+            },
+            2000
+        )
+    }
+
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    fun onDirectReplyEvent(event: DirectReplyEvent) {
+//        // Handle the direct reply in your activity
+//        // Update UI, perform actions, etc.
+////        Toast.makeText(this, "Direct Reply: ${event.message}", Toast.LENGTH_SHORT).show()
+//
+//        val message = createMessage(event.message,event.chatId)
+//        CoroutineScope(Dispatchers.IO).launch {
+//            messageViewModel.insertMessage(message)
+//            dialogViewModel.updateLastMessageForThisChat(event.chatId,message)
+//        }
+//    }
+
+
+    private fun observerAction() {
+        mainViewModel.selectedDialogsCount.observe(this, Observer { count ->
+            if (count != null && count > 0) {
+                if (actionMode == null) {
+                    // ActionMode not started yet, start it
+                    startAction(count)
+                } else {
+                    // ActionMode already started, update the title
+                    actionMode?.title = "$count selected"
+                }
+
+//                binding.toolbar.visibility = View.GONE
+            } else {
+                // No items selected, end the ActionMode if it's active
+                actionMode?.finish()
+//                binding.toolbar.visibility = View.VISIBLE
+            }
+        })
+    }
+
+    private fun observeMediator() {
+        // Observe both LiveData objects
+        val mediatorLiveData = MediatorLiveData<Pair<Int, Int>>()
+        mediatorLiveData.addSource(mainViewModel.selectedDialogsCount) {
+            mediatorLiveData.value = Pair(it, mainViewModel.selectedCallLogsCount.value ?: 0)
+        }
+        mediatorLiveData.addSource(mainViewModel.selectedCallLogsCount) {
+            mediatorLiveData.value = Pair(mainViewModel.selectedDialogsCount.value ?: 0, it)
+        }
+
+        // Do something when both values are greater than 1
+        mediatorLiveData.observe(this@MainActivity) { (selectedDialogsCount, selectedCallLogsCount) ->
+            if (selectedDialogsCount > 0 || selectedCallLogsCount > 0) {
+                // Perform the action here
+                // For example, show a toast
+                val count = selectedDialogsCount + selectedCallLogsCount
+
+                if (actionMode == null) {
+                    // ActionMode not started yet, start it
+                    startAction(count)
+                } else {
+                    // ActionMode already started, update the title
+                    actionMode?.title = "$count selected"
+                }
+            } else {
+                // No items selected, end the ActionMode if it's active
+                actionMode?.finish()
+//                binding.toolbar.visibility = View.VISIBLE
+            }
+        }
+
+    }
+
+
+    private fun startAction(count: Int) {
+        actionMode = startSupportActionMode(object : ActionMode.Callback {
+            // Implement the necessary callbacks for the ActionMode
+
+            override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+                // Inflate the menu for the ActionMode
+                menuInflater.inflate(R.menu.contextual_action_bar, menu)
+//                val customView = layoutInflater.inflate(R.layout.custom_action_mode_layout, null)
+//                mode?.customView = customView
+                return true
+            }
+
+            override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+                // Update the UI based on the selected items
+                return false
+            }
+
+            override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
+                return when (item?.itemId) {
+                    R.id.delete -> {
+                        // Handle delete icon press
+                        val dialogs = mainViewModel.selectedDialogsList
+                        val callLogs = mainViewModel.selectedCallLogs
+
+                        if (dialogs.isNotEmpty()) {
+                            deleteDialogs(dialogs)
+                        } else if (callLogs.isNotEmpty()) {
+                            deleteCallLogs(callLogs)
+                        }
+
+                        true // Indicate that the ActionMode has handled this item
+                    }
+
+                    R.id.more -> {
+                        // Handle more item (inside overflow menu) press
+                        true // Indicate that the ActionMode has handled this item
+                    }
+
+                    else -> false // Indicate that the regular onOptionsItemSelected should handle this item
+                }
+            }
+
+
+            override fun onDestroyActionMode(mode: ActionMode?) {
+                // ActionMode finished, reset the reference
+//                stop
+                actionMode = null
+                clear()
+                mainViewModel.resetSelectedDialogsCount()
+            }
+        })
+
+        // Set the initial title
+        actionMode?.title = "$count selected"
+    }
+
+
+    fun isInternetAvailable(context: Context): Boolean {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        val network = connectivityManager.activeNetwork
+        val capabilities = connectivityManager.getNetworkCapabilities(network)
+        return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || capabilities.hasTransport(
+            NetworkCapabilities.TRANSPORT_CELLULAR
+        ))
+    }
+
+    private fun deleteDialogs(dialogs: List<Dialog>) {
+        val dialogIds = dialogs.map { it.id }
+        CoroutineScope(Dispatchers.IO).launch {
+            if (dialogs.all { it.users.size > 1 }) {
+                // All dialogs have more than one user
+//                groupDialogViewModel.deleteGroups(dialogIds)
+                dialogIds.map {
+                    messageViewModel.markDeleted(it)
+                    val dialog = groupDialogViewModel.getGroupDialog(it)
+                    val empty = setEmptyMessage(it, dialog)
+                    groupDialogViewModel.updateLastMessageForThisGroup(it, empty)
+                }
+            } else {
+                // At least one dialog does not have more than one user
+//                dialogViewModel.deleteDialogs(dialogIds)
+                dialogIds.map {
+                    messageViewModel.deleteMessagesByChat(it)
+                    dialogViewModel.setNullLastMessage(it)
+                }
+            }
+        }
+        clear()
+        mainViewModel.resetSelectedDialogsCount()
+    }
+
+    private fun deleteCallLogs(callLogs: List<CallLogEntity>) {
+        val callLogIds = callLogs.map { it.id }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            callViewModel.deleteCallLogs(callLogIds)
+        }
+
+        clear()
+        mainViewModel.resetSelectedDialogsCount()
+    }
+
+
+    private fun showLogoutConfirmationDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Confirm Logout")
+        builder.setMessage("Are you sure you want to logout?")
+        builder.setPositiveButton("Yes") { dialog, which ->
+            // Handle logout here
+            performLogout()
+        }
+        builder.setNegativeButton("No") { dialog, which ->
+            // Dismiss the dialog
+            dialog.dismiss()
+        }
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+    private fun setEmptyMessage(chatId: String, dialog: GroupDialogEntity): MessageEntity {
+        val createdAt = System.currentTimeMillis()
+        val lastseen = Date(createdAt)
+
+        val avatar = settings.getString("avatar", "avatar").toString()
+
+        val user = UserEntity(
+            id = myId,
+            name = "You",
+            avatar = "avatar",
+            online = true,
+            lastSeen = lastseen
+        )
+
+        return MessageEntity(
+            id = "DeletedMessage_${Random.nextInt()}",
+            chatId = chatId,
+            text = "",
+            userId = "Flash",
+            user = user,
+            createdAt = dialog.lastMessage.createdAt,
+            imageUrl = null,
+            voiceUrl = null,
+            voiceDuration = 0,
+            userName = "You",
+            status = "Received",
+            videoUrl = null,
+            audioUrl = null,
+            docUrl = null,
+            fileSize = 0,
+            deleted = true
+        )
+    }
+
+
+    private fun createMessage(text: String, chatId: String): MessageEntity {
+        val createdAt = System.currentTimeMillis()
+        val lastSeen = Date(createdAt)
+
+        val avatar = settings.getString("avatar", "avatar").toString()
+
+        val user = UserEntity(
+            id = "0",
+            name = "You",
+            avatar = avatar,
+            online = true,
+            lastSeen = lastSeen
+        )
+
+        return MessageEntity(
+            id = "Text_${Random.nextInt()}",
+            chatId = chatId,
+            text = text,
+            userId = myId,
+            user = user,
+            createdAt = createdAt,
+            imageUrl = null,
+            voiceUrl = null,
+            voiceDuration = 0,
+            userName = "You",
+            status = "Sent",
+            videoUrl = null,
+            audioUrl = null,
+            docUrl = null,
+            fileSize = 0,
+            deleted = false
+        )
+    }
+
+
+    override fun onBackPressed() {
+        val count = mainViewModel.selectedDialogsCount.value
+//        Log.d("MainCount", "Count :$count")
+        if (mainViewModel.selectedDialogsCount.value == 0) {
+            // If no dialogs are selected, call the default back button behavior
+            super.onBackPressed()
+        } else {
+            // If there are selected dialogs, reset the selection in the ViewModel
+//            onBackListener?.onBackButtonPressed()
+            clear()
+            mainViewModel.resetSelectedDialogsCount()
+        }
+    }
+
+
+    private fun clear() {
+        // Do some work
+        // Notify listeners
+        notifyOnSomeEvent()
+    }
+
+    private fun notifyOnSomeEvent() {
+        onBackPressedListeners.forEach { it.onBackButtonPressed() }
+    }
+
+
+    // Register a listener in your fragment
+    fun addOnBackPressedListener(listener: OnBackPressedListener) {
+        onBackPressedListeners.add(listener)
+    }
+
+    // Unregister a listener in your fragment
+    fun removeOnBackPressedListener(listener: OnBackPressedListener) {
+        onBackPressedListeners.remove(listener)
+    }
+
+
+    private fun initializeCallService() {
+        CoroutineScope(Dispatchers.IO).launch {
+//            val username = localStorage.getUsername()
+//            val userId = localStorage.getUserId()
+            val username = settings.getString("username", "").toString()
+            val userId = settings.getString("_id", "").toString()
+
+            Log.d("VideoCall", "username : $username")
+            Log.d("VideoCall", "userId : $userId")
+
+            mainRepository.init(username)
+            mainServiceRepository.startService(username)
+            mainRepository.setUserName(username)
+//            mainRepository.setUserId(userId)
+        }
+    }
+
+
+    private fun performLogout() {
+        CoroutineScope(Dispatchers.IO).launch {
+            //delete data from local db
+            deleteUserProfile()
+            //clear shared prefs
+            LocalStorage.getInstance(this@MainActivity).clear()
+            LocalStorage.getInstance(this@MainActivity).clearToken()
+            settings.edit().clear().apply()
+
+            callViewModel.clearAll()
+            messageViewModel.clearAll()
+            dialogViewModel.clearAll()
+            groupDialogViewModel.clearAll()
+        }
+
+        val intent = Intent(this, LoginActivity::class.java)
+        startActivity(intent)
+    }
+
+
+    fun setDarkTheme() {
+        setTheme(R.style.DarkTheme)
+    }
+
+    private fun getUserProfile() {
+
+        GlobalScope.launch {
+            val response = try {
+
+                retrofitInterface.apiService.getMyProfile()
+            } catch (e: HttpException) {
+                Log.d("RetrofitActivity", "Http Exception ${e.message}")
+                runOnUiThread {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "HTTP error. Please try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+                return@launch
+            } catch (e: IOException) {
+                Log.d("RetrofitActivity", "IOException ${e.message}")
+                runOnUiThread {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Network error. Please try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                return@launch
+            } finally {
+                // Ensure the progress bar is hidden in case of an error
+//                withContext(Dispatchers.Main) {
+//                    dismissLoadingDialog()
+//                }
+            }
+
+            if (response.isSuccessful) {
+                val responseBody = response.body()
+//                Log.d("UserProfile", "User profile ${responseBody?.data}")
+
+                if (responseBody?.data != null) {
+
+                    val editor = settings.edit()
+                    editor.putString("firstname", responseBody.data.firstName)
+                    editor.putString("lastname", responseBody.data.lastName)
+                    editor.putString("avatar", responseBody.data.account.avatar.url)
+                    editor.putString("bio", responseBody.data.bio)
+                    editor.apply()
+
+                    val myProfile = ProfileEntity(
+                        __v = responseBody.data.__v,
+                        _id = responseBody.data._id,
+                        bio = responseBody.data.bio,
+                        firstName = responseBody.data.firstName,
+                        lastName = responseBody.data.lastName,
+                        account = responseBody.data.account,
+                        createdAt = responseBody.data.createdAt,
+                        dob = responseBody.data.dob,
+                        countryCode = responseBody.data.countryCode,
+                        coverImage = responseBody.data.coverImage,
+                        updatedAt = responseBody.data.updatedAt,
+                        followersCount = responseBody.data.followersCount,
+                        isFollowing = responseBody.data.isFollowing,
+                        location = responseBody.data.location,
+                        owner = responseBody.data.owner,
+                        phoneNumber = responseBody.data.phoneNumber,
+                        followingCount = responseBody.data.followingCount
+                    )
+
+                    insertProfile(myProfile)
+//                    Log.d("ProfileLocal", "To localDb $myProfile")
+
+                } else {
+                    Log.d("RetrofitActivity", "Response body or data is null")
+                }
+            }
+
+        }
+
+    }
+
+    fun setOnBackPressedListener() {
+
+    }
+
+    private fun setUpTabs() {
+        // Initialize TabLayout
+//        val tabLayout: TabLayout = binding.tabLayout
+//
+//        // Initialize ViewPager
+//        val viewPager: ViewPager = findViewById(R.id.viewPager)
+//
+//        // Create an adapter for ViewPager to manage tab fragments
+//        val adapter = ChatPagerAdapter(supportFragmentManager)
+//        viewPager.adapter = adapter
+//
+//
+//        // Connect the TabLayout and ViewPager
+//        tabLayout.setupWithViewPager(viewPager)
+    }
+
+
+    suspend fun deleteUserProfile() {
+        myProfileRepository.deleteMyProfile()
+    }
+
+    private fun insertProfile(myProfile: ProfileEntity) {
+        CoroutineScope(Dispatchers.IO).launch {
+            myProfileRepository.insertProfile(myProfile)
+        }
+    }
+
+//    private fun setNavigationListener() {
+//        bottomNavigation.setOnItemSelectedListener {
+//
+//            val menu = bottomNavigation.menu
+//            for (i in 0 until menu.size()) {
+//                val menuItem = menu.getItem(i)
+//                menuItem.actionView?.findViewById<View>(R.id.underline)?.visibility = View.INVISIBLE
+//            }
+//
+//            // Show underline for the selected item
+//            it.actionView?.findViewById<View>(R.id.underline)?.visibility = View.VISIBLE
+//
+//            // Handle item selection logic here
+//            when (it.itemId) {
+//
+//                R.id.notifications -> {
+////                    replaceFragment(FeedFragment())
+//                    getNavigationController().navigate("R.id.notifications", "Notification")
+//                }
+//
+//                R.id.chat -> {
+////                    replaceFragment(ChatFragment())
+//                    getNavigationController().navigate("R.id.chat", "Chat")
+//                }
+//
+//                R.id.shorts -> {
+////                    replaceFragment(ShortsFragment())
+//                    setDarkTheme()
+//                    getNavigationController().navigate("R.id.shots", "Shorts")
+//
+//                }
+//
+//                R.id.feed -> {
+////                    replaceFragment(FeedFragment())
+//                    getNavigationController().navigate("R.id.feed", "Feed")
+//                }
+//
+//                R.id.profile -> {
+////                    replaceFragment(FeedFragment())
+//                    getNavigationController().navigate("R.id.profile", "Profile")
+//                }
+//
+//
+//                else -> {
+//
+//
+//                }
+//
+//            }
+//
+//            true
+//
+//        }
+//
+//    }
+
+    private fun setNavigationListener() {
+
+        bottomNavigation.setOnClickedButtonListener(object : com.vplibs.colorimagebottomnav.BottomNavigationView.OnClickedButtonListener() {
+            override fun onClickedButton(button: NavigationItem, position: Int) {
+                val page: String? = null
+                when (button.drawable) {
+                    R.drawable.ic_home -> {}
+                    R.drawable.ic_event -> {}
+                    R.drawable.ic_search -> {}
+                    R.drawable.ic_profile -> {}
+                }
+            }
+        })
+        bottomNavigation.setOnItemSelectedListener {
+
+            val menu = bottomNavigation.menu
+            for (i in 0 until menu.size()) {
+                val menuItem = menu.getItem(i)
+                menuItem.actionView?.findViewById<View>(R.id.underline)?.visibility = View.INVISIBLE
+            }
+
+
+            // Show underline for the selected item
+            it.actionView?.findViewById<View>(R.id.underline)?.visibility = View.VISIBLE
+
+            // Handle item selection logic here
+            when (it.itemId) {
+
+                R.id.notifications -> {
+//                    replaceFragment(FeedFragment())
+                    getNavigationController().navigate("R.id.notifications", "Notification")
+                }
+
+                R.id.chat -> {
+//                    replaceFragment(ChatFragment())
+                    getNavigationController().navigate("R.id.chat", "Chat")
+                }
+
+                R.id.shorts -> {
+//                    replaceFragment(ShortsFragment())
+                    setDarkTheme()
+                    getNavigationController().navigate("R.id.shots", "Shorts")
+
+                }
+
+                R.id.feed -> {
+//                    replaceFragment(FeedFragment())
+                    getNavigationController().navigate("R.id.feed", "Feed")
+                }
+
+                R.id.profile -> {
+//                    replaceFragment(FeedFragment())
+                    getNavigationController().navigate("R.id.profile", "Profile")
+                }
+
+
+                else -> {
+
+
+                }
+
+            }
+
+            true
+
+        }
+
+    }
+
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menu_setting -> {
+                val intent = Intent(this, SettingsActivity::class.java)
+                startActivity(intent)
+                true
+            }
+
+            R.id.logout -> {
+                showLogoutConfirmationDialog()
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+
+    override fun openChat(id: Long, prepopulateText: String?) {
+        Log.d("NavigationController", "Open Chat")
+    }
+
+    override fun openPhoto(photo: Uri) {
+        Log.d("NavigationController", "Open Photo")
+    }
+
+    override fun navigate(id: String, title: String) {
+        Log.d("NavigationController", "On Navigate")
+        binding.pageTitle.text = title
+
+//        if (showTabs(id)) {
+//            binding.tabLayout.visibility = View.VISIBLE
+//            binding.viewPager.visibility = View.VISIBLE
+//        } else {
+//            binding.tabLayout.visibility = View.GONE
+//            binding.viewPager.visibility = View.GONE
+//        }
+
+        when (id) {
+
+            "R.id.notifications" -> {
+                badge.isVisible = false
+                replaceFragment(NotificationsFragment.newInstance("", ""))
+
+            }
+
+            "R.id.shots" -> {
+                // Add the behavior when navigating to ShortsFragment
+                val layoutParams =
+                    binding.bottomNavigationView.layoutParams as CoordinatorLayout.LayoutParams
+                layoutParams.behavior = HideBottomViewOnScrollBehavior<BottomNavigationView>()
+                binding.bottomNavigationView.layoutParams = layoutParams
+                replaceFragment(ShotsFragment.newInstance("", ""))
+            }
+
+            "R.id.feed" -> {
+                replaceFragment(FeedFragment.newInstance("", ""))
+            }
+
+            "R.id.chat" -> {
+//                val layoutParams = binding.bottomNavigationView.getLayoutParams()
+                val layoutParams =
+                    binding.bottomNavigationView.layoutParams as CoordinatorLayout.LayoutParams
+                layoutParams.behavior = null
+                binding.bottomNavigationView.layoutParams = layoutParams
+
+                replaceFragment(ChatFragment.newInstance("", ""))
+            }
+
+            "R.id.profile" -> {
+//                val layoutParams = binding.bottomNavigationView.getLayoutParams()
+//                val intent = Intent(this@MainActivity, UserProfileActivity::class.java)
+//                startActivity(intent)
+                replaceFragment(UserProfileFragment())
+
+            }
+
+            else -> {
+                Log.d("NavigationController", "Unknown Tab")
+            }
+        }
+    }
+
+    override fun updateAppBar(
+        showContact: Boolean,
+        hidden: Boolean,
+        body: (name: TextView, icon: ImageView) -> Unit
+    ) {
+        Log.d("NavigationController", "Update App Bar")
+
+    }
+
+    private fun showTabs(id: String): Boolean {
+        return when (id) {
+            "R.id.chat" -> true
+            else -> false
+        }
+    }
+
+    private fun replaceFragment(fragment: Fragment) {
+
+        val fragmentManager = supportFragmentManager
+        val fragmentTransaction = fragmentManager.beginTransaction()
+        fragmentTransaction.replace(R.id.frame_layout, fragment)
+        fragmentTransaction.commit()
+    }
+
+    override fun onDirectReply(message: String, chatId: String) {
+        Log.d("DirectReply", "onDirectReply : $message, $chatId")
+    }
+
+//    override fun onDestroy() {
+//        super.onDestroy()
+//        // Unregister with EventBus
+//        EventBus.getDefault().unregister(this)
+//    }
+
+    fun hideAppBar() {
+        binding.appbar.visibility = View.GONE
+    }
+
+    fun showAppBar() {
+        binding.appbar.visibility = View.VISIBLE
+    }
+
+    fun hideBottomNavigation() {
+        binding.bottomNavigationView.visibility = View.GONE
+    }
+
+    fun showBottomNavigation() {
+        binding.bottomNavigationView.visibility = View.VISIBLE
+    }
+
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun shortsCacheEvent(event: ShortsCacheEvent) {
+        Log.d("shortsCacheEvent", "shortsCacheEvent - ${event.videoPath}")
+//        Log.d("shortsCacheEvent", "shortsCacheEvent - ${event.}")
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        badge.isVisible = true
+    }
+
+    override fun onPause() {
+        super.onPause()
+        badge.isVisible = true
+    }
+
+    override fun onDestroy() {
+        job?.cancel()
+        super.onDestroy()
+    }
+}

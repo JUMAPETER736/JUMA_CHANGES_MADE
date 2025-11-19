@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><!-- res/layout/custom_action_mode_layout.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal">
+
+    <!-- Your custom close button -->
+    <ImageButton
+        android:id="@+id/customCloseButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?android:attr/selectableItemBackground"
+        android:contentDescription="@string/close"
+        android:padding="8dp"
+        android:src="@drawable/ic_close_24" />
+</LinearLayout>

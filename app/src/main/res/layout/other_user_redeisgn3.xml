@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".User_Interface.OtherUserProfile.OtherUserProfileAccount">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/coordinatorLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- App Bar with collapsing toolbar -->
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            app:elevation="0dp">
+
+            <com.google.android.material.appbar.CollapsingToolbarLayout
+                android:id="@+id/collapsingToolbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:contentScrim="@android:color/white"
+                app:layout_scrollFlags="scroll|exitUntilCollapsed|snap">
+
+                <!-- Header container -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:layout_collapseMode="parallax">
+
+                    <!-- Header (banner) image -->
+                    <ImageView
+                        android:id="@+id/headerBannerImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="150dp"
+                        android:background="@color/gray_dark"
+                        android:scaleType="centerCrop"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <!-- Profile image with border -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/profileImageContainer"
+                        android:layout_width="90dp"
+                        android:layout_height="90dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="-45dp"
+                        app:cardCornerRadius="45dp"
+                        app:cardElevation="4dp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/headerBannerImage">
+
+                        <ImageView
+                            android:id="@+id/userAvatar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            app:srcCompat="@drawable/user" />
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Follow/Following button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/followButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginEnd="16dp"
+                        android:backgroundTint="@android:color/black"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="Follow"
+                        android:textAllCaps="false"
+                        android:textColor="@android:color/white"
+                        app:cornerRadius="20dp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/headerBannerImage" />
+
+                    <!-- Message button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/messageButton"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="Message"
+                        android:textAllCaps="false"
+                        android:textColor="@android:color/black"
+                        app:cornerRadius="20dp"
+                        app:layout_constraintEnd_toStartOf="@id/followButton"
+                        app:layout_constraintTop_toTopOf="@id/followButton"
+                        app:strokeColor="@android:color/darker_gray"
+                        app:strokeWidth="1dp" />
+
+                    <!-- Username -->
+                    <TextView
+                        android:id="@+id/username"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="8dp"
+                        android:text=""
+                        android:textColor="@android:color/black"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/profileImageContainer" />
+
+                    <!-- Handle -->
+                    <TextView
+                        android:id="@+id/userHandle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="2dp"
+                        android:text="dummy_handle"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="14sp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/username" />
+
+                    <!-- Bio -->
+                    <TextView
+                        android:id="@+id/userBioText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginEnd="16dp"
+                        android:text=""
+                        android:textColor="@android:color/black"
+                        android:textSize="14sp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/userHandle" />
+
+                    <!-- Joined date with icon -->
+                    <ImageView
+                        android:id="@+id/calendarIcon"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="12dp"
+                        android:src="@drawable/ic_baseline_call_end_24"
+                        app:tint="@android:color/darker_gray"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/userBioText" />
+
+                    <TextView
+                        android:id="@+id/joinedDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="Joined March 2023"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="14sp"
+                        app:layout_constraintBottom_toBottomOf="@id/calendarIcon"
+                        app:layout_constraintStart_toEndOf="@id/calendarIcon"
+                        app:layout_constraintTop_toTopOf="@id/calendarIcon" />
+
+                    <!-- Followers/Following stats -->
+                    <LinearLayout
+                        android:id="@+id/statsContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginEnd="16dp"
+                        android:orientation="horizontal"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/calendarIcon">
+
+                        <!-- Following stat -->
+                        <LinearLayout
+                            android:id="@+id/followingContainer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/followingCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="@android:color/black"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="Following"
+                                android:textColor="@android:color/darker_gray"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <!-- Followers stat -->
+                        <LinearLayout
+                            android:id="@+id/followersContainer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/followersCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="@android:color/black"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="Followers"
+                                android:textColor="@android:color/darker_gray"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Bottom margin for profile header -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="16dp"
+                        app:layout_constraintTop_toBottomOf="@id/statsContainer" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <!-- Toolbar -->
+                <androidx.appcompat.widget.Toolbar
+                    android:id="@+id/toolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="?attr/actionBarSize"
+                    android:background="@android:color/transparent"
+                    app:layout_collapseMode="pin"
+                    app:title=""
+                    app:titleTextAppearance="@style/Toolbar.TitleText" />
+
+            </com.google.android.material.appbar.CollapsingToolbarLayout>
+
+            <!-- Tab layout for navigation -->
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tab_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/white"
+                app:tabGravity="fill"
+                app:tabIndicatorColor="@color/bluejeans"
+                app:tabIndicatorHeight="2dp"
+                app:tabMode="fixed"
+                app:tabSelectedTextColor="@android:color/black"
+                app:tabTextColor="@android:color/darker_gray" />
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <!-- Content area with ViewPager for tabs -->
+        <androidx.viewpager.widget.ViewPager
+            android:id="@+id/view_pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+        <!-- Bottom sheet for comments -->
+        <androidx.constraintlayout.motion.widget.MotionLayout
+            android:id="@+id/motionLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="invisible"
+            app:layoutDescription="@xml/activity_main_xml_motionlayout_scene">
+
+            <!-- Comments header -->
+            <LinearLayout
+                android:id="@+id/linearLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_corners"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <View
+                    android:layout_width="36dp"
+                    android:layout_height="4dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@android:color/darker_gray" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="12dp"
+                    android:text="Comments"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@android:color/darker_gray" />
+            </LinearLayout>
+
+            <!-- Comments container -->
+            <RelativeLayout
+                android:id="@+id/layout3"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:background="@android:color/white"
+                app:layout_constraintBottom_toTopOf="@+id/linearLayout2"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/linearLayout">
+
+                <!-- Shimmer effect for loading -->
+                <com.facebook.shimmer.ShimmerFrameLayout
+                    android:id="@+id/shimmer_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <include layout="@layout/short_comments_shimmer_placeholder" />
+                        <include layout="@layout/short_comments_shimmer_placeholder" />
+                        <include layout="@layout/short_comments_shimmer_placeholder" />
+                        <include layout="@layout/short_comments_shimmer_placeholder" />
+                        <include layout="@layout/short_comments_shimmer_placeholder" />
+                    </LinearLayout>
+                </com.facebook.shimmer.ShimmerFrameLayout>
+
+                <!-- Comments list -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_above="@+id/progressBar"
+                     />
+
+                <!-- Empty state placeholder -->
+                <LinearLayout
+                    android:id="@+id/placeholderLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Be the first to comment"
+                        android:textColor="@android:color/black"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <!-- Loading indicator -->
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_centerHorizontal="true"
+                    android:visibility="gone" />
+            </RelativeLayout>
+
+            <!-- Comment input area -->
+            <LinearLayout
+                android:id="@+id/linearLayout2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/white"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+
+                <!-- Reply indicator -->
+                <LinearLayout
+                    android:id="@+id/replyToLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#F2F2F2"
+                    android:orientation="horizontal"
+                    android:padding="8dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/replyToTextView"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Replying to @username"
+                        android:textColor="@color/bluejeans"
+                        android:textSize="14sp" />
+
+                    <ImageView
+                        android:id="@+id/exitReply"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="center_vertical"
+                        android:src="@drawable/ic_close_24" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@android:color/darker_gray" />
+
+                <!-- Twitter-style comment input -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="12dp">
+
+                    <ImageView
+                        android:id="@+id/commentUserAvatar"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_gravity="top"
+                        android:src="@drawable/user" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:orientation="vertical">
+
+                        <EditText
+                            android:id="@+id/commentInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@android:color/transparent"
+                            android:hint="Add a comment..."
+                            android:maxLines="5"
+                            android:minHeight="36dp"
+                            android:textSize="14sp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:gravity="end"
+                            android:orientation="horizontal">
+
+                            <!-- Media attachment button -->
+                            <ImageView
+                                android:id="@+id/attachmentButton"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center_vertical"
+                                android:src="@drawable/imageplaceholder"
+                                app:tint="@color/bluejeans" />
+
+                            <!-- Tweet button (for sending) -->
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/sendCommentButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:layout_marginStart="16dp"
+                                android:backgroundTint="@color/bluejeans"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="16dp"
+                                android:text="Reply"
+                                android:textAllCaps="false"
+                                android:textColor="@android:color/white"
+                                app:cornerRadius="18dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Dimmed background for bottom sheet -->
+            <View
+                android:id="@+id/click"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:background="#80000000"
+                app:layout_constraintBottom_toTopOf="@+id/linearLayout"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+        </androidx.constraintlayout.motion.widget.MotionLayout>
+
+        <!-- Voice note recording UI -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/VNLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                app:cardBackgroundColor="@android:color/black"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="8dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+
+                <LinearLayout
+                    android:id="@+id/VNLinearLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Timer display -->
+                    <TextView
+                        android:id="@+id/timerTv"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="00:00:00"
+                        android:textColor="@android:color/white"
+                        android:textSize="16sp" />
+
+                    <!-- Player timer -->
+                    <LinearLayout
+                        android:id="@+id/playerTimerTv"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/secondTimerTv"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="00:00"
+                            android:textColor="@android:color/white"
+                            android:textSize="14sp" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/thirdTimerTv"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="00:00"
+                            android:textColor="@android:color/white"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- Waveform visualization -->
+                    <com.uyscuti.social.circuit.views.WaveFormView
+                        android:id="@+id/waveForm"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:layout_marginTop="16dp" />
+
+                    <!-- Audio playback controls -->
+                    <LinearLayout
+                        android:id="@+id/playAudioLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:id="@+id/playVnAudioBtn"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/circle_background"
+                            android:padding="8dp"
+                            android:src="@drawable/play_button_filled"
+                            app:tint="@android:color/white" />
+
+                        <com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
+                            android:id="@+id/wave"
+                            android:layout_width="0dp"
+                            android:layout_height="32dp"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            app:wave_background_color="#444444"
+                            app:wave_corner_radius="2dp"
+                            app:wave_progress_color="@color/bluejeans" />
+                    </LinearLayout>
+
+                    <!-- Recording controls -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/deleteVN"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/circle_background"
+                            android:padding="8dp"
+                            android:src="@drawable/ic_close_24"
+                            app:tint="@android:color/white" />
+
+                        <ImageView
+                            android:id="@+id/recordVN"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:layout_marginHorizontal="40dp"
+                            android:background="@drawable/ic_record"
+                            android:padding="16dp"
+                            android:src="@drawable/microphone_mute_svgrepo_com"
+                            app:tint="@android:color/white" />
+
+                        <ImageView
+                            android:id="@+id/sendVN"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:padding="8dp"
+                            android:src="@drawable/ic_send"
+                            app:tint="@android:color/white" />
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <!-- Fullscreen shorts/video player container -->
+    <FrameLayout
+        android:id="@+id/other_users_shorts_play_fragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+</androidx.constraintlayout.widget.ConstraintLayout>

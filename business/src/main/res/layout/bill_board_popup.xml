@@ -1,0 +1,53 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/terms"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/billboard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/robot_bold"
+        android:text="Walking billboard feature"
+        android:padding="8dp"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:gravity="center"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fontFamily="@font/regular_font"
+        android:text="By enabling this feature you have agreed to the terms and conditions of the app. This feature enables our app to send notification to other flash users within the specified distance. Additionally, you acknowledge that any promotional materials provided to you are for promotional purposes only and remain the property of our company. "
+        android:padding="13dp"/>
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/confirmBtn"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:fontFamily="@font/robot_bold"
+            android:layout_alignParentEnd="true"
+            android:background="@drawable/blue_button_bg"
+            android:text="Proceed"
+            android:textColor="@color/white"/>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/cancelBtn"
+            android:fontFamily="@font/robot_bold"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:layout_alignParentStart="true"
+            android:background="@drawable/blue_button_bg"
+            android:text="cancel"
+            android:textColor="@color/white" />
+    </RelativeLayout>
+</LinearLayout>

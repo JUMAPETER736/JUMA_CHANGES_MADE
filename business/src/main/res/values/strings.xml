@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">Business App</string>
+    <string name="estimated_reach_1_6k_4k_people_per_day">Estimated reach 1.6k-4k people per day</string>
+    <string name="apply_changes">Change</string>
+    <string name="estimated_reach_1k_4k_people_per_day" />
+    <string name="collection_and_use_of_data_google_may_collect_and_use_your_data_including_your_location_search_history_and_app_usage_to_improve_our_services_and_provide_you_with_personalized_experiences_sharing_of_data_google_may_share_your_data_with_trusted_partners_and_affiliates_to_enhance_the_services_we_offer_privacy_policy_by_enabling_google_services_you_agree_to_our_privacy_policy_which_outlines_how_we_collect_use_and_share_your_data_to_confirm_your_consent_and_enable_google_services_please_follow_these_steps_tap_on_the_button_below_review_the_terms_and_conditions_carefully_if_you_agree_to_the_terms_tap_on_the_confirm_button_if_you_do_not_agree_to_the_terms_and_conditions_please_tap_on_the_cancel_button_please_note_that_enabling_google_services_is_essential_to_access_certain_features_and_functionalities_of_your_device_and_apps_for_more_information_please_visit_our_privacy_policy_at_link_to_privacy_policy_sincerely_the_google_team_p_s_if_you_have_any_questions_or_concerns_please_do_not_hesitate_to_contact_our_support_team">Collection and Use of Data: Google may collect and use your data, including your location, search history, and app usage, to improve our services and provide you with personalized experiences. Sharing of Data: Google may share your data with trusted partners and affiliates to enhance the services we offer. Privacy Policy: By enabling Google services, you agree to our Privacy Policy, which outlines how we collect, use, and share your data. To confirm your consent and enable Google services, please follow these steps: Tap on the button below. Review the terms and conditions carefully. If you agree to the terms, tap on the Confirm button. If you do not agree to the terms and conditions, please tap on the Cancel button. Please note that enabling Google services is essential to access certain features and functionalities of your device and apps. For more information, please visit our Privacy Policy at [link to Privacy Policy]. Sincerely, The Google Team P.S If you have any questions or concerns,please do not hesitate to contact our support team.</string>
+    <string name="by_enabling_location_settings_you_consent_to_the_collection_use_and_sharing_of_your_location_data_in_accordance_with_our_privacy_policy_please_review_our_privacy_policy_for_more_information">By enabling location settings, you consent to the collection, use, and sharing of your location data in accordance with our Privacy Policy. Please review our Privacy Policy for more information.</string>
+    <string name="terms_amp_conditions"><![CDATA[Terms & conditions]]></string>
+    <string name="i_agree_to_the_terms_and_conditions">I agree to the terms and conditions</string>
+    <string name="agree_and_continue">AGREE</string>
+    <string name="i_agree_with_flash_policy">I agree with flash policy</string>
+    <string name="todo">TODO</string>
+    <string name="What_are_you_looking_for_on_the_market" />
+    <string name="customer_interests">Customer Interests</string>
+    <string name="what_is_your_product">Select category</string>
+    <string name="product">Product</string>
+    <string name="submit">Submit</string>
+    <string name="category">Category</string>
+    <string name="save">Proceed</string>
+    <string name="your_profile_has_been_successfully_created">Your profile has been successfully created!!!. You have selected an amount of MK1000 per month, click NEXT and proceed to payment.</string>
+    <string name="your_profile_has_been_successfully" />
+    <string name="you_have_selected_amount_of_mk_1000_per_month_click_next_to_proceed_to_payment">You have selected amount of MK 1000 per month Click next to proceed to payment</string>
+    <string name="fullscreen_image_desc">fullscreen_image_desc</string>
+    <string name="seller_information">Seller Information</string>
+    <string name="follow">Follow</string>
+    <string name="ayscut_business">AYSCUT BUSINESS</string>
+    <string name="ayscut_Business">ayscut\n</string>
+    <string name="is_this_item_available">Is this Item available</string>
+    <string name="business_information">Business Information</string>
+    <string name="pick_images">Pick Images</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>

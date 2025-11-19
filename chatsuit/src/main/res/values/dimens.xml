@@ -1,0 +1,54 @@
+<resources>
+
+    <!-- Input dimensions -->
+    <dimen name="input_button_width">36dp</dimen>
+    <dimen name="input_button_height">36dp</dimen>
+    <dimen name="input_button_margin">16dp</dimen>
+    <dimen name="input_text_size">17sp</dimen>
+    <dimen name="input_padding_left">16sp</dimen>
+    <dimen name="input_padding_right">16sp</dimen>
+    <dimen name="input_padding_top">8sp</dimen>
+    <dimen name="input_padding_bottom">8sp</dimen>
+
+    <!-- Image dimensions -->
+    <dimen name="max_image_width">300dp</dimen>
+    <dimen name="max_image_height">450dp</dimen>
+
+    <!-- Message bubble -->
+    <dimen name="message_bubble_corners_radius">8dp</dimen>
+
+    <!-- WhatsApp-style Dialog List dimensions -->
+    <dimen name="dialog_avatar_width">54dp</dimen>
+    <dimen name="dialog_avatar_height">54dp</dimen>
+    <dimen name="dialog_last_message_avatar_width">20dp</dimen>
+    <dimen name="dialog_last_message_avatar_height">20dp</dimen>
+    <dimen name="dialog_title_text_size">17sp</dimen>
+    <dimen name="dialog_message_text_size">15sp</dimen>
+    <dimen name="dialog_date_text_size">14sp</dimen>
+    <dimen name="dialog_unread_bubble_text_size">12sp</dimen>
+    <dimen name="dialog_divider_margin_left">0dp</dimen>
+    <dimen name="dialog_divider_margin_right">0dp</dimen>
+
+    <!-- Message dimensions -->
+    <dimen name="message_avatar_width">40dp</dimen>
+    <dimen name="message_avatar_height">40dp</dimen>
+    <dimen name="message_padding_left">16dp</dimen>
+    <dimen name="message_padding_right">16dp</dimen>
+    <dimen name="message_padding_top">8dp</dimen>
+    <dimen name="message_padding_bottom">8dp</dimen>
+    <dimen name="message_text_size">16sp</dimen>
+    <dimen name="sub_title_text_size">12sp</dimen>
+    <dimen name="message_time_text_size">12sp</dimen>
+    <dimen name="message_date_header_text_size">13sp</dimen>
+    <dimen name="message_date_header_padding">16dp</dimen>
+    <dimen name="message_incoming_bubble_margin_right">40dp</dimen>
+    <dimen name="message_outcoming_bubble_margin_left">88dp</dimen>
+
+    <!-- GIF button -->
+    <dimen name="gif_button_width">36dp</dimen>
+
+    <!-- Dialog item padding - WhatsApp style -->
+    <dimen name="dialog_item_padding_vertical">16dp</dimen>
+    <dimen name="dialog_item_padding_horizontal">16dp</dimen>
+
+</resources>

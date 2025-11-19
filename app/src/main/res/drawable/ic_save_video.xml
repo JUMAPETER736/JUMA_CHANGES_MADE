@@ -1,0 +1,28 @@
+<!-- res/drawable/ic_save_video.xml -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+
+    <!-- Gray circular background -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M20,2C10.06,2 2,10.06 2,20s8.06,18 18,18 18,-8.06 18,-18S29.94,2 20,2z"/>
+
+    <!-- Down arrow stroke -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="1.5"
+        android:fillColor="@android:color/transparent"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M20,10v12m-5,-5l5,5 5,-5" />
+
+    <!-- Horizontal base line -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M14,30h12" />
+</vector>

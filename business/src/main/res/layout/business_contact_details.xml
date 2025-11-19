@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    android:background="@drawable/gray_background"
+    android:padding="24dp">
+
+    <TextView
+        android:fontFamily="@font/regular_font"
+        android:id="@+id/section_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingBottom="16dp"
+        android:text="what's your contact details ?"
+        android:textAllCaps="true"
+        android:textSize="11sp" />
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/section_label"
+        android:orientation="vertical">
+
+
+        <EditText
+            android:fontFamily="@font/regular_font"
+            android:id="@+id/email"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/section_label"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/style_edit_text"
+            android:drawableStart="@drawable/baseline_attach_email_24"
+            android:drawablePadding="8dp"
+            android:drawableTint="@color/fade_gray"
+            android:ems="10"
+            android:hint="Email address"
+            android:inputType="textEmailAddress"
+            android:padding="8dp"
+            android:src="@drawable/mail"
+            android:textSize="13sp"
+            app:helperText="Enter a valid email address" />
+
+        <EditText
+            android:fontFamily="@font/regular_font"
+            android:id="@+id/phonenumber_edit_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/email"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/style_edit_text"
+            android:drawableStart="@drawable/baseline_add_call_24"
+            android:drawablePadding="8dp"
+            android:drawableTint="@color/fade_gray"
+            android:hint="Phone Number"
+            android:inputType="phone"
+            android:maxLength="10"
+            android:padding="8dp"
+            android:textSize="13sp" />
+        <EditText
+            android:fontFamily="@font/regular_font"
+            android:id="@+id/address"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/style_edit_text"
+            android:drawableStart="@drawable/location_24"
+            android:drawablePadding="8dp"
+            android:drawableTint="@color/fade_gray"
+            android:hint="Address"
+            android:inputType="textPostalAddress"
+            android:padding="8dp"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+</RelativeLayout>

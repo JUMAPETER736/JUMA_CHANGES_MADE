@@ -1,0 +1,28 @@
+<!-- custom_radio_icon.xml -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true">
+        <layer-list>
+            <!-- Background circle -->
+            <item>
+                <shape android:shape="oval">
+                    <solid android:color="@android:color/transparent" />
+                    <size android:width="20dp" android:height="20dp" />
+                </shape>
+            </item>
+            <!-- Inner selected circle -->
+            <item android:top="4dp" android:left="4dp" android:right="4dp" android:bottom="4dp">
+                <shape android:shape="oval">
+                    <solid android:color="@color/blueJeans" />
+                    <size android:width="12dp" android:height="12dp" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <!-- Unselected state -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@android:color/transparent" />
+            <size android:width="20dp" android:height="20dp" />
+        </shape>
+    </item>
+</selector>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/voiceCallOption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Voice Call"
+        android:textSize="16sp"
+        android:padding="16dp"
+        android:drawableStart="@drawable/ic_call"
+        android:drawablePadding="16dp"
+        android:background="?attr/selectableItemBackground"/>
+
+    <TextView
+        android:id="@+id/videoCallOption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Video Call"
+        android:textSize="16sp"
+        android:padding="16dp"
+        android:drawableStart="@drawable/ic_camera_on"
+        android:drawablePadding="16dp"
+        android:backgroundTint="@color/blueJeans"
+        android:background="?attr/selectableItemBackground"/>
+
+</LinearLayout>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bottom_sheet_background"
+    >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        >
+        <LinearLayout
+            android:id="@+id/topLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="10dp"
+            android:orientation="vertical"
+            android:layout_weight="0">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Comments"
+                    android:textSize="16sp"
+                    android:layout_gravity="center"
+                    android:gravity="center_horizontal"/>
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/more_horizontal_svgrepo_com"
+                    android:layout_marginEnd="20dp"/>
+            </LinearLayout>
+        </LinearLayout>
+        <View
+            android:id="@+id/view_line"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:background="@color/bluejeans"/>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="10dp"
+            android:layout_weight="1"
+            tools:listitem="@layout/bottom_sheet_1_item"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+        <View
+            android:id="@+id/line_view"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:background="@color/bluejeans"/>
+        <com.uyscut.chatsuit.messages.MessageInput
+            android:id="@+id/input"
+            android:visibility="visible"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:attachmentButtonDefaultIconColor="@color/bluejeans"
+            app:attachmentButtonDefaultIconPressedColor="@color/bluejeans"
+            app:inputButtonDefaultBgColor="@color/bluejeans"
+            app:inputButtonDefaultBgPressedColor="@color/bluejeans"
+            app:inputCursorDrawable="@drawable/shape_custom_cursor"
+            app:inputHint="@string/hint_enter_a_message"
+            app:showAttachmentButton="true"/>
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

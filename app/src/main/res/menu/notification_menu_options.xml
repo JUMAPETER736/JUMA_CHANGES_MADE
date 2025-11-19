@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/delete"
+        android:icon="@drawable/ic_delete_24"
+        android:title="@string/delete"
+        android:contentDescription="@string/content_description_delete"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_mark_as_read"
+        android:title="Mark as Read"
+        app:itemTextAppearance="@style/CustomMenuItemTextAppearance"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_mark_as_unread"
+        android:title="Mark as Unread"
+        app:itemTextAppearance="@style/CustomMenuItemTextAppearance"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_report"
+        android:title="Report"
+        app:itemTextAppearance="@style/CustomMenuItemTextAppearance"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/priority"
+        android:title="Priority"
+        app:itemTextAppearance="@style/CustomMenuItemTextAppearance"
+        app:showAsAction="never"/>
+</menu>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ImageView
+        android:id="@+id/profilePic"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_margin="16dp"
+        android:src="@drawable/person_button_svgrepo_com" />
+
+    <TextView
+        android:id="@+id/username"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Username"
+        app:layout_constraintStart_toEndOf="@id/profilePic"
+        app:layout_constraintBottom_toBottomOf="@id/profilePic"
+        app:layout_constraintTop_toTopOf="@id/profilePic"
+        android:layout_marginStart="20dp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginStart="15dp"
+        android:text="time"
+        app:layout_constraintStart_toEndOf="@id/username"
+        app:layout_constraintBottom_toBottomOf="@id/username"
+        app:layout_constraintTop_toTopOf="@id/username"
+        android:textColor="#BDB5B5" />
+
+    <TextView
+        android:id="@+id/mentionTV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="5dp"
+        android:text="Username"
+        app:layout_constraintTop_toBottomOf="@id/username"
+        app:layout_constraintStart_toStartOf="@id/username"
+        android:visibility="gone" />
+
+    <ImageView
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_gravity="center"
+        android:id="@+id/playVnAudioBtn"
+        android:background="@drawable/ic_ripple"
+        android:padding="8dp"
+        android:src="@drawable/play_svgrepo_com"
+        app:tint="@color/white"
+        app:layout_constraintTop_toBottomOf="@id/username"
+        app:layout_constraintStart_toStartOf="@id/username"
+        android:layout_marginTop="10dp"
+        />
+
+    <com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
+        android:id="@+id/wave"
+        android:layout_width="100dp"
+        android:layout_height="22dp"
+        android:layout_weight="1"
+        android:layout_gravity="center"
+        app:marker_color="@color/fade"
+        android:layout_margin="16dp"
+        app:marker_text_padding="2dp"
+        app:marker_text_size="12dp"
+        app:marker_width="1dp"
+        app:wave_background_color="@color/gray_dark"
+        app:wave_corner_radius="2dp"
+        app:wave_gap="1.5dp"
+        app:wave_gravity="center"
+        app:wave_max_progress="100"
+        app:wave_min_height="3dp"
+        app:wave_progress="0"
+        app:wave_progress_color="@color/bluejeans"
+        app:wave_width="3dp"
+        android:layout_marginStart="50dp"
+        app:layout_constraintTop_toBottomOf="@id/username"
+        app:layout_constraintStart_toEndOf="@id/playVnAudioBtn"
+        android:layout_marginTop="10dp"
+        />
+</androidx.constraintlayout.widget.ConstraintLayout>

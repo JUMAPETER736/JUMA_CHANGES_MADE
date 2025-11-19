@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:id="@+id/feeds"
+    android:layout_height="match_parent">
+
+<androidx.constraintlayout.motion.widget.MotionLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/feedVideoParentLayout"
+    app:layoutDescription="@xml/fragment_feed_video_view_scene">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:background="@color/gray_transparent"
+        android:icon="@null"
+        android:label="@null"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:titleTextColor="@android:color/white">
+
+        <!-- Back Icon -->
+        <ImageView
+            android:id="@+id/backButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:src="@drawable/baseline_arrow_back_black" />
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/titleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Repost"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/backButton"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.5" />
+
+        <ImageView
+            android:id="@+id/cancelButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:src="@drawable/cancel_svgrepo_com" />
+
+    </androidx.appcompat.widget.Toolbar>
+
+
+    <LinearLayout
+        android:layout_marginStart="20sp"
+        android:id="@+id/username_user"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp"
+        tools:layout_editor_absoluteX="-10dp"
+        tools:layout_editor_absoluteY="50dp">
+
+        <!-- Original Post Profile Picture -->
+        <ImageView
+            android:id="@+id/userprofile"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/circle_background"
+            android:scaleType="centerCrop"
+            android:src="@drawable/profilepic2" />
+
+        <!-- Original Post Username -->
+        <TextView
+            android:id="@+id/username"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:text="reposted_User_Name"
+            android:textColor="@color/blueJeans"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="102dp"
+        android:id="@+id/editTextTextLayout"
+        android:hint="Caption your content to make it interesting up to 4000 words..."
+        android:layout_marginHorizontal="10dp"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.476"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        android:scrollbars="vertical"
+        >
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:inputType="textMultiLine"
+            android:lines="6"
+            android:scrollbars="vertical" />
+        <!--            android:fadeScrollbars="false"-->
+        <!--            <ScrollView-->
+        <!--                android:layout_width="match_parent"-->
+        <!--                android:layout_height="match_parent">-->
+        <!--               -->
+        <!--            </ScrollView>-->
+
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+
+    <TextView
+        android:id="@+id/tags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="50dp"
+        android:layout_marginTop="10dp"
+        android:textColor="@color/blueJeans"
+        app:layout_constraintTop_toBottomOf="@+id/feedTextContent"
+        app:layout_constraintStart_toStartOf="@id/feedTextContent"
+        app:layout_constraintEnd_toEndOf="@id/feedTextContent"
+        />
+
+
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/feedImageCardView"
+        android:layout_width="match_parent"
+        android:layout_height="500dp"
+        android:layout_marginHorizontal="50dp"
+        android:layout_marginBottom="20dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/commentButtonIcon"
+        app:layout_constraintTop_toBottomOf="@+id/tags">
+
+        <ImageView
+            android:id="@+id/feedImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitXY"
+            android:src="@drawable/imageplaceholder" />
+    </androidx.cardview.widget.CardView>
+    <!-- Original Post Section -->
+
+    <LinearLayout
+
+        android:id="@+id/originalPostSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="288dp"
+        android:orientation="vertical"
+        android:padding="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/feedImageCardView">
+
+        <!-- Original Post Author Section -->
+        <LinearLayout
+
+            android:id="@+id/originalPostAuthorSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="8dp">
+
+            <!-- Original Post Profile Picture -->
+            <ImageView
+                android:id="@+id/originalPostProfileImage"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/circle_background"
+                android:scaleType="centerCrop"
+                android:src="@drawable/profilepic2" />
+
+            <!-- Original Post Username -->
+            <TextView
+                android:id="@+id/originalPostUsername"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:text="Original_User_Name"
+                android:textColor="@color/blueJeans"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Original Post Content -->
+        <TextView
+            android:id="@+id/originalFeedTextContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/toolbar"
+            android:layout_marginStart="50dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="50dp"
+            android:contentDescription="@string/content_description"
+            android:justificationMode="inter_word"
+            android:text="usubjksbvkjsdfbvdfkvjndjbfikdsbvksdbvjbsdfjkvbdfjigviufbniavk;hriohafr"
+            android:textColor="@color/black"
+            android:textSize="20sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/toolbar"
+            app:layout_constraintVertical_bias="0.5" />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/originalFeedImageCardView"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
+            android:layout_marginHorizontal="50dp"
+            android:layout_marginBottom="2dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="8dp"
+            app:layout_constraintBottom_toBottomOf="@+id/commentButtonIcon"
+            app:layout_constraintTop_toBottomOf="@+id/tags">
+
+            <ImageView
+                android:id="@+id/originalFeedImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                android:src="@drawable/imageplaceholder" />
+        </androidx.cardview.widget.CardView>
+        <LinearLayout
+            android:id="@+id/buttonsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="8dp"
+            android:layout_marginTop="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:ignore="ExtraText">
+
+            <!-- Draft Button -->
+            <Button
+                android:id="@+id/draftButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/fill_button_color"
+                android:text="Save Draft"
+                android:textColor ="@color/white" />
+
+            <!-- Post Button -->
+            <Button
+                android:id="@+id/postButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/fill_button_color"
+                android:text="Repost" />
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.constraintlayout.motion.widget.MotionLayout>
+</ScrollView>

@@ -1,0 +1,73 @@
+[versions]
+activity = "1.10.1"
+activityCompose = "1.10.1"
+agp = "8.9.1"
+appcompat = "1.7.0"
+composeBom = "2024.09.00"
+constraintlayout = "2.2.1"
+coreKtx = "1.16.0"
+espressoCore = "3.6.1"
+expandabletextview = "0.3.2"
+junit = "4.13.2"
+junitVersion = "1.2.1"
+kotlin = "2.0.21"
+ksp = "2.0.21-1.0.25"
+lifecycleRuntimeKtx = "2.9.0"
+material = "1.12.0"
+navigationFragmentKtx = "2.9.0"
+animationGraphicsAndroid = "1.8.3"
+material3Android = "1.3.2"
+coreAnimation = "1.0.0"
+appcompatVersion = "1.7.1"
+firebaseAppdistributionGradle = "5.1.1"
+uiGraphics = "1.8.3"
+firebaseCrashlyticsBuildtools = "3.0.6"
+filamentAndroid = "1.17.1"
+scenecore = "1.0.0-alpha07"
+
+[libraries]
+# AndroidX Core
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+
+# Compose
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+
+# Google Material
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+
+# Testing
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+
+# Third-party
+expandabletextview = { module = "com.github.yuzumone:ExpandableTextView", version.ref = "expandabletextview" }
+androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
+androidx-animation-graphics-android = { group = "androidx.compose.animation", name = "animation-graphics-android", version.ref = "animationGraphicsAndroid" }
+androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
+androidx-core-animation = { group = "androidx.core", name = "core-animation", version.ref = "coreAnimation" }
+appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompatVersion" }
+firebase-appdistribution-gradle = { group = "com.google.firebase", name = "firebase-appdistribution-gradle", version.ref = "firebaseAppdistributionGradle" }
+ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
+filament-android = { group = "com.google.ar.sceneform", name = "filament-android", version.ref = "filamentAndroid" }
+androidx-scenecore = { group = "androidx.xr.scenecore", name = "scenecore", version.ref = "scenecore" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

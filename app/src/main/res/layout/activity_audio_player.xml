@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="#1F2937"
+    android:padding="16dp"
+    android:gravity="center_vertical">
+
+    <!-- Current Time -->
+    <TextView
+        android:id="@+id/currentTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="2:15"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:fontFamily="monospace"
+        android:layout_marginEnd="12dp" />
+
+    <!-- Waveform SeekBar -->
+    <com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
+        android:id="@+id/waveformSeekBar"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_weight="1"
+        android:layout_marginHorizontal="8dp" />
+
+    <!-- Total Time -->
+    <TextView
+        android:id="@+id/totalTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="3:56"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:fontFamily="monospace"
+        android:layout_marginStart="12dp" />
+
+    <!-- Play/Pause Button (Optional - can be placed below) -->
+    <ImageButton
+        android:id="@+id/playPauseButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/play"
+        android:contentDescription="Play/Pause"
+        app:tint="#25D366" />
+
+    <!-- Speed Control -->
+    <TextView
+        android:id="@+id/speedButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="1x"
+        android:textColor="#25D366"
+        android:textSize="12sp"
+        android:background="?android:attr/selectableItemBackground"
+        android:padding="8dp"
+        android:layout_marginStart="8dp" />
+
+</LinearLayout>

@@ -1,0 +1,24 @@
+<!-- res/layout/no_results_item.xml -->
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/noResultsTextView"
+        android:layout_width="match_parent"
+        android:layout_weight="1"
+        android:layout_height="0dp"
+        android:text="@string/no_results_found"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_gravity="center_vertical"
+        android:textColor="@android:color/black"
+        android:gravity="center"/>
+
+    <!-- You can customize the message and styling as needed -->
+
+</LinearLayout>

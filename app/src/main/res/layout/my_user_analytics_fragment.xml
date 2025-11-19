@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F6F3F3"
+    android:fillViewport="true"
+    tools:context=".User_Interface.MyUserProfile.MyUserAnalyticsFragment">
+
+    <LinearLayout
+        android:id="@+id/layout_root"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- USERNAME and TIME RANGE  -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp"
+            android:weightSum="1">
+
+            <TextView
+                android:id="@+id/tv_username"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.7"
+                android:text="Username"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#1A1A1A"
+                android:layout_marginEnd="8dp" />
+
+            <Spinner
+                android:id="@+id/spinner_time_range"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.3"
+                android:layout_gravity="end" />
+        </LinearLayout>
+
+        <!-- KEY METRICS CARD -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_key_metrics"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:elevation="4dp"
+            app:cardCornerRadius="12dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:id="@+id/layout_key_metrics"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tv_key_metrics_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Key Metrics"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_analytics_metrics"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:overScrollMode="never"
+                    android:scrollbars="none" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- VIDEO VIEWS CHART -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_video_views"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:elevation="4dp"
+            app:cardCornerRadius="12dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:id="@+id/layout_video_views"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tv_video_views_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Video Views Over Time"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000"
+                    android:layout_marginBottom="8dp" />
+
+                <com.github.mikephil.charting.charts.BarChart
+                    android:id="@+id/chart_video_views"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    tools:ignore="MissingClass" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- FOLLOWERS GROWTH CHART -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_followers_growth"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:elevation="4dp"
+            app:cardCornerRadius="12dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:id="@+id/layout_followers_growth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tv_followers_growth_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Followers Growth"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000"
+                    android:layout_marginBottom="8dp" />
+
+                <com.github.mikephil.charting.charts.LineChart
+                    android:id="@+id/chart_followers_growth"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    tools:ignore="MissingClass" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- AUDIENCE GENDER DISTRIBUTION -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_audience_gender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:elevation="4dp"
+            app:cardCornerRadius="12dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
+                android:id="@+id/layout_audience_gender"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tv_audience_gender_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Audience Gender Distribution"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000"
+                    android:layout_marginBottom="8dp" />
+
+                <com.github.mikephil.charting.charts.PieChart
+                    android:id="@+id/chart_audience_gender"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    tools:ignore="MissingClass" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+
+</ScrollView>

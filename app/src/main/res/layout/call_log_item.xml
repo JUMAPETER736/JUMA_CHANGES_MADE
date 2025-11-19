@@ -1,0 +1,99 @@
+<!-- res/layout/call_log_item.xml -->
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@id/dialogRootLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/callRoot"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+
+
+            <!-- Caller Avatar (ImageView) -->
+            <ImageView
+                android:id="@+id/imageCallerAvatar"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:src="@drawable/baseline_person_24" />
+
+
+
+        <!-- Call Log Details (Text and Icon) -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Caller Name (TextView) -->
+            <TextView
+                android:id="@+id/textCallerName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="John Doe"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Incoming/Outgoing Indicator (ImageView) -->
+                <ImageView
+                    android:id="@+id/imageCallTypeIndicator"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:padding="2dp"
+                    android:src="@drawable/baseline_call_received_24"
+                    app:tint="@color/green" />
+
+                <!-- Date/Time (TextView) -->
+                <TextView
+                    android:id="@+id/textCallDateTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="5 minutes ago"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/isVideo"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:src="@drawable/baseline_videocam_24"
+            app:tint="@color/green_dark" />
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@id/dialogDividerContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/callRoot"
+        android:layout_marginTop="1dp"
+        android:paddingStart="65dp"
+        android:paddingLeft="65dp">
+
+        <View
+            android:id="@id/dialogDivider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/dialog_divider" />
+
+    </FrameLayout>
+</RelativeLayout>

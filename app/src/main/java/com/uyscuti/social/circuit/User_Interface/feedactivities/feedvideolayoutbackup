@@ -1,0 +1,670 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.motion.widget.MotionLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/feedVideoParentLayout"
+    app:layoutDescription="@xml/fragment_feed_video_view_scene"
+    tools:context=".ui.feedactivities.FeedVideoViewFragment">
+
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/feed_view_custom" />
+
+    <TextView
+        android:id="@+id/feedTextContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/toolbar"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="50dp"
+        android:contentDescription="@string/content_description"
+        android:justificationMode="inter_word"
+        android:text="usubjksbvkjsdfbvdfkvjndjbfikdsbvksdbvjbsdfjkvbdfjigviufbniavk;hriohafr"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar"
+        app:layout_constraintVertical_bias="0.5" />
+
+    <TextView
+        android:id="@+id/tags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="50dp"
+        android:layout_marginTop="10dp"
+        app:layout_constraintTop_toBottomOf="@+id/feedTextContent" />
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/feedImageCardView"
+        android:layout_width="match_parent"
+        android:layout_height="500dp"
+        android:layout_marginHorizontal="50dp"
+        android:layout_marginBottom="20dp"
+        app:cardCornerRadius="16dp"
+        app:layout_constraintBottom_toBottomOf="@+id/comment"
+        app:layout_constraintTop_toBottomOf="@+id/tags">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <androidx.media3.ui.PlayerView
+                android:id="@+id/player_view"
+                android:layout_width="match_parent"
+                android:background="@color/black"
+                android:layout_height="match_parent"
+                />
+            <ImageView
+                android:id="@+id/playImageView"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:src="@drawable/comment_play_button"
+                android:visibility="visible"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.5" />
+            <TextView
+                android:id="@+id/finalDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:text="@string/duration"
+                android:layout_alignParentBottom="true"
+                android:textColor="@color/white"
+                android:layout_alignParentEnd="true"
+                android:layout_marginBottom="10dp"
+                app:layout_constraintBottom_toTopOf="@id/seekBar"
+                app:layout_constraintRight_toRightOf="@id/seekBar" />
+            <TextView
+                android:id="@+id/currentDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:textColor="@color/white"
+                android:text="@string/duration"
+                android:layout_marginBottom="10dp"
+                android:layout_alignParentBottom="true"
+                app:layout_constraintBottom_toTopOf="@id/seekBar"
+                app:layout_constraintLeft_toLeftOf="@id/seekBar" />
+            <SeekBar
+                style="@style/SeekBarNoThumb"
+                android:id="@+id/seekBar"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginBottom="16dp"
+                android:layout_alignParentBottom="true"
+                android:progressTint="@color/bluejeans"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+
+
+
+<!--        <ImageView-->
+<!--            android:id="@+id/feedImage"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:scaleType="fitXY"-->
+<!--            android:src="@drawable/imageplaceholder" />-->
+    </androidx.cardview.widget.CardView>
+<!--    <androidx.cardview.widget.CardView-->
+<!--        android:id="@+id/feedImageCardView"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="500dp"-->
+<!--        android:layout_marginHorizontal="50dp"-->
+<!--        android:layout_marginBottom="20dp"-->
+<!--        app:cardCornerRadius="16dp"-->
+<!--        app:cardElevation="8dp"-->
+<!--        app:layout_constraintBottom_toBottomOf="@+id/comment"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/tags">-->
+
+<!--        <ImageView-->
+<!--            android:id="@+id/feedImage"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:scaleType="fitXY"-->
+<!--            android:visibility="gone"-->
+<!--            android:src="@drawable/imageplaceholder" />-->
+<!--        <androidx.constraintlayout.widget.ConstraintLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:id="@+id/multipleImagesContainer"-->
+<!--            android:visibility="visible"-->
+<!--            android:layout_gravity="center"-->
+<!--            android:adjustViewBounds="true"-->
+<!--            android:layout_height="match_parent">-->
+<!--            <androidx.viewpager2.widget.ViewPager2-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="match_parent"-->
+<!--                android:id="@+id/viewPager"-->
+<!--                app:layout_constraintBottom_toTopOf="@+id/circleIndicator"-->
+<!--                />-->
+<!--            <me.relex.circleindicator.CircleIndicator3-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="48dp"-->
+<!--                app:layout_constraintBottom_toBottomOf="parent"-->
+<!--                android:id="@+id/circleIndicator"-->
+<!--                android:background="@color/black"-->
+<!--                />-->
+
+
+<!--        </androidx.constraintlayout.widget.ConstraintLayout>-->
+<!--    </androidx.cardview.widget.CardView>-->
+
+    <ImageView
+        android:id="@+id/like"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginStart="50dp"
+        android:layout_marginBottom="20dp"
+        android:contentDescription="@string/content_description"
+        android:padding="10dp"
+        android:src="@drawable/like_svgrepo_com_white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:tint="@color/blueJeans" />
+
+    <TextView
+        android:id="@+id/likesCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="15dp"
+        android:text="0"
+        android:textColor="@color/black"
+        app:layout_constraintLeft_toLeftOf="@id/like"
+        app:layout_constraintRight_toRightOf="@id/like"
+        app:layout_constraintTop_toBottomOf="@+id/like" />
+
+    <ImageView
+        android:id="@+id/comment"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginStart="5dp"
+        android:contentDescription="@string/content_description"
+        android:padding="10dp"
+        android:src="@drawable/chat_round_svgrepo_com_shorts"
+        app:layout_constraintBottom_toBottomOf="@id/like"
+        app:layout_constraintLeft_toRightOf="@id/like"
+        app:tint="@color/blueJeans" />
+
+    <TextView
+        android:id="@+id/feedCommentsCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="15dp"
+        android:text="0"
+        android:textColor="@color/black"
+        app:layout_constraintLeft_toLeftOf="@id/comment"
+        app:layout_constraintRight_toRightOf="@id/comment"
+        app:layout_constraintTop_toBottomOf="@+id/comment" />
+
+    <ImageView
+        android:id="@+id/fav"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginStart="5dp"
+        android:contentDescription="@string/content_description"
+        android:padding="10dp"
+        android:src="@drawable/favorite_svgrepo_com__1_"
+        app:layout_constraintBottom_toBottomOf="@id/like"
+        app:layout_constraintLeft_toRightOf="@id/comment"
+        app:tint="@color/blueJeans" />
+
+    <ImageView
+        android:id="@+id/re"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginStart="5dp"
+        android:padding="10dp"
+        android:src="@drawable/retweet_svgrepo_com"
+        app:layout_constraintBottom_toBottomOf="@id/fav"
+        app:layout_constraintLeft_toRightOf="@id/fav"
+
+        app:tint="@color/blueJeans" />
+
+    <ImageView
+        android:id="@+id/share"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginStart="5dp"
+        android:contentDescription="@string/content_description"
+        android:padding="10dp"
+        android:src="@drawable/baseline_share_24"
+        app:layout_constraintBottom_toBottomOf="@id/re"
+        app:layout_constraintLeft_toRightOf="@id/re"
+        app:tint="@color/blueJeans" />
+
+    <ImageView
+        android:id="@+id/moreOptions"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginStart="5dp"
+        android:contentDescription="@string/content_description"
+        android:padding="10dp"
+        android:src="@drawable/options_vertical_svgrepo_com"
+        app:layout_constraintBottom_toBottomOf="@id/share"
+        app:layout_constraintLeft_toRightOf="@id/share"
+        app:tint="@color/blueJeans" />
+
+</androidx.constraintlayout.motion.widget.MotionLayout>
+
+package com.uyscut.flashdesign.ui.feedactivities
+
+import android.annotation.SuppressLint
+import android.os.Bundle
+import android.util.Log
+import androidx.fragment.app.Fragment
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.SeekBar
+import androidx.activity.OnBackPressedCallback
+import androidx.annotation.OptIn
+import androidx.core.content.ContextCompat
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.transition.TransitionInflater
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.bitmap.CircleCrop
+import com.bumptech.glide.request.RequestOptions
+import com.daimajia.androidanimations.library.Techniques
+import com.daimajia.androidanimations.library.YoYo
+import com.uyscut.flashdesign.R
+import com.uyscut.flashdesign.databinding.FragmentFeedVideoViewBinding
+import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.social.circuit.model.FeedCommentClick
+import com.uyscuti.social.circuit.utils.formatDuration
+import com.uyscut.network.api.response.feed.getallfeed.Post
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.greenrobot.eventbus.EventBus
+
+// TODO: Rename parameter arguments, choose names that match
+// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+private const val ARG_PARAM1 = "param1"
+private const val ARG_PARAM2 = "param2"
+
+/**
+ * A simple [Fragment] subclass.
+ * Use the [FeedVideoViewFragment.newInstance] factory method to
+ * create an instance of this fragment.
+ */
+
+private const val TAG = "TODO: Rename and change types of parameters"
+
+class FeedVideoViewFragment : Fragment() {
+    // TODO: Rename and change types of parameters
+    private var param1: String? = null
+    private var param2: String? = null
+
+    private lateinit var data: Post
+    private var position = 0
+    private lateinit var backPressedCallback: OnBackPressedCallback
+    private var feedTextViewFragmentInterface: FeedTextViewFragmentInterface? = null
+
+    private lateinit var binding: FragmentFeedVideoViewBinding
+
+    private var player: ExoPlayer? = null
+    private var isPlaying = false
+    private var isUserSeeking = false
+    private var reply: Boolean = false
+
+    private val playbackStateListener: Player.Listener = playbackStateListener()
+    private fun updateSeekBar() {
+        player?.let { player ->
+            if (!isUserSeeking) {
+                val currentPosition = player.currentPosition.toInt()
+                binding.seekBar.progress = currentPosition
+            }
+        }
+    }
+
+    var videoUrl = ""
+    var owner = ""
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val inflater = TransitionInflater.from(requireContext())
+        enterTransition = inflater.inflateTransition(R.transition.feed_slide_from_top)
+        arguments?.let {
+            param1 = it.getString(ARG_PARAM1)
+            param2 = it.getString(ARG_PARAM2)
+            position = it.getInt("position")
+            data = (it.getSerializable("data") as Post?)!!
+        }
+    }
+
+    @OptIn(UnstableApi::class)
+    @SuppressLint("SetTextI18n")
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        // Inflate the layout for this fragment
+        binding = FragmentFeedVideoViewBinding.inflate(layoutInflater, container, false)
+        activity?.window?.navigationBarColor =
+            ContextCompat.getColor(requireContext(), R.color.black)
+        if (data.content == "") {
+            binding.feedTextContent.text = ""
+        } else {
+            binding.feedTextContent.text = data.content
+        }
+
+        if (data.tags.isEmpty()) {
+            binding.tags.visibility = View.GONE
+        } else {
+            binding.tags.visibility = View.VISIBLE
+        }
+        videoUrl = data.files[0].url
+
+        player = ExoPlayer.Builder(requireContext()).build()
+
+        binding.playerView.player = player
+
+        // Disable default controls
+        binding.playerView.useController = false
+        val mediaItem = MediaItem.fromUri(videoUrl)
+
+        player!!.setMediaItem(mediaItem)
+        player!!.prepare()
+
+//        binding.playImageView.setOnClickListener {
+//            if (player!!.isPlaying) {
+//                player!!.pause()
+//
+//            } else {
+//                player!!.play()
+//            }
+//        }
+        binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    player?.seekTo(progress.toLong())
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+        player?.repeatMode = Player.REPEAT_MODE_ONE
+        player?.addListener(playbackStateListener)
+
+        player?.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                super.onPlaybackStateChanged(state)
+                if (state == Player.STATE_READY) {
+                    binding.seekBar.max = player?.duration?.toInt()!!
+                }
+            }
+
+            @Deprecated("Deprecated in Java")
+            override fun onPositionDiscontinuity(reason: Int) {
+                updateSeekBar()
+            }
+
+        })
+
+        binding.playerView.setOnClickListener {
+//            isPlaying = !isPlaying
+            if (player!!.isPlaying) {
+                binding.playImageView.visibility = View.VISIBLE
+                binding.playImageView.setImageResource(R.drawable.comment_play_button)
+                player?.pause()
+            } else {
+                binding.playImageView.visibility = View.GONE
+                player?.play()
+            }
+
+        }
+
+        Glide.with(this)
+            .load(data.author.account.avatar.url)
+            .apply(RequestOptions.bitmapTransform(CircleCrop()))
+            .placeholder(R.drawable.profilepic2)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .into(binding.toolbar.feedProfilePic)
+
+        binding.toolbar.backIcon.setOnClickListener {
+            if (feedTextViewFragmentInterface != null) {
+                feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+                if(player != null) {
+                    player?.removeListener(playbackStateListener)
+                    player?.stop()
+                    player?.release()
+                }
+            }
+
+        }
+        binding.comment.setOnClickListener {
+            EventBus.getDefault().post(FeedCommentClick(position, data))
+        }
+
+        binding.toolbar.username.text = data.author.account.username
+        if (data.likes <= 0) {
+            binding.likesCount.text = "0"
+        } else {
+            binding.likesCount.text = data.likes.toString()
+        }
+        binding.feedCommentsCount.text = data.comments.toString()
+        if (data.isLiked) {
+            binding.like.setImageResource(R.drawable.filled_favorite_like)
+        } else {
+            binding.like.setImageResource(R.drawable.like_svgrepo_com)
+        }
+        binding.like.setOnClickListener {
+            data.isLiked = !data.isLiked
+            if (data.isLiked) {
+                Log.d(TAG, "onCreateView: data likes ${data.likes}")
+//                binding.likesCount.text = data.likes.toString()
+                if (data.likes < 0) {
+                    binding.likesCount.text = "0"
+                } else {
+                    binding.likesCount.text = (data.likes + 1).toString()
+                }
+                binding.like.setImageResource(R.drawable.filled_favorite_like)
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(binding.like)
+            } else {
+                Log.d(TAG, "onCreateView: data likes ${data.likes}")
+//                binding.likesCount.text = data.likes.toString()
+                if (data.likes <= 0) {
+                    binding.likesCount.text = "0"
+                } else {
+                    binding.likesCount.text = (data.likes - 1).toString()
+                }
+                binding.like.setImageResource(R.drawable.like_svgrepo_com)
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(binding.like)
+            }
+            feedTextViewFragmentInterface?.onLikeUnLikeFeedFromFeedTextViewFragment(position, data)
+
+        }
+        if (data.isBookmarked) {
+            binding.fav.setImageResource(R.drawable.filled_favorite)
+        } else {
+            binding.fav.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+        }
+
+        binding.moreOptions.setOnClickListener {
+            feedTextViewFragmentInterface?.onMoreOptionsClickFromFeedTextViewFragment(
+                position,
+                data
+            )
+        }
+        binding.fav.setOnClickListener {
+            data.isBookmarked = !data.isBookmarked
+            feedTextViewFragmentInterface?.onFeedFavoriteClickFromFeedTextViewFragment(
+                position,
+                data
+            )
+            if (data.isBookmarked) {
+                binding.fav.setImageResource(R.drawable.filled_favorite)
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(binding.fav)
+            } else {
+                binding.fav.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(binding.fav)
+            }
+        }
+        return binding.root
+    }
+
+    companion object {
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment FeedVideoViewFragment.
+         */
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedVideoViewFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        player?.pause()
+    }
+
+    private fun playbackStateListener() = object : Player.Listener {
+        @SuppressLint("SetTextI18n")
+        override fun onPlaybackStateChanged(state: Int) {
+            when (state) {
+                ExoPlayer.STATE_ENDED -> {
+                }
+
+                Player.STATE_BUFFERING -> {
+
+                }
+
+                Player.STATE_IDLE -> {
+                }
+
+                Player.STATE_READY -> {
+
+                    Log.d("TAG", "STATE_READY")
+                    val durationMs: Long? = player?.duration
+
+                    if (durationMs != null) {
+                        val formattedDuration = formatDuration(durationMs)
+                        binding.finalDuration.text = formattedDuration
+                    } else {
+                        binding.finalDuration.text = "Duration not available"
+                    }
+                    startUpdatingSeekBar()
+                }
+
+                else -> {
+                    Log.d("TAG", "STOP SEEK BAR")
+                    stopUpdatingSeekBar()
+                }
+            }
+        }
+
+        private var updateSeekBarJob: Job? = null
+
+        private fun startUpdatingSeekBar() {
+            updateSeekBarJob = CoroutineScope(Dispatchers.Main).launch {
+                while (true) {
+
+                    updateSeekBar()
+                    delay(50) // Update seek bar every second (adjust as needed)
+                    val currentPositionMs = player?.currentPosition ?: 0
+
+                    // Format current playback position into "mm:ss" format
+                    val formattedPosition = formatDuration(currentPositionMs)
+
+                    // Update TextView with formatted playback position
+                    binding.currentDuration.text = formattedPosition
+
+                }
+            }
+        }
+
+        private fun stopUpdatingSeekBar() {
+            updateSeekBarJob?.cancel()
+        }
+
+        override fun onIsPlayingChanged(isVideoPlaying: Boolean) {
+//        super.onIsPlayingChanged(isPlaying)
+
+        }
+
+        override fun onEvents(player: Player, events: Player.Events) {
+//        super.onEvents(player, events)
+//            if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
+//                events.contains(Player.EVENT_IS_PLAYING_CHANGED)
+//            ) {
+//
+////                progressBar.visibility = View.GONE
+//            }
+//
+//            if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)
+//            ) {
+////                player.seekTo(5000L)
+//            }
+        }
+    }
+
+    override fun onResume() {
+        Log.d(TAG, "onResume: ")
+        super.onResume()
+        backPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Handle back press
+//                navigateBack()
+                if (feedTextViewFragmentInterface != null) {
+                    feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+                    if(player != null) {
+                        player?.removeListener(playbackStateListener)
+                        player?.stop()
+                        player?.release()
+                    }
+                }
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        player?.removeListener(playbackStateListener)
+        player?.release()
+    }
+
+    fun setListener(listener: FeedTextViewFragmentInterface) {
+        feedTextViewFragmentInterface = listener
+    }
+}

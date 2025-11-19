@@ -1,0 +1,33 @@
+package com.uyscuti.social.network.api.response.backApiResponse
+
+data class Post(
+    val __v: Int,
+    val _id: String,
+    val author: Author,
+    val comments: List<Any?>,
+    val content: String,
+    val contentType: String,
+    val createdAt: String,
+    val duration: List<Duration>,
+    val feedShortsBusinessId: String,
+    val fileIds: List<Any?>,
+    val fileNames: List<FileName>,
+    val fileSizes: List<FileSize>,
+    val fileTypes: List<FileType>,
+    val files: List<File>,
+    val isBookmarked: Boolean,
+    val isExpanded: Boolean,
+    val isFollowing: Boolean,
+    val isLiked: Boolean,
+    val isLocal: Boolean,
+    val isReposted: Boolean,
+    val likes: Int,
+    val numberOfPages: List<NumberOfPage>,
+    val originalPost: List<OriginalPost>,
+    val repostedByUserId: String,
+    val repostedUser: RepostedUser,
+    val repostedUsers: List<String>,
+    val tags: List<Any?>,
+    val thumbnail: List<Any?>,
+    val updatedAt: String
+)

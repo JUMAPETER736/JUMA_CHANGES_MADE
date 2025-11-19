@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="white_two">#F4F4F4</color>
+    <color name="white_three">#D1D1D1</color>
+    <color name="blueJeans">#3284fc</color>
+    <color name="fade_gray">#E0E0E0</color>
+    <color name="gray_two">#D1D1D1</color>
+    <color name="green">#FF039409</color>
+    <color name="blue_fade">#EFF3FB</color>
+    <color name="red">#FF0000</color>
+
+    <!-- Primary text (e.g., title) -->
+    <color name="onSurface">#EDEDED</color> <!-- Off-white, high contrast -->
+
+    <!-- Secondary text (e.g., subtitle, hints) -->
+    <color name="onSurfaceVariant">#A3A3A3</color> <!-- Light gray, softer contrast -->
+
+    <!-- Accent color for buttons and interactive elements -->
+    <color name="primary">#60A5FA</color> <!-- Lighter blue, pops in dark mode -->
+
+    <!-- Chip background (unselected state) -->
+    <color name="chipBackground">#374151</color> <!-- Dark gray, subtle -->
+
+    <!-- Chip background (selected state) -->
+    <color name="chipSelected">#4B6EAF</color>
+
+    <!-- Base theme colors -->
+    <color name="primaryL">#3B82F6</color>
+    <color name="primary_dark">#2563EB</color>
+    <color name="accent_color">#8B5CF6</color>
+    <color name="accent_light">#A78BFA</color>
+
+    <!-- Background colors -->
+    <color name="background">#F9FAFB</color>
+    <color name="card_background">#FFFFFF</color>
+
+    <!-- Text colors -->
+    <color name="text_primary">#1F2937</color>
+    <color name="text_secondary">#6B7280</color>
+    <color name="white_alpha_80">#CCFFFFFF</color>
+
+    <!-- Interactive element colors -->
+    <color name="like_color">#EF4444</color>
+    <color name="comment_color">#3B82F6</color>
+    <color name="repost_color">#10B981</color>
+    <color name="favorite_color">#F59E0B</color>
+    <color name="share_color">#8B5CF6</color>
+</resources>

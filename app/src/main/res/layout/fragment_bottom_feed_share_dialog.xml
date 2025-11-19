@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".User_Interface.fragments.feed.feedviewfragments.BottomFeedShareDialog">
+
+<LinearLayout
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:id="@+id/share_public"
+        android:visibility="visible"
+        >
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/baseline_people_24"
+            android:id="@+id/deleteImageView"
+            android:layout_margin="16dp"
+            app:tint="@color/blueJeans" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintLeft_toRightOf="@id/deleteImageView"
+            app:layout_constraintBottom_toBottomOf="@id/deleteImageView"
+            app:layout_constraintTop_toTopOf="@id/deleteImageView"
+            android:layout_marginStart="10dp"
+            android:text="Share Now (Public)"
+            android:layout_gravity="center"
+            android:textSize="20sp"
+            />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/share_public"
+        android:id="@+id/copy_link"
+        >
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/copy"
+            android:id="@+id/downloadImageView"
+            android:layout_margin="16dp"
+            app:tint="@color/blueJeans" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="Copy Link"
+            android:layout_gravity="center"
+            android:textSize="20sp"
+            />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/downloadFeedLayout"
+        android:id="@+id/share_toChat"
+        >
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/chat_24_black"
+            android:id="@+id/sharetochat_button"
+            android:layout_margin="16dp"
+            app:tint="@color/blueJeans" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="share to chat"
+            android:layout_gravity="center"
+            android:textSize="20sp"
+            />
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/downloadFeedLayout"
+        android:id="@+id/shareFeedLayout"
+        android:visibility="gone"
+        >
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/baseline_share_24"
+            android:id="@+id/shareFeed"
+            android:layout_margin="16dp"
+            app:tint="@color/blueJeans" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="Share"
+            android:layout_gravity="center"
+            android:textSize="20sp"
+            />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/shareFeedLayout"
+        android:id="@+id/rePostFeedLayout"
+        android:visibility="gone"
+        >
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/retweet_svgrepo_com"
+            android:id="@+id/rePostFeed"
+            android:layout_margin="16dp"
+            app:tint="@color/blueJeans" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="Re-Post"
+            android:layout_gravity="center"
+            android:textSize="20sp"
+            />
+    </LinearLayout>
+</LinearLayout>
+
+</FrameLayout>

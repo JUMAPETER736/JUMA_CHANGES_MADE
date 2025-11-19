@@ -1,0 +1,160 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginLeft="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginRight="16dp"
+    android:layout_marginBottom="8dp">
+
+    <com.uyscuti.social.chatsuit.utils.ShapeImageView
+        android:id="@id/messageUserAvatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_above="@id/messageTime"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp" />
+
+    <TextView
+        android:id="@+id/userName"
+        android:layout_marginTop="2dp"
+        android:layout_marginStart="6dp"
+        android:layout_marginBottom="5dp"
+        android:textStyle="bold"
+        android:layout_alignStart="@id/bubble"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <RelativeLayout
+        android:id="@+id/bubble"
+        android:layout_width="300dp"
+        android:layout_marginTop="18dp"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/messageUserAvatar"
+        android:layout_toRightOf="@id/messageUserAvatar">
+
+        <LinearLayout
+            android:id="@+id/lab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:orientation="vertical">
+            <!-- Audio Play Button -->
+            <ImageView
+                android:id="@+id/playAudio"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:padding="8dp"
+                app:srcCompat="@drawable/baseline_play_arrow_24"
+                app:tint="@color/dark_gray" />
+
+            <!-- Audio Duration -->
+            <TextView
+                android:id="@+id/audioDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="8dp"
+                android:textSize="16sp"
+                android:text="duration" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/seekWrapper"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_toEndOf="@id/lab"
+            android:layout_toRightOf="@id/lab"
+            android:orientation="vertical">
+
+            <!-- Audio Seek Bar (if needed) -->
+            <SeekBar
+                android:id="@+id/audioSeekBar"
+                android:layout_width="180dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:paddingStart="8dp"
+                android:paddingLeft="8dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="8dp"
+                android:paddingRight="8dp"
+                android:paddingBottom="2dp" />
+
+            <!-- Audio Title -->
+            <TextView
+                android:id="@+id/audioTitle"
+                android:layout_width="180dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginLeft="8dp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:padding="8dp"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+
+        <ImageView
+            android:id="@+id/downIcon"
+            android:layout_width="40dp"
+            android:layout_centerVertical="true"
+            android:layout_toRightOf="@id/seekWrapper"
+            android:src="@drawable/download_minimalistic_svgrepo_com"
+            android:layout_height="40dp"
+            android:layout_alignParentEnd="true"
+            app:tint="@color/dark_gray"
+            android:layout_toEndOf="@id/seekWrapper" />
+
+        <RelativeLayout
+            android:id="@+id/downProgress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:gravity="center"
+            android:layout_toRightOf="@id/seekWrapper"
+            android:layout_margin="16dp"
+            android:layout_toEndOf="@id/seekWrapper">
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/progress_circle"
+                android:layout_centerInParent="true"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/circular_progress_bar" />
+
+            <ImageView
+                android:id="@+id/cancel"
+                android:layout_width="20dp"
+                android:src="@drawable/baseline_close_24"
+                android:layout_alignBottom="@id/progressBar"
+                android:layout_alignLeft="@id/progressBar"
+                android:layout_alignEnd="@id/progressBar"
+                android:padding="8dp"
+                android:layout_alignStart="@id/progressBar"
+                android:layout_alignTop="@id/progressBar"
+                android:layout_height="20dp"
+                app:tint="#2196F3" />
+
+        </RelativeLayout>
+
+    </RelativeLayout>
+
+    <TextView
+        android:id="@id/messageTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/bubble"
+        android:layout_alignEnd="@id/bubble"
+        android:layout_alignRight="@id/bubble" />
+
+</RelativeLayout>

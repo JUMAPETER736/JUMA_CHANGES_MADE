@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/black"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black"
+        android:scaleType="fitCenter" />
+
+    <ImageView
+        android:id="@+id/addImage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="154dp"
+        android:src="@drawable/baseline_camera_alt_24"
+        android:background="@color/white_three"
+        android:scaleType="fitCenter" />
+
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/playerView"
+        android:visibility="gone"
+        app:use_controller="false"
+        app:resize_mode="fit"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <ImageView
+        android:id="@+id/playButton"
+        android:src="@drawable/play"
+        android:layout_width="50dp"
+        android:visibility="gone"
+        android:layout_gravity="center"
+        android:padding="8dp"
+        android:layout_height="50dp"
+        app:tint="@color/white" />
+</FrameLayout>

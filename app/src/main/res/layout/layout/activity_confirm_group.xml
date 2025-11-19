@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.ConfirmGroupActivity">
+
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_height="60dp"
+        android:layout_width="match_parent"
+        android:background="#2196F3"
+        app:title="New Group Chat"
+        app:titleTextColor="@color/white" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_below="@id/toolbar"
+        android:gravity="center_vertical"
+        android:id="@+id/groupNameBox"
+        android:orientation="horizontal">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/groupAvatarWrapper"
+
+            android:layout_margin="8dp"
+            app:cardCornerRadius="25dp">
+
+            <ImageView
+                android:padding="8dp"
+                android:id="@+id/userAvatar"
+                android:layout_width="50dp"
+                android:alpha=".70"
+                android:background="@android:color/darker_gray"
+                app:srcCompat="@drawable/baseline_camera_alt_24"
+                android:layout_height="50dp"
+                app:tint="@color/white" />
+        </androidx.cardview.widget.CardView>
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:layout_width="0dp"
+            android:id="@+id/groupNameET"
+            android:layout_weight="1"
+            android:hint="Enter Group Chat Name"
+            android:background="@android:color/transparent"
+            android:layout_height="50dp" />
+
+        <ImageView
+            android:id="@+id/emoji"
+            android:layout_width="30dp"
+            android:layout_gravity="center_vertical"
+            android:layout_margin="8dp"
+            android:alpha=".60"
+            app:srcCompat="@drawable/baseline_insert_emoticon_24"
+            android:layout_height="30dp"
+            app:tint="@android:color/darker_gray" />
+
+
+    </LinearLayout>
+
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/horizontalRecyclerView"
+        android:layout_below="@id/groupNameBox"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:orientation="horizontal" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/confirm_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/baseline_check_24"
+        app:tint="#2196F3"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        />
+
+</RelativeLayout>

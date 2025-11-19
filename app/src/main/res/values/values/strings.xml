@@ -1,0 +1,156 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">Flash Social Delta.1</string>
+    <string name="user_name">Username</string>
+    <string name="chat">Chat</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="confirmPass">Confirm Password</string>
+    <string name="video_call">Video Call</string>
+    <string name="voice_call">Voice Call</string>
+    <string name="block_user">Block User</string>
+    <string name="login">Login</string>
+    <string name="uyscuti">UY SCUTI Technologies</string>
+    <string name="register">Register</string>
+    <string name="loginSuggestion">Already have an account?</string>
+    <string name="registerSuggestion">Don\'t have an account?</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="calls">Hello from calls fragment</string>
+    <string name="groups">Hello from group chats fragment</string>
+    <string name="persinal">Hello from personal chats  fragment</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="chat_fragment">Hello chat</string>
+    <string name="feed_fragment">Hello from feeds</string>
+    <string name="shots_fragment">Hello from shots</string>
+
+
+    <string name="view">View</string>
+
+    <string name="sample_title_default">Default view</string>
+    <string name="sample_subtitle_default">Dialogs and messages with default style</string>
+    <string name="sample_title_attrs">Styled view</string>
+    <string name="sample_subtitle_attrs">Styled components using embedded attributes</string>
+    <string name="sample_title_layout">Custom layout</string>
+    <string name="sample_subtitle_layout">Custom layouts to change default views position</string>
+    <string name="sample_title_holder">Custom view holder</string>
+    <string name="sample_subtitle_holder">Custom view holder to extend default behaviour for a new features</string>
+    <string name="sample_title_custom_content">Custom content type</string>
+    <string name="sample_subtitle_custom_content">Custom message content on the example of voice message</string>
+
+    <string name="hint_enter_a_message">Message…</string>
+    <string name="on_log_click_message">Your custom long click handler</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_copy">Copy</string>
+    <string name="copied_message">Message copied!</string>
+
+    <string name="date_header_today">Today</string>
+    <string name="date_header_yesterday">Yesterday</string>
+
+    <string-array name="view_types_dialog">
+        <item name="image">Image (default)</item>
+        <item name="voice">Voice message (custom)</item>
+    </string-array>
+
+    <string name="content_description_share">Share</string>
+    <string name="content_description_delete">Delete Chat Dialog</string>
+    <string name="content_description_more">More</string>
+
+    <string name="share">Share</string>
+    <string name="delete">Delete</string>
+    <string name="more">More</string>
+
+
+    <string name="start_typing_status">Start typing</string>
+    <string name="stop_typing_status">Stop typing</string>
+    <string name="title_activity_messages">MessagesActivity</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+    <string name="lorem_ipsum">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
+        volutpat, dolor id interdum ullamcorper, risus dolor egestas lectus, sit amet mattis purus
+        dui nec risus. Maecenas non sodales nisi, vel dictum dolor. Class aptent taciti sociosqu ad
+        litora torquent per conubia nostra, per inceptos himenaeos. Suspendisse blandit eleifend
+        diam, vel rutrum tellus vulputate quis. Aliquam eget libero aliquet, imperdiet nisl a,
+        ornare ex. Sed rhoncus est ut libero porta lobortis. Fusce in dictum tellus.\n\n
+        Suspendisse interdum ornare ante. Aliquam nec cursus lorem. Morbi id magna felis. Vivamus
+        egestas, est a condimentum egestas, turpis nisl iaculis ipsum, in dictum tellus dolor sed
+        neque. Morbi tellus erat, dapibus ut sem a, iaculis tincidunt dui. Interdum et malesuada
+        fames ac ante ipsum primis in faucibus. Curabitur et eros porttitor, ultricies urna vitae,
+        molestie nibh. Phasellus at commodo eros, non aliquet metus. Sed maximus nisl nec dolor
+        bibendum, vel congue leo egestas.\n\n
+        Sed interdum tortor nibh, in sagittis risus mollis quis. Curabitur mi odio, condimentum sit
+        amet auctor at, mollis non turpis. Nullam pretium libero vestibulum, finibus orci vel,
+        molestie quam. Fusce blandit tincidunt nulla, quis sollicitudin libero facilisis et. Integer
+        interdum nunc ligula, et fermentum metus hendrerit id. Vestibulum lectus felis, dictum at
+        lacinia sit amet, tristique id quam. Cras eu consequat dui. Suspendisse sodales nunc ligula,
+        in lobortis sem porta sed. Integer id ultrices magna, in luctus elit. Sed a pellentesque
+        est.\n\n
+        Aenean nunc velit, lacinia sed dolor sed, ultrices viverra nulla. Etiam a venenatis nibh.
+        Morbi laoreet, tortor sed facilisis varius, nibh orci rhoncus nulla, id elementum leo dui
+        non lorem. Nam mollis ipsum quis auctor varius. Quisque elementum eu libero sed commodo. In
+        eros nisl, imperdiet vel imperdiet et, scelerisque a mauris. Pellentesque varius ex nunc,
+        quis imperdiet eros placerat ac. Duis finibus orci et est auctor tincidunt. Sed non viverra
+        ipsum. Nunc quis augue egestas, cursus lorem at, molestie sem. Morbi a consectetur ipsum, a
+        placerat diam. Etiam vulputate dignissim convallis. Integer faucibus mauris sit amet finibus
+        convallis.\n\n
+        Phasellus in aliquet mi. Pellentesque habitant morbi tristique senectus et netus et
+        malesuada fames ac turpis egestas. In volutpat arcu ut felis sagittis, in finibus massa
+        gravida. Pellentesque id tellus orci. Integer dictum, lorem sed efficitur ullamcorper,
+        libero justo consectetur ipsum, in mollis nisl ex sed nisl. Donec maximus ullamcorper
+        sodales. Praesent bibendum rhoncus tellus nec feugiat. In a ornare nulla. Donec rhoncus
+        libero vel nunc consequat, quis tincidunt nisl eleifend. Cras bibendum enim a justo luctus
+        vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
+    </string>
+    <string name="title_activity_group_settings">GroupSettingsActivity</string>
+    <string name="close">Close</string>
+    <string name="default_web_client_id">1059922062877-klkbr4hh2amd5ghaiu8lh7a81uv9arfl.apps.googleusercontent.com</string>
+    <string name="google_client_id">1059922062877-klkbr4hh2amd5ghaiu8lh7a81uv9arfl.apps.googleusercontent.com</string>
+    <string name="search">Search</string>
+    <string name="recent_users">Recent</string>
+    <string name="search_results">Search Results</string>
+    <string name="no_results_found">No results found.</string>
+    <string name="back_icon">back_icon</string>
+    <string name="new_short">New Short</string>
+    <string name="content_description">content description</string>
+
+    <string name="_0">0</string>
+    <string name="_1">1</string>
+    <string name="starttime_second">StartTime(Second):</string>
+    <string name="done">Done</string>
+    <string name="go_to_merge">Go To Merge</string>
+    <string name="duration">00:00</string>
+    <string name="nested_user">Nested_user</string>
+    <string name="string">"@"</string>
+    <string name="Username">"@username"</string>
+    <string name="contentCreator">"@contentCreator"</string>
+
+    <declare-styleable name="WaveformSeekBar">
+        <attr name="wave_progress" format="float" />
+        <attr name="wave_max_progress" format="float" />
+        <attr name="wave_visible_progress" format="float" />
+        <attr name="wave_width" format="dimension" />
+        <attr name="wave_gap" format="dimension" />
+        <attr name="wave_padding_top" format="dimension" />
+        <attr name="wave_padding_Bottom" format="dimension" />
+        <attr name="wave_padding_left" format="dimension" />
+        <attr name="wave_padding_right" format="dimension" />
+        <attr name="wave_min_height" format="dimension" />
+        <attr name="wave_corner_radius" format="dimension" />
+        <attr name="wave_background_color" format="color" />
+        <attr name="wave_progress_color" format="color" />
+        <attr name="wave_gravity" format="enum">
+            <enum name="top" value="0" />
+            <enum name="center" value="1" />
+            <enum name="bottom" value="2" />
+        </attr>
+        <attr name="marker_width" format="dimension" />
+        <attr name="marker_color" format="color" />
+        <attr name="marker_text_size" format="dimension" />
+        <attr name="marker_text_color" format="color" />
+        <attr name="marker_text_padding" format="dimension" />
+    </declare-styleable>
+</resources>

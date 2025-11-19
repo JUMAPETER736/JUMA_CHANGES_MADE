@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Blue jeans color border -->
+    <stroke
+        android:width="3dp"
+        android:color="#4A90E2" />
+
+    <!-- Optional: Add a subtle background -->
+    <solid android:color="@android:color/transparent" />
+
+ />
+
+</shape>

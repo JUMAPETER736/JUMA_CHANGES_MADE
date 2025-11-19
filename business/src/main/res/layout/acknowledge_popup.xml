@@ -1,0 +1,98 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/terms"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp">
+<!--agreement terms and condition -->
+    <ImageView
+        android:layout_width="125dp"
+        android:layout_height="182dp"
+        android:layout_gravity="start"
+        android:contentDescription="@string/todo"
+        android:padding="12dp"
+
+        android:src="@drawable/check_use" />
+
+    <TextView
+        android:fontFamily="@font/regular_font"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="15dp"
+        android:text="@string/terms_amp_conditions"
+        android:textSize="30sp"
+        android:textColor="@color/blueJeans"
+        android:textStyle="bold"/>
+
+
+    <TextView
+        android:fontFamily="@font/regular_font"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="13dp"
+        android:text="@string/by_enabling_location_settings_you_consent_to_the_collection_use_and_sharing_of_your_location_data_in_accordance_with_our_privacy_policy_please_review_our_privacy_policy_for_more_information"
+        android:textSize="13sp" />
+
+
+    <TextView
+        android:fontFamily="@font/regular_font"
+        android:layout_width="wrap_content"
+        android:layout_height="258dp"
+        android:paddingStart="13dp"
+        android:text="@string/collection_and_use_of_data_google_may_collect_and_use_your_data_including_your_location_search_history_and_app_usage_to_improve_our_services_and_provide_you_with_personalized_experiences_sharing_of_data_google_may_share_your_data_with_trusted_partners_and_affiliates_to_enhance_the_services_we_offer_privacy_policy_by_enabling_google_services_you_agree_to_our_privacy_policy_which_outlines_how_we_collect_use_and_share_your_data_to_confirm_your_consent_and_enable_google_services_please_follow_these_steps_tap_on_the_button_below_review_the_terms_and_conditions_carefully_if_you_agree_to_the_terms_tap_on_the_confirm_button_if_you_do_not_agree_to_the_terms_and_conditions_please_tap_on_the_cancel_button_please_note_that_enabling_google_services_is_essential_to_access_certain_features_and_functionalities_of_your_device_and_apps_for_more_information_please_visit_our_privacy_policy_at_link_to_privacy_policy_sincerely_the_google_team_p_s_if_you_have_any_questions_or_concerns_please_do_not_hesitate_to_contact_our_support_team"
+        android:textSize="13sp"
+        tools:ignore="RtlSymmetry" />
+<!--check box-->
+    <CheckBox
+        android:fontFamily="@font/regular_font"
+        android:id="@+id/agree_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:text="@string/i_agree_to_the_terms_and_conditions"/>
+
+    <CheckBox
+        android:id="@+id/flash_checkbox"
+        android:fontFamily="@font/regular_font"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:text="@string/i_agree_with_flash_policy"/>
+
+
+    <!-- Agree or disagree button   -->
+<RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:fontFamily="@font/regular_font"
+        android:id="@+id/disagree_button"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="16dp"
+        android:background="@drawable/blue_button_bg"
+        android:text="disagree"
+        android:textColor="@color/white"
+        android:textSize="13sp"/>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:fontFamily="@font/regular_font"
+        android:layout_marginEnd="16dp"
+        android:id="@+id/agree_button"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:layout_alignParentEnd="true"
+        android:background="@drawable/blue_button_bg"
+        android:text="@string/agree_and_continue"
+        android:textColor="@color/white"
+        android:textSize="13sp" />
+
+</RelativeLayout>
+</LinearLayout>
+
+

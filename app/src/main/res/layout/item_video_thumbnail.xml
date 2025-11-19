@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="60dp"
+    android:layout_height="50dp"
+    android:layout_marginStart="2dp"
+    android:layout_marginEnd="2dp"
+    android:background="@drawable/thumbnail_background">
+
+    <!-- Main thumbnail image -->
+    <ImageView
+        android:id="@+id/thumbnailImageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="1dp"
+        android:scaleType="centerCrop"
+        android:contentDescription="Video thumbnail" />
+
+    <!-- Selection overlay (behind border) -->
+    <View
+        android:id="@+id/selectionOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="1dp"
+        android:background="@color/selection_overlay"
+        android:visibility="gone" />
+
+    <!-- Selection border (on top) -->
+    <View
+        android:id="@+id/selectionBorder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/selection_border"
+        android:visibility="gone" />
+
+</FrameLayout>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/relative1"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    android:background="@drawable/gray_background"
+    android:padding="24dp">
+
+    <TextView
+        android:fontFamily="@font/regular_font"
+        android:id="@+id/section_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingBottom="16dp"
+        android:text="location"
+        android:textAllCaps="true"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+
+    <TextView
+        android:fontFamily="@font/regular_font"
+        android:id="@+id/business_location"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/section_label"
+        android:paddingStart="8dp"
+        android:paddingBottom="4dp"
+        android:text="Tag your business location." />
+
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/business_location_toggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:padding="30dp"
+        android:textOff="Off"
+        android:textOn="On" />
+
+    <TextView
+        android:fontFamily="@font/regular_font"
+        android:id="@+id/business_location_description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/business_location"
+        android:hint="Tag where your business is situated. This information can be used for various purposes, including advertising and reaching out to potential customers in that area."
+        android:paddingStart="8dp"
+        android:paddingTop="4dp"
+        android:textSize="12dp" />
+
+
+    <View
+        android:id="@+id/first_margin"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@id/business_location_description"
+        android:layout_marginTop="16dp"
+        android:background="@color/gray_two" />
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/first_margin"
+        >
+
+
+        <TextView
+            android:fontFamily="@font/regular_font"
+            android:id="@+id/customer_location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="8dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="4dp"
+            android:text="Enable walking billboard." />
+
+        <TextView
+            android:fontFamily="@font/regular_font"
+            android:id="@+id/currence_location_description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/customer_location"
+            android:hint="By enabling this feature, every customer using Flash App witll be receiving a notification with a radius of 5 meters depending on your current location. This will make it easier to advertise your business everywhere you go."
+            android:paddingStart="8dp"
+            android:paddingTop="4dp"
+            android:textSize="12dp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/current_location_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/customer_location"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="-55dp"
+            android:layout_marginEnd="-2dp"
+            android:padding="30dp"
+            android:textOff="Off"
+            android:textOn="On" />
+        <!-- Add toggle buttons -->
+
+    </RelativeLayout>
+
+
+</RelativeLayout>

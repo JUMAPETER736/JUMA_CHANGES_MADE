@@ -1,0 +1,589 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/feedMixedFilesContainer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/white"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardElevation="0dp"
+    app:cardCornerRadius="0dp">
+
+    <!-- Main Repost Container - Clickable -->
+    <LinearLayout
+        android:id="@+id/repostContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/white"
+        android:clickable="true"
+        android:focusable="true">
+
+        <!-- User Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="2dp"
+            android:clickable="false"
+            android:focusable="false"
+            android:gravity="center_vertical"
+            android:weightSum="1">
+
+            <!-- Profile Image - Separate Click Handler -->
+            <ImageView
+                android:id="@+id/userReposterProfileImage"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="1dp"
+                android:src="@drawable/round_back_secondary"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- User Info Container - Separate Click Handler -->
+            <LinearLayout
+                android:id="@+id/userInfoContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:orientation="vertical"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?android:attr/selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/repostedUserName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Uy Scuti"
+                    android:textColor="@color/black"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvUserHandle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="\@contentCreator"
+                    android:textColor="@color/gray_dark" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/date_time_create"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:text="date_time"
+                android:textSize="14sp" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/followButton"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:layout_marginStart="8dp"
+                android:layout_gravity="center_vertical"
+                android:background="@drawable/fill_button_color"
+                android:text="Follow"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <ImageButton
+                android:id="@+id/moreOptions"
+                android:layout_width="36dp"
+                android:layout_height="28dp"
+                android:layout_marginEnd="2dp"
+                android:layout_gravity="center_vertical"
+                android:background="@null"
+                android:src="@drawable/options_vertical_svgrepo_com"
+                android:clickable="true"
+                android:focusable="true"
+                android:scaleType="centerInside"
+                app:tint="@color/blueJeans" />
+
+        </LinearLayout>
+
+
+        <!-- Post Content - Full Width Caption Section -->
+        <LinearLayout
+            android:id="@+id/postContentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground">
+
+            <TextView
+                android:id="@+id/tvPostTag"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📱 Had to Repost This! 📱"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:visibility="gone"/>
+
+            <!-- Main Caption - Full Width -->
+            <TextView
+                android:id="@+id/userComment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Couldn't agree more! [Software Name] is truly a game-changer—smooth, powerful, and a joy to use. If you haven't checked it out yet, now's the time! 🚀 🔥"
+                android:textColor="@color/black"
+                android:textSize="15sp"
+                android:lineSpacingExtra="2dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:textAlignment="viewStart" />
+
+            <!-- Hashtags - Full Width -->
+            <TextView
+                android:id="@+id/tvHashtags"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="#Repost #GreatSoftware #MustTry"
+                android:textColor="@color/blueJeans"
+                android:textSize="14sp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp" />
+
+            <!-- NEW POST MEDIA SECTION - Files/Media for the Repost -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/newPostMediaCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                android:clickable="false"
+                android:focusable="false"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="0dp"
+                android:background="@color/white">
+
+                <!-- Single Image for New Post -->
+                <ImageView
+                    android:id="@+id/newPostImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="280dp"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="newPostMedia"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/imageplaceholder"
+                    android:visibility="gone"/>
+
+                <!-- Multiple Media Container for New Post -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/newPostMultipleMediaContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="200dp"
+                    android:adjustViewBounds="true"
+                    android:visibility="gone"
+                    android:clickable="false"
+                    android:focusable="false">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/newPostMediaRecyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="200dp"
+                        android:nestedScrollingEnabled="false"
+                        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                        app:spanCount="3"
+                        tools:ignore="MissingConstraints" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ORIGINAL MIXED FILES SECTION -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/mixedFilesCardViews"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                android:clickable="false"
+                android:focusable="false"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="0dp"
+                android:background="@color/white">
+
+                <ImageView
+                    android:id="@+id/originalFeedImages"
+                    android:layout_width="match_parent"
+                    android:layout_height="280dp"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="originalPost"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/imageplaceholder"
+                    android:visibility="gone"/>
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/multipleAudiosContainers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="200dp"
+                    android:adjustViewBounds="true"
+                    android:visibility="gone"
+                    android:clickable="false"
+                    android:focusable="false">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerViews"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="200dp"
+                        android:nestedScrollingEnabled="false"
+                        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                        app:spanCount="3"
+                        tools:ignore="MissingConstraints" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Original/Quoted Post Container - Separate Click Handler -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/quotedPostCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="6dp"
+                android:background="@color/white"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="0dp"
+                android:foreground="?android:attr/selectableItemBackground">
+
+                <LinearLayout
+                    android:id="@+id/originalPostContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:clickable="false"
+                    android:focusable="false">
+
+                    <!-- Quoted User Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:clickable="false"
+                        android:focusable="false"
+                        android:weightSum="1">
+
+                        <!-- Original Poster Profile Image - Separate Click -->
+                        <ImageView
+                            android:id="@+id/originalPosterProfileImage"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@drawable/round_back_secondary"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?android:attr/selectableItemBackground" />
+
+                        <!-- Original Poster Info - Separate Click -->
+                        <LinearLayout
+                            android:id="@+id/originalPosterInfoContainer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:orientation="vertical"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?android:attr/selectableItemBackground">
+
+                            <TextView
+                                android:id="@+id/originalPosterName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Uy Scuti"
+                                android:textColor="@color/black"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvQuotedUserHandle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="\@Software$Developer"
+                                android:textColor="@color/gray_dark"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+
+                    </LinearLayout>
+
+                    <!-- Quoted Post Content - Full Width -->
+                    <TextView
+                        android:id="@+id/originalPostText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Big shoutout to Social Circuit App for making life so much easier! 🙌 Smooth performance, powerful features, and a great user experience couldn't ask for more! 💯🔥"
+                        android:textColor="@color/black"
+                        android:textSize="15sp"
+                        android:lineSpacingExtra="2dp"
+                        android:textAlignment="viewStart" />
+
+                    <!-- Quoted Post Hashtags - Full Width -->
+                    <TextView
+                        android:id="@+id/tvQuotedHashtags"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="#SoftwareDeveloper #GameChanger #MustHave"
+                        android:textColor="@color/blueJeans"
+                        android:textSize="14sp" />
+
+                    <!-- Quoted Post Image -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/mixedFilesCardView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:visibility="gone"
+                        android:clickable="false"
+                        android:focusable="false"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="0dp">
+
+                        <ImageView
+                            android:id="@+id/originalFeedImage"
+                            android:layout_width="match_parent"
+                            android:layout_height="280dp"
+                            android:adjustViewBounds="true"
+                            android:contentDescription="originalPost"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/imageplaceholder"
+                            android:visibility="gone" />
+
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:id="@+id/multipleAudiosContainer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="280dp"
+                            android:adjustViewBounds="true"
+                            android:visibility="gone"
+                            android:clickable="false"
+                            android:focusable="false">
+
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/recyclerView"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:minHeight="280dp"
+                                android:nestedScrollingEnabled="false"
+                                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                                app:spanCount="3"
+                                tools:ignore="MissingConstraints" />
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <ImageView
+                        android:id="@+id/ivQuotedPostImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="285dp"
+                        android:layout_marginTop="8dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/imageplaceholder"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+
+        <!-- Interaction Buttons -->
+        <LinearLayout
+            android:id="@+id/interactionButtonsCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@color/white"
+            android:paddingVertical="8dp"
+            android:weightSum="5"
+            android:clickable="false"
+            android:focusable="false">
+
+            <!-- Like Section -->
+            <LinearLayout
+                android:id="@+id/likeLayout"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?android:attr/selectableItemBackground">
+
+                <ImageView
+                    android:id="@+id/likeButtonIcon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:contentDescription="@string/content_description"
+                    android:src="@drawable/heart_svgrepo_com"
+                    app:tint="@color/blueJeans" />
+
+                <TextView
+                    android:id="@+id/likesCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="0"
+                    android:textColor="#657786"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Comment Section -->
+            <LinearLayout
+                android:id="@+id/commentLayout"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?android:attr/selectableItemBackground">
+
+                <ImageView
+                    android:id="@+id/commentButtonIcon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:contentDescription="@string/content_description"
+                    android:src="@drawable/comments"
+                    app:tint="@color/blueJeans" />
+
+                <TextView
+                    android:id="@+id/commentCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="0"
+                    android:textColor="#657786"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Favorite Section -->
+            <LinearLayout
+                android:id="@+id/favoriteSection"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?android:attr/selectableItemBackground">
+
+                <ImageView
+                    android:id="@+id/favoritesButton"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:contentDescription="@string/content_description"
+                    android:src="@drawable/favorite_svgrepo_com__1_"
+                    app:tint="@color/blueJeans" />
+
+                <TextView
+                    android:id="@+id/favoriteCounts"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="0"
+                    android:textColor="#657786"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Retweet Section -->
+            <LinearLayout
+                android:id="@+id/repostLayout"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?android:attr/selectableItemBackground">
+
+                <ImageView
+                    android:id="@+id/repostPost"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:contentDescription="@string/content_description"
+                    android:src="@drawable/repeat_svgrepo_com"
+                    app:tint="@color/blueJeans" />
+
+                <TextView
+                    android:id="@+id/repostCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="0"
+                    android:textColor="#657786"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Share Section -->
+            <LinearLayout
+                android:id="@+id/share_layout"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?android:attr/selectableItemBackground">
+
+                <ImageView
+                    android:id="@+id/shareButtonIcon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:contentDescription="@string/content_description"
+                    android:src="@drawable/share_svgrepo_com"
+                    app:tint="@color/blueJeans" />
+
+                <TextView
+                    android:id="@+id/shareCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="0"
+                    android:textColor="#657786"
+                    android:textSize="14sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <View
+        android:id="@+id/bottomDivider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E1E8ED"
+        app:layout_constraintTop_toBottomOf="@id/interactionButtonsLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+
+</androidx.cardview.widget.CardView>

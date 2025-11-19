@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context=".ui.MessagesActivity">
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:id="@+id/container"
+        android:layout_height="match_parent">
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/toolbar_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/bluejeans"
+            app:subtitle="New"
+            android:elevation="@dimen/sub_title_text_size"
+            android:fitsSystemWindows="true">
+
+
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                style="@style/Widget.MaterialComponents.Toolbar.Primary"
+                android:layout_height="?attr/actionBarSize" />
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <!--    <include layout="@layout/content_messages" />-->
+
+        <com.uyscut.chatsuit.messages.MessagesList
+            android:id="@+id/messagesList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/toolbar_layout"
+            android:layout_above="@+id/input"
+            app:dateHeaderFormat="dd MMMM yyyy"
+            app:incomingDefaultBubbleColor="@color/white_three"
+            app:incomingDefaultBubblePressedColor="@color/white_four"
+            app:incomingDefaultBubbleSelectedColor="@color/white_four"
+            app:incomingDefaultImageOverlayPressedColor="@color/black_10"
+            app:incomingDefaultImageOverlaySelectedColor="@color/gray_transparent"
+            app:incomingTextColor="@color/black"
+            app:incomingTextLinkColor="@color/bluejeans"
+            app:incomingTextSize="18sp"
+            app:outcomingDefaultBubbleColor="@color/bluejeans"
+            app:outcomingDefaultBubblePressedColor="@color/bluejeans"
+            app:outcomingDefaultBubbleSelectedColor="@color/gray_dark_transparent"
+            app:outcomingDefaultImageOverlayPressedColor="@color/black_10"
+            app:outcomingDefaultImageOverlaySelectedColor="@color/gray_transparent"
+            app:outcomingTextColor="@color/white"
+            app:outcomingTextLinkColor="@color/brown"
+            app:outcomingTextSize="18sp"
+            app:textAutoLink="all" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_above="@+id/input"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:background="@color/bluejeans" />
+
+
+        <com.uyscut.chatsuit.messages.MessageInput
+            android:id="@+id/input"
+            android:visibility="visible"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            app:attachmentButtonDefaultIconColor="@color/bluejeans"
+            app:attachmentButtonDefaultIconPressedColor="@color/bluejeans"
+            app:inputButtonDefaultBgColor="@color/bluejeans"
+            app:inputButtonDefaultBgPressedColor="@color/bluejeans"
+            app:inputCursorDrawable="@drawable/shape_custom_cursor"
+            app:inputHint="@string/hint_enter_a_message"
+            android:layout_gravity="bottom"
+            app:showAttachmentButton="true" />
+
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/messageBox"
+        android:layout_width="match_parent"
+        android:layout_alignParentBottom="true"
+        android:gravity="center_vertical"
+        android:layout_margin="8dp"
+        android:visibility="gone"
+        android:layout_height="50dp">
+
+        <LinearLayout
+            android:id="@+id/messageBoxLayout"
+            android:layout_width="match_parent"
+            android:orientation="horizontal"
+            android:layout_height="50dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_gravity="center_vertical"
+                android:background="@drawable/edittext_design"
+                android:orientation="horizontal"
+                android:layout_height="45dp">
+
+                <ImageView
+                    android:layout_width="25dp"
+                    android:id="@+id/emoji"
+                    android:alpha=".20"
+                    android:layout_gravity="center_vertical"
+                    android:layout_margin="10dp"
+                    android:background="@drawable/baseline_insert_emoticon_24"
+                    android:layout_height="25dp"
+                    app:tint="@color/white" />
+
+                <com.vanniktech.emoji.EmojiEditText
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="50dp"
+                    android:gravity="center_vertical"
+                    android:layout_gravity="center_vertical"
+                    android:background="@drawable/edittext_design"
+                    android:paddingStart="20dp"
+                    android:padding="8dp"
+                    android:hint="Type a Message..."
+                    android:textSize="16sp"
+                    android:imeOptions="actionSend"
+                    android:inputType="textCapSentences|textMultiLine"
+                    android:maxLines="4"
+                    android:id="@+id/messageEdit" />
+
+                <ImageView
+                    android:layout_width="25dp"
+                    android:id="@+id/attachment"
+                    android:layout_gravity="center_vertical"
+                    android:layout_margin="8dp"
+                    android:background="@drawable/attachment__2_"
+                    android:layout_height="25dp"
+                    app:tint="@color/bluejeans" />
+
+            </LinearLayout>
+
+
+
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="20dp"
+                android:id="@+id/sendCard"
+                android:padding="4dp"
+                android:layout_marginLeft="5dp"
+                app:contentPadding="8dp"
+                android:visibility="gone"
+                android:layout_gravity="center_vertical"
+                android:gravity="end">
+
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/send_svgrepo_com__1_"
+                    android:visibility="gone"
+                    android:id="@+id/sendBtn"
+                    app:tint="@color/bluejeans" />
+            </androidx.cardview.widget.CardView>
+
+
+
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="20dp"
+                android:id="@+id/vnCard"
+                android:padding="4dp"
+                android:layout_marginLeft="5dp"
+                app:contentPadding="8dp"
+                android:layout_gravity="center_vertical"
+                android:gravity="end">
+
+                <ImageView
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/mic_1"
+                    android:id="@+id/voiceNote"
+                    app:tint="@color/bluejeans" />
+
+
+            </androidx.cardview.widget.CardView>
+
+
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+</RelativeLayout>

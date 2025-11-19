@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+
+    <!-- Toolbar -->
+<!--    <androidx.appcompat.widget.Toolbar-->
+<!--        android:id="@+id/toolbar"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="?attr/actionBarSize"-->
+<!--        android:layout_alignParentTop="true"-->
+<!--        android:elevation="4dp"-->
+<!--        android:theme="?attr/actionBarTheme"-->
+<!--        android:visibility="invisible"-->
+<!--        android:title="Ads"-->
+<!--        app:titleTextColor="@color/black" />-->
+
+    <View
+        android:id="@+id/toolbar_margin"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/fade_gray" />
+
+    <!-- Tabs -->
+    <RelativeLayout
+        android:id="@+id/tabs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/toolbar_margin"
+        android:layout_centerHorizontal="true">
+
+        <FrameLayout
+            android:id="@+id/profileTab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <!-- Custom Tabs for Profile and Interests -->
+            <TextView
+                android:fontFamily="@font/poppins_regular"
+                android:id="@+id/profileText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="16dp"
+                android:text="Profile" />
+
+        </FrameLayout>
+
+
+        <FrameLayout
+            android:id="@+id/interestsTab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/profileTab">
+
+            <TextView
+                android:fontFamily="@font/poppins_regular"
+                android:id="@+id/interestsText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="16dp"
+                android:text="Interests" />
+
+        </FrameLayout>
+
+    </RelativeLayout>
+
+
+    <!-- FrameLayout for Fragments -->
+    <FrameLayout
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/tabs" />
+
+    <!-- RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/tabs"
+        android:layout_centerHorizontal="true"
+        android:clipToPadding="false"
+        android:padding="8dp"
+        android:scrollbars="none"
+        android:visibility="gone"
+        />
+
+
+</RelativeLayout>

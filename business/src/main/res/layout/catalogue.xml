@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/catalogtext"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Create catalogue"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:textSize="20dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="16dp"
+        android:layout_marginTop="8dp"/>
+
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_below="@+id/catalogtext"
+    tools:ignore="UseCompoundDrawables">
+
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:padding="30dp"
+        android:layout_marginStart="40dp"
+        android:background="@drawable/rectangle_background"
+        android:src="@drawable/add"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add item 1"
+            android:layout_gravity="center"
+            android:paddingStart="22dp"
+            android:paddingEnd="30dp"/>
+
+</LinearLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:padding="30dp"
+        android:layout_marginTop="13dp"
+        android:layout_marginStart="40dp"
+        android:background="@drawable/rectangle_background"
+        android:src="@drawable/add"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add item 2"
+        android:layout_gravity="center"
+        android:paddingStart="22dp"
+        android:paddingEnd="30dp"/>
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+       >
+
+        <ImageView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:padding="30dp"
+            android:layout_marginTop="13dp"
+            android:layout_marginStart="40dp"
+            android:background="@drawable/rectangle_background"
+            android:src="@drawable/add"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add item 3"
+            android:layout_gravity="center"
+            android:paddingStart="22dp"
+            android:paddingEnd="30dp"/>
+
+</LinearLayout>
+
+</RelativeLayout>

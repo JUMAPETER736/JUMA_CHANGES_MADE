@@ -1,0 +1,138 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_alignParentStart="true"
+    android:layout_marginLeft="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginRight="16dp"
+    android:layout_marginBottom="8dp">
+
+    <com.uyscuti.social.chatsuit.utils.ShapeImageView
+        android:id="@id/messageUserAvatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_above="@id/messageTime"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp" />
+
+    <TextView
+        android:id="@+id/userName"
+        android:layout_marginTop="2dp"
+        android:layout_marginStart="6dp"
+        android:layout_marginBottom="5dp"
+        android:textStyle="bold"
+        android:layout_alignStart="@id/bubble"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <RelativeLayout
+        android:id="@+id/bubble"
+        android:layout_width="350dp"
+        android:layout_marginTop="18dp"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/messageUserAvatar"
+        android:layout_toRightOf="@id/messageUserAvatar">
+
+        <LinearLayout
+            android:id="@+id/pal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            >
+            <com.uyscuti.social.chatsuit.utils.RoundedImageView
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:maxWidth="50dp"
+                android:maxHeight="50dp"
+                android:layout_margin="8dp"
+                android:layout_gravity="center"
+                android:id="@+id/documentImageView"
+                />
+
+            <TextView
+                android:id="@+id/docSize"
+                android:layout_width="wrap_content"
+                android:gravity="center_horizontal"
+                android:layout_gravity="center_horizontal"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_toEndOf="@id/pal"
+            android:gravity="center_vertical"
+            android:layout_centerVertical="true"
+            android:padding="8dp"
+            android:orientation="horizontal"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:id="@+id/docTitle"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textSize="18sp"
+                android:layout_gravity="center_vertical"
+                />
+
+            <ImageView
+                android:id="@+id/downIcon"
+                android:layout_margin="8dp"
+                android:layout_width="30dp"
+                android:src="@drawable/download_minimalistic_svgrepo_com"
+                android:layout_height="30dp"
+                app:tint="@color/dark_gray" />
+
+            <RelativeLayout
+                android:id="@+id/downProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:gravity="center"
+                app:layout_constraintEnd_toEndOf="@id/video"
+                app:layout_constraintBottom_toBottomOf="@id/video"
+                android:layout_margin="16dp">
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/progress_circle"
+                    android:layout_centerInParent="true"
+                    android:max="100"
+                    android:progress="0"
+                    android:progressDrawable="@drawable/circular_progress_bar" />
+
+                <ImageView
+                    android:id="@+id/cancel"
+                    android:layout_width="20dp"
+                    android:src="@drawable/baseline_close_24"
+                    android:layout_alignBottom="@id/progressBar"
+                    android:layout_alignLeft="@id/progressBar"
+                    android:layout_alignEnd="@id/progressBar"
+                    android:padding="8dp"
+                    android:layout_alignStart="@id/progressBar"
+                    android:layout_alignTop="@id/progressBar"
+                    android:layout_height="20dp"
+                    app:tint="#2196F3" />
+
+            </RelativeLayout>
+        </LinearLayout>
+
+
+    </RelativeLayout>
+
+    <TextView
+        android:id="@id/messageTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/bubble"
+        android:layout_alignEnd="@id/bubble"
+        android:layout_alignRight="@id/bubble" />
+
+</RelativeLayout>

@@ -1,0 +1,8 @@
+<!-- res/drawable/tab_selector.xml -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Selected Tab -->
+    <item android:state_selected="true" android:drawable="@color/bluejeans" />
+
+    <!-- Unselected Tab -->
+    <item android:state_selected="false" android:drawable="@android:color/transparent" />
+</selector>

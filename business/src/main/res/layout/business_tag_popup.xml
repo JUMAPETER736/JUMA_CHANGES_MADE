@@ -1,0 +1,126 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/terms"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+
+    <TextView
+        android:fontFamily="@font/regular_font"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="13dp"
+        android:text="Range"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <!-- radio buttons text-->
+    <RadioGroup
+        android:id="@+id/rangeRadioGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/gray_background"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/range_500_Metres"
+            android:fontFamily="@font/regular_font"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Advertise for free within 500 metres per month."
+            app:buttonTint="@color/blueJeans"
+            android:textSize="13dp"/>
+
+        <TextView
+            android:fontFamily="@font/regular_font"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="Advertise within a 500-meter radius is provided free of charge!"
+            android:paddingStart="38dp"
+            android:textSize="13dp" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/range_1kilometer"
+            android:fontFamily="@font/regular_font"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Advertise within 1 kilometre at MK 1000 per month."
+            android:textSize="13dp"
+            app:buttonTint="@color/blueJeans" />
+
+        <TextView
+            android:fontFamily="@font/regular_font"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="Additional distance beyond 1 kilometer will incur a standard fee."
+            android:paddingStart="38dp"
+            android:textSize="13dp" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/range_2kilometre"
+            android:fontFamily="@font/regular_font"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Advertise within 2kilometre at MK2000 per month."
+            app:buttonTint="@color/blueJeans"
+            android:textSize="13dp"/>
+
+        <TextView
+            android:fontFamily="@font/regular_font"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="For distances beyond 1 kilometer, a nominal fee per kilometer  will be applied."
+            android:paddingStart="38dp"
+            android:textSize="13dp" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:fontFamily="@font/regular_font"
+            android:id="@+id/range_3kilometre"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Advertise within 3kilometre at MK3000 per month."
+            android:textSize="13dp"
+            app:buttonTint="@color/blueJeans" />
+
+        <TextView
+            android:fontFamily="@font/regular_font"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="For distances beyond 1 kilometer, a nominal fee per kilometer will be applied."
+            android:paddingStart="38dp"
+            android:textSize="13dp" />
+
+
+    </RadioGroup>
+
+    <!-- button -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/proceedBtn"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:fontFamily="@font/robot_bold"
+            android:layout_alignParentEnd="true"
+            android:background="@drawable/blue_button_bg"
+            android:text="Proceed"
+            android:textColor="@color/white" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/cancel_Btn"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:fontFamily="@font/robot_bold"
+            android:layout_alignParentStart="true"
+            android:background="@drawable/blue_button_bg"
+            android:text="cancel"
+            android:textColor="@color/white" />
+    </RelativeLayout>
+</LinearLayout>

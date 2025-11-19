@@ -1,0 +1,56 @@
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/tv_latitude"
+            android:paddingStart="20dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="50dp"
+            android:text="Latitude: "
+            android:textSize="18sp" />
+
+        <TextView
+            android:paddingStart="20dp"
+            android:id="@+id/tv_longitude"
+            android:layout_below="@+id/tv_latitude"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Longitude: "
+            android:textSize="18sp" />
+
+        <TextView
+            android:paddingStart="20dp"
+            android:id="@+id/tv_accuracy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv_longitude"
+            android:layout_marginTop="20dp"
+            android:text="Accuracy: "
+            android:textSize="18sp" />
+
+        <TextView
+            android:paddingStart="20dp"
+            android:id="@+id/tv_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv_accuracy"
+            android:layout_marginTop="20dp"
+            android:text="Status: "
+            android:textColor="@android:color/holo_red_dark"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/btn_get_coordinates"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv_status"
+            android:layout_marginTop="84dp"
+            android:gravity="center"
+            android:text="Get Coordinates" />
+    </RelativeLayout>
+

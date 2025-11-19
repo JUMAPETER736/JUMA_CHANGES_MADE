@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="white60">#a0ffffff</color>
+    <color name="white_two">#efefef</color>
+    <color name="white_three">#ebebeb</color>
+    <color name="white_four">#e0e0e0</color>
+    <color name="white_five">#dadada</color>
+    <color name="blue">#031cd7</color>
+    <color name="gray">#333333</color>
+    <color name="dark_gray">#282a2b</color>
+    <color name="dark_grey_two">#191a1b</color>
+    <color name="warm_grey">#7f7f7f</color>
+    <color name="warm_grey_two">#9c9c9c</color>
+    <color name="warm_grey_three">#8b8b8b</color>
+    <color name="warm_grey_four">#979797</color>
+    <color name="dark_mint">#51c05c</color>
+    <color name="cornflower_blue_two">#4f62d7</color>
+    <color name="cornflower_blue_two_24">#3d4f62d7</color>
+    <color name="cornflower_blue_two_dark">#475bd4</color>
+    <color name="cornflower_blue_light_40">#64bec5f7</color>
+
+
+
+    <color name="bluejeans">#3284fc</color>
+    <color name="nextBlue">#00cafb</color>
+    <color name="settings_disc">#9F9C9C</color>
+
+
+
+    <!-- Text colors -->
+    <color name="whatsapp_text_primary">#111B21</color>
+    <color name="whatsapp_text_secondary">#667781</color>
+
+    <!-- Background colors -->
+    <color name="whatsapp_background">#FFFFFF</color>
+    <color name="whatsapp_selected_bg">#E7F8EE</color>
+
+    <!-- Divider color -->
+    <color name="whatsapp_divider">#F0F0F0</color>
+
+
+
+
+    <!-- WhatsApp Colors -->
+    <color name="whatsapp_green">#25D366</color>
+    <color name="whatsapp_teal">#075E54</color>
+    <color name="whatsapp_teal_dark">#128C7E</color>
+    <color name="whatsapp_light_green">#DCF8C6</color>
+
+    <!-- Dialog List Colors -->
+    <color name="dialog_title_text">#000000</color>
+    <color name="dialog_title_text_unread">#000000</color>
+    <color name="dialog_message_text">#8696A0</color>
+    <color name="dialog_message_text_unread">#000000</color>
+    <color name="dialog_date_text">#8696A0</color>
+    <color name="dialog_date_text_unread">#25D366</color>
+    <color name="dialog_divider">#E9EDEF</color>
+    <color name="dialog_unread_bubble">#25D366</color>
+    <color name="dialog_unread_text">#FFFFFF</color>
+    <color name="dialog_background">#FFFFFF</color>
+    <color name="dialog_selected_background">#F7F8FA</color>
+
+    <!-- General Colors -->
+    <color name="transparent">#00000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="gray_light">#F0F2F5</color>
+    <color name="gray_medium">#8696A0</color>
+    <color name="gray_dark">#667781</color>
+
+
+</resources>

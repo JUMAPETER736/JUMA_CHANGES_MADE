@@ -1,0 +1,181 @@
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:layout_marginLeft="16dp"
+    android:layout_marginRight="16dp"
+    android:layout_marginTop="8dp">
+
+    <com.uyscuti.social.chatsuit.utils.ShapeImageView
+        android:id="@id/messageUserAvatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_above="@id/messageTime"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp" />
+
+    <LinearLayout
+        android:id="@+id/vid_wrapper"
+        android:orientation="vertical"
+        android:layout_toEndOf="@id/messageUserAvatar"
+        android:layout_toRightOf="@id/messageUserAvatar"
+        android:layout_marginTop="18dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/userName"
+            android:layout_marginTop="2dp"
+            android:layout_marginStart="6dp"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/wrapper"
+            android:layout_gravity="end"
+            android:gravity="end"
+          >
+
+            <com.uyscuti.social.chatsuit.utils.RoundedImageView
+                android:id="@+id/video"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/message_outcoming_bubble_margin_left"
+                android:layout_marginLeft="@dimen/message_outcoming_bubble_margin_left"
+                android:adjustViewBounds="true"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintVertical_bias="0.5"/>
+
+
+            <LinearLayout
+                android:id="@+id/down"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="@id/video"
+                app:layout_constraintBottom_toBottomOf="@id/video"
+                android:layout_margin="8dp">
+
+                <ImageView
+                    android:id="@+id/download"
+                    android:layout_width="30dp"
+                    android:layout_gravity="center_horizontal"
+                    android:src="@drawable/download_minimalistic_svgrepo_com"
+                    android:layout_height="30dp"
+                    app:tint="@color/white_three" />
+
+                <TextView
+                    android:id="@+id/vidSize"
+                    android:layout_width="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:gravity="center"
+                    android:layout_height="wrap_content"/>
+
+
+            </LinearLayout>
+
+            <RelativeLayout
+                android:id="@+id/downProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:gravity="center"
+                app:layout_constraintEnd_toEndOf="@id/video"
+                app:layout_constraintBottom_toBottomOf="@id/video"
+                android:layout_margin="16dp">
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/progress_circle"
+                    android:layout_centerInParent="true"
+                    android:max="100"
+                    android:progress="0"
+                    android:progressDrawable="@drawable/circular_progress_bar" />
+
+                <ImageView
+                    android:id="@+id/cancel"
+                    android:layout_width="20dp"
+                    android:src="@drawable/baseline_close_24"
+                    android:layout_alignBottom="@id/progressBar"
+                    android:layout_alignLeft="@id/progressBar"
+                    android:layout_alignEnd="@id/progressBar"
+                    android:padding="8dp"
+                    android:layout_alignStart="@id/progressBar"
+                    android:layout_alignTop="@id/progressBar"
+                    android:layout_height="20dp"
+                    app:tint="#2196F3" />
+
+                <TextView
+                    android:id="@+id/progressCountTv"
+                    android:layout_width="wrap_content"
+                    android:visibility="gone"
+                    android:gravity="center"
+                    android:layout_height="wrap_content"
+                    android:layout_alignBottom="@id/progressBar"
+                    android:layout_alignLeft="@id/progressBar"
+                    android:layout_alignEnd="@id/progressBar"
+                    android:layout_alignStart="@id/progressBar"
+                    android:layout_alignTop="@id/progressBar"
+                    android:textSize="12sp"
+                    android:text="%100" />
+
+            </RelativeLayout>
+
+
+
+            <View
+                android:id="@+id/downloadOverLay"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:layout_constraintStart_toStartOf="@id/down"
+                app:layout_constraintEnd_toEndOf="@id/down"
+                app:layout_constraintTop_toTopOf="@id/down"
+                app:layout_constraintBottom_toBottomOf="@id/down" />
+
+            <View
+                android:id="@+id/videoOverLay"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:layout_constraintStart_toStartOf="@id/video"
+                app:layout_constraintEnd_toEndOf="@id/video"
+                app:layout_constraintTop_toTopOf="@id/video"
+                app:layout_constraintBottom_toBottomOf="@id/video" />
+
+            <ImageView
+                android:layout_width="50dp"
+                android:id="@+id/playVideo"
+                android:layout_centerInParent="true"
+                android:src="@drawable/baseline_play_circle_24"
+                android:layout_height="50dp"
+                app:layout_constraintStart_toStartOf="@id/video"
+                app:layout_constraintEnd_toEndOf="@id/video"
+                app:layout_constraintTop_toTopOf="@id/video"
+                app:layout_constraintBottom_toBottomOf="@id/video" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+
+
+    <TextView
+        android:id="@id/messageTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@id/vid_wrapper"
+        android:layout_alignRight="@id/vid_wrapper"
+        android:layout_below="@id/vid_wrapper" />
+
+</RelativeLayout>
+
+
+

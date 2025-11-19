@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="300dp"
+    android:background="@drawable/image_background"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:fontFamily="@font/robot_bold"
+        android:id="@+id/tv_edit_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:text="Edit Image"
+        android:textSize="16dp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tv_edit_image"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:id="@+id/delete"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:gravity="center"
+            android:layout_marginEnd="8dp"
+            android:background="@color/white"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <ImageView
+                android:backgroundTint="@color/white"
+                android:id="@+id/btn_delete"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:contentDescription="TODO"
+                android:padding="8dp"
+                android:src="@drawable/delete_24"
+                app:tint="@android:color/holo_red_dark" />
+
+            <TextView
+                android:fontFamily="@font/regular_font"
+                android:id="@+id/tv_pick_Video"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Remove"
+                android:textColor="@android:color/holo_red_dark"
+                android:textSize="13dp" />
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:id="@+id/video"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:gravity="center"
+            android:background="@color/white"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <ImageView
+                android:id="@+id/btn_pick_video"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:padding="8dp"
+                android:backgroundTint="@color/white"
+                android:src="@drawable/photo_alternate_24" />
+
+            <TextView
+                android:fontFamily="@font/regular_font"
+                android:id="@+id/tv_pick_video"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Video"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/image"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:gravity="center"
+            android:layout_marginEnd="8dp"
+            android:background="@color/white"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <ImageView
+                android:id="@+id/btn_pick_image"
+                android:layout_width="50dp"
+                android:padding="8dp"
+                android:layout_height="50dp"
+                android:backgroundTint="@color/white"
+                android:src="@drawable/photo_alternate_24" />
+
+            <TextView
+                android:fontFamily="@font/regular_font"
+                android:id="@+id/tv_pick_image"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Image"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>

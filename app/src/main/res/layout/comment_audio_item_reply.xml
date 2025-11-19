@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="4dp"
+    android:layout_marginEnd="4dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="4dp"
+    android:orientation="horizontal"
+    android:padding="0dp">
+
+    <!-- Profile Picture -->
+    <ImageView
+        android:id="@+id/profilePic"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginEnd="2dp"
+        android:layout_marginTop="2dp"
+        android:src="@drawable/person_button_svgrepo_com" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Comment Bubble -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/comment_bubble_background"
+            android:orientation="vertical"
+            android:paddingStart="2dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="8dp"
+            android:minWidth="200dp">
+
+            <!-- Username -->
+            <TextView
+                android:id="@+id/username"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Username"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#1C1E21" />
+
+            <!-- Audio Row -->
+            <LinearLayout
+                android:id="@+id/playAudioLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+
+                <ImageView
+                    android:id="@+id/playVnAudioBtn"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/ic_ripple"
+                    android:padding="6dp"
+                    android:src="@drawable/play_svgrepo_com"
+                    app:tint="@color/white" />
+
+                <com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
+                    android:id="@+id/wave"
+                    android:layout_width="0dp"
+                    android:layout_height="22dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    app:wave_background_color="@color/gray_dark"
+                    app:wave_progress_color="@color/bluejeans"
+                    app:wave_corner_radius="2dp"
+                    app:wave_gap="1.5dp"
+                    app:wave_width="3dp"
+                    app:wave_min_height="3dp"
+                    app:wave_max_progress="100"
+                    app:wave_progress="0" />
+
+                <!-- Hidden SeekBars if needed -->
+                <SeekBar
+                    android:id="@+id/commentAudioSeekBar"
+                    android:layout_width="0dp"
+                    android:layout_height="22dp"
+                    android:layout_weight="1"
+                    android:layout_margin="12dp"
+                    android:progressTint="@color/bluejeans"
+                    android:visibility="gone" />
+
+                <SeekBar
+                    android:id="@+id/secondCommentAudioSeekBar"
+                    android:layout_width="0dp"
+                    android:layout_height="22dp"
+                    android:layout_weight="1"
+                    android:layout_margin="12dp"
+                    android:progressTint="@color/bluejeans"
+                    android:visibility="gone" />
+
+                <com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
+                    android:id="@+id/secondWave"
+                    android:layout_width="0dp"
+                    android:layout_height="22dp"
+                    android:layout_weight="1"
+                    android:layout_margin="12dp"
+                    app:wave_background_color="@color/gray_dark"
+                    app:wave_progress_color="@color/bluejeans"
+                    app:wave_corner_radius="2dp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <!-- Duration Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:id="@+id/audioDurationTVCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textSize="13sp"
+                    android:textColor="#1C1E21"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginStart="36dp" />
+
+                <TextView
+                    android:id="@+id/secondAudioDurationTV"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textSize="13sp"
+                    android:textColor="#1C1E21"
+                    android:fontFamily="sans-serif"
+                    android:visibility="gone"
+                    android:layout_marginStart="36dp" />
+
+                <TextView
+                    android:id="@+id/audioDurationTV"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:visibility="gone"
+                    android:text="00:00"
+                    android:textSize="13sp"
+                    android:textColor="#1C1E21"
+                    android:fontFamily="sans-serif" />
+
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Comment Actions Row -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical">
+
+            <!-- Time -->
+            <TextView
+                android:id="@+id/time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1h"
+                android:textSize="12sp"
+                android:textColor="#65676B"
+                android:fontFamily="sans-serif" />
+
+            <!-- Like Button -->
+            <TextView
+                android:id="@+id/likeUnLikeComment"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="6dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="4dp"
+                android:text="Like"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:textColor="#65676B"
+                android:fontFamily="sans-serif-medium" />
+
+            <!-- Reply Button -->
+            <TextView
+                android:id="@+id/reply"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="6dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="4dp"
+                android:text="Reply"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:textColor="#65676B"
+                android:fontFamily="sans-serif-medium" />
+
+            <!-- Like Count with Icons -->
+            <LinearLayout
+                android:id="@+id/likeCountContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp">
+
+                    <!-- Like Icon (left side, bottom layer) -->
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/like_thumbs_up_svgrepo_com" />
+
+                    <!-- Love Icon (right side, top layer overlapping) -->
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="18dp"
+                        android:src="@drawable/red_like_heart_svgrepo_com_white" />
+
+                </FrameLayout>
+
+                <!-- Like Count -->
+                <TextView
+                    android:id="@+id/likesCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="25"
+                    android:textColor="#65676B"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Replies RecyclerView -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/repliesRecyclerView"
+            android:layout_width="match_parent"
+            android:orientation="vertical"
+            android:layout_height="wrap_content"
+            android:visibility="visible"
+            tools:listitem="@layout/comment_audio_item_reply"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            android:layout_marginTop="8dp"
+            android:nestedScrollingEnabled="false" />
+
+        <!-- View More/Hide Replies Row -->
+        <LinearLayout
+            android:id="@+id/viewRepliesContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/commentReplies"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="6dp"
+                android:textColor="#65676B"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:text="View more replies"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:id="@+id/hideCommentReplies"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:visibility="gone"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:textColor="#65676B"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:text="Hide replies"
+                android:fontFamily="sans-serif-medium" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

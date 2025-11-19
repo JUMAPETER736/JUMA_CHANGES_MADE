@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:fitsSystemWindows="false">
+
+    <!-- Main content container -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- ViewPager for content -->
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="0dp"
+            android:layout_marginRight="0dp"
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="0dp"
+            android:clipToPadding="false"
+            android:paddingLeft="0dp"
+            android:paddingRight="0dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp" />
+
+        <!-- Audio icon for music and voice notes -->
+        <ImageView
+            android:id="@+id/audioIcon"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_centerInParent="true"
+            android:contentDescription="Audio Icon"
+            android:visibility="gone"
+            android:src="@drawable/music_icon"
+            app:tint="@color/white"
+            tools:ignore="MissingConstraints" />
+
+    </RelativeLayout>
+
+    <!-- Page indicator dots -->
+    <com.tbuonomo.viewpagerdotsindicator.DotsIndicator
+        android:id="@+id/worm_dots_indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="80dp"
+        android:padding="8dp"
+        app:dotsColor="@color/white_three"
+        app:dotsCornerRadius="6dp"
+        app:dotsSize="8dp"
+        app:dotsSpacing="3dp"
+        app:dotsStrokeWidth="2dp"
+        app:progressMode="false"
+        app:selectedDotColor="@color/blueJeans" />
+
+    <!-- Close button in top-left corner -->
+    <ImageView
+        android:id="@+id/close_button"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|start"
+        android:layout_margin="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Close"
+        android:padding="12dp"
+        android:src="@drawable/cancel_svgrepo_com"
+        app:tint="@android:color/white" />
+
+    <!-- Remove button in top-right corner -->
+    <ImageView
+        android:id="@+id/removeButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_delete_"
+        app:tint="@color/black" />
+
+    <!-- Fullscreen play/pause button -->
+    <ImageView
+        android:id="@+id/fullScreenPlayPauseButton"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_centerInParent="true"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:contentDescription="Play/Pause video"
+        android:focusable="true"
+        android:padding="20dp"
+        android:src="@drawable/baseline_pause_white_24"
+        android:visibility="gone"
+        app:tint="@color/white" />
+
+    <!-- Bottom container for SeekBar and duration -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginBottom="16dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Video progress SeekBar -->
+        <SeekBar
+            android:id="@+id/bottomShortsVideoProgressSeekBar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="100"
+            android:maxHeight="4dp"
+            android:minHeight="4dp"
+            android:progress="0"
+            android:progressBackgroundTint="@color/gray_light"
+            android:progressTint="@color/bluejeans"
+            android:splitTrack="false"
+            android:thumb="@null"
+            android:visibility="visible" />
+
+        <!-- Video duration text (at the end of SeekBar) -->
+        <TextView
+            android:id="@+id/videoDurationText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:gravity="center_vertical"
+            android:shadowColor="@android:color/black"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="2"
+            android:text="00:00"
+            android:textColor="@color/white"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

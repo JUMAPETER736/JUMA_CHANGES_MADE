@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="225dp"
+    android:background="@drawable/gray_background"
+    android:orientation="vertical">
+
+
+<!--    <View-->
+<!--        android:id="@+id/line1"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="2dp"-->
+<!--        android:background="@color/fade_gray" />-->
+
+    <TextView
+        android:id="@+id/seller_information"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:paddingTop="10dp"
+        android:fontFamily="@font/regular_font"
+        android:text="@string/seller_information"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        tools:layout_editor_absoluteX="158dp"
+        tools:layout_editor_absoluteY="16dp" />
+
+
+    <LinearLayout
+        android:id="@+id/relayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/seller_information"
+        android:orientation="horizontal"
+        tools:ignore="MissingConstraints"
+        android:paddingEnd="8dp">
+
+        <ImageView
+            android:id="@+id/round_placeholder"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:padding="16dp"
+            android:src="@drawable/round_placeholder" />
+
+        <TextView
+            android:id="@+id/name_user"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="2"
+            android:fontFamily="@font/poppins_regular"
+            android:text="Username"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            tools:ignore="MissingConstraints" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:layout_gravity="end|center"
+            android:layout_marginLeft="100dp"
+            android:id="@+id/btn_follow"
+            android:fontFamily="@font/regular_font"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/blueJeans"
+            android:text="@string/follow"
+            android:textColor="@color/white"
+            android:textSize="11sp" />
+
+
+    </LinearLayout>
+
+</LinearLayout>

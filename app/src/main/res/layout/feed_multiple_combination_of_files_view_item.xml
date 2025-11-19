@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/materialCardView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+ >
+
+
+
+        <!-- Main File Preview Image -->
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/content_description" />
+
+        <!-- Overlay for extra items -->
+        <ImageView
+            android:id="@+id/imageViewOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:background="#80333131"
+            android:visibility="gone"
+            android:contentDescription="@string/content_description" />
+
+        <!-- Count Text (+X) -->
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+0"
+            android:textColor="@android:color/white"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+        <!-- File Type Icon -->
+        <ImageView
+            android:id="@+id/fileTypeIcon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginTop="3dp"
+            android:layout_marginStart="5dp"
+            android:visibility="visible"
+            android:contentDescription="@string/content_description"
+            tools:src="@drawable/pdf_icon" />
+
+        <!-- Centered Play Button -->
+        <ImageView
+            android:id="@+id/playButton"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_gravity="center"
+            android:src="@drawable/play_button_filled"
+            android:contentDescription="@string/content_description"
+            android:visibility="visible"
+            app:tint="@android:color/white" />
+
+        <!-- Bottom-left Video Icon -->
+        <ImageView
+            android:id="@+id/feedVideoImageView"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="bottom|start"
+            android:layout_marginStart="8dp"
+            android:layout_marginBottom="8dp"
+            android:src="@drawable/ic_video_call"
+            android:contentDescription="@string/content_description" />
+
+        <!-- Bottom-left Video Duration -->
+        <TextView
+            android:id="@+id/feedVideoDurationTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="20dp"
+            android:text="00:00"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_gravity="bottom|start"
+            android:layout_marginStart="32dp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Document Details -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="0dp">
+
+            <!-- PDF Cover Image -->
+            <ImageView
+                android:id="@+id/pdfImageView"
+                android:layout_width="0dp"
+                android:layout_height="200dp"
+                android:adjustViewBounds="true"
+                android:scaleType="fitXY"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:src="@drawable/documents" />
+
+
+            <TextView
+                android:id="@+id/countTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+1"
+                android:textColor="@color/cardBackgroundTint"
+                android:textSize="32sp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="8dp"
+               />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+</com.google.android.material.card.MaterialCardView>
