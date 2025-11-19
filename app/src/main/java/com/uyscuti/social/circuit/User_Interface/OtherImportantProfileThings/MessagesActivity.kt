@@ -2921,7 +2921,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-    // Add this new method to handle successful message send
+
     private fun onMessageSendSuccess(messageId: String) {
         CoroutineScope(Dispatchers.Main).launch {
             // Update message status in adapter to "Sent"
@@ -2934,7 +2934,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-    // Add this method to handle delivered status
+
     private fun onMessageDelivered(messageId: String) {
         CoroutineScope(Dispatchers.Main).launch {
             messagesAdapter?.updateMessageStatus(messageId, STATUS_DELIVERED)
@@ -2968,7 +2968,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             }
         }
     }
-
 
     private fun showInternetConnectionSnackbar(view: View) {
         Snackbar.make(view, "Check your internet connection", Snackbar.LENGTH_LONG)
@@ -3544,6 +3543,8 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                     sendAttachmentContent(contentUri, currentMessage) { success ->
                         if (success) {
+
+                            onMessageSendSuccess(currentMessage.id)
                             // If the message was sent successfully, proceed to the next one.
                             sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
                         } else {
@@ -3551,8 +3552,11 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         }
                     }
                 } else {
+
                     sendAttachment(encodedFilePath, currentMessage) { success ->
                         if (success) {
+
+                            onMessageSendSuccess(currentMessage.id)
                             // If the message was sent successfully, proceed to the next one.
                             sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
                         } else {
@@ -3588,6 +3592,8 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
             sendTextMessage(currentMessage.text, uiMessage, currentMessage) { success ->
                 if (success) {
+
+                    onMessageSendSuccess(currentMessage.id)
 
                     sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
                 } else {
@@ -4011,6 +4017,8 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 }
 
                 if (!isGroup){
+
+                    onMessageDelivered(message._id)
                     delay(700)
                     sendSeenReport(chatId,message.sender._id)
                 }
@@ -4021,9 +4029,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     resetUnreadCount(dialog)
                 }
 
-//                dialog?.let { resetUnreadCount(it) }
 
-//                dialog?.let { resetUnreadCount(it) }
             }
         }
     }
