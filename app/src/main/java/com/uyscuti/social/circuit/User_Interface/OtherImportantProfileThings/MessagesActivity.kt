@@ -140,6 +140,8 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -156,6 +158,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import java.util.UUID
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -517,6 +520,229 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         })
     }
 
+    // 1. UPDATE stopRecordingVoiceNote() method - Replace your current one with this:
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
+    private fun stopRecordingVoiceNote() {
+        val TAG = "StopRecording"
+        try {
+            // Stop media recorder
+            if (mediaRecorder != null) {
+                mediaRecorder?.apply {
+                    stop()
+                    release()
+                }
+                mediaRecorder = null
+            }
+
+            isRecording = false
+            isPaused = false
+            stopWaveDotsAnimation()
+            binding.recordingLayout.visibility = View.GONE
+            binding.recordingTimerTv?.text = "00:00"
+            binding.recordVN?.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
+            binding.sendVN?.setBackgroundResource(com.uyscuti.social.circuit.R.drawable.ic_ripple_disabled)
+            binding.sendVN?.isClickable = false
+            timer.stop()
+
+            if (player?.isPlaying == true) {
+                stopPlaying()
+            }
+
+            Log.d(TAG, "stopRecording: recorded files size ${recordedAudioFiles.size}")
+
+            // Select appropriate audio file
+            val audioFilePath = if (mixingCompleted && File(outputVnFile).exists()) {
+                Log.d(TAG, "Using mixed audio file: $outputVnFile")
+                outputVnFile
+            } else {
+                Log.d(TAG, "Using single recording file: $outputFile")
+                outputFile
+            }
+
+            val file = File(audioFilePath)
+            if (!file.exists()) {
+                Log.e(TAG, "Audio file not found: $audioFilePath")
+                Toast.makeText(this, "Voice note file not found", Toast.LENGTH_SHORT).show()
+                sending = false
+                return
+            }
+
+            // Get duration and filename
+            val durationString = getFormattedDuration(audioFilePath)
+            val fileName = file.name
+
+            Log.d(TAG, "Voice note prepared - File: $fileName, Duration: $durationString, Path: $audioFilePath")
+
+            // Check file size and compress if needed
+            val fileSizeInBytes = file.length()
+            val fileSizeInKB = fileSizeInBytes / 1024
+            val fileSizeInMB = fileSizeInKB / 1024
+
+            Log.d(TAG, "Voice note file size: $fileSizeInKB KB, $fileSizeInMB MB")
+
+            if (fileSizeInMB > 2) {
+                Log.d(TAG, "Voice note needs compression")
+                val outputFileName = "compressed_audio_${System.currentTimeMillis()}.mp3"
+                val outputFilePath = File(cacheDir, outputFileName)
+
+                lifecycleScope.launch(Dispatchers.IO) {
+                    // Compress audio in background
+                    val compressor = FFMPEG_AudioCompressor()
+                    val isCompressionSuccessful = compressor.compress(audioFilePath, outputFilePath.absolutePath)
+
+                    withContext(Dispatchers.Main) {
+                        if (isCompressionSuccessful) {
+                            Log.d(TAG, "Voice note compression successful")
+                            val compressedSizeInBytes = outputFilePath.length()
+                            val compressedSizeInKB = compressedSizeInBytes / 1024
+                            val compressedSizeInMB = compressedSizeInKB / 1024
+                            Log.d(TAG, "Compressed file size: $compressedSizeInKB KB, $compressedSizeInMB MB")
+
+                            // Send compressed voice note
+                            sendVoiceNoteMessage(outputFilePath.absolutePath, durationString)
+                        } else {
+                            Log.e(TAG, "Voice note compression failed - using original file")
+                            // Send original file
+                            sendVoiceNoteMessage(audioFilePath, durationString)
+                        }
+                    }
+                }
+            } else {
+                // File is small enough, upload directly
+                Log.d(TAG, "Voice note doesn't need compression, uploading directly")
+                sendVoiceNoteMessage(audioFilePath, durationString)
+            }
+
+            // Hide VN recording UI
+            binding.VNLayout.visibility = View.GONE
+            binding.inputContainer.visibility = View.VISIBLE
+
+            // Clean up recording state
+            wasPaused = false
+            mixingCompleted = false
+            recordedAudioFiles.clear()
+
+            Log.d(TAG, "Voice note processing completed")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in stopRecording: ${e.message}", e)
+            Toast.makeText(this, "Failed to send voice note", Toast.LENGTH_SHORT).show()
+            sending = false
+        }
+    }
+
+
+
+    private fun sendVoiceNoteMessage(filePath: String, duration: String) {
+        val TAG = "SendVoiceNote"
+
+        try {
+            val file = File(filePath)
+
+            if (!file.exists()) {
+                Log.e(TAG, "Voice note file not found: $filePath")
+                Toast.makeText(this, "Voice note file not found", Toast.LENGTH_SHORT).show()
+                sending = false
+                return
+            }
+
+            Log.d(TAG, "Preparing to send voice note: ${file.name}, Duration: $duration")
+
+            // Create voice note message object (similar to text message)
+            val tempId = UUID.randomUUID().toString()
+            val currentUser = User(myId, username, localStorage.getUserAvatar(), true)
+
+            val voiceNoteMessage = Message(tempId, currentUser, "").apply {
+                // Set voice note data
+                setVoice(Message.Voice(filePath, duration.toIntOrNull() ?: 0))
+                setStatus("Sent") // Initial status
+                setCreatedAt(Date())
+            }
+
+            // Add message to adapter immediately (like text messages)
+            messagesAdapter?.addToStart(voiceNoteMessage, true)
+
+            Log.d("Sending Messages", "Voice note added to adapter with temp ID: $tempId")
+
+            // Upload the voice note file
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    // Create RequestBody for the file
+                    val requestFile = file.asRequestBody("audio/*".toMediaTypeOrNull())
+                    val audioPart = MultipartBody.Part.createFormData("audio", file.name, requestFile)
+
+                    // Create request body for chat ID
+                    val chatIdBody = chatId.toRequestBody("text/plain".toMediaTypeOrNull())
+
+                    Log.d(TAG, "Uploading voice note to server...")
+
+                    // Call your API to upload voice note
+                    val response = remoteMessageRepository.sendVoiceNote(
+                        chatId = chatIdBody,
+                        audio = audioPart
+                    )
+
+                    withContext(Dispatchers.Main) {
+                        if (response.isSuccessful && response.body() != null) {
+                            val responseBody = response.body()!!
+
+                            Log.d("API_RESPONSE", "URL: ${response.raw().request.url}")
+                            Log.d("API_RESPONSE", "Response Code: ${response.code()}")
+                            Log.d("API_RESPONSE", "Response Body: ${responseBody}")
+                            Log.d(TAG, "Voice note sent successfully: ${responseBody.message}")
+                            Log.d("Sending Messages", "Voice note sent successfully")
+
+                            // Update message with server data (similar to text message update)
+                            val serverMessage = responseBody.data
+                            val updatedMessage = Message(serverMessage._id, currentUser, "").apply {
+                                setVoice(Message.Voice(
+                                    serverMessage.attachments?.firstOrNull()?.url ?: filePath,
+                                    duration.toIntOrNull() ?: 0
+                                ))
+                                setStatus("Sent")
+                                setCreatedAt(Date(serverMessage.createdAt))
+                            }
+
+                            // Update in adapter
+                            messagesAdapter?.update(tempId, updatedMessage)
+
+                            Log.d("Sending Messages", "Voice note message updated with server ID: ${serverMessage._id}")
+
+                        } else {
+                            Log.e(TAG, "Failed to send voice note: ${response.code()}")
+                            Log.e("API_RESPONSE", "Error Body: ${response.errorBody()?.string()}")
+
+                            // Update message status to failed
+                            voiceNoteMessage.setStatus("Failed")
+                            messagesAdapter?.update(tempId, voiceNoteMessage)
+
+                            Toast.makeText(this@MessagesActivity, "Failed to send voice note", Toast.LENGTH_SHORT).show()
+                        }
+
+                        sending = false
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Exception while sending voice note: ${e.message}", e)
+                    withContext(Dispatchers.Main) {
+                        // Update message status to failed
+                        voiceNoteMessage.setStatus("Failed")
+                        messagesAdapter?.update(tempId, voiceNoteMessage)
+
+                        Toast.makeText(this@MessagesActivity, "Error sending voice note", Toast.LENGTH_SHORT).show()
+                        sending = false
+                    }
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error preparing voice note: ${e.message}", e)
+            Toast.makeText(this, "Failed to prepare voice note", Toast.LENGTH_SHORT).show()
+            sending = false
+        }
+    }
+
+
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun setupMessageInput() {
@@ -858,119 +1084,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     stopRecordingVoiceNote()
                 }
             }
-        }
-    }
-
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
-    private fun stopRecordingVoiceNote() {
-        val TAG = "StopRecording"
-        try {
-
-
-
-            // Stop media recorder
-            if (mediaRecorder != null) {
-                mediaRecorder?.apply {
-                    stop()
-                    release()
-                }
-                mediaRecorder = null
-            }
-
-            isRecording = false
-            isPaused = false
-            stopWaveDotsAnimation()
-            binding.recordingLayout.visibility = View.GONE
-            binding.recordingTimerTv?.text = "00:00"
-            binding.recordVN?.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
-            binding.sendVN?.setBackgroundResource(com.uyscuti.social.circuit.R.drawable.ic_ripple_disabled)
-            binding.sendVN?.isClickable = false
-            timer.stop()
-
-            if (player?.isPlaying == true) {
-                stopPlaying()
-            }
-
-            Log.d(TAG, "stopRecording: recorded files size ${recordedAudioFiles.size}")
-
-            // Select appropriate audio file
-            val audioFilePath = if (mixingCompleted && File(outputVnFile).exists()) {
-                Log.d(TAG, "Using mixed audio file: $outputVnFile")
-                outputVnFile
-            } else {
-                Log.d(TAG, "Using single recording file: $outputFile")
-                outputFile
-            }
-
-            val file = File(audioFilePath)
-            if (!file.exists()) {
-                Log.e(TAG, "Audio file not found: $audioFilePath")
-                Toast.makeText(this, "Voice note file not found", Toast.LENGTH_SHORT).show()
-                return
-            }
-
-            // Get duration and filename
-            val durationString = getFormattedDuration(audioFilePath)
-            val fileName = file.name
-
-            Log.d(TAG, "Voice note prepared - File: $fileName, Duration: $durationString, Path: $audioFilePath")
-
-            // Check file size and compress if needed
-            val fileSizeInBytes = file.length()
-            val fileSizeInKB = fileSizeInBytes / 1024
-            val fileSizeInMB = fileSizeInKB / 1024
-
-            Log.d(TAG, "Voice note file size: $fileSizeInKB KB, $fileSizeInMB MB")
-
-            if (fileSizeInMB > 2) {
-                Log.d(TAG, "Voice note needs compression")
-                val outputFileName = "compressed_audio_${System.currentTimeMillis()}.mp3"
-                val outputFilePath = File(cacheDir, outputFileName)
-
-                lifecycleScope.launch(Dispatchers.IO) {
-
-
-                    // Compress audio in background
-                    val compressor = FFMPEG_AudioCompressor()
-                    val isCompressionSuccessful = compressor.compress(audioFilePath, outputFilePath.absolutePath)
-
-                    if (isCompressionSuccessful) {
-                        Log.d(TAG, "Voice note compression successful")
-                        val compressedSizeInBytes = outputFilePath.length()
-                        val compressedSizeInKB = compressedSizeInBytes / 1024
-                        val compressedSizeInMB = compressedSizeInKB / 1024
-                        Log.d(TAG, "Compressed file size: $compressedSizeInKB KB, $compressedSizeInMB MB")
-
-
-                    } else {
-                        Log.e(TAG, "Voice note compression failed - using original file")
-                        withContext(Dispatchers.Main) {
-                            // Trigger upload with original file
-
-                        }
-                    }
-                }
-            } else {
-                // File is small enough, upload directly
-                Log.d(TAG, "Voice note doesn't need compression, uploading directly")
-
-            }
-
-            // Hide VN recording UI, keep comment section visible
-            binding.VNLayout.visibility = View.GONE
-
-            // Clean up recording state
-            wasPaused = false
-            mixingCompleted = false
-            recordedAudioFiles.clear()
-            sending = false
-
-            Log.d(TAG, "Voice note comment processing completed")
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in stopRecording: ${e.message}", e)
-            Toast.makeText(this, "", Toast.LENGTH_SHORT).show()
-            sending = false
         }
     }
 
@@ -3471,6 +3584,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         sendingMessages: List<MessageEntity>,
         currentIndex: Int = 0,
         retryCount: Int = 0
+
     ) {
         if (currentIndex >= sendingMessages.size || retryCount >= MAX_RETRY_COUNT) {
             // All messages have been sent or reached the maximum number of retries.
@@ -3510,9 +3624,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 
-//                    val file = copyFileToInternalStorage(this, filePath, filePath)
 
-//                    Log.d("FileOperation", "Completed : $file")
                     val contentUri = try {
                         getFileUri(this@MessagesActivity, filePath)
                     } catch (e: Exception) {
@@ -3521,7 +3633,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                     val ul = getUriForFileByName(this, getFileNameFromUrl(filePath))
 
-//                    Log.d("FileOperation", "Content Found: $ul")
 
                     sendAttachmentContent(contentUri, currentMessage) { success ->
                         if (success) {
@@ -3541,13 +3652,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             if (retryCount > MAX_RETRY_COUNT) {
                                 // Retry sending the message after a delay (e.g., 5 seconds).
                                 val delayMillis = 5000
-//                                Handler(Looper.getMainLooper()).postDelayed({
-//                                    sendPendingMessagesWithRetry(
-//                                        sendingMessages,
-//                                        currentIndex,
-//                                        retryCount + 1
-//                                    )
-//                                }, delayMillis.toLong())
+
                             } else {
                                 // Reached the maximum retry count for this message.
                                 // You can choose to skip or take other actions.
@@ -3575,24 +3680,14 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
             sendTextMessage(currentMessage.text, uiMessage, currentMessage) { success ->
                 if (success) {
-//                    CoroutineScope(Dispatchers.IO).launch {
-//                        messageViewModel.updateMessageStatus(currentMessage)
-//                    }
+
                     sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
                 } else {
                     // Handle the case where the message failed to send.
                     retryCount+1
                     if (retryCount > MAX_RETRY_COUNT) {
                         // Retry sending the message after a delay (e.g., 5 seconds).
-//                        retryCount+1
-//                        val delayMillis = 5000
-//                        Handler(Looper.getMainLooper()).postDelayed({
-//                            sendPendingMessagesWithRetry(
-//                                sendingMessages,
-//                                currentIndex,
-//                                retryCount + 1
-//                            )
-//                        }, delayMillis.toLong())
+
                         sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
 
                     } else {
@@ -3897,9 +3992,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
 
 
-//            val messageEntity: MessageEntity = message.toMessageEntity()
-//            insertMessage(messageEntity)
-
             if (message.chat == chatId) {
                 val user = User(
                     "1",
@@ -3964,7 +4056,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 }
 
 
-//                showToast(message.content)
 
                 Log.d(TAG, "In This Chat : ${message.content}")
 
@@ -4018,9 +4109,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     resetUnreadCount(dialog)
                 }
 
-//                dialog?.let { resetUnreadCount(it) }
-
-//                dialog?.let { resetUnreadCount(it) }
             }
         }
     }
@@ -4048,7 +4136,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 val user =
                     User("0", deliveredMessage.userName, deliveredMessage.user.avatar, true, Date())
 
-//            Log.d("MessageSent", "Current Message Id : ${currentMessage.id}")
+
 
                 val uiMessage = Message(
                     deliveredMessage.id,
@@ -4059,8 +4147,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                 withContext(Dispatchers.Main) {
                     uiMessage.status = "Delivered"
-//                    super.messagesAdapter?.modifyMessageStatus(uiMessage)
-//                    showToast("Message Delivered")
+
                     getAndUpdateMessages("Delivered")
                 }
             }
@@ -4106,14 +4193,13 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             delay(1000)
 
             if (deliveredMessage != null) {
-//                deliveredMessage.status = "Seen"
-//                messageViewModel.updateMessage(deliveredMessage)
+
 
                 val date = Date(deliveredMessage.createdAt)
                 val user =
                     User("0", deliveredMessage.userName, deliveredMessage.user.avatar, true, Date())
 
-//            Log.d("MessageSent", "Current Message Id : ${currentMessage.id}")
+
 
                 val uiMessage = Message(
                     deliveredMessage.id,
@@ -4124,8 +4210,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                 withContext(Dispatchers.Main) {
                     uiMessage.status = "Seen"
-//                    super.messagesAdapter?.modifyMessageStatus(uiMessage)
-//                    showToast("Message Delivered")
+
                     getAndUpdateMessages("Seen")
                 }
             }
@@ -4323,18 +4408,14 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         val downloadProgress =
                             (bytesCopied.toFloat() / fileSize.toFloat() * 100).toInt()
                         runOnUiThread {
-                            //progressbar.visibility = View.VISIBLE
-//                        progressbar.progress = downloadProgress
-//                        progressCountTv.text = "$downloadProgress%"
+
                         }
                         outputStream.write(buffer, 0, bytes)
                         bytes = inputStream.read(buffer)
                     }
-                    // progressbar.visibility = View.GONE
-                    //progressCountTv.visibility = View.GONE
+
                     runOnUiThread {
-                        // Update the UI components here
-//                    progressbar.visibility = View.GONE
+
 
                         coreChatSocketClient.sendDownLoadedEvent(myId,message.id)
                         Log.d("Download", "File Downloaded : $storageDirectory")
@@ -4345,13 +4426,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             FileType.IMAGE -> {
                                 if (downloadedFile.exists()) {
                                     CoroutineScope(Dispatchers.IO).launch {
-//                                        val msg =
-//                                            messageRepository.getMessageByMessageId(message.id)
-//                                        if (msg != null) {
-//                                            msg.imageUrl = downloadedFile.toString()
-//                                            Log.d("Download", "Message to update : $msg")
-//                                            messageRepository.updateMessage(msg)
-//                                        }
+
                                     }
                                 }
 
@@ -4389,13 +4464,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             FileType.VIDEO -> {
                                 if (downloadedFile.exists()) {
                                     CoroutineScope(Dispatchers.IO).launch {
-//                                        val msg =
-//                                            messageRepository.getMessageByMessageId(message.id)
-//                                        if (msg != null) {
-//                                            msg.videoUrl = downloadedFile.toString()
-//                                            Log.d("Download", "Message to update : $msg")
-//                                            messageRepository.updateMessage(msg)
-//                                        }
+
                                     }
                                 }
 
@@ -4408,23 +4477,11 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             FileType.DOCUMENT -> {
                                 if (downloadedFile.exists()) {
                                     CoroutineScope(Dispatchers.IO).launch {
-//                                        val msg =
-//                                            messageRepository.getMessageByMessageId(message.id)
-//                                        if (msg != null) {
-//                                            msg.docUrl = downloadedFile.toString()
-//                                            Log.d("Download", "Document Message to update : $msg")
-//                                            messageRepository.updateMessage(msg)
-//                                        }
+
                                     }
                                 }
 
-//                                message.setDocument(
-//                                    Message.Document(
-//                                        storageDirectory,
-//                                        getFileNameFromUrl(storageDirectory),
-//                                        formatFileSize(getFileSize(storageDirectory))
-//                                    )
-//                                )
+
 
                                 super.messagesAdapter?.update(message)
                             }
@@ -4441,31 +4498,13 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         } else if (fileExtension == "mp4") {
                             if (downloadedFile.exists()) {
                                 CoroutineScope(Dispatchers.IO).launch {
-//                                    val msg = messageRepository.getMessageByMessageId(message.id)
-//                                    if (msg != null) {
-//                                        msg.videoUrl = downloadedFile.toString()
-//                                        Log.d("Download", "Message to update : $msg")
-//                                        messageRepository.updateMessage(msg)
-//                                    }
+
                                 }
                             }
                         }
                     }
 
 
-//                val createdAt = getDateTimeStamp()
-//                val uniqueId = System.currentTimeMillis().toString()
-//                val saveDownloadPath = DownloadedFile(
-//                    chatId,
-//                    uniqueId,
-//                    directoryPath,
-//                    mUrl,
-//                    createdAt
-//                )
-//
-//                insertDownload(saveDownloadPath)
-                    //insertOfflinePath(saveLocalPath)
-//                Log.i("Download", "saved download path: $saveDownloadPath")
                     outputStream.close()
                     inputStream.close()
                 } else {
