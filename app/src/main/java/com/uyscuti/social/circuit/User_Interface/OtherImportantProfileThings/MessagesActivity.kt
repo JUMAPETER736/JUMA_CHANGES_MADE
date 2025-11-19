@@ -646,17 +646,15 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         // Send button for voice note
         binding.sendVN?.setOnClickListener {
             Log.d(TAG, "Send VN button clicked")
-            Log.d(TAG, "isVoiceNoteReady: ${isVoiceNoteReady()}")  // ← Check and log
-            Log.d(TAG, "State - sending: $sending, isRecording: $isRecording, isPaused: $isPaused, wasPaused: $wasPaused")
 
-            if (isVoiceNoteReady()) {  // ← CALLED HERE - checks if ready to send
-                sending = true
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    stopRecordingVoiceNote()
-                }
-            } else {
-                Log.d(TAG, "Voice note not ready to send")
+            if (sending) {
+                Log.d(TAG, "Already sending, ignoring click")
+                return@setOnClickListener
             }
+
+            // ALWAYS stop recording and send when send button is clicked
+            Log.d(TAG, "Stopping and sending voice note")
+            stopRecordingVoiceNote()
         }
 
     }
