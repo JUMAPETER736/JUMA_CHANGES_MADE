@@ -5,10 +5,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
+    android:background="@drawable/personal_chat_white_default_background"
     tools:context=".User_Interface.OtherImportantProfileThings.MessagesActivity">
 
     <RelativeLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:id="@+id/container"
         android:layout_height="match_parent">
 
@@ -21,8 +22,6 @@
             android:elevation="@dimen/sub_title_text_size"
             android:fitsSystemWindows="true">
 
-
-
             <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
@@ -31,57 +30,134 @@
 
         </com.google.android.material.appbar.AppBarLayout>
 
-        <!--    <include layout="@layout/content_messages" />-->
-
         <com.uyscuti.social.chatsuit.messages.MessagesList
             android:id="@+id/messagesList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_below="@id/toolbar_layout"
-            android:layout_above="@+id/input"
+            android:layout_above="@+id/inputContainer"
             app:dateHeaderFormat="dd MMMM yyyy"
-            app:incomingDefaultBubbleColor="@color/white_three"
-            app:incomingDefaultBubblePressedColor="@color/white_four"
-            app:incomingDefaultBubbleSelectedColor="@color/white_four"
+            app:incomingDefaultBubbleColor="@color/gray_dark_transparent"
+            app:incomingDefaultBubblePressedColor="@color/gray_dark_transparent"
+            app:incomingDefaultBubbleSelectedColor="@color/gray_dark_transparent"
             app:incomingDefaultImageOverlayPressedColor="@color/black_10"
             app:incomingDefaultImageOverlaySelectedColor="@color/gray_transparent"
             app:incomingTextColor="@color/black"
             app:incomingTextLinkColor="@color/bluejeans"
-            app:incomingTextSize="18sp"
+            app:incomingTextSize="16sp"
             app:outcomingDefaultBubbleColor="@color/bluejeans"
             app:outcomingDefaultBubblePressedColor="@color/bluejeans"
             app:outcomingDefaultBubbleSelectedColor="@color/gray_dark_transparent"
             app:outcomingDefaultImageOverlayPressedColor="@color/black_10"
             app:outcomingDefaultImageOverlaySelectedColor="@color/gray_transparent"
             app:outcomingTextColor="@color/white"
-            app:outcomingTextLinkColor="@color/brown"
-            app:outcomingTextSize="18sp"
+            app:outcomingTextLinkColor="@color/white"
+            app:outcomingTextSize="16sp"
             app:textAutoLink="all" />
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_above="@+id/input"
-            android:layout_marginLeft="16dp"
-            android:layout_marginRight="16dp"
-            android:background="@color/bluejeans" />
-
-
-        <com.uyscuti.social.chatsuit.messages.MessageInput
-            android:id="@+id/input"
-            android:visibility="visible"
+        <RelativeLayout
+            android:id="@+id/inputContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            app:attachmentButtonDefaultIconColor="@color/bluejeans"
-            app:attachmentButtonDefaultIconPressedColor="@color/bluejeans"
-            app:inputButtonDefaultBgColor="@color/bluejeans"
-            app:inputButtonDefaultBgPressedColor="@color/bluejeans"
-            app:inputCursorDrawable="@drawable/shape_custom_cursor"
-            app:inputHint="@string/hint_enter_a_message"
-            android:layout_gravity="bottom"
-            app:showAttachmentButton="true" />
+            android:background="@color/white"
+            android:padding="8dp">
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/edittext_design"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp">
+
+                    <ImageView
+                        android:id="@+id/emoji"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_margin="8dp"
+                        android:background="@drawable/baseline_insert_emoticon_24_blue_jeans"
+                        app:tint="@color/bluejeans" />
+
+                    <com.vanniktech.emoji.EmojiEditText
+                        android:id="@+id/inputEditText"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:minHeight="40dp"
+                        android:maxHeight="120dp"
+                        android:background="@android:color/transparent"
+                        android:hint="Message..."
+                        android:textSize="16sp"
+                        android:textColorHint="#808080"
+                        android:imeOptions="actionSend"
+                        android:inputType="textCapSentences|textMultiLine"
+                        android:maxLines="4"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:gravity="center_vertical" />
+
+                    <ImageView
+                        android:id="@+id/attachment"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_margin="8dp"
+                        android:background="@drawable/attachment_blue_jeans"
+                        app:tint="@color/bluejeans" />
+
+                </LinearLayout>
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/sendCard"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    app:cardCornerRadius="24dp"
+                    app:cardBackgroundColor="@color/bluejeans"
+                    app:cardElevation="2dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/sendBtn"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/send_svgrepo_com__1_"
+                        app:tint="@color/white"
+                        android:visibility="gone" />
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/vnCard"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    app:cardCornerRadius="24dp"
+                    app:cardBackgroundColor="@color/bluejeans"
+                    app:cardElevation="2dp">
+
+                    <ImageView
+                        android:id="@+id/voiceNote"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/mic_1"
+                        app:tint="@color/white" />
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+
+        </RelativeLayout>
 
     </RelativeLayout>
 
@@ -110,13 +186,12 @@
 
                 <ImageView
                     android:layout_width="25dp"
-                    android:id="@+id/emoji"
-                    android:alpha=".20"
+                    android:id="@+id/emoji2"
                     android:layout_gravity="center_vertical"
                     android:layout_margin="10dp"
                     android:background="@drawable/baseline_insert_emoticon_24"
                     android:layout_height="25dp"
-                    app:tint="@color/white" />
+                    app:tint="@color/bluejeans" />
 
                 <com.vanniktech.emoji.EmojiEditText
                     android:layout_width="0dp"
@@ -124,7 +199,7 @@
                     android:layout_height="50dp"
                     android:gravity="center_vertical"
                     android:layout_gravity="center_vertical"
-                    android:background="@drawable/edittext_design"
+                    android:background="@android:color/transparent"
                     android:paddingStart="20dp"
                     android:padding="8dp"
                     android:hint="Type a Message..."
@@ -132,11 +207,11 @@
                     android:imeOptions="actionSend"
                     android:inputType="textCapSentences|textMultiLine"
                     android:maxLines="4"
-                    android:id="@+id/messageEdit" />
+                    android:id="@+id/messageEdit2" />
 
                 <ImageView
                     android:layout_width="25dp"
-                    android:id="@+id/attachment"
+                    android:id="@+id/attachment2"
                     android:layout_gravity="center_vertical"
                     android:layout_margin="8dp"
                     android:background="@drawable/attachment__2_"
@@ -145,14 +220,11 @@
 
             </LinearLayout>
 
-
-
-
             <androidx.cardview.widget.CardView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="20dp"
-                android:id="@+id/sendCard"
+                android:id="@+id/sendCard2"
                 android:padding="4dp"
                 android:layout_marginLeft="5dp"
                 app:contentPadding="8dp"
@@ -165,18 +237,15 @@
                     android:layout_height="30dp"
                     android:src="@drawable/send_svgrepo_com__1_"
                     android:visibility="gone"
-                    android:id="@+id/sendBtn"
+                    android:id="@+id/sendBtn2"
                     app:tint="@color/bluejeans" />
             </androidx.cardview.widget.CardView>
-
-
-
 
             <androidx.cardview.widget.CardView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="20dp"
-                android:id="@+id/vnCard"
+                android:id="@+id/vnCard2"
                 android:padding="4dp"
                 android:layout_marginLeft="5dp"
                 app:contentPadding="8dp"
@@ -187,20 +256,191 @@
                     android:layout_width="30dp"
                     android:layout_height="30dp"
                     android:src="@drawable/mic_1"
-                    android:id="@+id/voiceNote"
+                    android:id="@+id/voiceNote2"
                     app:tint="@color/bluejeans" />
-
-
             </androidx.cardview.widget.CardView>
-
-
 
         </LinearLayout>
 
     </RelativeLayout>
 
-</RelativeLayout>
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/VNLayout"
+        android:visibility="gone">
 
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:elevation="18dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:id="@+id/VNLinearLayout"
+                android:background="@drawable/rounded_corners_vn">
+
+                <!-- Shared waveform area (always visible) -->
+                <LinearLayout
+                    android:id="@+id/recordingLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center_vertical"
+                    android:padding="8dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:visibility="visible">
+
+                    <!-- Timer for recording -->
+                    <TextView
+                        android:id="@+id/recordingTimerTv"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="00:00"
+                        android:textSize="16sp"
+                        android:textColor="@color/blueJeans"
+                        android:layout_marginEnd="12dp"
+                        android:visibility="visible" />
+
+                    <!-- Play controls for paused state (hidden during recording) -->
+                    <LinearLayout
+                        android:id="@+id/playVNRecorded"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:id="@+id/playVnAudioBtn"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:src="@drawable/play_svgrepo_com"
+                            app:tint="@color/blueJeans"
+                            android:padding="4dp"
+                            android:layout_marginEnd="12dp" />
+
+                        <TextView
+                            android:id="@+id/pausedTimerTv"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="00:00"
+                            android:textSize="16sp"
+                            android:textColor="@color/blueJeans"
+                            android:layout_marginEnd="12dp" />
+                    </LinearLayout>
+
+                    <!-- Full waveform container -->
+                    <HorizontalScrollView
+                        android:id="@+id/waveformScrollView"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/waveDotsContainer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingEnd="8dp" />
+                    </HorizontalScrollView>
+                </LinearLayout>
+
+                <!-- Container for WaveformSeekBar -->
+                <LinearLayout
+
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
+                        android:id="@+id/wave"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_weight="1"
+                        android:scaleY="1.8"
+                        app:wave_width="4dp"
+                        app:wave_gap="6dp"
+                        app:wave_min_height="16dp"
+                        app:wave_corner_radius="2dp"
+                        app:wave_background_color="@color/blueJeans"
+                        app:wave_progress_color="@color/blueJeans"
+                        app:wave_gravity="center"
+                        android:visibility="gone"
+                        tools:ignore="MissingClass" />
+                </LinearLayout>
+
+                <!-- Control buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:id="@+id/deleteVN"
+                        android:src="@drawable/delete_24"
+                        app:tint="@color/white"
+                        android:background="@drawable/ic_ripple"
+                        android:layout_marginStart="16dp"
+                        android:layout_gravity="center"
+                        android:padding="5dp" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <ImageView
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:src="@drawable/ic_mic_on"
+                        android:padding="10dp"
+                        app:tint="@color/white"
+                        android:id="@+id/recordVN"
+                        android:layout_gravity="center"
+                        android:background="@drawable/ic_ripple" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:padding="8dp"
+                        android:src="@drawable/send_svgrepo_com__1_"
+                        app:tint="@color/white"
+                        android:id="@+id/sendVN"
+                        android:scaleType="centerCrop"
+                        android:layout_gravity="center"
+                        android:background="@drawable/ic_ripple_disabled"
+                        android:layout_marginEnd="16dp" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</RelativeLayout>
 
 
 <!--<?xml version="1.0" encoding="utf-8"?>-->
@@ -210,11 +450,10 @@
 <!--    android:layout_width="match_parent"-->
 <!--    android:layout_height="match_parent"-->
 <!--    android:fitsSystemWindows="true"-->
-<!--    android:background="@drawable/personal_chat_white_default_background"-->
 <!--    tools:context=".User_Interface.OtherImportantProfileThings.MessagesActivity">-->
 
 <!--    <RelativeLayout-->
-<!--        android:layout_width="match_parent"-->
+<!--        android:layout_width="wrap_content"-->
 <!--        android:id="@+id/container"-->
 <!--        android:layout_height="match_parent">-->
 
@@ -227,6 +466,8 @@
 <!--            android:elevation="@dimen/sub_title_text_size"-->
 <!--            android:fitsSystemWindows="true">-->
 
+
+
 <!--            <com.google.android.material.appbar.MaterialToolbar-->
 <!--                android:id="@+id/toolbar"-->
 <!--                android:layout_width="match_parent"-->
@@ -235,134 +476,57 @@
 
 <!--        </com.google.android.material.appbar.AppBarLayout>-->
 
+<!--        &lt;!&ndash;    <include layout="@layout/content_messages" />&ndash;&gt;-->
+
 <!--        <com.uyscuti.social.chatsuit.messages.MessagesList-->
 <!--            android:id="@+id/messagesList"-->
 <!--            android:layout_width="match_parent"-->
 <!--            android:layout_height="match_parent"-->
 <!--            android:layout_below="@id/toolbar_layout"-->
-<!--            android:layout_above="@+id/inputContainer"-->
+<!--            android:layout_above="@+id/input"-->
 <!--            app:dateHeaderFormat="dd MMMM yyyy"-->
-<!--            app:incomingDefaultBubbleColor="@color/gray_dark_transparent"-->
-<!--            app:incomingDefaultBubblePressedColor="@color/gray_dark_transparent"-->
-<!--            app:incomingDefaultBubbleSelectedColor="@color/gray_dark_transparent"-->
+<!--            app:incomingDefaultBubbleColor="@color/white_three"-->
+<!--            app:incomingDefaultBubblePressedColor="@color/white_four"-->
+<!--            app:incomingDefaultBubbleSelectedColor="@color/white_four"-->
 <!--            app:incomingDefaultImageOverlayPressedColor="@color/black_10"-->
 <!--            app:incomingDefaultImageOverlaySelectedColor="@color/gray_transparent"-->
 <!--            app:incomingTextColor="@color/black"-->
 <!--            app:incomingTextLinkColor="@color/bluejeans"-->
-<!--            app:incomingTextSize="16sp"-->
+<!--            app:incomingTextSize="18sp"-->
 <!--            app:outcomingDefaultBubbleColor="@color/bluejeans"-->
 <!--            app:outcomingDefaultBubblePressedColor="@color/bluejeans"-->
 <!--            app:outcomingDefaultBubbleSelectedColor="@color/gray_dark_transparent"-->
 <!--            app:outcomingDefaultImageOverlayPressedColor="@color/black_10"-->
 <!--            app:outcomingDefaultImageOverlaySelectedColor="@color/gray_transparent"-->
 <!--            app:outcomingTextColor="@color/white"-->
-<!--            app:outcomingTextLinkColor="@color/white"-->
-<!--            app:outcomingTextSize="16sp"-->
+<!--            app:outcomingTextLinkColor="@color/brown"-->
+<!--            app:outcomingTextSize="18sp"-->
 <!--            app:textAutoLink="all" />-->
 
-<!--        <RelativeLayout-->
-<!--            android:id="@+id/inputContainer"-->
+<!--        <View-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="1dp"-->
+<!--            android:layout_above="@+id/input"-->
+<!--            android:layout_marginLeft="16dp"-->
+<!--            android:layout_marginRight="16dp"-->
+<!--            android:background="@color/bluejeans" />-->
+
+
+<!--        <com.uyscuti.social.chatsuit.messages.MessageInput-->
+<!--            android:id="@+id/input"-->
+<!--            android:visibility="visible"-->
 <!--            android:layout_width="match_parent"-->
 <!--            android:layout_height="wrap_content"-->
 <!--            android:layout_alignParentBottom="true"-->
-<!--            android:background="@color/white"-->
-<!--            android:padding="8dp">-->
+<!--            app:attachmentButtonDefaultIconColor="@color/bluejeans"-->
+<!--            app:attachmentButtonDefaultIconPressedColor="@color/bluejeans"-->
+<!--            app:inputButtonDefaultBgColor="@color/bluejeans"-->
+<!--            app:inputButtonDefaultBgPressedColor="@color/bluejeans"-->
+<!--            app:inputCursorDrawable="@drawable/shape_custom_cursor"-->
+<!--            app:inputHint="@string/hint_enter_a_message"-->
+<!--            android:layout_gravity="bottom"-->
+<!--            app:showAttachmentButton="true" />-->
 
-<!--            <LinearLayout-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:orientation="horizontal"-->
-<!--                android:gravity="center_vertical">-->
-
-<!--                <LinearLayout-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_weight="1"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:background="@drawable/edittext_design"-->
-<!--                    android:orientation="horizontal"-->
-<!--                    android:gravity="center_vertical"-->
-<!--                    android:paddingStart="4dp"-->
-<!--                    android:paddingEnd="4dp">-->
-
-<!--                    <ImageView-->
-<!--                        android:id="@+id/emoji"-->
-<!--                        android:layout_width="28dp"-->
-<!--                        android:layout_height="28dp"-->
-<!--                        android:layout_margin="8dp"-->
-<!--                        android:background="@drawable/baseline_insert_emoticon_24_blue_jeans"-->
-<!--                        app:tint="@color/bluejeans" />-->
-
-<!--                    <com.vanniktech.emoji.EmojiEditText-->
-<!--                        android:id="@+id/inputEditText"-->
-<!--                        android:layout_width="0dp"-->
-<!--                        android:layout_weight="1"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:minHeight="40dp"-->
-<!--                        android:maxHeight="120dp"-->
-<!--                        android:background="@android:color/transparent"-->
-<!--                        android:hint="Message..."-->
-<!--                        android:textSize="16sp"-->
-<!--                        android:textColorHint="#808080"-->
-<!--                        android:imeOptions="actionSend"-->
-<!--                        android:inputType="textCapSentences|textMultiLine"-->
-<!--                        android:maxLines="4"-->
-<!--                        android:paddingStart="8dp"-->
-<!--                        android:paddingEnd="8dp"-->
-<!--                        android:paddingTop="8dp"-->
-<!--                        android:paddingBottom="8dp"-->
-<!--                        android:gravity="center_vertical" />-->
-
-<!--                    <ImageView-->
-<!--                        android:id="@+id/attachment"-->
-<!--                        android:layout_width="28dp"-->
-<!--                        android:layout_height="28dp"-->
-<!--                        android:layout_margin="8dp"-->
-<!--                        android:background="@drawable/attachment_blue_jeans"-->
-<!--                        app:tint="@color/bluejeans" />-->
-
-<!--                </LinearLayout>-->
-
-<!--                <androidx.cardview.widget.CardView-->
-<!--                    android:id="@+id/sendCard"-->
-<!--                    android:layout_width="48dp"-->
-<!--                    android:layout_height="48dp"-->
-<!--                    android:layout_marginStart="8dp"-->
-<!--                    app:cardCornerRadius="24dp"-->
-<!--                    app:cardBackgroundColor="@color/bluejeans"-->
-<!--                    app:cardElevation="2dp"-->
-<!--                    android:visibility="gone">-->
-
-<!--                    <ImageView-->
-<!--                        android:id="@+id/sendBtn"-->
-<!--                        android:layout_width="24dp"-->
-<!--                        android:layout_height="24dp"-->
-<!--                        android:layout_gravity="center"-->
-<!--                        android:src="@drawable/send_svgrepo_com__1_"-->
-<!--                        app:tint="@color/white"-->
-<!--                        android:visibility="gone" />-->
-<!--                </androidx.cardview.widget.CardView>-->
-
-<!--                <androidx.cardview.widget.CardView-->
-<!--                    android:id="@+id/vnCard"-->
-<!--                    android:layout_width="48dp"-->
-<!--                    android:layout_height="48dp"-->
-<!--                    android:layout_marginStart="8dp"-->
-<!--                    app:cardCornerRadius="24dp"-->
-<!--                    app:cardBackgroundColor="@color/bluejeans"-->
-<!--                    app:cardElevation="2dp">-->
-
-<!--                    <ImageView-->
-<!--                        android:id="@+id/voiceNote"-->
-<!--                        android:layout_width="24dp"-->
-<!--                        android:layout_height="24dp"-->
-<!--                        android:layout_gravity="center"-->
-<!--                        android:src="@drawable/mic_1"-->
-<!--                        app:tint="@color/white" />-->
-<!--                </androidx.cardview.widget.CardView>-->
-
-<!--            </LinearLayout>-->
-
-<!--        </RelativeLayout>-->
 
 <!--    </RelativeLayout>-->
 
@@ -391,12 +555,13 @@
 
 <!--                <ImageView-->
 <!--                    android:layout_width="25dp"-->
-<!--                    android:id="@+id/emoji2"-->
+<!--                    android:id="@+id/emoji"-->
+<!--                    android:alpha=".20"-->
 <!--                    android:layout_gravity="center_vertical"-->
 <!--                    android:layout_margin="10dp"-->
 <!--                    android:background="@drawable/baseline_insert_emoticon_24"-->
 <!--                    android:layout_height="25dp"-->
-<!--                    app:tint="@color/bluejeans" />-->
+<!--                    app:tint="@color/white" />-->
 
 <!--                <com.vanniktech.emoji.EmojiEditText-->
 <!--                    android:layout_width="0dp"-->
@@ -404,7 +569,7 @@
 <!--                    android:layout_height="50dp"-->
 <!--                    android:gravity="center_vertical"-->
 <!--                    android:layout_gravity="center_vertical"-->
-<!--                    android:background="@android:color/transparent"-->
+<!--                    android:background="@drawable/edittext_design"-->
 <!--                    android:paddingStart="20dp"-->
 <!--                    android:padding="8dp"-->
 <!--                    android:hint="Type a Message..."-->
@@ -412,11 +577,11 @@
 <!--                    android:imeOptions="actionSend"-->
 <!--                    android:inputType="textCapSentences|textMultiLine"-->
 <!--                    android:maxLines="4"-->
-<!--                    android:id="@+id/messageEdit2" />-->
+<!--                    android:id="@+id/messageEdit" />-->
 
 <!--                <ImageView-->
 <!--                    android:layout_width="25dp"-->
-<!--                    android:id="@+id/attachment2"-->
+<!--                    android:id="@+id/attachment"-->
 <!--                    android:layout_gravity="center_vertical"-->
 <!--                    android:layout_margin="8dp"-->
 <!--                    android:background="@drawable/attachment__2_"-->
@@ -425,11 +590,14 @@
 
 <!--            </LinearLayout>-->
 
+
+
+
 <!--            <androidx.cardview.widget.CardView-->
 <!--                android:layout_width="wrap_content"-->
 <!--                android:layout_height="wrap_content"-->
 <!--                app:cardCornerRadius="20dp"-->
-<!--                android:id="@+id/sendCard2"-->
+<!--                android:id="@+id/sendCard"-->
 <!--                android:padding="4dp"-->
 <!--                android:layout_marginLeft="5dp"-->
 <!--                app:contentPadding="8dp"-->
@@ -442,15 +610,18 @@
 <!--                    android:layout_height="30dp"-->
 <!--                    android:src="@drawable/send_svgrepo_com__1_"-->
 <!--                    android:visibility="gone"-->
-<!--                    android:id="@+id/sendBtn2"-->
+<!--                    android:id="@+id/sendBtn"-->
 <!--                    app:tint="@color/bluejeans" />-->
 <!--            </androidx.cardview.widget.CardView>-->
+
+
+
 
 <!--            <androidx.cardview.widget.CardView-->
 <!--                android:layout_width="wrap_content"-->
 <!--                android:layout_height="wrap_content"-->
 <!--                app:cardCornerRadius="20dp"-->
-<!--                android:id="@+id/vnCard2"-->
+<!--                android:id="@+id/vnCard"-->
 <!--                android:padding="4dp"-->
 <!--                android:layout_marginLeft="5dp"-->
 <!--                app:contentPadding="8dp"-->
@@ -461,188 +632,17 @@
 <!--                    android:layout_width="30dp"-->
 <!--                    android:layout_height="30dp"-->
 <!--                    android:src="@drawable/mic_1"-->
-<!--                    android:id="@+id/voiceNote2"-->
+<!--                    android:id="@+id/voiceNote"-->
 <!--                    app:tint="@color/bluejeans" />-->
+
+
 <!--            </androidx.cardview.widget.CardView>-->
+
+
 
 <!--        </LinearLayout>-->
 
 <!--    </RelativeLayout>-->
 
-<!--    <androidx.constraintlayout.widget.ConstraintLayout-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:id="@+id/VNLayout"-->
-<!--        android:visibility="gone">-->
-
-<!--        <androidx.cardview.widget.CardView-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="150dp"-->
-<!--            app:layout_constraintStart_toStartOf="parent"-->
-<!--            app:layout_constraintTop_toTopOf="parent"-->
-<!--            app:layout_constraintVertical_bias="1.0"-->
-<!--            app:layout_constraintBottom_toBottomOf="parent"-->
-<!--            app:layout_constraintEnd_toEndOf="parent"-->
-<!--            android:elevation="18dp">-->
-
-<!--            <LinearLayout-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="match_parent"-->
-<!--                android:orientation="vertical"-->
-<!--                android:id="@+id/VNLinearLayout"-->
-<!--                android:background="@drawable/rounded_corners_vn">-->
-
-<!--                &lt;!&ndash; Shared waveform area (always visible) &ndash;&gt;-->
-<!--                <LinearLayout-->
-<!--                    android:id="@+id/recordingLayout"-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:orientation="horizontal"-->
-<!--                    android:layout_marginTop="6dp"-->
-<!--                    android:gravity="center_vertical"-->
-<!--                    android:padding="8dp"-->
-<!--                    android:layout_marginStart="16dp"-->
-<!--                    android:layout_marginEnd="16dp"-->
-<!--                    android:visibility="visible">-->
-
-<!--                    &lt;!&ndash; Timer for recording &ndash;&gt;-->
-<!--                    <TextView-->
-<!--                        android:id="@+id/recordingTimerTv"-->
-<!--                        android:layout_width="wrap_content"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:text="00:00"-->
-<!--                        android:textSize="16sp"-->
-<!--                        android:textColor="@color/blueJeans"-->
-<!--                        android:layout_marginEnd="12dp"-->
-<!--                        android:visibility="visible" />-->
-
-<!--                    &lt;!&ndash; Play controls for paused state (hidden during recording) &ndash;&gt;-->
-<!--                    <LinearLayout-->
-<!--                        android:id="@+id/playVNRecorded"-->
-<!--                        android:layout_width="wrap_content"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:orientation="horizontal"-->
-<!--                        android:gravity="center_vertical"-->
-<!--                        android:visibility="gone">-->
-
-<!--                        <ImageView-->
-<!--                            android:id="@+id/playVnAudioBtn"-->
-<!--                            android:layout_width="32dp"-->
-<!--                            android:layout_height="32dp"-->
-<!--                            android:src="@drawable/play_svgrepo_com"-->
-<!--                            app:tint="@color/blueJeans"-->
-<!--                            android:padding="4dp"-->
-<!--                            android:layout_marginEnd="12dp" />-->
-
-<!--                        <TextView-->
-<!--                            android:id="@+id/pausedTimerTv"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:text="00:00"-->
-<!--                            android:textSize="16sp"-->
-<!--                            android:textColor="@color/blueJeans"-->
-<!--                            android:layout_marginEnd="12dp" />-->
-<!--                    </LinearLayout>-->
-
-<!--                    &lt;!&ndash; Full waveform container &ndash;&gt;-->
-<!--                    <HorizontalScrollView-->
-<!--                        android:id="@+id/waveformScrollView"-->
-<!--                        android:layout_width="0dp"-->
-<!--                        android:layout_height="48dp"-->
-<!--                        android:layout_weight="1"-->
-<!--                        android:scrollbars="none">-->
-
-<!--                        <LinearLayout-->
-<!--                            android:id="@+id/waveDotsContainer"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="match_parent"-->
-<!--                            android:orientation="horizontal"-->
-<!--                            android:gravity="center_vertical"-->
-<!--                            android:paddingEnd="8dp" />-->
-<!--                    </HorizontalScrollView>-->
-<!--                </LinearLayout>-->
-
-<!--                &lt;!&ndash; Container for WaveformSeekBar &ndash;&gt;-->
-<!--                <LinearLayout-->
-
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="0dp"-->
-<!--                    android:orientation="vertical"-->
-<!--                    android:visibility="gone">-->
-
-<!--                    <com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar-->
-<!--                        android:id="@+id/wave"-->
-<!--                        android:layout_width="match_parent"-->
-<!--                        android:layout_height="50dp"-->
-<!--                        android:layout_weight="1"-->
-<!--                        android:scaleY="1.8"-->
-<!--                        app:wave_width="4dp"-->
-<!--                        app:wave_gap="6dp"-->
-<!--                        app:wave_min_height="16dp"-->
-<!--                        app:wave_corner_radius="2dp"-->
-<!--                        app:wave_background_color="@color/blueJeans"-->
-<!--                        app:wave_progress_color="@color/blueJeans"-->
-<!--                        app:wave_gravity="center"-->
-<!--                        android:visibility="gone"-->
-<!--                        tools:ignore="MissingClass" />-->
-<!--                </LinearLayout>-->
-
-<!--                &lt;!&ndash; Control buttons &ndash;&gt;-->
-<!--                <LinearLayout-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:orientation="horizontal"-->
-<!--                    android:layout_marginTop="12dp"-->
-<!--                    android:gravity="center_vertical">-->
-
-<!--                    <ImageView-->
-<!--                        android:layout_width="40dp"-->
-<!--                        android:layout_height="40dp"-->
-<!--                        android:id="@+id/deleteVN"-->
-<!--                        android:src="@drawable/delete_24"-->
-<!--                        app:tint="@color/white"-->
-<!--                        android:background="@drawable/ic_ripple"-->
-<!--                        android:layout_marginStart="16dp"-->
-<!--                        android:layout_gravity="center"-->
-<!--                        android:padding="5dp" />-->
-
-<!--                    <View-->
-<!--                        android:layout_width="0dp"-->
-<!--                        android:layout_height="1dp"-->
-<!--                        android:layout_weight="1" />-->
-
-<!--                    <ImageView-->
-<!--                        android:layout_width="60dp"-->
-<!--                        android:layout_height="60dp"-->
-<!--                        android:src="@drawable/ic_mic_on"-->
-<!--                        android:padding="10dp"-->
-<!--                        app:tint="@color/white"-->
-<!--                        android:id="@+id/recordVN"-->
-<!--                        android:layout_gravity="center"-->
-<!--                        android:background="@drawable/ic_ripple" />-->
-
-<!--                    <View-->
-<!--                        android:layout_width="0dp"-->
-<!--                        android:layout_height="1dp"-->
-<!--                        android:layout_weight="1" />-->
-
-<!--                    <ImageView-->
-<!--                        android:layout_width="40dp"-->
-<!--                        android:layout_height="40dp"-->
-<!--                        android:padding="8dp"-->
-<!--                        android:src="@drawable/send_svgrepo_com__1_"-->
-<!--                        app:tint="@color/white"-->
-<!--                        android:id="@+id/sendVN"-->
-<!--                        android:scaleType="centerCrop"-->
-<!--                        android:layout_gravity="center"-->
-<!--                        android:background="@drawable/ic_ripple_disabled"-->
-<!--                        android:layout_marginEnd="16dp" />-->
-<!--                </LinearLayout>-->
-
-<!--            </LinearLayout>-->
-
-<!--        </androidx.cardview.widget.CardView>-->
-
-<!--    </androidx.constraintlayout.widget.ConstraintLayout>-->
-
 <!--</RelativeLayout>-->
+
