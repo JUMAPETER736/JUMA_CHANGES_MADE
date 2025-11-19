@@ -15,6 +15,7 @@ import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
 import android.media.AudioRecord
+import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.media.MediaScannerConnection
@@ -142,6 +143,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -929,7 +931,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-
     @SuppressLint("DefaultLocale")
     private fun updateRecordingTimer() {
         timerHandler.post(object : kotlinx.coroutines.Runnable {
@@ -1025,9 +1026,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     private fun stopRecordingVoiceNote() {
         val TAG = "StopRecording"
         try {
-
-
-
             // Stop media recorder
             if (mediaRecorder != null) {
                 mediaRecorder?.apply {
@@ -1045,7 +1043,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             binding.recordVN?.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
             binding.sendVN?.setBackgroundResource(com.uyscuti.social.circuit.R.drawable.ic_ripple_disabled)
             binding.sendVN?.isClickable = false
-            timer.stop()
 
             if (player?.isPlaying == true) {
                 stopPlaying()
@@ -1066,21 +1063,76 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             if (!file.exists()) {
                 Log.e(TAG, "Audio file not found: $audioFilePath")
                 Toast.makeText(this, "Voice note file not found", Toast.LENGTH_SHORT).show()
+                sending = false
+                binding.VNLayout.visibility = View.GONE
+                binding.inputContainer.visibility = View.VISIBLE
                 return
             }
 
-            // Get duration and filename
-            val durationString = getFormattedDuration(audioFilePath)
-            val fileName = file.name
+            // Get duration in seconds - FIXED: Added the missing method
+            val durationMs = getDurationFromMediaMetadata(audioFilePath)
+            val durationSeconds = (durationMs / 1000).toInt()
+            Log.d(TAG, "Voice note duration: $durationSeconds seconds")
 
-            Log.d(TAG, "Voice note prepared - File: $fileName, Duration: $durationString, Path: $audioFilePath")
+            // Create message entities
+            val messageId = "VoiceNote_${Random.Default.nextInt()}"
+            val date = Date(System.currentTimeMillis())
+            val avatar = settings.getString("avatar", "avatar").toString()
 
-            // Check file size and compress if needed
-            val fileSizeInBytes = file.length()
-            val fileSizeInKB = fileSizeInBytes / 1024
-            val fileSizeInMB = fileSizeInKB / 1024
+            val user = User("0", "You", avatar, true, date)
+            val message = Message(
+                messageId,
+                user,
+                null, // No text content for voice note
+                date
+            )
+            message.status = "Sending"
 
-            Log.d(TAG, "Voice note file size: $fileSizeInKB KB, $fileSizeInMB MB")
+            // FIXED: Set voice note using setter method instead of direct access
+            message.setVoice(Message.Voice(audioFilePath, durationSeconds))
+
+            val userEntity = UserEntity(
+                "0",
+                "You",
+                avatar,
+                date,
+                true
+            )
+
+            val voiceMessageEntity = MessageEntity(
+                id = messageId,
+                chatId = chatId,
+                userName = "You",
+                user = userEntity,
+                userId = myId,
+                text = "", // Empty text for voice note
+                createdAt = System.currentTimeMillis(),
+                imageUrl = null,
+                voiceUrl = audioFilePath, // Local path initially
+                voiceDuration = durationSeconds,
+                status = "Sending",
+                videoUrl = null,
+                audioUrl = null,
+                docUrl = null,
+                fileSize = file.length()
+            )
+
+            // Add to UI immediately (like text messages)
+            super.messagesAdapter?.addToStart(message, true)
+
+            // Insert into database
+            CoroutineScope(Dispatchers.IO).launch {
+                insertMessage(voiceMessageEntity)
+                updateLastMessage(isGroup, chatId, voiceMessageEntity)
+            }
+
+            // Hide VN recording UI
+            binding.VNLayout.visibility = View.GONE
+            binding.inputContainer.visibility = View.VISIBLE
+
+            // Check file size and process
+            val fileSizeInMB = file.length() / (1024 * 1024)
+            Log.d(TAG, "Voice note file size: $fileSizeInMB MB")
 
             if (fileSizeInMB > 2) {
                 Log.d(TAG, "Voice note needs compression")
@@ -1088,51 +1140,139 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 val outputFilePath = File(cacheDir, outputFileName)
 
                 lifecycleScope.launch(Dispatchers.IO) {
-
-
-                    // Compress audio in background
+                    // Compress audio
                     val compressor = FFMPEG_AudioCompressor()
                     val isCompressionSuccessful = compressor.compress(audioFilePath, outputFilePath.absolutePath)
 
                     if (isCompressionSuccessful) {
                         Log.d(TAG, "Voice note compression successful")
-                        val compressedSizeInBytes = outputFilePath.length()
-                        val compressedSizeInKB = compressedSizeInBytes / 1024
-                        val compressedSizeInMB = compressedSizeInKB / 1024
-                        Log.d(TAG, "Compressed file size: $compressedSizeInKB KB, $compressedSizeInMB MB")
+                        val compressedSizeInMB = outputFilePath.length() / (1024 * 1024)
+                        Log.d(TAG, "Compressed file size: $compressedSizeInMB MB")
 
-
+                        // Send compressed file
+                        sendVoiceNoteMessage(outputFilePath, message, voiceMessageEntity)
                     } else {
                         Log.e(TAG, "Voice note compression failed - using original file")
-                        withContext(Dispatchers.Main) {
-                            // Trigger upload with original file
-
-                        }
+                        // Send original file
+                        sendVoiceNoteMessage(file, message, voiceMessageEntity)
                     }
                 }
             } else {
-                // File is small enough, upload directly
-                Log.d(TAG, "Voice note doesn't need compression, uploading directly")
-
+                // File is small enough, send directly
+                Log.d(TAG, "Voice note doesn't need compression, sending directly")
+                lifecycleScope.launch(Dispatchers.IO) {
+                    sendVoiceNoteMessage(file, message, voiceMessageEntity)
+                }
             }
-
-            // Hide VN recording UI, keep comment section visible
-            binding.VNLayout.visibility = View.GONE
 
             // Clean up recording state
             wasPaused = false
             mixingCompleted = false
             recordedAudioFiles.clear()
-            sending = false
 
-            Log.d(TAG, "Voice note comment processing completed")
+            Log.d(TAG, "Voice note processing initiated")
 
         } catch (e: Exception) {
             Log.e(TAG, "Error in stopRecording: ${e.message}", e)
-            Toast.makeText(this, "", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Failed to send voice note", Toast.LENGTH_SHORT).show()
             sending = false
+            binding.VNLayout.visibility = View.GONE
+            binding.inputContainer.visibility = View.VISIBLE
         }
     }
+
+    private fun getDurationFromMediaMetadata(audioFilePath: String): Long {
+        return try {
+            val retriever = MediaMetadataRetriever()
+            retriever.setDataSource(audioFilePath)
+            val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+            retriever.release()
+            duration?.toLongOrNull() ?: 0L
+        } catch (e: Exception) {
+            Log.e("getDuration", "Error getting audio duration: ${e.message}", e)
+            0L
+        }
+    }
+
+    private fun sendVoiceNoteMessage(
+        file: File,
+        message: Message,
+        dBMessage: MessageEntity
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            withContext(NonCancellable) {
+                try {
+                    // Create MultipartBody.Part from file
+                    val requestFile = file.asRequestBody("audio/mp3".toMediaTypeOrNull())
+                    val body = MultipartBody.Part.createFormData(
+                        "attachments",
+                        file.name,
+                        requestFile
+                    )
+
+                    Log.d(TAG, "Sending voice note: ${file.name}, size: ${file.length()} bytes")
+
+                    // Use your existing sendAttachment method
+                    when (val result = remoteMessageRepository.sendAttachment(
+                        chatId = chatId,
+                        message = null,
+                        filePath = body
+                    )) {
+                        is Result.Success -> {
+                            // Voice note sent successfully
+                            Log.d(TAG, "Voice note sent successfully")
+                            withContext(Dispatchers.Main) {
+                                super.messagesAdapter?.notifyMessageSent(message)
+                            }
+
+                            // Update message status in database
+                            messageViewModel.updateMessageStatus(dBMessage)
+
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(
+                                    this@MessagesActivity,
+                                    "Voice note sent",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+
+                        is Result.Error -> {
+                            Log.e(TAG, "Error sending voice note: ${result.exception.message}")
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(
+                                    this@MessagesActivity,
+                                    "Failed to send voice note",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                // Update message status to failed
+                                message.status = "Failed"
+                                dBMessage.status = "Failed"
+                                messageViewModel.updateMessageStatus(dBMessage)
+                                super.messagesAdapter?.notifyDataSetChanged()
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Exception sending voice note: ${e.message}", e)
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            this@MessagesActivity,
+                            "Error sending voice note",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        message.status = "Failed"
+                        dBMessage.status = "Failed"
+                        super.messagesAdapter?.notifyDataSetChanged()
+                    }
+                } finally {
+                    sending = false
+                }
+            }
+        }
+    }
+
 
     private fun stopPlaying() {
         val scrollAnimator = binding.waveformScrollView.tag as? ValueAnimator
