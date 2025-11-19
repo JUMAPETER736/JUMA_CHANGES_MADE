@@ -315,7 +315,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     }
 
 
-
     companion object {
 
         const val SENT = 1
@@ -1473,8 +1472,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-
-
     private fun deleteVn() {
         recordedAudioFiles.clear()
         val isDeleted = deleteFiles(recordedAudioFiles)
@@ -2611,19 +2608,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                     // Handle the selected file here
                     val contentResolver = contentResolver
-                    //val docName = getPathFromUri(uri)
-                    //val selectedPath = copyFileToInternalStorage(uri, docName!!)
-                    //val filePath = getFilePathFromUri(uri)
-//                    val localPath = uri.toString() // You can store this URI for later use
-//                    Log.i("File Path", localPath)
-//                    Log.i("File Path", "docName - $docName")
-//                    Log.d("File Path", "File Path - $selectedPath")
-//                    Log.d("File Path", "File Path from uri- $filePath")
 
-                    //val data = result.data
-
-                    // Process the selected image data
-                    //val docPath = data?.getStringExtra("docPath")
 
                     Log.d("Document Results", "Picked Document : $data")
 
@@ -2844,12 +2829,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             imagePickerLauncher.launch(intent)
 
             // Apply slide-up animation
-//            overridePendingTransition(R.anim.slide_up, R.anim.stay)
-//            overridePendingTransition(0, 0) // Disable the default transition
-//            this@MessagesActivity.overridePendingTransition(
-//                R.anim.up_slide,
-//                R.anim.stay
-//            )
+
         }
 
         video?.setOnClickListener {
@@ -2857,46 +2837,29 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             val intent = Intent(this@MessagesActivity, VideosActivity::class.java)
             dialog.dismiss()
             videoPickerLauncher.launch(intent)
-//            overridePendingTransition(R.anim.slide_up, R.anim.stay)
 
-//            overridePendingTransition(0, 0) // Disable the default transition
-//            this@MessagesActivity.overridePendingTransition(
-//                R.anim.up_slide,
-//                R.anim.stay
-//            )
 
         }
 
         audio?.setOnClickListener {
             val intent = Intent(this@MessagesActivity, AudioActivity::class.java)
-//            overridePendingTransition(R.anim.up_slide, R.anim.stay)
+
 
 
             dialog.dismiss()
             audioPickerLauncher.launch(intent)
-//
-//            overridePendingTransition(0, 0) // Disable the default transition
-//            this@MessagesActivity.overridePendingTransition(
-//                R.anim.up_slide,
-//                R.anim.stay
-//            )
+
 
         }
 
         doc?.setOnClickListener {
-            //val intent = Intent(this@ChatActivity, DisplayOtherFilesActivity::class.java)
+
             val currentApiVersion = Build.VERSION.SDK_INT
             if (currentApiVersion < Build.VERSION_CODES.Q) {
                 val intent = Intent(this@MessagesActivity, DocumentsActivity::class.java)
                 dialog.dismiss()
                 docsPickerLauncher.launch(intent)
-//                overridePendingTransition(R.anim.up_slide, R.anim.stay)
 
-//                overridePendingTransition(0, 0) // Disable the default transition
-//                this@MessagesActivity.overridePendingTransition(
-//                    R.anim.up_slide,
-//                    R.anim.stay
-//                )
 
             } else {
                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
@@ -2917,7 +2880,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
         camera?.setOnClickListener {
             val intent = Intent(this@MessagesActivity, CameraActivity::class.java)
-//            startActivity(intent)
+
             cameraLauncher.launch(intent)
             dialog.dismiss()
         }
@@ -2930,12 +2893,10 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         dialog.show()
     }
 
-//    override fun onAddVoiceNote() {
-//        Toast.makeText(this, "Voice Note Added", Toast.LENGTH_SHORT).show()
-//    }
+
 
     override fun onAddEmoji() {
-//        Toast.makeText(this, "Emoji Added", Toast.LENGTH_SHORT).show()
+
         initView()
     }
 
