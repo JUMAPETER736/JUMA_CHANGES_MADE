@@ -59,9 +59,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     private var TOTAL_MESSAGES_COUNT = 10
     private var first_messages_count = 0
 
-//    protected val senderId = "0"
-//    protected lateinit var imageLoader: ImageLoader
-//    protected lateinit var messagesAdapter: MessagesListAdapter<Message>
+
 
     private var firstLoad = true
 
@@ -90,9 +88,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
     private var selectedMessagesIds = ArrayList<String>()
 
-//    private var menu: Menu? = null
-//    private var selectionCount = 0
-//    private var lastLoadedDate: Date? = null
 
     private lateinit var chatId: String
     private lateinit var myId: String
@@ -106,12 +101,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//
-//        imageLoader = ImageLoader { imageView, url, _ ->
-//            Picasso.get().load(url).into(imageView)
-//        }
 
-//        messageRepository = MessageRepository(this,ChatDatabase.getInstance(this).messageDao(),re)
 
         groupDialogRepository = GroupDialogRepository(
             ChatDatabase.getInstance(this).groupDialogDao(),
@@ -122,17 +112,16 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
             try {
                 // Check if the URL is for a video file (you can adjust the list of video file extensions)
                 if (isVideoFile(url)) {
-//                    Log.d("Thumbnail", "The url is a video : $url")
+
 
                     if (url != null) {
                         if (imageView != null) {
-//                            loadVideoThumbnailP(this, url, imageView)
+
                             loadVideoThumbnail(this, url, imageView)
                         }
                     }
                 } else {
-                    // It's not a video, load it as an image
-//                    Picasso.get().load(url).into(imageView)
+
 
                     if (imageView != null) {
                         if (url != null) {
@@ -147,7 +136,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
         }
         settings = getSharedPreferences(PREFS_NAME, 0)
 
-//        lastMessageId = dialog?.lastMessage?.id
+
 
         loadMessageList()
     }
@@ -162,10 +151,10 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
     override fun onStart() {
         super.onStart()
-//        messagesAdapter.addToStart(getTextMessage(), true)
+
 
         if (firstLoad) {
-//            loadFirstMessages()
+
             initMessages()
         }
     }
@@ -305,19 +294,16 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
             // Handle menu item clicks here
             R.id.action_delete_ -> {
 
-//                Log.d("SelectedMessages", "${selectedMessagesIds.size}")
+
                 messagesAdapter?.deleteSelectedMessages()
 
                 val selectedMessages = messagesAdapter?.allSelectedMessages
 
-//                Log.d("SelectedMessages", "${selectedMessages?.size}")
 
                 selectedMessages?.map {
                     selectedMessagesIds.add(it.id)
                 }
-//                CoroutineScope(Dispatchers.IO).launch {
-//                    messageViewModel.deleteMessages(selectedMessagesIds)
-//                }
+
             }
 
             R.id.action_copy_ -> {
@@ -349,8 +335,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
     override fun onLoadMore(page: Int, totalItemsCount: Int) {
         if (totalItemsCount < TOTAL_MESSAGES_COUNT) {
-//            loadMessages()
-//            loadMessageList()
+
         }
     }
 
@@ -389,7 +374,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
                 // Check if the text is "None" and imageUrl is not null
                 val messageContent = if (message.imageUrl != null) {
-//                        user.id = "0"
+
                     Message(
                         message.id,
                         user,
@@ -400,7 +385,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 } else if (message.videoUrl != null) {
-//                        user.id = "0"
+
                     Message(
                         message.id,
                         user,
@@ -411,7 +396,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 } else if (message.audioUrl != null) {
-//                        user.id = "0"
+
                     Message(
                         message.id,
                         user,
@@ -428,7 +413,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 } else if (message.voiceUrl != null) {
-//                        user.id = "0"
+
                     Message(
                         message.id,
                         user,
@@ -439,7 +424,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 } else if (message.docUrl != null) {
-//                        user.id = "0"
+
                     Message(
                         message.id,
                         user,
@@ -485,8 +470,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                 val sortedMessages = messageList.sortedByDescending { it.createdAt }
                 val filteredMessages = sortedMessages.filter { !it.deleted }
                 TOTAL_MESSAGES_COUNT = filteredMessages.size
-//                Log.d(TAG, "Message List: $messageList")
-//                Log.d(TAG, "Sorted Message List: $sortedMessages")
+
                 val messages = filteredMessages.filter { message ->
                     val userId = if (message.userId == myId) "0" else "1"
                     userId != "0" || (userId == "0" && message.id.startsWith("Image") || message.id.startsWith(
@@ -509,7 +493,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
                     // Check if the text is "None" and imageUrl is not null
                     val messageContent = if (message.imageUrl != null) {
-//                        user.id = "0"
+
                         Message(
                             message.id,
                             user,
@@ -520,7 +504,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                             setStatus(status)
                         }
                     } else if (message.videoUrl != null) {
-//                        user.id = "0"
+
                         Message(
                             message.id,
                             user,
@@ -531,7 +515,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                             setStatus(status)
                         }
                     } else if (message.audioUrl != null) {
-//                        user.id = "0"
+
                         Message(
                             message.id,
                             user,
@@ -548,7 +532,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                             setStatus(status)
                         }
                     } else if (message.voiceUrl != null) {
-//                        user.id = "0"
+
                         Message(
                             message.id,
                             user,
@@ -559,7 +543,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                             setStatus(status)
                         }
                     } else if (message.docUrl != null) {
-//                        user.id = "0"
+
                         Message(
                             message.id,
                             user,
@@ -635,17 +619,17 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                 // It's a local file
                 val file = File(uri)
                 if (file.exists()) {
-//                    Log.d("Attachment File Size", "File Size is : ${file.length()}")
+
                     return file.length()
                 }
             } else if (uri.scheme == "http" || uri.scheme == "https") {
                 // It's a remote URL, you can handle it differently or return an appropriate value
-//                Log.d("Attachment File Size", "Remote URL detected")
+
                 return 0L // Or handle it according to your requirements
             }
         } catch (e: IllegalArgumentException) {
             // Handle invalid URIs here if needed
-//            Log.e("Attachment File Size", "Invalid URI: $filePath")
+
             e.printStackTrace()
         }
 
@@ -773,19 +757,16 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     }
 
     override fun onDelete(deletedItems: MutableList<String>?) {
-//        Log.d("OnDelete", "Messages : ${deletedItems?.size}")
-//        Log.d("OnDelete", "last Message id : $lastMessageId ")
+
         CoroutineScope(Dispatchers.IO).launch {
             if (deletedItems != null) {
 
-//                Log.d("onDelete", "Deleting Messages")
 
                 val isLast = deletedItems.contains(lastMessageId)
 
 
                 if (isGroup) {
                     messageViewModel.markMessagesDeleted(deletedItems)
-//                    Log.d("onDelete", "Deleting Messages : ${deletedItems.size}")
 
                 } else {
 
@@ -804,19 +785,15 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                     }
                 }
 
-//                val lastMessage = notifyMessageDeletion()
-
-
-
                 if (isLast) {
                     if (isGroup) {
                         val groupDG = groupDialogRepository.getDialog(chatId)
                         val empty = setEmptyMessage(groupDG)
-//                        val dialog = groupDialogRepository.getDialog(chatId)
+
                         groupDialogRepository.updateLastMessageForThisChat(chatId, empty)
-//                        .updateLastMessageForThisChat(chatId,empty)
+
                     } else {
-//                        dialogViewModel.updateLastMessageForThisChat(chatId, lastMessage)
+
                     }
                 }
             }
