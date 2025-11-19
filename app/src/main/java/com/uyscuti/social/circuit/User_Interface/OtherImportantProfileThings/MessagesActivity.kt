@@ -1089,7 +1089,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     // Add method to reset UI after sending
     private fun resetVoiceNoteUI() {
         voiceNoteState = VoiceNoteState.IDLE
-        binding.recordVN?.visibility = View.VISIBLE
+        binding.recordVN?.visibility = View.GONE
         binding.sendVN?.visibility = View.GONE
         binding.deleteVN?.visibility = View.GONE
         binding.playVnAudioBtn?.visibility = View.GONE
