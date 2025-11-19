@@ -160,6 +160,7 @@ import java.util.Locale
 import java.util.TimeZone
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.onSuccess
 import kotlin.random.Random
 
 @UnstableApi
@@ -520,8 +521,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         })
     }
 
-    // 1. UPDATE stopRecordingVoiceNote() method - Replace your current one with this:
-
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     private fun stopRecordingVoiceNote() {
         val TAG = "StopRecording"
@@ -632,8 +631,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-
-
     private fun sendVoiceNoteMessage(filePath: String, duration: String) {
         val TAG = "SendVoiceNote"
 
@@ -649,76 +646,58 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
             Log.d(TAG, "Preparing to send voice note: ${file.name}, Duration: $duration")
 
-            // Create voice note message object (similar to text message)
+            // Create voice note message object (using your Message class)
             val tempId = UUID.randomUUID().toString()
-            val currentUser = User(myId, username, localStorage.getUserAvatar(), true)
+            val currentUser = User(myId, username, localStorage.getUserId(), true, Date())
 
             val voiceNoteMessage = Message(tempId, currentUser, "").apply {
-                // Set voice note data
                 setVoice(Message.Voice(filePath, duration.toIntOrNull() ?: 0))
-                setStatus("Sent") // Initial status
+                setStatus("Sent")
                 setCreatedAt(Date())
             }
 
-            // Add message to adapter immediately (like text messages)
+            // Add message to adapter immediately (same as text messages)
             messagesAdapter?.addToStart(voiceNoteMessage, true)
 
             Log.d("Sending Messages", "Voice note added to adapter with temp ID: $tempId")
 
-            // Upload the voice note file
+            // Send to server
             lifecycleScope.launch(Dispatchers.IO) {
                 try {
-                    // Create RequestBody for the file
+                    // Create MultipartBody.Part for the audio file
                     val requestFile = file.asRequestBody("audio/*".toMediaTypeOrNull())
-                    val audioPart = MultipartBody.Part.createFormData("audio", file.name, requestFile)
-
-                    // Create request body for chat ID
-                    val chatIdBody = chatId.toRequestBody("text/plain".toMediaTypeOrNull())
+                    val audioPart = MultipartBody.Part.createFormData("attachments", file.name, requestFile)
 
                     Log.d(TAG, "Uploading voice note to server...")
 
-                    // Call your API to upload voice note
-                    val response = remoteMessageRepository.sendVoiceNote(
-                        chatId = chatIdBody,
-                        audio = audioPart
+                    // Use existing sendAttachment method (same as images/videos)
+                    val result = remoteMessageRepository.sendAttachment(
+                        chatId = chatId,
+                        message = null, // No text content for voice note
+                        filePath = audioPart
                     )
 
                     withContext(Dispatchers.Main) {
-                        if (response.isSuccessful && response.body() != null) {
-                            val responseBody = response.body()!!
 
-                            Log.d("API_RESPONSE", "URL: ${response.raw().request.url}")
-                            Log.d("API_RESPONSE", "Response Code: ${response.code()}")
-                            Log.d("API_RESPONSE", "Response Body: ${responseBody}")
-                            Log.d(TAG, "Voice note sent successfully: ${responseBody.message}")
-                            Log.d("Sending Messages", "Voice note sent successfully")
-
-                            // Update message with server data (similar to text message update)
-                            val serverMessage = responseBody.data
-                            val updatedMessage = Message(serverMessage._id, currentUser, "").apply {
-                                setVoice(Message.Voice(
-                                    serverMessage.attachments?.firstOrNull()?.url ?: filePath,
-                                    duration.toIntOrNull() ?: 0
-                                ))
-                                setStatus("Sent")
-                                setCreatedAt(Date(serverMessage.createdAt))
-                            }
-
-                            // Update in adapter
-                            messagesAdapter?.update(tempId, updatedMessage)
-
-                            Log.d("Sending Messages", "Voice note message updated with server ID: ${serverMessage._id}")
-
-                        } else {
-                            Log.e(TAG, "Failed to send voice note: ${response.code()}")
-                            Log.e("API_RESPONSE", "Error Body: ${response.errorBody()?.string()}")
-
-                            // Update message status to failed
-                            voiceNoteMessage.setStatus("Failed")
-                            messagesAdapter?.update(tempId, voiceNoteMessage)
-
-                            Toast.makeText(this@MessagesActivity, "Failed to send voice note", Toast.LENGTH_SHORT).show()
-                        }
+//                        if (result.isSuccess) {
+//                            Log.d("API_RESPONSE", "Voice note sent successfully")
+//                            Log.d("Sending Messages", "All Messages Have Been Sent")
+//
+//                            // Message will be updated via WebSocket when server responds
+//                            // (similar to how text messages work)
+//
+//                        }
+//
+//                        else {
+//                            val error = result.exceptionOrNull()
+//                            Log.e(TAG, "Failed to send voice note: ${error?.message}")
+//
+//                            // Update message status to failed
+//                            voiceNoteMessage.setStatus("Failed")
+//                            messagesAdapter?.update(tempId, voiceNoteMessage)
+//
+//                            Toast.makeText(this@MessagesActivity, "Failed to send voice note", Toast.LENGTH_SHORT).show()
+//                        }
 
                         sending = false
                     }
