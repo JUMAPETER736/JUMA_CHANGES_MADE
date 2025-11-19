@@ -305,7 +305,24 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
     private lateinit var myId: String
 
+
+    fun setMessageStatus(messageStatus: Int, tickImageView: ImageView) {
+        when (messageStatus) {
+            SENT -> tickImageView.setImageResource(R.drawable.ic_tick_single)
+            DELIVERED -> tickImageView.setImageResource(R.drawable.ic_tick_double)
+            READ -> tickImageView.setImageResource(R.drawable.ic_tick_double_blue)
+        }
+    }
+
+
+
     companion object {
+
+        const val SENT = 1
+        const val DELIVERED = 2
+        const val READ = 3
+
+
         fun open(context: Context, dialogName: String, dialog: Dialog?, temporally: Boolean) {
             val intent = Intent(context, MessagesActivity::class.java)
 
