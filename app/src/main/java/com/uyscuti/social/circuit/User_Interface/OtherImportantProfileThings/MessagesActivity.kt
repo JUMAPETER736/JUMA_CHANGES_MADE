@@ -521,6 +521,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     private fun setupMessageInput() {
         // Access views through binding object
         val inputEditText = binding.inputEditText
@@ -565,12 +566,19 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             }
         }
 
-        // Voice note click - MAIN RECORDING CONTROL
+        // Voice note click - INITIAL START ONLY
         voiceNote?.setOnClickListener {
-            handleVoiceNoteClick()
+            if (voiceNoteState == VoiceNoteState.IDLE) {
+                // Show the VN recording layout
+                binding.VNLayout.visibility = View.VISIBLE
+                binding.inputContainer.visibility = View.GONE
+
+                // Start recording
+                startRecording()
+            }
         }
 
-        // Setup voice note control buttons
+        // Setup voice note control buttons (includes recordVN button)
         setupVoiceNoteControls()
 
         // Attachment click
@@ -584,7 +592,72 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-    // Replace the handleVoiceNoteClick() method with this updated version:
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
+    private fun setupVoiceNoteControls() {
+        // THIS IS THE MISSING CLICK LISTENER!
+        // recordVN button - handles pause/resume during recording
+        binding.recordVN?.setOnClickListener {
+            Log.d(TAG, "recordVN clicked, current state: $voiceNoteState")
+            handleVoiceNoteClick()
+            when (voiceNoteState) {
+                VoiceNoteState.RECORDING -> {
+                    // Pause recording
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        Log.d(TAG, "Pausing recording")
+                        pauseRecording()
+                    }
+                }
+                VoiceNoteState.PAUSED -> {
+                    // Resume recording
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        Log.d(TAG, "Resuming recording")
+                        resumeRecording()
+                    }
+                }
+                else -> {
+                    Log.d(TAG, "recordVN clicked but state is $voiceNoteState")
+                }
+            }
+        }
+
+        // Play/Pause button for recorded audio (after pausing)
+        binding.playVnAudioBtn?.setOnClickListener {
+            Log.d("playVnAudioBtn", "Play VN button clicked")
+            handleVoiceNoteClick()
+            when {
+                !isAudioVNPlaying -> {
+                    Log.d("playVnAudioBtn", "Starting playback")
+                    startPlaying(outputVnFile)
+                }
+                else -> {
+                    Log.d("playVnAudioBtn", "Pausing VN")
+                    vnRecordAudioPlaying = true
+                    val currentProgress = player?.currentPosition ?: vnRecordProgress
+                    vnRecordProgress = currentProgress
+                    pauseVn(currentProgress)
+                }
+            }
+        }
+
+        // Delete button
+        binding.deleteVN?.setOnClickListener {
+            Log.d(TAG, "Delete button clicked")
+            deleteRecording()
+        }
+
+        // Send button for voice note
+        binding.sendVN?.setOnClickListener {
+            Log.d(TAG, "Send VN button clicked, sending: $sending, state: $voiceNoteState")
+            if (!sending && (isRecording || isPaused || wasPaused)) {
+                sending = true
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    stopRecordingVoiceNote()
+                }
+            } else {
+                Log.d(TAG, "Cannot send: sending=$sending, isRecording=$isRecording, isPaused=$isPaused, wasPaused=$wasPaused")
+            }
+        }
+    }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun handleVoiceNoteClick() {
@@ -615,8 +688,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             }
         }
     }
-
-// Add this method to handle starting recording with permissions:
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun startRecording() {
@@ -689,7 +760,121 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-// Update the deleteRecording method to also hide the VN layout:
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun pauseRecording() {
+        Log.d(TAG, "pauseRecording called")
+        if (isRecording && !isPaused) {
+            try {
+                isListeningToAudio = false
+
+                // Calculate elapsed time before stopping
+                val currentTime = System.currentTimeMillis()
+                recordingElapsedTime += (currentTime - recordingStartTime)
+
+                Log.d(TAG, "Elapsed time: $recordingElapsedTime ms")
+
+                mediaRecorder?.let { recorder ->
+                    try {
+                        recorder.stop()
+                        recorder.release()
+                        Log.d(TAG, "MediaRecorder stopped and released")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error stopping recorder: $e")
+                    }
+                }
+                mediaRecorder = null
+
+                isPaused = true
+                isRecording = false  // Important: set to false when paused
+
+                // Stop the recording timer
+                timerHandler.removeCallbacksAndMessages(null)
+
+                // Update both timers to show the current recorded duration
+                runOnUiThread {
+                    val seconds = (recordingElapsedTime / 1000) % 60
+                    val minutes = (recordingElapsedTime / 1000) / 60
+                    val formatted = String.format("%02d:%02d", minutes, seconds)
+                    binding.recordingTimerTv.text = formatted
+                    binding.pausedTimerTv.text = formatted
+                    Log.d(TAG, "Timer updated to: $formatted")
+                }
+
+                updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
+
+                // Change icon to microphone (to indicate resume will start recording again)
+                binding.recordVN.setImageResource(com.uyscuti.social.circuit.R.drawable.mic_2)
+                binding.sendVN.setBackgroundResource(com.uyscuti.social.circuit.R.drawable.ic_ripple)
+                binding.sendVN.isClickable = true
+
+                Log.d(TAG, "Recordings: ${recordedAudioFiles.size}")
+                mixVoiceNote()
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in pauseRecording: $e")
+                e.printStackTrace()
+            }
+        } else {
+            Log.d(TAG, "pauseRecording: Cannot pause - isRecording=$isRecording, isPaused=$isPaused")
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun resumeRecording() {
+        Log.d(TAG, "resumeRecording called")
+        if (isPaused) {
+            try {
+                // Create new recording file for this segment
+                outputFile = com.uyscuti.social.circuit.utils.getOutputFilePath("rec")
+                Log.d(TAG, "New recording file: $outputFile")
+
+                mediaRecorder = MediaRecorder().apply {
+                    setAudioSource(MediaRecorder.AudioSource.MIC)
+                    setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                    setOutputFile(outputFile)
+                    setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                    setAudioEncodingBitRate(128000)
+                    setAudioSamplingRate(44100)
+                    prepare()
+                    start()
+                }
+
+                isPaused = false
+                isListeningToAudio = true
+                isRecording = true
+
+                // Resume timer from where it left off
+                recordingStartTime = System.currentTimeMillis()
+                updateRecordingTimer()
+
+                binding.playVNRecorded.visibility = View.GONE
+                binding.recordingTimerTv.visibility = View.VISIBLE
+
+                binding.playVnAudioBtn.setImageResource(com.uyscuti.social.circuit.R.drawable.play_svgrepo_com)
+                binding.recordVN.setImageResource(com.uyscuti.social.circuit.R.drawable.baseline_pause_white_24)
+
+                updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
+
+                recordedAudioFiles.add(outputFile)
+                Log.d(TAG, "Added file to recordings, total: ${recordedAudioFiles.size}")
+
+                // Resume audio listening
+                Thread {
+                    listenToAudio()
+                }.start()
+
+                Log.d(TAG, "Recording resumed successfully")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error resuming recording: ${e.message}", e)
+                Toast.makeText(this, "Failed to resume recording", Toast.LENGTH_SHORT).show()
+                isPaused = true
+                isRecording = false
+            }
+        } else {
+            Log.d(TAG, "resumeRecording: Cannot resume - isPaused=$isPaused")
+        }
+    }
 
     private fun deleteRecording() {
         val TAG = "Recording"
@@ -825,43 +1010,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 }
             }
         }
-    }
-
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
-    private fun setupVoiceNoteControls() {
-        // Play/Pause button for recorded audio
-        binding.playVnAudioBtn?.setOnClickListener {
-            Log.d("playVnAudioBtn", "Play VN button clicked")
-            when {
-                !isAudioVNPlaying -> {
-                    Log.d("playVnAudioBtn", "Starting playback")
-                    startPlaying(outputVnFile)
-                }
-                else -> {
-                    Log.d("playVnAudioBtn", "Pausing VN")
-                    vnRecordAudioPlaying = true
-                    val currentProgress = player?.currentPosition ?: vnRecordProgress
-                    vnRecordProgress = currentProgress
-                    pauseVn(currentProgress)
-                }
-            }
-        }
-
-        // Delete button
-        binding.deleteVN?.setOnClickListener {
-            deleteRecording()
-        }
-
-        // Send button for voice note
-        binding.sendVN?.setOnClickListener {
-            if (!sending && (isRecording || isPaused || wasPaused)) {
-                sending = true
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    stopRecordingVoiceNote()
-                }
-            }
-        }
-
     }
 
     private fun isVoiceNoteReady(): Boolean {
@@ -1084,53 +1232,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         binding.pausedTimerTv.text = String.format("%02d:%02d", currentMinutes, currentSeconds)
 
         updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun pauseRecording() {
-        if (isRecording && !isPaused) {
-            try {
-                isListeningToAudio = false
-
-                // Calculate elapsed time before stopping
-                val currentTime = System.currentTimeMillis()
-                recordingElapsedTime += (currentTime - recordingStartTime)
-
-                mediaRecorder?.let { recorder ->
-                    try {
-                        recorder.stop()
-                        recorder.release()
-                    } catch (e: Exception) {
-                        Log.e("pauseRecording", "Error: $e")
-                    }
-                }
-                mediaRecorder = null
-            } catch (e: Exception) {
-                Log.d("pauseRecording", "Error: $e")
-                e.printStackTrace()
-            }
-
-            isPaused = true
-
-            // Stop the recording timer
-            timerHandler.removeCallbacksAndMessages(null)
-
-            // Update both timers to show the current recorded duration
-            runOnUiThread {
-                val seconds = (recordingElapsedTime / 1000) % 60
-                val minutes = (recordingElapsedTime / 1000) / 60
-                val formatted = String.format("%02d:%02d", minutes, seconds)
-                binding.recordingTimerTv.text = formatted
-                binding.pausedTimerTv.text = formatted
-            }
-
-            updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
-            binding.recordVN.setImageResource(com.uyscuti.social.circuit.R.drawable.mic_2)
-            binding.sendVN.isClickable = true
-
-            Log.d("pauseRecording", "Recordings: ${recordedAudioFiles.size}")
-            mixVoiceNote()
-        }
     }
 
     private fun mixVoiceNote() {
@@ -1362,48 +1463,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             if (maxScroll > 0) {
                 binding.waveformScrollView.smoothScrollTo(maxScroll, 0)
             }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun resumeRecording() {
-        if (isPaused) {
-            // Create new recording file for this segment
-            outputFile = com.uyscuti.social.circuit.utils.getOutputFilePath("rec")
-
-            mediaRecorder = MediaRecorder().apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                setOutputFile(outputFile)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                setAudioEncodingBitRate(128000)
-                setAudioSamplingRate(44100)
-                prepare()
-                start()
-            }
-
-            isPaused = false
-            isListeningToAudio = true
-            isRecording = true
-
-            // Resume timer from where it left off
-            recordingStartTime = System.currentTimeMillis()
-            updateRecordingTimer()
-
-            binding.playVNRecorded.visibility = View.GONE
-            binding.recordingTimerTv.visibility = View.VISIBLE
-
-            binding.playVnAudioBtn.setImageResource(com.uyscuti.social.circuit.R.drawable.play_svgrepo_com)
-            binding.recordVN.setImageResource(com.uyscuti.social.circuit.R.drawable.baseline_pause_white_24)
-
-            updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
-
-            recordedAudioFiles.add(outputFile)
-
-            // Resume audio listening
-            Thread {
-                listenToAudio()
-            }.start()
         }
     }
 
