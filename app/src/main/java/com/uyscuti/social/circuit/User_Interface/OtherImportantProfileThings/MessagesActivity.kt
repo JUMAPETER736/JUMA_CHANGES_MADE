@@ -1711,7 +1711,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-
     fun formatLastSeenDa(lastSeen: Date?): String {
         if (lastSeen == null) {
             return "Unknown"
@@ -1735,7 +1734,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             "Last Seen on ${dateFormat.format(lastSeen)}"
         }
     }
-
 
     private fun formatLastSeenDate(lastSeen: Date?): String {
         if (lastSeen == null) {
