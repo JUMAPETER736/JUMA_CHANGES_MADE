@@ -2267,7 +2267,7 @@ public class MessageHolders {
         }
     }
 
-    public class DefaultOutGoingVoiceMessageViewHolder
+    public static class DefaultOutGoingVoiceMessageViewHolder
             extends MessageHolders.BaseOutcomingMessageViewHolder<MessageContentType.Image> {
 
         private View bubble;
@@ -2318,7 +2318,7 @@ public class MessageHolders {
         }
     }
 
-    public class DefaultInComingVoiceMessageViewHolder
+    public static class DefaultInComingVoiceMessageViewHolder
             extends MessageHolders.BaseIncomingMessageViewHolder<MessageContentType.Image> {
 
         private View bubble;
@@ -2402,4 +2402,5 @@ public class MessageHolders {
             this.payload = payload;
         }
     }
+
 }
