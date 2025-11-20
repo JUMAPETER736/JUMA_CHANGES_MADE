@@ -753,6 +753,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+    // Replace your sendVoiceNoteDirectly function with this corrected version
     private fun sendVoiceNoteDirectly(vnPath: String) {
         try {
             val newFile = File(vnPath)
@@ -777,7 +778,9 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             val user = User("0", "You", "test", true, Date())
             val date = Date(System.currentTimeMillis())
             val messageId = "Voice_${System.currentTimeMillis()}"
-            val message = Message(messageId, user, null, date)  // IMPORTANT: Keep text as null
+
+            // Create message with NULL text - this is critical for voice note display
+            val message = Message(messageId, user, null, date)
 
             val voiceUrl = Uri.fromFile(newFile)
 
@@ -793,23 +796,24 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 10000L
             }
 
-            // Set voice message - this makes it display as an audio player
+            // IMPORTANT: Use setVoice() NOT setAudio() - this makes it display as voice note
             message.setVoice(Message.Voice(voiceUrl.toString(), duration.toInt()))
 
+            // Create MessageEntity with NULL text and voiceUrl (NOT audioUrl)
             val voiceMessage = MessageEntity(
                 id = messageId,
                 chatId = chatId,
                 userName = "You",
                 user = userEntity,
                 userId = myId,
-                text = "",
+                text = "",  // MUST be null for proper voice note display
                 createdAt = System.currentTimeMillis(),
                 imageUrl = null,
-                voiceUrl = voiceUrl.toString(),
+                voiceUrl = voiceUrl.toString(),  // Use voiceUrl field
                 voiceDuration = duration.toInt(),
                 status = "Sending",
                 videoUrl = null,
-                audioUrl = null,
+                audioUrl = null,  // Leave audioUrl null
                 docUrl = null,
                 fileSize = newFile.length()
             )
@@ -842,6 +846,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             resetVoiceNoteUI()
         }
     }
+
 
     private fun resetVoiceNoteUI() {
         try {

@@ -1,5 +1,6 @@
 package com.uyscuti.social.circuit
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -413,14 +414,14 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 } else if (message.voiceUrl != null) {
-
-                    Message(
-                        message.id,
-                        user,
-                        null,
-                        date
-                    ).apply {
-                        setVoice(Message.Voice(message.voiceUrl!!, 10000))
+                    Message(message.id, user, null, date).apply {
+                        // Use actual duration from database instead of hardcoded 10000
+                        val actualDuration = if (message.voiceDuration > 0) {
+                            message.voiceDuration
+                        } else {
+                            10000  // Fallback only if not stored
+                        }
+                        setVoice(Message.Voice(message.voiceUrl!!, actualDuration))
                         setStatus(status)
                     }
                 } else if (message.docUrl != null) {
@@ -532,14 +533,14 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                             setStatus(status)
                         }
                     } else if (message.voiceUrl != null) {
-
-                        Message(
-                            message.id,
-                            user,
-                            null,
-                            date
-                        ).apply {
-                            setVoice(Message.Voice(message.voiceUrl!!, 10000))
+                        Message(message.id, user, null, date).apply {
+                            // Use actual duration from database instead of hardcoded 10000
+                            val actualDuration = if (message.voiceDuration > 0) {
+                                message.voiceDuration
+                            } else {
+                                10000  // Fallback only if not stored
+                            }
+                            setVoice(Message.Voice(message.voiceUrl!!, actualDuration))
                             setStatus(status)
                         }
                     } else if (message.docUrl != null) {
@@ -588,6 +589,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
         }
     }
 
+    @SuppressLint("DefaultLocale")
     private fun formatFileSize(fileSize: Long): String {
         if (fileSize <= 0) {
             return "0 B"
