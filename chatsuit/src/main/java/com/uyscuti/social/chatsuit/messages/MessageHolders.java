@@ -76,6 +76,8 @@ public class MessageHolders {
     private HolderConfig<MessageContentType.Image> inComingAudioConfig;
     private HolderConfig<MessageContentType.Image> inComingDocConfig;
 
+
+
     private List<ContentTypeConfig> customContentTypes = new ArrayList<>();
     private ContentChecker contentChecker;
 
@@ -85,14 +87,22 @@ public class MessageHolders {
 
         this.incomingTextConfig = new HolderConfig<>(DefaultIncomingTextMessageViewHolder.class, R.layout.item_incoming_text_message);
         this.outcomingTextConfig = new HolderConfig<>(DefaultOutcomingTextMessageViewHolder.class, R.layout.item_outcoming_text_message);
+
         this.incomingImageConfig = new HolderConfig<>(DefaultIncomingImageMessageViewHolder.class, R.layout.item_incoming_image_message);
         this.outcomingImageConfig = new HolderConfig<>(DefaultOutcomingImageMessageViewHolder.class, R.layout.item_outcoming_image_message);
+
         this.outGoingVideoConfig = new HolderConfig<>(DefaultOutGoingVideoMessageViewHolder.class, R.layout.item_outgoing_video);
         this.outGoingAudioConfig = new HolderConfig<>(DefaultOutGoingAudioMessageViewHolder.class, R.layout.item_outgoing_audio);
+
         this.inComingAudioConfig = new HolderConfig<>(DefaultInComingAudioMessageViewHolder.class, R.layout.item_incoming_audio_message);
         this.outGoingDocConfig = new HolderConfig<>(DefaultOutGoingDocMessageViewHolder.class, R.layout.item_outgoing_doc);
+
         this.inComingDocConfig = new HolderConfig<>(DefaultInComingDocMessageViewHolder.class, R.layout.item_incoming_doc_message);
         this.inComingVideoConfig = new HolderConfig<>(DefaultIncomingVideoMessageViewHolder.class, R.layout.item_incoming_video_message);
+
+        this.outGoingVoiceConfig = new HolderConfig<>(DefaultOutGoingVoiceMessageViewHolder.class, R.layout.item_outgoing_voice_message);
+        this.inComingVoiceConfig = new HolderConfig<>(DefaultInComingVoiceMessageViewHolder.class, R.layout.item_incoming_voice_message);
+
     }
 
     public MessageHolders setIncomingTextConfig(
@@ -2254,6 +2264,94 @@ public class MessageHolders {
 
         public DefaultInComingDocMessageViewHolder(View itemView) {
             super(itemView, null);
+        }
+    }
+
+
+    public class DefaultOutGoingVoiceMessageViewHolder
+            extends MessageHolders.BaseOutcomingMessageViewHolder<MessageContentType.Image> {
+
+        private View bubble;
+        private ImageView playButton;
+        private TextView duration;
+
+        public DefaultOutGoingVoiceMessageViewHolder(View itemView) {
+            super(itemView);
+            bubble = itemView.findViewById(R.id.bubble);
+            playButton = itemView.findViewById(R.id.playAudio);
+            duration = itemView.findViewById(R.id.audioDuration);
+        }
+
+        @Override
+        public void onBind(MessageContentType.Image message) {
+            super.onBind(message);
+
+            if (message.getVoiceDuration() > 0) {
+                duration.setText(formatDuration(message.getVoiceDuration()));
+            }
+
+            playButton.setOnClickListener(v -> {
+                if (audioPlayListener != null) {
+                    audioPlayListener.onAudioPlayClick(
+                            message.getVoiceUrl(),
+                            playButton,
+                            duration,
+                            null,  // SeekBar - add if you have one in layout
+                            message
+                    );
+                }
+            });
+        }
+
+        private String formatDuration(int millis) {
+            int seconds = millis / 1000;
+            int minutes = seconds / 60;
+            seconds = seconds % 60;
+            return String.format("%d:%02d", minutes, seconds);
+        }
+    }
+
+
+    public class DefaultInComingVoiceMessageViewHolder
+            extends MessageHolders.BaseIncomingMessageViewHolder<MessageContentType.Image> {
+
+        private View bubble;
+        private ImageView playButton;
+        private TextView duration;
+
+        public DefaultInComingVoiceMessageViewHolder(View itemView) {
+            super(itemView);
+            bubble = itemView.findViewById(R.id.bubble);
+            playButton = itemView.findViewById(R.id.playButton);
+            duration = itemView.findViewById(R.id.duration);
+        }
+
+        @Override
+        public void onBind(MessageContentType.Image message) {
+            super.onBind(message);
+
+            if (message.getVoiceDuration() > 0) {
+                duration.setText(formatDuration(message.getVoiceDuration()));
+            }
+
+            playButton.setOnClickListener(v -> {
+                if (audioPlayListener != null) {
+                    audioPlayListener.onAudioPlayClick(
+                            message.getVoiceUrl(),
+                            playButton,
+                            duration,
+                            null,  // SeekBar - add if you have one in layout
+                            message
+                    );
+                }
+            });
+        }
+
+        private String formatDuration(int millis) {
+            int seconds = millis / 1000;
+            int minutes = seconds / 60;
+            seconds = seconds % 60;
+            return String.format("%d:%02d", minutes, seconds);
         }
     }
 
