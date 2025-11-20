@@ -2269,6 +2269,10 @@ public class MessageHolders {
         }
     }
 
+    // Replace your existing DefaultOutGoingVoiceMessageViewHolder class with this:
+
+// Replace your existing DefaultOutGoingVoiceMessageViewHolder class with this:
+
     public static class DefaultOutGoingVoiceMessageViewHolder
             extends MessageHolders.BaseOutcomingMessageViewHolder<MessageContentType.Image> {
 
@@ -2295,57 +2299,85 @@ public class MessageHolders {
         public void onBind(MessageContentType.Image message) {
             super.onBind(message);
 
-            // Set duration
-            if (message.getVoiceDuration() > 0) {
-                duration.setText(formatDuration(message.getVoiceDuration()));
-            }
+            // Check if this is a voice message
+            boolean isVoiceMessage = message.getVoiceDuration() > 0 ||
+                    (message.getImageUrl() != null && message.getImageUrl().endsWith(".mp3"));
 
-            // Set time
-            if (message.getCreatedAt() != null) {
-                time.setText(formatTime(message.getCreatedAt()));
-            }
+            if (isVoiceMessage) {
+                // Make voice UI visible
+                if (playButton != null) playButton.setVisibility(View.VISIBLE);
+                if (duration != null) duration.setVisibility(View.VISIBLE);
+                if (waveformContainer != null) waveformContainer.setVisibility(View.VISIBLE);
 
-            // Generate waveform based on duration
-            generateWaveform(message.getVoiceDuration());
+                // Set duration
+                int voiceDuration = message.getVoiceDuration() > 0 ?
+                        message.getVoiceDuration() : 3000; // Default 3 seconds
+                duration.setText(formatDuration(voiceDuration));
 
-            // Reset play state
-            isPlaying = false;
-            playButton.setImageResource(R.drawable.baseline_play_arrow_24);
-
-            playButton.setOnClickListener(v -> {
-                if (audioPlayListener != null) {
-                    isPlaying = !isPlaying;
-                    playButton.setImageResource(isPlaying ?
-                            R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
-
-                    audioPlayListener.onAudioPlayClick(
-                            message.getVoiceUrl(),
-                            playButton,
-                            duration,
-                            null,
-                            message
-                    );
+                // Set time
+                if (message.getCreatedAt() != null) {
+                    time.setText(formatTime(message.getCreatedAt()));
                 }
-            });
+
+                // Generate waveform
+                generateWaveform(voiceDuration);
+
+                // Reset play state
+                isPlaying = false;
+                playButton.setImageResource(R.drawable.baseline_play_arrow_24);
+
+                // Set play button click listener
+                playButton.setOnClickListener(v -> {
+                    if (audioPlayListener != null) {
+                        isPlaying = !isPlaying;
+                        playButton.setImageResource(isPlaying ?
+                                R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
+
+                        String audioUrl = message.getVoiceUrl() != null ?
+                                message.getVoiceUrl() : message.getImageUrl();
+
+                        audioPlayListener.onAudioPlayClick(
+                                audioUrl,
+                                playButton,
+                                duration,
+                                null,
+                                message
+                        );
+                    }
+                });
+
+                // Set message status icon
+                setMessageStatus(message);
+            }
+        }
+
+        private void setMessageStatus(MessageContentType.Image message) {
+            if (messageStatus != null) {
+                // Adjust based on your message status logic
+                // Example:
+                messageStatus.setImageResource(R.drawable.ic_tick_single);
+            }
         }
 
         private void generateWaveform(int durationMillis) {
             waveformContainer.removeAllViews();
 
             // Calculate number of bars based on duration
-            int seconds = durationMillis / 1000;
-            int barCount = Math.min(Math.max(seconds * 2, 10), 30); // 10-30 bars
+            int seconds = Math.max(durationMillis / 1000, 1);
+            int barCount = Math.min(Math.max(seconds * 3, 15), 35); // 15-35 bars
 
-            int barWidth = dpToPx(3);
-            int barMargin = dpToPx(3);
+            int barWidth = dpToPx(2);
+            int barMargin = dpToPx(2);
             int maxHeight = dpToPx(24);
-            int minHeight = dpToPx(8);
+            int minHeight = dpToPx(6);
 
             for (int i = 0; i < barCount; i++) {
                 View bar = new View(waveformContainer.getContext());
 
-                // Create varied heights for visual interest
-                int height = minHeight + (int)(Math.random() * (maxHeight - minHeight));
+                // Create varied heights with smoother pattern
+                double progress = (double) i / barCount;
+                double wave = Math.sin(progress * Math.PI * 2) * 0.3 + 0.7;
+                int height = minHeight + (int)((maxHeight - minHeight) * wave * Math.random());
 
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(barWidth, height);
                 if (i < barCount - 1) {
@@ -2354,7 +2386,7 @@ public class MessageHolders {
 
                 bar.setLayoutParams(params);
                 bar.setBackgroundColor(Color.WHITE);
-                bar.setAlpha(0.7f);
+                bar.setAlpha(0.8f);
 
                 waveformContainer.addView(bar);
             }
@@ -2369,7 +2401,7 @@ public class MessageHolders {
             int seconds = millis / 1000;
             int minutes = seconds / 60;
             seconds = seconds % 60;
-            return String.format("%d:%02d", minutes, seconds);
+            return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds);
         }
 
         private String formatTime(Date date) {
@@ -2377,6 +2409,8 @@ public class MessageHolders {
             return sdf.format(date);
         }
     }
+
+
 
     public static class DefaultInComingVoiceMessageViewHolder
             extends MessageHolders.BaseIncomingMessageViewHolder<MessageContentType.Image> {
@@ -2396,63 +2430,81 @@ public class MessageHolders {
             duration = itemView.findViewById(R.id.duration);
             time = itemView.findViewById(R.id.time);
             waveformContainer = itemView.findViewById(R.id.waveformContainer);
+            // Note: No messageStatus for incoming messages
         }
 
         @Override
         public void onBind(MessageContentType.Image message) {
             super.onBind(message);
 
-            // Set duration
-            if (message.getVoiceDuration() > 0) {
-                duration.setText(formatDuration(message.getVoiceDuration()));
-            }
+            // Check if this is a voice message
+            boolean isVoiceMessage = message.getVoiceDuration() > 0 ||
+                    (message.getImageUrl() != null && message.getImageUrl().endsWith(".mp3"));
 
-            // Set time
-            if (message.getCreatedAt() != null) {
-                time.setText(formatTime(message.getCreatedAt()));
-            }
+            if (isVoiceMessage) {
+                // Make voice UI visible
+                if (playButton != null) playButton.setVisibility(View.VISIBLE);
+                if (duration != null) duration.setVisibility(View.VISIBLE);
+                if (waveformContainer != null) waveformContainer.setVisibility(View.VISIBLE);
 
-            // Generate waveform based on duration
-            generateWaveform(message.getVoiceDuration());
+                // Set duration
+                int voiceDuration = message.getVoiceDuration() > 0 ?
+                        message.getVoiceDuration() : 3000; // Default 3 seconds
+                duration.setText(formatDuration(voiceDuration));
 
-            // Reset play state
-            isPlaying = false;
-            playButton.setImageResource(R.drawable.baseline_play_arrow_24);
-
-            playButton.setOnClickListener(v -> {
-                if (audioPlayListener != null) {
-                    isPlaying = !isPlaying;
-                    playButton.setImageResource(isPlaying ?
-                            R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
-
-                    audioPlayListener.onAudioPlayClick(
-                            message.getVoiceUrl(),
-                            playButton,
-                            duration,
-                            null,
-                            message
-                    );
+                // Set time
+                if (message.getCreatedAt() != null) {
+                    time.setText(formatTime(message.getCreatedAt()));
                 }
-            });
+
+                // Generate waveform
+                generateWaveform(voiceDuration);
+
+                // Reset play state
+                isPlaying = false;
+                playButton.setImageResource(R.drawable.baseline_play_arrow_24);
+
+                // Set play button click listener
+                playButton.setOnClickListener(v -> {
+                    if (audioPlayListener != null) {
+                        isPlaying = !isPlaying;
+                        playButton.setImageResource(isPlaying ?
+                                R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
+
+                        String audioUrl = message.getVoiceUrl() != null ?
+                                message.getVoiceUrl() : message.getImageUrl();
+
+                        audioPlayListener.onAudioPlayClick(
+                                audioUrl,
+                                playButton,
+                                duration,
+                                null,
+                                message
+                        );
+                    }
+                });
+            }
         }
 
         private void generateWaveform(int durationMillis) {
             waveformContainer.removeAllViews();
 
             // Calculate number of bars based on duration
-            int seconds = durationMillis / 1000;
-            int barCount = Math.min(Math.max(seconds * 2, 10), 30); // 10-30 bars
+            int seconds = Math.max(durationMillis / 1000, 1);
+            int barCount = Math.min(Math.max(seconds * 3, 15), 35); // 15-35 bars
 
-            int barWidth = dpToPx(3);
-            int barMargin = dpToPx(3);
+            int barWidth = dpToPx(2);
+            int barMargin = dpToPx(2);
             int maxHeight = dpToPx(24);
-            int minHeight = dpToPx(8);
+            int minHeight = dpToPx(6);
 
             for (int i = 0; i < barCount; i++) {
                 View bar = new View(waveformContainer.getContext());
 
-                // Create varied heights for visual interest
-                int height = minHeight + (int)(Math.random() * (maxHeight - minHeight));
+                // Create varied heights with smoother pattern
+                double progress = (double) i / barCount;
+                double wave = Math.sin(progress * Math.PI * 2) * 0.3 + 0.7;
+                int height = minHeight + (int)((maxHeight - minHeight) * wave * Math.random());
 
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(barWidth, height);
                 if (i < barCount - 1) {
@@ -2460,8 +2512,8 @@ public class MessageHolders {
                 }
 
                 bar.setLayoutParams(params);
-                bar.setBackgroundColor(Color.parseColor("#808080")); // Gray color
-                bar.setAlpha(0.6f);
+                bar.setBackgroundColor(Color.parseColor("#666666")); // Dark gray color
+                bar.setAlpha(0.7f);
 
                 waveformContainer.addView(bar);
             }
@@ -2476,7 +2528,7 @@ public class MessageHolders {
             int seconds = millis / 1000;
             int minutes = seconds / 60;
             seconds = seconds % 60;
-            return String.format("%d:%02d", minutes, seconds);
+            return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds);
         }
 
         private String formatTime(Date date) {
@@ -2484,7 +2536,6 @@ public class MessageHolders {
             return sdf.format(date);
         }
     }
-
     private static class ContentTypeConfig<TYPE extends MessageContentType> {
 
         private byte type;
