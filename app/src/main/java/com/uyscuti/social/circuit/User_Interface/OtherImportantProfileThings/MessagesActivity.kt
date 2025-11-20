@@ -1054,22 +1054,9 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
             Log.d("VoiceNote", "Sending voice note: $vnPath, size: ${newFile.length()} bytes")
 
-            val userEntity = UserEntity(
-                "0",
-                "You",
-                "local",
-                Date(),
-                true
-            )
-
             val user = User("0", "You", "test", true, Date())
             val date = Date(System.currentTimeMillis())
             val messageId = "Voice_${System.currentTimeMillis()}"
-
-            // Create message with NULL text - this is critical for voice note display
-            val message = Message(messageId, user, null, date)
-
-            val voiceUrl = Uri.fromFile(newFile)
 
             // Calculate actual duration
             val duration = try {
@@ -1083,46 +1070,74 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 10000L
             }
 
-            // IMPORTANT: Use setVoice() NOT setAudio() - this makes it display as voice note
-            message.setVoice(Message.Voice(voiceUrl.toString(), duration.toInt()))
+            val voiceUrl = Uri.fromFile(newFile)
 
-            // Create MessageEntity with NULL text and voiceUrl (NOT audioUrl)
+            // Create message with NULL text
+            val message = Message(messageId, user, null, date)
+
+            // Set voice BEFORE setting user/status
+            message.setVoice(Message.Voice(voiceUrl.toString(), duration.toInt()))
+            message.setUser(user)
+            message.status = "Sending"
+
+            // ✅ Use getVoice() instead of .voice
+            Log.d("VoiceNote", "Message voice set: ${message.getVoice() != null}, duration: ${message.getVoice()?.duration}")
+
+            val userEntity = UserEntity(
+                "0",
+                "You",
+                "local",
+                Date(),
+                true
+            )
+
+            // Create MessageEntity
             val voiceMessage = MessageEntity(
                 id = messageId,
                 chatId = chatId,
                 userName = "You",
                 user = userEntity,
                 userId = myId,
-                text = String.toString(),  // MUST be null for proper voice note display
+                text = "",  // Empty string since text field is non-nullable
                 createdAt = System.currentTimeMillis(),
                 imageUrl = null,
-                voiceUrl = voiceUrl.toString(),  // Use voiceUrl field
+                voiceUrl = voiceUrl.toString(),
                 voiceDuration = duration.toInt(),
                 status = "Sending",
                 videoUrl = null,
-                audioUrl = null,  // Leave audioUrl null
+                audioUrl = null,
                 docUrl = null,
-                fileSize = newFile.length()
+                fileSize = newFile.length(),
+                deleted = false
             )
 
-            // Save to database and update UI
+            // Save to database
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     insertMessage(voiceMessage)
                     updateLastMessage(isGroup, chatId, voiceMessage)
+                    Log.d("VoiceNote", "✅ Voice message saved to DB")
                 } catch (e: Exception) {
-                    Log.e("VoiceNote", "Error saving message: ${e.message}")
+                    Log.e("VoiceNote", "❌ Error saving message: ${e.message}")
                 }
             }
 
-            message.setUser(user)
-            message.status = "Sending"
-
             // Add to UI immediately
             CoroutineScope(Dispatchers.Main).launch {
-                messagesAdapter?.addToStart(message, true)
+                // ✅ Use getVoice() instead of .voice
+                if (message.getVoice() != null) {
+                    Log.d("VoiceNote", "✅ Adding voice message to adapter")
+                    messagesAdapter?.addToStart(message, true)
 
-                // Reset UI after a short delay to ensure smooth transition
+                    // Verify it was added
+                    delay(200)
+                    val firstMsg = messagesAdapter?.getItems()?.firstOrNull()?.item as? Message
+                    // ✅ Use getVoice() instead of .voice
+                    Log.d("VoiceNote", "First message in adapter - hasVoice: ${firstMsg?.getVoice() != null}, text: '${firstMsg?.text}'")
+                } else {
+                    Log.e("VoiceNote", "❌ ERROR: Voice is null, cannot add to adapter")
+                }
+
                 delay(100)
                 resetVoiceNoteUI()
             }

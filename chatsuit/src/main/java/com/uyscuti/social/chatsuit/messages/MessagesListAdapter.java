@@ -166,7 +166,9 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         return count;
     }
 
-
+    public List<Wrapper> getItems() {
+        return items;
+    }
 
     // Constants for message status
     public static final String STATUS_SENT = "Sent";

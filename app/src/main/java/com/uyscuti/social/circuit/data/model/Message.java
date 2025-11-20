@@ -195,8 +195,7 @@ public class Message implements IMessage,
         this.user= user;
     }
 
-
-
+    public Voice getVoice() { return voice; }
 
     public void setAudio(Audio audio) {
         this.audio = audio;
