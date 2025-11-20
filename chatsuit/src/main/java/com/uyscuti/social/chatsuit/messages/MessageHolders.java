@@ -107,6 +107,69 @@ public class MessageHolders {
 
     }
 
+    @SuppressWarnings("unchecked")
+    private short getContentViewType(IMessage message) {
+
+        if (message instanceof MessageContentType.Image) {
+            MessageContentType.Image imageMessage = (MessageContentType.Image) message;
+
+            // ⚠️ CHECK VOICE FIRST (before checking imageUrl)
+            // Voice messages often have URLs in imageUrl field ending with .mp3
+            if (imageMessage.getVoiceUrl() != null) {
+                Log.d("Holder Attachments", "Voice Found, Path: " + imageMessage.getVoiceUrl());
+                return VIEW_TYPE_VOICE_MESSAGE;
+            }
+
+            // Additional check: if imageUrl ends with .mp3, it's a voice message
+            if (imageMessage.getImageUrl() != null && imageMessage.getImageUrl().endsWith(".mp3")) {
+                Log.d("Holder Attachments", "Voice Found (from imageUrl), Path: " + imageMessage.getImageUrl());
+                return VIEW_TYPE_VOICE_MESSAGE;
+            }
+
+            // Check for video
+            if (imageMessage.getVideoUrl() != null) {
+                Log.d("Holder Attachments", "Video Found, Path: " + imageMessage.getVideoUrl());
+                return VIEW_TYPE_VIDEO_MESSAGE;
+            }
+
+            // Check for audio (non-voice)
+            if (imageMessage.getAudioUrl() != null) {
+                Log.d("Holder Attachments", "Audio Found, Path: " + imageMessage.getAudioUrl());
+                return VIEW_TYPE_AUDIO_MESSAGE;
+            }
+
+            // Check for document
+            if (imageMessage.getDocUrl() != null) {
+                Log.d("Holder Attachments", "Doc Found, Path: " + imageMessage.getDocUrl());
+                return VIEW_TYPE_DOCUMENT_MESSAGE;
+            }
+
+            // Check for image (regular images, not voice/video/audio)
+            if (imageMessage.getImageUrl() != null) {
+                // Make sure it's not a voice file with .mp3 extension
+                if (!imageMessage.getImageUrl().endsWith(".mp3")) {
+                    Log.d("Holder Attachments", "Image Found, Image Path: " + imageMessage.getImageUrl());
+                    return VIEW_TYPE_IMAGE_MESSAGE;
+                }
+            }
+        }
+
+        // Check custom content types
+        if (message instanceof MessageContentType) {
+            for (int i = 0; i < customContentTypes.size(); i++) {
+                ContentTypeConfig config = customContentTypes.get(i);
+                if (contentChecker == null) {
+                    throw new IllegalArgumentException("ContentChecker cannot be null when using custom content types!");
+                }
+                boolean hasContent = contentChecker.hasContentFor(message, config.type);
+                if (hasContent) return config.type;
+            }
+        }
+
+        // Default to text message
+        return VIEW_TYPE_TEXT_MESSAGE;
+    }
+
     public MessageHolders setIncomingTextConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
             @LayoutRes int layout) {
@@ -470,43 +533,7 @@ public class MessageHolders {
             throw new UnsupportedOperationException("Somehow we couldn't create the ViewHolder for message. Please, report this issue on GitHub with full stacktrace in description.", e);
         }
     }
-
-    @SuppressWarnings("unchecked")
-    private short getContentViewType(IMessage message) {
-
-
-        if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getImageUrl() != null) {
-
-//            Log.d("Holder Attachments", "IMage Found , Image Path : " + ((MessageContentType.Image) message).getImageUrl());
-            return VIEW_TYPE_IMAGE_MESSAGE;
-        } else if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getAudioUrl() != null) {
-//            Log.d("Holder Attachments", "Audio Found, Path : " + ((MessageContentType.Image) message).getAudioUrl());
-            return VIEW_TYPE_AUDIO_MESSAGE;
-        } else if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getVideoUrl() != null) {
-//            Log.d("Holder Attachments", "Video Found, Path : " + ((MessageContentType.Image) message).getVideoUrl());
-            return VIEW_TYPE_VIDEO_MESSAGE;
-        } else if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getVoiceUrl() != null) {
-//            Log.d("Holder Attachments", "Voice Found, Path : " + ((MessageContentType.Image) message).getVoiceUrl());
-            return VIEW_TYPE_VOICE_MESSAGE;
-        } else if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getDocUrl() != null) {
-            return VIEW_TYPE_DOCUMENT_MESSAGE;
-        }
-
-        // other default types will be here
-
-        if (message instanceof MessageContentType) {
-            for (int i = 0; i < customContentTypes.size(); i++) {
-                ContentTypeConfig config = customContentTypes.get(i);
-                if (contentChecker == null) {
-                    throw new IllegalArgumentException("ContentChecker cannot be null when using custom content types!");
-                }
-                boolean hasContent = contentChecker.hasContentFor(message, config.type);
-                if (hasContent) return config.type;
-            }
-        }
-
-        return VIEW_TYPE_TEXT_MESSAGE;
-    }
+    
 
     protected ViewHolder getHolder(ViewGroup parent, int viewType, MessagesListStyle messagesListStyle) {
         switch (viewType) {
