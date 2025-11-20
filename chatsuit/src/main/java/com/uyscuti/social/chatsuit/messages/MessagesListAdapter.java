@@ -631,9 +631,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         this.audioPlayListener = audioPlayListener;
     }
 
-    /**
-     * Sets custom {@link DateFormatter.Formatter} for text representation of date headers.
-     */
+
     public void setDateHeadersFormatter(DateFormatter.Formatter dateHeaderFormatter) {
         this.dateHeadersFormatter = dateHeaderFormatter;
     }
@@ -642,9 +640,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         this.dateFormatterListener = dateListener;
     }
 
-    /*
-     * PRIVATE METHODS
-     * */
     private void recountDateHeaders() {
         List<Integer> indicesToDelete = new ArrayList<>();
 

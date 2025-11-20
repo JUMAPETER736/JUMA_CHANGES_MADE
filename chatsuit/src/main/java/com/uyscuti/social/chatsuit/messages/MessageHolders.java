@@ -2,6 +2,7 @@ package com.uyscuti.social.chatsuit.messages;
 
 
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.media.MediaMetadataRetriever;
 import android.os.Build;
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -2273,6 +2275,9 @@ public class MessageHolders {
         private View bubble;
         private ImageView playButton;
         private TextView duration;
+        private TextView time;
+        private ImageView messageStatus;
+        private LinearLayout waveformContainer;
 
         private boolean isPlaying = false;
 
@@ -2281,17 +2286,31 @@ public class MessageHolders {
             bubble = itemView.findViewById(R.id.bubble);
             playButton = itemView.findViewById(R.id.playButton);
             duration = itemView.findViewById(R.id.duration);
-
+            time = itemView.findViewById(R.id.time);
+            messageStatus = itemView.findViewById(R.id.messageStatus);
+            waveformContainer = itemView.findViewById(R.id.waveformContainer);
         }
 
         @Override
         public void onBind(MessageContentType.Image message) {
             super.onBind(message);
 
+            // Set duration
             if (message.getVoiceDuration() > 0) {
                 duration.setText(formatDuration(message.getVoiceDuration()));
             }
 
+            // Set time
+            if (message.getCreatedAt() != null) {
+                time.setText(formatTime(message.getCreatedAt()));
+            }
+
+            // Generate waveform based on duration
+            generateWaveform(message.getVoiceDuration());
+
+            // Reset play state
+            isPlaying = false;
+            playButton.setImageResource(R.drawable.baseline_play_arrow_24);
 
             playButton.setOnClickListener(v -> {
                 if (audioPlayListener != null) {
@@ -2310,11 +2329,52 @@ public class MessageHolders {
             });
         }
 
+        private void generateWaveform(int durationMillis) {
+            waveformContainer.removeAllViews();
+
+            // Calculate number of bars based on duration
+            int seconds = durationMillis / 1000;
+            int barCount = Math.min(Math.max(seconds * 2, 10), 30); // 10-30 bars
+
+            int barWidth = dpToPx(3);
+            int barMargin = dpToPx(3);
+            int maxHeight = dpToPx(24);
+            int minHeight = dpToPx(8);
+
+            for (int i = 0; i < barCount; i++) {
+                View bar = new View(waveformContainer.getContext());
+
+                // Create varied heights for visual interest
+                int height = minHeight + (int)(Math.random() * (maxHeight - minHeight));
+
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(barWidth, height);
+                if (i < barCount - 1) {
+                    params.setMarginEnd(barMargin);
+                }
+
+                bar.setLayoutParams(params);
+                bar.setBackgroundColor(Color.WHITE);
+                bar.setAlpha(0.7f);
+
+                waveformContainer.addView(bar);
+            }
+        }
+
+        private int dpToPx(int dp) {
+            float density = waveformContainer.getContext().getResources().getDisplayMetrics().density;
+            return Math.round(dp * density);
+        }
+
         private String formatDuration(int millis) {
             int seconds = millis / 1000;
             int minutes = seconds / 60;
             seconds = seconds % 60;
             return String.format("%d:%02d", minutes, seconds);
+        }
+
+        private String formatTime(Date date) {
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+            return sdf.format(date);
         }
     }
 
@@ -2324,6 +2384,8 @@ public class MessageHolders {
         private View bubble;
         private ImageView playButton;
         private TextView duration;
+        private TextView time;
+        private LinearLayout waveformContainer;
 
         private boolean isPlaying = false;
 
@@ -2332,18 +2394,30 @@ public class MessageHolders {
             bubble = itemView.findViewById(R.id.bubble);
             playButton = itemView.findViewById(R.id.playButton);
             duration = itemView.findViewById(R.id.duration);
-
+            time = itemView.findViewById(R.id.time);
+            waveformContainer = itemView.findViewById(R.id.waveformContainer);
         }
 
         @Override
         public void onBind(MessageContentType.Image message) {
             super.onBind(message);
 
+            // Set duration
             if (message.getVoiceDuration() > 0) {
                 duration.setText(formatDuration(message.getVoiceDuration()));
             }
 
+            // Set time
+            if (message.getCreatedAt() != null) {
+                time.setText(formatTime(message.getCreatedAt()));
+            }
 
+            // Generate waveform based on duration
+            generateWaveform(message.getVoiceDuration());
+
+            // Reset play state
+            isPlaying = false;
+            playButton.setImageResource(R.drawable.baseline_play_arrow_24);
 
             playButton.setOnClickListener(v -> {
                 if (audioPlayListener != null) {
@@ -2362,11 +2436,52 @@ public class MessageHolders {
             });
         }
 
+        private void generateWaveform(int durationMillis) {
+            waveformContainer.removeAllViews();
+
+            // Calculate number of bars based on duration
+            int seconds = durationMillis / 1000;
+            int barCount = Math.min(Math.max(seconds * 2, 10), 30); // 10-30 bars
+
+            int barWidth = dpToPx(3);
+            int barMargin = dpToPx(3);
+            int maxHeight = dpToPx(24);
+            int minHeight = dpToPx(8);
+
+            for (int i = 0; i < barCount; i++) {
+                View bar = new View(waveformContainer.getContext());
+
+                // Create varied heights for visual interest
+                int height = minHeight + (int)(Math.random() * (maxHeight - minHeight));
+
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(barWidth, height);
+                if (i < barCount - 1) {
+                    params.setMarginEnd(barMargin);
+                }
+
+                bar.setLayoutParams(params);
+                bar.setBackgroundColor(Color.parseColor("#808080")); // Gray color
+                bar.setAlpha(0.6f);
+
+                waveformContainer.addView(bar);
+            }
+        }
+
+        private int dpToPx(int dp) {
+            float density = waveformContainer.getContext().getResources().getDisplayMetrics().density;
+            return Math.round(dp * density);
+        }
+
         private String formatDuration(int millis) {
             int seconds = millis / 1000;
             int minutes = seconds / 60;
             seconds = seconds % 60;
             return String.format("%d:%02d", minutes, seconds);
+        }
+
+        private String formatTime(Date date) {
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+            return sdf.format(date);
         }
     }
 
