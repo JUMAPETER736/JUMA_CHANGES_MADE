@@ -1093,7 +1093,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 userName = "You",
                 user = userEntity,
                 userId = myId,
-                text = "",  // MUST be null for proper voice note display
+                text = String.toString(),  // MUST be null for proper voice note display
                 createdAt = System.currentTimeMillis(),
                 imageUrl = null,
                 voiceUrl = voiceUrl.toString(),  // Use voiceUrl field

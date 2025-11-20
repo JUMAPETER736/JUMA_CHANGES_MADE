@@ -165,39 +165,27 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
         this.retrofitInterface = retrofitInstance
     }
 
-
-
     private fun initMessages() {
         firstLoad = false
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val message = messageViewModel.getLastMessage(chatId, myId)
 
-                // Add null check here
                 if (message == null) {
                     Log.e("LoadMessages", "No message found")
-                    // Don't crash - just return silently
                     return@launch
                 }
 
                 val userId = if (message.userId == myId) "0" else "1"
                 val status = message.status
 
-                // Add null check for user
                 val user = message.user?.let {
-                    User(
-                        userId,
-                        it.name,
-                        it.avatar,
-                        it.online,
-                        it.lastSeen
-                    )
+                    User(userId, it.name, it.avatar, it.online, it.lastSeen)
                 } ?: run {
                     Log.e("LoadMessages", "Message user is null")
                     return@launch
                 }
 
-                // Rest of your code...
                 val date = Date(message.createdAt)
 
                 val messageContent = when {
@@ -215,32 +203,25 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                     }
                     message.audioUrl != null -> {
                         Message(message.id, user, null, date).apply {
-                            setAudio(
-                                Message.Audio(
-                                    message.audioUrl!!,
-                                    0,
-                                    getNameFromUrl(message.audioUrl!!)
-                                )
-                            )
+                            setAudio(Message.Audio(message.audioUrl!!, 0, getNameFromUrl(message.audioUrl!!)))
                             setStatus(status)
                         }
                     }
                     message.voiceUrl != null -> {
                         Message(message.id, user, null, date).apply {
-                            setVoice(Message.Voice(message.voiceUrl!!, 10000))
+                            val actualDuration = if (message.voiceDuration > 0) {
+                                message.voiceDuration
+                            } else {
+                                10000
+                            }
+                            setVoice(Message.Voice(message.voiceUrl!!, actualDuration))
                             setStatus(status)
                         }
                     }
                     message.docUrl != null -> {
                         Message(message.id, user, null, date).apply {
                             val size = getFileSize(message.docUrl!!)
-                            setDocument(
-                                Message.Document(
-                                    message.docUrl!!,
-                                    getNameFromUrl(message.docUrl!!),
-                                    formatFileSize(size)
-                                )
-                            )
+                            setDocument(Message.Document(message.docUrl!!, getNameFromUrl(message.docUrl!!), formatFileSize(size)))
                             setStatus(status)
                         }
                     }
@@ -343,24 +324,24 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     private fun loadFirstMessages() {
         firstLoad = false
         CoroutineScope(Dispatchers.IO).launch {
-
             val messageList: List<MessageEntity> = messageViewModel.getLastMessagesByChatId(chatId)
-
             first_messages_count = messageList.size
-
             val sortedMessages = messageList.sortedByDescending { it.createdAt }
-
-            Log.d("TAG", "Sorted Message List: $sortedMessages")
             val filteredMessages = sortedMessages.filter { !it.deleted }
 
             val messages = filteredMessages.filter { message ->
                 val userId = if (message.userId == myId) "0" else "1"
-                userId != "0" || (userId == "0" && message.id.startsWith("Image") || message.id.startsWith(
-                    "Video"
-                ) || message.id.startsWith("Audio") || message.id.startsWith("Text") || message.id.startsWith(
-                    "Doc"
-                ))
+
+                userId != "0" || (userId == "0" && (
+                        message.id.startsWith("Image") ||
+                                message.id.startsWith("Video") ||
+                                message.id.startsWith("Audio") ||
+                                message.id.startsWith("Text") ||
+                                message.id.startsWith("Doc") ||
+                                message.id.startsWith("Voice")  // ← ADD THIS
+                        ))
             }.map { message ->
+
                 val userId = if (message.userId == myId) "0" else "1"
                 val status = message.status
                 val user =
@@ -463,10 +444,8 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     }
 
     private fun loadMessageList() {
-
         Handler().post {
             CoroutineScope(Dispatchers.Main).launch {
-//                messageViewModel.getMessages(chatId)
                 val messageList: List<MessageEntity> = messageViewModel.messages(chatId)
                 val sortedMessages = messageList.sortedByDescending { it.createdAt }
                 val filteredMessages = sortedMessages.filter { !it.deleted }
@@ -474,11 +453,16 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
                 val messages = filteredMessages.filter { message ->
                     val userId = if (message.userId == myId) "0" else "1"
-                    userId != "0" || (userId == "0" && message.id.startsWith("Image") || message.id.startsWith(
-                        "Video"
-                    ) || message.id.startsWith("Audio") || message.id.startsWith("Text") || message.id.startsWith(
-                        "Doc"
-                    ))
+
+                    userId != "0" || (userId == "0" && (
+                            message.id.startsWith("Image") ||
+                                    message.id.startsWith("Video") ||
+                                    message.id.startsWith("Audio") ||
+                                    message.id.startsWith("Text") ||
+                                    message.id.startsWith("Doc") ||
+                                    message.id.startsWith("Voice")  // ← ADD THIS
+                            ))
+
                 }.map { message ->
                     val userId = if (message.userId == myId) "0" else "1"
                     val status = message.status
