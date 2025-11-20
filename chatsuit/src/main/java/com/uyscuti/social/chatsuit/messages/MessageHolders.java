@@ -107,6 +107,39 @@ public class MessageHolders {
 
     }
 
+    private static class ContentTypeConfig<TYPE extends MessageContentType> {
+
+        private byte type;
+        private HolderConfig<TYPE> incomingConfig;
+        private HolderConfig<TYPE> outcomingConfig;
+
+        private ContentTypeConfig(
+                byte type, HolderConfig<TYPE> incomingConfig, HolderConfig<TYPE> outcomingConfig) {
+
+            this.type = type;
+            this.incomingConfig = incomingConfig;
+            this.outcomingConfig = outcomingConfig;
+        }
+    }
+
+    private static class HolderConfig<T extends IMessage> {
+
+        protected Class<? extends BaseMessageViewHolder<? extends T>> holder;
+        protected int layout;
+        protected Object payload;
+
+        HolderConfig(Class<? extends BaseMessageViewHolder<? extends T>> holder, int layout) {
+            this.holder = holder;
+            this.layout = layout;
+        }
+
+        HolderConfig(Class<? extends BaseMessageViewHolder<? extends T>> holder, int layout, Object payload) {
+            this.holder = holder;
+            this.layout = layout;
+            this.payload = payload;
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private short getContentViewType(IMessage message) {
 
@@ -2295,10 +2328,6 @@ public class MessageHolders {
         }
     }
 
-    // Replace your existing DefaultOutGoingVoiceMessageViewHolder class with this:
-
-// Replace your existing DefaultOutGoingVoiceMessageViewHolder class with this:
-
     public static class DefaultOutGoingVoiceMessageViewHolder
             extends MessageHolders.BaseOutcomingMessageViewHolder<MessageContentType.Image> {
 
@@ -2562,37 +2591,6 @@ public class MessageHolders {
             return sdf.format(date);
         }
     }
-    private static class ContentTypeConfig<TYPE extends MessageContentType> {
 
-        private byte type;
-        private HolderConfig<TYPE> incomingConfig;
-        private HolderConfig<TYPE> outcomingConfig;
-
-        private ContentTypeConfig(
-                byte type, HolderConfig<TYPE> incomingConfig, HolderConfig<TYPE> outcomingConfig) {
-
-            this.type = type;
-            this.incomingConfig = incomingConfig;
-            this.outcomingConfig = outcomingConfig;
-        }
-    }
-
-    private static class HolderConfig<T extends IMessage> {
-
-        protected Class<? extends BaseMessageViewHolder<? extends T>> holder;
-        protected int layout;
-        protected Object payload;
-
-        HolderConfig(Class<? extends BaseMessageViewHolder<? extends T>> holder, int layout) {
-            this.holder = holder;
-            this.layout = layout;
-        }
-
-        HolderConfig(Class<? extends BaseMessageViewHolder<? extends T>> holder, int layout, Object payload) {
-            this.holder = holder;
-            this.layout = layout;
-            this.payload = payload;
-        }
-    }
 
 }
