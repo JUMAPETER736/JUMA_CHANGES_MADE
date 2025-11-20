@@ -802,7 +802,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 userName = "You",
                 user = userEntity,
                 userId = myId,
-                text = null,  // CHANGED: Set to null instead of "Voice Note"
+                text = "",
                 createdAt = System.currentTimeMillis(),
                 imageUrl = null,
                 voiceUrl = voiceUrl.toString(),
