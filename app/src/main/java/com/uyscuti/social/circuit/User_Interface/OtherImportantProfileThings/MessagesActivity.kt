@@ -352,6 +352,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         return (dp * resources.displayMetrics.density).toInt()
     }
 
+    @SuppressLint("SimpleDateFormat")
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -937,6 +938,34 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         timerHandler.post(playbackTimerRunnable!!)
     }
 
+    @SuppressLint("DefaultLocale")
+    private fun pauseVn(progress: Int) {
+        val scrollAnimator = binding.waveformScrollView.tag as? ValueAnimator
+        scrollAnimator?.cancel()
+
+        player?.pause()
+        player?.seekTo(progress)
+
+        isAudioVNPlaying = false
+        isAudioVNPaused = true
+
+        stopPlaybackTimerRunnable()
+
+        // Stop animations but keep waveforms visible
+        waveBars.forEach { bar ->
+            (bar.tag as? ObjectAnimator)?.cancel()
+            val storedHeight = bar.tag as? Float ?: 1.0f
+            bar.scaleY = storedHeight
+        }
+
+        // Show current playback position
+        val currentMinutes = (progress / 1000) / 60
+        val currentSeconds = (progress / 1000) % 60
+        binding.pausedTimerTv.text = String.format("%02d:%02d", currentMinutes, currentSeconds)
+
+        updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
+    }
+
     private fun stopAllVoiceNoteActivities() {
         try {
             isListeningToAudio = false
@@ -1302,34 +1331,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
         binding.waveDotsContainer.removeAllViews()
         waveBars.clear()
-    }
-
-    @SuppressLint("DefaultLocale")
-    private fun pauseVn(progress: Int) {
-        val scrollAnimator = binding.waveformScrollView.tag as? ValueAnimator
-        scrollAnimator?.cancel()
-
-        player?.pause()
-        player?.seekTo(progress)
-
-        isAudioVNPlaying = false
-        isAudioVNPaused = true
-
-        stopPlaybackTimerRunnable()
-
-        // Stop animations but keep waveforms visible
-        waveBars.forEach { bar ->
-            (bar.tag as? ObjectAnimator)?.cancel()
-            val storedHeight = bar.tag as? Float ?: 1.0f
-            bar.scaleY = storedHeight
-        }
-
-        // Show current playback position
-        val currentMinutes = (progress / 1000) / 60
-        val currentSeconds = (progress / 1000) % 60
-        binding.pausedTimerTv.text = String.format("%02d:%02d", currentMinutes, currentSeconds)
-
-        updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
     }
 
     private fun mixVoiceNote() {
