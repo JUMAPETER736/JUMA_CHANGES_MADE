@@ -2267,19 +2267,21 @@ public class MessageHolders {
         }
     }
 
-
     public class DefaultOutGoingVoiceMessageViewHolder
             extends MessageHolders.BaseOutcomingMessageViewHolder<MessageContentType.Image> {
 
         private View bubble;
         private ImageView playButton;
         private TextView duration;
+        private AudioRecordView audioWaveform;
+        private boolean isPlaying = false;
 
         public DefaultOutGoingVoiceMessageViewHolder(View itemView) {
             super(itemView);
             bubble = itemView.findViewById(R.id.bubble);
-            playButton = itemView.findViewById(R.id.playAudio);
-            duration = itemView.findViewById(R.id.audioDuration);
+            playButton = itemView.findViewById(R.id.playButton);
+            duration = itemView.findViewById(R.id.duration);
+            audioWaveform = itemView.findViewById(R.id.audioWaveform);
         }
 
         @Override
@@ -2290,13 +2292,22 @@ public class MessageHolders {
                 duration.setText(formatDuration(message.getVoiceDuration()));
             }
 
+            // Generate waveform visualization
+            if (audioWaveform != null) {
+                audioWaveform.recreate();
+            }
+
             playButton.setOnClickListener(v -> {
                 if (audioPlayListener != null) {
+                    isPlaying = !isPlaying;
+                    playButton.setImageResource(isPlaying ?
+                            R.drawable.ic_pause : R.drawable.baseline_play_arrow_24);
+
                     audioPlayListener.onAudioPlayClick(
                             message.getVoiceUrl(),
                             playButton,
                             duration,
-                            null,  // SeekBar - add if you have one in layout
+                            null,
                             message
                     );
                 }
@@ -2311,19 +2322,21 @@ public class MessageHolders {
         }
     }
 
-
     public class DefaultInComingVoiceMessageViewHolder
             extends MessageHolders.BaseIncomingMessageViewHolder<MessageContentType.Image> {
 
         private View bubble;
         private ImageView playButton;
         private TextView duration;
+        private AudioRecordView audioWaveform;
+        private boolean isPlaying = false;
 
         public DefaultInComingVoiceMessageViewHolder(View itemView) {
             super(itemView);
             bubble = itemView.findViewById(R.id.bubble);
             playButton = itemView.findViewById(R.id.playButton);
             duration = itemView.findViewById(R.id.duration);
+            audioWaveform = itemView.findViewById(R.id.audioWaveform);
         }
 
         @Override
@@ -2334,13 +2347,22 @@ public class MessageHolders {
                 duration.setText(formatDuration(message.getVoiceDuration()));
             }
 
+            // Generate waveform visualization
+            if (audioWaveform != null) {
+                audioWaveform.recreate();
+            }
+
             playButton.setOnClickListener(v -> {
                 if (audioPlayListener != null) {
+                    isPlaying = !isPlaying;
+                    playButton.setImageResource(isPlaying ?
+                            R.drawable.ic_pause : R.drawable.baseline_play_arrow_24);
+
                     audioPlayListener.onAudioPlayClick(
                             message.getVoiceUrl(),
                             playButton,
                             duration,
-                            null,  // SeekBar - add if you have one in layout
+                            null,
                             message
                     );
                 }

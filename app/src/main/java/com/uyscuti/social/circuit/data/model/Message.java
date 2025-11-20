@@ -164,6 +164,10 @@ public class Message implements IMessage,
         return 0;
     }
 
+    public int getVoiceDuration() {
+        return 0;
+    }
+
     @Nullable
     @Override
     public String getDocUrl() {

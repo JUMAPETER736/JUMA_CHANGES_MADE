@@ -1,33 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="8dp">
+    android:padding="4dp">
 
     <LinearLayout
         android:id="@+id/bubble"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minWidth="200dp"
+        android:maxWidth="280dp"
         android:layout_alignParentStart="true"
         android:background="@drawable/shape_incoming_message"
         android:orientation="horizontal"
-        android:padding="12dp"
+        android:padding="8dp"
         android:gravity="center_vertical">
 
         <ImageView
             android:id="@+id/playButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@android:drawable/ic_media_play"/>
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="4dp"
 
-        <TextView
-            android:id="@+id/duration"
-            android:layout_width="wrap_content"
+            android:src="@drawable/baseline_play_arrow_24"
+            app:tint="#128C7E" />
+
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:text="0:00"
-            android:textColor="@android:color/black"
-            android:textSize="14sp"/>
+            android:layout_marginEnd="8dp"
+            android:orientation="vertical">
+
+            <com.visualizer.amplitude.AudioRecordView
+                android:id="@+id/audioWaveform"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                app:chunkColor="#128C7E"
+                app:chunkRoundedCorners="true"
+                app:chunkWidth="3dp"
+                app:chunkSpacing="2dp"
+                tools:ignore="MissingClass" />
+
+            <TextView
+                android:id="@+id/duration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="0:00"
+                android:textColor="#666666"
+                android:textSize="12sp"/>
+
+        </LinearLayout>
 
     </LinearLayout>
 
