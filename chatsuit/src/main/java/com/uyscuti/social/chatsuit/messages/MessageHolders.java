@@ -113,8 +113,7 @@ public class MessageHolders {
         if (message instanceof MessageContentType.Image) {
             MessageContentType.Image imageMessage = (MessageContentType.Image) message;
 
-            // ⚠️ CHECK VOICE FIRST (before checking imageUrl)
-            // Voice messages often have URLs in imageUrl field ending with .mp3
+
             if (imageMessage.getVoiceUrl() != null) {
                 Log.d("Holder Attachments", "Voice Found, Path: " + imageMessage.getVoiceUrl());
                 return VIEW_TYPE_VOICE_MESSAGE;
@@ -533,7 +532,7 @@ public class MessageHolders {
             throw new UnsupportedOperationException("Somehow we couldn't create the ViewHolder for message. Please, report this issue on GitHub with full stacktrace in description.", e);
         }
     }
-    
+
 
     protected ViewHolder getHolder(ViewGroup parent, int viewType, MessagesListStyle messagesListStyle) {
         switch (viewType) {
