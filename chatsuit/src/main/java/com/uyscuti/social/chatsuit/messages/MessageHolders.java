@@ -2273,7 +2273,7 @@ public class MessageHolders {
         private View bubble;
         private ImageView playButton;
         private TextView duration;
-        private AudioRecordView audioWaveform;
+
         private boolean isPlaying = false;
 
         public DefaultOutGoingVoiceMessageViewHolder(View itemView) {
@@ -2281,7 +2281,7 @@ public class MessageHolders {
             bubble = itemView.findViewById(R.id.bubble);
             playButton = itemView.findViewById(R.id.playButton);
             duration = itemView.findViewById(R.id.duration);
-            audioWaveform = itemView.findViewById(R.id.audioWaveform);
+
         }
 
         @Override
@@ -2292,16 +2292,12 @@ public class MessageHolders {
                 duration.setText(formatDuration(message.getVoiceDuration()));
             }
 
-            // Generate waveform visualization
-            if (audioWaveform != null) {
-                audioWaveform.recreate();
-            }
 
             playButton.setOnClickListener(v -> {
                 if (audioPlayListener != null) {
                     isPlaying = !isPlaying;
                     playButton.setImageResource(isPlaying ?
-                            R.drawable.ic_pause : R.drawable.baseline_play_arrow_24);
+                            R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
 
                     audioPlayListener.onAudioPlayClick(
                             message.getVoiceUrl(),
@@ -2328,7 +2324,7 @@ public class MessageHolders {
         private View bubble;
         private ImageView playButton;
         private TextView duration;
-        private AudioRecordView audioWaveform;
+
         private boolean isPlaying = false;
 
         public DefaultInComingVoiceMessageViewHolder(View itemView) {
@@ -2336,7 +2332,7 @@ public class MessageHolders {
             bubble = itemView.findViewById(R.id.bubble);
             playButton = itemView.findViewById(R.id.playButton);
             duration = itemView.findViewById(R.id.duration);
-            audioWaveform = itemView.findViewById(R.id.audioWaveform);
+
         }
 
         @Override
@@ -2347,16 +2343,13 @@ public class MessageHolders {
                 duration.setText(formatDuration(message.getVoiceDuration()));
             }
 
-            // Generate waveform visualization
-            if (audioWaveform != null) {
-                audioWaveform.recreate();
-            }
+
 
             playButton.setOnClickListener(v -> {
                 if (audioPlayListener != null) {
                     isPlaying = !isPlaying;
                     playButton.setImageResource(isPlaying ?
-                            R.drawable.ic_pause : R.drawable.baseline_play_arrow_24);
+                            R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
 
                     audioPlayListener.onAudioPlayClick(
                             message.getVoiceUrl(),

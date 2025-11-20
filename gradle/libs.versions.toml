@@ -24,6 +24,7 @@ uiGraphics = "1.8.3"
 firebaseCrashlyticsBuildtools = "3.0.6"
 filamentAndroid = "1.17.1"
 scenecore = "1.0.0-alpha07"
+audiorecordview = "3.0.1"
 
 [libraries]
 # AndroidX Core
@@ -64,6 +65,7 @@ ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref
 firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
 filament-android = { group = "com.google.ar.sceneform", name = "filament-android", version.ref = "filamentAndroid" }
 androidx-scenecore = { group = "androidx.xr.scenecore", name = "scenecore", version.ref = "scenecore" }
+audiorecordview = { group = "com.github.3llomi", name = "AudioRecordView", version.ref = "audiorecordview" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

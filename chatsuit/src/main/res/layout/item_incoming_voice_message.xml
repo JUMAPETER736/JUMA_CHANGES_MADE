@@ -23,7 +23,6 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:padding="4dp"
-
             android:src="@drawable/baseline_play_arrow_24"
             app:tint="#128C7E" />
 
@@ -35,15 +34,7 @@
             android:layout_marginEnd="8dp"
             android:orientation="vertical">
 
-            <com.visualizer.amplitude.AudioRecordView
-                android:id="@+id/audioWaveform"
-                android:layout_width="match_parent"
-                android:layout_height="30dp"
-                app:chunkColor="#128C7E"
-                app:chunkRoundedCorners="true"
-                app:chunkWidth="3dp"
-                app:chunkSpacing="2dp"
-                tools:ignore="MissingClass" />
+
 
             <TextView
                 android:id="@+id/duration"

@@ -50,4 +50,5 @@ dependencies {
     implementation("com.vanniktech:emoji-facebook:0.18.0")
     implementation("com.vanniktech:emoji-google:0.18.0")
     implementation("com.vanniktech:emoji-ios:0.18.0")
+    implementation("com.github.3llomi:AudioRecordView:3.0.1")
 }
