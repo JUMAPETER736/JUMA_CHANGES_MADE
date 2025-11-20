@@ -777,7 +777,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             val user = User("0", "You", "test", true, Date())
             val date = Date(System.currentTimeMillis())
             val messageId = "Voice_${System.currentTimeMillis()}"
-            val message = Message(messageId, user, null, date)
+            val message = Message(messageId, user, null, date)  // IMPORTANT: Keep text as null
 
             val voiceUrl = Uri.fromFile(newFile)
 
@@ -793,7 +793,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 10000L
             }
 
-            // Set voice message
+            // Set voice message - this makes it display as an audio player
             message.setVoice(Message.Voice(voiceUrl.toString(), duration.toInt()))
 
             val voiceMessage = MessageEntity(
@@ -802,7 +802,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 userName = "You",
                 user = userEntity,
                 userId = myId,
-                text = "Voice Note",
+                text = null,  // CHANGED: Set to null instead of "Voice Note"
                 createdAt = System.currentTimeMillis(),
                 imageUrl = null,
                 voiceUrl = voiceUrl.toString(),
@@ -1247,24 +1247,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 }
             }
         }
-    }
-
-    private fun stopPlaying() {
-        val scrollAnimator = binding.waveformScrollView.tag as? ValueAnimator
-        scrollAnimator?.cancel()
-
-        binding.playVnAudioBtn.setImageResource(com.uyscuti.social.circuit.R.drawable.play_svgrepo_com)
-        player?.release()
-        player = null
-        isAudioVNPlaying = false
-        vnRecordAudioPlaying = false
-        isOnRecordDurationOnPause = false
-
-        stopWaveDotsAnimation()
-        updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
-
-        stopPlaybackTimerRunnable()
-        vnRecordProgress = 0
     }
 
     private fun stopPlaybackTimerRunnable() {
