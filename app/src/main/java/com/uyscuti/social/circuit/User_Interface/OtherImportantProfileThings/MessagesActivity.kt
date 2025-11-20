@@ -589,7 +589,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     private fun setupVoiceNoteControls() {
@@ -675,230 +674,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     resetVoiceNoteUI()
                 }
             }, 200) // Small delay to ensure mixing completes
-        }
-    }
-
-    private fun stopAllVoiceNoteActivities() {
-        try {
-            isListeningToAudio = false
-
-            // Stop timers
-            timerHandler.removeCallbacksAndMessages(null)
-            playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
-
-            // Stop recording if active
-            if (isRecording) {
-                mediaRecorder?.apply {
-                    try {
-                        stop()
-                        release()
-                        Log.d(TAG, "MediaRecorder stopped and released")
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error stopping recorder: $e")
-                    }
-                }
-                mediaRecorder = null
-
-                // Add the current recording file to the list
-                if (::outputFile.isInitialized && File(outputFile).exists()) {
-                    if (!recordedAudioFiles.contains(outputFile)) {
-                        recordedAudioFiles.add(outputFile)
-                        Log.d(TAG, "Added current recording to list")
-                    }
-                }
-            }
-
-            // Stop playback if active
-            if (isAudioVNPlaying) {
-                player?.apply {
-                    try {
-                        stop()
-                        release()
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error stopping player: $e")
-                    }
-                }
-                player = null
-            }
-
-            // Stop animations
-            stopWaveDotsAnimation()
-            val scrollAnimator = binding.waveformScrollView.tag as? ValueAnimator
-            scrollAnimator?.cancel()
-
-            // Reset flags
-            isRecording = false
-            isPaused = false
-            isAudioVNPlaying = false
-            vnRecordAudioPlaying = false
-
-            Log.d(TAG, "Recorded audio files count: ${recordedAudioFiles.size}")
-            recordedAudioFiles.forEachIndexed { index, file ->
-                Log.d(TAG, "File $index: $file, exists: ${File(file).exists()}, size: ${File(file).length()}")
-            }
-
-            // If there are multiple audio segments, mix them
-            if (recordedAudioFiles.size > 1) {
-                Log.d(TAG, "Mixing ${recordedAudioFiles.size} audio segments")
-                mixVoiceNote()
-            } else if (recordedAudioFiles.size == 1) {
-                // Single recording, use it directly
-                outputVnFile = recordedAudioFiles[0]
-                Log.d(TAG, "Using single recording file: $outputVnFile")
-            }
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error stopping voice note activities: ${e.message}")
-            e.printStackTrace()
-        }
-    }
-
-    // Replace your sendVoiceNoteDirectly function with this corrected version
-    private fun sendVoiceNoteDirectly(vnPath: String) {
-        try {
-            val newFile = File(vnPath)
-
-            if (!newFile.exists() || newFile.length() == 0L) {
-                Log.e("VoiceNote", "Voice note file doesn't exist or is empty")
-                resetVoiceNoteUI()
-                showToast("Failed to send voice note")
-                return
-            }
-
-            Log.d("VoiceNote", "Sending voice note: $vnPath, size: ${newFile.length()} bytes")
-
-            val userEntity = UserEntity(
-                "0",
-                "You",
-                "local",
-                Date(),
-                true
-            )
-
-            val user = User("0", "You", "test", true, Date())
-            val date = Date(System.currentTimeMillis())
-            val messageId = "Voice_${System.currentTimeMillis()}"
-
-            // Create message with NULL text - this is critical for voice note display
-            val message = Message(messageId, user, null, date)
-
-            val voiceUrl = Uri.fromFile(newFile)
-
-            // Calculate actual duration
-            val duration = try {
-                val retriever = MediaMetadataRetriever()
-                retriever.setDataSource(vnPath)
-                val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                retriever.release()
-                durationStr?.toLongOrNull() ?: 10000L
-            } catch (e: Exception) {
-                Log.e("VoiceNote", "Error getting duration: ${e.message}")
-                10000L
-            }
-
-            // IMPORTANT: Use setVoice() NOT setAudio() - this makes it display as voice note
-            message.setVoice(Message.Voice(voiceUrl.toString(), duration.toInt()))
-
-            // Create MessageEntity with NULL text and voiceUrl (NOT audioUrl)
-            val voiceMessage = MessageEntity(
-                id = messageId,
-                chatId = chatId,
-                userName = "You",
-                user = userEntity,
-                userId = myId,
-                text = "",  // MUST be null for proper voice note display
-                createdAt = System.currentTimeMillis(),
-                imageUrl = null,
-                voiceUrl = voiceUrl.toString(),  // Use voiceUrl field
-                voiceDuration = duration.toInt(),
-                status = "Sending",
-                videoUrl = null,
-                audioUrl = null,  // Leave audioUrl null
-                docUrl = null,
-                fileSize = newFile.length()
-            )
-
-            // Save to database and update UI
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    insertMessage(voiceMessage)
-                    updateLastMessage(isGroup, chatId, voiceMessage)
-                } catch (e: Exception) {
-                    Log.e("VoiceNote", "Error saving message: ${e.message}")
-                }
-            }
-
-            message.setUser(user)
-            message.status = "Sending"
-
-            // Add to UI immediately
-            CoroutineScope(Dispatchers.Main).launch {
-                messagesAdapter?.addToStart(message, true)
-
-                // Reset UI after a short delay to ensure smooth transition
-                delay(100)
-                resetVoiceNoteUI()
-            }
-
-        } catch (e: Exception) {
-            Log.e("VoiceNote", "Error sending voice note: ${e.message}", e)
-            showToast("Failed to send voice note")
-            resetVoiceNoteUI()
-        }
-    }
-
-
-    private fun resetVoiceNoteUI() {
-        try {
-            // Reset state
-            voiceNoteState = VoiceNoteState.IDLE
-            isRecording = false
-            isPaused = false
-            isAudioVNPlaying = false
-            vnRecordAudioPlaying = false
-            isListeningToAudio = false
-
-            // Reset time variables
-            recordingStartTime = 0L
-            recordingElapsedTime = 0L
-            vnRecordProgress = 0
-
-            // Clear recorded files list
-            recordedAudioFiles.clear()
-
-            // Hide VN layout and show input container
-            binding.VNLayout.visibility = View.GONE
-            binding.inputContainer.visibility = View.VISIBLE
-
-            // Reset button states
-            binding.recordVN.setImageResource(com.uyscuti.social.circuit.R.drawable.mic_2)
-            binding.sendVN.setBackgroundResource(com.uyscuti.social.circuit.R.drawable.ic_ripple_disabled)
-            binding.sendVN.isClickable = false
-
-            // Reset timers
-            binding.recordingTimerTv.text = "00:00"
-            binding.pausedTimerTv.text = "00:00"
-
-            // Clear waveform
-            binding.waveDotsContainer.removeAllViews()
-            waveBars.clear()
-
-            Log.d(TAG, "Voice note UI reset complete")
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error resetting voice note UI: ${e.message}")
-            e.printStackTrace()
-        }
-    }
-
-    private fun stopWaveDotsAnimation() {
-        try {
-            waveBars.forEach { bar ->
-                (bar.tag as? ObjectAnimator)?.cancel()
-                bar.tag = null
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error stopping wave animation: ${e.message}")
         }
     }
 
@@ -1119,6 +894,271 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+    @SuppressLint("DefaultLocale")
+    private fun updateRecordingTimer() {
+        timerHandler.post(object : kotlinx.coroutines.Runnable {
+            override fun run() {
+                if (isRecording && !isPaused) {
+                    val currentTime = System.currentTimeMillis()
+                    val elapsed = recordingElapsedTime + (currentTime - recordingStartTime)
+
+                    val seconds = (elapsed / 1000) % 60
+                    val minutes = (elapsed / 1000) / 60
+
+                    val formatted = String.format("%02d:%02d", minutes, seconds)
+                    binding.recordingTimerTv.text = formatted
+
+                    timerHandler.postDelayed(this, 100) // Update every 100ms
+                }
+            }
+        })
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun updatePlaybackTimer() {
+        // Remove any existing callbacks first
+        playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
+
+        playbackTimerRunnable = object : kotlinx.coroutines.Runnable {
+            override fun run() {
+                if (isAudioVNPlaying && player != null) {
+                    try {
+                        val currentPosition = player?.currentPosition ?: 0
+                        val currentMinutes = (currentPosition / 1000) / 60
+                        val currentSeconds = (currentPosition / 1000) % 60
+                        binding.pausedTimerTv.text = String.format("%02d:%02d", currentMinutes, currentSeconds)
+                        timerHandler.postDelayed(this, 100)
+                    } catch (e: Exception) {
+                        Log.e("PlaybackTimer", "Error updating timer: ${e.message}")
+                    }
+                }
+            }
+        }
+        timerHandler.post(playbackTimerRunnable!!)
+    }
+
+    private fun stopAllVoiceNoteActivities() {
+        try {
+            isListeningToAudio = false
+
+            // Stop timers
+            timerHandler.removeCallbacksAndMessages(null)
+            playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
+
+            // Stop recording if active
+            if (isRecording) {
+                mediaRecorder?.apply {
+                    try {
+                        stop()
+                        release()
+                        Log.d(TAG, "MediaRecorder stopped and released")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error stopping recorder: $e")
+                    }
+                }
+                mediaRecorder = null
+
+                // Add the current recording file to the list
+                if (::outputFile.isInitialized && File(outputFile).exists()) {
+                    if (!recordedAudioFiles.contains(outputFile)) {
+                        recordedAudioFiles.add(outputFile)
+                        Log.d(TAG, "Added current recording to list")
+                    }
+                }
+            }
+
+            // Stop playback if active
+            if (isAudioVNPlaying) {
+                player?.apply {
+                    try {
+                        stop()
+                        release()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error stopping player: $e")
+                    }
+                }
+                player = null
+            }
+
+            // Stop animations
+            stopWaveDotsAnimation()
+            val scrollAnimator = binding.waveformScrollView.tag as? ValueAnimator
+            scrollAnimator?.cancel()
+
+            // Reset flags
+            isRecording = false
+            isPaused = false
+            isAudioVNPlaying = false
+            vnRecordAudioPlaying = false
+
+            Log.d(TAG, "Recorded audio files count: ${recordedAudioFiles.size}")
+            recordedAudioFiles.forEachIndexed { index, file ->
+                Log.d(TAG, "File $index: $file, exists: ${File(file).exists()}, size: ${File(file).length()}")
+            }
+
+            // If there are multiple audio segments, mix them
+            if (recordedAudioFiles.size > 1) {
+                Log.d(TAG, "Mixing ${recordedAudioFiles.size} audio segments")
+                mixVoiceNote()
+            } else if (recordedAudioFiles.size == 1) {
+                // Single recording, use it directly
+                outputVnFile = recordedAudioFiles[0]
+                Log.d(TAG, "Using single recording file: $outputVnFile")
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping voice note activities: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    private fun sendVoiceNoteDirectly(vnPath: String) {
+        try {
+            val newFile = File(vnPath)
+
+            if (!newFile.exists() || newFile.length() == 0L) {
+                Log.e("VoiceNote", "Voice note file doesn't exist or is empty")
+                resetVoiceNoteUI()
+                showToast("Failed to send voice note")
+                return
+            }
+
+            Log.d("VoiceNote", "Sending voice note: $vnPath, size: ${newFile.length()} bytes")
+
+            val userEntity = UserEntity(
+                "0",
+                "You",
+                "local",
+                Date(),
+                true
+            )
+
+            val user = User("0", "You", "test", true, Date())
+            val date = Date(System.currentTimeMillis())
+            val messageId = "Voice_${System.currentTimeMillis()}"
+
+            // Create message with NULL text - this is critical for voice note display
+            val message = Message(messageId, user, null, date)
+
+            val voiceUrl = Uri.fromFile(newFile)
+
+            // Calculate actual duration
+            val duration = try {
+                val retriever = MediaMetadataRetriever()
+                retriever.setDataSource(vnPath)
+                val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                retriever.release()
+                durationStr?.toLongOrNull() ?: 10000L
+            } catch (e: Exception) {
+                Log.e("VoiceNote", "Error getting duration: ${e.message}")
+                10000L
+            }
+
+            // IMPORTANT: Use setVoice() NOT setAudio() - this makes it display as voice note
+            message.setVoice(Message.Voice(voiceUrl.toString(), duration.toInt()))
+
+            // Create MessageEntity with NULL text and voiceUrl (NOT audioUrl)
+            val voiceMessage = MessageEntity(
+                id = messageId,
+                chatId = chatId,
+                userName = "You",
+                user = userEntity,
+                userId = myId,
+                text = "",  // MUST be null for proper voice note display
+                createdAt = System.currentTimeMillis(),
+                imageUrl = null,
+                voiceUrl = voiceUrl.toString(),  // Use voiceUrl field
+                voiceDuration = duration.toInt(),
+                status = "Sending",
+                videoUrl = null,
+                audioUrl = null,  // Leave audioUrl null
+                docUrl = null,
+                fileSize = newFile.length()
+            )
+
+            // Save to database and update UI
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    insertMessage(voiceMessage)
+                    updateLastMessage(isGroup, chatId, voiceMessage)
+                } catch (e: Exception) {
+                    Log.e("VoiceNote", "Error saving message: ${e.message}")
+                }
+            }
+
+            message.setUser(user)
+            message.status = "Sending"
+
+            // Add to UI immediately
+            CoroutineScope(Dispatchers.Main).launch {
+                messagesAdapter?.addToStart(message, true)
+
+                // Reset UI after a short delay to ensure smooth transition
+                delay(100)
+                resetVoiceNoteUI()
+            }
+
+        } catch (e: Exception) {
+            Log.e("VoiceNote", "Error sending voice note: ${e.message}", e)
+            showToast("Failed to send voice note")
+            resetVoiceNoteUI()
+        }
+    }
+
+    private fun resetVoiceNoteUI() {
+        try {
+            // Reset state
+            voiceNoteState = VoiceNoteState.IDLE
+            isRecording = false
+            isPaused = false
+            isAudioVNPlaying = false
+            vnRecordAudioPlaying = false
+            isListeningToAudio = false
+
+            // Reset time variables
+            recordingStartTime = 0L
+            recordingElapsedTime = 0L
+            vnRecordProgress = 0
+
+            // Clear recorded files list
+            recordedAudioFiles.clear()
+
+            // Hide VN layout and show input container
+            binding.VNLayout.visibility = View.GONE
+            binding.inputContainer.visibility = View.VISIBLE
+
+            // Reset button states
+            binding.recordVN.setImageResource(com.uyscuti.social.circuit.R.drawable.mic_2)
+            binding.sendVN.setBackgroundResource(com.uyscuti.social.circuit.R.drawable.ic_ripple_disabled)
+            binding.sendVN.isClickable = false
+
+            // Reset timers
+            binding.recordingTimerTv.text = "00:00"
+            binding.pausedTimerTv.text = "00:00"
+
+            // Clear waveform
+            binding.waveDotsContainer.removeAllViews()
+            waveBars.clear()
+
+            Log.d(TAG, "Voice note UI reset complete")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error resetting voice note UI: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    private fun stopWaveDotsAnimation() {
+        try {
+            waveBars.forEach { bar ->
+                (bar.tag as? ObjectAnimator)?.cancel()
+                bar.tag = null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping wave animation: ${e.message}")
+        }
+    }
+
     private fun deleteRecording() {
         val TAG = "Recording"
         try {
@@ -1165,49 +1205,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             e.printStackTrace()
             Log.e(TAG, "Error deleting recording: $e")
         }
-    }
-
-    @SuppressLint("DefaultLocale")
-    private fun updateRecordingTimer() {
-        timerHandler.post(object : kotlinx.coroutines.Runnable {
-            override fun run() {
-                if (isRecording && !isPaused) {
-                    val currentTime = System.currentTimeMillis()
-                    val elapsed = recordingElapsedTime + (currentTime - recordingStartTime)
-
-                    val seconds = (elapsed / 1000) % 60
-                    val minutes = (elapsed / 1000) / 60
-
-                    val formatted = String.format("%02d:%02d", minutes, seconds)
-                    binding.recordingTimerTv.text = formatted
-
-                    timerHandler.postDelayed(this, 100) // Update every 100ms
-                }
-            }
-        })
-    }
-
-    @SuppressLint("DefaultLocale")
-    private fun updatePlaybackTimer() {
-        // Remove any existing callbacks first
-        playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
-
-        playbackTimerRunnable = object : kotlinx.coroutines.Runnable {
-            override fun run() {
-                if (isAudioVNPlaying && player != null) {
-                    try {
-                        val currentPosition = player?.currentPosition ?: 0
-                        val currentMinutes = (currentPosition / 1000) / 60
-                        val currentSeconds = (currentPosition / 1000) % 60
-                        binding.pausedTimerTv.text = String.format("%02d:%02d", currentMinutes, currentSeconds)
-                        timerHandler.postDelayed(this, 100)
-                    } catch (e: Exception) {
-                        Log.e("PlaybackTimer", "Error updating timer: ${e.message}")
-                    }
-                }
-            }
-        }
-        timerHandler.post(playbackTimerRunnable!!)
     }
 
     private fun animatePlaybackWaves() {
