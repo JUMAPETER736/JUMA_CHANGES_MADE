@@ -83,6 +83,8 @@ public class MessageHolders {
     private List<ContentTypeConfig> customContentTypes = new ArrayList<>();
     private ContentChecker contentChecker;
 
+
+
     public MessageHolders() {
         this.dateHeaderHolder = DefaultDateHeaderViewHolder.class;
         this.dateHeaderLayout = R.layout.item_new_date;
@@ -571,32 +573,43 @@ public class MessageHolders {
 
     protected ViewHolder getHolder(ViewGroup parent, int viewType, MessagesListStyle messagesListStyle) {
         switch (viewType) {
+
             case VIEW_TYPE_DATE_HEADER:
                 return getHolder(parent, dateHeaderLayout, dateHeaderHolder, messagesListStyle, null);
+
             case VIEW_TYPE_TEXT_MESSAGE:
                 return getHolder(parent, incomingTextConfig, messagesListStyle);
+
             case -VIEW_TYPE_TEXT_MESSAGE:
                 return getHolder(parent, outcomingTextConfig, messagesListStyle);
+
             case VIEW_TYPE_IMAGE_MESSAGE:
                 return getHolder(parent, incomingImageConfig, messagesListStyle);
+
             case VIEW_TYPE_VIDEO_MESSAGE:
                 return getHolder(parent, inComingVideoConfig, messagesListStyle);
+                
             case VIEW_TYPE_AUDIO_MESSAGE:
                 return getHolder(parent, inComingAudioConfig, messagesListStyle);
-            // ⚠️ ADD THESE TWO CASES:
+
             case VIEW_TYPE_VOICE_MESSAGE:
                 return getHolder(parent, inComingVoiceConfig, messagesListStyle);
+
             case -VIEW_TYPE_VOICE_MESSAGE:
                 return getHolder(parent, outGoingVoiceConfig, messagesListStyle);
-            // END OF ADDITIONS
+
             case -VIEW_TYPE_IMAGE_MESSAGE:
                 return getHolder(parent, outcomingImageConfig, messagesListStyle);
+
             case -VIEW_TYPE_VIDEO_MESSAGE:
                 return getHolder(parent, outGoingVideoConfig, messagesListStyle);
+
             case -VIEW_TYPE_AUDIO_MESSAGE:
                 return getHolder(parent, outGoingAudioConfig, messagesListStyle);
+
             case -VIEW_TYPE_DOCUMENT_MESSAGE:
                 return getHolder(parent, outGoingDocConfig, messagesListStyle);
+
             case VIEW_TYPE_DOCUMENT_MESSAGE:
                 return getHolder(parent, inComingDocConfig, messagesListStyle);
         }
