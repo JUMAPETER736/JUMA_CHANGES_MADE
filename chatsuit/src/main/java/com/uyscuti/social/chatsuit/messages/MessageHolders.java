@@ -588,7 +588,7 @@ public class MessageHolders {
 
             case VIEW_TYPE_VIDEO_MESSAGE:
                 return getHolder(parent, inComingVideoConfig, messagesListStyle);
-                
+
             case VIEW_TYPE_AUDIO_MESSAGE:
                 return getHolder(parent, inComingAudioConfig, messagesListStyle);
 
