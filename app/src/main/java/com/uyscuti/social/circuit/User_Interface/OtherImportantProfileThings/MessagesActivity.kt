@@ -2028,7 +2028,8 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 var audioUrl: String? = null
                 var videoUrl: String? = null
                 var docUrl: String? = null
-                var voiceUrl: String? = null  // ADD THIS
+                var voiceUrl: String? = null  // IMPORTANT: Add this
+                var voiceDuration: Int = 0     // IMPORTANT: Add this
 
                 // Handle attachments and assign URLs
                 if (message.attachments != null && message.attachments?.isNotEmpty() == true) {
@@ -2046,12 +2047,29 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                                 FileType.AUDIO -> {
                                     // Check if it's a voice note
-                                    // Voice notes have "rec_" in filename or are in /vn/ directory
-                                    if (attachment.url.contains("rec_") && attachment.url.endsWith(".mp3")) {
+                                    val isVoiceNote = attachment.url.contains("/vn/") ||
+                                            attachment.url.contains("rec_")
+
+                                    if (isVoiceNote) {
                                         voiceUrl = attachment.url
+
+                                        // Try to extract duration from the file
+                                        try {
+                                            val retriever = MediaMetadataRetriever()
+                                            retriever.setDataSource(voiceUrl)
+                                            val durationStr = retriever.extractMetadata(
+                                                MediaMetadataRetriever.METADATA_KEY_DURATION
+                                            )
+                                            voiceDuration = durationStr?.toIntOrNull() ?: 0
+                                            retriever.release()
+                                        } catch (e: Exception) {
+                                            Log.e("Voice Duration", "Failed to extract duration", e)
+                                            voiceDuration = 0
+                                        }
+
                                         Log.d(
                                             "Received Attachment",
-                                            "Voice Note, Path: $voiceUrl"
+                                            "Voice Note, Path: $voiceUrl, Duration: $voiceDuration"
                                         )
                                     } else {
                                         audioUrl = attachment.url
@@ -2066,7 +2084,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     videoUrl = attachment.url
                                     Log.d(
                                         "Received Attachment",
-                                        "Video, Path Of Image Received: $videoUrl"
+                                        "Video, Path: $videoUrl"
                                     )
                                 }
 
@@ -2074,7 +2092,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     docUrl = attachment.url
                                     Log.d(
                                         "Received Attachment",
-                                        "Document, Path Of Image Received: $docUrl"
+                                        "Document, Path: $docUrl"
                                     )
                                 }
 
@@ -2100,6 +2118,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                 newMessage.setImage(imageUrl?.let { Message.Image(it) })
                 newMessage.setVideo(videoUrl?.let { Message.Video(it) })
+
                 newMessage.setDocument(
                     docUrl?.let {
                         Message.Document(
@@ -2110,24 +2129,19 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     }
                 )
 
-                // ADD THIS: Set voice message
+                // CRITICAL: Set voice message with duration
                 newMessage.setVoice(
                     voiceUrl?.let {
-                        Message.Voice(
-                            it,
-                            0  // Duration - will be extracted by the view holder
-                        )
+                        Log.d("Setting Voice", "Voice URL: $it, Duration: $voiceDuration")
+                        Message.Voice(it, voiceDuration)
                     }
                 )
 
-                // Set regular audio (non-voice)
+                // Set regular audio (only non-voice audio)
                 newMessage.setAudio(
                     audioUrl?.let {
-                        Message.Audio(
-                            it,
-                            0,
-                            getNameFromUrl(audioUrl)
-                        )
+                        Log.d("Setting Audio", "Audio URL: $it")
+                        Message.Audio(it, 0, getNameFromUrl(audioUrl))
                     }
                 )
 

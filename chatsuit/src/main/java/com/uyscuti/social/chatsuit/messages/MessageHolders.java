@@ -146,13 +146,24 @@ public class MessageHolders {
         if (message instanceof MessageContentType.Image) {
             MessageContentType.Image imageMessage = (MessageContentType.Image) message;
 
-
-            if (imageMessage.getVoiceUrl() != null) {
+            // Check for voice message FIRST (highest priority)
+            if (imageMessage.getVoiceUrl() != null || imageMessage.getVoiceDuration() > 0) {
                 Log.d("Holder Attachments", "Voice Found, Path: " + imageMessage.getVoiceUrl());
                 return VIEW_TYPE_VOICE_MESSAGE;
             }
 
-            // Additional check: if imageUrl ends with .mp3, it's a voice message
+            // Fallback: Check if audio URL contains voice note patterns
+            if (imageMessage.getAudioUrl() != null) {
+                String audioPath = imageMessage.getAudioUrl();
+                if (audioPath.contains("/vn/") || audioPath.contains("rec_")) {
+                    Log.d("Holder Attachments", "Voice Found (from audioUrl pattern), Path: " + audioPath);
+                    return VIEW_TYPE_VOICE_MESSAGE;
+                }
+                Log.d("Holder Attachments", "Audio Found, Path: " + audioPath);
+                return VIEW_TYPE_AUDIO_MESSAGE;
+            }
+
+            // Another fallback: Check if imageUrl is an mp3 (as your ViewHolder does)
             if (imageMessage.getImageUrl() != null && imageMessage.getImageUrl().endsWith(".mp3")) {
                 Log.d("Holder Attachments", "Voice Found (from imageUrl), Path: " + imageMessage.getImageUrl());
                 return VIEW_TYPE_VOICE_MESSAGE;
@@ -164,25 +175,16 @@ public class MessageHolders {
                 return VIEW_TYPE_VIDEO_MESSAGE;
             }
 
-            // Check for audio (non-voice)
-            if (imageMessage.getAudioUrl() != null) {
-                Log.d("Holder Attachments", "Audio Found, Path: " + imageMessage.getAudioUrl());
-                return VIEW_TYPE_AUDIO_MESSAGE;
-            }
-
             // Check for document
             if (imageMessage.getDocUrl() != null) {
                 Log.d("Holder Attachments", "Doc Found, Path: " + imageMessage.getDocUrl());
                 return VIEW_TYPE_DOCUMENT_MESSAGE;
             }
 
-            // Check for image (regular images, not voice/video/audio)
-            if (imageMessage.getImageUrl() != null) {
-                // Make sure it's not a voice file with .mp3 extension
-                if (!imageMessage.getImageUrl().endsWith(".mp3")) {
-                    Log.d("Holder Attachments", "Image Found, Image Path: " + imageMessage.getImageUrl());
-                    return VIEW_TYPE_IMAGE_MESSAGE;
-                }
+            // Check for image (regular images)
+            if (imageMessage.getImageUrl() != null && !imageMessage.getImageUrl().endsWith(".mp3")) {
+                Log.d("Holder Attachments", "Image Found, Image Path: " + imageMessage.getImageUrl());
+                return VIEW_TYPE_IMAGE_MESSAGE;
             }
         }
 
