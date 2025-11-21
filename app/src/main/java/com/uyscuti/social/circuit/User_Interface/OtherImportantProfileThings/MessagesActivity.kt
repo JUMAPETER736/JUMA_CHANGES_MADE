@@ -3767,117 +3767,118 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         currentIndex: Int = 0,
         retryCount: Int = 0
     ) {
-        if (currentIndex >= sendingMessages.size || retryCount >= MAX_RETRY_COUNT) {
-            // All messages have been sent or reached the maximum number of retries.
-            if (currentIndex >= sendingMessages.size) {
-                // All messages have been sent.
-                Log.d("Sending Messages", "All Messages Have Been Sent")
-            } else {
-                // Maximum retry attempts reached.
-                Log.d("Sending Messages", "Maximum Retry Attempts Reached")
-                showInternetConnectionSnackbar(binding.root) // Show the Snackbar
+        // Process ALL messages in parallel, not sequentially
+        if (currentIndex == 0 && retryCount == 0) {
+            Log.d("Sending Messages", "Processing ${sendingMessages.size} messages in parallel")
+
+            // Send all messages at once
+            sendingMessages.forEach { message ->
+                sendSingleMessage(message, 0)
+            }
+            return
+        }
+    }
+
+    private fun sendSingleMessage(message: MessageEntity, retryCount: Int) {
+        if (retryCount >= MAX_RETRY_COUNT) {
+            Log.e("Sending Messages", "Max retries reached for message: ${message.id}")
+            // Mark message as failed
+            CoroutineScope(Dispatchers.IO).launch {
+                message.status = "Failed"
+                messageViewModel.updateMessage(message)
             }
             return
         }
 
-        Log.d("Sending Messages", "Messages To send : ${sendingMessages.size}")
-
-        val currentMessage = sendingMessages[currentIndex]
-
-        val filePath: String? = if (currentMessage.imageUrl?.isNotEmpty() == true) {
-            currentMessage.imageUrl?.let { File(it).absolutePath.substringAfter("/file:") }
-        } else if (currentMessage.voiceUrl?.isNotEmpty() == true) {
-            currentMessage.voiceUrl?.let { File(it).absolutePath.substringAfter("/file:") }
-        } else if (currentMessage.audioUrl?.isNotEmpty() == true) {
-            currentMessage.audioUrl?.let { File(it).absolutePath.substringAfter("/file:") }
-        } else if (currentMessage.videoUrl?.isNotEmpty() == true) {
-            currentMessage.videoUrl?.let { File(it).absolutePath.substringAfter("/file:") }
-        } else if (currentMessage.docUrl?.isNotEmpty() == true) {
-            currentMessage.docUrl?.let { File(it).absolutePath.substringAfter("/file:") }
-        } else {
-            null
+        val filePath: String? = when {
+            message.imageUrl?.isNotEmpty() == true ->
+                message.imageUrl?.let { File(it).absolutePath.substringAfter("/file:") }
+            message.voiceUrl?.isNotEmpty() == true ->
+                message.voiceUrl?.let { File(it).absolutePath.substringAfter("/file:") }
+            message.audioUrl?.isNotEmpty() == true ->
+                message.audioUrl?.let { File(it).absolutePath.substringAfter("/file:") }
+            message.videoUrl?.isNotEmpty() == true ->
+                message.videoUrl?.let { File(it).absolutePath.substringAfter("/file:") }
+            message.docUrl?.isNotEmpty() == true ->
+                message.docUrl?.let { File(it).absolutePath.substringAfter("/file:") }
+            else -> null
         }
 
         if (filePath != null) {
             val encodedFilePath = URLEncoder.encode(filePath, "UTF-8")
 
-            if (encodedFilePath != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    val contentUri = try {
-                        getFileUri(this@MessagesActivity, filePath)
-                    } catch (e: Exception) {
-                        Uri.fromFile(File(filePath))
-                    }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val contentUri = try {
+                    getFileUri(this@MessagesActivity, filePath)
+                } catch (e: Exception) {
+                    Uri.fromFile(File(filePath))
+                }
 
-                    sendAttachmentContent(contentUri, currentMessage) { success ->
-                        if (success) {
-                            // If the message was sent successfully, proceed to the next one.
-                            sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
-                        } else {
-                            Log.e("SendAttachment", "Failed to send attachment")
-                            // Move to next message even on failure
-                            sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
+                sendAttachmentContent(contentUri, message) { success ->
+                    if (success) {
+                        Log.d("Sending Messages", "Attachment sent successfully: ${message.id}")
+                    } else {
+                        Log.e("SendAttachment", "Failed to send attachment: ${message.id}, retry: $retryCount")
+                        // Retry with exponential backoff
+                        val delayMillis = when (retryCount) {
+                            0 -> 2000L
+                            1 -> 5000L
+                            2 -> 10000L
+                            else -> 15000L
                         }
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            sendSingleMessage(message, retryCount + 1)
+                        }, delayMillis)
                     }
-                } else {
-                    sendAttachment(encodedFilePath, currentMessage) { success ->
-                        if (success) {
-                            // If the message was sent successfully, proceed to the next one.
-                            sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
-                        } else {
-                            // Handle the case where the message failed to send.
-                            if (retryCount < MAX_RETRY_COUNT) {
-                                // Retry sending the message after a delay (e.g., 5 seconds).
-                                val delayMillis = 5000
-                                Handler(Looper.getMainLooper()).postDelayed({
-                                    sendPendingMessagesWithRetry(
-                                        sendingMessages,
-                                        currentIndex,
-                                        retryCount + 1
-                                    )
-                                }, delayMillis.toLong())
-                            } else {
-                                // Reached the maximum retry count for this message.
-                                sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
-                            }
+                }
+            } else {
+                sendAttachment(encodedFilePath, message) { success ->
+                    if (success) {
+                        Log.d("Sending Messages", "Attachment sent successfully: ${message.id}")
+                    } else {
+                        Log.e("SendAttachment", "Failed to send attachment: ${message.id}, retry: $retryCount")
+                        // Retry with exponential backoff
+                        val delayMillis = when (retryCount) {
+                            0 -> 2000L
+                            1 -> 5000L
+                            2 -> 10000L
+                            else -> 15000L
                         }
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            sendSingleMessage(message, retryCount + 1)
+                        }, delayMillis)
                     }
                 }
             }
         } else {
-            // Handle the case where filePath is null (no valid image or voice URL).
-            val date = Date(currentMessage.createdAt)
-            val user = User("0", currentMessage.userName, currentMessage.user.avatar, true, Date())
+            // Text message
+            val date = Date(message.createdAt)
+            val user = User("0", message.userName, message.user.avatar, true, Date())
 
             val uiMessage = Message(
-                currentMessage.id,
+                message.id,
                 user,
-                currentMessage.text,
+                message.text,
                 date
             )
 
-            sendTextMessage(currentMessage.text, uiMessage, currentMessage) { success ->
+            sendTextMessage(message.text, uiMessage, message) { success ->
                 if (success) {
-                    sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
+                    Log.d("Sending Messages", "Text message sent successfully: ${message.id}")
                 } else {
-                    // Handle the case where the message failed to send.
-                    if (retryCount < MAX_RETRY_COUNT) {
-                        // Retry sending the message after a delay (e.g., 5 seconds).
-                        val delayMillis = 5000
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            sendPendingMessagesWithRetry(
-                                sendingMessages,
-                                currentIndex,
-                                retryCount + 1
-                            )
-                        }, delayMillis.toLong())
-                    } else {
-                        // Reached the maximum retry count for this message.
-                        sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
+                    Log.e("SendTextMessage", "Failed to send text message: ${message.id}, retry: $retryCount")
+                    // Retry with exponential backoff
+                    val delayMillis = when (retryCount) {
+                        0 -> 2000L
+                        1 -> 5000L
+                        2 -> 10000L
+                        else -> 15000L
                     }
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        sendSingleMessage(message, retryCount + 1)
+                    }, delayMillis)
                 }
             }
-
         }
     }
 
