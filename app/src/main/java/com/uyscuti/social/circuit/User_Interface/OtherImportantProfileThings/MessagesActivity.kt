@@ -2239,12 +2239,9 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     }
 
                     is Result.Error -> {
-
+                        Log.e("MessagesActivity", "Failed to send message: ${result.exception?.message}")
                         callback(false)
                     }
-
-                    is Result.Error -> TODO()
-                    is Result.Success<*> -> TODO()
                 }
             }
         }
@@ -3769,7 +3766,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         sendingMessages: List<MessageEntity>,
         currentIndex: Int = 0,
         retryCount: Int = 0
-
     ) {
         if (currentIndex >= sendingMessages.size || retryCount >= MAX_RETRY_COUNT) {
             // All messages have been sent or reached the maximum number of retries.
@@ -3806,48 +3802,43 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             val encodedFilePath = URLEncoder.encode(filePath, "UTF-8")
 
             if (encodedFilePath != null) {
-
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-
-
                     val contentUri = try {
                         getFileUri(this@MessagesActivity, filePath)
                     } catch (e: Exception) {
-                        Uri.fromFile(File(filePath));
+                        Uri.fromFile(File(filePath))
                     }
-
-                    val ul = getUriForFileByName(this, getFileNameFromUrl(filePath))
-
 
                     sendAttachmentContent(contentUri, currentMessage) { success ->
                         if (success) {
-
-                            onMessageSendSuccess(currentMessage.id)
                             // If the message was sent successfully, proceed to the next one.
                             sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
                         } else {
                             Log.e("SendAttachment", "Failed to send attachment")
+                            // Move to next message even on failure
+                            sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
                         }
                     }
                 } else {
-
                     sendAttachment(encodedFilePath, currentMessage) { success ->
                         if (success) {
-
-                            onMessageSendSuccess(currentMessage.id)
                             // If the message was sent successfully, proceed to the next one.
                             sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
                         } else {
                             // Handle the case where the message failed to send.
-                            if (retryCount > MAX_RETRY_COUNT) {
+                            if (retryCount < MAX_RETRY_COUNT) {
                                 // Retry sending the message after a delay (e.g., 5 seconds).
                                 val delayMillis = 5000
-
+                                Handler(Looper.getMainLooper()).postDelayed({
+                                    sendPendingMessagesWithRetry(
+                                        sendingMessages,
+                                        currentIndex,
+                                        retryCount + 1
+                                    )
+                                }, delayMillis.toLong())
                             } else {
                                 // Reached the maximum retry count for this message.
-                                // You can choose to skip or take other actions.
                                 sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
-//                                showToast("Sending Failed, Check Your Internet Connection And Try Again")
                             }
                         }
                     }
@@ -3855,11 +3846,8 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             }
         } else {
             // Handle the case where filePath is null (no valid image or voice URL).
-            // You can choose to skip or take other actions.
             val date = Date(currentMessage.createdAt)
             val user = User("0", currentMessage.userName, currentMessage.user.avatar, true, Date())
-
-
 
             val uiMessage = Message(
                 currentMessage.id,
@@ -3870,27 +3858,26 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
             sendTextMessage(currentMessage.text, uiMessage, currentMessage) { success ->
                 if (success) {
-
-                    onMessageSendSuccess(currentMessage.id)
-
                     sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
                 } else {
                     // Handle the case where the message failed to send.
-                    retryCount+1
-                    if (retryCount > MAX_RETRY_COUNT) {
+                    if (retryCount < MAX_RETRY_COUNT) {
                         // Retry sending the message after a delay (e.g., 5 seconds).
-
-                        sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
-
+                        val delayMillis = 5000
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            sendPendingMessagesWithRetry(
+                                sendingMessages,
+                                currentIndex,
+                                retryCount + 1
+                            )
+                        }, delayMillis.toLong())
                     } else {
                         // Reached the maximum retry count for this message.
-                        // You can choose to skip or take other actions.
                         sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
-
                     }
                 }
             }
-            sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
+
         }
     }
 
@@ -4116,7 +4103,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         startDurationTv: TextView?,
         endDurationTv: TextView?
     ) {
-        TODO("Not yet implemented")
+        Log.d("MessagesActivity", "Audio download clicked - URL: $url, FileLocation: $fileLocation")
     }
 
     override fun onSocketConnect() {
@@ -4170,135 +4157,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-//    override fun onNewMessage(message: com.uyscuti.social.network.api.models.Message) {
-//        CoroutineScope(Dispatchers.IO).launch {
-//            Log.d(TAG, "In This Chat : $message")
-//            Log.d(TAG, "In This Chat attachment: ${message.attachments}")
-//
-//
-//
-//            if (message.chat == chatId) {
-//                val user = User(
-//                    "1",
-//                    message.sender.username,
-//                    message.sender.avatar.url,
-//                    true, Date()
-//                )
-//
-//                // Initialize URLs as null
-//                var imageUrl: String? = null
-//                var audioUrl: String? = null
-//                var videoUrl: String? = null
-//                var docUrl: String? = null
-//
-//                // Handle attachments and assign URLs
-//                if (message.attachments != null && message.attachments?.isNotEmpty() == true) {
-//                    val attachments = message.attachments
-//                    if (attachments != null) {
-//                        for (attachment in attachments) {
-//                            when (getFileType(attachment.url)) {
-//                                FileType.IMAGE -> {
-//                                    imageUrl = attachment.url
-//                                    Log.d(
-//                                        "Received Attachment",
-//                                        "Image, Path Of Image Received: $imageUrl"
-//                                    )
-//                                }
-//
-//                                FileType.AUDIO -> {
-//                                    audioUrl = attachment.url
-//                                    Log.d(
-//                                        "Received Attachment",
-//                                        "Audi, Path Of Image Received: $audioUrl"
-//                                    )
-//
-//                                }
-//
-//                                FileType.VIDEO -> {
-//                                    videoUrl = attachment.url
-//                                    Log.d(
-//                                        "Received Attachment",
-//                                        "Video, Path Of Image Received: $videoUrl"
-//                                    )
-//
-//                                }
-//
-//                                FileType.DOCUMENT -> {
-//                                    docUrl = attachment.url
-//                                    Log.d(
-//                                        "Received Attachment",
-//                                        "Document, Path Of Image Received: $docUrl"
-//                                    )
-//
-//                                }
-//
-//                                FileType.OTHER -> {
-//                                    // Handle other types, if needed
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//
-//
-//                Log.d(TAG, "In This Chat : ${message.content}")
-//
-//                val createdAt = convertIso8601ToUnixTimestamp(message.createdAt)
-//
-//                val date = Date(createdAt)
-//
-//                val newMessage = Message(
-//                    message._id,
-//                    user,
-//                    message.content,
-//                    date
-//                )
-//
-//                newMessage.setImage(imageUrl?.let { Message.Image(it) })
-//
-//                newMessage.setVideo(videoUrl?.let { Message.Video(it) })
-//
-//                newMessage.setDocument(
-//                    docUrl?.let {
-//                        Message.Document(
-//                            it,
-//                            getNameFromUrl(docUrl),
-//                            formatFileSize(getFileSize(docUrl))
-//                        )
-//                    }
-//                )
-//
-//                newMessage.setAudio(
-//                    audioUrl?.let {
-//                        Message.Audio(
-//                            it,
-//                            0,
-//                            getNameFromUrl(audioUrl)
-//                        )
-//                    }
-//                )
-//
-//                withContext(Dispatchers.Main) {
-//                    super.messagesAdapter?.addToStart(newMessage, true)
-//                }
-//
-//                if (!isGroup){
-//
-//                    onMessageDelivered(message._id)
-//                    delay(700)
-//                    sendSeenReport(chatId,message.sender._id)
-//                }
-//
-//                if(isGroup){
-//                    resetGroupUnreadCount(chatId)
-//                } else {
-//                    resetUnreadCount(dialog)
-//                }
-//
-//
-//            }
-//        }
-//    }
 
     private fun sendDeliveryReport(chatId: String,senderId: String){
         try {
@@ -4341,7 +4199,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     }
 
     override fun onNotification(notification: Notification) {
-        TODO("Not yet implemented")
+        Log.d("MessagesActivity", "Notification received: ${notification.toString()}")
     }
 
     private fun resetUnreadCount(dialog: Dialog?) {
