@@ -4,8 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
-    android:layout_marginLeft="16dp"
-    android:layout_marginRight="16dp"
+    android:layout_marginLeft="14dp"
+    android:layout_marginRight="8dp"
     android:layout_marginTop="8dp">
 
     <RelativeLayout
@@ -18,17 +18,17 @@
         android:layout_marginStart="@dimen/message_outcoming_bubble_margin_left"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
-        android:paddingLeft="12dp"
-        android:paddingRight="12dp">
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp">
 
         <com.vanniktech.emoji.EmojiTextView
             android:id="@id/messageText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/test_message"
             android:paddingEnd="8dp"
             android:paddingRight="8dp"
-            android:paddingBottom="20dp" />
+            android:paddingBottom="20dp"
+            android:text="@string/test_message" />
 
         <LinearLayout
             android:layout_width="wrap_content"
