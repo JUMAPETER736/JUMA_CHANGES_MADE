@@ -49,6 +49,7 @@
                 android:text="@string/test_message"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minWidth="50dp"
                 android:paddingEnd="8dp"
                 android:paddingRight="8dp"
                 android:paddingBottom="20dp" />
