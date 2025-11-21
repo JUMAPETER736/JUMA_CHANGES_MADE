@@ -2363,13 +2363,28 @@ public class MessageHolders {
             time = itemView.findViewById(R.id.time);
             messageStatus = itemView.findViewById(R.id.messageStatus);
             waveformContainer = itemView.findViewById(R.id.waveformContainer);
+
+            Log.d("VoiceViewHolder", "Constructor called");
+            Log.d("VoiceViewHolder", "playButton found: " + (playButton != null));
+            Log.d("VoiceViewHolder", "waveformContainer found: " + (waveformContainer != null));
         }
 
         @Override
         public void onBind(MessageContentType.Image message) {
             super.onBind(message);
 
-            // Check if this is a voice message - UPDATED LOGIC
+            // DEBUG LOGS
+
+            Log.d("VoiceViewHolder", "Message ID: " + message.getId());
+            Log.d("VoiceViewHolder", "voiceUrl: " + message.getVoiceUrl());
+            Log.d("VoiceViewHolder", "voiceDuration: " + message.getVoiceDuration());
+            Log.d("VoiceViewHolder", "audioUrl: " + message.getAudioUrl());
+            Log.d("VoiceViewHolder", "imageUrl: " + message.getImageUrl());
+            Log.d("VoiceViewHolder", "playButton null? " + (playButton == null));
+            Log.d("VoiceViewHolder", "waveformContainer null? " + (waveformContainer == null));
+            Log.d("VoiceViewHolder", "duration null? " + (duration == null));
+
+            // Check if this is a voice message
             boolean isVoiceMessage = message.getVoiceUrl() != null && !message.getVoiceUrl().isEmpty();
 
             // Fallback checks
@@ -2379,11 +2394,32 @@ public class MessageHolders {
                         (message.getAudioUrl() != null && (message.getAudioUrl().contains("/vn/") || message.getAudioUrl().contains("rec_")));
             }
 
+            Log.d("VoiceViewHolder", "isVoiceMessage: " + isVoiceMessage);
+
             if (isVoiceMessage) {
+                Log.d("VoiceViewHolder", "Rendering as VOICE MESSAGE");
+
                 // Make voice UI visible
-                if (playButton != null) playButton.setVisibility(View.VISIBLE);
-                if (duration != null) duration.setVisibility(View.VISIBLE);
-                if (waveformContainer != null) waveformContainer.setVisibility(View.VISIBLE);
+                if (playButton != null) {
+                    playButton.setVisibility(View.VISIBLE);
+                    Log.d("VoiceViewHolder", "Play button set to VISIBLE");
+                } else {
+                    Log.e("VoiceViewHolder", "playButton is NULL!");
+                }
+
+                if (duration != null) {
+                    duration.setVisibility(View.VISIBLE);
+                    Log.d("VoiceViewHolder", "Duration set to VISIBLE");
+                } else {
+                    Log.e("VoiceViewHolder", "duration is NULL!");
+                }
+
+                if (waveformContainer != null) {
+                    waveformContainer.setVisibility(View.VISIBLE);
+                    Log.d("VoiceViewHolder", "Waveform container set to VISIBLE");
+                } else {
+                    Log.e("VoiceViewHolder", "waveformContainer is NULL!");
+                }
 
                 // Get the voice URL from multiple sources
                 String audioUrl = message.getVoiceUrl();
@@ -2394,59 +2430,77 @@ public class MessageHolders {
                     audioUrl = message.getAudioUrl();
                 }
 
+                Log.d("VoiceViewHolder", "Final audioUrl: " + audioUrl);
+
                 // Set duration
                 int voiceDuration = message.getVoiceDuration();
                 if (voiceDuration <= 0) {
                     voiceDuration = 3000; // Default 3 seconds
                 }
-                duration.setText(formatDuration(voiceDuration));
+
+                if (duration != null) {
+                    String durationText = formatDuration(voiceDuration);
+                    duration.setText(durationText);
+                    Log.d("VoiceViewHolder", "Duration text set: " + durationText);
+                }
 
                 // Set time
-                if (message.getCreatedAt() != null) {
+                if (message.getCreatedAt() != null && time != null) {
                     time.setText(formatTime(message.getCreatedAt()));
                 }
 
                 // Generate waveform
-                generateWaveform(voiceDuration);
+                if (waveformContainer != null) {
+                    Log.d("VoiceViewHolder", "Generating waveform...");
+                    generateWaveform(voiceDuration);
+                    Log.d("VoiceViewHolder", "Waveform generated");
+                }
 
                 // Reset play state
                 isPlaying = false;
-                playButton.setImageResource(R.drawable.baseline_play_arrow_24);
+                if (playButton != null) {
+                    playButton.setImageResource(R.drawable.baseline_play_arrow_24);
+                }
 
                 // Set play button click listener
                 final String finalAudioUrl = audioUrl;
-                playButton.setOnClickListener(v -> {
-                    if (audioPlayListener != null && finalAudioUrl != null && !finalAudioUrl.isEmpty()) {
-                        isPlaying = !isPlaying;
-                        playButton.setImageResource(isPlaying ?
-                                R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
+                if (playButton != null) {
+                    playButton.setOnClickListener(v -> {
+                        if (audioPlayListener != null && finalAudioUrl != null && !finalAudioUrl.isEmpty()) {
+                            isPlaying = !isPlaying;
+                            playButton.setImageResource(isPlaying ?
+                                    R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
 
-                        audioPlayListener.onAudioPlayClick(
-                                finalAudioUrl,
-                                playButton,
-                                duration,
-                                null,
-                                message
-                        );
-                    }
-                });
+                            audioPlayListener.onAudioPlayClick(
+                                    finalAudioUrl,
+                                    playButton,
+                                    duration,
+                                    null,
+                                    message
+                            );
+                        }
+                    });
+                }
 
-                // Set message status icon (for outgoing only)
+                // Set message status icon
                 if (messageStatus != null) {
                     setMessageStatus(message);
                 }
+
+                Log.d("VoiceViewHolder", "Voice message rendering complete");
             } else {
-                // Hide voice UI if this isn't actually a voice message
+                Log.d("VoiceViewHolder", "NOT a voice message - hiding UI");
+                // Hide voice UI
                 if (playButton != null) playButton.setVisibility(View.GONE);
                 if (duration != null) duration.setVisibility(View.GONE);
                 if (waveformContainer != null) waveformContainer.setVisibility(View.GONE);
             }
+
+
         }
 
         private void setMessageStatus(MessageContentType.Image message) {
             if (messageStatus != null) {
-                // Adjust based on your message status logic
-                // Example:
                 messageStatus.setImageResource(R.drawable.ic_tick_single);
             }
         }
@@ -2456,17 +2510,18 @@ public class MessageHolders {
 
             // Calculate number of bars based on duration
             int seconds = Math.max(durationMillis / 1000, 1);
-            int barCount = Math.min(Math.max(seconds * 3, 15), 35); // 15-35 bars
+            int barCount = Math.min(Math.max(seconds * 3, 15), 35);
 
             int barWidth = dpToPx(2);
             int barMargin = dpToPx(2);
             int maxHeight = dpToPx(24);
             int minHeight = dpToPx(6);
 
+            Log.d("VoiceViewHolder", "Generating " + barCount + " bars");
+
             for (int i = 0; i < barCount; i++) {
                 View bar = new View(waveformContainer.getContext());
 
-                // Create varied heights with smoother pattern
                 double progress = (double) i / barCount;
                 double wave = Math.sin(progress * Math.PI * 2) * 0.3 + 0.7;
                 int height = minHeight + (int)((maxHeight - minHeight) * wave * Math.random());
@@ -2522,14 +2577,27 @@ public class MessageHolders {
             duration = itemView.findViewById(R.id.duration);
             time = itemView.findViewById(R.id.time);
             waveformContainer = itemView.findViewById(R.id.waveformContainer);
-            // Note: No messageStatus for incoming messages
+
+            Log.d("VoiceViewHolder", "INCOMING Constructor called");
+            Log.d("VoiceViewHolder", "INCOMING playButton found: " + (playButton != null));
+            Log.d("VoiceViewHolder", "INCOMING waveformContainer found: " + (waveformContainer != null));
         }
 
         @Override
         public void onBind(MessageContentType.Image message) {
             super.onBind(message);
 
-            // Check if this is a voice message - UPDATED LOGIC
+            //  DEBUG LOGS
+
+            Log.d("VoiceViewHolder", "Message ID: " + message.getId());
+            Log.d("VoiceViewHolder", "voiceUrl: " + message.getVoiceUrl());
+            Log.d("VoiceViewHolder", "voiceDuration: " + message.getVoiceDuration());
+            Log.d("VoiceViewHolder", "audioUrl: " + message.getAudioUrl());
+            Log.d("VoiceViewHolder", "imageUrl: " + message.getImageUrl());
+            Log.d("VoiceViewHolder", "playButton null? " + (playButton == null));
+            Log.d("VoiceViewHolder", "waveformContainer null? " + (waveformContainer == null));
+
+            // Check if this is a voice message
             boolean isVoiceMessage = message.getVoiceUrl() != null && !message.getVoiceUrl().isEmpty();
 
             // Fallback checks
@@ -2539,11 +2607,32 @@ public class MessageHolders {
                         (message.getAudioUrl() != null && (message.getAudioUrl().contains("/vn/") || message.getAudioUrl().contains("rec_")));
             }
 
+            Log.d("VoiceViewHolder", "isVoiceMessage: " + isVoiceMessage);
+
             if (isVoiceMessage) {
+                Log.d("VoiceViewHolder", "✅ Rendering as VOICE MESSAGE");
+
                 // Make voice UI visible
-                if (playButton != null) playButton.setVisibility(View.VISIBLE);
-                if (duration != null) duration.setVisibility(View.VISIBLE);
-                if (waveformContainer != null) waveformContainer.setVisibility(View.VISIBLE);
+                if (playButton != null) {
+                    playButton.setVisibility(View.VISIBLE);
+                    Log.d("VoiceViewHolder", "Play button set to VISIBLE");
+                } else {
+                    Log.e("VoiceViewHolder", "playButton is NULL!");
+                }
+
+                if (duration != null) {
+                    duration.setVisibility(View.VISIBLE);
+                    Log.d("VoiceViewHolder", "Duration set to VISIBLE");
+                } else {
+                    Log.e("VoiceViewHolder", "duration is NULL!");
+                }
+
+                if (waveformContainer != null) {
+                    waveformContainer.setVisibility(View.VISIBLE);
+                    Log.d("VoiceViewHolder", "Waveform container set to VISIBLE");
+                } else {
+                    Log.e("VoiceViewHolder", "waveformContainer is NULL!");
+                }
 
                 // Get the voice URL from multiple sources
                 String audioUrl = message.getVoiceUrl();
@@ -2554,68 +2643,85 @@ public class MessageHolders {
                     audioUrl = message.getAudioUrl();
                 }
 
+                Log.d("VoiceViewHolder", "Final audioUrl: " + audioUrl);
+
                 // Set duration
                 int voiceDuration = message.getVoiceDuration();
                 if (voiceDuration <= 0) {
-                    voiceDuration = 3000; // Default 3 seconds
+                    voiceDuration = 3000;
                 }
-                duration.setText(formatDuration(voiceDuration));
+
+                if (duration != null) {
+                    String durationText = formatDuration(voiceDuration);
+                    duration.setText(durationText);
+                    Log.d("VoiceViewHolder", "Duration text set: " + durationText);
+                }
 
                 // Set time
-                if (message.getCreatedAt() != null) {
+                if (message.getCreatedAt() != null && time != null) {
                     time.setText(formatTime(message.getCreatedAt()));
                 }
 
                 // Generate waveform
-                generateWaveform(voiceDuration);
+                if (waveformContainer != null) {
+                    Log.d("VoiceViewHolder", "Generating waveform...");
+                    generateWaveform(voiceDuration);
+                    Log.d("VoiceViewHolder", "Waveform generated");
+                }
 
                 // Reset play state
                 isPlaying = false;
-                playButton.setImageResource(R.drawable.baseline_play_arrow_24);
+                if (playButton != null) {
+                    playButton.setImageResource(R.drawable.baseline_play_arrow_24);
+                }
 
                 // Set play button click listener
                 final String finalAudioUrl = audioUrl;
-                playButton.setOnClickListener(v -> {
-                    if (audioPlayListener != null && finalAudioUrl != null && !finalAudioUrl.isEmpty()) {
-                        isPlaying = !isPlaying;
-                        playButton.setImageResource(isPlaying ?
-                                R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
+                if (playButton != null) {
+                    playButton.setOnClickListener(v -> {
+                        if (audioPlayListener != null && finalAudioUrl != null && !finalAudioUrl.isEmpty()) {
+                            isPlaying = !isPlaying;
+                            playButton.setImageResource(isPlaying ?
+                                    R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
 
-                        audioPlayListener.onAudioPlayClick(
-                                finalAudioUrl,
-                                playButton,
-                                duration,
-                                null,
-                                message
-                        );
-                    }
-                });
+                            audioPlayListener.onAudioPlayClick(
+                                    finalAudioUrl,
+                                    playButton,
+                                    duration,
+                                    null,
+                                    message
+                            );
+                        }
+                    });
+                }
 
-
+                Log.d("VoiceViewHolder", "Voice message rendering complete");
             } else {
-                // Hide voice UI if this isn't actually a voice message
+                Log.d("VoiceViewHolder", "NOT a voice message - hiding UI");
                 if (playButton != null) playButton.setVisibility(View.GONE);
                 if (duration != null) duration.setVisibility(View.GONE);
                 if (waveformContainer != null) waveformContainer.setVisibility(View.GONE);
             }
+
+
         }
 
         private void generateWaveform(int durationMillis) {
             waveformContainer.removeAllViews();
 
-            // Calculate number of bars based on duration
             int seconds = Math.max(durationMillis / 1000, 1);
-            int barCount = Math.min(Math.max(seconds * 3, 15), 35); // 15-35 bars
+            int barCount = Math.min(Math.max(seconds * 3, 15), 35);
 
             int barWidth = dpToPx(2);
             int barMargin = dpToPx(2);
             int maxHeight = dpToPx(24);
             int minHeight = dpToPx(6);
 
+            Log.d("VoiceViewHolder", "Generating " + barCount + " bars");
+
             for (int i = 0; i < barCount; i++) {
                 View bar = new View(waveformContainer.getContext());
 
-                // Create varied heights with smoother pattern
                 double progress = (double) i / barCount;
                 double wave = Math.sin(progress * Math.PI * 2) * 0.3 + 0.7;
                 int height = minHeight + (int)((maxHeight - minHeight) * wave * Math.random());
@@ -2626,7 +2732,7 @@ public class MessageHolders {
                 }
 
                 bar.setLayoutParams(params);
-                bar.setBackgroundColor(Color.parseColor("#666666")); // Dark gray color
+                bar.setBackgroundColor(Color.parseColor("#666666"));
                 bar.setAlpha(0.7f);
 
                 waveformContainer.addView(bar);
@@ -2650,6 +2756,5 @@ public class MessageHolders {
             return sdf.format(date);
         }
     }
-
 
 }
