@@ -1846,21 +1846,16 @@ class MessagesActivity : MainMessagesActivity(),
 
         // Check if the date is today
         if (DateUtils.isToday(lastSeen.time)) {
-            // Check if the time is within the last minute (considered "online")
-//            if (now.time - lastSeen.time < DateUtils.MINUTE_IN_MILLIS) {
-//                return "Online"
-//            } else {
-            // Format the time for today
+
             val dateFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
             return "Last Seen Today at ${dateFormat.format(lastSeen)}"
-//            return ""
-//            }
+
         } else if (DateUtils.isToday(lastSeen.time + DateUtils.DAY_IN_MILLIS)) {
-            // Format the time for yesterday
+
             val dateFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
             return "Last Seen Yesterday at ${dateFormat.format(lastSeen)}"
         } else {
-            // Format the date for other days
+
             val dateFormat = SimpleDateFormat("MMM d, HH:mm", Locale.getDefault())
             return "Last Seen on ${dateFormat.format(lastSeen)}"
         }
@@ -1901,17 +1896,20 @@ class MessagesActivity : MainMessagesActivity(),
             val friendAvatar = intent.getStringExtra("firstUserAvatar")
 
             if (friendId != null && friendName != null) {
-
-                OtherUserProfileAccount.open(
-                    context = this@MessagesActivity,
-                    user = "null",
-                    dialogPhoto = friendAvatar,
-                    dialogId = chatId
-                )
-                Log.d(TAG, "Opening profile fallback for user: $friendName ($friendId)")
+                // Pass user data via Intent extras for OtherUserProfileAccount to extract
+                val intent = Intent(this@MessagesActivity, OtherUserProfileAccount::class.java).apply {
+                    putExtra("extra_user_id", friendId)
+                    putExtra("extra_user_name", friendName)
+                    putExtra("extra_username", friendName)
+                    putExtra("extra_avatar_url", friendAvatar)
+                    putExtra("extra_dialog_photo", friendAvatar)
+                    putExtra("extra_dialog_id", chatId)
+                }
+                startActivity(intent)
+                Log.d(TAG, "Opening profile (fallback) for user: $friendName ($friendId)")
             } else {
-                Toast.makeText(this, "Unable to open profile. User Data not available.", Toast.LENGTH_SHORT).show()
-                Log.e(TAG, "Cannot open profile - missing user Data")
+                Toast.makeText(this, "Unable to open profile. User data not available.", Toast.LENGTH_SHORT).show()
+                Log.e(TAG, "Cannot open profile - missing user data")
             }
         }
     }
