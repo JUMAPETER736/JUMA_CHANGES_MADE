@@ -4,6 +4,7 @@ package com.uyscuti.social.chatsuit.messages;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.os.Build;
@@ -2625,43 +2626,50 @@ public class MessageHolders {
             }
         }
 
-        // Updated generateWaveform method for DefaultOutGoingVoiceMessageViewHolder
+        // Updated generateWaveform for DefaultOutGoingVoiceMessageViewHolder
         private void generateWaveform(int durationMillis) {
             waveformContainer.removeAllViews();
 
             int seconds = Math.max(durationMillis / 1000, 1);
-            // Doubled the bar count to add more waves
-            int barCount = Math.min(Math.max(seconds * 6, 30), 70);
+            // More bars for WhatsApp-like density
+            int barCount = Math.min(Math.max(seconds * 8, 50), 90);
 
-            // Reduced bar width by half
-            int barWidth = dpToPx(1);
-            // Reduced margin by half
-            int barMargin = dpToPx(0);
-            int maxHeight = dpToPx(24);
-            int minHeight = dpToPx(6);
+            // WhatsApp-style thin bars
+            int barWidth = dpToPx(2);
+            int barSpacing = dpToPx(2);
+            int maxHeight = dpToPx(20);
+            int minHeight = dpToPx(4);
 
             for (int i = 0; i < barCount; i++) {
                 View bar = new View(waveformContainer.getContext());
 
+                // Create more natural waveform pattern
                 double progress = (double) i / barCount;
-                double wave = Math.sin(progress * Math.PI * 2) * 0.3 + 0.7;
-                int height = minHeight + (int)((maxHeight - minHeight) * wave * Math.random());
+                double wave1 = Math.sin(progress * Math.PI * 3) * 0.4;
+                double wave2 = Math.sin(progress * Math.PI * 7) * 0.3;
+                double randomness = Math.random() * 0.3;
+                double combinedWave = Math.abs(wave1 + wave2 + randomness);
+
+                int height = minHeight + (int)((maxHeight - minHeight) * combinedWave);
 
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(barWidth, height);
-                params.setMarginEnd(barMargin);
-                params.setMarginStart(barMargin);
-                params.weight = 1;
+                params.setMarginEnd(barSpacing);
 
                 bar.setLayoutParams(params);
                 bar.setBackgroundColor(Color.WHITE);
                 bar.setAlpha(0.8f);
 
+                // Rounded corners for bars
+                GradientDrawable shape = new GradientDrawable();
+                shape.setShape(GradientDrawable.RECTANGLE);
+                shape.setColor(Color.WHITE);
+                shape.setCornerRadius(dpToPx(1));
+                bar.setBackground(shape);
+                bar.setAlpha(0.8f);
+
                 waveformContainer.addView(bar);
             }
         }
-
-
-
 
 
         private int dpToPx(int dp) {
@@ -2892,35 +2900,43 @@ public class MessageHolders {
             }
         }
 
-        // Updated generateWaveform method for DefaultInComingVoiceMessageViewHolder
+        // Updated generateWaveform for DefaultInComingVoiceMessageViewHolder
         private void generateWaveform(int durationMillis) {
             waveformContainer.removeAllViews();
 
             int seconds = Math.max(durationMillis / 1000, 1);
-            // Doubled the bar count to add more waves
-            int barCount = Math.min(Math.max(seconds * 6, 30), 70);
+            // More bars for WhatsApp-like density
+            int barCount = Math.min(Math.max(seconds * 8, 50), 90);
 
-            // Reduced bar width by half
-            int barWidth = dpToPx(1);
-            // Reduced margin by half
-            int barMargin = dpToPx(0);
-            int maxHeight = dpToPx(24);
-            int minHeight = dpToPx(6);
+            // WhatsApp-style thin bars
+            int barWidth = dpToPx(2);
+            int barSpacing = dpToPx(2);
+            int maxHeight = dpToPx(20);
+            int minHeight = dpToPx(4);
 
             for (int i = 0; i < barCount; i++) {
                 View bar = new View(waveformContainer.getContext());
 
+                // Create more natural waveform pattern
                 double progress = (double) i / barCount;
-                double wave = Math.sin(progress * Math.PI * 2) * 0.3 + 0.7;
-                int height = minHeight + (int)((maxHeight - minHeight) * wave * Math.random());
+                double wave1 = Math.sin(progress * Math.PI * 3) * 0.4;
+                double wave2 = Math.sin(progress * Math.PI * 7) * 0.3;
+                double randomness = Math.random() * 0.3;
+                double combinedWave = Math.abs(wave1 + wave2 + randomness);
+
+                int height = minHeight + (int)((maxHeight - minHeight) * combinedWave);
 
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(barWidth, height);
-                params.setMarginEnd(barMargin);
-                params.setMarginStart(barMargin);
-                params.weight = 1;
+                params.setMarginEnd(barSpacing);
 
                 bar.setLayoutParams(params);
-                bar.setBackgroundColor(Color.parseColor("#666666"));
+
+                // Rounded corners for bars
+                GradientDrawable shape = new GradientDrawable();
+                shape.setShape(GradientDrawable.RECTANGLE);
+                shape.setColor(Color.parseColor("#666666"));
+                shape.setCornerRadius(dpToPx(1));
+                bar.setBackground(shape);
                 bar.setAlpha(0.7f);
 
                 waveformContainer.addView(bar);
