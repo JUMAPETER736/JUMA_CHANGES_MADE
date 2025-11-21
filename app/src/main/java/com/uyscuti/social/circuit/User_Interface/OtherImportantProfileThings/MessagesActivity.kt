@@ -1888,7 +1888,7 @@ class MessagesActivity : MainMessagesActivity(),
                 dialogId = dialog!!.id
             )
 
-            Log.d(TAG, "Opening profile for username: ${user.name}, And User ID:${user.id}")
+            Log.d(TAG, "Opening profile for user: ${user.name} (${user.id})")
         } else {
             // Fallback if dialog is null but we have intent data
             val friendId = intent.getStringExtra("firstUserId")
@@ -1896,17 +1896,18 @@ class MessagesActivity : MainMessagesActivity(),
             val friendAvatar = intent.getStringExtra("firstUserAvatar")
 
             if (friendId != null && friendName != null) {
-                // Pass user data via Intent extras for OtherUserProfileAccount to extract
+                // Pass user data via Intent extras matching OtherUserProfileAccount constants
                 val intent = Intent(this@MessagesActivity, OtherUserProfileAccount::class.java).apply {
-                    putExtra("extra_user_id", friendId)
+                    putExtra("extra_user_id", friendId)         
                     putExtra("extra_user_name", friendName)
                     putExtra("extra_username", friendName)
                     putExtra("extra_avatar_url", friendAvatar)
+                    putExtra("user_full_name", friendName)
                     putExtra("extra_dialog_photo", friendAvatar)
                     putExtra("extra_dialog_id", chatId)
                 }
                 startActivity(intent)
-                Log.d(TAG, "Opening profile (fallback) for username: $friendName, And User ID: $friendId")
+                Log.d(TAG, "Opening profile (fallback) for username: $friendName  User ID: $friendId")
             } else {
                 Toast.makeText(this, "Unable to open profile. User data not available.", Toast.LENGTH_SHORT).show()
                 Log.e(TAG, "Cannot open profile - missing user data")
