@@ -2028,21 +2028,20 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 var audioUrl: String? = null
                 var videoUrl: String? = null
                 var docUrl: String? = null
-                var voiceUrl: String? = null  // IMPORTANT: Add this
-                var voiceDuration: Int = 0     // IMPORTANT: Add this
+                var voiceUrl: String? = null
+                var voiceDuration: Int = 0
 
                 // Handle attachments and assign URLs
                 if (message.attachments != null && message.attachments?.isNotEmpty() == true) {
                     val attachments = message.attachments
                     if (attachments != null) {
                         for (attachment in attachments) {
+                            Log.d("Attachment Processing", "URL: ${attachment.url}, Type: ${getFileType(attachment.url)}")
+
                             when (getFileType(attachment.url)) {
                                 FileType.IMAGE -> {
                                     imageUrl = attachment.url
-                                    Log.d(
-                                        "Received Attachment",
-                                        "Image, Path Of Image Received: $imageUrl"
-                                    )
+                                    Log.d("Received Attachment", "Image, Path: $imageUrl")
                                 }
 
                                 FileType.AUDIO -> {
@@ -2050,10 +2049,13 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     val isVoiceNote = attachment.url.contains("/vn/") ||
                                             attachment.url.contains("rec_")
 
+                                    Log.d("Voice Check", "Is voice note: $isVoiceNote for ${attachment.url}")
+
                                     if (isVoiceNote) {
                                         voiceUrl = attachment.url
+                                        Log.d("Received Attachment", "✅ VOICE NOTE DETECTED: $voiceUrl")
 
-                                        // Try to extract duration from the file
+                                        // Extract duration
                                         try {
                                             val retriever = MediaMetadataRetriever()
                                             retriever.setDataSource(voiceUrl)
@@ -2062,49 +2064,36 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                             )
                                             voiceDuration = durationStr?.toIntOrNull() ?: 0
                                             retriever.release()
+                                            Log.d("Voice Duration", "Extracted duration: $voiceDuration ms")
                                         } catch (e: Exception) {
-                                            Log.e("Voice Duration", "Failed to extract duration", e)
+                                            Log.e("Voice Duration", "Failed to extract duration: ${e.message}")
                                             voiceDuration = 0
                                         }
-
-                                        Log.d(
-                                            "Received Attachment",
-                                            "Voice Note, Path: $voiceUrl, Duration: $voiceDuration"
-                                        )
                                     } else {
                                         audioUrl = attachment.url
-                                        Log.d(
-                                            "Received Attachment",
-                                            "Audio, Path: $audioUrl"
-                                        )
+                                        Log.d("Received Attachment", "Regular Audio: $audioUrl")
                                     }
                                 }
 
                                 FileType.VIDEO -> {
                                     videoUrl = attachment.url
-                                    Log.d(
-                                        "Received Attachment",
-                                        "Video, Path: $videoUrl"
-                                    )
+                                    Log.d("Received Attachment", "Video: $videoUrl")
                                 }
 
                                 FileType.DOCUMENT -> {
                                     docUrl = attachment.url
-                                    Log.d(
-                                        "Received Attachment",
-                                        "Document, Path: $docUrl"
-                                    )
+                                    Log.d("Received Attachment", "Document: $docUrl")
                                 }
 
                                 FileType.OTHER -> {
-                                    // Handle other types, if needed
+                                    Log.d("Received Attachment", "Other type")
                                 }
                             }
                         }
                     }
                 }
 
-                Log.d(TAG, "In This Chat : ${message.content}")
+                Log.d("Before Message Creation", "voiceUrl: $voiceUrl, audioUrl: $audioUrl, voiceDuration: $voiceDuration")
 
                 val createdAt = convertIso8601ToUnixTimestamp(message.createdAt)
                 val date = Date(createdAt)
@@ -2116,9 +2105,13 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     date
                 )
 
+                // Set image
                 newMessage.setImage(imageUrl?.let { Message.Image(it) })
+
+                // Set video
                 newMessage.setVideo(videoUrl?.let { Message.Video(it) })
 
+                // Set document
                 newMessage.setDocument(
                     docUrl?.let {
                         Message.Document(
@@ -2129,24 +2122,27 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     }
                 )
 
-                // CRITICAL: Set voice message with duration
-                newMessage.setVoice(
-                    voiceUrl?.let {
-                        Log.d("Setting Voice", "Voice URL: $it, Duration: $voiceDuration")
-                        Message.Voice(it, voiceDuration)
-                    }
-                )
+                // SET VOICE MESSAGE - THIS IS CRITICAL!
+                if (voiceUrl != null) {
+                    val voiceMessage = Message.Voice(voiceUrl, voiceDuration)
+                    newMessage.setVoice(voiceMessage)
+                    Log.d("Setting Voice", "✅ Voice message set! URL: $voiceUrl, Duration: $voiceDuration")
+                } else {
+                    Log.d("Setting Voice", "❌ voiceUrl is NULL - voice message NOT set!")
+                }
 
-                // Set regular audio (only non-voice audio)
-                newMessage.setAudio(
-                    audioUrl?.let {
-                        Log.d("Setting Audio", "Audio URL: $it")
-                        Message.Audio(it, 0, getNameFromUrl(audioUrl))
-                    }
-                )
+                // Set regular audio (only if NOT a voice note)
+                if (audioUrl != null) {
+                    val audioMessage = Message.Audio(audioUrl, 0, getNameFromUrl(audioUrl))  // ✅ FIXED
+                    newMessage.setAudio(audioMessage)
+                    Log.d("Setting Audio", "Audio message set: $audioUrl")
+                }
 
                 withContext(Dispatchers.Main) {
                     super.messagesAdapter?.addToStart(newMessage, true)
+
+                    // Add verification log
+                    Log.d("Message Added", "Message added. Has voice: ${newMessage.voice != null}, voiceUrl: ${newMessage.voice?.url}")
                 }
 
                 if (!isGroup) {

@@ -1,19 +1,11 @@
 package com.uyscuti.social.circuit.data.model;
 
 import android.content.Context;
-
 import androidx.annotation.Nullable;
-
 import com.uyscuti.social.chatsuit.commons.models.IMessage;
 import com.uyscuti.social.chatsuit.commons.models.IUser;
 import com.uyscuti.social.chatsuit.commons.models.MessageContentType;
-
-
 import java.util.Date;
-
-/*
- * Created by troy379 on 04.04.17.
- */
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -29,11 +21,9 @@ public class Message implements IMessage,
     private Image image;
     private Voice voice;
     private String messageStatus;
-
     private Audio audio;
-    private Video video; // New video field
-    private Document doc; // New document field
-
+    private Video video;
+    private Document doc;
 
     public Message(String id, User user, String text) {
         this(id, user, text, new Date());
@@ -46,8 +36,6 @@ public class Message implements IMessage,
         this.createdAt = createdAt;
     }
 
-    // Other methods...
-
     // Parcelable implementation
     protected Message(Parcel in) {
         id = in.readString();
@@ -57,6 +45,9 @@ public class Message implements IMessage,
         image = in.readParcelable(Image.class.getClassLoader());
         voice = in.readParcelable(Voice.class.getClassLoader());
         messageStatus = in.readString();
+        audio = in.readParcelable(Audio.class.getClassLoader());
+        video = in.readParcelable(Video.class.getClassLoader());
+        doc = in.readParcelable(Document.class.getClassLoader());
     }
 
     public static final Creator<Message> CREATOR = new Creator<Message>() {
@@ -85,6 +76,9 @@ public class Message implements IMessage,
         dest.writeParcelable(image, flags);
         dest.writeParcelable(voice, flags);
         dest.writeString(messageStatus);
+        dest.writeParcelable(audio, flags);
+        dest.writeParcelable(video, flags);
+        dest.writeParcelable(doc, flags);
     }
 
     @Override
@@ -120,7 +114,7 @@ public class Message implements IMessage,
     @Nullable
     @Override
     public String getVideoThumbUrl(Context context, String url) {
-        return this.voice.url;
+        return video == null ? null : video.url;
     }
 
     @Nullable
@@ -161,24 +155,25 @@ public class Message implements IMessage,
 
     @Override
     public long getAudioDuration() {
-        return 0;
+        return audio == null ? 0 : audio.duration;
     }
 
+    // ✅ FIXED: Return actual voice duration
     public int getVoiceDuration() {
-        return 0;
+        return voice == null ? 0 : voice.duration;
     }
 
     @Nullable
     @Override
     public String getDocUrl() {
         return doc == null ? null : doc.url;
-
     }
 
+    // ✅ FIXED: Return actual voice URL
     @Nullable
     @Override
     public String getVoiceUrl() {
-        return null;
+        return voice == null ? null : voice.url;
     }
 
     @Nullable
@@ -196,20 +191,21 @@ public class Message implements IMessage,
     }
 
     public void setUser(User user) {
-        this.user= user;
+        this.user = user;
     }
 
-    public Voice getVoice() { return voice; }
+    public Voice getVoice() {
+        return voice;
+    }
 
     public void setAudio(Audio audio) {
         this.audio = audio;
     }
 
-    public void  setStatus(String status) {
+    public void setStatus(String status) {
         messageStatus = status;
     }
 
-    // New setter methods for video and document fields
     public void setVideo(Video video) {
         this.video = video;
     }
@@ -217,7 +213,6 @@ public class Message implements IMessage,
     public void setDocument(Document doc) {
         this.doc = doc;
     }
-
 
     public void setVoice(Voice voice) {
         this.voice = voice;
@@ -227,15 +222,14 @@ public class Message implements IMessage,
         this.createdAt = time;
     }
 
+    // Inner classes remain the same...
     public static class Image implements Parcelable {
-
         private String url;
 
         public Image(String url) {
             this.url = url;
         }
 
-        // Parcelable implementation for Image
         protected Image(Parcel in) {
             url = in.readString();
         }
@@ -264,14 +258,12 @@ public class Message implements IMessage,
     }
 
     public static class Video implements Parcelable {
-
         private String url;
 
         public Video(String url) {
             this.url = url;
         }
 
-        // Parcelable implementation for Video
         protected Video(Parcel in) {
             url = in.readString();
         }
@@ -300,7 +292,6 @@ public class Message implements IMessage,
     }
 
     public static class Voice implements Parcelable {
-
         private String url;
         private int duration;
 
@@ -309,7 +300,6 @@ public class Message implements IMessage,
             this.duration = duration;
         }
 
-        // Parcelable implementation for Voice
         protected Voice(Parcel in) {
             url = in.readString();
             duration = in.readInt();
@@ -348,9 +338,7 @@ public class Message implements IMessage,
     }
 
     public static class Audio implements Parcelable {
-
         private String url;
-
         private String title;
         private Long duration;
 
@@ -360,7 +348,6 @@ public class Message implements IMessage,
             this.title = title;
         }
 
-        // Parcelable implementation for Audio
         protected Audio(Parcel in) {
             url = in.readString();
             duration = in.readLong();
@@ -405,9 +392,7 @@ public class Message implements IMessage,
     }
 
     public static class Document implements Parcelable {
-
         private String url;
-
         private String title;
         private String size;
 
@@ -417,7 +402,6 @@ public class Message implements IMessage,
             this.title = title;
         }
 
-        // Parcelable implementation for Document
         protected Document(Parcel in) {
             url = in.readString();
             size = in.readString();
