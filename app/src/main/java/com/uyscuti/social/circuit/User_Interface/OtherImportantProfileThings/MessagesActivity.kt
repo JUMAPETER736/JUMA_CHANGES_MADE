@@ -1980,15 +1980,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     }
 
     private fun initEmoji() {
-//        messageEdit = findViewById(R.id.messageEdit)
-//        sendBtn = findViewById(R.id.sendBtn)
-//        pickImgBtn = findViewById(R.id.voiceNote)
-//        recyclerView = findViewById(R.id.recyclerView)
-//        emojiButton = findViewById(R.id.emoji)
-//        rootView = findViewById(R.id.rootView)
-//        chatAvatar = findViewById(R.id.chatAvatar)
-//        videoCall = findViewById(R.id.videoCall)
-//        voiceCall = findViewById(R.id.voiceCall)
+
 
         val emojiPopup = EmojiPopup(binding.container, binding.inputEditText)
 
@@ -2344,14 +2336,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             super.messagesAdapter?.addToStart(message, true)
                         }
 
-//                        sendFile(imagePath, message)
 
-// Convert the image path to a File or use the path directly if it's a valid file path
-                        //val imageFile = File(imagePath)
-
-
-//
-                        // sendFile(chatId, imagePath)
                     }
                 }
 
@@ -2374,8 +2359,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         // You can proceed to send the image or display it in your chat.
                         val audioFileName =
                             "files/${System.currentTimeMillis()}.jpg" // Change the file name as needed
-//                        Log.d(TAG, "file name $audioFileName")
-//                        Log.d(TAG, "audio path $audioPath")
+
 
 
                         val user = User("0", "You", "test", true, Date())
