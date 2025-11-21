@@ -39,8 +39,7 @@
                 android:layout_height="24dp"
                 android:layout_gravity="center"
                 android:src="@drawable/baseline_play_arrow_24"
-                app:tint="@color/white"
-                android:padding="2dp" />
+                app:tint="@color/white" />
 
         </androidx.cardview.widget.CardView>
 
