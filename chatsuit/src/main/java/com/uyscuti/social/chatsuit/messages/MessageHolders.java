@@ -2375,12 +2375,12 @@ public class MessageHolders {
 
             // DEBUG LOGS
 
-
+            Log.d("VoiceViewHolder", "Voice Note ID: " + message.getId());
             Log.d("VoiceViewHolder", "voiceUrl: " + message.getVoiceUrl());
             Log.d("VoiceViewHolder", "voiceDuration: " + message.getVoiceDuration());
             Log.d("VoiceViewHolder", "playButton null? " + (playButton == null));
             Log.d("VoiceViewHolder", "waveformContainer null? " + (waveformContainer == null));
-
+            Log.d("VoiceViewHolder", "duration null? " + (duration == null));
 
             // Check if this is a voice message
             boolean isVoiceMessage = message.getVoiceUrl() != null && !message.getVoiceUrl().isEmpty();
@@ -2555,6 +2555,8 @@ public class MessageHolders {
         }
     }
 
+
+
     public static class DefaultInComingVoiceMessageViewHolder
             extends MessageHolders.BaseIncomingMessageViewHolder<MessageContentType.Image> {
 
@@ -2585,7 +2587,7 @@ public class MessageHolders {
 
             //  DEBUG LOGS
 
-
+            Log.d("VoiceViewHolder", "Voice Note ID: " + message.getId());
             Log.d("VoiceViewHolder", "voiceUrl: " + message.getVoiceUrl());
             Log.d("VoiceViewHolder", "voiceDuration: " + message.getVoiceDuration());
             Log.d("VoiceViewHolder", "playButton null? " + (playButton == null));
