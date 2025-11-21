@@ -165,15 +165,25 @@ import kotlin.random.Random
 
 @UnstableApi
 @AndroidEntryPoint
-class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
+class MessagesActivity : MainMessagesActivity(),
 
-    MessageInput.EmojiListener, MessageInput.VoiceListener, MessageInput.AttachmentsListener,
-    DateFormatter.Formatter, CoreChatSocketClient.ChatSocketEvents,
+    MessageInput.InputListener,
+    MessageInput.EmojiListener,
+    MessageInput.VoiceListener,
+
+    DateFormatter.Formatter,
+    MessageInput.AttachmentsListener,
+    CoreChatSocketClient.ChatSocketEvents,
+    ChatManager.ChatManagerListener,
+
     MessagesListAdapter.MessageSentListener<Message>,
     MessagesListAdapter.DateFormatterListener,
     MessagesListAdapter.OnDownloadListener<Message>,
     MessagesListAdapter.OnMediaClickListener<Message>,
-    MessagesListAdapter.OnAudioPlayListener<Message> , ChatManager.ChatManagerListener{
+    MessagesListAdapter.OnAudioPlayListener<Message>
+
+
+{
 
     private val MAX_RETRY_COUNT = 3
     private val REQUEST_CODE = 558
@@ -1856,21 +1866,52 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
+
     @OptIn(UnstableApi::class)
     private fun viewUser() {
-        if (dialog?.users?.size == 1) {
-            OtherUserProfileAccount.Companion.open(
-                this@MessagesActivity,
-                dialog!!.users[0],
-                dialog!!.dialogPhoto,
-                dialog!!.id
-            )
-        } else {
+        if (isGroup) {
             dialog?.let {
                 GroupProfileActivity.open(
-                    this@MessagesActivity, it, groupAdminId,
+                    this@MessagesActivity,
+                    it,
+                    groupAdminId,
                     groupCreatedAt
                 )
+            }
+            return
+        }
+
+        // For 1-on-1 chats
+        if (dialog?.users?.isNotEmpty() == true) {
+            val user = dialog!!.users.first()
+
+            // Use the companion object's open method
+            OtherUserProfileAccount.open(
+                context = this@MessagesActivity,
+                user = user,
+                dialogPhoto = dialog!!.dialogPhoto,
+                dialogId = dialog!!.id
+            )
+
+            Log.d(TAG, "Opening profile for user: ${user.name} (${user.id})")
+        } else {
+            // Fallback if dialog is null but we have intent data
+            val friendId = intent.getStringExtra("firstUserId")
+            val friendName = intent.getStringExtra("firstUserName")
+            val friendAvatar = intent.getStringExtra("firstUserAvatar")
+
+            if (friendId != null && friendName != null) {
+
+                OtherUserProfileAccount.open(
+                    context = this@MessagesActivity,
+                    user = "null",
+                    dialogPhoto = friendAvatar,
+                    dialogId = chatId
+                )
+                Log.d(TAG, "Opening profile fallback for user: $friendName ($friendId)")
+            } else {
+                Toast.makeText(this, "Unable to open profile. User Data not available.", Toast.LENGTH_SHORT).show()
+                Log.e(TAG, "Cannot open profile - missing user Data")
             }
         }
     }
