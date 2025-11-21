@@ -2662,6 +2662,8 @@ public class MessageHolders {
 
 
 
+
+
         private int dpToPx(int dp) {
             float density = waveformContainer.getContext().getResources().getDisplayMetrics().density;
             return Math.round(dp * density);
