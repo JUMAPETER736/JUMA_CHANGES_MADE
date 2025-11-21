@@ -17,26 +17,28 @@
         android:background="@drawable/shape_incoming_voice_note"
         android:orientation="horizontal"
         android:paddingStart="8dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
         android:minWidth="220dp"
         android:maxWidth="280dp">
 
-        <!-- Play/Pause Button - Centered Vertically -->
+        <!-- Play/Pause Button - Centered with waveform -->
         <androidx.cardview.widget.CardView
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            app:cardCornerRadius="20dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            app:cardCornerRadius="18dp"
             app:cardBackgroundColor="#67A4D5"
             app:cardElevation="0dp"
-            android:layout_marginEnd="8dp"
-            android:layout_gravity="center_vertical">
+            android:layout_marginEnd="6dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="18dp">
 
             <ImageView
                 android:id="@+id/playButton"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:layout_gravity="center"
                 android:src="@drawable/baseline_play_arrow_24"
                 app:tint="@color/white" />
@@ -48,17 +50,16 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
+            android:orientation="vertical">
 
             <!-- Waveform Visualization - Full Width -->
             <LinearLayout
                 android:id="@+id/waveformContainer"
                 android:layout_width="match_parent"
-                android:layout_height="32dp"
+                android:layout_height="36dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="4dp">
+                android:layout_marginBottom="2dp">
 
                 <!-- Dynamic bars will be added here -->
             </LinearLayout>
@@ -76,7 +77,8 @@
                     android:layout_height="wrap_content"
                     android:text="0:04"
                     android:textColor="#FFFFFF"
-                    android:textSize="11sp" />
+                    android:textSize="11sp"
+                    android:alpha="0.9" />
 
                 <Space
                     android:layout_width="0dp"
@@ -89,6 +91,7 @@
                     android:layout_height="wrap_content"
                     android:textColor="#FFFFFF"
                     android:textSize="11sp"
+                    android:alpha="0.7"
                     tools:text="12:25" />
 
             </LinearLayout>
