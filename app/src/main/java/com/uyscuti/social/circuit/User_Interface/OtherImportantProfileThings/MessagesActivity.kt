@@ -4399,25 +4399,40 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             com.uyscuti.social.circuit.R.id.menu_edit -> "Edit"
             else -> ""
         }
+
         if (itemName.isNotEmpty()) {
+            // Add null check for dialog
+            if (dialog == null) {
+                Toast.makeText(this, "Unable to make call. Please try again.", Toast.LENGTH_SHORT).show()
+                return true
+            }
+
+            // Add null check for username
+            if (username.isNullOrEmpty()) {
+                Toast.makeText(this, "Unable to make call. Please try again.", Toast.LENGTH_SHORT).show()
+                return true
+            }
 
             when (itemName) {
                 "Video" -> {
-                    //
                     mainRepository.sendConnectionRequest(
                         DataModel(
-                            DataModelType.StartVideoCall, username, dialog?.dialogName, null
+                            DataModelType.StartVideoCall,
+                            username,
+                            dialog!!.dialogName, // Safe to use now
+                            null
                         )
                     ) {
                         if (it) {
                             startActivity(Intent(this, CallActivity::class.java).apply {
-                                putExtra("target", dialog?.dialogName)
+                                putExtra("target", dialog!!.dialogName)
                                 putExtra("isVideoCall", true)
                                 putExtra("isCaller", true)
                                 putExtra("avatar", dialog!!.dialogPhoto)
                             })
                         }
                     }
+
                     val newCallLog = CallLogEntity(
                         id = Random.Default.nextLong(),
                         callerName = dialog!!.dialogName,
@@ -4434,15 +4449,17 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 }
 
                 "Voice" -> {
-                    //
                     mainRepository.sendConnectionRequest(
                         DataModel(
-                            DataModelType.StartVoiceCall, username, dialog?.dialogName, null
+                            DataModelType.StartVoiceCall,
+                            username,
+                            dialog!!.dialogName, // Safe to use now
+                            null
                         )
                     ) {
                         if (it) {
                             startActivity(Intent(this, CallActivity::class.java).apply {
-                                putExtra("target", dialog?.dialogName)
+                                putExtra("target", dialog!!.dialogName)
                                 putExtra("isVideoCall", false)
                                 putExtra("isCaller", true)
                                 putExtra("avatar", dialog!!.dialogPhoto)

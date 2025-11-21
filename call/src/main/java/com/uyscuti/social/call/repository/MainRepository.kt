@@ -72,34 +72,16 @@ class MainRepository @Inject constructor(
     lateinit var callViewModel: CallViewHandler
 
     val TAG = "MainRepository"
-//    interface Listener {
-//        fun onLatestEventReceived(data: DataModel)
-//        fun endCall()
-//    }
 
-//    suspend fun init(username: String):  Result<Unit> {
-////        socketClient.listener = this
-//        callSocketClient.listener = this
-//        //        socketClient.init(username)
-//        return callSocketClient.initialize()
-//    }
 
     fun init(username: String){
-//        socketClient.listener = this
+
         callSocketClient.listener = this
         //        socketClient.init(username)
         callSocketClient.init()
     }
 
-//    suspend fun init(username: String): CallResult {
-//        callSocketClient.listener = this
-//        val initializationResult = callSocketClient.initialize()
-//        return if (initializationResult.isSuccess) {
-//            CallResult.Success("Initialization successful")
-//        } else {
-//            CallResult.Failure("Failed to initialize")
-//        }
-//    }
+
 
     fun setTarget(value: String) {
         target = value
