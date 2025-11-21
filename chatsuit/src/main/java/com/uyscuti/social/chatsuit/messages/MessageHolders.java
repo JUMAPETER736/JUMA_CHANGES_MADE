@@ -2625,14 +2625,18 @@ public class MessageHolders {
             }
         }
 
+        // Updated generateWaveform method for DefaultOutGoingVoiceMessageViewHolder
         private void generateWaveform(int durationMillis) {
             waveformContainer.removeAllViews();
 
             int seconds = Math.max(durationMillis / 1000, 1);
-            int barCount = Math.min(Math.max(seconds * 3, 15), 35);
+            // Doubled the bar count to add more waves
+            int barCount = Math.min(Math.max(seconds * 6, 30), 70);
 
-            int barWidth = dpToPx(2);
-            int barMargin = dpToPx(1);
+            // Reduced bar width by half
+            int barWidth = dpToPx(1);
+            // Reduced margin by half
+            int barMargin = dpToPx(0);
             int maxHeight = dpToPx(24);
             int minHeight = dpToPx(6);
 
@@ -2655,6 +2659,8 @@ public class MessageHolders {
                 waveformContainer.addView(bar);
             }
         }
+
+
 
         private int dpToPx(int dp) {
             float density = waveformContainer.getContext().getResources().getDisplayMetrics().density;
@@ -2884,14 +2890,18 @@ public class MessageHolders {
             }
         }
 
+        // Updated generateWaveform method for DefaultInComingVoiceMessageViewHolder
         private void generateWaveform(int durationMillis) {
             waveformContainer.removeAllViews();
 
             int seconds = Math.max(durationMillis / 1000, 1);
-            int barCount = Math.min(Math.max(seconds * 3, 15), 35);
+            // Doubled the bar count to add more waves
+            int barCount = Math.min(Math.max(seconds * 6, 30), 70);
 
-            int barWidth = dpToPx(2);
-            int barMargin = dpToPx(1);
+            // Reduced bar width by half
+            int barWidth = dpToPx(1);
+            // Reduced margin by half
+            int barMargin = dpToPx(0);
             int maxHeight = dpToPx(24);
             int minHeight = dpToPx(6);
 
