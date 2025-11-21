@@ -1,3 +1,4 @@
+<!-- OUTGOING MESSAGE LAYOUT -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -7,7 +8,7 @@
     android:layout_marginRight="16dp"
     android:layout_marginTop="8dp">
 
-    <com.google.android.flexbox.FlexboxLayout
+    <RelativeLayout
         android:id="@id/bubble"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -15,47 +16,48 @@
         android:layout_alignParentRight="true"
         android:layout_marginLeft="@dimen/message_outcoming_bubble_margin_left"
         android:layout_marginStart="@dimen/message_outcoming_bubble_margin_left"
-        app:alignContent="stretch"
-        app:alignItems="stretch"
-        app:flexWrap="wrap"
-        app:justifyContent="flex_end">
-
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp">
 
         <com.vanniktech.emoji.EmojiTextView
             android:id="@id/messageText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/test_message"
-            android:layout_alignWithParentIfMissing="true" />
-
+            android:paddingEnd="8dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="20dp" />
 
         <LinearLayout
             android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_below="@id/messageText"
-            android:layout_height="wrap_content">
+            android:layout_alignEnd="@id/messageText"
+            android:layout_alignRight="@id/messageText"
+            android:layout_alignBottom="@id/messageText"
+            android:layout_marginBottom="2dp"
+            android:gravity="end|bottom">
 
             <TextView
                 android:id="@id/messageTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
-                android:layout_gravity="center"
-                android:layout_marginStart="8dp"
-                app:layout_alignSelf="center"
-                app:layout_order="1" />
+                android:layout_gravity="center_vertical"
+                android:textSize="11sp" />
 
             <ImageView
-                android:id="@+id/status"
+                android:id="@+id/messageStatus"
                 android:layout_width="12dp"
-                android:layout_gravity="center"
+                android:layout_height="12dp"
+                android:layout_gravity="center_vertical"
                 android:layout_marginStart="4dp"
-                android:layout_height="12dp"/>
+                android:layout_marginLeft="4dp"
+                android:src="@drawable/ic_tick_single" />
 
         </LinearLayout>
 
-
-
-    </com.google.android.flexbox.FlexboxLayout>
+    </RelativeLayout>
 
 </RelativeLayout>
