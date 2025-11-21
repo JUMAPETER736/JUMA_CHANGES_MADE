@@ -2356,9 +2356,15 @@ public class MessageHolders {
         public void onBind(MessageContentType.Image message) {
             super.onBind(message);
 
-            // Check if this is a voice message
-            boolean isVoiceMessage = message.getVoiceDuration() > 0 ||
-                    (message.getImageUrl() != null && message.getImageUrl().endsWith(".mp3"));
+            // Check if this is a voice message - UPDATED LOGIC
+            boolean isVoiceMessage = message.getVoiceUrl() != null && !message.getVoiceUrl().isEmpty();
+
+            // Fallback checks
+            if (!isVoiceMessage) {
+                isVoiceMessage = message.getVoiceDuration() > 0 ||
+                        (message.getImageUrl() != null && message.getImageUrl().endsWith(".mp3")) ||
+                        (message.getAudioUrl() != null && (message.getAudioUrl().contains("/vn/") || message.getAudioUrl().contains("rec_")));
+            }
 
             if (isVoiceMessage) {
                 // Make voice UI visible
@@ -2366,9 +2372,20 @@ public class MessageHolders {
                 if (duration != null) duration.setVisibility(View.VISIBLE);
                 if (waveformContainer != null) waveformContainer.setVisibility(View.VISIBLE);
 
+                // Get the voice URL from multiple sources
+                String audioUrl = message.getVoiceUrl();
+                if (audioUrl == null || audioUrl.isEmpty()) {
+                    audioUrl = message.getImageUrl();
+                }
+                if (audioUrl == null || audioUrl.isEmpty()) {
+                    audioUrl = message.getAudioUrl();
+                }
+
                 // Set duration
-                int voiceDuration = message.getVoiceDuration() > 0 ?
-                        message.getVoiceDuration() : 3000; // Default 3 seconds
+                int voiceDuration = message.getVoiceDuration();
+                if (voiceDuration <= 0) {
+                    voiceDuration = 3000; // Default 3 seconds
+                }
                 duration.setText(formatDuration(voiceDuration));
 
                 // Set time
@@ -2384,17 +2401,15 @@ public class MessageHolders {
                 playButton.setImageResource(R.drawable.baseline_play_arrow_24);
 
                 // Set play button click listener
+                final String finalAudioUrl = audioUrl;
                 playButton.setOnClickListener(v -> {
-                    if (audioPlayListener != null) {
+                    if (audioPlayListener != null && finalAudioUrl != null && !finalAudioUrl.isEmpty()) {
                         isPlaying = !isPlaying;
                         playButton.setImageResource(isPlaying ?
                                 R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
 
-                        String audioUrl = message.getVoiceUrl() != null ?
-                                message.getVoiceUrl() : message.getImageUrl();
-
                         audioPlayListener.onAudioPlayClick(
-                                audioUrl,
+                                finalAudioUrl,
                                 playButton,
                                 duration,
                                 null,
@@ -2403,8 +2418,15 @@ public class MessageHolders {
                     }
                 });
 
-                // Set message status icon
-                setMessageStatus(message);
+                // Set message status icon (for outgoing only)
+                if (messageStatus != null) {
+                    setMessageStatus(message);
+                }
+            } else {
+                // Hide voice UI if this isn't actually a voice message
+                if (playButton != null) playButton.setVisibility(View.GONE);
+                if (duration != null) duration.setVisibility(View.GONE);
+                if (waveformContainer != null) waveformContainer.setVisibility(View.GONE);
             }
         }
 
@@ -2494,9 +2516,15 @@ public class MessageHolders {
         public void onBind(MessageContentType.Image message) {
             super.onBind(message);
 
-            // Check if this is a voice message
-            boolean isVoiceMessage = message.getVoiceDuration() > 0 ||
-                    (message.getImageUrl() != null && message.getImageUrl().endsWith(".mp3"));
+            // Check if this is a voice message - UPDATED LOGIC
+            boolean isVoiceMessage = message.getVoiceUrl() != null && !message.getVoiceUrl().isEmpty();
+
+            // Fallback checks
+            if (!isVoiceMessage) {
+                isVoiceMessage = message.getVoiceDuration() > 0 ||
+                        (message.getImageUrl() != null && message.getImageUrl().endsWith(".mp3")) ||
+                        (message.getAudioUrl() != null && (message.getAudioUrl().contains("/vn/") || message.getAudioUrl().contains("rec_")));
+            }
 
             if (isVoiceMessage) {
                 // Make voice UI visible
@@ -2504,9 +2532,20 @@ public class MessageHolders {
                 if (duration != null) duration.setVisibility(View.VISIBLE);
                 if (waveformContainer != null) waveformContainer.setVisibility(View.VISIBLE);
 
+                // Get the voice URL from multiple sources
+                String audioUrl = message.getVoiceUrl();
+                if (audioUrl == null || audioUrl.isEmpty()) {
+                    audioUrl = message.getImageUrl();
+                }
+                if (audioUrl == null || audioUrl.isEmpty()) {
+                    audioUrl = message.getAudioUrl();
+                }
+
                 // Set duration
-                int voiceDuration = message.getVoiceDuration() > 0 ?
-                        message.getVoiceDuration() : 3000; // Default 3 seconds
+                int voiceDuration = message.getVoiceDuration();
+                if (voiceDuration <= 0) {
+                    voiceDuration = 3000; // Default 3 seconds
+                }
                 duration.setText(formatDuration(voiceDuration));
 
                 // Set time
@@ -2522,17 +2561,15 @@ public class MessageHolders {
                 playButton.setImageResource(R.drawable.baseline_play_arrow_24);
 
                 // Set play button click listener
+                final String finalAudioUrl = audioUrl;
                 playButton.setOnClickListener(v -> {
-                    if (audioPlayListener != null) {
+                    if (audioPlayListener != null && finalAudioUrl != null && !finalAudioUrl.isEmpty()) {
                         isPlaying = !isPlaying;
                         playButton.setImageResource(isPlaying ?
                                 R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
 
-                        String audioUrl = message.getVoiceUrl() != null ?
-                                message.getVoiceUrl() : message.getImageUrl();
-
                         audioPlayListener.onAudioPlayClick(
-                                audioUrl,
+                                finalAudioUrl,
                                 playButton,
                                 duration,
                                 null,
@@ -2540,6 +2577,13 @@ public class MessageHolders {
                         );
                     }
                 });
+
+
+            } else {
+                // Hide voice UI if this isn't actually a voice message
+                if (playButton != null) playButton.setVisibility(View.GONE);
+                if (duration != null) duration.setVisibility(View.GONE);
+                if (waveformContainer != null) waveformContainer.setVisibility(View.GONE);
             }
         }
 
