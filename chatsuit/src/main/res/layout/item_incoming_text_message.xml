@@ -62,6 +62,8 @@
                 android:layout_alignRight="@id/messageText"
                 android:layout_alignBottom="@id/messageText"
                 android:layout_marginBottom="2dp"
+                android:textColor="@color/white"
+                android:textColorHint="@color/white"
                 android:textSize="11sp"
                 android:gravity="end" />
 
