@@ -8,8 +8,10 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.annotation.OptIn
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.Observer
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.social.circuit.R
@@ -453,6 +455,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         openTempChat(tempDialog)
     }
 
+    @OptIn(UnstableApi::class)
     private fun openTempChat(dialog: Dialog) {
         MessagesActivity.open(
             this@CreateChatActivity, "",
@@ -517,7 +520,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 null,
                 date
             ).apply {
-                setVoice(Message.Voice(voiceUrl!!, 10000))
+                setVoice(Message.Voice(voiceUrl!!, voiceDuration))
                 setStatus(status)
             }
         } else if (docUrl != null) {
@@ -529,14 +532,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 date
             ).apply {
 
-//                val size = getFileSize(messagedocUrl!!)
-//                setDocument(
-//                    Message.Document(
-//                        messagedocUrl!!,
-//                        getNameFromUrl(messagedocUrl!!),
-//                        formatFileSize(size)
-//                    )
-//                )
+
                 setStatus(status)
             }
         } else {
@@ -590,10 +586,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 }
                 return@launch
             } finally {
-                // Ensure the progress bar is hidden in case of an error
-//                withContext(Dispatchers.Main) {
-//                    dismissLoadingDialog()
-//                }
+
             }
 
             if (response.isSuccessful) {

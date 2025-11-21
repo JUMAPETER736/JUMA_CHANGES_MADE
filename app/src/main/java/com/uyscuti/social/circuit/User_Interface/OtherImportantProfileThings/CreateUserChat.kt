@@ -6,9 +6,11 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.activity.viewModels
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.Observer
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.social.circuit.R
@@ -159,6 +161,7 @@ class CreateUserChat : AppCompatActivity() {
         })
     }
 
+    @OptIn(UnstableApi::class)
     private fun initUserList() {
         userListView = binding.userList
         userListAdapter = SearchUserAdapter(this) {
@@ -188,7 +191,7 @@ class CreateUserChat : AppCompatActivity() {
                             this@CreateUserChat, "",
                             dialog, false
                         )
-//                        openChatActivity(chatId,chatName)
+
                         finish()
                     } else {
                         Log.d("UserDialog", "Dialog does not exist")
@@ -600,7 +603,7 @@ class CreateUserChat : AppCompatActivity() {
                 null,
                 date
             ).apply {
-                setVoice(Message.Voice(voiceUrl!!, 10000))
+                setVoice(Message.Voice(voiceUrl!!, voiceDuration))
                 setStatus(status)
             }
         } else if (docUrl != null) {
@@ -612,14 +615,7 @@ class CreateUserChat : AppCompatActivity() {
                 date
             ).apply {
 
-//                val size = getFileSize(messagedocUrl!!)
-//                setDocument(
-//                    Message.Document(
-//                        messagedocUrl!!,
-//                        getNameFromUrl(messagedocUrl!!),
-//                        formatFileSize(size)
-//                    )
-//                )
+
                 setStatus(status)
             }
         } else {
@@ -646,7 +642,7 @@ class CreateUserChat : AppCompatActivity() {
 
     private fun doInBackGround(user: User) {
         val singleUserList = arrayListOf(user)
-//        singleUserList.size
+
 
         Log.d("UserList", "Single User List Size : ${singleUserList.size}")
 
@@ -659,8 +655,7 @@ class CreateUserChat : AppCompatActivity() {
             0
         )
 
-//        chatParticipant.add(receiver.toUserEntity())
-//        chatParticipant.add(user.toUserEntity())
+
 
         val dialogEntity = DialogEntity(
             id = tempDialog.dialogName,
@@ -678,6 +673,7 @@ class CreateUserChat : AppCompatActivity() {
         openTempChat(tempDialog)
     }
 
+    @OptIn(UnstableApi::class)
     private fun openTempChat(dialog: Dialog) {
         MessagesActivity.Companion.open(
             this@CreateUserChat, "",

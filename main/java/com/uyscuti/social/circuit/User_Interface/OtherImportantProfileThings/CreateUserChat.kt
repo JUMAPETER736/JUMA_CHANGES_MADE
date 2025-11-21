@@ -593,18 +593,18 @@ class CreateUserChat : AppCompatActivity() {
                 setStatus(status)
             }
         } else if (voiceUrl != null) {
-//                        user.id = "0"
+
             Message(
                 id,
                 user,
                 null,
                 date
             ).apply {
-                setVoice(Message.Voice(voiceUrl!!, 10000))
+                setVoice(Message.Voice(voiceUrl!!, voiceDuration))
                 setStatus(status)
             }
         } else if (docUrl != null) {
-//                        user.id = "0"
+
             Message(
                 id,
                 user,
@@ -612,14 +612,7 @@ class CreateUserChat : AppCompatActivity() {
                 date
             ).apply {
 
-//                val size = getFileSize(messagedocUrl!!)
-//                setDocument(
-//                    Message.Document(
-//                        messagedocUrl!!,
-//                        getNameFromUrl(messagedocUrl!!),
-//                        formatFileSize(size)
-//                    )
-//                )
+
                 setStatus(status)
             }
         } else {
@@ -646,7 +639,7 @@ class CreateUserChat : AppCompatActivity() {
 
     private fun doInBackGround(user: User) {
         val singleUserList = arrayListOf(user)
-//        singleUserList.size
+
 
         Log.d("UserList", "Single User List Size : ${singleUserList.size}")
 
@@ -659,8 +652,7 @@ class CreateUserChat : AppCompatActivity() {
             0
         )
 
-//        chatParticipant.add(receiver.toUserEntity())
-//        chatParticipant.add(user.toUserEntity())
+
 
         val dialogEntity = DialogEntity(
             id = tempDialog.dialogName,
@@ -673,7 +665,7 @@ class CreateUserChat : AppCompatActivity() {
 
         insertDialog(dialogEntity)
 
-//        createUserChat(user.id, user)
+
 
         openTempChat(tempDialog)
     }

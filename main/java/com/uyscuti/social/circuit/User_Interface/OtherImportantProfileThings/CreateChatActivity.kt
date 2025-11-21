@@ -471,7 +471,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
 
         // Check if the text is "None" and imageUrl is not null
         val messageContent = if (imageUrl != null) {
-//                        user.id = "0"
+
             Message(
                 id,
                 user,
@@ -482,7 +482,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 setStatus(status)
             }
         } else if (videoUrl != null) {
-//                        user.id = "0"
+
             Message(
                 id,
                 user,
@@ -493,7 +493,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 setStatus(status)
             }
         } else if (audioUrl != null) {
-//                        user.id = "0"
+
             Message(
                 id,
                 user,
@@ -510,18 +510,18 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 setStatus(status)
             }
         } else if (voiceUrl != null) {
-//                        user.id = "0"
+
             Message(
                 id,
                 user,
                 null,
                 date
             ).apply {
-                setVoice(Message.Voice(voiceUrl!!, 10000))
+                setVoice(Message.Voice(voiceUrl!!, voiceDuration))
                 setStatus(status)
             }
         } else if (docUrl != null) {
-//                        user.id = "0"
+
             Message(
                 id,
                 user,
@@ -529,14 +529,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 date
             ).apply {
 
-//                val size = getFileSize(messagedocUrl!!)
-//                setDocument(
-//                    Message.Document(
-//                        messagedocUrl!!,
-//                        getNameFromUrl(messagedocUrl!!),
-//                        formatFileSize(size)
-//                    )
-//                )
+
                 setStatus(status)
             }
         } else {
