@@ -2010,6 +2010,146 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
     }
 
+    override fun onNewMessage(message: com.uyscuti.social.network.api.models.Message) {
+        CoroutineScope(Dispatchers.IO).launch {
+            Log.d(TAG, "In This Chat : $message")
+            Log.d(TAG, "In This Chat attachment: ${message.attachments}")
+
+            if (message.chat == chatId) {
+                val user = User(
+                    "1",
+                    message.sender.username,
+                    message.sender.avatar.url,
+                    true, Date()
+                )
+
+                // Initialize URLs as null
+                var imageUrl: String? = null
+                var audioUrl: String? = null
+                var videoUrl: String? = null
+                var docUrl: String? = null
+                var voiceUrl: String? = null  // ADD THIS
+
+                // Handle attachments and assign URLs
+                if (message.attachments != null && message.attachments?.isNotEmpty() == true) {
+                    val attachments = message.attachments
+                    if (attachments != null) {
+                        for (attachment in attachments) {
+                            when (getFileType(attachment.url)) {
+                                FileType.IMAGE -> {
+                                    imageUrl = attachment.url
+                                    Log.d(
+                                        "Received Attachment",
+                                        "Image, Path Of Image Received: $imageUrl"
+                                    )
+                                }
+
+                                FileType.AUDIO -> {
+                                    // Check if it's a voice note
+                                    // Voice notes have "rec_" in filename or are in /vn/ directory
+                                    if (attachment.url.contains("rec_") && attachment.url.endsWith(".mp3")) {
+                                        voiceUrl = attachment.url
+                                        Log.d(
+                                            "Received Attachment",
+                                            "Voice Note, Path: $voiceUrl"
+                                        )
+                                    } else {
+                                        audioUrl = attachment.url
+                                        Log.d(
+                                            "Received Attachment",
+                                            "Audio, Path: $audioUrl"
+                                        )
+                                    }
+                                }
+
+                                FileType.VIDEO -> {
+                                    videoUrl = attachment.url
+                                    Log.d(
+                                        "Received Attachment",
+                                        "Video, Path Of Image Received: $videoUrl"
+                                    )
+                                }
+
+                                FileType.DOCUMENT -> {
+                                    docUrl = attachment.url
+                                    Log.d(
+                                        "Received Attachment",
+                                        "Document, Path Of Image Received: $docUrl"
+                                    )
+                                }
+
+                                FileType.OTHER -> {
+                                    // Handle other types, if needed
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Log.d(TAG, "In This Chat : ${message.content}")
+
+                val createdAt = convertIso8601ToUnixTimestamp(message.createdAt)
+                val date = Date(createdAt)
+
+                val newMessage = Message(
+                    message._id,
+                    user,
+                    message.content,
+                    date
+                )
+
+                newMessage.setImage(imageUrl?.let { Message.Image(it) })
+                newMessage.setVideo(videoUrl?.let { Message.Video(it) })
+                newMessage.setDocument(
+                    docUrl?.let {
+                        Message.Document(
+                            it,
+                            getNameFromUrl(docUrl),
+                            formatFileSize(getFileSize(docUrl))
+                        )
+                    }
+                )
+
+                // ADD THIS: Set voice message
+                newMessage.setVoice(
+                    voiceUrl?.let {
+                        Message.Voice(
+                            it,
+                            0  // Duration - will be extracted by the view holder
+                        )
+                    }
+                )
+
+                // Set regular audio (non-voice)
+                newMessage.setAudio(
+                    audioUrl?.let {
+                        Message.Audio(
+                            it,
+                            0,
+                            getNameFromUrl(audioUrl)
+                        )
+                    }
+                )
+
+                withContext(Dispatchers.Main) {
+                    super.messagesAdapter?.addToStart(newMessage, true)
+                }
+
+                if (!isGroup) {
+                    onMessageDelivered(message._id)
+                    delay(700)
+                    sendSeenReport(chatId, message.sender._id)
+                }
+
+                if (isGroup) {
+                    resetGroupUnreadCount(chatId)
+                } else {
+                    resetUnreadCount(dialog)
+                }
+            }
+        }
+    }
+
     override fun onSubmit(input: CharSequence): Boolean {
 
         val user = User("0", "You", "avatar", true, Date())
@@ -2227,14 +2367,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             super.messagesAdapter?.addToStart(message, true)
                         }
 
-//                        sendFile(imagePath, message)
 
-// Convert the image path to a File or use the path directly if it's a valid file path
-                        //val imageFile = File(imagePath)
-
-
-//
-                        // sendFile(chatId, imagePath)
                     }
                 }
 
@@ -4027,135 +4160,135 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
     }
 
-    override fun onNewMessage(message: com.uyscuti.social.network.api.models.Message) {
-        CoroutineScope(Dispatchers.IO).launch {
-            Log.d(TAG, "In This Chat : $message")
-            Log.d(TAG, "In This Chat attachment: ${message.attachments}")
-
-
-
-            if (message.chat == chatId) {
-                val user = User(
-                    "1",
-                    message.sender.username,
-                    message.sender.avatar.url,
-                    true, Date()
-                )
-
-                // Initialize URLs as null
-                var imageUrl: String? = null
-                var audioUrl: String? = null
-                var videoUrl: String? = null
-                var docUrl: String? = null
-
-                // Handle attachments and assign URLs
-                if (message.attachments != null && message.attachments?.isNotEmpty() == true) {
-                    val attachments = message.attachments
-                    if (attachments != null) {
-                        for (attachment in attachments) {
-                            when (getFileType(attachment.url)) {
-                                FileType.IMAGE -> {
-                                    imageUrl = attachment.url
-                                    Log.d(
-                                        "Received Attachment",
-                                        "Image, Path Of Image Received: $imageUrl"
-                                    )
-                                }
-
-                                FileType.AUDIO -> {
-                                    audioUrl = attachment.url
-                                    Log.d(
-                                        "Received Attachment",
-                                        "Audi, Path Of Image Received: $audioUrl"
-                                    )
-
-                                }
-
-                                FileType.VIDEO -> {
-                                    videoUrl = attachment.url
-                                    Log.d(
-                                        "Received Attachment",
-                                        "Video, Path Of Image Received: $videoUrl"
-                                    )
-
-                                }
-
-                                FileType.DOCUMENT -> {
-                                    docUrl = attachment.url
-                                    Log.d(
-                                        "Received Attachment",
-                                        "Document, Path Of Image Received: $docUrl"
-                                    )
-
-                                }
-
-                                FileType.OTHER -> {
-                                    // Handle other types, if needed
-                                }
-                            }
-                        }
-                    }
-                }
-
-
-                Log.d(TAG, "In This Chat : ${message.content}")
-
-                val createdAt = convertIso8601ToUnixTimestamp(message.createdAt)
-
-                val date = Date(createdAt)
-
-                val newMessage = Message(
-                    message._id,
-                    user,
-                    message.content,
-                    date
-                )
-
-                newMessage.setImage(imageUrl?.let { Message.Image(it) })
-
-                newMessage.setVideo(videoUrl?.let { Message.Video(it) })
-
-                newMessage.setDocument(
-                    docUrl?.let {
-                        Message.Document(
-                            it,
-                            getNameFromUrl(docUrl),
-                            formatFileSize(getFileSize(docUrl))
-                        )
-                    }
-                )
-
-                newMessage.setAudio(
-                    audioUrl?.let {
-                        Message.Audio(
-                            it,
-                            0,
-                            getNameFromUrl(audioUrl)
-                        )
-                    }
-                )
-
-                withContext(Dispatchers.Main) {
-                    super.messagesAdapter?.addToStart(newMessage, true)
-                }
-
-                if (!isGroup){
-
-                    onMessageDelivered(message._id)
-                    delay(700)
-                    sendSeenReport(chatId,message.sender._id)
-                }
-
-                if(isGroup){
-                    resetGroupUnreadCount(chatId)
-                } else {
-                    resetUnreadCount(dialog)
-                }
-
-
-            }
-        }
-    }
+//    override fun onNewMessage(message: com.uyscuti.social.network.api.models.Message) {
+//        CoroutineScope(Dispatchers.IO).launch {
+//            Log.d(TAG, "In This Chat : $message")
+//            Log.d(TAG, "In This Chat attachment: ${message.attachments}")
+//
+//
+//
+//            if (message.chat == chatId) {
+//                val user = User(
+//                    "1",
+//                    message.sender.username,
+//                    message.sender.avatar.url,
+//                    true, Date()
+//                )
+//
+//                // Initialize URLs as null
+//                var imageUrl: String? = null
+//                var audioUrl: String? = null
+//                var videoUrl: String? = null
+//                var docUrl: String? = null
+//
+//                // Handle attachments and assign URLs
+//                if (message.attachments != null && message.attachments?.isNotEmpty() == true) {
+//                    val attachments = message.attachments
+//                    if (attachments != null) {
+//                        for (attachment in attachments) {
+//                            when (getFileType(attachment.url)) {
+//                                FileType.IMAGE -> {
+//                                    imageUrl = attachment.url
+//                                    Log.d(
+//                                        "Received Attachment",
+//                                        "Image, Path Of Image Received: $imageUrl"
+//                                    )
+//                                }
+//
+//                                FileType.AUDIO -> {
+//                                    audioUrl = attachment.url
+//                                    Log.d(
+//                                        "Received Attachment",
+//                                        "Audi, Path Of Image Received: $audioUrl"
+//                                    )
+//
+//                                }
+//
+//                                FileType.VIDEO -> {
+//                                    videoUrl = attachment.url
+//                                    Log.d(
+//                                        "Received Attachment",
+//                                        "Video, Path Of Image Received: $videoUrl"
+//                                    )
+//
+//                                }
+//
+//                                FileType.DOCUMENT -> {
+//                                    docUrl = attachment.url
+//                                    Log.d(
+//                                        "Received Attachment",
+//                                        "Document, Path Of Image Received: $docUrl"
+//                                    )
+//
+//                                }
+//
+//                                FileType.OTHER -> {
+//                                    // Handle other types, if needed
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//
+//
+//                Log.d(TAG, "In This Chat : ${message.content}")
+//
+//                val createdAt = convertIso8601ToUnixTimestamp(message.createdAt)
+//
+//                val date = Date(createdAt)
+//
+//                val newMessage = Message(
+//                    message._id,
+//                    user,
+//                    message.content,
+//                    date
+//                )
+//
+//                newMessage.setImage(imageUrl?.let { Message.Image(it) })
+//
+//                newMessage.setVideo(videoUrl?.let { Message.Video(it) })
+//
+//                newMessage.setDocument(
+//                    docUrl?.let {
+//                        Message.Document(
+//                            it,
+//                            getNameFromUrl(docUrl),
+//                            formatFileSize(getFileSize(docUrl))
+//                        )
+//                    }
+//                )
+//
+//                newMessage.setAudio(
+//                    audioUrl?.let {
+//                        Message.Audio(
+//                            it,
+//                            0,
+//                            getNameFromUrl(audioUrl)
+//                        )
+//                    }
+//                )
+//
+//                withContext(Dispatchers.Main) {
+//                    super.messagesAdapter?.addToStart(newMessage, true)
+//                }
+//
+//                if (!isGroup){
+//
+//                    onMessageDelivered(message._id)
+//                    delay(700)
+//                    sendSeenReport(chatId,message.sender._id)
+//                }
+//
+//                if(isGroup){
+//                    resetGroupUnreadCount(chatId)
+//                } else {
+//                    resetUnreadCount(dialog)
+//                }
+//
+//
+//            }
+//        }
+//    }
 
     private fun sendDeliveryReport(chatId: String,senderId: String){
         try {
