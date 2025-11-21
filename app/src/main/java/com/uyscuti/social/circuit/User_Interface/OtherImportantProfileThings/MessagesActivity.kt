@@ -1054,7 +1054,12 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
             Log.d("VoiceNote", "Sending voice note: $vnPath, size: ${newFile.length()} bytes")
 
-            val user = User("0", "You", "test", true, Date())
+            // Get current user info - use your actual user data variables
+            val currentUserId = myId // or however you store current user ID
+            val currentUserName = username // or however you store username
+            val currentUserAvatar = "test" // or however you store user avatar
+
+            val user = User(currentUserId, currentUserName, currentUserAvatar, true, Date())
             val date = Date(System.currentTimeMillis())
             val messageId = "Voice_${System.currentTimeMillis()}"
 
@@ -1072,33 +1077,30 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
             val voiceUrl = Uri.fromFile(newFile)
 
-            // Create message with NULL text
+            // Create UI message
             val message = Message(messageId, user, null, date)
-
-            // Set voice BEFORE setting user/status
             message.setVoice(Message.Voice(voiceUrl.toString(), duration.toInt()))
             message.setUser(user)
             message.status = "Sending"
 
-            // ✅ Use getVoice() instead of .voice
             Log.d("VoiceNote", "Message voice set: ${message.getVoice() != null}, duration: ${message.getVoice()?.duration}")
 
             val userEntity = UserEntity(
-                "0",
-                "You",
-                "local",
-                Date(),
-                true
+                id = currentUserId,
+                name = currentUserName,
+                avatar = currentUserAvatar,
+                lastSeen = Date(System.currentTimeMillis()),
+                online = true
             )
 
             // Create MessageEntity
             val voiceMessage = MessageEntity(
                 id = messageId,
                 chatId = chatId,
-                userName = "You",
+                userName = currentUserName,
                 user = userEntity,
-                userId = myId,
-                text = "",  // Empty string since text field is non-nullable
+                userId = currentUserId,
+                text = "",
                 createdAt = System.currentTimeMillis(),
                 imageUrl = null,
                 voiceUrl = voiceUrl.toString(),
@@ -1111,41 +1113,116 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 deleted = false
             )
 
-            // Save to database
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    insertMessage(voiceMessage)
-                    updateLastMessage(isGroup, chatId, voiceMessage)
-                    Log.d("VoiceNote", "✅ Voice message saved to DB")
-                } catch (e: Exception) {
-                    Log.e("VoiceNote", "❌ Error saving message: ${e.message}")
-                }
-            }
-
-            // Add to UI immediately
-            CoroutineScope(Dispatchers.Main).launch {
-                // ✅ Use getVoice() instead of .voice
+            // Add to UI IMMEDIATELY
+            runOnUiThread {
                 if (message.getVoice() != null) {
                     Log.d("VoiceNote", "✅ Adding voice message to adapter")
                     messagesAdapter?.addToStart(message, true)
-
-                    // Verify it was added
-                    delay(200)
-                    val firstMsg = messagesAdapter?.getItems()?.firstOrNull()?.item as? Message
-                    // ✅ Use getVoice() instead of .voice
-                    Log.d("VoiceNote", "First message in adapter - hasVoice: ${firstMsg?.getVoice() != null}, text: '${firstMsg?.text}'")
                 } else {
                     Log.e("VoiceNote", "❌ ERROR: Voice is null, cannot add to adapter")
                 }
-
-                delay(100)
-                resetVoiceNoteUI()
             }
+
+            // Save to database and send to server
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    // Save to database first
+                    insertMessage(voiceMessage)
+                    updateLastMessage(isGroup, chatId, voiceMessage)
+                    Log.d("VoiceNote", "✅ Voice message saved to DB")
+
+                    // NOW SEND TO SERVER
+                    withContext(Dispatchers.Main) {
+                        val encodedFilePath = URLEncoder.encode(vnPath, "UTF-8")
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            val contentUri = try {
+                                getFileUri(this@MessagesActivity, vnPath)
+                            } catch (e: Exception) {
+                                Uri.fromFile(File(vnPath))
+                            }
+
+                            sendAttachmentContent(contentUri, voiceMessage) { success ->
+                                if (success) {
+                                    Log.d("VoiceNote", "✅ Voice note sent successfully")
+                                    updateMessageStatusInUI(messageId, "Sent")
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        voiceMessage.status = "Sent"
+                                        messageViewModel.updateMessage(voiceMessage)
+                                    }
+                                } else {
+                                    Log.e("VoiceNote", "❌ Failed to send voice note")
+                                    updateMessageStatusInUI(messageId, "Failed")
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        voiceMessage.status = "Failed"
+                                        messageViewModel.updateMessage(voiceMessage)
+                                    }
+                                }
+                            }
+                        } else {
+                            sendAttachment(encodedFilePath, voiceMessage) { success ->
+                                if (success) {
+                                    Log.d("VoiceNote", "✅ Voice note sent successfully")
+                                    updateMessageStatusInUI(messageId, "Sent")
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        voiceMessage.status = "Sent"
+                                        messageViewModel.updateMessage(voiceMessage)
+                                    }
+                                } else {
+                                    Log.e("VoiceNote", "❌ Failed to send voice note")
+                                    updateMessageStatusInUI(messageId, "Failed")
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        voiceMessage.status = "Failed"
+                                        messageViewModel.updateMessage(voiceMessage)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("VoiceNote", "❌ Error saving/sending message: ${e.message}")
+                    withContext(Dispatchers.Main) {
+                        updateMessageStatusInUI(messageId, "Failed")
+                    }
+                }
+            }
+
+            // Reset UI after a short delay
+            Handler(Looper.getMainLooper()).postDelayed({
+                resetVoiceNoteUI()
+            }, 300)
 
         } catch (e: Exception) {
             Log.e("VoiceNote", "Error sending voice note: ${e.message}", e)
             showToast("Failed to send voice note")
             resetVoiceNoteUI()
+        }
+    }
+
+    // Updated helper method to find message properly
+    private fun updateMessageStatusInUI(messageId: String, status: String) {
+        runOnUiThread {
+            try {
+                // Get all messages from adapter
+                val allMessages = messagesAdapter?.getItems()
+
+                // Find the message with matching ID
+                val messageWrapper = allMessages?.find { wrapper ->
+                    (wrapper.item as? Message)?.id == messageId
+                }
+
+                val message = messageWrapper?.item as? Message
+
+                if (message != null) {
+                    message.status = status
+                    messagesAdapter?.update(message)
+                    Log.d("VoiceNote", "✅ Updated message status to: $status")
+                } else {
+                    Log.e("VoiceNote", "❌ Could not find message with ID: $messageId")
+                }
+            } catch (e: Exception) {
+                Log.e("VoiceNote", "❌ Error updating message status: ${e.message}")
+            }
         }
     }
 
