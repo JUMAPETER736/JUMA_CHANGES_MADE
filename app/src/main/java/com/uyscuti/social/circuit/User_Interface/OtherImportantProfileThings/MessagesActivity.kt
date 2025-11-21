@@ -1888,7 +1888,7 @@ class MessagesActivity : MainMessagesActivity(),
                 dialogId = dialog!!.id
             )
 
-            Log.d(TAG, "Opening profile for user: ${user.name} (${user.id})")
+            Log.d(TAG, "Opening profile for username: ${user.name}, And User ID:${user.id}")
         } else {
             // Fallback if dialog is null but we have intent data
             val friendId = intent.getStringExtra("firstUserId")
@@ -1906,7 +1906,7 @@ class MessagesActivity : MainMessagesActivity(),
                     putExtra("extra_dialog_id", chatId)
                 }
                 startActivity(intent)
-                Log.d(TAG, "Opening profile (fallback) for user: $friendName ($friendId)")
+                Log.d(TAG, "Opening profile (fallback) for username: $friendName, And User ID: $friendId")
             } else {
                 Toast.makeText(this, "Unable to open profile. User data not available.", Toast.LENGTH_SHORT).show()
                 Log.e(TAG, "Cannot open profile - missing user data")
