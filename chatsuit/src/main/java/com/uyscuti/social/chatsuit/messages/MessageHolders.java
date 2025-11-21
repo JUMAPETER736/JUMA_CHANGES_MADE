@@ -5,7 +5,9 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.media.MediaMetadataRetriever;
+import android.media.MediaPlayer;
 import android.os.Build;
+import android.os.Handler;
 import android.text.Spannable;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
@@ -737,6 +739,11 @@ public class MessageHolders {
             bubble = itemView.findViewById(R.id.bubble);
             text = itemView.findViewById(R.id.messageText);
         }
+
+        @Override
+        public void onViewRecycled() {
+
+        }
     }
 
 
@@ -797,6 +804,11 @@ public class MessageHolders {
         private void init(View itemView) {
             bubble = itemView.findViewById(R.id.bubble);
             text = itemView.findViewById(R.id.messageText);
+        }
+
+        @Override
+        public void onViewRecycled() {
+
         }
     }
 
@@ -1093,6 +1105,11 @@ public class MessageHolders {
                 );
             }
         }
+
+        @Override
+        public void onViewRecycled() {
+
+        }
     }
 
     public static class IncomingImageMessageViewHolder<MESSAGE extends MessageContentType.Image>
@@ -1295,6 +1312,11 @@ public class MessageHolders {
                 );
             }
         }
+
+        @Override
+        public void onViewRecycled() {
+
+        }
     }
     public static class OutcomingImageMessageViewHolder<MESSAGE extends MessageContentType.Image>
             extends BaseOutcomingMessageViewHolder<MESSAGE> {
@@ -1409,6 +1431,11 @@ public class MessageHolders {
                         R.dimen.message_bubble_corners_radius
                 );
             }
+        }
+
+        @Override
+        public void onViewRecycled() {
+
         }
     }
 
@@ -1563,6 +1590,11 @@ public class MessageHolders {
                 );
             }
         }
+
+        @Override
+        public void onViewRecycled() {
+
+        }
     }
 
     //    OutGoing Doc Holder
@@ -1689,6 +1721,11 @@ public class MessageHolders {
                 );
             }
         }
+
+        @Override
+        public void onViewRecycled() {
+
+        }
     }
 
     //    InComing Audio Holder
@@ -1808,6 +1845,11 @@ public class MessageHolders {
 //        playAudio = itemView.findViewById(R.id.playVideo);
             bubble = itemView.findViewById(R.id.bubble);
 
+
+        }
+
+        @Override
+        public void onViewRecycled() {
 
         }
     }
@@ -1970,6 +2012,11 @@ public class MessageHolders {
 
 
         }
+
+        @Override
+        public void onViewRecycled() {
+
+        }
     }
 
 
@@ -2069,6 +2116,11 @@ public class MessageHolders {
                         R.dimen.message_bubble_corners_radius
                 );
             }
+        }
+
+        @Override
+        public void onViewRecycled() {
+
         }
     }
 
@@ -2191,6 +2243,8 @@ public class MessageHolders {
             userAvatar = itemView.findViewById(R.id.messageUserAvatar);
             userName = itemView.findViewById(R.id.userName);
         }
+
+        public abstract void onViewRecycled();
     }
 
 
@@ -2256,6 +2310,8 @@ public class MessageHolders {
             time = itemView.findViewById(R.id.messageTime);
             status = itemView.findViewById(R.id.status);
         }
+
+        public abstract void onViewRecycled();
     }
 
 
@@ -2343,6 +2399,7 @@ public class MessageHolders {
         }
     }
 
+
     public static class DefaultOutGoingVoiceMessageViewHolder
             extends MessageHolders.BaseOutcomingMessageViewHolder<MessageContentType.Image> {
 
@@ -2354,6 +2411,11 @@ public class MessageHolders {
         private LinearLayout waveformContainer;
 
         private boolean isPlaying = false;
+        private MediaPlayer mediaPlayer;
+        private Handler handler = new Handler();
+        private int currentDuration = 0;
+        private int totalDuration = 0;
+        private int currentWavePosition = 0;
 
         public DefaultOutGoingVoiceMessageViewHolder(View itemView) {
             super(itemView);
@@ -2365,61 +2427,27 @@ public class MessageHolders {
             waveformContainer = itemView.findViewById(R.id.waveformContainer);
 
             Log.d("VoiceViewHolder", "Constructor called");
-            Log.d("VoiceViewHolder", "playButton found: " + (playButton != null));
-            Log.d("VoiceViewHolder", "waveformContainer found: " + (waveformContainer != null));
         }
 
         @Override
         public void onBind(MessageContentType.Image message) {
             super.onBind(message);
 
-            // DEBUG LOGS
-
-            Log.d("VoiceViewHolder", "Voice Note ID: " + message.getId());
-            Log.d("VoiceViewHolder", "voiceUrl: " + message.getVoiceUrl());
-            Log.d("VoiceViewHolder", "voiceDuration: " + message.getVoiceDuration());
-            Log.d("VoiceViewHolder", "playButton null? " + (playButton == null));
-            Log.d("VoiceViewHolder", "waveformContainer null? " + (waveformContainer == null));
-            Log.d("VoiceViewHolder", "duration null? " + (duration == null));
-
-            // Check if this is a voice message
             boolean isVoiceMessage = message.getVoiceUrl() != null && !message.getVoiceUrl().isEmpty();
 
-            // Fallback checks
             if (!isVoiceMessage) {
                 isVoiceMessage = message.getVoiceDuration() > 0 ||
                         (message.getImageUrl() != null && message.getImageUrl().endsWith(".mp3")) ||
                         (message.getAudioUrl() != null && (message.getAudioUrl().contains("/vn/") || message.getAudioUrl().contains("rec_")));
             }
 
-            Log.d("VoiceViewHolder", "isVoiceMessage: " + isVoiceMessage);
-
             if (isVoiceMessage) {
                 Log.d("VoiceViewHolder", "Rendering as VOICE MESSAGE");
 
-                // Make voice UI visible
-                if (playButton != null) {
-                    playButton.setVisibility(View.VISIBLE);
-                    Log.d("VoiceViewHolder", "Play button set to VISIBLE");
-                } else {
-                    Log.e("VoiceViewHolder", "playButton is NULL!");
-                }
+                if (playButton != null) playButton.setVisibility(View.VISIBLE);
+                if (duration != null) duration.setVisibility(View.VISIBLE);
+                if (waveformContainer != null) waveformContainer.setVisibility(View.VISIBLE);
 
-                if (duration != null) {
-                    duration.setVisibility(View.VISIBLE);
-                    Log.d("VoiceViewHolder", "Duration set to VISIBLE");
-                } else {
-                    Log.e("VoiceViewHolder", "duration is NULL!");
-                }
-
-                if (waveformContainer != null) {
-                    waveformContainer.setVisibility(View.VISIBLE);
-                    Log.d("VoiceViewHolder", "Waveform container set to VISIBLE");
-                } else {
-                    Log.e("VoiceViewHolder", "waveformContainer is NULL!");
-                }
-
-                // Get the voice URL from multiple sources
                 String audioUrl = message.getVoiceUrl();
                 if (audioUrl == null || audioUrl.isEmpty()) {
                     audioUrl = message.getImageUrl();
@@ -2428,73 +2456,167 @@ public class MessageHolders {
                     audioUrl = message.getAudioUrl();
                 }
 
-                Log.d("VoiceViewHolder", "Final audioUrl: " + audioUrl);
-
-                // Set duration
-                int voiceDuration = message.getVoiceDuration();
-                if (voiceDuration <= 0) {
-                    voiceDuration = 3000; // Default 3 seconds
+                totalDuration = message.getVoiceDuration();
+                if (totalDuration <= 0) {
+                    totalDuration = 3000;
                 }
 
+                // Show total duration before playing
                 if (duration != null) {
-                    String durationText = formatDuration(voiceDuration);
-                    duration.setText(durationText);
-                    Log.d("VoiceViewHolder", "Duration text set: " + durationText);
+                    duration.setText(formatDuration(totalDuration));
                 }
 
-                // Set time
                 if (message.getCreatedAt() != null && time != null) {
                     time.setText(formatTime(message.getCreatedAt()));
                 }
 
-                // Generate waveform
                 if (waveformContainer != null) {
-                    Log.d("VoiceViewHolder", "Generating waveform...");
-                    generateWaveform(voiceDuration);
-                    Log.d("VoiceViewHolder", "Waveform generated");
+                    generateWaveform(totalDuration);
                 }
 
-                // Reset play state
-                isPlaying = false;
-                if (playButton != null) {
-                    playButton.setImageResource(R.drawable.baseline_play_arrow_24);
-                }
+                resetPlayState();
 
-                // Set play button click listener
                 final String finalAudioUrl = audioUrl;
+                final MessageContentType.Image finalMessage = message;
+
                 if (playButton != null) {
                     playButton.setOnClickListener(v -> {
-                        if (audioPlayListener != null && finalAudioUrl != null && !finalAudioUrl.isEmpty()) {
-                            isPlaying = !isPlaying;
-                            playButton.setImageResource(isPlaying ?
-                                    R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
-
-                            audioPlayListener.onAudioPlayClick(
-                                    finalAudioUrl,
-                                    playButton,
-                                    duration,
-                                    null,
-                                    message
-                            );
+                        if (finalAudioUrl != null && !finalAudioUrl.isEmpty()) {
+                            if (!isPlaying) {
+                                startPlaying(finalAudioUrl, finalMessage);
+                            } else {
+                                pausePlaying();
+                            }
                         }
                     });
                 }
 
-                // Set message status icon
                 if (messageStatus != null) {
                     setMessageStatus(message);
                 }
 
-                Log.d("VoiceViewHolder", "Voice message rendering complete");
             } else {
-                Log.d("VoiceViewHolder", "NOT a voice message - hiding UI");
-                // Hide voice UI
                 if (playButton != null) playButton.setVisibility(View.GONE);
                 if (duration != null) duration.setVisibility(View.GONE);
                 if (waveformContainer != null) waveformContainer.setVisibility(View.GONE);
             }
+        }
 
+        private void startPlaying(String audioUrl, MessageContentType.Image message) {
+            isPlaying = true;
+            currentDuration = 0;
+            currentWavePosition = 0;
 
+            // Animate play button scaling
+            if (playButton != null) {
+                playButton.animate()
+                        .scaleX(1.2f)
+                        .scaleY(1.2f)
+                        .setDuration(150)
+                        .withEndAction(() -> playButton.setImageResource(R.drawable.baseline_pause_24))
+                        .start();
+            }
+
+            // Notify listener to start playing
+            if (audioPlayListener != null) {
+                audioPlayListener.onAudioPlayClick(
+                        audioUrl,
+                        playButton,
+                        duration,
+                        null,
+                        message
+                );
+            }
+
+            // Update duration every 100ms
+            updateDurationRunnable();
+        }
+
+        private void updateDurationRunnable() {
+            if (isPlaying && duration != null) {
+                currentDuration += 100;
+                duration.setText(formatDuration(currentDuration));
+
+                // Update waveform animation
+                updateWaveformProgress();
+
+                if (currentDuration <= totalDuration) {
+                    handler.postDelayed(this::updateDurationRunnable, 100);
+                } else {
+                    finishPlaying();
+                }
+            }
+        }
+
+        private void updateWaveformProgress() {
+            if (waveformContainer == null) return;
+
+            float progress = (float) currentDuration / totalDuration;
+            int barCount = waveformContainer.getChildCount();
+            int progressBar = (int) (barCount * progress);
+
+            for (int i = 0; i < barCount; i++) {
+                View bar = waveformContainer.getChildAt(i);
+                if (bar != null) {
+                    if (i < progressBar) {
+                        // Highlight bars that have been played
+                        bar.setAlpha(1.0f);
+                        bar.setScaleY(1.15f);
+                    } else {
+                        // Dim bars that haven't been played yet
+                        bar.setAlpha(0.4f);
+                        bar.setScaleY(1.0f);
+                    }
+                }
+            }
+        }
+
+        private void pausePlaying() {
+            isPlaying = false;
+            handler.removeCallbacksAndMessages(null);
+
+            if (playButton != null) {
+                playButton.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(150)
+                        .withEndAction(() -> playButton.setImageResource(R.drawable.baseline_play_arrow_24))
+                        .start();
+            }
+        }
+
+        private void finishPlaying() {
+            isPlaying = false;
+            handler.removeCallbacksAndMessages(null);
+            resetPlayState();
+        }
+
+        private void resetPlayState() {
+            isPlaying = false;
+            currentDuration = 0;
+            currentWavePosition = 0;
+
+            if (playButton != null) {
+                playButton.setScaleX(1.0f);
+                playButton.setScaleY(1.0f);
+                playButton.setImageResource(R.drawable.baseline_play_arrow_24);
+            }
+
+            // Reset duration to show total duration again
+            if (duration != null) {
+                duration.setText(formatDuration(totalDuration));
+            }
+
+            // Reset waveform
+            if (waveformContainer != null) {
+                for (int i = 0; i < waveformContainer.getChildCount(); i++) {
+                    View bar = waveformContainer.getChildAt(i);
+                    if (bar != null) {
+                        bar.setAlpha(0.8f);
+                        bar.setScaleY(1.0f);
+                    }
+                }
+            }
         }
 
         private void setMessageStatus(MessageContentType.Image message) {
@@ -2506,16 +2628,13 @@ public class MessageHolders {
         private void generateWaveform(int durationMillis) {
             waveformContainer.removeAllViews();
 
-            // Calculate number of bars based on duration
             int seconds = Math.max(durationMillis / 1000, 1);
             int barCount = Math.min(Math.max(seconds * 3, 15), 35);
 
             int barWidth = dpToPx(2);
-            int barMargin = dpToPx(2);
+            int barMargin = dpToPx(1);
             int maxHeight = dpToPx(24);
             int minHeight = dpToPx(6);
-
-            Log.d("VoiceViewHolder", "Generating " + barCount + " bars");
 
             for (int i = 0; i < barCount; i++) {
                 View bar = new View(waveformContainer.getContext());
@@ -2525,9 +2644,9 @@ public class MessageHolders {
                 int height = minHeight + (int)((maxHeight - minHeight) * wave * Math.random());
 
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(barWidth, height);
-                if (i < barCount - 1) {
-                    params.setMarginEnd(barMargin);
-                }
+                params.setMarginEnd(barMargin);
+                params.setMarginStart(barMargin);
+                params.weight = 1;
 
                 bar.setLayoutParams(params);
                 bar.setBackgroundColor(Color.WHITE);
@@ -2553,9 +2672,15 @@ public class MessageHolders {
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
             return sdf.format(date);
         }
+
+        @Override
+        public void onViewRecycled() {
+            if (isPlaying) {
+                pausePlaying();
+            }
+            handler.removeCallbacksAndMessages(null);
+        }
     }
-
-
 
     public static class DefaultInComingVoiceMessageViewHolder
             extends MessageHolders.BaseIncomingMessageViewHolder<MessageContentType.Image> {
@@ -2567,6 +2692,9 @@ public class MessageHolders {
         private LinearLayout waveformContainer;
 
         private boolean isPlaying = false;
+        private Handler handler = new Handler();
+        private int currentDuration = 0;
+        private int totalDuration = 0;
 
         public DefaultInComingVoiceMessageViewHolder(View itemView) {
             super(itemView);
@@ -2577,60 +2705,27 @@ public class MessageHolders {
             waveformContainer = itemView.findViewById(R.id.waveformContainer);
 
             Log.d("VoiceViewHolder", "INCOMING Constructor called");
-            Log.d("VoiceViewHolder", "INCOMING playButton found: " + (playButton != null));
-            Log.d("VoiceViewHolder", "INCOMING waveformContainer found: " + (waveformContainer != null));
         }
 
         @Override
         public void onBind(MessageContentType.Image message) {
             super.onBind(message);
 
-            //  DEBUG LOGS
-
-            Log.d("VoiceViewHolder", "Voice Note ID: " + message.getId());
-            Log.d("VoiceViewHolder", "voiceUrl: " + message.getVoiceUrl());
-            Log.d("VoiceViewHolder", "voiceDuration: " + message.getVoiceDuration());
-            Log.d("VoiceViewHolder", "playButton null? " + (playButton == null));
-            Log.d("VoiceViewHolder", "waveformContainer null? " + (waveformContainer == null));
-
-            // Check if this is a voice message
             boolean isVoiceMessage = message.getVoiceUrl() != null && !message.getVoiceUrl().isEmpty();
 
-            // Fallback checks
             if (!isVoiceMessage) {
                 isVoiceMessage = message.getVoiceDuration() > 0 ||
                         (message.getImageUrl() != null && message.getImageUrl().endsWith(".mp3")) ||
                         (message.getAudioUrl() != null && (message.getAudioUrl().contains("/vn/") || message.getAudioUrl().contains("rec_")));
             }
 
-            Log.d("VoiceViewHolder", "isVoiceMessage: " + isVoiceMessage);
-
             if (isVoiceMessage) {
                 Log.d("VoiceViewHolder", "✅ Rendering as VOICE MESSAGE");
 
-                // Make voice UI visible
-                if (playButton != null) {
-                    playButton.setVisibility(View.VISIBLE);
-                    Log.d("VoiceViewHolder", "Play button set to VISIBLE");
-                } else {
-                    Log.e("VoiceViewHolder", "playButton is NULL!");
-                }
+                if (playButton != null) playButton.setVisibility(View.VISIBLE);
+                if (duration != null) duration.setVisibility(View.VISIBLE);
+                if (waveformContainer != null) waveformContainer.setVisibility(View.VISIBLE);
 
-                if (duration != null) {
-                    duration.setVisibility(View.VISIBLE);
-                    Log.d("VoiceViewHolder", "Duration set to VISIBLE");
-                } else {
-                    Log.e("VoiceViewHolder", "duration is NULL!");
-                }
-
-                if (waveformContainer != null) {
-                    waveformContainer.setVisibility(View.VISIBLE);
-                    Log.d("VoiceViewHolder", "Waveform container set to VISIBLE");
-                } else {
-                    Log.e("VoiceViewHolder", "waveformContainer is NULL!");
-                }
-
-                // Get the voice URL from multiple sources
                 String audioUrl = message.getVoiceUrl();
                 if (audioUrl == null || audioUrl.isEmpty()) {
                     audioUrl = message.getImageUrl();
@@ -2639,67 +2734,154 @@ public class MessageHolders {
                     audioUrl = message.getAudioUrl();
                 }
 
-                Log.d("VoiceViewHolder", "Final audioUrl: " + audioUrl);
-
-                // Set duration
-                int voiceDuration = message.getVoiceDuration();
-                if (voiceDuration <= 0) {
-                    voiceDuration = 3000;
+                totalDuration = message.getVoiceDuration();
+                if (totalDuration <= 0) {
+                    totalDuration = 3000;
                 }
 
+                // Show total duration before playing
                 if (duration != null) {
-                    String durationText = formatDuration(voiceDuration);
-                    duration.setText(durationText);
-                    Log.d("VoiceViewHolder", "Duration text set: " + durationText);
+                    duration.setText(formatDuration(totalDuration));
                 }
 
-                // Set time
                 if (message.getCreatedAt() != null && time != null) {
                     time.setText(formatTime(message.getCreatedAt()));
                 }
 
-                // Generate waveform
                 if (waveformContainer != null) {
-                    Log.d("VoiceViewHolder", "Generating waveform...");
-                    generateWaveform(voiceDuration);
-                    Log.d("VoiceViewHolder", "Waveform generated");
+                    generateWaveform(totalDuration);
                 }
 
-                // Reset play state
-                isPlaying = false;
-                if (playButton != null) {
-                    playButton.setImageResource(R.drawable.baseline_play_arrow_24);
-                }
+                resetPlayState();
 
-                // Set play button click listener
                 final String finalAudioUrl = audioUrl;
+                final MessageContentType.Image finalMessage = message;
+
                 if (playButton != null) {
                     playButton.setOnClickListener(v -> {
-                        if (audioPlayListener != null && finalAudioUrl != null && !finalAudioUrl.isEmpty()) {
-                            isPlaying = !isPlaying;
-                            playButton.setImageResource(isPlaying ?
-                                    R.drawable.baseline_pause_24 : R.drawable.baseline_play_arrow_24);
-
-                            audioPlayListener.onAudioPlayClick(
-                                    finalAudioUrl,
-                                    playButton,
-                                    duration,
-                                    null,
-                                    message
-                            );
+                        if (finalAudioUrl != null && !finalAudioUrl.isEmpty()) {
+                            if (!isPlaying) {
+                                startPlaying(finalAudioUrl, finalMessage);
+                            } else {
+                                pausePlaying();
+                            }
                         }
                     });
                 }
 
-                Log.d("VoiceViewHolder", "Voice message rendering complete");
             } else {
-                Log.d("VoiceViewHolder", "NOT a voice message - hiding UI");
                 if (playButton != null) playButton.setVisibility(View.GONE);
                 if (duration != null) duration.setVisibility(View.GONE);
                 if (waveformContainer != null) waveformContainer.setVisibility(View.GONE);
             }
+        }
 
+        private void startPlaying(String audioUrl, MessageContentType.Image message) {
+            isPlaying = true;
+            currentDuration = 0;
 
+            if (playButton != null) {
+                playButton.animate()
+                        .scaleX(1.2f)
+                        .scaleY(1.2f)
+                        .setDuration(150)
+                        .withEndAction(() -> playButton.setImageResource(R.drawable.baseline_pause_24))
+                        .start();
+            }
+
+            if (audioPlayListener != null) {
+                audioPlayListener.onAudioPlayClick(
+                        audioUrl,
+                        playButton,
+                        duration,
+                        null,
+                        message
+                );
+            }
+
+            updateDurationRunnable();
+        }
+
+        private void updateDurationRunnable() {
+            if (isPlaying && duration != null) {
+                currentDuration += 100;
+                duration.setText(formatDuration(currentDuration));
+
+                updateWaveformProgress();
+
+                if (currentDuration <= totalDuration) {
+                    handler.postDelayed(this::updateDurationRunnable, 100);
+                } else {
+                    finishPlaying();
+                }
+            }
+        }
+
+        private void updateWaveformProgress() {
+            if (waveformContainer == null) return;
+
+            float progress = (float) currentDuration / totalDuration;
+            int barCount = waveformContainer.getChildCount();
+            int progressBar = (int) (barCount * progress);
+
+            for (int i = 0; i < barCount; i++) {
+                View bar = waveformContainer.getChildAt(i);
+                if (bar != null) {
+                    if (i < progressBar) {
+                        bar.setAlpha(1.0f);
+                        bar.setScaleY(1.15f);
+                    } else {
+                        bar.setAlpha(0.4f);
+                        bar.setScaleY(1.0f);
+                    }
+                }
+            }
+        }
+
+        private void pausePlaying() {
+            isPlaying = false;
+            handler.removeCallbacksAndMessages(null);
+
+            if (playButton != null) {
+                playButton.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(150)
+                        .withEndAction(() -> playButton.setImageResource(R.drawable.baseline_play_arrow_24))
+                        .start();
+            }
+        }
+
+        private void finishPlaying() {
+            isPlaying = false;
+            handler.removeCallbacksAndMessages(null);
+            resetPlayState();
+        }
+
+        private void resetPlayState() {
+            isPlaying = false;
+            currentDuration = 0;
+
+            if (playButton != null) {
+                playButton.setScaleX(1.0f);
+                playButton.setScaleY(1.0f);
+                playButton.setImageResource(R.drawable.baseline_play_arrow_24);
+            }
+
+            // Reset duration to show total duration again
+            if (duration != null) {
+                duration.setText(formatDuration(totalDuration));
+            }
+
+            if (waveformContainer != null) {
+                for (int i = 0; i < waveformContainer.getChildCount(); i++) {
+                    View bar = waveformContainer.getChildAt(i);
+                    if (bar != null) {
+                        bar.setAlpha(0.7f);
+                        bar.setScaleY(1.0f);
+                    }
+                }
+            }
         }
 
         private void generateWaveform(int durationMillis) {
@@ -2709,11 +2891,9 @@ public class MessageHolders {
             int barCount = Math.min(Math.max(seconds * 3, 15), 35);
 
             int barWidth = dpToPx(2);
-            int barMargin = dpToPx(2);
+            int barMargin = dpToPx(1);
             int maxHeight = dpToPx(24);
             int minHeight = dpToPx(6);
-
-            Log.d("VoiceViewHolder", "Generating " + barCount + " bars");
 
             for (int i = 0; i < barCount; i++) {
                 View bar = new View(waveformContainer.getContext());
@@ -2723,9 +2903,9 @@ public class MessageHolders {
                 int height = minHeight + (int)((maxHeight - minHeight) * wave * Math.random());
 
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(barWidth, height);
-                if (i < barCount - 1) {
-                    params.setMarginEnd(barMargin);
-                }
+                params.setMarginEnd(barMargin);
+                params.setMarginStart(barMargin);
+                params.weight = 1;
 
                 bar.setLayoutParams(params);
                 bar.setBackgroundColor(Color.parseColor("#666666"));
@@ -2750,6 +2930,14 @@ public class MessageHolders {
         private String formatTime(Date date) {
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
             return sdf.format(date);
+        }
+
+        @Override
+        public void onViewRecycled() {
+            if (isPlaying) {
+                pausePlaying();
+            }
+            handler.removeCallbacksAndMessages(null);
         }
     }
 
