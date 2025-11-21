@@ -1898,7 +1898,7 @@ class MessagesActivity : MainMessagesActivity(),
             if (friendId != null && friendName != null) {
                 // Pass user data via Intent extras matching OtherUserProfileAccount constants
                 val intent = Intent(this@MessagesActivity, OtherUserProfileAccount::class.java).apply {
-                    putExtra("extra_user_id", friendId)         
+                    putExtra("extra_user_id", friendId)
                     putExtra("extra_user_name", friendName)
                     putExtra("extra_username", friendName)
                     putExtra("extra_avatar_url", friendAvatar)
