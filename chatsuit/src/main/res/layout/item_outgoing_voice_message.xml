@@ -16,12 +16,12 @@
         android:layout_gravity="end"
         android:background="@drawable/shape_outgoing_voice_note"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:gravity="top"
         android:paddingStart="8dp"
         android:paddingEnd="12dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp"
-        android:minWidth="200dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:minWidth="220dp"
         android:maxWidth="280dp">
 
         <!-- Play/Pause Button -->
@@ -31,12 +31,13 @@
             app:cardCornerRadius="20dp"
             app:cardBackgroundColor="@color/bluejeans"
             app:cardElevation="0dp"
-            android:layout_marginEnd="8dp">
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="4dp">
 
             <ImageView
                 android:id="@+id/playButton"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_gravity="center"
                 android:src="@drawable/baseline_play_arrow_24"
                 app:tint="@color/bluejeans"
@@ -44,7 +45,7 @@
 
         </androidx.cardview.widget.CardView>
 
-        <!-- Waveform and Duration Container -->
+        <!-- Waveform, Duration and Time Container -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -58,117 +59,48 @@
                 android:layout_height="32dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="2dp">
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp">
 
-                <!-- These will be dynamically created bars representing audio waveform -->
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="12dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="@color/white"
-                    android:alpha="0.7" />
+                <!-- Dynamic bars will be added here -->
+            </LinearLayout>
 
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="20dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="@color/white"
-                    android:alpha="0.7" />
+            <!-- Duration, Time and Status Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end">
 
-                <View
-                    android:layout_width="3dp"
+                <TextView
+                    android:id="@+id/duration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0:04"
+                    android:textColor="@color/white"
+                    android:textSize="11sp"
+                    android:alpha="0.9"
+                    android:layout_marginEnd="98dp" />
+
+                <TextView
+                    android:id="@+id/time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/white"
+                    android:textSize="11sp"
+                    android:alpha="0.7"
+                    android:layout_marginEnd="4dp"
+                    tools:text="12:25" />
+
+                <ImageView
+                    android:id="@+id/messageStatus"
+                    android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="@color/white"
-                    android:alpha="0.7" />
-
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="@color/white"
-                    android:alpha="0.7" />
-
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="18dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="@color/white"
-                    android:alpha="0.7" />
-
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="14dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="@color/white"
-                    android:alpha="0.7" />
-
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="22dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="@color/white"
-                    android:alpha="0.7" />
-
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="16dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="@color/white"
-                    android:alpha="0.7" />
-
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="20dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="@color/white"
-                    android:alpha="0.7" />
-
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="12dp"
-                    android:background="@color/white"
+                    android:src="@drawable/ic_tick_single"
+                    app:tint="@color/white"
                     android:alpha="0.7" />
 
             </LinearLayout>
-
-            <!-- Duration Text -->
-            <TextView
-                android:id="@+id/duration"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0:00"
-                android:textColor="@color/white"
-                android:textSize="12sp"
-                android:alpha="0.8" />
-
-        </LinearLayout>
-
-        <!-- Time and Status -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginStart="4dp">
-
-            <TextView
-                android:id="@+id/time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/white"
-                android:textSize="11sp"
-                android:alpha="0.7"
-                tools:text="12:25" />
-
-            <ImageView
-                android:id="@+id/messageStatus"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginStart="4dp"
-                android:src="@drawable/ic_tick_single"
-                app:tint="@color/white"
-                android:alpha="0.7" />
 
         </LinearLayout>
 

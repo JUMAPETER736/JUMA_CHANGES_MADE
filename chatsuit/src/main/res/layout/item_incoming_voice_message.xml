@@ -16,12 +16,12 @@
         android:layout_gravity="start"
         android:background="@drawable/shape_incoming_voice_note"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:gravity="top"
         android:paddingStart="8dp"
         android:paddingEnd="12dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp"
-        android:minWidth="200dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:minWidth="220dp"
         android:maxWidth="280dp">
 
         <!-- Play/Pause Button -->
@@ -29,9 +29,10 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             app:cardCornerRadius="20dp"
-            app:cardBackgroundColor="@color/bluejeans"
+            app:cardBackgroundColor="#67A4D5"
             app:cardElevation="0dp"
-            android:layout_marginEnd="8dp">
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="4dp">
 
             <ImageView
                 android:id="@+id/playButton"
@@ -44,7 +45,7 @@
 
         </androidx.cardview.widget.CardView>
 
-        <!-- Waveform and Duration Container -->
+        <!-- Waveform, Duration and Time Container -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -58,102 +59,39 @@
                 android:layout_height="32dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="2dp">
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp">
 
-                <!-- These will be dynamically created bars representing audio waveform -->
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="12dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="#808080"
-                    android:alpha="0.6" />
+                <!-- Dynamic bars will be added here -->
+            </LinearLayout>
 
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="20dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="#808080"
-                    android:alpha="0.6" />
+            <!-- Duration and Time Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end">
 
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="16dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="#808080"
-                    android:alpha="0.6" />
+                <TextView
+                    android:id="@+id/duration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0:04"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp"
+                    android:layout_marginEnd="98dp" />
 
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="#808080"
-                    android:alpha="0.6" />
-
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="18dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="#808080"
-                    android:alpha="0.6" />
-
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="14dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="#808080"
-                    android:alpha="0.6" />
-
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="22dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="#808080"
-                    android:alpha="0.6" />
-
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="16dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="#808080"
-                    android:alpha="0.6" />
-
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="20dp"
-                    android:layout_marginEnd="3dp"
-                    android:background="#808080"
-                    android:alpha="0.6" />
-
-                <View
-                    android:layout_width="3dp"
-                    android:layout_height="12dp"
-                    android:background="#808080"
-                    android:alpha="0.6" />
+                <TextView
+                    android:id="@+id/time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp"
+                    tools:text="12:25" />
 
             </LinearLayout>
 
-            <!-- Duration Text -->
-            <TextView
-                android:id="@+id/duration"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0:00"
-                android:textColor="#666666"
-                android:textSize="12sp"
-                android:alpha="0.7" />
-
         </LinearLayout>
-
-        <!-- Time -->
-        <TextView
-            android:id="@+id/time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:textColor="#666666"
-            android:textSize="11sp"
-            android:alpha="0.6"
-            tools:text="12:25" />
 
     </LinearLayout>
 
