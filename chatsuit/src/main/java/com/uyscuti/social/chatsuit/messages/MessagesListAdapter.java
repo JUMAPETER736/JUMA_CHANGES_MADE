@@ -1104,9 +1104,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
     }
 
-    /**
-     * This class is deprecated. Use {@link MessageHolders.IncomingTextMessageViewHolder} instead.
-     */
+
     @Deprecated
     public static class IncomingMessageViewHolder<MESSAGE extends IMessage>
             extends MessageHolders.IncomingTextMessageViewHolder<MESSAGE>
@@ -1117,9 +1115,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
     }
 
-    /**
-     * This class is deprecated. Use {@link MessageHolders.OutcomingTextMessageViewHolder} instead.
-     */
+
     @Deprecated
     public static class OutcomingMessageViewHolder<MESSAGE extends MessageContentType.Image>
             extends MessageHolders.OutcomingTextMessageViewHolder<MESSAGE> {

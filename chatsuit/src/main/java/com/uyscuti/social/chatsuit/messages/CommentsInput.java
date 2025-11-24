@@ -1,21 +1,5 @@
 package com.uyscuti.social.chatsuit.messages;
 
-/*******************************************************************************
- * Copyright 2016 stfalcon.com
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *******************************************************************************/
-
 
 
 
@@ -53,9 +37,7 @@ import com.vanniktech.emoji.twitter.TwitterEmojiProvider;
 
 import java.lang.reflect.Field;
 
-/**
- * Component for input outcoming messages
- */
+
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class CommentsInput extends RelativeLayout
 
@@ -402,17 +384,10 @@ public class CommentsInput extends RelativeLayout
         this.typingListener = typingListener;
     }
 
-    /**
-     * Interface definition for a callback to be invoked when user pressed 'submit' button
-     */
+
     public interface InputListener {
 
-        /**
-         * Fires when user presses 'send' button.
-         *
-         * @param input input entered by user
-         * @return if input text is valid, you must return {@code true} and input will be cleared, otherwise return false.
-         */
+
         boolean onSubmit(CharSequence input);
     }
 
@@ -428,30 +403,20 @@ public class CommentsInput extends RelativeLayout
         void onAddEmoji();
     }
 
-    /**
-     * Interface definition for a callback to be invoked when user presses 'add' button
-     */
+
     public interface AttachmentsListener {
 
-        /**
-         * Fires when user presses 'add' button.
-         */
+
         void onAddAttachments();
     }
 
-    /**
-     * Interface definition for a callback to be invoked when user typing
-     */
+
     public interface TypingListener {
 
-        /**
-         * Fires when user presses start typing
-         */
+
         void onStartTyping();
 
-        /**
-         * Fires when user presses stop typing
-         */
+
         void onStopTyping();
     }
 }
