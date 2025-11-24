@@ -93,7 +93,7 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
             // No internet connection, get data from room
             return
         } else {
-//            fetchUsers()
+
         }
 
         dialogViewModel.allDialogs.observe(this) { chats ->
@@ -104,18 +104,10 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
             }
         }
 
-//        CoroutineScope(Dispatchers.Main).launch {
-//            usersViewModel.users.observe(this@MakeCallActivity) { users ->
-//                usersList = users
-//                runOnUiThread {
-//                    Log.d("UsersList", "$usersList")
-//                    initUserList()
-//                }
-//            }
-//        }
+
 
         supportActionBar?.title = "Call"
-//        initUserList()
+
     }
 
 
@@ -147,15 +139,12 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 }
                 return@launch
             } finally {
-                // Ensure the progress bar is hidden in case of an error
-//                withContext(Dispatchers.Main) {
-//                    dismissLoadingDialog()
-//                }
+
             }
 
             if (response.isSuccessful) {
                 val responseBody = response.body()
-//                Log.d("AllUsers", "Users List ${responseBody?.data}")
+
 
                 if (responseBody?.data != null) {
 
@@ -175,7 +164,7 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                     }
                     allUsers.forEach {
                         insertUser(it)
-//                        Log.d("Add users", "All users added successfully to room")
+
                     }
 
 
@@ -206,7 +195,7 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
     private fun initUserList() {
         userListView = binding.userList
         userListAdapter = CallUsersListAdapter(this) { user, video ->
-//            showToast(video, user.name)
+
             if (video) {
                 startVideoCall(user)
             } else {
@@ -256,36 +245,10 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         // Set the query text listener to this activity
         searchView.setOnQueryTextListener(this)
 
-        // Tint the search icon with white color
-//        tintMenuIcon(searchItem, Color.WHITE)
         return true
     }
 
-//    private fun setupSearchView() {
-//        val searchView = findViewById<SearchView>(R.id.searchView)
-//
-//        // Customize the SearchView
-//        searchView.queryHint = "Search Users"
-//        val searchIcon = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_button)
-//        searchIcon.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP)
-//        val closeButton = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_close_btn)
-//        closeButton.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP)
-//
-//        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-//            override fun onQueryTextSubmit(query: String?): Boolean {
-//                return false
-//            }
-//
-//            override fun onQueryTextChange(newText: String?): Boolean {
-//                // Filter the user list based on the search query
-//                val filteredList = originalUserList.filter { user ->
-//                    user.name.contains(newText.orEmpty(), true)
-//                }
-//                userListAdapter.setUserList(filteredList)
-//                return true
-//            }
-//        })
-//    }
+
 
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
