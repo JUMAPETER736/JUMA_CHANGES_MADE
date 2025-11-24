@@ -4115,8 +4115,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "application/*"
-//            type = "*/*"
-//            type = "images/*" // Set MIME type to select all types of documents
+
         }
         getDocumentContent.launch(intent)
     }
@@ -4130,7 +4129,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             cursor.moveToFirst()
             val fileName = cursor.getString(nameIndex)
             val fileSize = cursor.getLong(sizeIndex)
-//            val numberOfPages = getNumberOfPagesFromUri(this, uri)
+
             var numberOfPages = 0
             val formattedFileSize = formatFileSize(fileSize)
 
@@ -4462,9 +4461,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
         postId = data._id
         commentCount = data.comments
-//        commentId = data.images
 
- //       isFeedComment = false
 
         Log.d("showBottomSheet", "showBottomSheet: inside show bottom sheet")
         val items = generateSampleData(50)
@@ -5221,7 +5218,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             exoPlayer!!.prepare()
             exoPlayer!!.seekTo(progress.toLong())
             exoPlayer!!.playWhenReady = true
-//            exoPlayer!!.play()
+
             exoPlayer!!.repeatMode = Player.REPEAT_MODE_OFF
             exoPlayer!!.addListener(playbackStateListener)
             exoPlayer!!.addListener(object : Player.Listener {
@@ -5325,12 +5322,12 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         override fun onPlaybackStateChanged(state: Int) {
             when (state) {
                 ExoPlayer.STATE_ENDED -> {
-//                     The video playback ended. Move to the next video if available.
+
                     Log.d(
                         "playbackStateListener",
                         "commentAudioStartPlaying: comment audio completed"
                     )
-//                    audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
+
                     if (isVnAudioToPlay) {
                         if (::audioDurationTVCount.isInitialized) {
                             audioDurationTVCount.text = "00:00"
@@ -5365,8 +5362,6 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
                     adapter?.refreshMainComment(position)
                     adapter?.changePlayingStatus()
-//                    adapter?.resetWaveForm()
-//                    adapter?.notifyDataSetChanged()
                     if (isVnAudioToPlay) {
                         stopWaveRunnable()
 
@@ -5386,36 +5381,32 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
                     }
                     Log.d("TAG", "STATE_READY")
-//                    startUpdatingSeekBar()
-//                    shortsAdapter.setSeekBarProgress(exoPlayer!!.currentPosition.toInt())
+
 
                 }
 
                 else -> {
                     Log.d("TAG", "STOP SEEK BAR")
-                    // Stop updating seek bar in other states
-//                    stopUpdatingSeekBar()
+
                 }
             }
         }
 
         override fun onIsPlayingChanged(isVideoPlaying: Boolean) {
-//        super.onIsPlayingChanged(isPlaying)
 
         }
 
         override fun onEvents(player: Player, events: Player.Events) {
-//        super.onEvents(player, events)
+
             if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
                 events.contains(Player.EVENT_IS_PLAYING_CHANGED)
             ) {
 
-//                progressBar.visibility = View.GONE
             }
 
             if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)
             ) {
-//                player.seekTo(5000L)
+
             }
         }
     }
@@ -5436,7 +5427,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         val TAG = "audioWave"
 
         audioFormWave = event.audioWave
-//        event.audioWave.setSampleFrom(event.audioPath)
+
         audioDurationTVCount = event.leftDuration
         wavePosition = event.position
         Log.d(TAG, "audioWave: position $wavePosition ")
@@ -5468,7 +5459,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             Log.d(TAG, "cleanCache: inside clean cache bus in main activity try download")
 
             DownloadManager.getInstance(applicationContext).cleanCacheDir()
-//            MediaLoader.getInstance(this).
+
         } catch (e: IOException) {
             Toast.makeText(this@MainActivity, "Error clean cache", Toast.LENGTH_LONG).show()
         }
@@ -5512,15 +5503,14 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                     Log.d("VideoPicker", "File path: $filePath")
                     Log.d("VideoPicker", "File path: $isReply")
                     if (filePath != null && !isReply) {
-//                        uploadVideoComment(filePath)
+
                     } else {
                         if (filePath != null) {
-//                            uploadReplyImageComment(filePath)
+
                         }
                     }
                 }
-//                Log.d("PhotoPicker", "Number of items selected: ${uris.size}")
-//                Log.d("PhotoPicker", "photo uris ${uris.toString()}")
+
             } else {
                 Log.d("PhotoPicker", "No media selected")
             }
@@ -5854,9 +5844,9 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                             Log.d("ThumbnailExtract", "ThumbnailExtract failed")
                         }
                         val outputStream = ByteArrayOutputStream()
-//                            // Compress the bitmap to a byte array
+
                         bitmapThumbnail?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-//                            // Convert the byte array to a RequestBody
+
                         val requestBody = outputStream.toByteArray()
                             .toRequestBody(
                                 "image/*".toMediaTypeOrNull(),
