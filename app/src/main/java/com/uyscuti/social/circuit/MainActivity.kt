@@ -555,7 +555,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     private var isDurationOnPause = false
     private var isOnRecordDurationOnPause = false
 
-// ============================================================================
+
 // MEDIA PICKERS & LAUNCHERS
 
     private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
@@ -1784,7 +1784,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         )
 
 
-// Ensure that the directory exists
+        // Ensure that the directory exists
         if (!storageDirectory.exists()) {
             storageDirectory.mkdirs()
         }
@@ -1792,7 +1792,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         Log.d("Download", "directory path - $storageDirectory")
 
 
-//        setUpTabs()
+
         setNavigationListener()
         getUserProfile()
 
@@ -1802,7 +1802,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
         Log.d("ProfilePic", "Avatar path: $profilePic")
         Log.d("ProfilePic", "Avatar path2: $profilePic2")
-//        imageBadgeView = findViewById(R.id.ibv_icon4);
+
         item = NavigationItem(this@MainActivity, R.drawable.nav_notification_icon)
         item1 = NavigationItem(this@MainActivity, R.drawable.chat_round_svgrepo_com)
         item2 = NavigationItem(this@MainActivity, R.drawable.play_svgrepo_com)
@@ -1822,7 +1822,6 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         item4.drawableWidth = 36
         item4.drawableHeight = 36
 
-//        item.padding = 20
         item.setsBadge(count)
         item1.setsBadge(4)
 
@@ -2564,7 +2563,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         val constraintLayout = binding.constraintLayout
         val bottomNavigationView = binding.bottomNavigationView
         val reference = binding.reference
-//        val visibleConstraintSet = ConstraintSet()
+
 
         val visibleConstraintSet = ConstraintSet()
         visibleConstraintSet.clone(constraintLayout)
@@ -2589,7 +2588,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
     private suspend fun loadMoreShorts(nextPage: Int) {
         // This function will be called when there are more shorts available
-//        getUserShorts(nextPage)
+
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -2617,7 +2616,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                     val drawable = BitmapDrawable(resources, resource)
                     item4.setDrawable(drawable)
                     Log.d("ProfilePic", "onResourceReady")
-//                    Log.d("BitmapSize", "Width: ${resource.width}, Height: ${resource.height}")
+
                 }
 
                 override fun onLoadCleared(placeholder: Drawable?) {
@@ -2664,7 +2663,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             Log.d(WORKER_TAG, "Combined Work already exists, Replacing.......")
 
             ExistingWorkPolicy.REPLACE
-//            return
+
         }
 
         val request = OneTimeWorkRequestBuilder<CombinedWorker>().setBackoffCriteria(
@@ -2719,8 +2718,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                     Log.d("Download", "File Downloaded: ${destinationFile.absolutePath}")
                     Glide.with(applicationContext).asBitmap().load(destinationFile)
                         .transform(CircleCrop()).placeholder(R.drawable.google)
-//            .apply(RequestOptions.bitmapTransform(CircleCrop()))
-//            .apply(RequestOptions.placeholderOf(R.drawable.google))
+
                         .error(R.drawable.error_drawable) // Drawable to display on load failure
                         .fallback(R.drawable.fallback_drawable)
                         .into(object : CustomTarget<Bitmap>() {
@@ -2733,7 +2731,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                                     "BitmapSize",
                                     "Width: ${resource.width}, Height: ${resource.height}"
                                 )
-//                    resource.
+
                             }
 
                             override fun onLoadCleared(placeholder: Drawable?) {
@@ -2823,7 +2821,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
         val request = OneTimeWorkRequestBuilder<FlashWorker>()
-//            .setConstraints(constraints)
+
             .setInitialDelay(10, TimeUnit.SECONDS).setBackoffCriteria(
                 BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS
             ) // Customize backoff criteria
@@ -2870,11 +2868,11 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                     actionMode?.title = "$count selected"
                 }
 
-//                binding.toolbar.visibility = View.GONE
+
             } else {
                 // No items selected, end the ActionMode if it's active
                 actionMode?.finish()
-//                binding.toolbar.visibility = View.VISIBLE
+
             }
         })
     }
@@ -2906,7 +2904,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             } else {
                 // No items selected, end the ActionMode if it's active
                 actionMode?.finish()
-//                binding.toolbar.visibility = View.VISIBLE
+
             }
         }
 
@@ -2920,8 +2918,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
                 // Inflate the menu for the ActionMode
                 menuInflater.inflate(R.menu.contextual_action_bar, menu)
-//                val customView = layoutInflater.inflate(R.layout.custom_action_mode_layout, null)
-//                mode?.customView = customView
+
                 return true
             }
 
@@ -2958,7 +2955,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
             override fun onDestroyActionMode(mode: ActionMode?) {
                 // ActionMode finished, reset the reference
-//                stop
+
                 actionMode = null
                 clear()
                 mainViewModel.resetSelectedDialogsCount()
@@ -2985,8 +2982,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         val dialogIds = dialogs.map { it.id }
         CoroutineScope(Dispatchers.IO).launch {
             if (dialogs.all { it.users.size > 1 }) {
-                // All dialogs have more than one user
-//                groupDialogViewModel.deleteGroups(dialogIds)
+
                 dialogIds.map {
                     messageViewModel.markDeleted(it)
                     val dialog = groupDialogViewModel.getGroupDialog(it)
@@ -2994,8 +2990,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                     groupDialogViewModel.updateLastMessageForThisGroup(it, empty)
                 }
             } else {
-                // At least one dialog does not have more than one user
-//                dialogViewModel.deleteDialogs(dialogIds)
+
                 dialogIds.map {
                     messageViewModel.deleteMessagesByChat(it)
                     dialogViewModel.setNullLastMessage(it)
@@ -3098,13 +3093,12 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
     override fun onBackPressed() {
         val count = mainViewModel.selectedDialogsCount.value
-//        Log.d("MainCount", "Count :$count")
+
         if (mainViewModel.selectedDialogsCount.value == 0) {
             // If no dialogs are selected, call the default back button behavior
             super.onBackPressed()
         } else {
-            // If there are selected dialogs, reset the selection in the ViewModel
-//            onBackListener?.onBackButtonPressed()
+
             clear()
             mainViewModel.resetSelectedDialogsCount()
         }
@@ -3137,8 +3131,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
     private fun initializeCallService() {
         CoroutineScope(Dispatchers.IO).launch {
-//            val username = localStorage.getUsername()
-//            val userId = localStorage.getUserId()
+
             val username = settings.getString("username", "").toString()
             val userId = settings.getString("_id", "").toString()
 
@@ -3148,7 +3141,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             mainRepository.init(username)
             mainServiceRepository.startService(username)
             mainRepository.setUserName(username)
-//            mainRepository.setUserId(userId)
+
         }
     }
 
@@ -3275,7 +3268,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             item1.drawableTint = Color.BLACK
             item2.drawableTint = Color.BLACK
             item3.drawableTint = Color.BLACK
-//            item4.drawableTint = Color.BLACK
+
 
             when (pos) {
                 0 -> {
@@ -3940,8 +3933,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         Log.d(TAG, "onAddVoiceNote: start VN clicked")
         binding.VNLayout.visibility = View.VISIBLE
         binding.playVNRecorded.visibility = View.GONE
-        //  binding.waveForm.visibility = View.VISIBLE
-        // binding.recordingTimerTv.visibility = View.VISIBLE
+
         startRecording()
         EventBus.getDefault().post(PauseShort(true))
 
@@ -3963,17 +3955,17 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     }
 
     private fun addAudioComment(postId: String, content: String, audio: File) {
-//        commentsViewModel.commentAudio(postId, content, audio)
+
 
         createAudioMultipart(audio)
-//        commentsViewModel.commentAudio(postId, content, "audio", audioPart)
+
 
     }
 
     private fun createAudioMultipart(audioFile: File): MultipartBody.Part {
         // Create RequestBody from file
         val requestFile = audioFile.asRequestBody("audio/*".toMediaTypeOrNull())
-//        val requestFile = RequestBody.create("audio/*".toMediaTypeOrNull(), audioFile)
+
 
         // Create MultipartBody.Part from RequestBody
         return MultipartBody.Part.createFormData("audio", audioFile.name, requestFile)
