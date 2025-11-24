@@ -13,18 +13,20 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.User_Interface.MainActivity
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.circuit.databinding.ActivitySearchShortBinding
-import com.uyscuti.social.circuit.viewmodel.ShortsViewModel
+import com.uyscuti.social.circuit.model.ShortsViewModel
 import com.uyscuti.social.core.common.data.api.Retrofit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -317,6 +319,7 @@ class SearchShortActivity : AppCompatActivity() {
         }
     }
 
+    @OptIn(UnstableApi::class)
     private fun onSearchResultClicked(result: SearchResult) {
         // Navigate back to MainActivity and play the selected short
         val intent = Intent(this, MainActivity::class.java).apply {
