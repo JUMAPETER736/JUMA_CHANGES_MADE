@@ -13,6 +13,7 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.AnimationDrawable
 import android.net.ConnectivityManager
+import com.uyscuti.social.circuit.R
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -120,7 +121,7 @@ import com.uyscuti.social.circuit.utils.removeDuplicateFollowers
 import com.uyscuti.social.circuit.viewmodels.FeedShortsViewModel
 import com.uyscuti.social.circuit.viewmodels.FollowUnfollowViewModel
 import com.uyscuti.social.circuit.viewmodels.FollowViewModel
-import com.uyscuti.social.circuit.R
+import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SearchShortActivity
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.circuit.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.social.circuit.model.GoToUserProfileFragment
@@ -174,6 +175,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
+import kotlin.jvm.java
 
 
 private const val ARG_PARAM1 = "param1"
@@ -1327,6 +1329,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     private lateinit var shortsDownloadProgressBar: ProgressBar
     private lateinit var progressBarLayout: LinearLayout
     private lateinit var downloadProgressBarLayout: LinearLayout
+    private lateinit var searchForAllShorts: ImageView
 
     // UI Components - Media & Controls
     // private lateinit var playerView: PlayerView
@@ -1488,6 +1491,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         cancelShortsUpload = view.findViewById(R.id.cancelShortsUpload)
         shortSeekBar = view.findViewById(R.id.shortSeekBar)
         shortsMenu = view.findViewById(R.id.shortsMenu)
+        searchForAllShorts = view.findViewById(R.id.searchForAllShorts)
 
         shortsMenu.setOnClickListener {
             val popupMenu = PopupMenu(context, shortsMenu)
@@ -1505,6 +1509,19 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 }
             }
             popupMenu.show()
+        }
+
+
+
+        searchForAllShorts.setOnClickListener {
+            val intent = Intent(requireContext(), SearchShortActivity::class.java)
+            startActivity(intent)
+
+            // Optional: Nice slide-up animation like TikTok
+            requireActivity().overridePendingTransition(
+                R.anim.slide_in_up,
+                R.anim.stay
+            )
         }
 
         shortSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {

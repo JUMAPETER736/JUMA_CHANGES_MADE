@@ -88,6 +88,7 @@
 
         <!-- Search icon -->
         <ImageView
+            android:id="@+id/searchForAllShorts"
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:src="@drawable/baseline_search_24_black"
