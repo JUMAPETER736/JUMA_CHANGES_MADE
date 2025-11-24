@@ -20,11 +20,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.R
+import com.uyscuti.social.circuit.User_Interface.MainActivity
+import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.circuit.databinding.ActivitySearchShortBinding
-import dagger.hilt.android.AndroidEntryPoint
-import dagger.hilt.android.AndroidEntryPointodel
+import com.uyscuti.social.circuit.viewmodel.ShortsViewModel
+import com.uyscuti.social.core.common.data.api.Retrofit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -32,17 +33,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
-import javax.inject.Inject
 
-@AndroidEntryPoint
+
 class SearchShortActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySearchShortBinding
     private lateinit var searchAdapter: SearchResultsAdapter
     private val allResults = mutableListOf<SearchResult>()
     private val filteredResults = mutableListOf<SearchResult>()
 
-    @Inject
-    lateinit var retrofitIns: RetrofitInstance
+    private lateinit var apiService: IFlashapi
 
     private val shortsViewModel: ShortsViewModel by viewModels()
     private var searchJob: Job? = null
@@ -61,6 +60,9 @@ class SearchShortActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        // Initialize API service
+        apiService = Retrofit(this).regService
 
         setupSearch()
         loadShortsData()
@@ -153,7 +155,7 @@ class SearchShortActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 // Load shorts from API
-                val response = retrofitIns.apiService.getShorts(currentPage.toString())
+                val response = apiService.getShorts(currentPage.toString())
 
                 if (response.isSuccessful) {
                     val responseBody = response.body()
@@ -214,7 +216,7 @@ class SearchShortActivity : AppCompatActivity() {
 
     private suspend fun loadFeedVideos() {
         try {
-            val response = retrofitIns.apiService.getAllFeed(currentPage.toString())
+            val response = apiService.getAllFeed(currentPage.toString())
 
             if (response.isSuccessful) {
                 val responseBody = response.body()
@@ -269,7 +271,7 @@ class SearchShortActivity : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val response = retrofitIns.apiService.getShorts(currentPage.toString())
+                val response = apiService.getShorts(currentPage.toString())
 
                 if (response.isSuccessful) {
                     val responseBody = response.body()
@@ -445,7 +447,7 @@ class SearchResultsAdapter(
 
                 // Stats (likes and comments)
                 val statsView = TextView(context).apply {
-                    text = "❤${result.likes}  💬 ${result.comments}"
+                    text = " ${result.likes}   ${result.comments}"
                     textSize = 12f
                     setTextColor(context.getColor(android.R.color.darker_gray))
                     layoutParams = LinearLayout.LayoutParams(
