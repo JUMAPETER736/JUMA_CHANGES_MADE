@@ -1,5 +1,6 @@
 package com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
@@ -128,6 +129,7 @@ class SearchShortActivity : AppCompatActivity() {
         })
     }
 
+    @SuppressLint("SetTextI18n")
     private fun performSearch(query: String) {
         lifecycleScope.launch(Dispatchers.Default) {
             val results = allResults.filter { result ->
