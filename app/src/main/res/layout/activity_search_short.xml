@@ -26,10 +26,11 @@
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:autofillHints="shorts"
-        android:background="@color/white"
+        android:background="@drawable/search_input_border"
         android:hint="Search..."
-        android:padding="10dp"
+        android:padding="12dp"
         android:textSize="16sp"
+        android:textColorHint="@android:color/darker_gray"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
@@ -39,7 +40,8 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/searchResultsRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="743dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -48,5 +50,16 @@
         app:layout_constraintVertical_bias="1.0"
         tools:listitem="@layout/item_search_list" />
 
+    <TextView
+        android:id="@+id/noResultsText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="24dp"
+        android:text="No results found"
+        android:textSize="16sp"
+        android:textColor="@color/challenge_primary_color"
+        android:visibility="gone"
+        tools:visibility="visible" />
 
 </LinearLayout>
