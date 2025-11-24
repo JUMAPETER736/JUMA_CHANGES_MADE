@@ -277,7 +277,7 @@ class ConfirmGroupActivity : AppCompatActivity() {
             lastseen
         )
     }
- 
+
     private fun showLoadingDialog() {
         // Create a dialog with the loading layout
         dialog = Dialog(this)
