@@ -91,7 +91,7 @@ class CreateGroupChat : AppCompatActivity() {
 
             userListAdapter.setRecentUsers(recentUsers.map { it.toUser() })
 
-//            Log.d("RecentUsers", "RecentUsers: $recentUsers")
+
         }
 
 
@@ -101,9 +101,7 @@ class CreateGroupChat : AppCompatActivity() {
         CoroutineScope(Dispatchers.Main).launch {
             recentUserViewModel.selectedUserList.observe(this@CreateGroupChat,
                 Observer { userList ->
-                    // Update your UI or perform actions based on the changes in the userList
-                    // userList contains the latest list of selected users
-                    // For example, you can update an adapter or other UI components
+
 
                     if (userList.isNotEmpty()) {
                         selectedUserListView.visibility = View.VISIBLE
@@ -136,10 +134,6 @@ class CreateGroupChat : AppCompatActivity() {
             }
         }
 
-        // Or use addTextChangedListener to detect text changes in the EditText
-//        searchEditText.addTextChangedListener { text ->
-//            performSearch(text.toString())
-//        }
 
         searchEditText.addTextChangedListener(afterTextChanged = { editable ->
             // This will be called after the text in the EditText has changed
@@ -167,8 +161,7 @@ class CreateGroupChat : AppCompatActivity() {
         selectedUsersAdapter = SelectedUsersAdapter(this) {
             selectedUsersAdapter.removeUser(it)
             selectedUserList.remove(it)
-//            userListAdapter.update(it)
-//            participants.remove(it)
+
             recentUserViewModel.removeUser(it)
         }
 
@@ -181,7 +174,7 @@ class CreateGroupChat : AppCompatActivity() {
         userListView = binding.userList
         userListAdapter = SearchUserAdapter(this) {
 
-//            Log.d("RecentUsers", "RecentUsers: $it")
+
             addUserToRecent(it.toRecentUser())
 
             CoroutineScope(Dispatchers.Main).launch {
@@ -203,18 +196,8 @@ class CreateGroupChat : AppCompatActivity() {
         // Set LinearLayoutManager for a vertical list
         userListView.layoutManager = LinearLayoutManager(this)
 
-        // Get the random users and sort them alphabetically
-//        val randomUsers = DialogsFixtures.getRandomUsers(15)
-//        val sortedUsers = randomUsers.sortedBy { it.name }
-
-//        originalUserList = participants.map { it }.sortedBy { it.name }
         originalUserList = listOf()
-//
-//        val converted = participants.map { it }
-//
-//        val sorted = converted.sortedBy { it.name }
 
-//        userListAdapter.setSearchUsers(originalUserList)
         userListView.adapter = userListAdapter
     }
 
@@ -247,19 +230,13 @@ class CreateGroupChat : AppCompatActivity() {
 
     private fun performSearch(query: String) {
         userListAdapter.setLoading(true)
-        // Implement your logic to search for users based on the query
-        // You can make a network request here and update your UI accordingly
-        // Example: Call your search function and update the UI with search results
+
         CoroutineScope(Dispatchers.Main).launch {
             val searchResults = searchUsers(query).sortedBy { it.username }
-            // Update UI with searchResults...
-//
 
-            // Hide the keyboard and remove focus from searchEditText
             hideKeyboard()
             searchEditText.clearFocus()
-//            val
-//            originalUserList = searchResults.map { it.toUser() }
+
             Log.d("SearchResults", "$searchResults")
             Log.d("SearchResults", "${searchResults.size}")
 
