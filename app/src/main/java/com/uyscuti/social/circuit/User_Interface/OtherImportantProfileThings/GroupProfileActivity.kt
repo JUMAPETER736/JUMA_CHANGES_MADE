@@ -56,11 +56,6 @@ class GroupProfileActivity : AppCompatActivity() {
 
         binding.groupInfo.text = info
 
-//        dialog?.users?.map { user ->
-//            if (user.id == groupAdminId) {
-//                binding.groupInfo.text = "Created by ${user.name} On $groupCreatedAt"
-//            }
-//        }
 
         val tabsAdapter = GroupTabsAdapter(this, supportFragmentManager)
 
@@ -75,8 +70,6 @@ class GroupProfileActivity : AppCompatActivity() {
         for (i in 0 until tabsAdapter.count) {
             tabs.getTabAt(i)?.icon = tabsAdapter.getIcon(i)
         }
-
-//        binding.toolbar.setNavigationIcon(R.drawable.back_svgrepo_com)
 
         val navigationIcon = ContextCompat.getDrawable(this, R.drawable.baseline_arrow_back_ios_24)
 
@@ -93,42 +86,6 @@ class GroupProfileActivity : AppCompatActivity() {
             onBackPressed()
         }
 
-//        // Set listener for tab selection
-//        tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-//            override fun onTabSelected(tab: TabLayout.Tab) {
-//                // Change the icon tint color for the selected tab
-//                tab.icon = getTintedDrawable(R.drawable.ic_tab_selected, Color.RED)
-//            }
-//
-//            override fun onTabUnselected(tab: TabLayout.Tab) {
-//                // Change the icon tint color for the unselected tab
-//                tab.icon = getTintedDrawable(R.drawable.ic_tab_unselected, Color.BLACK)
-//            }
-//
-//            override fun onTabReselected(tab: TabLayout.Tab) {
-//                // Handle tab reselection if needed
-//            }
-//        })
-//        tabs.setOnTabSelectedListener(
-//            object : TabLayout.ViewPagerOnTabSelectedListener(viewPager) {
-//                override fun onTabSelected(tab: TabLayout.Tab) {
-//                    super.onTabSelected(tab)
-//                    val tabIconColor = ContextCompat.getColor(this@GroupProfileActivity, R.color.tabSelectedIconColor)
-//                    tab.icon!!.setColorFilter(tabIconColor, PorterDuff.Mode.SRC_IN)
-//                }
-//
-//                override fun onTabUnselected(tab: TabLayout.Tab) {
-//                    super.onTabUnselected(tab)
-//                    val tabIconColor =
-//                        ContextCompat.getColor(context, R.color.tabUnselectedIconColor)
-//                    tab.icon!!.setColorFilter(tabIconColor, PorterDuff.Mode.SRC_IN)
-//                }
-//
-//                override fun onTabReselected(tab: TabLayout.Tab) {
-//                    super.onTabReselected(tab)
-//                }
-//            }
-//        )
 
         binding.callTextView.setOnClickListener {
             showCallTypeDialog()
@@ -162,7 +119,7 @@ class GroupProfileActivity : AppCompatActivity() {
                     ) {
                         val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
 
-//                        drawable.cornerRadius = resources.getDimension(R.dimen.icon_radius)
+
                         drawable.isCircular = true
 
                         val marginDrawable = InsetDrawable(drawable, 0, 0, 0, 0)
@@ -170,7 +127,6 @@ class GroupProfileActivity : AppCompatActivity() {
                     }
                 })
 
-//            binding.groupNameET.text = dialog?.dialogName
         }
     }
 
@@ -187,10 +143,6 @@ class GroupProfileActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.menu_setting -> {
-                // Handle the click on this menu item
-                // For example, you can open a new activity or perform an action
-//                Toast.makeText(this, "Menu item clicked", Toast.LENGTH_SHORT).show()
-//                showAccessDeniedDialog("You cannot access this content because you are not an admin.")
 
                 settings = getSharedPreferences(PREFS_NAME, 0)
                 val userId = settings.getString("_id", "").toString()
