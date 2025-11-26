@@ -303,7 +303,7 @@ class ShortsAdapter(
         }
     }
 
-    // ✅ NEW: Comment count management methods
+    // Comment count management methods
     fun updateCommentCountForPosition(position: Int, newCount: Int) {
         if (position in 0 until shortsList.size) {
             shortsList[position].comments = newCount
@@ -326,7 +326,7 @@ class ShortsAdapter(
         }
     }
 
-    // ✅ Update in ShortsAdapter class
+    // Update in ShortsAdapter class
     fun refreshCommentCountFromDatabase(position: Int, isFeedComment: Boolean = false) {
         if (position in 0 until shortsList.size) {
             val shortsId = shortsList[position]._id
@@ -760,7 +760,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         }
     }
 
-    // ✅ Comment count initialization
+    // Comment count initialization
     private fun initializeCommentCounts(shortsEntity: ShortsEntity) {
         serverCommentCount = shortsEntity.comments
         totalComments = serverCommentCount
@@ -768,14 +768,14 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         Log.d(TAG, "Initialized comment counts - Server: $serverCommentCount, Total: $totalComments")
     }
 
-    // ✅ Update comment count display
+    // Update comment count display
     private fun updateCommentCountDisplay() {
         commentsCount.text = formatCount(totalComments)
         commentsCount.visibility = View.VISIBLE
         Log.d(TAG, "Updated comment count display: ${commentsCount.text}")
     }
 
-    // ✅ Public method to update comment count (called from adapter)
+    // Public method to update comment count (called from adapter)
     fun updateCommentCount(newCount: Int) {
         Log.d(TAG, "updateCommentCount: Updating comment count from $totalComments to $newCount")
         totalComments = if (newCount < 0) {
@@ -797,7 +797,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             .playOn(commentsCount)
     }
 
-    // ✅ Decrement comment count
+    // Decrement comment count
     fun decrementCommentCount() {
         val newCount = maxOf(0, totalComments - 1)
         Log.d(TAG, "decrementCommentCount: Decrementing from $totalComments to $newCount")
@@ -843,7 +843,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         })
     }
 
-    // ✅ Format count for display
+    // Format count for display
     @SuppressLint("DefaultLocale")
     private fun formatCount(count: Int): String {
         return when {
@@ -928,7 +928,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
             commentsClickListener.onCommentsClick(
                 bindingAdapterPosition,
                 userShortsEntity,
-                isFeedComment = false  // ✅ NEW: Indicate this is a shorts comment
+                isFeedComment = false  //Indicate this is a shorts comment
             )
         }
 
@@ -1432,12 +1432,12 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             feedShortsBusinessId = it.getString(FEED_SHORT_BUSINESS_ID) ?: run {
                 Log.d("openShortsFragment", "FEED_SHORT_BUSINESS_ID is not set")
                 // Provide a default value or handle the absence of FEED_SHORT_BUSINESS_ID
-                "default_value" // Replace "default_value" with an appropriate default or handle as needed
+                "default_value"
             }
             feedShortsBusinessFileId = it.getString(FEED_SHORT_BUSINESS_FILE_ID) ?: run {
                 Log.d("openShortsFragment", "FEED_SHORT_BUSINESS_ID is not set")
-                // Provide a default value or handle the absence of FEED_SHORT_BUSINESS_ID
-                "default_value_file_id" // Replace "default_value" with an appropriate default or handle as needed
+
+                "default_value_file_id"
             }
         }
         feedOnBackPressedData = arguments?.getBoolean(FEED_ARG_DATA) == true
@@ -1455,10 +1455,9 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
 
-//        initializeShortsViewModel()
+
         if (savedInstanceState == null) {
-            // Register the observer only when the fragment is created, not recreated
-            // observeShortsViewModel()
+
             Log.d("ViewModel", "onViewCreated: view not created")
         } else {
             Log.d("ViewModel", "onViewCreated: view already created")
@@ -1473,7 +1472,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         savedInstanceState: Bundle?
     ): View? {
 
-        val TAG = "onCreateView"
+        val TAG = "ShortsFragment onCreateView"
         val view = inflater.inflate(R.layout.shorts_fragment, container, false)
         activity?.window?.statusBarColor = ContextCompat.getColor(requireContext(), R.color.black)
 
@@ -1552,7 +1551,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         viewPager = view.findViewById(R.id.shortsViewPager)
 
-        // FIXED: Improved HTTP data source factory with timeouts
+
         httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setAllowCrossProtocolRedirects(true)
             .setConnectTimeoutMs(8000)
@@ -1576,10 +1575,10 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             .setLoadControl(
                 DefaultLoadControl.Builder()
                     .setBufferDurationsMs(
-                        1500,  // minBufferMs - MUST be >= bufferForPlaybackAfterRebufferMs
-                        15000, // maxBufferMs
-                        1000,  // bufferForPlaybackMs
-                        1000   // bufferForPlaybackAfterRebufferMs
+                        1500,
+                        15000,
+                        1000,
+                        1000
                     )
                     .setPrioritizeTimeOverSizeThresholds(true)
                     .build()
@@ -2221,18 +2220,17 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
     private fun markVideoAsFailedToLoad(position: Int) {
-        // You might want to add this functionality to mark videos as failed
-        // so you don't keep trying to play them
+
         Log.d("ErrorRecovery", "Marking video at position $position as failed to load")
         // Implementation depends on your data structure
     }
 
     fun loadMoreVideosIfNeeded(position: Int) {
-        // Check if the position meets the condition
+
         if (position >= 5 && (position - 5) % 5 == 0) {
-            // Calculate the parameter to pass to loadMoreVideos based on the position
+
             val loadMoreValue = 2 + (position - 5) / 5
-            // Call loadMoreVideos with the calculated value
+
             loadMoreVideos(loadMoreValue)
         }
     }
@@ -2695,7 +2693,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 thumbnail = serverResponseItem.thumbnail,
                 feedShortsBusinessId = serverResponseItem.feedShortsBusinessId
 
-                // map other properties...
             )
         }
     }
