@@ -2313,11 +2313,11 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         }
 
         searchForAllShorts.setOnClickListener {
-            
+
             val intent = Intent(requireContext, SearchShortActivity::class.java)
             startActivity(intent)
 
-            // Optional: Nice slide-up animation like TikTok
+
             requireActivity.overridePendingTransition(
                 R.anim.slide_in_up,
                 R.anim.stay

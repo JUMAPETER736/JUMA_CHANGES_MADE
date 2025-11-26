@@ -1516,7 +1516,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             val intent = Intent(requireContext(), SearchShortActivity::class.java)
             startActivity(intent)
 
-            // Optional: Nice slide-up animation like TikTok
+
             requireActivity().overridePendingTransition(
                 R.anim.slide_in_up,
                 R.anim.stay
