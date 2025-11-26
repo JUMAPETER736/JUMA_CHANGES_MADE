@@ -1,12 +1,10 @@
 package com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,8 +19,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
@@ -32,12 +32,14 @@ import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.ActivitySearchAllUserNameBinding
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.circuit.model.ShortsViewModel
-import kotlinx.coroutines.*
-import retrofit2.HttpException
-import java.io.IOException
 import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import retrofit2.HttpException
+import java.io.IOException
 import java.util.Date
 
 
@@ -46,9 +48,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySearchAllUserNameBinding
     private lateinit var searchAdapter: SearchUserNameAdapter
-
-
-    lateinit var apiService: IFlashapi
+    private lateinit var apiService: IFlashapi
 
     private val shortsViewModel: ShortsViewModel by viewModels()
     private val recentUserViewModel: RecentUserViewModel by viewModels()
@@ -56,7 +56,6 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
         binding = ActivitySearchAllUserNameBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -75,155 +74,120 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
         binding.toolbar.setNavigationIcon(R.drawable.baseline_arrow_back_ios_24)
-        binding.toolbar.setNavigationOnClickListener {
-            onBackPressed()
-        }
+        binding.toolbar.setNavigationOnClickListener { onBackPressed() }
     }
 
     private fun loadRecentUsers() {
-        CoroutineScope(Dispatchers.IO).launch {
-            val recentUsers = recentUserViewModel.getRecentUsers()
-            searchAdapter.setRecentUsers(recentUsers.map { it.toUserResult() })
-            Log.d("RecentUsers", "RecentUsers: $recentUsers")
+        lifecycleScope.launch {
+            val recentUsers = withContext(Dispatchers.IO) {
+                recentUserViewModel.getRecentUsers()
+            }
+            searchAdapter.showRecentUsers(recentUsers.map { it.toUserResult() })
         }
     }
 
-    private fun RecentUser.toUserResult(): UserResult {
-        return UserResult(
-            userId = id,
-            username = name,
-            avatarUrl = avatar,
-            firstVideoId = "",
-            firstVideoUrl = "",
-            firstVideoThumbnail = ""
-        )
-    }
+    // Inside SearchAllUserNameActivity.kt
+
+    private fun UserResult.toRecentUser() = RecentUser(
+        id = userId,                 
+        name = username,
+        avatar = avatarUrl,
+        lastSeen = Date(),
+        online = false,
+        dateAdded = Date()
+    )
+
+    private fun RecentUser.toUserResult() = UserResult(
+        userId = id,
+        username = name,
+        avatarUrl = avatar,
+        firstVideoId = "",
+        firstVideoUrl = "",
+        firstVideoThumbnail = ""
+    )
 
     private fun initSearchResults() {
-        searchAdapter = SearchUserNameAdapter(this) { user ->
+        searchAdapter = SearchUserNameAdapter { user ->
             Log.d("SearchResults", "User clicked: @${user.username} (${user.userId})")
             addUserToRecent(user.toRecentUser())
             onUserClicked(user)
         }
 
         binding.searchResultsRecyclerView.apply {
-            layoutManager = LinearLayoutManager(this@SearchAllUserNameActivity)
+            layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this@SearchAllUserNameActivity)
             adapter = searchAdapter
         }
     }
 
-    private fun UserResult.toRecentUser(): RecentUser {
-        return RecentUser(
-            userId,
-            username,
-            avatarUrl,
-            Date(),
-            false,
-            Date()
-        )
-    }
+
 
     private fun addUserToRecent(user: RecentUser) {
-        CoroutineScope(Dispatchers.IO).launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             recentUserViewModel.addRecentUser(user)
         }
     }
 
     private fun setupSearch() {
-        // Handle the "Search" button on the keyboard
         binding.searchEditText.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                searchAdapter.setLoading(true)
-                performSearch(binding.searchEditText.text.toString())
+                performSearch(binding.searchEditText.text.toString().trim())
                 hideKeyboard()
                 binding.searchEditText.clearFocus()
                 true
-            } else {
-                false
-            }
+            } else false
         }
 
-        // Detect text changes after user finishes typing
         binding.searchEditText.addTextChangedListener(afterTextChanged = { editable ->
-            val searchText = editable.toString().trim()
-            Log.d("FinishedTyping", "FinishedTyping: $searchText")
+            val query = editable.toString().trim()
+            Log.d("FinishedTyping", "FinishedTyping: $query")
 
-            if (searchText.isEmpty()) {
-                // Show recent users when search is empty
+            if (query.isEmpty()) {
                 loadRecentUsers()
             } else {
-                searchAdapter.setLoading(true)
-                performSearch(searchText)
+                searchAdapter.showLoading()
+                performSearch(query)
             }
         })
     }
 
     private fun performSearch(query: String) {
-        searchAdapter.setLoading(true)
-
-        CoroutineScope(Dispatchers.Main).launch {
-            val searchResults = searchUsers(query).sortedBy { it.username }
-            hideKeyboard()
-            binding.searchEditText.clearFocus()
-
-            Log.d("SearchResults", "Search results: $searchResults")
-            Log.d("SearchResults", "Results count: ${searchResults.size}")
-
-            if (searchResults.isNotEmpty()) {
-                searchAdapter.setSearchUsers(searchResults)
+        lifecycleScope.launch {
+            val results = searchUsers(query).sortedBy { it.username }
+            if (results.isNotEmpty()) {
+                searchAdapter.showSearchResults(results)
             } else {
-                searchAdapter.setNoResults()
+                searchAdapter.showNoResults()
             }
         }
     }
 
-    private suspend fun searchUsers(query: String): List<UserResult> {
-        searchAdapter.setLoading(true)
-        return withContext(Dispatchers.IO) {
-            val users = mutableListOf<UserResult>()
-
-            try {
-                Log.d("SearchUsers", "Calling searchUsers API with query: '$query'")
-                val response = apiService.searchUsers(query)
-
-                if (response.isSuccessful) {
-                    Log.d("SearchUsers", "Success Message: ${response.body()?.message}")
-                    Log.d("SearchUsers", "Success Data: ${response.body()?.data}")
-
-                    val apiUsers = response.body()?.data as? List<com.uyscuti.social.network.api.models.User>
-                        ?: emptyList()
-
-                    apiUsers.forEach { apiUser ->
-                        try {
-                            val userResult = UserResult(
-                                userId = apiUser._id,
-                                username = apiUser.username,
-                                avatarUrl = apiUser.avatar.url,
-                                firstVideoId = "",
-                                firstVideoUrl = "",
-                                firstVideoThumbnail = ""
-                            )
-                            users.add(userResult)
-                        } catch (e: Exception) {
-                            Log.e("SearchUsers", "Error converting user: ${e.message}")
-                        }
-                    }
-                } else {
-                    Log.e("SearchUsers", "Error: ${response.message()}")
+    private suspend fun searchUsers(query: String): List<UserResult> = withContext(Dispatchers.IO) {
+        val users = mutableListOf<UserResult>()
+        try {
+            val response = apiService.searchUsers(query)
+            if (response.isSuccessful) {
+                val apiUsers = response.body()?.data as? List<com.uyscuti.social.network.api.models.User> ?: emptyList()
+                apiUsers.forEach { apiUser ->
+                    users.add(
+                        UserResult(
+                            userId = apiUser._id,
+                            username = apiUser.username,
+                            avatarUrl = apiUser.avatar.url,
+                            firstVideoId = "",
+                            firstVideoUrl = "",
+                            firstVideoThumbnail = ""
+                        )
+                    )
                 }
-            } catch (e: HttpException) {
-                Log.e("SearchUsers", "HttpException: ${e.message}")
-                e.printStackTrace()
-            } catch (e: IOException) {
-                Log.e("SearchUsers", "IOException: ${e.message}")
-                e.printStackTrace()
-            } catch (e: Exception) {
-                Log.e("SearchUsers", "Exception: ${e.message}")
-                e.printStackTrace()
             }
-
-            users
+        } catch (e: HttpException) {
+            Log.e("SearchUsers", "HTTP error: ${e.message}")
+        } catch (e: IOException) {
+            Log.e("SearchUsers", "Network error: ${e.message}")
+        } catch (e: Exception) {
+            Log.e("SearchUsers", "Unexpected error: ${e.message}")
         }
+        users
     }
 
     @OptIn(UnstableApi::class)
@@ -238,7 +202,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     }
 
     private fun hideKeyboard() {
-        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
     }
 }
@@ -252,213 +216,103 @@ data class UserResult(
     val firstVideoThumbnail: String
 )
 
-
+// ─────────────────────────────────────────────────────────────────────────────
+// MODERN LISTADAPTER — 100% THREAD-SAFE, NO MORE NOTIFYDATASETCHANGED()
+// ─────────────────────────────────────────────────────────────────────────────
 
 class SearchUserNameAdapter(
-    private val context: Context,
-    private val listener: (UserResult) -> Unit
-)
+    private val onUserClicked: (UserResult) -> Unit
+) : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback()) {
 
-    : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-
-    private var recentUserList: MutableList<UserResult> = mutableListOf()
-    private var searchUserList: MutableList<UserResult> = mutableListOf()
-    private var displayRecentUsers = true
-    private var isLoading = false
-    private var noResults = false
-
-    private val SHIMMER_ITEM_COUNT = 10
-
-    // View types
-    private val TYPE_RECENT_HEADER = 0
-    private val TYPE_SEARCH_HEADER = 1
-    private val TYPE_USER = 2
-    private val TYPE_LOADING = 3
-    private val TYPE_NO_RESULTS = 4
-
-    fun setRecentUsers(recentUsers: List<UserResult>) {
-        this.recentUserList = recentUsers.toMutableList()
-        if (displayRecentUsers) {
-            notifyDataSetChanged()
-        } else {
-            displayRecentUsers = true
-            notifyDataSetChanged()
-        }
+    fun showRecentUsers(users: List<UserResult>) {
+        submitList(listOf("RECENT_HEADER") + users)
     }
 
-    fun setSearchUsers(searchUsers: List<UserResult>) {
-        this.searchUserList = searchUsers.toMutableList()
-        isLoading = false
-        displayRecentUsers = false
-        noResults = false
-        notifyDataSetChanged()
+    fun showSearchResults(users: List<UserResult>) {
+        submitList(listOf("SEARCH_HEADER") + users)
     }
 
-    fun setLoading(isLoading: Boolean) {
-        this.isLoading = isLoading
-        displayRecentUsers = false
-        notifyDataSetChanged()
+    fun showLoading() {
+        submitList(List(10) { "LOADING" })
     }
 
-    fun setNoResults() {
-        this.noResults = true
-        this.isLoading = false
-        notifyDataSetChanged()
+    fun showNoResults() {
+        submitList(listOf("NO_RESULTS"))
+    }
+
+    override fun getItemViewType(position: Int): Int = when (getItem(position)) {
+        "RECENT_HEADER", "SEARCH_HEADER" -> 0
+        is UserResult -> 1
+        "LOADING" -> 2
+        "NO_RESULTS" -> 3
+        else -> -1
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val inflater = LayoutInflater.from(context)
-
+        val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
-            TYPE_RECENT_HEADER -> {
-                val view = inflater.inflate(R.layout.recent_users_header, parent, false)
-                HeaderViewHolder(view)
-            }
-            TYPE_SEARCH_HEADER -> {
-                val view = inflater.inflate(R.layout.search_results_header, parent, false)
-                HeaderViewHolder(view)
-            }
-            TYPE_USER -> {
-                val view = inflater.inflate(R.layout.search_user_item, parent, false)
-                UserViewHolder(view)
-            }
-            TYPE_LOADING -> {
-                val view = inflater.inflate(R.layout.shimmer_search_user, parent, false)
-                LoadingViewHolder(view)
-            }
-            TYPE_NO_RESULTS -> {
-                val view = inflater.inflate(R.layout.no_results_item, parent, false)
-                NoResultsViewHolder(view)
-            }
-            else -> throw IllegalArgumentException("Invalid view type")
-        }
-    }
-
-    override fun getItemCount(): Int {
-        return when {
-            displayRecentUsers -> recentUserList.size + 1
-            isLoading -> SHIMMER_ITEM_COUNT
-            noResults -> 1
-            else -> searchUserList.size + 1
-        }
-    }
-
-    override fun getItemViewType(position: Int): Int {
-        return when {
-            displayRecentUsers && position == 0 -> TYPE_RECENT_HEADER
-            !displayRecentUsers && position == 0 -> TYPE_SEARCH_HEADER
-            isLoading -> TYPE_LOADING
-            noResults -> TYPE_NO_RESULTS
-            else -> TYPE_USER
+            0 -> HeaderViewHolder(
+                if (getItem(0) == "RECENT_HEADER")
+                    inflater.inflate(R.layout.recent_users_header, parent, false)
+                else
+                    inflater.inflate(R.layout.search_results_header, parent, false)
+            )
+            1 -> UserViewHolder(inflater.inflate(R.layout.search_user_item, parent, false))
+            2 -> LoadingViewHolder(inflater.inflate(R.layout.shimmer_search_user, parent, false))
+            3 -> NoResultsViewHolder(inflater.inflate(R.layout.no_results_item, parent, false))
+            else -> throw IllegalArgumentException("Unknown view type")
         }
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
-            is HeaderViewHolder -> {
-                // Bind header data if needed
-            }
             is UserViewHolder -> {
-                val userPosition = if (displayRecentUsers) position - 1 else position - 1
-                holder.bind(
-                    if (displayRecentUsers) recentUserList[userPosition]
-                    else searchUserList[userPosition],
-                    listener
-                )
+                val user = getItem(position) as UserResult
+                holder.bind(user, onUserClicked)
             }
-            is LoadingViewHolder -> {
-                if (isLoading) {
-                    holder.showLoading()
-                } else {
-                    holder.hideLoading()
-                }
-            }
-            is NoResultsViewHolder -> {
-                // No results message is handled in the layout
-            }
+            is LoadingViewHolder -> holder.showLoading()
+            // Header & NoResults have static layouts → nothing to bind
         }
     }
+}
 
-    // ViewHolder for header
-    private class HeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
-
-    // ViewHolder for user items
-    private class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val avatarImageView: ImageView = itemView.findViewById(R.id.avatar)
-        private val userNameTextView: TextView = itemView.findViewById(R.id.name)
-
-        init {
-            val selectableItemBackground = TypedValue()
-            itemView.context.theme.resolveAttribute(
-                android.R.attr.selectableItemBackground,
-                selectableItemBackground,
-                true
-            )
-            itemView.setBackgroundResource(selectableItemBackground.resourceId)
+private class SearchDiffCallback : DiffUtil.ItemCallback<Any>() {
+    override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
+        if (oldItem is UserResult && newItem is UserResult) {
+            return oldItem.userId == newItem.userId
         }
-
-        fun bind(user: UserResult, listener: (UserResult) -> Unit) {
-            Glide.with(itemView.context)
-                .load(user.avatarUrl)
-                .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                .into(avatarImageView)
-
-            userNameTextView.text = "@${user.username}"
-
-            itemView.setOnClickListener {
-                listener.invoke(user)
-            }
-        }
+        return oldItem::class == newItem::class
     }
 
-    // ViewHolder for loading
-    private class LoadingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val shimmerView: View = itemView.findViewById(R.id.shimmer_view)
-        private val shimmerView2: View = itemView.findViewById(R.id.shimmer_view2)
-        private var handler: Handler? = null
-        private var shimmerRunnable: Runnable? = null
+    @SuppressLint("DiffUtilEquals")
+    override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean = oldItem == newItem
+}
 
-        init {
-            showLoading()
-        }
+// ViewHolders (same as before, only minor cleanup)
+private class HeaderViewHolder(view: View) : RecyclerView.ViewHolder(view)
+private class NoResultsViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
-        fun showLoading() {
-            shimmerView.visibility = View.VISIBLE
-            shimmerView2.visibility = View.VISIBLE
-            startShimmerEffect()
-        }
+private class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    private val avatar = itemView.findViewById<ImageView>(R.id.avatar)
+    private val username = itemView.findViewById<TextView>(R.id.name)
 
-        fun hideLoading() {
-            shimmerView.visibility = View.GONE
-            shimmerView2.visibility = View.GONE
-            stopShimmerEffect()
-        }
-
-        private fun startShimmerEffect() {
-            handler = Handler(Looper.getMainLooper())
-            shimmerRunnable = object : Runnable {
-                override fun run() {
-                    shimmerView.alpha = 0.7f
-                    shimmerView2.alpha = 0.7f
-
-                    handler?.postDelayed({
-                        shimmerView.alpha = 1f
-                        shimmerView2.alpha = 1f
-                    }, 500)
-
-                    handler?.postDelayed(this, 600)
-                }
-            }
-            handler?.post(shimmerRunnable!!)
-        }
-
-        private fun stopShimmerEffect() {
-            shimmerRunnable?.let { handler?.removeCallbacks(it) }
-            handler = null
-            shimmerRunnable = null
-        }
+    fun bind(user: UserResult, listener: (UserResult) -> Unit) {
+        Glide.with(itemView.context)
+            .load(user.avatarUrl)
+            .apply(RequestOptions.bitmapTransform(CircleCrop()))
+            .placeholder(R.drawable.person_button_svgrepo_com)
+            .into(avatar)
+        username.text = "@${user.username}"
+        itemView.setOnClickListener { listener(user) }
     }
+}
 
-    // ViewHolder for no results
-    private class NoResultsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+private class LoadingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    private val shimmer1 = itemView.findViewById<View>(R.id.shimmer_view)
+    private val shimmer2 = itemView.findViewById<View>(R.id.shimmer_view2)
+
+    fun showLoading() {
+        shimmer1.visibility = View.VISIBLE
+        shimmer2.visibility = View.VISIBLE
+    }
 }
