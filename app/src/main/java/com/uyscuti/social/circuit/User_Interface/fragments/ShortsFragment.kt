@@ -1470,6 +1470,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
+
     ): View? {
 
         val TAG = "ShortsFragment onCreateView"

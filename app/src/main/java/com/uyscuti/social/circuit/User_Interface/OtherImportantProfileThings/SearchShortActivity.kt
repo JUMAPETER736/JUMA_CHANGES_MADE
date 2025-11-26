@@ -148,11 +148,14 @@ class SearchShortActivity : AppCompatActivity() {
                     val posts = responseBody?.data?.posts?.posts ?: emptyList()
 
                     val searchResults = posts.map { post ->
+                        // Extract username from author account
+                        val username = post.author.account.username.trim()
+
                         SearchResult(
                             id = post._id,
                             title = post.content.take(100),
                             description = post.content,
-                            username = post.author.account.username,
+                            username = username,
                             thumbnailUrl = post.thumbnail.firstOrNull()?.thumbnailUrl ?: "",
                             videoUrl = post.images.firstOrNull()?.url ?: "",
                             authorId = post.author.account._id,
@@ -193,7 +196,7 @@ class SearchShortActivity : AppCompatActivity() {
             } catch (e: IOException) {
                 withContext(Dispatchers.Main) {
                     showLoading(false)
-                    showToast("Connection error. Please check your internet.")
+
                     Log.e("SearchShort", "IOException: ${e.message}")
                 }
             }
@@ -215,11 +218,14 @@ class SearchShortActivity : AppCompatActivity() {
                 } ?: emptyList()
 
                 val searchResults = videoPosts.map { post ->
+                    // Extract username properly from author account
+                    val username = post.author?.account?.username?.trim() ?: ""
+
                     SearchResult(
                         id = post._id,
                         title = post.content.take(100),
                         description = post.content,
-                        username = post.author.account.username,
+                        username = username,
                         thumbnailUrl = post.thumbnail.firstOrNull()?.thumbnailUrl ?: "",
                         videoUrl = post.files.firstOrNull { file ->
                             post.fileTypes.any {
@@ -227,8 +233,8 @@ class SearchShortActivity : AppCompatActivity() {
                                         it.fileType.contains("video", ignoreCase = true) == true
                             }
                         }?.url ?: "",
-                        authorId = post.author.account._id,
-                        avatarUrl = post.author.account.avatar.url,
+                        authorId = post.author?.account?._id ?: "",
+                        avatarUrl = post.author?.account?.avatar?.url ?: "",
                         likes = post.likes,
                         comments = post.comments,
                         isLiked = post.isLiked,
@@ -275,9 +281,22 @@ class SearchShortActivity : AppCompatActivity() {
             val results = mutableListOf<SearchResult>()
 
             try {
+                // Normalize the search query (trim and lowercase)
+                val normalizedQuery = query.trim().lowercase()
+
+                Log.d("SearchShort", "Searching for: '$normalizedQuery'")
+
+                // Filter results by username (case-insensitive)
                 results.addAll(
                     allResults.filter { result ->
-                        result.username.contains(query, ignoreCase = true)
+                        val normalizedUsername = result.username.trim().lowercase()
+                        val matches = normalizedUsername.contains(normalizedQuery)
+
+                        if (matches) {
+                            Log.d("SearchShort", "Match found: @${result.username}")
+                        }
+
+                        matches
                     }
                 )
 
@@ -306,11 +325,14 @@ class SearchShortActivity : AppCompatActivity() {
                     val posts = responseBody?.data?.posts?.posts ?: emptyList()
 
                     val searchResults = posts.map { post ->
+                        // Extract username properly
+                        val username = post.author.account.username.trim()
+
                         SearchResult(
                             id = post._id,
                             title = post.content.take(100),
                             description = post.content,
-                            username = post.author.account.username,
+                            username = username,
                             thumbnailUrl = post.thumbnail.firstOrNull()?.thumbnailUrl ?: "",
                             videoUrl = post.images.firstOrNull()?.url ?: "",
                             authorId = post.author.account._id,
