@@ -8,8 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -23,7 +21,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
@@ -129,8 +126,8 @@ class SearchShortActivity : AppCompatActivity() {
             val searchText = editable.toString().trim()
 
             if (searchText.isEmpty()) {
-                // Show all results when search is empty
-                searchAdapter.setSearchResults(allResults)
+                // Hide results when search is empty
+                searchAdapter.setSearchResults(emptyList())
                 binding.noResultsText.visibility = View.GONE
             } else {
                 searchAdapter.setLoading(true)
@@ -259,8 +256,7 @@ class SearchShortActivity : AppCompatActivity() {
             hideKeyboard()
             binding.searchEditText.clearFocus()
 
-            Log.d("SearchShort", "Search results: $searchResults")
-            Log.d("SearchShort", "Results count: ${searchResults.size}")
+            Log.d("SearchShort", "Search results: ${searchResults.size}")
 
             if (searchResults.isNotEmpty()) {
                 searchAdapter.setSearchResults(searchResults)
@@ -281,10 +277,7 @@ class SearchShortActivity : AppCompatActivity() {
             try {
                 results.addAll(
                     allResults.filter { result ->
-                        result.title.contains(query, ignoreCase = true) ||
-                                result.description.contains(query, ignoreCase = true) ||
-                                result.username.contains(query, ignoreCase = true) ||
-                                result.tags.any { it.contains(query, ignoreCase = true) }
+                        result.username.contains(query, ignoreCase = true)
                     }
                 )
 
@@ -340,8 +333,6 @@ class SearchShortActivity : AppCompatActivity() {
                         val query = binding.searchEditText.text.toString().trim()
                         if (query.isNotEmpty()) {
                             performSearch(query)
-                        } else {
-                            searchAdapter.setSearchResults(allResults)
                         }
                     }
                 }
@@ -425,16 +416,17 @@ class SearchResultsAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SearchViewHolder {
-        val itemView = LinearLayout(parent.context).apply {
+        val textView = TextView(parent.context).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(16, 16, 16, 16)
+            setPadding(48, 32, 48, 32)
+            textSize = 18f
+            setTextColor(parent.context.getColor(android.R.color.black))
             setBackgroundResource(android.R.drawable.list_selector_background)
         }
-        return SearchViewHolder(itemView, onItemClick)
+        return SearchViewHolder(textView, onItemClick)
     }
 
     override fun onBindViewHolder(holder: SearchViewHolder, position: Int) {
@@ -444,86 +436,13 @@ class SearchResultsAdapter(
     override fun getItemCount() = results.size
 
     inner class SearchViewHolder(
-        private val itemView: LinearLayout,
+        private val textView: TextView,
         private val onItemClick: (SearchResult) -> Unit
-    ) : RecyclerView.ViewHolder(itemView) {
+    ) : RecyclerView.ViewHolder(textView) {
 
-        @SuppressLint("SetTextI18n")
         fun bind(result: SearchResult) {
-            itemView.apply {
-                removeAllViews()
-
-                // Thumbnail ImageView
-                val thumbnailView = ImageView(context).apply {
-                    layoutParams = LinearLayout.LayoutParams(120, 120).apply {
-                        rightMargin = 16
-                    }
-                    scaleType = ImageView.ScaleType.CENTER_CROP
-
-                    if (result.thumbnailUrl.isNotEmpty()) {
-                        Glide.with(context)
-                            .load(result.thumbnailUrl)
-                            .placeholder(R.drawable.ic_launcher_background)
-                            .error(R.drawable.ic_launcher_background)
-                            .into(this)
-                    } else {
-                        setImageResource(R.drawable.ic_launcher_background)
-                    }
-                }
-                addView(thumbnailView)
-
-                // Content Container
-                val contentLayout = LinearLayout(context).apply {
-                    layoutParams = LinearLayout.LayoutParams(
-                        0,
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        1f
-                    )
-                    orientation = LinearLayout.VERTICAL
-                }
-
-                // Title
-                val titleView = TextView(context).apply {
-                    text = if (result.title.isEmpty()) "Short Video" else result.title
-                    textSize = 16f
-                    setTextColor(context.getColor(android.R.color.black))
-                    typeface = android.graphics.Typeface.DEFAULT_BOLD
-                    maxLines = 2
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply { bottomMargin = 4 }
-                }
-                contentLayout.addView(titleView)
-
-                // Username
-                val usernameView = TextView(context).apply {
-                    text = "@${result.username}"
-                    textSize = 14f
-                    setTextColor(context.getColor(android.R.color.darker_gray))
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply { bottomMargin = 4 }
-                }
-                contentLayout.addView(usernameView)
-
-                // Stats (likes and comments)
-                val statsView = TextView(context).apply {
-                    text = " ${result.likes}   ${result.comments}"
-                    textSize = 12f
-                    setTextColor(context.getColor(android.R.color.darker_gray))
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-                }
-                contentLayout.addView(statsView)
-
-                addView(contentLayout)
-
-                setOnClickListener { onItemClick(result) }
-            }
+            textView.text = "@${result.username}"
+            textView.setOnClickListener { onItemClick(result) }
         }
     }
 }
