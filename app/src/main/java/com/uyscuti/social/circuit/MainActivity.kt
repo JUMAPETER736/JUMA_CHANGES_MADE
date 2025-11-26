@@ -434,7 +434,8 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     private val IMAGES_REQUEST_CODE = 2023
     private val READ_EXTERNAL_STORAGE_REQUEST_CODE = 101
     private val REQUEST_RECORD_AUDIO_PERMISSION = 200
-    private lateinit var searchForAllShorts: ImageView
+
+
 
    // VIEW BINDING & UI COMPONENTS
 
@@ -2231,6 +2232,8 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         initializeCommentsBottomSheet()
 
 
+
+
         binding.VNLinearLayout.setOnClickListener {
             Log.d(TAG, "onCreate: vn linear layout touched")
         }
@@ -2309,15 +2312,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             binding.waveformScrollView.fullScroll(View.FOCUS_RIGHT)
         }
 
-        searchForAllShorts.setOnClickListener {
-            val intent = Intent(this@MainActivity, SearchShortActivity::class.java)
-            startActivity(intent)
 
-            overridePendingTransition(
-                R.anim.slide_in_up,
-                R.anim.stay
-            )
-        }
 
 
         setupCommentCountObservers()
