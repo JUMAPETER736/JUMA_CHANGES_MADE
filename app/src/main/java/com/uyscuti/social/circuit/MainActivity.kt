@@ -60,6 +60,7 @@ import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
@@ -458,7 +459,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     private lateinit var item4: NavigationItem
     private var lastFragmentId: String? = null
     private val onBackPressedListeners: MutableList<OnBackPressedListener> = mutableListOf()
-
+    private lateinit var searchForAllShorts: ImageView
 
   // DEPENDENCY INJECTIONS
 
@@ -2311,6 +2312,17 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             binding.waveformScrollView.fullScroll(View.FOCUS_RIGHT)
         }
 
+        searchForAllShorts.setOnClickListener {
+            
+            val intent = Intent(requireContext, SearchShortActivity::class.java)
+            startActivity(intent)
+
+            // Optional: Nice slide-up animation like TikTok
+            requireActivity.overridePendingTransition(
+                R.anim.slide_in_up,
+                R.anim.stay
+            )
+        }
 
     }
 
