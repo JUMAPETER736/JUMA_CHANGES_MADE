@@ -39,7 +39,8 @@ import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Date
-import javax.inject.Inject
+
+
 
 @AndroidEntryPoint
 class SearchAllUserNameActivity : AppCompatActivity() {
@@ -47,7 +48,6 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySearchAllUserNameBinding
     private lateinit var searchAdapter: SearchUserNameAdapter
 
-    @Inject
     lateinit var apiService: IFlashapi
 
     private val shortsViewModel: ShortsViewModel by viewModels()
