@@ -57,7 +57,7 @@
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:textSize="15sp"
-                android:textColor="@color/white"
+                android:textColor="@color/black"
                 android:textColorHint="#B3FFFFFF"
                 android:singleLine="true"
                 android:imeOptions="actionSearch"
