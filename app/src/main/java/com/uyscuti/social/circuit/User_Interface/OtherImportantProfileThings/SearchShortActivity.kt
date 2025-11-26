@@ -27,10 +27,7 @@ import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.circuit.databinding.ActivitySearchShortBinding
 import com.uyscuti.social.circuit.model.ShortsViewModel
 import com.uyscuti.social.core.common.data.api.Retrofit
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import retrofit2.HttpException
 import java.io.IOException
 
@@ -46,6 +43,10 @@ class SearchShortActivity : AppCompatActivity() {
     private val shortsViewModel: ShortsViewModel by viewModels()
     private var currentPage = 1
     private var isLoading = false
+
+    // For debouncing search
+    private var searchJob: Job? = null
+    private val searchDebounceTime = 300L // 300ms delay
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,9 +67,6 @@ class SearchShortActivity : AppCompatActivity() {
         setupSearch()
         initSearchResults()
         setupBackButton()
-
-        hideKeyboard()
-        binding.searchEditText.clearFocus()
 
         // Load initial data
         loadInitialData()
@@ -106,11 +104,18 @@ class SearchShortActivity : AppCompatActivity() {
     }
 
     private fun setupSearch() {
+        // Show all results initially when EditText is focused
+        binding.searchEditText.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && binding.searchEditText.text.isEmpty()) {
+                // Show all results when focused with empty text
+                searchAdapter.setSearchResults(allResults)
+                binding.noResultsText.visibility = View.GONE
+            }
+        }
+
         // Handle the "Search" button on the keyboard
         binding.searchEditText.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                searchAdapter.setLoading(true)
-                performSearch(binding.searchEditText.text.toString())
                 hideKeyboard()
                 binding.searchEditText.clearFocus()
                 true
@@ -119,19 +124,27 @@ class SearchShortActivity : AppCompatActivity() {
             }
         }
 
-        // Handle text changes
+        // Handle text changes with debouncing
         binding.searchEditText.addTextChangedListener(afterTextChanged = { editable ->
-            Log.d("SearchShort", "Text changed: $editable")
-
             val searchText = editable.toString().trim()
 
+            // Cancel previous search job
+            searchJob?.cancel()
+
             if (searchText.isEmpty()) {
-                // Hide results when search is empty
-                searchAdapter.setSearchResults(emptyList())
+                // Show all results when search is empty
+                searchAdapter.setSearchResults(allResults)
                 binding.noResultsText.visibility = View.GONE
+                binding.progressBar.visibility = View.GONE
             } else {
-                searchAdapter.setLoading(true)
-                performSearch(searchText)
+                // Show loading state
+                binding.progressBar.visibility = View.VISIBLE
+
+                // Debounce search - wait 300ms after user stops typing
+                searchJob = lifecycleScope.launch {
+                    delay(searchDebounceTime)
+                    performSearch(searchText)
+                }
             }
         })
     }
@@ -196,7 +209,6 @@ class SearchShortActivity : AppCompatActivity() {
             } catch (e: IOException) {
                 withContext(Dispatchers.Main) {
                     showLoading(false)
-
                     Log.e("SearchShort", "IOException: ${e.message}")
                 }
             }
@@ -255,14 +267,14 @@ class SearchShortActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun performSearch(query: String) {
-        CoroutineScope(Dispatchers.Main).launch {
+        lifecycleScope.launch {
             val searchResults = searchInResults(query)
 
-            hideKeyboard()
-            binding.searchEditText.clearFocus()
-
             Log.d("SearchShort", "Search results: ${searchResults.size}")
+
+            binding.progressBar.visibility = View.GONE
 
             if (searchResults.isNotEmpty()) {
                 searchAdapter.setSearchResults(searchResults)
@@ -276,7 +288,6 @@ class SearchShortActivity : AppCompatActivity() {
     }
 
     private suspend fun searchInResults(query: String): List<SearchResult> {
-        searchAdapter.setLoading(true)
         return withContext(Dispatchers.Default) {
             val results = mutableListOf<SearchResult>()
 
@@ -355,6 +366,9 @@ class SearchShortActivity : AppCompatActivity() {
                         val query = binding.searchEditText.text.toString().trim()
                         if (query.isNotEmpty()) {
                             performSearch(query)
+                        } else {
+                            // Show all results if no query
+                            searchAdapter.setSearchResults(allResults)
                         }
                     }
                 }
@@ -391,6 +405,11 @@ class SearchShortActivity : AppCompatActivity() {
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        searchJob?.cancel()
+    }
 }
 
 data class SearchResult(
@@ -416,24 +435,16 @@ class SearchResultsAdapter(
     private val onItemClick: (SearchResult) -> Unit
 ) : RecyclerView.Adapter<SearchResultsAdapter.SearchViewHolder>() {
 
-    private var isLoading = false
-
-    fun setLoading(loading: Boolean) {
-        isLoading = loading
-    }
-
     @SuppressLint("NotifyDataSetChanged")
     fun setSearchResults(newResults: List<SearchResult>) {
         results.clear()
         results.addAll(newResults)
-        isLoading = false
         notifyDataSetChanged()
     }
 
     @SuppressLint("NotifyDataSetChanged")
     fun setNoResults() {
         results.clear()
-        isLoading = false
         notifyDataSetChanged()
     }
 
