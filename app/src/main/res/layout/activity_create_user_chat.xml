@@ -30,7 +30,7 @@
             android:paddingEnd="16dp"
             android:textSize="15sp"
             android:textColor="@color/black"
-            android:textColorHint="#B3FFFFFF"
+            android:textColorHint="#B3100F0F"
             android:maxLines="1"
             android:singleLine="true" />
 
