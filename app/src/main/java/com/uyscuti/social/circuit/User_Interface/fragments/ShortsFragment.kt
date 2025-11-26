@@ -121,7 +121,7 @@ import com.uyscuti.social.circuit.utils.removeDuplicateFollowers
 import com.uyscuti.social.circuit.viewmodels.FeedShortsViewModel
 import com.uyscuti.social.circuit.viewmodels.FollowUnfollowViewModel
 import com.uyscuti.social.circuit.viewmodels.FollowViewModel
-import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SearchShortActivity
+import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SearchUserNameActivity
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.circuit.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.social.circuit.model.GoToUserProfileFragment
@@ -167,14 +167,7 @@ import retrofit2.Response
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.signature.ObjectKey
 import android.graphics.drawable.Drawable
-import com.uyscuti.social.core.common.data.api.Retrofit
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
-import com.uyscuti.social.network.api.response.comment.allcomments.AllShortComments
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.GET
-import retrofit2.http.Path
-import retrofit2.http.Query
 import kotlin.jvm.java
 
 
@@ -1514,7 +1507,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
         searchForAllShorts.setOnClickListener {
-            val intent = Intent(requireContext(), SearchShortActivity::class.java)
+            val intent = Intent(requireContext(), SearchUserNameActivity::class.java)
             startActivity(intent)
 
 
