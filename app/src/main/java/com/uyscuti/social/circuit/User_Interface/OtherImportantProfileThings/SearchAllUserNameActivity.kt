@@ -29,8 +29,8 @@ import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.R
+import com.uyscuti.social.circuit.databinding.ActivitySearchAllUserNameBinding
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
-import com.uyscuti.social.circuit.databinding.ActivitySearchShortBinding
 import com.uyscuti.social.circuit.model.ShortsViewModel
 import kotlinx.coroutines.*
 import retrofit2.HttpException
@@ -42,9 +42,9 @@ import java.util.Date
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class SearchUserNameActivity : AppCompatActivity() {
+class SearchAllUserNameActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivitySearchShortBinding
+    private lateinit var binding: ActivitySearchAllUserNameBinding
     private lateinit var searchAdapter: SearchUserNameAdapter
 
     @Inject
@@ -57,7 +57,7 @@ class SearchUserNameActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        binding = ActivitySearchShortBinding.inflate(layoutInflater)
+        binding = ActivitySearchAllUserNameBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
@@ -107,7 +107,7 @@ class SearchUserNameActivity : AppCompatActivity() {
         }
 
         binding.searchResultsRecyclerView.apply {
-            layoutManager = LinearLayoutManager(this@SearchUserNameActivity)
+            layoutManager = LinearLayoutManager(this@SearchAllUserNameActivity)
             adapter = searchAdapter
         }
     }

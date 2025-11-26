@@ -321,7 +321,7 @@
             android:name=".User_Interface.OtherImportantProfileThings.GifActivity"
             android:exported="false" />
         <activity
-            android:name=".User_Interface.OtherImportantProfileThings.SearchUserNameActivity"
+            android:name=".User_Interface.OtherImportantProfileThings.SearchAllUserNameActivity"
             android:exported="false" />
         <activity
             android:name=".feed_demo.AnyFileFullScreenActivity"

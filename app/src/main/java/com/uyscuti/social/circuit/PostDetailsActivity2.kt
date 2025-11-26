@@ -115,7 +115,7 @@ import com.uyscuti.social.circuit.presentation.MessageViewModel
 import com.uyscuti.social.circuit.service.VideoPreLoadingService
 import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.GifActivity
 import com.uyscuti.social.circuit.User_Interface.Log_In_And_Register.LoginActivity
-import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SearchUserNameActivity
+import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SearchAllUserNameActivity
 import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SettingsActivity
 import com.uyscuti.social.circuit.User_Interface.shorts.UniqueIdGenerator
 import com.uyscuti.social.circuit.User_Interface.shorts.getFileSize
@@ -499,7 +499,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         val logoutMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.logout)
 
         menuSearch?.setOnMenuItemClickListener {
-            val intent = Intent(this, SearchUserNameActivity::class.java)
+            val intent = Intent(this, SearchAllUserNameActivity::class.java)
             startActivity(intent)
             true
         }

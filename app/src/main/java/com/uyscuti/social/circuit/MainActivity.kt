@@ -114,7 +114,7 @@ import com.uyscuti.social.chatsuit.messages.CommentsInput
 import com.uyscuti.social.circuit.User_Interface.Log_In_And_Register.LoginActivity
 import com.uyscuti.social.circuit.User_Interface.MyUserProfile.MyUserProfileAccount
 import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.GifActivity
-import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SearchUserNameActivity
+import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SearchAllUserNameActivity
 import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SettingsActivity
 import com.uyscuti.social.circuit.User_Interface.fragments.ChatFragment
 import com.uyscuti.social.circuit.User_Interface.fragments.FeedFragment
@@ -1757,7 +1757,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         val searchMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_search)
 
         searchMenuItem?.setOnMenuItemClickListener {
-            val intent = Intent(this, SearchUserNameActivity::class.java)
+            val intent = Intent(this, SearchAllUserNameActivity::class.java)
             startActivity(intent)
             true
 

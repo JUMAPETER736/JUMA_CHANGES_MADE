@@ -121,7 +121,7 @@ import com.uyscuti.social.circuit.utils.removeDuplicateFollowers
 import com.uyscuti.social.circuit.viewmodels.FeedShortsViewModel
 import com.uyscuti.social.circuit.viewmodels.FollowUnfollowViewModel
 import com.uyscuti.social.circuit.viewmodels.FollowViewModel
-import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SearchUserNameActivity
+import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SearchAllUserNameActivity
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.circuit.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.social.circuit.model.GoToUserProfileFragment
@@ -1507,7 +1507,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
         searchForAllShorts.setOnClickListener {
-            val intent = Intent(requireContext(), SearchUserNameActivity::class.java)
+            val intent = Intent(requireContext(), SearchAllUserNameActivity::class.java)
             startActivity(intent)
 
 
