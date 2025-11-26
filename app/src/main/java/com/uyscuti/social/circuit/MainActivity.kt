@@ -2313,12 +2313,10 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         }
 
         searchForAllShorts.setOnClickListener {
-
-            val intent = Intent(requireContext, SearchShortActivity::class.java)
+            val intent = Intent(this@MainActivity, SearchShortActivity::class.java)
             startActivity(intent)
 
-
-            requireActivity.overridePendingTransition(
+            overridePendingTransition(
                 R.anim.slide_in_up,
                 R.anim.stay
             )

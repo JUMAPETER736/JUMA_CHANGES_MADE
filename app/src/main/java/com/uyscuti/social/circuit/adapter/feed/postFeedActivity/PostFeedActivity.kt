@@ -140,15 +140,7 @@ class PostFeedActivity : AppCompatActivity(),CommentsInput.EmojiListener, OnComm
     @OptIn(UnstableApi::class)
 
     private fun stopPlaying() {
-//        binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-////        player?.release()
-////        player = null
-//        isAudioVNPlaying = false
-////        vnRecordAudioPlaying = false
-////        isOnRecordDurationOnPause = false
-////        stopRecordWaveRunnable()
-//        binding.wave.progress = 0F
-//        vnRecordProgress = 0
+
     }
 
     private fun showProgressBar() {
