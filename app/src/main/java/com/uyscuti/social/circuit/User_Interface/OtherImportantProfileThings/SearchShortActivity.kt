@@ -151,19 +151,21 @@ class SearchShortActivity : AppCompatActivity() {
 
     private fun loadInitialData() {
         showLoading(true)
+        Log.d("SearchResults", "Starting initial load...")
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                Log.d("SearchResults", "Starting initial load...")
-
                 loadShortsFromAPI(currentPage)
+                Log.d("SearchResults", "After loadShortsFromAPI: ${allUsers.size} users")
+
                 loadVideosFromFeed(currentPage)
+                Log.d("SearchResults", "After loadVideosFromFeed: ${allUsers.size} users")
 
                 withContext(Dispatchers.Main) {
+                    Log.d("SearchResults", "Initial load complete. Total unique users: ${allUsers.size}")
+                    Log.d("SearchResults", "Users: ${allUsers.values.map { it.username }}")
+
                     isInitialLoadComplete = true
                     showLoading(false)
-
-                    Log.d("SearchResults", "Initial load complete. Total unique users: ${allUsers.size}")
-
                     showAllUsers()
                 }
 
@@ -179,43 +181,55 @@ class SearchShortActivity : AppCompatActivity() {
 
     private suspend fun loadShortsFromAPI(page: Int) {
         try {
+            Log.d("SearchResults", "Calling getShorts API for page $page")
             val response = apiService.getShorts(page.toString())
+            Log.d("SearchResults", "Shorts API Response: ${response.code()}")
 
             if (response.isSuccessful) {
                 val responseBody = response.body()
                 val posts = responseBody?.data?.posts?.posts ?: emptyList()
 
-                Log.d("SearchResults", "Loaded ${posts.size} shorts from page $page")
+                Log.d("SearchResults", "Successfully loaded ${posts.size} shorts from page $page")
 
                 posts.forEach { post ->
-                    val userId = post.author.account._id
-                    val username = post.author.account.username.trim()
+                    try {
+                        val userId = post.author.account._id
+                        val username = post.author.account.username.trim()
 
-                    if (!allUsers.containsKey(userId)) {
-                        allUsers[userId] = UserResult(
-                            userId = userId,
-                            username = username,
-                            avatarUrl = post.author.account.avatar.url,
-                            firstVideoId = post._id,
-                            firstVideoUrl = post.images.firstOrNull()?.url ?: "",
-                            firstVideoThumbnail = post.thumbnail.firstOrNull()?.thumbnailUrl ?: ""
-                        )
-                        Log.d("SearchResults", "Added user from shorts: @$username")
+                        if (!allUsers.containsKey(userId)) {
+                            allUsers[userId] = UserResult(
+                                userId = userId,
+                                username = username,
+                                avatarUrl = post.author.account.avatar.url,
+                                firstVideoId = post._id,
+                                firstVideoUrl = post.images.firstOrNull()?.url ?: "",
+                                firstVideoThumbnail = post.thumbnail.firstOrNull()?.thumbnailUrl ?: ""
+                            )
+                            Log.d("SearchResults", "Added user from shorts: @$username")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("SearchResults", "Error processing short post: ${e.message}")
                     }
                 }
 
             } else {
-                Log.e("SearchResults", "Shorts API error: ${response.message()}")
+                Log.e("SearchResults", "Shorts API error: ${response.code()} - ${response.message()}")
             }
 
+        } catch (e: HttpException) {
+            Log.e("SearchResults", "HttpException in getShorts: ${e.message}")
+        } catch (e: IOException) {
+            Log.e("SearchResults", "IOException in getShorts: ${e.message}")
         } catch (e: Exception) {
-            Log.e("SearchResults", "Error loading shorts: ${e.message}", e)
+            Log.e("SearchResults", "Exception loading shorts: ${e.message}")
         }
     }
 
     private suspend fun loadVideosFromFeed(page: Int) {
         try {
+            Log.d("SearchResults", "Calling getAllFeed API for page $page")
             val response = apiService.getAllFeed(page.toString())
+            Log.d("SearchResults", "Feed API Response: ${response.code()}")
 
             if (response.isSuccessful) {
                 val responseBody = response.body()
@@ -226,47 +240,58 @@ class SearchShortActivity : AppCompatActivity() {
                     }
                 } ?: emptyList()
 
-                Log.d("SearchResults", "Loaded ${videoPosts.size} feed videos from page $page")
+                Log.d("SearchResults", "Successfully loaded ${videoPosts.size} feed videos from page $page")
 
                 videoPosts.forEach { post ->
-                    if (post.author == null || post.author.account == null) {
-                        return@forEach
-                    }
+                    try {
+                        if (post.author == null || post.author.account == null) {
+                            Log.d("SearchResults", "Skipping post with null author")
+                            return@forEach
+                        }
 
-                    val userId = post.author.account._id
-                    val username = post.author.account.username.trim()
+                        val userId = post.author.account._id
+                        val username = post.author.account.username.trim()
 
-                    if (!allUsers.containsKey(userId)) {
-                        val videoFile = post.files.firstOrNull { file ->
-                            post.fileTypes.any {
-                                it.fileId == file.fileId &&
-                                        it.fileType?.contains("video", ignoreCase = true) == true
+                        if (!allUsers.containsKey(userId)) {
+                            val videoFile = post.files.firstOrNull { file ->
+                                post.fileTypes.any {
+                                    it.fileId == file.fileId &&
+                                            it.fileType?.contains("video", ignoreCase = true) == true
+                                }
+                            }
+
+                            val videoThumbnail = post.thumbnail.firstOrNull { thumb ->
+                                post.fileTypes.any {
+                                    it.fileId == thumb.fileId &&
+                                            it.fileType?.contains("video", ignoreCase = true) == true
+                                }
+                            }
+
+                            if (videoFile != null) {
+                                allUsers[userId] = UserResult(
+                                    userId = userId,
+                                    username = username,
+                                    avatarUrl = post.author.account.avatar.url,
+                                    firstVideoId = post._id,
+                                    firstVideoUrl = videoFile.url,
+                                    firstVideoThumbnail = videoThumbnail?.thumbnailUrl ?: ""
+                                )
+                                Log.d("SearchResults", "Added user from feed: @$username")
                             }
                         }
-
-                        val videoThumbnail = post.thumbnail.firstOrNull { thumb ->
-                            post.fileTypes.any {
-                                it.fileId == thumb.fileId &&
-                                        it.fileType?.contains("video", ignoreCase = true) == true
-                            }
-                        }
-
-                        if (videoFile != null) {
-                            allUsers[userId] = UserResult(
-                                userId = userId,
-                                username = username,
-                                avatarUrl = post.author.account.avatar.url,
-                                firstVideoId = post._id,
-                                firstVideoUrl = videoFile.url,
-                                firstVideoThumbnail = videoThumbnail?.thumbnailUrl ?: ""
-                            )
-                            Log.d("SearchResults", "Added user from feed: @$username")
-                        }
+                    } catch (e: Exception) {
+                        Log.e("SearchResults", "Error processing feed post: ${e.message}")
                     }
                 }
+            } else {
+                Log.e("SearchResults", "Feed API error: ${response.code()} - ${response.message()}")
             }
+        } catch (e: HttpException) {
+            Log.e("SearchResults", "HttpException in getAllFeed: ${e.message}")
+        } catch (e: IOException) {
+            Log.e("SearchResults", "IOException in getAllFeed: ${e.message}")
         } catch (e: Exception) {
-            Log.e("SearchResults", "Error loading feed videos: ${e.message}", e)
+            Log.e("SearchResults", "Exception loading feed videos: ${e.message}")
         }
     }
 
