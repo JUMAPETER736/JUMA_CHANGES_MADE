@@ -257,7 +257,9 @@ data class UserResult(
 class SearchUserNameAdapter(
     private val context: Context,
     private val listener: (UserResult) -> Unit
-) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+) 
+
+    : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var recentUserList: MutableList<UserResult> = mutableListOf()
     private var searchUserList: MutableList<UserResult> = mutableListOf()
