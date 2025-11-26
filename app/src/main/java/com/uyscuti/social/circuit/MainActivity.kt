@@ -1639,13 +1639,144 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     }
 
 
-
-
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     @OptIn(UnstableApi::class)
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
+        waveBarCount = 0
+        binding.waveDotsContainer.removeAllViews()
+        waveBars.clear()
+        waveBarCount = 0
+
+        installTwitter()
+        addComment()
+        observeMediator()
+        addCommentVN()
+        addCommentReply()
+        addCommentFileReply()
+        addImageComment()
+        addVideoComment()
+        addDocumentComment()
+        addGifComment()
+        observeCommentRepliesToRefresh()
+        observeMainCommentToRefresh()
+        initializeCommentsBottomSheet()
+        setupCommentCountObservers()
+        startDirectReplyService()
+
+        item3.drawableWidth = 36
+        item3.drawableHeight = 36
+        item2.drawableWidth = 36
+        item2.drawableHeight = 36
+        item1.drawableWidth = 36
+        item1.drawablePadding = 15
+        item1.drawableHeight = 36
+        item.drawableWidth = 36
+        item.drawableHeight = 36
+
+        item4.drawableWidth = 36
+        item4.drawableHeight = 36
+
+        item.setsBadge(count)
+        item1.setsBadge(4)
+
+        item.hideBadge()
+        item1.hideBadge()
+        item2.hideBadge()
+        item3.hideBadge()
+        item4.hideBadge()
+
+
+        binding.bottomNavigationView.addItem(item)
+        binding.bottomNavigationView.addItem(item1)
+        binding.bottomNavigationView.addItem(item2)
+        binding.bottomNavigationView.addItem(item3)
+        binding.bottomNavigationView.addItem(item4)
+
+        item = NavigationItem(this@MainActivity, R.drawable.nav_notification_icon)
+        item1 = NavigationItem(this@MainActivity, R.drawable.chat_round_svgrepo_com)
+        item2 = NavigationItem(this@MainActivity, R.drawable.play_svgrepo_com)
+        item3 = NavigationItem(this@MainActivity, R.drawable.scroll_text_line_svgrepo_com)
+        item4 = NavigationItem(this@MainActivity, R.drawable.flash21)
+
+        bottomNavigation = binding.bottomNavigationView
+        EventBus.getDefault().post(UserProfileShortsStartGet())
+        // Initialize the ViewModel
+        myViewModel = ViewModelProvider(this)[LikeUnLikeViewModel::class.java]
+        shortsViewModel = ViewModelProvider(this)[ShortsViewModel::class.java]
+        feedViewModel = ViewModelProvider(this)[GetFeedViewModel::class.java]
+
+        userProfileShortsViewModel =
+            ViewModelProvider(this)[GetShortsByUsernameViewModel::class.java]
+        userShortsFragment = ViewModelProvider(this)[UserProfileShortsViewModel::class.java]
+        shortsCommentViewModel = ViewModelProvider(this)[RoomCommentsViewModel::class.java]
+        commentFilesViewModel = ViewModelProvider(this)[RoomCommentFilesViewModel::class.java]
+        roomCommentReplyViewModel = ViewModelProvider(this)[RoomCommentReplyViewModel::class.java]
+        commentsViewModel = ViewModelProvider(this)[ShortCommentsViewModel::class.java]
+        commentsReplyViewModel = ViewModelProvider(this)[ShortCommentReplyViewModel::class.java]
+        commentViewModel = ViewModelProvider(this)[CommentsViewModel::class.java]
+
+        // Find the menu item by ID
+        val editMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_edit)
+        val settingsMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_setting)
+        val logoutMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.logout)
+        val searchMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_search)
+
+        customDialog = CustomAlertDialog(this)
+
+        customDialog?.setDialogCallback(this)
+        getUserBussinessProfile()
+
+        if (binding.motionLayout.visibility == View.GONE) {
+            binding.VNLayout.visibility = View.GONE
+        } else {
+
+        }
+
+        val barsToFill = calculateBarsNeededForFullWidth()
+
+        repeat(barsToFill) {
+            addIdleDottedBar()
+        }
+
+        object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val fragmentManager = supportFragmentManager // if this is the main Activity
+
+                val currentVisibility = binding.motionLayout.visibility
+                if (currentVisibility == View.VISIBLE) {
+                    binding.VNLayout.visibility = View.GONE
+                    stopPlaying()
+                    deleteRecording()
+                    binding.motionLayout.visibility = View.GONE
+
+                    Log.d("handleOnBackPressed", "UI cleared, not popping fragment yet.")
+                } else {
+                    if (fragmentManager.isStateSaved) {
+                        Log.w("handleOnBackPressed", "FragmentManager isStateSaved, can't pop now.")
+                        return
+                    }
+
+                    Handler(Looper.getMainLooper()).post {
+                        try {
+                            if (fragmentManager.backStackEntryCount > 0) {
+                                fragmentManager.popBackStack()
+                                Log.d("handleOnBackPressed", "Popped fragment from back stack.")
+                            } else {
+                                finish()
+                                Log.d("handleOnBackPressed", "No fragments left, finishing activity.")
+                            }
+                        } catch (e: IllegalStateException) {
+                            Log.e("handleOnBackPressed", "Error popping back stack: ${e.message}")
+                        }
+                    }
+                }
+            }
+        }
+
 
         // Get postId from intent
         postId = intent.getStringExtra("postId") ?: ""
@@ -1700,6 +1831,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         var navigateTo = intent.getStringExtra("fragment") ?: "shorts"
 
         var userProfileFragment = intent.getStringExtra("UserProfileFragment")
+
         intent.getStringExtra("title") ?: ""
 
         if (userProfileFragment != null) {
@@ -1714,24 +1846,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
         }
 
-        startDirectReplyService()
 
-        bottomNavigation = binding.bottomNavigationView
-        EventBus.getDefault().post(UserProfileShortsStartGet())
-        // Initialize the ViewModel
-        myViewModel = ViewModelProvider(this)[LikeUnLikeViewModel::class.java]
-        shortsViewModel = ViewModelProvider(this)[ShortsViewModel::class.java]
-        feedViewModel = ViewModelProvider(this)[GetFeedViewModel::class.java]
-
-        userProfileShortsViewModel =
-            ViewModelProvider(this)[GetShortsByUsernameViewModel::class.java]
-        userShortsFragment = ViewModelProvider(this)[UserProfileShortsViewModel::class.java]
-        shortsCommentViewModel = ViewModelProvider(this)[RoomCommentsViewModel::class.java]
-        commentFilesViewModel = ViewModelProvider(this)[RoomCommentFilesViewModel::class.java]
-        roomCommentReplyViewModel = ViewModelProvider(this)[RoomCommentReplyViewModel::class.java]
-        commentsViewModel = ViewModelProvider(this)[ShortCommentsViewModel::class.java]
-        commentsReplyViewModel = ViewModelProvider(this)[ShortCommentReplyViewModel::class.java]
-        commentViewModel = ViewModelProvider(this)[CommentsViewModel::class.java]
 
         lifecycleScope.launch {}
 
@@ -1749,34 +1864,6 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
         getNavigationController().navigate("R.id.shots", "Shorts")
 
-
-
-        // Find the menu item by ID
-        val editMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_edit)
-        val settingsMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_setting)
-        val logoutMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.logout)
-        val searchMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_search)
-
-        searchMenuItem?.setOnMenuItemClickListener {
-            val intent = Intent(this, SearchShortActivity::class.java)
-            startActivity(intent)
-            true
-
-        }
-        settingsMenuItem?.setOnMenuItemClickListener {
-
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
-            true
-        }
-
-        logoutMenuItem?.setOnMenuItemClickListener {
-            showLogoutConfirmationDialog()
-            true
-        }
-
-
-        observeMediator()
 
         val flashDir = "Flash"
         val storageDirectory = File(
@@ -1803,40 +1890,9 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         Log.d("ProfilePic", "Avatar path: $profilePic")
         Log.d("ProfilePic", "Avatar path2: $profilePic2")
 
-        item = NavigationItem(this@MainActivity, R.drawable.nav_notification_icon)
-        item1 = NavigationItem(this@MainActivity, R.drawable.chat_round_svgrepo_com)
-        item2 = NavigationItem(this@MainActivity, R.drawable.play_svgrepo_com)
-        item3 = NavigationItem(this@MainActivity, R.drawable.scroll_text_line_svgrepo_com)
-        item4 = NavigationItem(this@MainActivity, R.drawable.flash21)
-
-        item3.drawableWidth = 36
-        item3.drawableHeight = 36
-        item2.drawableWidth = 36
-        item2.drawableHeight = 36
-        item1.drawableWidth = 36
-        item1.drawablePadding = 15
-        item1.drawableHeight = 36
-        item.drawableWidth = 36
-        item.drawableHeight = 36
-
-        item4.drawableWidth = 36
-        item4.drawableHeight = 36
-
-        item.setsBadge(count)
-        item1.setsBadge(4)
-
-        item.hideBadge()
-        item1.hideBadge()
-        item2.hideBadge()
-        item3.hideBadge()
-        item4.hideBadge()
 
 
-        binding.bottomNavigationView.addItem(item)
-        binding.bottomNavigationView.addItem(item1)
-        binding.bottomNavigationView.addItem(item2)
-        binding.bottomNavigationView.addItem(item3)
-        binding.bottomNavigationView.addItem(item4)
+
 
 
         val TAG = "onCreate"
@@ -1857,6 +1913,24 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
         }
 
+        searchMenuItem?.setOnMenuItemClickListener {
+            val intent = Intent(this, SearchShortActivity::class.java)
+            startActivity(intent)
+            true
+
+        }
+
+        settingsMenuItem?.setOnMenuItemClickListener {
+
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+            true
+        }
+
+        logoutMenuItem?.setOnMenuItemClickListener {
+            showLogoutConfirmationDialog()
+            true
+        }
 
         imagePickerLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -2178,72 +2252,9 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
 
 
-        installTwitter()
-        addComment()
-        addCommentVN()
-        addCommentReply()
-        addCommentFileReply()
-        addImageComment()
-        addVideoComment()
-        addDocumentComment()
-        addGifComment()
-        observeCommentRepliesToRefresh()
-        observeMainCommentToRefresh()
-        customDialog = CustomAlertDialog(this)
-
-        customDialog?.setDialogCallback(this)
-        getUserBussinessProfile()
-
-        object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                val fragmentManager = supportFragmentManager // if this is the main Activity
-
-                val currentVisibility = binding.motionLayout.visibility
-                if (currentVisibility == View.VISIBLE) {
-                    binding.VNLayout.visibility = View.GONE
-                    stopPlaying()
-                    deleteRecording()
-                    binding.motionLayout.visibility = View.GONE
-
-                    Log.d("handleOnBackPressed", "UI cleared, not popping fragment yet.")
-                } else {
-                    if (fragmentManager.isStateSaved) {
-                        Log.w("handleOnBackPressed", "FragmentManager isStateSaved, can't pop now.")
-                        return
-                    }
-
-                    Handler(Looper.getMainLooper()).post {
-                        try {
-                            if (fragmentManager.backStackEntryCount > 0) {
-                                fragmentManager.popBackStack()
-                                Log.d("handleOnBackPressed", "Popped fragment from back stack.")
-                            } else {
-                                finish()
-                                Log.d("handleOnBackPressed", "No fragments left, finishing activity.")
-                            }
-                        } catch (e: IllegalStateException) {
-                            Log.e("handleOnBackPressed", "Error popping back stack: ${e.message}")
-                        }
-                    }
-                }
-            }
-        }
-
-
-        initializeCommentsBottomSheet()
-
-
         binding.VNLinearLayout.setOnClickListener {
             Log.d(TAG, "onCreate: vn linear layout touched")
         }
-
-
-        if (binding.motionLayout.visibility == View.GONE) {
-            binding.VNLayout.visibility = View.GONE
-        } else {
-
-        }
-
 
         binding.recordVN.setOnClickListener {
             when {
@@ -2253,6 +2264,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
             }
         }
+
         binding.deleteVN.setOnClickListener {
             if (mediaRecorder != null) {
                 Log.d(TAG, "onCreate: media recorder not null")
@@ -2295,20 +2307,10 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             }
         }
 
-        waveBarCount = 0
-
-        binding.waveDotsContainer.removeAllViews()
-        waveBars.clear()
-        waveBarCount = 0
-        val barsToFill = calculateBarsNeededForFullWidth()
-        repeat(barsToFill) {
-            addIdleDottedBar()
-        }
         binding.waveformScrollView.post {
             binding.waveformScrollView.fullScroll(View.FOCUS_RIGHT)
         }
 
-        setupCommentCountObservers()
 
     }
 
