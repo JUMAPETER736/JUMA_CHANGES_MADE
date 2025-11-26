@@ -10,7 +10,6 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
@@ -39,17 +38,8 @@ class SearchShortActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySearchShortBinding
     private lateinit var searchAdapter: SearchResultsAdapter
 
-    private val allUsers = mutableMapOf<String, UserResult>()
-
     private lateinit var apiService: IFlashapi
     private val shortsViewModel: ShortsViewModel by viewModels()
-
-    private var currentPage = 1
-    private var isLoading = false
-    private var isInitialLoadComplete = false
-
-    private var searchJob: Job? = null
-    private val searchDebounceTime = 300L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,8 +59,6 @@ class SearchShortActivity : AppCompatActivity() {
         initSearchResults()
         setupBackButton()
         setupSearch()
-
-        loadInitialData()
     }
 
     private fun setupBackButton() {
@@ -87,33 +75,15 @@ class SearchShortActivity : AppCompatActivity() {
                 onUserClicked(user)
             }
             adapter = searchAdapter
-
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    super.onScrolled(recyclerView, dx, dy)
-
-                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                    val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
-                    val totalItemCount = layoutManager.itemCount
-
-                    if (!isLoading && lastVisiblePosition >= totalItemCount - 3 && isInitialLoadComplete) {
-                        loadMoreData()
-                    }
-                }
-            })
         }
     }
 
     private fun setupSearch() {
-        binding.searchEditText.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus && binding.searchEditText.text.isEmpty() && isInitialLoadComplete) {
-                Log.d("SearchResults", "Search box focused, showing all users")
-                showAllUsers()
-            }
-        }
-
+        // Handle the "Search" button on the keyboard
         binding.searchEditText.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                searchAdapter.setLoading(true)
+                performSearch(binding.searchEditText.text.toString())
                 hideKeyboard()
                 binding.searchEditText.clearFocus()
                 true
@@ -122,191 +92,35 @@ class SearchShortActivity : AppCompatActivity() {
             }
         }
 
+        // Detect text changes after user finishes typing
         binding.searchEditText.addTextChangedListener(afterTextChanged = { editable ->
             val searchText = editable.toString().trim()
             Log.d("SearchResults", "Search text changed: '$searchText'")
 
-            searchJob?.cancel()
-
-            if (!isInitialLoadComplete) {
-                Log.d("SearchResults", "Initial load not complete, skipping search")
-                return@addTextChangedListener
-            }
-
             if (searchText.isEmpty()) {
-                Log.d("SearchResults", "Search text is empty, showing all users")
-                showAllUsers()
+                Log.d("SearchResults", "Search text is empty, clearing results")
+                searchAdapter.setNoResults()
+                binding.noResultsText.visibility = View.VISIBLE
+                binding.noResultsText.text = "Type to search..."
                 binding.progressBar.visibility = View.GONE
             } else {
+                searchAdapter.setLoading(true)
                 binding.progressBar.visibility = View.VISIBLE
-                Log.d("SearchResults", "Debouncing search for: '$searchText'")
-
-                searchJob = lifecycleScope.launch {
-                    delay(searchDebounceTime)
-                    performSearch(searchText)
-                }
+                Log.d("SearchResults", "Performing search for: '$searchText'")
+                performSearch(searchText)
             }
         })
     }
 
-    private fun loadInitialData() {
-        showLoading(true)
-        Log.d("SearchResults", "Starting initial load...")
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                loadShortsFromAPI(currentPage)
-                Log.d("SearchResults", "After loadShortsFromAPI: ${allUsers.size} users")
-
-                loadVideosFromFeed(currentPage)
-                Log.d("SearchResults", "After loadVideosFromFeed: ${allUsers.size} users")
-
-                withContext(Dispatchers.Main) {
-                    Log.d("SearchResults", "Initial load complete. Total unique users: ${allUsers.size}")
-                    Log.d("SearchResults", "Users: ${allUsers.values.map { it.username }}")
-
-                    isInitialLoadComplete = true
-                    showLoading(false)
-                    showAllUsers()
-                }
-
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    showLoading(false)
-                    showToast("Error loading data: ${e.message}")
-                    Log.e("SearchResults", "Error in initial load: ${e.message}", e)
-                }
-            }
-        }
-    }
-
-    private suspend fun loadShortsFromAPI(page: Int) {
-        try {
-            Log.d("SearchResults", "Calling getShorts API for page $page")
-            val response = apiService.getShorts(page.toString())
-            Log.d("SearchResults", "Shorts API Response: ${response.code()}")
-
-            if (response.isSuccessful) {
-                val responseBody = response.body()
-                val posts = responseBody?.data?.posts?.posts ?: emptyList()
-
-                Log.d("SearchResults", "Successfully loaded ${posts.size} shorts from page $page")
-
-                posts.forEach { post ->
-                    try {
-                        val userId = post.author.account._id
-                        val username = post.author.account.username.trim()
-
-                        if (!allUsers.containsKey(userId)) {
-                            allUsers[userId] = UserResult(
-                                userId = userId,
-                                username = username,
-                                avatarUrl = post.author.account.avatar.url,
-                                firstVideoId = post._id,
-                                firstVideoUrl = post.images.firstOrNull()?.url ?: "",
-                                firstVideoThumbnail = post.thumbnail.firstOrNull()?.thumbnailUrl ?: ""
-                            )
-                            Log.d("SearchResults", "Added user from shorts: @$username")
-                        }
-                    } catch (e: Exception) {
-                        Log.e("SearchResults", "Error processing short post: ${e.message}")
-                    }
-                }
-
-            } else {
-                Log.e("SearchResults", "Shorts API error: ${response.code()} - ${response.message()}")
-            }
-
-        } catch (e: HttpException) {
-            Log.e("SearchResults", "HttpException in getShorts: ${e.message}")
-        } catch (e: IOException) {
-            Log.e("SearchResults", "IOException in getShorts: ${e.message}")
-        } catch (e: Exception) {
-            Log.e("SearchResults", "Exception loading shorts: ${e.message}")
-        }
-    }
-
-    private suspend fun loadVideosFromFeed(page: Int) {
-        try {
-            Log.d("SearchResults", "Calling getAllFeed API for page $page")
-            val response = apiService.getAllFeed(page.toString())
-            Log.d("SearchResults", "Feed API Response: ${response.code()}")
-
-            if (response.isSuccessful) {
-                val responseBody = response.body()
-
-                val videoPosts = responseBody?.data?.data?.posts?.filter { post ->
-                    post.contentType == "mixed_files" && post.fileTypes.any {
-                        it.fileType?.contains("video", ignoreCase = true) == true
-                    }
-                } ?: emptyList()
-
-                Log.d("SearchResults", "Successfully loaded ${videoPosts.size} feed videos from page $page")
-
-                videoPosts.forEach { post ->
-                    try {
-                        if (post.author == null || post.author.account == null) {
-                            Log.d("SearchResults", "Skipping post with null author")
-                            return@forEach
-                        }
-
-                        val userId = post.author.account._id
-                        val username = post.author.account.username.trim()
-
-                        if (!allUsers.containsKey(userId)) {
-                            val videoFile = post.files.firstOrNull { file ->
-                                post.fileTypes.any {
-                                    it.fileId == file.fileId &&
-                                            it.fileType?.contains("video", ignoreCase = true) == true
-                                }
-                            }
-
-                            val videoThumbnail = post.thumbnail.firstOrNull { thumb ->
-                                post.fileTypes.any {
-                                    it.fileId == thumb.fileId &&
-                                            it.fileType?.contains("video", ignoreCase = true) == true
-                                }
-                            }
-
-                            if (videoFile != null) {
-                                allUsers[userId] = UserResult(
-                                    userId = userId,
-                                    username = username,
-                                    avatarUrl = post.author.account.avatar.url,
-                                    firstVideoId = post._id,
-                                    firstVideoUrl = videoFile.url,
-                                    firstVideoThumbnail = videoThumbnail?.thumbnailUrl ?: ""
-                                )
-                                Log.d("SearchResults", "Added user from feed: @$username")
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e("SearchResults", "Error processing feed post: ${e.message}")
-                    }
-                }
-            } else {
-                Log.e("SearchResults", "Feed API error: ${response.code()} - ${response.message()}")
-            }
-        } catch (e: HttpException) {
-            Log.e("SearchResults", "HttpException in getAllFeed: ${e.message}")
-        } catch (e: IOException) {
-            Log.e("SearchResults", "IOException in getAllFeed: ${e.message}")
-        } catch (e: Exception) {
-            Log.e("SearchResults", "Exception loading feed videos: ${e.message}")
-        }
-    }
-
-    private fun showAllUsers() {
-        val userList = allUsers.values.toList()
-        Log.d("SearchResults", "Showing all ${userList.size} users")
-        searchAdapter.setUsers(userList)
-        binding.noResultsText.visibility = View.GONE
-    }
-
     private fun performSearch(query: String) {
-        lifecycleScope.launch {
-            val searchResults = searchUsers(query)
+        searchAdapter.setLoading(true)
+        binding.progressBar.visibility = View.VISIBLE
 
-            Log.d("SearchResults", "Search results for '$query': ${searchResults.size}")
+        lifecycleScope.launch(Dispatchers.Main) {
+            val searchResults = searchUsers(query).sortedBy { it.username }
+
+            Log.d("SearchResults", "Search results for '$query': ${searchResults.size} users")
+            Log.d("SearchResults", searchResults.map { it.username }.toString())
 
             binding.progressBar.visibility = View.GONE
 
@@ -324,64 +138,53 @@ class SearchShortActivity : AppCompatActivity() {
     }
 
     private suspend fun searchUsers(query: String): List<UserResult> {
-        return withContext(Dispatchers.Default) {
+        return withContext(Dispatchers.IO) {
+            val users = mutableListOf<UserResult>()
+
             try {
-                val normalizedQuery = query.trim().lowercase()
-                val userList = allUsers.values.toList()
+                Log.d("SearchResults", "Calling searchUsers API with query: '$query'")
+                val response = apiService.searchUsers(query)
+                Log.d("SearchResults", "API Response Code: ${response.code()}")
 
-                Log.d("SearchResults", "Searching for: '$normalizedQuery' in ${userList.size} users")
+                if (response.isSuccessful) {
+                    Log.d("SearchResults", "Success Message: ${response.body()?.message}")
+                    Log.d("SearchResults", "Success Data: ${response.body()?.data}")
 
-                val results = userList.filter { user ->
-                    val normalizedUsername = user.username.trim().lowercase()
-                    val matches = normalizedUsername.contains(normalizedQuery)
+                    val apiUsers = response.body()?.data as? List<com.uyscuti.social.network.api.models.User> ?: emptyList()
 
-                    if (matches) {
-                        Log.d("SearchResults", "Match found: @${user.username}")
+                    Log.d("SearchResults", "Converting ${apiUsers.size} API users to UserResult")
+
+                    apiUsers.forEach { apiUser ->
+                        try {
+                            val userResult = UserResult(
+                                userId = apiUser._id,
+                                username = apiUser.username,
+                                avatarUrl = apiUser.avatar.url,
+                                firstVideoId = "",
+                                firstVideoUrl = "",
+                                firstVideoThumbnail = ""
+                            )
+                            users.add(userResult)
+                            Log.d("SearchResults", "Added user: @${apiUser.username}")
+                        } catch (e: Exception) {
+                            Log.e("SearchResults", "Error converting user: ${e.message}")
+                        }
                     }
 
-                    matches
+                } else {
+                    Log.e("SearchResults", "API Error: ${response.code()} - ${response.message()}")
                 }
 
-                Log.d("SearchResults", "Search completed with ${results.size} results")
-                results
+            } catch (e: HttpException) {
+                Log.e("SearchResults", "HttpException: ${e.message}")
+            } catch (e: IOException) {
+                Log.e("SearchResults", "IOException: ${e.message}")
             } catch (e: Exception) {
-                Log.e("SearchResults", "Search exception: ${e.message}", e)
-                emptyList()
+                Log.e("SearchResults", "Exception: ${e.message}")
+                e.printStackTrace()
             }
-        }
-    }
 
-    private fun loadMoreData() {
-        if (isLoading) return
-
-        isLoading = true
-        currentPage++
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                Log.d("SearchResults", "Loading page $currentPage")
-
-                loadShortsFromAPI(currentPage)
-                loadVideosFromFeed(currentPage)
-
-                withContext(Dispatchers.Main) {
-                    isLoading = false
-
-                    val query = binding.searchEditText.text.toString().trim()
-                    if (query.isNotEmpty()) {
-                        performSearch(query)
-                    } else {
-                        showAllUsers()
-                    }
-
-                    Log.d("SearchResults", "Page $currentPage loaded. Total users: ${allUsers.size}")
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    isLoading = false
-                    Log.e("SearchResults", "Error loading page $currentPage: ${e.message}", e)
-                }
-            }
+            users
         }
     }
 
@@ -390,30 +193,16 @@ class SearchShortActivity : AppCompatActivity() {
         Log.d("SearchResults", "User clicked: @${user.username} (${user.userId})")
         val intent = Intent(this, MainActivity::class.java).apply {
             putExtra("navigate_to", "shorts")
-            putExtra("video_id", user.firstVideoId)
-            putExtra("video_url", user.firstVideoUrl)
+            putExtra("user_id", user.userId)
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         startActivity(intent)
         finish()
     }
 
-    private fun showLoading(show: Boolean) {
-        binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
-    }
-
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
-
     private fun hideKeyboard() {
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        searchJob?.cancel()
     }
 }
 
@@ -431,21 +220,31 @@ class SearchResultsAdapter(
     private val onItemClick: (UserResult) -> Unit
 ) : RecyclerView.Adapter<SearchResultsAdapter.UserViewHolder>() {
 
+    private var isLoading = false
+
     fun setUsers(newUsers: List<UserResult>) {
         users.clear()
         users.addAll(newUsers)
+        isLoading = false
         notifyDataSetChanged()
     }
 
     fun setNoResults() {
         users.clear()
+        isLoading = false
         notifyDataSetChanged()
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
-        val view = android.view.LayoutInflater.from(parent.context)
-            .inflate(android.R.layout.simple_list_item_1, parent, false)
+    fun setLoading(loading: Boolean) {
+        isLoading = loading
+        if (loading) {
+            // Optionally clear current results when loading starts
+            // users.clear()
+            // notifyDataSetChanged()
+        }
+    }
 
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
         val container = LinearLayout(parent.context).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -502,7 +301,6 @@ class SearchResultsAdapter(
         fun bind(user: UserResult) {
             usernameTextView.text = "@${user.username}"
 
-            // Load avatar using Glide
             Glide.with(avatarImageView.context)
                 .load(user.avatarUrl)
                 .circleCrop()
