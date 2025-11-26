@@ -39,6 +39,8 @@ import java.io.IOException
 
 
 class SearchShortActivity : AppCompatActivity() {
+
+
     private lateinit var binding: ActivitySearchShortBinding
     private lateinit var searchAdapter: SearchResultsAdapter
     private val allResults = mutableListOf<SearchResult>()
@@ -73,7 +75,7 @@ class SearchShortActivity : AppCompatActivity() {
     }
 
     private fun setupBackButton() {
-        binding.backButton?.setOnClickListener {
+        binding.backButton.setOnClickListener {
             finish()
         }
     }
@@ -106,6 +108,7 @@ class SearchShortActivity : AppCompatActivity() {
         binding.searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
+            @SuppressLint("NotifyDataSetChanged")
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s.toString().trim()
 
@@ -129,7 +132,7 @@ class SearchShortActivity : AppCompatActivity() {
         })
     }
 
-    @SuppressLint("SetTextI18n")
+    @SuppressLint("SetTextI18n", "NotifyDataSetChanged")
     private fun performSearch(query: String) {
         lifecycleScope.launch(Dispatchers.Default) {
             val results = allResults.filter { result ->
@@ -228,7 +231,7 @@ class SearchShortActivity : AppCompatActivity() {
                 // Filter only video posts from feed
                 val videoPosts = responseBody?.data?.data?.posts?.filter { post ->
                     post.contentType == "mixed_files" && post.fileTypes.any {
-                        it.fileType?.contains("video", ignoreCase = true) == true
+                        it.fileType.contains("video", ignoreCase = true) == true
                     }
                 } ?: emptyList()
 
@@ -242,7 +245,7 @@ class SearchShortActivity : AppCompatActivity() {
                         videoUrl = post.files.firstOrNull { file ->
                             post.fileTypes.any {
                                 it.fileId == file.fileId &&
-                                        it.fileType?.contains("video", ignoreCase = true) == true
+                                        it.fileType.contains("video", ignoreCase = true) == true
                             }
                         }?.url ?: "",
                         authorId = post.author.account._id,
@@ -335,7 +338,7 @@ class SearchShortActivity : AppCompatActivity() {
     }
 
     private fun showLoading(show: Boolean) {
-        binding.progressBar?.visibility = if (show) View.VISIBLE else View.GONE
+        binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     private fun showToast(message: String) {
@@ -390,6 +393,7 @@ class SearchResultsAdapter(
         private val onItemClick: (SearchResult) -> Unit
     ) : RecyclerView.ViewHolder(itemView) {
 
+        @SuppressLint("SetTextI18n")
         fun bind(result: SearchResult) {
             itemView.apply {
                 removeAllViews()
