@@ -60,7 +60,6 @@ import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
@@ -435,7 +434,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     private val IMAGES_REQUEST_CODE = 2023
     private val READ_EXTERNAL_STORAGE_REQUEST_CODE = 101
     private val REQUEST_RECORD_AUDIO_PERMISSION = 200
-
+    private lateinit var searchForAllShorts: ImageView
 
    // VIEW BINDING & UI COMPONENTS
 
@@ -459,7 +458,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     private lateinit var item4: NavigationItem
     private var lastFragmentId: String? = null
     private val onBackPressedListeners: MutableList<OnBackPressedListener> = mutableListOf()
-    private lateinit var searchForAllShorts: ImageView
+
 
   // DEPENDENCY INJECTIONS
 
@@ -1639,17 +1638,35 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         }
     }
 
+
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     @OptIn(UnstableApi::class)
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize binding FIRST
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        // Get postId from intent
+        postId = intent.getStringExtra("postId") ?: ""
 
-        // Permission checks
+        // Upload any pending comments for this post
+        if (postId.isNotEmpty()) {
+            uploadPendingComments()
+        }
+
+        followingManager = FollowingManager(this)
+
+        // Load following list immediately
+        lifecycleScope.launch {
+            val followingList = followingManager.loadFollowingList()
+            Log.d("MainActivity", "Loaded ${followingList.size} following users on app start")
+        }
+
+        fun resetCountValue() {
+            countValue = 0
+            resetCountValue()
+        }
+        binding = ActivityMainBinding.inflate(layoutInflater)
+
         permissionGranted = ActivityCompat.checkSelfPermission(
             this, permissions[0]
         ) == PackageManager.PERMISSION_GRANTED
@@ -1668,33 +1685,44 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         if (!permissionGranted) {
             ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
         }
+
         if (!permissionGranted3) {
             ActivityCompat.requestPermissions(this, permissions, IMAGES_REQUEST_CODE)
         }
+        setContentView(binding.root)
 
-        // Initialize basic properties
         directReplyListener = this
+
         timer = Timer(this)
-        customDialog = CustomAlertDialog(this)
-        customDialog?.setDialogCallback(this)
-        followingManager = FollowingManager(this)
 
-        // Wave bars setup
-        waveBarCount = 0
-        binding.waveDotsContainer.removeAllViews()
-        waveBars.clear()
-        waveBarCount = 0
+        var navigateTo = intent.getStringExtra("fragment") ?: "shorts"
 
-        val barsToFill = calculateBarsNeededForFullWidth()
-        repeat(barsToFill) {
-            addIdleDottedBar()
+        var userProfileFragment = intent.getStringExtra("UserProfileFragment")
+        intent.getStringExtra("title") ?: ""
+
+        if (userProfileFragment != null) {
+            navigate("R.id.profile", "userProfileFragment")
         }
 
-        // Initialize ViewModels
+        if (navigateTo == "profile") {
+            getNavigationController().navigate("R.id.profile", "Profile")
+        } else {
+            getNavigationController().navigate("R.id.shots", "Shorts")
+            lastFragmentId = navigateTo
+
+        }
+
+        startDirectReplyService()
+
+        bottomNavigation = binding.bottomNavigationView
+        EventBus.getDefault().post(UserProfileShortsStartGet())
+        // Initialize the ViewModel
         myViewModel = ViewModelProvider(this)[LikeUnLikeViewModel::class.java]
         shortsViewModel = ViewModelProvider(this)[ShortsViewModel::class.java]
         feedViewModel = ViewModelProvider(this)[GetFeedViewModel::class.java]
-        userProfileShortsViewModel = ViewModelProvider(this)[GetShortsByUsernameViewModel::class.java]
+
+        userProfileShortsViewModel =
+            ViewModelProvider(this)[GetShortsByUsernameViewModel::class.java]
         userShortsFragment = ViewModelProvider(this)[UserProfileShortsViewModel::class.java]
         shortsCommentViewModel = ViewModelProvider(this)[RoomCommentsViewModel::class.java]
         commentFilesViewModel = ViewModelProvider(this)[RoomCommentFilesViewModel::class.java]
@@ -1703,21 +1731,76 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         commentsReplyViewModel = ViewModelProvider(this)[ShortCommentReplyViewModel::class.java]
         commentViewModel = ViewModelProvider(this)[CommentsViewModel::class.java]
 
-        // Initialize repositories
+        lifecycleScope.launch {}
+
         myProfileRepository = ProfileRepository(ChatDatabase.getInstance(this).profileDao())
 
-        // SharedPreferences and user data
         settings = getSharedPreferences(PREFS_NAME, 0)
         val accessToken = settings.getString("token", "").toString()
+
+
         Log.d("accessToken", "accessToken: $accessToken")
         myId = localStorage.getUserId()
 
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        supportActionBar?.title = ""
+
+        getNavigationController().navigate("R.id.shots", "Shorts")
+
+
+
+        // Find the menu item by ID
+        val editMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_edit)
+        val settingsMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_setting)
+        val logoutMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.logout)
+        val searchMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_search)
+
+        searchMenuItem?.setOnMenuItemClickListener {
+            val intent = Intent(this, SearchShortActivity::class.java)
+            startActivity(intent)
+            true
+
+        }
+        settingsMenuItem?.setOnMenuItemClickListener {
+
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+            true
+        }
+
+        logoutMenuItem?.setOnMenuItemClickListener {
+            showLogoutConfirmationDialog()
+            true
+        }
+
+
+        observeMediator()
+
+        val flashDir = "Flash"
+        val storageDirectory = File(
+            Environment.getExternalStorageDirectory(), flashDir
+        )
+
+
+        // Ensure that the directory exists
+        if (!storageDirectory.exists()) {
+            storageDirectory.mkdirs()
+        }
+
+        Log.d("Download", "directory path - $storageDirectory")
+
+
+
+        setNavigationListener()
+        getUserProfile()
+
+
         val profilePic = settings.getString("avatar", "").toString()
         val profilePic2 = settings.getString("profile_pic", "").toString()
+
         Log.d("ProfilePic", "Avatar path: $profilePic")
         Log.d("ProfilePic", "Avatar path2: $profilePic2")
 
-        // Setup navigation items
         item = NavigationItem(this@MainActivity, R.drawable.nav_notification_icon)
         item1 = NavigationItem(this@MainActivity, R.drawable.chat_round_svgrepo_com)
         item2 = NavigationItem(this@MainActivity, R.drawable.play_svgrepo_com)
@@ -1733,6 +1816,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         item1.drawableHeight = 36
         item.drawableWidth = 36
         item.drawableHeight = 36
+
         item4.drawableWidth = 36
         item4.drawableHeight = 36
 
@@ -1745,169 +1829,55 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         item3.hideBadge()
         item4.hideBadge()
 
+
         binding.bottomNavigationView.addItem(item)
         binding.bottomNavigationView.addItem(item1)
         binding.bottomNavigationView.addItem(item2)
         binding.bottomNavigationView.addItem(item3)
         binding.bottomNavigationView.addItem(item4)
 
-        bottomNavigation = binding.bottomNavigationView
-        binding.bottomNavigationView.position = 2
-
-        if (item2.isEnabled) {
-            item2.drawableTint = Color.WHITE
-        }
 
         val TAG = "onCreate"
+        binding.bottomNavigationView.position = 2
         Log.d(TAG, "onCreate is selected: ${item2.isSelected}")
         Log.d(TAG, "onCreate is checked: ${item2.isChecked}")
         Log.d(TAG, "onCreate is activated: ${item2.isActivated}")
         Log.d(TAG, "onCreate is enabled: ${item2.isEnabled}")
 
-        // Setup ActionBar
-        supportActionBar?.setDisplayHomeAsUpEnabled(false)
-        supportActionBar?.title = ""
-
-        // Menu items
-        val editMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_edit)
-        val settingsMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_setting)
-        val logoutMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.logout)
-        val searchMenuItem: MenuItem? = binding.toolbar.menu.findItem(R.id.menu_search)
-
-        searchMenuItem?.setOnMenuItemClickListener {
-            val intent = Intent(this, SearchShortActivity::class.java)
-            startActivity(intent)
-            true
+        if (item2.isEnabled) {
+            item2.drawableTint = Color.WHITE
         }
 
-        settingsMenuItem?.setOnMenuItemClickListener {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
-            true
-        }
-
-        logoutMenuItem?.setOnMenuItemClickListener {
-            showLogoutConfirmationDialog()
-            true
-        }
-
-        // Setup storage directory
-        val flashDir = "Flash"
-        val storageDirectory = File(Environment.getExternalStorageDirectory(), flashDir)
-        if (!storageDirectory.exists()) {
-            storageDirectory.mkdirs()
-        }
-        Log.d("Download", "directory path - $storageDirectory")
-
-        // Handle intent data
-        postId = intent.getStringExtra("postId") ?: ""
-        if (postId.isNotEmpty()) {
-            uploadPendingComments()
-        }
-
-        val navigateTo = intent.getStringExtra("fragment") ?: "shorts"
-        val userProfileFragment = intent.getStringExtra("UserProfileFragment")
-        intent.getStringExtra("title") ?: ""
-
-        // Navigation setup
-        if (userProfileFragment != null) {
-            navigate("R.id.profile", "userProfileFragment")
-        }
-
-        if (navigateTo == "profile") {
-            getNavigationController().navigate("R.id.profile", "Profile")
-        } else {
-            getNavigationController().navigate("R.id.shots", "Shorts")
-            lastFragmentId = navigateTo
-        }
-
-        getNavigationController().navigate("R.id.shots", "Shorts")
-
-        // Setup listeners and observers
-        installTwitter()
-        addComment()
-        observeMediator()
-        addCommentVN()
-        addCommentReply()
-        addCommentFileReply()
-        addImageComment()
-        addVideoComment()
-        addDocumentComment()
-        addGifComment()
-        observeCommentRepliesToRefresh()
-        observeMainCommentToRefresh()
-        initializeCommentsBottomSheet()
-        setupCommentCountObservers()
-        startDirectReplyService()
-        setNavigationListener()
-        getUserProfile()
-        getUserBussinessProfile()
         loadProfileImage(profilePic2)
 
-        // Check motion layout visibility
-        if (binding.motionLayout.visibility == View.GONE) {
-            binding.VNLayout.visibility = View.GONE
-        }
 
-        // EventBus
-        EventBus.getDefault().post(UserProfileShortsStartGet())
-
-        // Load following list
         lifecycleScope.launch {
-            val followingList = followingManager.loadFollowingList()
-            Log.d("MainActivity", "Loaded ${followingList.size} following users on app start")
+
         }
 
-        // Back press handler
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                val fragmentManager = supportFragmentManager
 
-                val currentVisibility = binding.motionLayout.visibility
-                if (currentVisibility == View.VISIBLE) {
-                    binding.VNLayout.visibility = View.GONE
-                    stopPlaying()
-                    deleteRecording()
-                    binding.motionLayout.visibility = View.GONE
-                    Log.d("handleOnBackPressed", "UI cleared, not popping fragment yet.")
-                } else {
-                    if (fragmentManager.isStateSaved) {
-                        Log.w("handleOnBackPressed", "FragmentManager isStateSaved, can't pop now.")
-                        return
-                    }
-
-                    Handler(Looper.getMainLooper()).post {
-                        try {
-                            if (fragmentManager.backStackEntryCount > 0) {
-                                fragmentManager.popBackStack()
-                                Log.d("handleOnBackPressed", "Popped fragment from back stack.")
-                            } else {
-                                finish()
-                                Log.d("handleOnBackPressed", "No fragments left, finishing activity.")
-                            }
-                        } catch (e: IllegalStateException) {
-                            Log.e("handleOnBackPressed", "Error popping back stack: ${e.message}")
-                        }
-                    }
-                }
-            }
-        })
-
-        // Activity result launchers
         imagePickerLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
+                    // Handle image selection result here
                     val data = result.data
+                    // Process the selected image data
                     val imagePath = data?.getStringExtra("image_url")
+
                     Log.d("ImagePath", "Img path $imagePath")
+
                 }
+
             }
 
         audioPickerLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
+                    // Handle image selection result here
                     val data = result.data
+                    // Process the selected image data
                     val audioPath = data?.getStringExtra("audio_url")
+
                     val uriString = data?.getStringExtra("aUri")
                     val aUri = Uri.parse(uriString)
 
@@ -1918,13 +1888,17 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                         val fileName = getFileNameFromLocalPath(audioPath)
                         reverseFormattedDuration(durationString)
 
+
                         Log.d("AudioPicker", "File name: $fileName")
                         Log.d("AudioPicker", "durationString: $durationString")
 
                         val file = File(audioPath)
+
+
                         var fileSizeInBytes by Delegates.notNull<Long>()
                         var fileSizeInKB by Delegates.notNull<Long>()
                         var fileSizeInMB by Delegates.notNull<Long>()
+
 
                         fileSizeInBytes = file.length()
                         fileSizeInKB = fileSizeInBytes / 1024
@@ -1932,11 +1906,17 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
                         if (fileSizeInMB > 2) {
                             Log.d("AudioPicker", "onCreate: file needs compression")
-                            val outputFileName = "compressed_audio_${System.currentTimeMillis()}.mp3"
+                            val outputFileName =
+                                "compressed_audio_${System.currentTimeMillis()}.mp3" // Example output file name
                             val outputFilePath = File(cacheDir, outputFileName)
 
+
                             lifecycleScope.launch(Dispatchers.IO) {
-                                Log.d("AudioPicker", "onCreate: file needs compression is reply $isReply")
+
+                                Log.d(
+                                    "AudioPicker",
+                                    "onCreate: file needs compression is reply $isReply"
+                                )
                                 withContext(Dispatchers.Main) {
                                     if (!isReply) {
                                         Log.d("AudioPicker", "onCreate:not reply use place holder")
@@ -1951,8 +1931,12 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                                     } else {
                                         Log.d("AudioPicker", "onCreate: reply use placeholder")
                                         uploadReplyVnComment(
-                                            audioPath, fileName, durationString,
-                                            fileType = "mAudio", update = false, placeholder = true
+                                            audioPath,
+                                            fileName,
+                                            durationString,
+                                            fileType = "mAudio",
+                                            update = false,
+                                            placeholder = true
                                         )
                                     }
                                 }
@@ -1961,12 +1945,19 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                                 val isCompressionSuccessful =
                                     compressor.compress(audioPath, outputFilePath.absolutePath)
 
+
                                 if (isCompressionSuccessful) {
                                     Log.d("AudioPicker", "AudioPicker: Compression successful ")
+
                                     fileSizeInBytes = outputFilePath.length()
                                     fileSizeInKB = fileSizeInBytes / 1024
                                     fileSizeInMB = fileSizeInKB / 1024
-                                    Log.d("AudioPicker", "File size: $fileSizeInKB KB,  $fileSizeInMB MB")
+                                    Log.d(
+                                        "AudioPicker",
+                                        "File size: $fileSizeInKB KB,  $fileSizeInMB MB"
+                                    )
+
+                                    fileSizeInMB / 1024 // Conversion from MB to GB
 
                                     withContext(Dispatchers.Main) {
                                         if (!isReply) {
@@ -1980,25 +1971,46 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                                             )
                                         } else {
                                             uploadReplyVnComment(
-                                                outputFilePath.absolutePath, fileName, durationString,
-                                                fileType = "mAudio", update = true, placeholder = false
+                                                outputFilePath.absolutePath,
+                                                fileName,
+                                                durationString,
+                                                fileType = "mAudio",
+                                                update = true,
+                                                placeholder = false
                                             )
                                         }
                                     }
+
                                 } else {
                                     Log.d("AudioPicker", "AudioPicker: Compression not successful")
                                 }
                             }
                         } else {
+
                             if (isReply) {
-                                uploadReplyVnComment(audioPath, fileName, durationString, "mAudio", false)
+                                uploadReplyVnComment(
+                                    audioPath,
+                                    fileName,
+                                    durationString,
+                                    "mAudio",
+                                    false
+                                )
                             } else {
-                                uploadVnComment(audioPath, fileName, durationString, "mAudio", false)
+                                uploadVnComment(
+                                    audioPath,
+                                    fileName,
+                                    durationString,
+                                    "mAudio",
+                                    false
+                                )
                             }
                         }
+
+
                     } else {
                         Log.d("AudioPicker", "File path: $audioPath")
                     }
+
                 }
             }
 
@@ -2006,10 +2018,13 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 Log.d("VideoDebug", "onActivityResult callback triggered")
                 if (result.resultCode == RESULT_OK) {
+
                     val data = result.data
+
                     val videoPath = data?.getStringExtra("video_url")
                     val uriString = data?.getStringExtra("vUri")
                     val vUri = Uri.parse(uriString)
+
                     val uri = Uri.parse(videoPath)
 
                     if (videoPath != null) {
@@ -2025,7 +2040,8 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                             val fileSizeInMB = fileSizeInKB / 1024
                             Log.d("VideoPicker", "File size: $fileSizeInMB MB")
 
-                            val fileSizeInGB = fileSizeInMB / 1024
+                            val fileSizeInGB = fileSizeInMB / 1024 // Conversion from MB to GB
+
 
                             if (fileSizeInGB.toInt() == 1) {
                                 showToast(this, "File size too large")
@@ -2050,9 +2066,12 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                                     uploadReplyVideoComment(videoPath, durationString)
                                 }
                             }
+
+
                         } else {
                             Log.d("VideoPicker", "File does not exists ")
                         }
+
                     } else {
                         Log.d("PhotoPicker", "No media selected")
                     }
@@ -2062,47 +2081,70 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         docsPickerLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
+                    // Handle image selection result here
                     val data = result.data
+                    // Process the selected image data
                     val docPath = data?.getStringExtra("doc_url")
+
                     Log.d("Document Results", "Picked Document : $docPath")
 
                     if (docPath != null) {
+                        // You now have the imagePath from the DisplayImages activity.
+                        // You can use it as needed, for example, to send the image in a message.
                         Log.d("ChatActivityDocPath", "Selected Document path: $docPath")
 
-                        "files/${System.currentTimeMillis()}.jpg"
+
+                        "files/${System.currentTimeMillis()}.jpg" // Change the file name as needed
+
 
                         val user = User("0", "You", "test", true, Date())
                         val messageId = "Doc_${Random.nextInt()}"
+
                         val date = Date(System.currentTimeMillis())
 
-                        Message(messageId, user, null, date)
+                        Message(
+                            messageId, user, // Set user ID as needed
+                            null, date
+                        )
 
                         Uri.parse(docPath)
                         val file = File(docPath)
                         if (file.exists()) {
+
                             Log.d("Document File", "Document File Exists : $file")
                             val absolutePath = file.absolutePath
+
                             val fileUri = Uri.fromFile(file)
                             val fileUrl = fileUri.toString()
+
+
                         }
+
                     }
                 }
+
             }
 
         cameraLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
+                    // Handle image selection result here
                     val data = result.data
+                    // Process the selected image data
                     val imagePath = data?.getStringExtra("image_url")
-                    Log.d("cameraLauncher", "Selected image path from camera: $imagePath")
+                    Log.d(
+                        "cameraLauncher", "Selected image path from camera: $imagePath"
+                    )
                     val imageUri = Uri.parse(imagePath)
-                    Log.d("cameraLauncher", "Selected image path from camera: $imageUri")
-
+                    Log.d(
+                        "cameraLauncher", "Selected image path from camera: $imageUri"
+                    )
                     if (imagePath != null) {
                         val file = File(imagePath)
                         if (file.exists()) {
                             lifecycleScope.launch {
-                                val compressedImageFile = Compressor.compress(this@MainActivity, file)
+                                val compressedImageFile =
+                                    Compressor.compress(this@MainActivity, file)
                                 Log.d(
                                     "cameraLauncher",
                                     "cameraLauncher: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
@@ -2124,20 +2166,89 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                                 }
                             }
                         }
+
+                    }
+
+
+                }
+
+            }
+
+
+
+        installTwitter()
+        addComment()
+        addCommentVN()
+        addCommentReply()
+        addCommentFileReply()
+        addImageComment()
+        addVideoComment()
+        addDocumentComment()
+        addGifComment()
+        observeCommentRepliesToRefresh()
+        observeMainCommentToRefresh()
+        customDialog = CustomAlertDialog(this)
+
+        customDialog?.setDialogCallback(this)
+        getUserBussinessProfile()
+
+        object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val fragmentManager = supportFragmentManager // if this is the main Activity
+
+                val currentVisibility = binding.motionLayout.visibility
+                if (currentVisibility == View.VISIBLE) {
+                    binding.VNLayout.visibility = View.GONE
+                    stopPlaying()
+                    deleteRecording()
+                    binding.motionLayout.visibility = View.GONE
+
+                    Log.d("handleOnBackPressed", "UI cleared, not popping fragment yet.")
+                } else {
+                    if (fragmentManager.isStateSaved) {
+                        Log.w("handleOnBackPressed", "FragmentManager isStateSaved, can't pop now.")
+                        return
+                    }
+
+                    Handler(Looper.getMainLooper()).post {
+                        try {
+                            if (fragmentManager.backStackEntryCount > 0) {
+                                fragmentManager.popBackStack()
+                                Log.d("handleOnBackPressed", "Popped fragment from back stack.")
+                            } else {
+                                finish()
+                                Log.d("handleOnBackPressed", "No fragments left, finishing activity.")
+                            }
+                        } catch (e: IllegalStateException) {
+                            Log.e("handleOnBackPressed", "Error popping back stack: ${e.message}")
+                        }
                     }
                 }
             }
+        }
 
-        // View click listeners
+
+        initializeCommentsBottomSheet()
+
+
         binding.VNLinearLayout.setOnClickListener {
             Log.d(TAG, "onCreate: vn linear layout touched")
         }
+
+
+        if (binding.motionLayout.visibility == View.GONE) {
+            binding.VNLayout.visibility = View.GONE
+        } else {
+
+        }
+
 
         binding.recordVN.setOnClickListener {
             when {
                 isPaused -> resumeRecording()
                 isRecording -> pauseRecording()
                 else -> Log.d("recordVN", "onCreate: else in vn record btn on click")
+
             }
         }
 
@@ -2158,6 +2269,8 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         }
 
         binding.sendVN.setOnClickListener {
+
+
             sending = true
             CoroutineScope(Dispatchers.Main).launch {
                 if (!wasPaused) {
@@ -2168,15 +2281,29 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                     }
                     mediaRecorder = null
                     Log.d("SendVN", "When sending vn was paused was false")
-                    mixVoiceNote()
+                    mixVoiceNote() // Execute mixVN asynchronously
                 }
 
                 lifecycleScope.launch(Dispatchers.Main) {
+
                     delay(500)
                     stopRecordingVoiceNote()
                 }
+
+
             }
         }
+
+        waveBarCount = 0
+
+        binding.waveDotsContainer.removeAllViews()
+        waveBars.clear()
+        waveBarCount = 0
+        val barsToFill = calculateBarsNeededForFullWidth()
+        repeat(barsToFill) {
+            addIdleDottedBar()
+        }
+
 
         binding.waveformScrollView.post {
             binding.waveformScrollView.fullScroll(View.FOCUS_RIGHT)
@@ -2185,8 +2312,16 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         searchForAllShorts.setOnClickListener {
             val intent = Intent(this@MainActivity, SearchShortActivity::class.java)
             startActivity(intent)
-            overridePendingTransition(R.anim.slide_in_up, R.anim.stay)
+
+            overridePendingTransition(
+                R.anim.slide_in_up,
+                R.anim.stay
+            )
         }
+
+
+        setupCommentCountObservers()
+
     }
 
     override fun onRequestPermissionsResult(
