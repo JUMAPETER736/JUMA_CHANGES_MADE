@@ -3,11 +3,11 @@ package com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -18,6 +18,7 @@ import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -29,9 +30,8 @@ import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.circuit.databinding.ActivitySearchShortBinding
 import com.uyscuti.social.circuit.model.ShortsViewModel
 import com.uyscuti.social.core.common.data.api.Retrofit
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
@@ -40,16 +40,13 @@ import java.io.IOException
 
 class SearchShortActivity : AppCompatActivity() {
 
-
     private lateinit var binding: ActivitySearchShortBinding
     private lateinit var searchAdapter: SearchResultsAdapter
-    private val allResults = mutableListOf<SearchResult>()
-    private val filteredResults = mutableListOf<SearchResult>()
+    private var allResults = mutableListOf<SearchResult>()
 
     private lateinit var apiService: IFlashapi
 
     private val shortsViewModel: ShortsViewModel by viewModels()
-    private var searchJob: Job? = null
     private var currentPage = 1
     private var isLoading = false
 
@@ -70,8 +67,14 @@ class SearchShortActivity : AppCompatActivity() {
         apiService = Retrofit(this).regService
 
         setupSearch()
-        loadShortsData()
+        initSearchResults()
         setupBackButton()
+
+        hideKeyboard()
+        binding.searchEditText.clearFocus()
+
+        // Load initial data
+        loadInitialData()
     }
 
     private fun setupBackButton() {
@@ -80,13 +83,12 @@ class SearchShortActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupSearch() {
-        searchAdapter = SearchResultsAdapter(filteredResults) { result ->
-            onSearchResultClicked(result)
-        }
-
+    private fun initSearchResults() {
         binding.searchResultsRecyclerView.apply {
             layoutManager = LinearLayoutManager(this@SearchShortActivity)
+            searchAdapter = SearchResultsAdapter(mutableListOf()) { result ->
+                onSearchResultClicked(result)
+            }
             adapter = searchAdapter
 
             // Add scroll listener for pagination
@@ -104,62 +106,42 @@ class SearchShortActivity : AppCompatActivity() {
                 }
             })
         }
+    }
 
-        binding.searchEditText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-            @SuppressLint("NotifyDataSetChanged")
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val query = s.toString().trim()
-
-                // Cancel previous search
-                searchJob?.cancel()
-
-                if (query.isEmpty()) {
-                    filteredResults.clear()
-                    searchAdapter.notifyDataSetChanged()
-                    binding.noResultsText.visibility = View.GONE
-                } else {
-                    // Debounce search by 300ms
-                    searchJob = lifecycleScope.launch {
-                        delay(300)
-                        performSearch(query)
-                    }
-                }
+    private fun setupSearch() {
+        // Handle the "Search" button on the keyboard
+        binding.searchEditText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                searchAdapter.setLoading(true)
+                performSearch(binding.searchEditText.text.toString())
+                hideKeyboard()
+                binding.searchEditText.clearFocus()
+                true
+            } else {
+                false
             }
+        }
 
-            override fun afterTextChanged(s: Editable?) {}
+        // Handle text changes
+        binding.searchEditText.addTextChangedListener(afterTextChanged = { editable ->
+            Log.d("SearchShort", "Text changed: $editable")
+
+            val searchText = editable.toString().trim()
+
+            if (searchText.isEmpty()) {
+                // Show all results when search is empty
+                searchAdapter.setSearchResults(allResults)
+                binding.noResultsText.visibility = View.GONE
+            } else {
+                searchAdapter.setLoading(true)
+                performSearch(searchText)
+            }
         })
     }
 
-    @SuppressLint("SetTextI18n", "NotifyDataSetChanged")
-    private fun performSearch(query: String) {
-        lifecycleScope.launch(Dispatchers.Default) {
-            val results = allResults.filter { result ->
-                result.title.contains(query, ignoreCase = true) ||
-                        result.description.contains(query, ignoreCase = true) ||
-                        result.username.contains(query, ignoreCase = true) ||
-                        result.tags.any { it.contains(query, ignoreCase = true) }
-            }.toMutableList()
-
-            withContext(Dispatchers.Main) {
-                filteredResults.clear()
-                filteredResults.addAll(results)
-                searchAdapter.notifyDataSetChanged()
-
-                if (filteredResults.isEmpty()) {
-                    binding.noResultsText.visibility = View.VISIBLE
-                    binding.noResultsText.text = "No results found for \"$query\""
-                } else {
-                    binding.noResultsText.visibility = View.GONE
-                }
-            }
-        }
-    }
-
-    private fun loadShortsData() {
+    private fun loadInitialData() {
         showLoading(true)
-        lifecycleScope.launch(Dispatchers.IO) {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
                 // Load shorts from API
                 val response = apiService.getShorts(currentPage.toString())
@@ -171,7 +153,7 @@ class SearchShortActivity : AppCompatActivity() {
                     val searchResults = posts.map { post ->
                         SearchResult(
                             id = post._id,
-                            title = post.content.take(100), // First 100 chars as title
+                            title = post.content.take(100),
                             description = post.content,
                             username = post.author.account.username,
                             thumbnailUrl = post.thumbnail.firstOrNull()?.thumbnailUrl ?: "",
@@ -254,7 +236,7 @@ class SearchShortActivity : AppCompatActivity() {
                         comments = post.comments,
                         isLiked = post.isLiked,
                         isBookmarked = post.isBookmarked,
-                        tags = emptyList(), // Feed posts may not have tags
+                        tags = emptyList(),
                         createdAt = post.createdAt,
                         type = "feed_video"
                     )
@@ -270,13 +252,59 @@ class SearchShortActivity : AppCompatActivity() {
         }
     }
 
+    private fun performSearch(query: String) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val searchResults = searchInResults(query)
+
+            hideKeyboard()
+            binding.searchEditText.clearFocus()
+
+            Log.d("SearchShort", "Search results: $searchResults")
+            Log.d("SearchShort", "Results count: ${searchResults.size}")
+
+            if (searchResults.isNotEmpty()) {
+                searchAdapter.setSearchResults(searchResults)
+                binding.noResultsText.visibility = View.GONE
+            } else {
+                searchAdapter.setNoResults()
+                binding.noResultsText.visibility = View.VISIBLE
+                binding.noResultsText.text = "No results found for \"$query\""
+            }
+        }
+    }
+
+    private suspend fun searchInResults(query: String): List<SearchResult> {
+        searchAdapter.setLoading(true)
+        return withContext(Dispatchers.Default) {
+            val results = mutableListOf<SearchResult>()
+
+            try {
+                results.addAll(
+                    allResults.filter { result ->
+                        result.title.contains(query, ignoreCase = true) ||
+                                result.description.contains(query, ignoreCase = true) ||
+                                result.username.contains(query, ignoreCase = true) ||
+                                result.tags.any { it.contains(query, ignoreCase = true) }
+                    }
+                )
+
+                Log.d("SearchShort", "Search completed with ${results.size} results")
+            } catch (e: Exception) {
+                Log.e("SearchShort", "Search exception: ${e.message}")
+                e.printStackTrace()
+            }
+
+            results
+        }
+    }
+
     private fun loadMoreShorts() {
         if (isLoading) return
 
         isLoading = true
         currentPage++
 
-        lifecycleScope.launch(Dispatchers.IO) {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = apiService.getShorts(currentPage.toString())
 
@@ -312,6 +340,8 @@ class SearchShortActivity : AppCompatActivity() {
                         val query = binding.searchEditText.text.toString().trim()
                         if (query.isNotEmpty()) {
                             performSearch(query)
+                        } else {
+                            searchAdapter.setSearchResults(allResults)
                         }
                     }
                 }
@@ -326,7 +356,6 @@ class SearchShortActivity : AppCompatActivity() {
 
     @OptIn(UnstableApi::class)
     private fun onSearchResultClicked(result: SearchResult) {
-        // Navigate back to MainActivity and play the selected short
         val intent = Intent(this, MainActivity::class.java).apply {
             putExtra("navigate_to", "shorts")
             putExtra("video_id", result.id)
@@ -343,6 +372,11 @@ class SearchShortActivity : AppCompatActivity() {
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun hideKeyboard() {
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
     }
 }
 
@@ -365,9 +399,30 @@ data class SearchResult(
 )
 
 class SearchResultsAdapter(
-    private val results: List<SearchResult>,
+    private val results: MutableList<SearchResult>,
     private val onItemClick: (SearchResult) -> Unit
 ) : RecyclerView.Adapter<SearchResultsAdapter.SearchViewHolder>() {
+
+    private var isLoading = false
+
+    fun setLoading(loading: Boolean) {
+        isLoading = loading
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun setSearchResults(newResults: List<SearchResult>) {
+        results.clear()
+        results.addAll(newResults)
+        isLoading = false
+        notifyDataSetChanged()
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun setNoResults() {
+        results.clear()
+        isLoading = false
+        notifyDataSetChanged()
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SearchViewHolder {
         val itemView = LinearLayout(parent.context).apply {
@@ -405,7 +460,6 @@ class SearchResultsAdapter(
                     }
                     scaleType = ImageView.ScaleType.CENTER_CROP
 
-                    // Load thumbnail with Glide
                     if (result.thumbnailUrl.isNotEmpty()) {
                         Glide.with(context)
                             .load(result.thumbnailUrl)
