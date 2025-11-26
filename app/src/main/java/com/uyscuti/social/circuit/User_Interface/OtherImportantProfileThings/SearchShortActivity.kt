@@ -1,6 +1,5 @@
 package com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -8,6 +7,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -21,6 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
@@ -37,8 +39,7 @@ class SearchShortActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySearchShortBinding
     private lateinit var searchAdapter: SearchResultsAdapter
 
-    // Store unique users (not videos)
-    private val allUsers = mutableMapOf<String, UserResult>() // userId -> UserResult
+    private val allUsers = mutableMapOf<String, UserResult>()
 
     private lateinit var apiService: IFlashapi
     private val shortsViewModel: ShortsViewModel by viewModels()
@@ -47,7 +48,6 @@ class SearchShortActivity : AppCompatActivity() {
     private var isLoading = false
     private var isInitialLoadComplete = false
 
-    // For debouncing search
     private var searchJob: Job? = null
     private val searchDebounceTime = 300L
 
@@ -70,12 +70,12 @@ class SearchShortActivity : AppCompatActivity() {
         setupBackButton()
         setupSearch()
 
-        // Load initial data
         loadInitialData()
     }
 
     private fun setupBackButton() {
         binding.backButton.setOnClickListener {
+            Log.d("SearchResults", "Back button clicked")
             finish()
         }
     }
@@ -107,6 +107,7 @@ class SearchShortActivity : AppCompatActivity() {
     private fun setupSearch() {
         binding.searchEditText.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus && binding.searchEditText.text.isEmpty() && isInitialLoadComplete) {
+                Log.d("SearchResults", "Search box focused, showing all users")
                 showAllUsers()
             }
         }
@@ -123,19 +124,22 @@ class SearchShortActivity : AppCompatActivity() {
 
         binding.searchEditText.addTextChangedListener(afterTextChanged = { editable ->
             val searchText = editable.toString().trim()
+            Log.d("SearchResults", "Search text changed: '$searchText'")
 
             searchJob?.cancel()
 
             if (!isInitialLoadComplete) {
-                // Don't search until initial load is complete
+                Log.d("SearchResults", "Initial load not complete, skipping search")
                 return@addTextChangedListener
             }
 
             if (searchText.isEmpty()) {
+                Log.d("SearchResults", "Search text is empty, showing all users")
                 showAllUsers()
                 binding.progressBar.visibility = View.GONE
             } else {
                 binding.progressBar.visibility = View.VISIBLE
+                Log.d("SearchResults", "Debouncing search for: '$searchText'")
 
                 searchJob = lifecycleScope.launch {
                     delay(searchDebounceTime)
@@ -149,7 +153,7 @@ class SearchShortActivity : AppCompatActivity() {
         showLoading(true)
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                Log.d("SearchShort", "Starting initial load...")
+                Log.d("SearchResults", "Starting initial load...")
 
                 loadShortsFromAPI(currentPage)
                 loadVideosFromFeed(currentPage)
@@ -158,9 +162,8 @@ class SearchShortActivity : AppCompatActivity() {
                     isInitialLoadComplete = true
                     showLoading(false)
 
-                    Log.d("SearchShort", "Initial load complete. Total unique users: ${allUsers.size}")
+                    Log.d("SearchResults", "Initial load complete. Total unique users: ${allUsers.size}")
 
-                    // Show all users initially
                     showAllUsers()
                 }
 
@@ -168,7 +171,7 @@ class SearchShortActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     showLoading(false)
                     showToast("Error loading data: ${e.message}")
-                    Log.e("SearchShort", "Error in initial load: ${e.message}", e)
+                    Log.e("SearchResults", "Error in initial load: ${e.message}", e)
                 }
             }
         }
@@ -182,13 +185,12 @@ class SearchShortActivity : AppCompatActivity() {
                 val responseBody = response.body()
                 val posts = responseBody?.data?.posts?.posts ?: emptyList()
 
-                Log.d("SearchShort", "Loaded ${posts.size} shorts from page $page")
+                Log.d("SearchResults", "Loaded ${posts.size} shorts from page $page")
 
                 posts.forEach { post ->
                     val userId = post.author.account._id
                     val username = post.author.account.username.trim()
 
-                    // Only add if this user isn't already in our map
                     if (!allUsers.containsKey(userId)) {
                         allUsers[userId] = UserResult(
                             userId = userId,
@@ -198,16 +200,16 @@ class SearchShortActivity : AppCompatActivity() {
                             firstVideoUrl = post.images.firstOrNull()?.url ?: "",
                             firstVideoThumbnail = post.thumbnail.firstOrNull()?.thumbnailUrl ?: ""
                         )
-                        Log.d("SearchShort", "Added user: @$username")
+                        Log.d("SearchResults", "Added user from shorts: @$username")
                     }
                 }
 
             } else {
-                Log.e("SearchShort", "Shorts API error: ${response.message()}")
+                Log.e("SearchResults", "Shorts API error: ${response.message()}")
             }
 
         } catch (e: Exception) {
-            Log.e("SearchShort", "Error loading shorts: ${e.message}", e)
+            Log.e("SearchResults", "Error loading shorts: ${e.message}", e)
         }
     }
 
@@ -224,7 +226,7 @@ class SearchShortActivity : AppCompatActivity() {
                     }
                 } ?: emptyList()
 
-                Log.d("SearchShort", "Loaded ${videoPosts.size} feed videos from page $page")
+                Log.d("SearchResults", "Loaded ${videoPosts.size} feed videos from page $page")
 
                 videoPosts.forEach { post ->
                     if (post.author == null || post.author.account == null) {
@@ -234,7 +236,6 @@ class SearchShortActivity : AppCompatActivity() {
                     val userId = post.author.account._id
                     val username = post.author.account.username.trim()
 
-                    // Only add if this user isn't already in our map
                     if (!allUsers.containsKey(userId)) {
                         val videoFile = post.files.firstOrNull { file ->
                             post.fileTypes.any {
@@ -259,36 +260,37 @@ class SearchShortActivity : AppCompatActivity() {
                                 firstVideoUrl = videoFile.url,
                                 firstVideoThumbnail = videoThumbnail?.thumbnailUrl ?: ""
                             )
-                            Log.d("SearchShort", "Added user from feed: @$username")
+                            Log.d("SearchResults", "Added user from feed: @$username")
                         }
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.e("SearchShort", "Error loading feed videos: ${e.message}", e)
+            Log.e("SearchResults", "Error loading feed videos: ${e.message}", e)
         }
     }
 
     private fun showAllUsers() {
         val userList = allUsers.values.toList()
+        Log.d("SearchResults", "Showing all ${userList.size} users")
         searchAdapter.setUsers(userList)
         binding.noResultsText.visibility = View.GONE
-
-        Log.d("SearchShort", "Showing all ${userList.size} users")
     }
 
     private fun performSearch(query: String) {
         lifecycleScope.launch {
             val searchResults = searchUsers(query)
 
-            Log.d("SearchShort", "Search results for '$query': ${searchResults.size}")
+            Log.d("SearchResults", "Search results for '$query': ${searchResults.size}")
 
             binding.progressBar.visibility = View.GONE
 
             if (searchResults.isNotEmpty()) {
+                Log.d("SearchResults", "Displaying ${searchResults.size} results")
                 searchAdapter.setUsers(searchResults)
                 binding.noResultsText.visibility = View.GONE
             } else {
+                Log.d("SearchResults", "No results found for '$query'")
                 searchAdapter.setNoResults()
                 binding.noResultsText.visibility = View.VISIBLE
                 binding.noResultsText.text = "No users found for \"$query\""
@@ -302,23 +304,23 @@ class SearchShortActivity : AppCompatActivity() {
                 val normalizedQuery = query.trim().lowercase()
                 val userList = allUsers.values.toList()
 
-                Log.d("SearchShort", "Searching for: '$normalizedQuery' in ${userList.size} users")
+                Log.d("SearchResults", "Searching for: '$normalizedQuery' in ${userList.size} users")
 
                 val results = userList.filter { user ->
                     val normalizedUsername = user.username.trim().lowercase()
                     val matches = normalizedUsername.contains(normalizedQuery)
 
                     if (matches) {
-                        Log.d("SearchShort", "Match found: @${user.username}")
+                        Log.d("SearchResults", "Match found: @${user.username}")
                     }
 
                     matches
                 }
 
-                Log.d("SearchShort", "Search completed with ${results.size} results")
+                Log.d("SearchResults", "Search completed with ${results.size} results")
                 results
             } catch (e: Exception) {
-                Log.e("SearchShort", "Search exception: ${e.message}", e)
+                Log.e("SearchResults", "Search exception: ${e.message}", e)
                 emptyList()
             }
         }
@@ -332,7 +334,7 @@ class SearchShortActivity : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                Log.d("SearchShort", "Loading page $currentPage")
+                Log.d("SearchResults", "Loading page $currentPage")
 
                 loadShortsFromAPI(currentPage)
                 loadVideosFromFeed(currentPage)
@@ -347,12 +349,12 @@ class SearchShortActivity : AppCompatActivity() {
                         showAllUsers()
                     }
 
-                    Log.d("SearchShort", "Page $currentPage loaded. Total users: ${allUsers.size}")
+                    Log.d("SearchResults", "Page $currentPage loaded. Total users: ${allUsers.size}")
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     isLoading = false
-                    Log.e("SearchShort", "Error loading page $currentPage: ${e.message}", e)
+                    Log.e("SearchResults", "Error loading page $currentPage: ${e.message}", e)
                 }
             }
         }
@@ -360,7 +362,7 @@ class SearchShortActivity : AppCompatActivity() {
 
     @OptIn(UnstableApi::class)
     private fun onUserClicked(user: UserResult) {
-        // Navigate to shorts and play this user's first video
+        Log.d("SearchResults", "User clicked: @${user.username} (${user.userId})")
         val intent = Intent(this, MainActivity::class.java).apply {
             putExtra("navigate_to", "shorts")
             putExtra("video_id", user.firstVideoId)
@@ -390,12 +392,11 @@ class SearchShortActivity : AppCompatActivity() {
     }
 }
 
-// Changed from SearchResult to UserResult - stores unique users, not videos
 data class UserResult(
     val userId: String,
     val username: String,
     val avatarUrl: String,
-    val firstVideoId: String,      // Their first video to play when clicked
+    val firstVideoId: String,
     val firstVideoUrl: String,
     val firstVideoThumbnail: String
 )
@@ -405,31 +406,59 @@ class SearchResultsAdapter(
     private val onItemClick: (UserResult) -> Unit
 ) : RecyclerView.Adapter<SearchResultsAdapter.UserViewHolder>() {
 
-    @SuppressLint("NotifyDataSetChanged")
     fun setUsers(newUsers: List<UserResult>) {
         users.clear()
         users.addAll(newUsers)
         notifyDataSetChanged()
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     fun setNoResults() {
         users.clear()
         notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
-        val textView = TextView(parent.context).apply {
+        val view = android.view.LayoutInflater.from(parent.context)
+            .inflate(android.R.layout.simple_list_item_1, parent, false)
+
+        val container = LinearLayout(parent.context).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
-            setPadding(48, 32, 48, 32)
-            textSize = 18f
-            setTextColor(parent.context.getColor(android.R.color.black))
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(16, 16, 16, 16)
             setBackgroundResource(android.R.drawable.list_selector_background)
         }
-        return UserViewHolder(textView, onItemClick)
+
+        val avatarImageView = ImageView(parent.context).apply {
+            layoutParams = LinearLayout.LayoutParams(56, 56)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            clipToOutline = true
+            outlineProvider = object : android.view.ViewOutlineProvider() {
+                override fun getOutline(view: android.view.View, outline: android.graphics.Outline) {
+                    outline.setOval(0, 0, view.width, view.height)
+                }
+            }
+        }
+
+        val usernameTextView = TextView(parent.context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
+                marginStart = 16
+            }
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            textSize = 16f
+            setTextColor(parent.context.getColor(android.R.color.black))
+        }
+
+        container.addView(avatarImageView)
+        container.addView(usernameTextView)
+
+        return UserViewHolder(container, avatarImageView, usernameTextView, onItemClick)
     }
 
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
@@ -439,13 +468,25 @@ class SearchResultsAdapter(
     override fun getItemCount() = users.size
 
     inner class UserViewHolder(
-        private val textView: TextView,
+        private val container: LinearLayout,
+        private val avatarImageView: ImageView,
+        private val usernameTextView: TextView,
         private val onItemClick: (UserResult) -> Unit
-    ) : RecyclerView.ViewHolder(textView) {
+    ) : RecyclerView.ViewHolder(container) {
 
         fun bind(user: UserResult) {
-            textView.text = "@${user.username}"
-            textView.setOnClickListener { onItemClick(user) }
+            usernameTextView.text = "@${user.username}"
+
+            // Load avatar using Glide
+            Glide.with(avatarImageView.context)
+                .load(user.avatarUrl)
+                .circleCrop()
+                .into(avatarImageView)
+
+            container.setOnClickListener {
+                Log.d("SearchResults", "Item clicked: @${user.username}")
+                onItemClick(user)
+            }
         }
     }
 }
