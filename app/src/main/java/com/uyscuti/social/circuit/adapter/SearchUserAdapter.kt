@@ -16,7 +16,10 @@ import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.data.model.User
 
-class SearchUserAdapter(private val context: Context, private val listener: (User) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class SearchUserAdapter(
+
+    private val context: Context,
+    private val listener: (User) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private var recentUserList: MutableList<User> = mutableListOf()
     private var searchUserList: MutableList<User> = mutableListOf()
     private var displayRecentUsers = true

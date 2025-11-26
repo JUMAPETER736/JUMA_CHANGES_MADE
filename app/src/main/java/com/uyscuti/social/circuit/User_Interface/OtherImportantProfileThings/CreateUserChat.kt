@@ -97,19 +97,6 @@ class CreateUserChat : AppCompatActivity() {
         }
 
 
-
-//        CoroutineScope(Dispatchers.Main).launch {
-//            recentUserViewModel.recentUsers.observe(this@CreateUserChat, Observer{ users ->
-//                Log.d("RecentUsers", "RecentUsers: $users")
-//                if (users.isNotEmpty()){
-//                    val recentLiveUsers = users.map { it.toUser() }
-////                    userListAdapter.setRecentUsers(recentLiveUsers)
-//                }
-//            })
-//        }
-
-//        observeTempDialogs()
-
     }
 
     private fun observeTempDialogs() {
@@ -119,7 +106,7 @@ class CreateUserChat : AppCompatActivity() {
                 Log.d("ChatOperations", "Temp Chats Found : $temps")
                 CoroutineScope(Dispatchers.IO).launch {
                     handleTempDialogs(temps, 0)
-//                    deleteTempDialogs(temps)
+
                 }
             })
         }
@@ -144,10 +131,6 @@ class CreateUserChat : AppCompatActivity() {
             }
         }
 
-        // Or use addTextChangedListener to detect text changes in the EditText
-//        searchEditText.addTextChangedListener { text ->
-//            performSearch(text.toString())
-//        }
 
         searchEditText.addTextChangedListener(afterTextChanged = { editable ->
             // This will be called after the text in the EditText has changed
