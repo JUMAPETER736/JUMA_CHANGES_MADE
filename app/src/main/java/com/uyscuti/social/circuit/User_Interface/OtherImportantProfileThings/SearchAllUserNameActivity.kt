@@ -89,7 +89,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     // Inside SearchAllUserNameActivity.kt
 
     private fun UserResult.toRecentUser() = RecentUser(
-        id = userId,                 
+        id = userId,
         name = username,
         avatar = avatarUrl,
         lastSeen = Date(),
@@ -216,9 +216,6 @@ data class UserResult(
     val firstVideoThumbnail: String
 )
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MODERN LISTADAPTER — 100% THREAD-SAFE, NO MORE NOTIFYDATASETCHANGED()
-// ─────────────────────────────────────────────────────────────────────────────
 
 class SearchUserNameAdapter(
     private val onUserClicked: (UserResult) -> Unit
@@ -300,7 +297,7 @@ private class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
         Glide.with(itemView.context)
             .load(user.avatarUrl)
             .apply(RequestOptions.bitmapTransform(CircleCrop()))
-            .placeholder(R.drawable.person_button_svgrepo_com)
+            .placeholder(R.drawable.flash21)
             .into(avatar)
         username.text = "@${user.username}"
         itemView.setOnClickListener { listener(user) }

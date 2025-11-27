@@ -630,10 +630,15 @@ interface IFlashapi {
 
 
     @POST("social-media/comment/reply/comment/{commentId}")
-    suspend fun addCommentReply(@Path("commentId") commentId: String, @Body requestBody: CommentRequestBody) : Response<CommentReplyResponse>
+    suspend fun addCommentReply(
+        @Path("commentId") commentId: String,
+        @Body requestBody: CommentRequestBody) : Response<CommentReplyResponse>
+
 
     @POST("feed/comment/reply/comment/{commentId}")
-    suspend fun addFeedCommentReply(@Path("commentId") commentId: String, @Body requestBody: CommentRequestBody) : Response<CommentReplyResponse>
+    suspend fun addFeedCommentReply(
+        @Path("commentId") commentId: String,
+        @Body requestBody: CommentRequestBody) : Response<CommentReplyResponse>
 
     @Multipart
     @POST("social-media/comment/reply/comment/{commentId}")
