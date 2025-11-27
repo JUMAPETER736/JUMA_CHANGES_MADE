@@ -21,6 +21,7 @@ import javax.inject.Inject
 class ShortsViewModel @Inject constructor(
 
     private val repository: ShortsRepository
+
 ) : ViewModel() {
 
 
@@ -75,9 +76,6 @@ class ShortsViewModel @Inject constructor(
         return repository.getShortsForPage(page, pageSize)
     }
 
-    fun getApiService(): IFlashapi {
-        return apiService
-    }
 
 
 }
