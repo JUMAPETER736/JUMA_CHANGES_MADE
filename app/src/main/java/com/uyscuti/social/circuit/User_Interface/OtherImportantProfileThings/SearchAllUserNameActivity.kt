@@ -45,14 +45,15 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
 import java.util.Date
-import javax.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 
 @AndroidEntryPoint
 class SearchAllUserNameActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySearchAllUserNameBinding
     private lateinit var searchAdapter: SearchUserNameAdapter
-
+    private var searchJob: Job? = null
     private val apiService: IFlashapi by lazy {
         RetrofitInstance(LocalStorage(this), this).apiService
     }
@@ -109,6 +110,48 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             // After loading, show recent users
             loadRecentUsers()
         }
+    }
+
+    private fun setupSearch() {
+        binding.searchEditText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                performSearch(binding.searchEditText.text.toString().trim())
+                hideKeyboard()
+                binding.searchEditText.clearFocus()
+                true
+            } else false
+        }
+
+        binding.searchEditText.addTextChangedListener(afterTextChanged = { editable ->
+            val query = editable.toString().trim()
+
+            // Cancel previous search job
+            searchJob?.cancel()
+
+            if (query.isEmpty()) {
+                loadRecentUsers()
+            } else {
+                // Start new search job with slight delay for better performance
+                searchJob = lifecycleScope.launch {
+                    // Optional: Add a small delay (300ms) to avoid too many searches
+                    // Remove this line if you want instant results without debounce
+                    delay(300)
+
+                    Log.d("SearchUsers", "Searching for: '$query', Cache size: ${allAuthorsCache.size}")
+                    val results = searchUsers(query).sortedBy { it.account.username }
+                    Log.d("SearchUsers", "Found ${results.size} results")
+
+                    if (results.isNotEmpty()) {
+                        results.take(3).forEach {
+                            Log.d("SearchUsers", "Result: ${it.account.username}")
+                        }
+                        searchAdapter.showSearchResults(results)
+                    } else {
+                        searchAdapter.showNoResults()
+                    }
+                }
+            }
+        })
     }
 
     private suspend fun fetchAllAuthorsFromShortsAndFeed(): List<Author> {
@@ -302,28 +345,6 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupSearch() {
-        binding.searchEditText.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                performSearch(binding.searchEditText.text.toString().trim())
-                hideKeyboard()
-                binding.searchEditText.clearFocus()
-                true
-            } else false
-        }
-
-        binding.searchEditText.addTextChangedListener(afterTextChanged = { editable ->
-            val query = editable.toString().trim()
-            Log.d("FinishedTyping", "FinishedTyping: $query")
-
-            if (query.isEmpty()) {
-                loadRecentUsers()
-            } else {
-                performSearch(query)
-            }
-        })
-    }
-
     private fun performSearch(query: String) {
         lifecycleScope.launch {
             Log.d("SearchUsers", "Searching for: '$query', Cache size: ${allAuthorsCache.size}")
@@ -359,6 +380,9 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         val intent = Intent(this, MainActivity::class.java).apply {
             putExtra("navigate_to", "shorts")
             putExtra("user_id", author._id)
+            putExtra("filter_user_id", author._id)
+            putExtra("filter_username", author.account.username)
+            putExtra("filter_user_avatar", author.account.avatar.url)
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         startActivity(intent)

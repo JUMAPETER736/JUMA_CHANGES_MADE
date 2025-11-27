@@ -1371,6 +1371,13 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     @Inject
     lateinit var retrofitIns: RetrofitInstance
 
+    private var filterUserId: String? = null
+    private var filterUsername: String? = null
+    private var filterUserAvatar: String? = null
+    private var isUserFiltered = false
+    private var isLoadingMore = false
+    private var currentPage = 1
+
     // ViewModels
     private val eventProgressSets = HashMap<String, HashSet<Int>>()
     private val feesShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
