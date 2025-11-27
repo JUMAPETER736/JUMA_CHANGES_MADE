@@ -383,6 +383,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             putExtra("filter_user_id", author._id)
             putExtra("filter_username", author.account.username)
             putExtra("filter_user_avatar", author.account.avatar.url)
+            putExtra("should_filter", true)  // ADD THIS LINE
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         startActivity(intent)

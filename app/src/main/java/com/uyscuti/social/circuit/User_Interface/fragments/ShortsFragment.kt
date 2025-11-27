@@ -1311,6 +1311,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     // UI Components - ViewPager & Adapter
     private lateinit var viewPager: ViewPager2
     private lateinit var shortsAdapter: ShortsAdapter
+    private var shouldFilter = false
 
     // UI Components - Buttons & Actions
     private lateinit var fabAction: FloatingActionButton
@@ -1415,7 +1416,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // From the  Tapped Files Viewers Post fragment
+        // From the Tapped Files Viewers Post fragment
         arguments?.let { bundle ->
             videoUrl = bundle.getString("video_url")
             postItem = bundle.getParcelable("post_item")
@@ -1428,22 +1429,30 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         arguments?.let {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
-            // Check if FEED_SHORT_BUSINESS_ID is set
             feedShortsBusinessId = it.getString(FEED_SHORT_BUSINESS_ID) ?: run {
                 Log.d("openShortsFragment", "FEED_SHORT_BUSINESS_ID is not set")
-                // Provide a default value or handle the absence of FEED_SHORT_BUSINESS_ID
                 "default_value"
             }
             feedShortsBusinessFileId = it.getString(FEED_SHORT_BUSINESS_FILE_ID) ?: run {
                 Log.d("openShortsFragment", "FEED_SHORT_BUSINESS_ID is not set")
-
                 "default_value_file_id"
             }
         }
+
         feedOnBackPressedData = arguments?.getBoolean(FEED_ARG_DATA) == true
         feedPostPosition = arguments?.getInt(FEED_POST_POSITION)!!
-        Log.d("openShortsFragment", "onCreate:feedShortsBusinessId $feedShortsBusinessId")
 
+        // ADD THESE LINES
+        shouldFilter = activity?.intent?.getBooleanExtra("should_filter", false) ?: false
+        if (shouldFilter) {
+            filterUserId = activity?.intent?.getStringExtra("filter_user_id")
+            filterUsername = activity?.intent?.getStringExtra("filter_username")
+            filterUserAvatar = activity?.intent?.getStringExtra("filter_user_avatar")
+            isUserFiltered = true
+            Log.d("ShotsFragment", "Filtering enabled for user: $filterUsername (ID: $filterUserId)")
+        }
+
+        Log.d("openShortsFragment", "onCreate:feedShortsBusinessId $feedShortsBusinessId")
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -1601,6 +1610,33 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         lifecycleScope.launch(Dispatchers.IO) {
 
             val followEntity = followShortsViewModel.allShortsList
+
+            // Inside the lifecycleScope.launch(Dispatchers.IO) block, after checking shouldFilter
+            if (shouldFilter && filterUserId != null) {
+                // Clear existing data before loading filtered content
+                withContext(Dispatchers.Main) {
+                    shortsViewModel.mutableShortsList.clear()
+                    shortsViewModel.videoShorts.clear()
+                    shortsViewModel.followList.clear()
+                    uniqueEntitiesSet.clear()
+                    shortsList.clear()
+                }
+            }
+
+            if (!shortsViewModel.isResuming) {
+                // ADD THESE LINES HERE - Clear data if filtering
+                if (shouldFilter && filterUserId != null) {
+                    shortsViewModel.mutableShortsList.clear()
+                    shortsViewModel.videoShorts.clear()
+                    shortsViewModel.followList.clear()
+                    uniqueEntitiesSet.clear()
+                    shortsList.clear()
+                    Log.d("ShotsFragment", "Cleared existing data for filtered view")
+                }
+
+                loadMoreShortsPage1(1)
+                Log.d("Resume", "onCreateView: ! ${!shortsViewModel.isResuming}")
+            }
 
             withContext(Dispatchers.Main) {
                 shortsViewModel.allShortsList.observe(viewLifecycleOwner, Observer {
@@ -1832,7 +1868,303 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         return view
     }
-    
+
+    @SuppressLint("NotifyDataSetChanged")
+    private suspend fun loadMoreShorts(currentPage: Int) {
+        try {
+            val response = retrofitIns.apiService.getShorts(currentPage.toString())
+
+            if (response.isSuccessful) {
+                val responseBody = response.body()
+                Log.d(
+                    "AllShorts3",
+                    "Shorts List in page $currentPage ${responseBody?.data!!.posts}"
+                )
+                Log.d(
+                    "AllShorts3",
+                    "loadMoreShorts: followItem:  ${responseBody.data.followList}"
+                )
+
+                // CHANGE THIS - Remove var and reassign properly
+                var shortsEntity = serverResponseToEntity(responseBody.data.posts.posts)
+
+                // ADD THIS FILTERING LOGIC - Fixed version
+                if (isUserFiltered && filterUserId != null) {
+                    shortsEntity = shortsEntity.filter { entity ->
+                        entity.author.account._id == filterUserId
+                    }
+                    Log.d("AllShorts3", "Filtered shorts for user $filterUsername: ${shortsEntity.size} videos")
+                }
+
+                val followListItem =
+                    responseBody.data.followList.let { serverResponseToFollowEntity(it) }
+
+                // Rest of the code remains the same...
+                lifecycleScope.launch(Dispatchers.IO) {
+
+                    val uniqueFollowList = removeDuplicateFollowers(followListItem)
+                    Log.d(
+                        "AllShorts3",
+                        "getAllShort3: Inserted uniqueFollowList $uniqueFollowList"
+                    )
+                    followShortsViewModel.insertFollowListItems(uniqueFollowList)
+                    if (uniqueFollowList.isEmpty()) {
+                        Log.d("AllShorts3", "loadMoreShorts:uniqueFollowList is empty")
+
+                        withContext(Dispatchers.Main) {
+                            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
+                                shortsViewModel.followList.addAll(followListItem)
+
+                                shortsAdapter.addIsFollowingData(followListItem)
+
+                            }
+                        }
+                    }
+
+                    for (entity in shortsEntity) {
+                        // Access the list of images for each entity
+                        val images = entity.images
+
+                        if (uniqueEntitiesSet.add(entity)) {
+                            Log.d("SHORTS", "Processing entity: $entity")
+                            // Add the unique entity to both the set and your ViewModel's list
+                            shortsViewModel.videoShorts.add(entity)
+                            continue
+                        }
+                        // Iterate through the list of images
+                        for (image in images) {
+                            // Access individual image properties or perform any desired actions
+                            val imageUrl = image.url
+
+                            shortsList.add(imageUrl)
+
+                        }
+                    }
+
+                    startPreLoadingService()
+                    withContext(Dispatchers.Main) {
+                        if (shortsEntity.isNotEmpty()) {
+                            Log.d("AllShorts3", "loadMoreShorts: shorts entity is not empty")
+
+                            shortsViewModel.mutableShortsList.addAll(shortsEntity)
+                            shortsAdapter.addData(shortsEntity)
+                            shortsViewModel.followList.addAll(followListItem)
+
+                            shortsAdapter.addIsFollowingData(followListItem)
+
+                        } else {
+                            Log.d("AllShorts3", "loadMoreShorts:shorts entity is empty")
+                        }
+
+                    }
+
+                }
+
+
+            } else {
+                Log.d("AllShorts3", "Error: ${response.message()}")
+                requireActivity().runOnUiThread {
+                    showToast(response.message())
+                }
+            }
+
+        } catch (e: HttpException) {
+            Log.d("AllShorts", "Http Exception ${e.message}")
+            requireActivity().runOnUiThread {
+                showToast("Failed to connect try again...")
+            }
+        } catch (e: IOException) {
+            Log.d("AllShorts", "IOException ${e.message}")
+            requireActivity().runOnUiThread {
+                showToast("Failed to connect try again...")
+            }
+        }
+    }
+
+    private suspend fun loadMoreShortsFromFeed(currentPage: Int) {
+        try {
+            val response = retrofitIns.apiService.getAllFeed(currentPage.toString())
+
+            if (response.isSuccessful) {
+                val responseBody = response.body()
+
+                // CHANGE THIS - Make it var instead of val
+                var videoPosts = responseBody?.data?.data?.posts?.filter { post ->
+                    post.contentType == "mixed_files" && post.fileTypes.any {
+                        // FIX: Add null safety check
+                        it.fileType?.contains("video", ignoreCase = true) == true
+                    }
+                } ?: emptyList()
+
+                // ADD THIS FILTERING LOGIC - Fixed version
+                if (isUserFiltered && filterUserId != null) {
+                    videoPosts = videoPosts.filter { post ->
+                        post.author._id == filterUserId
+                    }
+                    Log.d("GetAllFeed", "Filtered feed videos for user $filterUsername: ${videoPosts.size} videos")
+                }
+
+                if (videoPosts.isNotEmpty()) {
+                    val shortsEntity = convertFeedPostsToShortsEntity(videoPosts)
+
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val newFollowData = mutableListOf<ShortsEntityFollowList>()
+
+                        for (entity in shortsEntity) {
+                            val videos = entity.images
+
+                            if (uniqueEntitiesSet.add(entity)) {
+                                shortsViewModel.videoShorts.add(entity)
+
+                                newFollowData.add(
+                                    ShortsEntityFollowList(
+                                        followersId = entity.author.account._id,
+                                        isFollowing = false
+                                    )
+                                )
+
+                                for (video in videos) {
+                                    shortsList.add(video.url)
+                                }
+                            }
+                        }
+
+                        startPreLoadingService()
+
+                        withContext(Dispatchers.Main) {
+                            if (shortsEntity.isNotEmpty()) {
+                                shortsViewModel.mutableShortsList.addAll(shortsEntity)
+                                shortsAdapter.addData(shortsEntity)
+                                shortsAdapter.addIsFollowingData(newFollowData)
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("GetAllFeed", "Error loading feed: ${e.message}", e)
+        }
+    }
+
+    private suspend fun loadMoreShortsPage1(currentPage: Int) {
+        try {
+            val response = retrofitIns.apiService.getShorts(currentPage.toString())
+
+            if (response.isSuccessful) {
+                val responseBody = response.body()
+                Log.d(
+                    "AllShorts3",
+                    "Shorts List in page $currentPage ${responseBody?.data!!.posts}"
+                )
+                Log.d(
+                    "AllShorts3",
+                    "loadMoreShorts: followItem:  ${responseBody.data.followList}"
+                )
+
+                var shortsEntity = serverResponseToEntity(responseBody.data.posts.posts)
+
+                // ADD THIS FILTERING LOGIC
+                if (isUserFiltered && filterUserId != null) {
+                    shortsEntity = shortsEntity.filter { entity ->
+                        entity.author.account._id == filterUserId
+                    }
+                    Log.d("AllShorts3", "Filtered page 1 shorts for user $filterUsername: ${shortsEntity.size} videos")
+                }
+
+                val followListItem =
+                    responseBody.data.followList.let { serverResponseToFollowEntity(it) }
+
+
+                // Now, insert yourEntity into the Room database
+                lifecycleScope.launch(Dispatchers.IO) {
+
+                    val uniqueFollowList = removeDuplicateFollowers(followListItem)
+                    Log.d(
+                        "AllShorts3",
+                        "getAllShort3: Inserted uniqueFollowList $uniqueFollowList"
+                    )
+                    followShortsViewModel.insertFollowListItems(uniqueFollowList)
+                    if (uniqueFollowList.isEmpty()) {
+                        Log.d("AllShorts3", "loadMoreShorts:uniqueFollowList is empty")
+
+                        withContext(Dispatchers.Main) {
+                            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
+                                shortsViewModel.followList.addAll(it)
+
+                                shortsAdapter.addIsFollowingData(it)
+
+                            }
+                        }
+                    }
+
+
+                    for (entity in shortsEntity) {
+
+                        // Access the list of images for each entity
+                        val images = entity.images
+
+                        Log.d("ShortsData", "short: $entity")
+
+
+                        // Add the unique entity to both the set and your ViewModel's list
+                        shortsViewModel.videoShorts.add(entity)
+
+
+                        for (image in images) {
+                            // Access individual image properties or perform any desired actions
+                            val imageUrl = image.url
+
+                            shortsList.add(imageUrl)
+                        }
+                    }
+
+                    startPreLoadingService()
+                    withContext(Dispatchers.Main) {
+                        if (shortsEntity.isNotEmpty()) {
+                            Log.d("AllShorts3", "loadMoreShorts: shorts entity is not empty")
+
+
+                            shortsViewModel.mutableShortsList.addAll(shortsEntity)
+                            shortsViewModel.followList.addAll(followListItem)
+                            shortsAdapter.addData(shortsEntity)
+
+                            shortsAdapter.addIsFollowingData(followListItem)
+
+                        } else {
+                            Log.d("AllShorts3", "loadMoreShorts:shorts entity is empty")
+                        }
+
+                    }
+
+                }
+
+
+            } else {
+                Log.d("ErrorInShortsFragment", "Error message: ${response.message()}")
+                Log.d("ErrorInShortsFragment", "Error body: ${response.body()}")
+                Log.d("ErrorInShortsFragment", "Error error body: ${response.errorBody()}")
+                Log.d("ErrorInShortsFragment", "Error response: $response")
+                Log.d("ErrorInShortsFragment", "Error response code: ${response.code()}")
+                Log.d("ErrorInShortsFragment", "Error response headers: ${response.headers()}")
+                Log.d("ErrorInShortsFragment", "Error response raw: ${response.raw()}")
+
+                requireActivity().runOnUiThread {
+                    showToast(response.message())
+                }
+            }
+
+        } catch (e: HttpException) {
+            Log.d("AllShorts", "Http Exception ${e.message}")
+            requireActivity().runOnUiThread {
+                showToast("Failed to connect try again...")
+            }
+        } catch (e: IOException) {
+            Log.d("AllShorts", "IOException ${e.message}")
+            requireActivity().runOnUiThread {
+                showToast("Failed to connect try again...")
+            }
+        }
+    }
 
     private fun playVideoAtPosition(position: Int) {
         val videoShorts = shortsViewModel.videoShorts
@@ -1881,7 +2213,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         prepareAndPlayVideoImmediately(finalVideoUrl, position)
     }
 
-    // 3. REPLACE prepareAndPlayVideo with this optimized version:
     private fun prepareAndPlayVideoImmediately(videoUrl: String, position: Int) {
         try {
             val videoUri = Uri.parse(videoUrl)
@@ -2001,114 +2332,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             }
         }
     }
-
-
-
-    @SuppressLint("NotifyDataSetChanged")
-    private suspend fun loadMoreShorts(currentPage: Int) {
-        try {
-            val response = retrofitIns.apiService.getShorts(currentPage.toString())
-
-            if (response.isSuccessful) {
-                val responseBody = response.body()
-                Log.d(
-                    "AllShorts3",
-                    "Shorts List in page $currentPage ${responseBody?.data!!.posts}"
-                )
-                Log.d(
-                    "AllShorts3",
-                    "loadMoreShorts: followItem:  ${responseBody.data.followList}"
-                )
-
-
-                val shortsEntity = serverResponseToEntity(responseBody.data.posts.posts)
-
-                val followListItem =
-                    responseBody.data.followList.let { serverResponseToFollowEntity(it) }
-
-
-                // Now, insert yourEntity into the Room database
-                lifecycleScope.launch(Dispatchers.IO) {
-
-                    val uniqueFollowList = removeDuplicateFollowers(followListItem)
-                    Log.d(
-                        "AllShorts3",
-                        "getAllShort3: Inserted uniqueFollowList $uniqueFollowList"
-                    )
-                    followShortsViewModel.insertFollowListItems(uniqueFollowList)
-                    if (uniqueFollowList.isEmpty()) {
-                        Log.d("AllShorts3", "loadMoreShorts:uniqueFollowList is empty")
-
-                        withContext(Dispatchers.Main) {
-                            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
-                                shortsViewModel.followList.addAll(followListItem)
-
-                                shortsAdapter.addIsFollowingData(followListItem)
-
-                            }
-                        }
-                    }
-
-                    for (entity in shortsEntity) {
-                        // Access the list of images for each entity
-                        val images = entity.images
-
-                        if (uniqueEntitiesSet.add(entity)) {
-                            Log.d("SHORTS", "Processing entity: $entity")
-                            // Add the unique entity to both the set and your ViewModel's list
-                            shortsViewModel.videoShorts.add(entity)
-                            continue
-                        }
-                        // Iterate through the list of images
-                        for (image in images) {
-                            // Access individual image properties or perform any desired actions
-                            val imageUrl = image.url
-
-                            shortsList.add(imageUrl)
-
-                        }
-                    }
-
-                    startPreLoadingService()
-                    withContext(Dispatchers.Main) {
-                        if (shortsEntity.isNotEmpty()) {
-                            Log.d("AllShorts3", "loadMoreShorts: shorts entity is not empty")
-
-                            shortsViewModel.mutableShortsList.addAll(shortsEntity)
-                            shortsAdapter.addData(shortsEntity)
-                            shortsViewModel.followList.addAll(followListItem)
-
-                            shortsAdapter.addIsFollowingData(followListItem)
-
-                        } else {
-                            Log.d("AllShorts3", "loadMoreShorts:shorts entity is empty")
-                        }
-
-                    }
-
-                }
-
-
-            } else {
-                Log.d("AllShorts3", "Error: ${response.message()}")
-                requireActivity().runOnUiThread {
-                    showToast(response.message())
-                }
-            }
-
-        } catch (e: HttpException) {
-            Log.d("AllShorts", "Http Exception ${e.message}")
-            requireActivity().runOnUiThread {
-                showToast("Failed to connect try again...")
-            }
-        } catch (e: IOException) {
-            Log.d("AllShorts", "IOException ${e.message}")
-            requireActivity().runOnUiThread {
-                showToast("Failed to connect try again...")
-            }
-        }
-    }
-
+    
     @SuppressLint("NotifyDataSetChanged")
     private suspend fun loadMoreShortsByFeedShortsBusinessId(feedShortsBusinessId: String) {
         try {
@@ -2252,114 +2476,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    private suspend fun loadMoreShortsFromFeed(currentPage: Int) {
-        try {
-            val response = retrofitIns.apiService.getAllFeed(currentPage.toString())
-
-            if (response.isSuccessful) {
-                val responseBody = response.body()
-
-                val videoPosts = responseBody?.data?.data?.posts?.filter { post ->
-                    post.contentType == "mixed_files" && post.fileTypes.any {
-                        // FIX: Add null safety check
-                        it.fileType?.contains("video", ignoreCase = true) == true
-                    }
-                } ?: emptyList()
-
-                if (videoPosts.isNotEmpty()) {
-                    val shortsEntity = convertFeedPostsToShortsEntity(videoPosts)
-
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        val newFollowData = mutableListOf<ShortsEntityFollowList>()
-
-                        for (entity in shortsEntity) {
-                            val videos = entity.images
-
-                            if (uniqueEntitiesSet.add(entity)) {
-                                shortsViewModel.videoShorts.add(entity)
-
-                                newFollowData.add(
-                                    ShortsEntityFollowList(
-                                        followersId = entity.author.account._id,
-                                        isFollowing = false
-                                    )
-                                )
-
-                                for (video in videos) {
-                                    shortsList.add(video.url)
-                                }
-                            }
-                        }
-
-                        startPreLoadingService()
-
-                        withContext(Dispatchers.Main) {
-                            if (shortsEntity.isNotEmpty()) {
-                                shortsViewModel.mutableShortsList.addAll(shortsEntity)
-                                shortsAdapter.addData(shortsEntity)
-                                shortsAdapter.addIsFollowingData(newFollowData)
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("GetAllFeed", "Error loading feed: ${e.message}", e)
-        }
-    }
-
-    private fun prepareAndPlayVideo(videoUrl: String, position: Int) {
-        try {
-            val videoUri = Uri.parse(videoUrl)
-            Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
-
-            // Ensure surface is ready
-            val currentHolder = shortsAdapter.getCurrentViewHolder()
-            currentHolder?.getSurface()?.let { playerView ->
-                playerView.visibility = View.VISIBLE
-                playerView.player = exoPlayer
-            }
-
-            val mediaItem = MediaItem.Builder()
-                .setUri(videoUri)
-                .apply {
-                    val detectedMimeType = getMimeTypeFromUrl(videoUrl)
-                    if (detectedMimeType != MimeTypes.VIDEO_UNKNOWN) {
-                        setMimeType(detectedMimeType)
-                    }
-                }
-                .build()
-
-            val mediaSource = createEnhancedMediaSource(mediaItem, videoUrl)
-
-            currentPlayerListener?.let { oldListener ->
-                exoPlayer?.removeListener(oldListener)
-            }
-
-            currentPlayerListener = createPlayerListener(position)
-
-            exoPlayer?.let { player ->
-                // Don't pause - go straight to preparation
-                player.clearMediaItems()
-                player.addListener(currentPlayerListener!!)
-                player.repeatMode = Player.REPEAT_MODE_ONE
-                player.playWhenReady = true // Set to true immediately
-
-                player.setMediaSource(mediaSource, true) // Reset position
-                player.prepare()
-                player.play() // Start playing immediately after prepare
-
-                Log.d("prepareAndPlayVideo", "Video preparation started for position: $position")
-            }
-
-
-        } catch (e: Exception) {
-            Log.e("prepareAndPlayVideo", "Error in prepareAndPlayVideo", e)
-
-            handlePlaybackError(position)
-        }
-    }
-
     private fun setupVideoPlaybackInShots(videoUrl: String) {
         // Implement video playback logic specific to ShotsFragment
         Log.d("ShotsFragment", "Setting up video playback for: $videoUrl")
@@ -2454,119 +2570,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
         updateStatusBar()
 
-    }
-
-    private suspend fun loadMoreShortsPage1(currentPage: Int) {
-        try {
-            val response = retrofitIns.apiService.getShorts(currentPage.toString())
-
-            if (response.isSuccessful) {
-                val responseBody = response.body()
-                Log.d(
-                    "AllShorts3",
-                    "Shorts List in page $currentPage ${responseBody?.data!!.posts}"
-                )
-                Log.d(
-                    "AllShorts3",
-                    "loadMoreShorts: followItem:  ${responseBody.data.followList}"
-                )
-
-
-                val shortsEntity = serverResponseToEntity(responseBody.data.posts.posts)
-
-                val followListItem =
-                    responseBody.data.followList.let { serverResponseToFollowEntity(it) }
-
-
-                // Now, insert yourEntity into the Room database
-                lifecycleScope.launch(Dispatchers.IO) {
-
-                    val uniqueFollowList = removeDuplicateFollowers(followListItem)
-                    Log.d(
-                        "AllShorts3",
-                        "getAllShort3: Inserted uniqueFollowList $uniqueFollowList"
-                    )
-                    followShortsViewModel.insertFollowListItems(uniqueFollowList)
-                    if (uniqueFollowList.isEmpty()) {
-                        Log.d("AllShorts3", "loadMoreShorts:uniqueFollowList is empty")
-
-                        withContext(Dispatchers.Main) {
-                            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
-                                shortsViewModel.followList.addAll(it)
-
-                                shortsAdapter.addIsFollowingData(it)
-
-                            }
-                        }
-                    }
-
-
-                    for (entity in shortsEntity) {
-
-                        // Access the list of images for each entity
-                        val images = entity.images
-
-                        Log.d("ShortsData", "short: $entity")
-
-
-                        // Add the unique entity to both the set and your ViewModel's list
-                        shortsViewModel.videoShorts.add(entity)
-
-
-                        for (image in images) {
-                            // Access individual image properties or perform any desired actions
-                            val imageUrl = image.url
-
-                            shortsList.add(imageUrl)
-                        }
-                    }
-
-                    startPreLoadingService()
-                    withContext(Dispatchers.Main) {
-                        if (shortsEntity.isNotEmpty()) {
-                            Log.d("AllShorts3", "loadMoreShorts: shorts entity is not empty")
-
-
-                            shortsViewModel.mutableShortsList.addAll(shortsEntity)
-                            shortsViewModel.followList.addAll(followListItem)
-                            shortsAdapter.addData(shortsEntity)
-
-                            shortsAdapter.addIsFollowingData(followListItem)
-
-                        } else {
-                            Log.d("AllShorts3", "loadMoreShorts:shorts entity is empty")
-                        }
-
-                    }
-
-                }
-
-
-            } else {
-                Log.d("ErrorInShortsFragment", "Error message: ${response.message()}")
-                Log.d("ErrorInShortsFragment", "Error body: ${response.body()}")
-                Log.d("ErrorInShortsFragment", "Error error body: ${response.errorBody()}")
-                Log.d("ErrorInShortsFragment", "Error response: $response")
-                Log.d("ErrorInShortsFragment", "Error response code: ${response.code()}")
-                Log.d("ErrorInShortsFragment", "Error response headers: ${response.headers()}")
-                Log.d("ErrorInShortsFragment", "Error response raw: ${response.raw()}")
-
-                requireActivity().runOnUiThread {
-                    showToast(response.message())
-                }
-            }
-
-        } catch (e: HttpException) {
-            Log.d("AllShorts", "Http Exception ${e.message}")
-            requireActivity().runOnUiThread {
-                showToast("Failed to connect try again...")
-            }
-        } catch (e: IOException) {
-            Log.d("AllShorts", "IOException ${e.message}")
-            requireActivity().runOnUiThread {
-                showToast("Failed to connect try again...")
-            }
-        }
     }
 
     private fun convertFeedPostsToShortsEntity(
