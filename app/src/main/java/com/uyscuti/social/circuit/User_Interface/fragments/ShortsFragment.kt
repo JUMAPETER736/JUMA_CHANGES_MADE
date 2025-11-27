@@ -1271,7 +1271,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     // Dependency Injection
     @Inject
     lateinit var retrofitIns: RetrofitInstance
-    
+
     // Fragment Parameters
     private var param1: String? = null
     private var param2: String? = null
