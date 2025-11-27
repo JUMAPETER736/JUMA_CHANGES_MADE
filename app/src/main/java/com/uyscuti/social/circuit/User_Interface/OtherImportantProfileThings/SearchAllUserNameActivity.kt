@@ -36,6 +36,8 @@ import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.response.getallshorts.Author as ShortsAuthor
+import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -43,8 +45,7 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
 import java.util.Date
-
-
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class SearchAllUserNameActivity : AppCompatActivity() {
