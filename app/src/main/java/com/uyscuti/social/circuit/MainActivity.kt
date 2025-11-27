@@ -3271,7 +3271,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     private fun setNavigationListener() {
         bottomNavigation.setOnClickedButtonListener { button, pos ->
 
-            // Reset all items to black background
+
             item.drawableTint = Color.BLACK
             item1.drawableTint = Color.BLACK
             item2.drawableTint = Color.BLACK
