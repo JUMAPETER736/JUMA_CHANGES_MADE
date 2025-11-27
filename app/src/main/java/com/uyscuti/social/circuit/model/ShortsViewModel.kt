@@ -19,7 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ShortsViewModel @Inject constructor(
-    private val apiService: IFlashapi,
+
     private val repository: ShortsRepository
 ) : ViewModel() {
 
