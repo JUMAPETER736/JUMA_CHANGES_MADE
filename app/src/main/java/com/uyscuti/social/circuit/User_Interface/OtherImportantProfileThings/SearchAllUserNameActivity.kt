@@ -451,7 +451,7 @@ private class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
             .apply(RequestOptions.bitmapTransform(CircleCrop()))
             .placeholder(R.drawable.flash21)
             .into(avatar)
-        username.text = "@${author.account.username}"
+        username.text = "${author.account.username}"
         itemView.setOnClickListener { listener(author) }
     }
 }
