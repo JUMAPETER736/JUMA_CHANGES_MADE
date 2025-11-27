@@ -53,8 +53,9 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySearchAllUserNameBinding
     private lateinit var searchAdapter: SearchUserNameAdapter
 
-
-    lateinit var apiService: IFlashapi
+    private val apiService: IFlashapi by lazy {
+        RetrofitInstance(LocalStorage(this), this).apiService
+    }
 
     private val shortsViewModel: ShortsViewModel by viewModels()
     private val recentUserViewModel: RecentUserViewModel by viewModels()
