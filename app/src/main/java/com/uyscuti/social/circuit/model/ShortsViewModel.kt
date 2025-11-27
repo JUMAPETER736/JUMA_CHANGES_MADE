@@ -10,6 +10,7 @@ import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
 import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
 import com.uyscuti.social.core.common.data.room.repository.ShortsRepository
+import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +18,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ShortsViewModel @Inject constructor(private val repository: ShortsRepository) : ViewModel() {
+class ShortsViewModel @Inject constructor(
+    private val apiService: IFlashapi,
+    private val repository: ShortsRepository
+) : ViewModel() {
 
 
     var isResuming = false
@@ -70,5 +74,10 @@ class ShortsViewModel @Inject constructor(private val repository: ShortsReposito
 
         return repository.getShortsForPage(page, pageSize)
     }
+
+    fun getApiService(): IFlashapi {
+        return apiService
+    }
+
 
 }

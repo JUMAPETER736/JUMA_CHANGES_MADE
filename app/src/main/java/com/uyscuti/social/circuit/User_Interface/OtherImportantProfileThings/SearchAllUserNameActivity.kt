@@ -36,7 +36,6 @@ import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.response.getallshorts.Author as ShortsAuthor
-import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
