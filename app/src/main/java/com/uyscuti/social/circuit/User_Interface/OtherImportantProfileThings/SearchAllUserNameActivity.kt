@@ -36,6 +36,7 @@ import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.response.getallshorts.Author as ShortsAuthor
+import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -51,7 +52,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySearchAllUserNameBinding
     private lateinit var searchAdapter: SearchUserNameAdapter
 
-
+    @Inject
     lateinit var apiService: IFlashapi
 
     private val shortsViewModel: ShortsViewModel by viewModels()
@@ -323,8 +324,13 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
     private fun performSearch(query: String) {
         lifecycleScope.launch {
+            Log.d("SearchUsers", "Searching for: '$query', Cache size: ${allAuthorsCache.size}")
             val results = searchUsers(query).sortedBy { it.account.username }
+            Log.d("SearchUsers", "Found ${results.size} results")
             if (results.isNotEmpty()) {
+                results.take(3).forEach {
+                    Log.d("SearchUsers", "Result: ${it.account.username}")
+                }
                 searchAdapter.showSearchResults(results)
             } else {
                 searchAdapter.showNoResults()
