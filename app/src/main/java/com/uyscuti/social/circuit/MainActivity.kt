@@ -3270,63 +3270,52 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
     private fun setNavigationListener() {
         bottomNavigation.setOnClickedButtonListener { button, pos ->
+
             // Reset all items to black background
             item.drawableTint = Color.BLACK
             item1.drawableTint = Color.BLACK
             item2.drawableTint = Color.BLACK
             item3.drawableTint = Color.BLACK
+            item4.drawableTint = Color.BLACK
 
 
             when (pos) {
                 0 -> {
-                    // Handle click on the first button
                     item.drawableTint = Color.WHITE
-
                     getNavigationController().navigate("R.id.notifications", "Notification")
                     Log.d("bottomNavigation", "position $pos")
                 }
 
                 1 -> {
-                    // Handle click on the second button
                     item1.drawableTint = Color.WHITE
                     getNavigationController().navigate("R.id.chat", "Chat")
                     Log.d("bottomNavigation", "position $pos")
                 }
 
                 2 -> {
-                    // Handle click on the third button
                     item2.drawableTint = Color.WHITE
                     getNavigationController().navigate("R.id.shots", "Shorts")
                     Log.d("bottomNavigation", "position $pos")
                 }
 
                 3 -> {
-                    // Handle click on the third button
                     item3.drawableTint = Color.WHITE
                     getNavigationController().navigate("R.id.feed", "Feed")
                     Log.d("bottomNavigation", "position $pos")
                 }
 
                 4 -> {
-
-
-
+                    item4.drawableTint = Color.WHITE
                     getNavigationController().navigate("R.id.profile", "Profile")
                     Log.d("bottomNavigation", "position $pos")
                 }
 
-                // ... add more cases for other positions
-
                 else -> {
-                    // Handle unknown position
                     Log.d("bottomNavigation", "position position")
                 }
             }
         }
-
-
     }
-
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
