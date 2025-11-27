@@ -51,7 +51,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySearchAllUserNameBinding
     private lateinit var searchAdapter: SearchUserNameAdapter
 
-    @Inject
+
     lateinit var apiService: IFlashapi
 
     private val shortsViewModel: ShortsViewModel by viewModels()
