@@ -34,6 +34,8 @@ import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.circuit.model.ShortsViewModel
 import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
+import com.uyscuti.social.network.api.response.posts.Author
+import com.uyscuti.social.network.api.response.getallshorts.Author as ShortsAuthor
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -41,17 +43,22 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
 import java.util.Date
-
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class SearchAllUserNameActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySearchAllUserNameBinding
     private lateinit var searchAdapter: SearchUserNameAdapter
-    private lateinit var apiService: IFlashapi
+
+    @Inject
+    lateinit var apiService: IFlashapi
 
     private val shortsViewModel: ShortsViewModel by viewModels()
     private val recentUserViewModel: RecentUserViewModel by viewModels()
+
+    // Cache for all authors
+    private val allAuthorsCache = mutableListOf<Author>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,6 +76,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         initSearchResults()
         setupSearch()
         loadRecentUsers()
+        loadAllAuthors()
     }
 
     private fun setupToolbar() {
@@ -82,35 +90,201 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             val recentUsers = withContext(Dispatchers.IO) {
                 recentUserViewModel.getRecentUsers()
             }
-            searchAdapter.showRecentUsers(recentUsers.map { it.toUserResult() })
+            searchAdapter.showRecentUsers(recentUsers.map { it.toAuthor() })
         }
     }
 
-    // Inside SearchAllUserNameActivity.kt
+    private fun loadAllAuthors() {
+        lifecycleScope.launch {
+            searchAdapter.showLoading()
+            val authors = withContext(Dispatchers.IO) {
+                fetchAllAuthorsFromShortsAndFeed()
+            }
+            allAuthorsCache.clear()
+            allAuthorsCache.addAll(authors)
 
-    private fun UserResult.toRecentUser() = RecentUser(
-        id = userId,
-        name = username,
-        avatar = avatarUrl,
+            // After loading, show recent users
+            loadRecentUsers()
+        }
+    }
+
+    private suspend fun fetchAllAuthorsFromShortsAndFeed(): List<Author> {
+        val authorsMap = mutableMapOf<String, Author>()
+
+        try {
+            // Fetch from shorts (multiple pages)
+            for (page in 1..5) {
+                try {
+                    val shortsResponse = apiService.getShorts(page.toString())
+                    if (shortsResponse.isSuccessful) {
+                        val body = shortsResponse.body()
+                        if (body != null) {
+                            val responseData = body.data
+                            if (responseData != null) {
+                                val postsData = responseData.posts
+                                if (postsData != null) {
+                                    val postsList = postsData.posts
+                                    for (post in postsList) {
+                                        val shortsAuthor = post.author
+                                        val author = shortsAuthor.toFeedAuthor()
+                                        if (!authorsMap.containsKey(author._id)) {
+                                            authorsMap[author._id] = author
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("SearchUsers", "Error fetching shorts page $page: ${e.message}")
+                }
+            }
+
+            // Fetch from feed (multiple pages)
+            for (page in 1..5) {
+                try {
+                    val feedResponse = apiService.getAllFeed(page.toString())
+                    if (feedResponse.isSuccessful) {
+                        val body = feedResponse.body()
+                        if (body != null) {
+                            val data = body.data
+                            if (data != null) {
+                                val dataX = data.data
+                                if (dataX != null) {
+                                    val postsList = dataX.posts
+                                    for (post in postsList) {
+                                        val author = post.author
+                                        if (!authorsMap.containsKey(author._id)) {
+                                            authorsMap[author._id] = author
+                                        }
+
+                                        // Also get authors from reposted content
+                                        val originalPosts = post.originalPost
+                                        for (originalPost in originalPosts) {
+                                            val originalAuthor = originalPost.author
+                                            if (!authorsMap.containsKey(originalAuthor._id)) {
+                                                authorsMap[originalAuthor._id] = originalAuthor.toAuthor()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("SearchUsers", "Error fetching feed page $page: ${e.message}")
+                }
+            }
+
+        } catch (e: HttpException) {
+            Log.e("SearchUsers", "HTTP error: ${e.message}")
+        } catch (e: IOException) {
+            Log.e("SearchUsers", "Network error: ${e.message}")
+        } catch (e: Exception) {
+            Log.e("SearchUsers", "Unexpected error: ${e.message}")
+        }
+
+        return authorsMap.values.toList()
+    }
+
+    // Extension function to convert ShortsAuthor to Feed Author
+    private fun ShortsAuthor.toFeedAuthor() = Author(
+        __v = __v,
+        _id = _id,
+        account = com.uyscuti.social.network.api.response.posts.Account(
+            _id = account._id,
+            avatar = com.uyscuti.social.network.api.response.posts.Avatar(
+                _id = account.avatar._id,
+                localPath = account.avatar.localPath,
+                url = account.avatar.url
+            ),
+            createdAt = "",
+            email = account.email,
+            updatedAt = "",
+            username = account.username
+        ),
+        bio = bio,
+        countryCode = countryCode,
+        coverImage = com.uyscuti.social.network.api.response.posts.CoverImage(
+            _id = coverImage._id,
+            localPath = coverImage.localPath,
+            url = coverImage.url
+        ),
+        createdAt = createdAt,
+        dob = dob,
+        firstName = firstName,
+        lastName = lastName,
+        location = location,
+        owner = owner,
+        phoneNumber = phoneNumber,
+        updatedAt = updatedAt
+    )
+
+    // Extension function to convert AuthorX (from OriginalPost) to Author
+    private fun com.uyscuti.social.network.api.response.posts.AuthorX.toAuthor() = Author(
+        __v = 0,
+        _id = _id,
+        account = account,
+        bio = bio,
+        countryCode = countryCode,
+        coverImage = coverImage,
+        createdAt = createdAt,
+        dob = dob,
+        firstName = firstName,
+        lastName = lastName,
+        location = location,
+        owner = owner,
+        phoneNumber = phoneNumber,
+        updatedAt = updatedAt
+    )
+
+    // Extension functions to convert between Author and RecentUser
+    private fun Author.toRecentUser() = RecentUser(
+        id = _id,
+        name = account.username,
+        avatar = account.avatar.url,
         lastSeen = Date(),
         online = false,
         dateAdded = Date()
     )
 
-    private fun RecentUser.toUserResult() = UserResult(
-        userId = id,
-        username = name,
-        avatarUrl = avatar,
-        firstVideoId = "",
-        firstVideoUrl = "",
-        firstVideoThumbnail = ""
+    private fun RecentUser.toAuthor() = Author(
+        __v = 0,
+        _id = id,
+        account = com.uyscuti.social.network.api.response.posts.Account(
+            _id = id,
+            avatar = com.uyscuti.social.network.api.response.posts.Avatar(
+                _id = "",
+                localPath = "",
+                url = avatar
+            ),
+            createdAt = "",
+            email = "",
+            updatedAt = "",
+            username = name
+        ),
+        bio = "",
+        countryCode = "",
+        coverImage = com.uyscuti.social.network.api.response.posts.CoverImage(
+            _id = "",
+            localPath = "",
+            url = ""
+        ),
+        createdAt = "",
+        dob = "",
+        firstName = "",
+        lastName = "",
+        location = "",
+        owner = "",
+        phoneNumber = "",
+        updatedAt = ""
     )
 
     private fun initSearchResults() {
-        searchAdapter = SearchUserNameAdapter { user ->
-            Log.d("SearchResults", "User clicked: @${user.username} (${user.userId})")
-            addUserToRecent(user.toRecentUser())
-            onUserClicked(user)
+        searchAdapter = SearchUserNameAdapter { author ->
+            Log.d("SearchResults", "User clicked: @${author.account.username} (${author._id})")
+            addUserToRecent(author.toRecentUser())
+            onUserClicked(author)
         }
 
         binding.searchResultsRecyclerView.apply {
@@ -118,8 +292,6 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             adapter = searchAdapter
         }
     }
-
-
 
     private fun addUserToRecent(user: RecentUser) {
         lifecycleScope.launch(Dispatchers.IO) {
@@ -144,7 +316,6 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             if (query.isEmpty()) {
                 loadRecentUsers()
             } else {
-                searchAdapter.showLoading()
                 performSearch(query)
             }
         })
@@ -152,7 +323,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
     private fun performSearch(query: String) {
         lifecycleScope.launch {
-            val results = searchUsers(query).sortedBy { it.username }
+            val results = searchUsers(query).sortedBy { it.account.username }
             if (results.isNotEmpty()) {
                 searchAdapter.showSearchResults(results)
             } else {
@@ -161,40 +332,25 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun searchUsers(query: String): List<UserResult> = withContext(Dispatchers.IO) {
-        val users = mutableListOf<UserResult>()
-        try {
-            val response = apiService.searchUsers(query)
-            if (response.isSuccessful) {
-                val apiUsers = response.body()?.data as? List<com.uyscuti.social.network.api.models.User> ?: emptyList()
-                apiUsers.forEach { apiUser ->
-                    users.add(
-                        UserResult(
-                            userId = apiUser._id,
-                            username = apiUser.username,
-                            avatarUrl = apiUser.avatar.url,
-                            firstVideoId = "",
-                            firstVideoUrl = "",
-                            firstVideoThumbnail = ""
-                        )
-                    )
-                }
-            }
-        } catch (e: HttpException) {
-            Log.e("SearchUsers", "HTTP error: ${e.message}")
-        } catch (e: IOException) {
-            Log.e("SearchUsers", "Network error: ${e.message}")
-        } catch (e: Exception) {
-            Log.e("SearchUsers", "Unexpected error: ${e.message}")
+    private suspend fun searchUsers(query: String): List<Author> = withContext(Dispatchers.Default) {
+        if (allAuthorsCache.isEmpty()) {
+            return@withContext emptyList()
         }
-        users
+
+        val lowerQuery = query.lowercase()
+        allAuthorsCache.filter { author ->
+            author.account.username.lowercase().contains(lowerQuery) ||
+                    author.firstName.lowercase().contains(lowerQuery) ||
+                    author.lastName.lowercase().contains(lowerQuery) ||
+                    "${author.firstName} ${author.lastName}".lowercase().contains(lowerQuery)
+        }
     }
 
     @OptIn(UnstableApi::class)
-    private fun onUserClicked(user: UserResult) {
+    private fun onUserClicked(author: Author) {
         val intent = Intent(this, MainActivity::class.java).apply {
             putExtra("navigate_to", "shorts")
-            putExtra("user_id", user.userId)
+            putExtra("user_id", author._id)
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         startActivity(intent)
@@ -207,26 +363,16 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     }
 }
 
-data class UserResult(
-    val userId: String,
-    val username: String,
-    val avatarUrl: String,
-    val firstVideoId: String,
-    val firstVideoUrl: String,
-    val firstVideoThumbnail: String
-)
-
-
 class SearchUserNameAdapter(
-    private val onUserClicked: (UserResult) -> Unit
+    private val onUserClicked: (Author) -> Unit
 ) : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback()) {
 
-    fun showRecentUsers(users: List<UserResult>) {
-        submitList(listOf("RECENT_HEADER") + users)
+    fun showRecentUsers(authors: List<Author>) {
+        submitList(listOf("RECENT_HEADER") + authors)
     }
 
-    fun showSearchResults(users: List<UserResult>) {
-        submitList(listOf("SEARCH_HEADER") + users)
+    fun showSearchResults(authors: List<Author>) {
+        submitList(listOf("SEARCH_HEADER") + authors)
     }
 
     fun showLoading() {
@@ -239,7 +385,7 @@ class SearchUserNameAdapter(
 
     override fun getItemViewType(position: Int): Int = when (getItem(position)) {
         "RECENT_HEADER", "SEARCH_HEADER" -> 0
-        is UserResult -> 1
+        is Author -> 1
         "LOADING" -> 2
         "NO_RESULTS" -> 3
         else -> -1
@@ -264,19 +410,18 @@ class SearchUserNameAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is UserViewHolder -> {
-                val user = getItem(position) as UserResult
-                holder.bind(user, onUserClicked)
+                val author = getItem(position) as Author
+                holder.bind(author, onUserClicked)
             }
             is LoadingViewHolder -> holder.showLoading()
-            // Header & NoResults have static layouts → nothing to bind
         }
     }
 }
 
 private class SearchDiffCallback : DiffUtil.ItemCallback<Any>() {
     override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
-        if (oldItem is UserResult && newItem is UserResult) {
-            return oldItem.userId == newItem.userId
+        if (oldItem is Author && newItem is Author) {
+            return oldItem._id == newItem._id
         }
         return oldItem::class == newItem::class
     }
@@ -285,7 +430,6 @@ private class SearchDiffCallback : DiffUtil.ItemCallback<Any>() {
     override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean = oldItem == newItem
 }
 
-// ViewHolders (same as before, only minor cleanup)
 private class HeaderViewHolder(view: View) : RecyclerView.ViewHolder(view)
 private class NoResultsViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
@@ -293,14 +437,14 @@ private class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
     private val avatar = itemView.findViewById<ImageView>(R.id.avatar)
     private val username = itemView.findViewById<TextView>(R.id.name)
 
-    fun bind(user: UserResult, listener: (UserResult) -> Unit) {
+    fun bind(author: Author, listener: (Author) -> Unit) {
         Glide.with(itemView.context)
-            .load(user.avatarUrl)
+            .load(author.account.avatar.url)
             .apply(RequestOptions.bitmapTransform(CircleCrop()))
             .placeholder(R.drawable.flash21)
             .into(avatar)
-        username.text = "@${user.username}"
-        itemView.setOnClickListener { listener(user) }
+        username.text = "@${author.account.username}"
+        itemView.setOnClickListener { listener(author) }
     }
 }
 
