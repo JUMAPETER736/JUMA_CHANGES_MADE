@@ -39,7 +39,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.appcompat.widget.AppCompatButton
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -69,7 +68,6 @@ import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
-import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
@@ -88,20 +86,13 @@ import com.uyscuti.social.circuit.FlashApplication
 import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.eventbus.FeedFavoriteFollowUpdate
 import com.uyscuti.social.circuit.eventbus.HideFeedFloatingActionButton
-import com.uyscuti.social.circuit.eventbus.InformShortsFragment2
 import com.uyscuti.social.circuit.eventbus.ShowFeedFloatingActionButton
-import com.uyscuti.social.circuit.model.CancelShortsUpload
 import com.uyscuti.social.circuit.model.FollowListItemViewModel
 import com.uyscuti.social.circuit.model.GoToFeedFragment
 import com.uyscuti.social.circuit.model.HideBottomNav
-import com.uyscuti.social.circuit.model.InformAdapter
 import com.uyscuti.social.circuit.model.PausePlayEvent
-import com.uyscuti.social.circuit.model.PauseShort
-import com.uyscuti.social.circuit.model.ProgressEvent
 import com.uyscuti.social.circuit.model.ProgressViewModel
-import com.uyscuti.social.circuit.model.ShortAdapterNotifyDatasetChanged
 import com.uyscuti.social.circuit.model.ShortsBookmarkButton
-import com.uyscuti.social.circuit.model.ShortsFavoriteUnFavorite
 import com.uyscuti.social.circuit.model.ShortsFollowButtonClicked
 import com.uyscuti.social.circuit.model.ShortsLikeUnLike
 import com.uyscuti.social.circuit.model.ShortsLikeUnLike2
@@ -1256,6 +1247,99 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
 class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
+    // Feed Business Data
+    private var feedShortsBusinessId = ""
+    private var feedShortsBusinessFileId = ""
+    val count = 0
+
+    // Media Content & URLs
+    private var videoUrl: String? = null
+    private var postItem: PostItem? = null
+
+    // UI Animations
+    private var wifiAnimation: AnimationDrawable? = null
+
+    // Position & State Management
+    private var currentPosition: Int = -1
+
+    // File Picker & Permissions
+    private var getContentLauncher: ActivityResultLauncher<String>? = null
+    private val PICK_VIDEO_REQUEST = "video/*"
+    private val requestCode = 2024
+    private val WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 12
+
+    // Dependency Injection
+    @Inject
+    lateinit var retrofitIns: RetrofitInstance
+    
+    // Fragment Parameters
+    private var param1: String? = null
+    private var param2: String? = null
+
+    // UI Components - ViewPager & Adapter
+    private lateinit var viewPager: ViewPager2
+    private lateinit var shortsAdapter: ShortsAdapter
+
+    // UI Components - Buttons & Actions
+    private lateinit var fabAction: FloatingActionButton
+    private lateinit var shortsMenu: ImageView
+    private lateinit var cancelShortsUpload: ImageView
+
+    // UI Components - Progress Indicators
+    private lateinit var progressBar: ProgressBar
+    private lateinit var shortsDownloadProgressBar: ProgressBar
+    private lateinit var progressBarLayout: LinearLayout
+    private lateinit var downloadProgressBarLayout: LinearLayout
+    private lateinit var searchForAllShorts: ImageView
+
+    // UI Components - Media & Controls
+    private lateinit var shortSeekBar: SeekBar
+    private lateinit var shortsDownloadImageView: ImageView
+
+    // Data Collections
+    private var shortsList = ArrayList<String>()
+    private val exoPlayerItems = ArrayList<ExoPlayerItem>()
+    val uniqueEntitiesSet = HashSet<ShortsEntity>()
+
+    // Media Player & ExoPlayer
+    private var exoPlayer: ExoPlayer? = null
+    private var currentPlayerListener: Player.Listener? = null
+    //private var isPlayerPreparing = false
+    private var isUserSeeking = false
+
+    // Repository
+    private lateinit var myProfileRepository: ProfileRepository
+
+    // Back Press & Navigation
+    private val doubleBackPressThreshold = 3
+    private var backPressCount = 0
+    private var feedOnBackPressedData: Boolean = false
+    private var feedPostPosition: Int = -1
+
+
+    // ExoPlayer Data Sources
+    private lateinit var httpDataSourceFactory: HttpDataSource.Factory
+    private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
+    private val simpleCache: SimpleCache = FlashApplication.cache
+    private val playbackStateListener: Player.Listener = playbackStateListener()
+
+    // ViewModels
+    private val feesShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
+    private val progressViewModel: ProgressViewModel by activityViewModels()
+    private val shortsViewModel: ShortsViewModel by activityViewModels()
+    private val followShortsViewModel: FollowListItemViewModel by viewModels()
+    private val followViewModel: FollowViewModel by viewModels()
+    private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
+    private val userProfileShortsViewModel: UserProfileShortsViewModel by activityViewModels()
+
+
+
+
+    init {
+        // Increase cache size for better performance
+        simpleCache.release() // Clear if needed
+    }
+
 
     companion object {
         const val REQUEST_UPLOAD_SHORTS_ACTIVITY = 123 // You can use any unique value
@@ -1302,121 +1386,10 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    
-
-    // Fragment Parameters
-    private var param1: String? = null
-    private var param2: String? = null
-
-    // UI Components - ViewPager & Adapter
-    private lateinit var viewPager: ViewPager2
-    private lateinit var shortsAdapter: ShortsAdapter
-    private var shouldFilter = false
-
-    // UI Components - Buttons & Actions
-    private lateinit var fabAction: FloatingActionButton
-    private lateinit var shortsMenu: ImageView
-    private lateinit var cancelShortsUpload: ImageView
-
-    // UI Components - Progress Indicators
-    private lateinit var progressBar: ProgressBar
-    private lateinit var shortsDownloadProgressBar: ProgressBar
-    private lateinit var progressBarLayout: LinearLayout
-    private lateinit var downloadProgressBarLayout: LinearLayout
-    private lateinit var searchForAllShorts: ImageView
-
-    // UI Components - Media & Controls
-    // private lateinit var playerView: PlayerView
-    private lateinit var shortSeekBar: SeekBar
-    private lateinit var shortsDownloadImageView: ImageView
-
-    // Data Collections
-    private var videoShorts = ArrayList<ShortsEntity>()
-    private var shortsList = ArrayList<String>()
-    private val exoPlayerItems = ArrayList<ExoPlayerItem>()
-    val uniqueEntitiesSet = HashSet<ShortsEntity>()
-
-    // Media Player & ExoPlayer
-    private var exoPlayer: ExoPlayer? = null
-    private var currentPlayerListener: Player.Listener? = null
-    //private var isPlayerPreparing = false
-    private var isUserSeeking = false
-
-    // ExoPlayer Data Sources
-    private lateinit var httpDataSourceFactory: HttpDataSource.Factory
-    private lateinit var defaultDataSourceFactory: DefaultDataSourceFactory
-    private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
-    private val simpleCache: SimpleCache = FlashApplication.cache
-    private val playbackStateListener: Player.Listener = playbackStateListener()
-
-    // Media Content & URLs
-    private var videoUrl: String? = null
-    private var postItem: PostItem? = null
-
-    // UI Animations
-    private var wifiAnimation: AnimationDrawable? = null
-
-    // Position & State Management
-    private var currentPosition: Int = -1
-
-    // File Picker & Permissions
-    private var getContentLauncher: ActivityResultLauncher<String>? = null
-    private val PICK_VIDEO_REQUEST = "video/*"
-    private val requestCode = 2024
-    private val TOTAL_PROGRESS = 200
-
-    private val WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 12
-    private val MY_MANAGE_EXTERNAL_STORAGE_REQUEST_CODE = 202
-
-    // Dependency Injection
-    @Inject
-    lateinit var retrofitIns: RetrofitInstance
-
-    private var filterUserId: String? = null
-    private var filterUsername: String? = null
-    private var filterUserAvatar: String? = null
-    private var isUserFiltered = false
-    private var isLoadingMore = false
-    private var currentPage = 1
-
-    // ViewModels
-    private val eventProgressSets = HashMap<String, HashSet<Int>>()
-    private val feesShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
-    private val progressViewModel: ProgressViewModel by activityViewModels()
-    private val likeUnLikeViewModel: LikeUnLikeViewModel by activityViewModels()
-    private val shortsViewModel: ShortsViewModel by activityViewModels()
-    private val followShortsViewModel: FollowListItemViewModel by viewModels()
-    private val followViewModel: FollowViewModel by viewModels()
-    private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
-    private val getOtherUsersProfileViewModel: GetOtherUsersProfileViewModel by viewModels()
-    private val userProfileShortsViewModel: UserProfileShortsViewModel by activityViewModels()
-
-    // Repository
-    private lateinit var myProfileRepository: ProfileRepository
-
-
-
-    // Back Press & Navigation
-    private val doubleBackPressThreshold = 3
-    private var backPressCount = 0
-    private var feedOnBackPressedData: Boolean = false
-    private var feedPostPosition: Int = -1
-
-    // Feed Business Data
-    private var feedShortsBusinessId = ""
-    private var feedShortsBusinessFileId = ""
-    val count = 0
-
-
-    init {
-        // Increase cache size for better performance
-        simpleCache.release() // Clear if needed
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // From the Tapped Files Viewers Post fragment
+        // From the  Tapped Files Viewers Post fragment
         arguments?.let { bundle ->
             videoUrl = bundle.getString("video_url")
             postItem = bundle.getParcelable("post_item")
@@ -1429,30 +1402,22 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         arguments?.let {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
+            // Check if FEED_SHORT_BUSINESS_ID is set
             feedShortsBusinessId = it.getString(FEED_SHORT_BUSINESS_ID) ?: run {
                 Log.d("openShortsFragment", "FEED_SHORT_BUSINESS_ID is not set")
+                // Provide a default value or handle the absence of FEED_SHORT_BUSINESS_ID
                 "default_value"
             }
             feedShortsBusinessFileId = it.getString(FEED_SHORT_BUSINESS_FILE_ID) ?: run {
                 Log.d("openShortsFragment", "FEED_SHORT_BUSINESS_ID is not set")
+
                 "default_value_file_id"
             }
         }
-
         feedOnBackPressedData = arguments?.getBoolean(FEED_ARG_DATA) == true
         feedPostPosition = arguments?.getInt(FEED_POST_POSITION)!!
-
-        // ADD THESE LINES
-        shouldFilter = activity?.intent?.getBooleanExtra("should_filter", false) ?: false
-        if (shouldFilter) {
-            filterUserId = activity?.intent?.getStringExtra("filter_user_id")
-            filterUsername = activity?.intent?.getStringExtra("filter_username")
-            filterUserAvatar = activity?.intent?.getStringExtra("filter_user_avatar")
-            isUserFiltered = true
-            Log.d("ShotsFragment", "Filtering enabled for user: $filterUsername (ID: $filterUserId)")
-        }
-
         Log.d("openShortsFragment", "onCreate:feedShortsBusinessId $feedShortsBusinessId")
+
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -1610,33 +1575,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         lifecycleScope.launch(Dispatchers.IO) {
 
             val followEntity = followShortsViewModel.allShortsList
-
-            // Inside the lifecycleScope.launch(Dispatchers.IO) block, after checking shouldFilter
-            if (shouldFilter && filterUserId != null) {
-                // Clear existing data before loading filtered content
-                withContext(Dispatchers.Main) {
-                    shortsViewModel.mutableShortsList.clear()
-                    shortsViewModel.videoShorts.clear()
-                    shortsViewModel.followList.clear()
-                    uniqueEntitiesSet.clear()
-                    shortsList.clear()
-                }
-            }
-
-            if (!shortsViewModel.isResuming) {
-                // ADD THESE LINES HERE - Clear data if filtering
-                if (shouldFilter && filterUserId != null) {
-                    shortsViewModel.mutableShortsList.clear()
-                    shortsViewModel.videoShorts.clear()
-                    shortsViewModel.followList.clear()
-                    uniqueEntitiesSet.clear()
-                    shortsList.clear()
-                    Log.d("ShotsFragment", "Cleared existing data for filtered view")
-                }
-
-                loadMoreShortsPage1(1)
-                Log.d("Resume", "onCreateView: ! ${!shortsViewModel.isResuming}")
-            }
 
             withContext(Dispatchers.Main) {
                 shortsViewModel.allShortsList.observe(viewLifecycleOwner, Observer {
@@ -1885,21 +1823,14 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     "loadMoreShorts: followItem:  ${responseBody.data.followList}"
                 )
 
-                // CHANGE THIS - Remove var and reassign properly
-                var shortsEntity = serverResponseToEntity(responseBody.data.posts.posts)
 
-                // ADD THIS FILTERING LOGIC - Fixed version
-                if (isUserFiltered && filterUserId != null) {
-                    shortsEntity = shortsEntity.filter { entity ->
-                        entity.author.account._id == filterUserId
-                    }
-                    Log.d("AllShorts3", "Filtered shorts for user $filterUsername: ${shortsEntity.size} videos")
-                }
+                val shortsEntity = serverResponseToEntity(responseBody.data.posts.posts)
 
                 val followListItem =
                     responseBody.data.followList.let { serverResponseToFollowEntity(it) }
 
-                // Rest of the code remains the same...
+
+                // Now, insert yourEntity into the Room database
                 lifecycleScope.launch(Dispatchers.IO) {
 
                     val uniqueFollowList = removeDuplicateFollowers(followListItem)
@@ -1981,6 +1912,79 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
+    fun loadMoreVideosIfNeeded(position: Int) {
+
+        if (position >= 5 && (position - 5) % 5 == 0) {
+
+            val loadMoreValue = 2 + (position - 5) / 5
+
+            loadMoreVideos(loadMoreValue)
+        }
+    }
+
+    private fun loadMoreVideos(pageNumber: Int) {
+        // Call the function that makes a request to the server for more videos
+        lifecycleScope.launch(Dispatchers.IO) {
+            // Your code to fetch more videos goes here
+            Log.d("TAG", "Call for more videos")
+
+            delay(50)
+            loadMoreShorts(pageNumber)
+            loadMoreShortsFromFeed(pageNumber)
+            shortsViewModel.pageNumber = pageNumber
+            lifecycleScope.launch(Dispatchers.Main) {
+
+            }
+        }
+    }
+
+    private fun playVideoAtPosition(position: Int) {
+        val videoShorts = shortsViewModel.videoShorts
+
+        if (position < 0 || position >= videoShorts.size) {
+            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
+            return
+        }
+
+        val shortVideo = videoShorts[position]
+        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
+
+        // Load thumbnail for current position ONLY
+        val currentHolder = shortsAdapter.getCurrentViewHolder()
+        val thumbnailUrl = shortVideo.thumbnail.firstOrNull()?.thumbnailUrl
+        currentHolder?.loadThumbnail(thumbnailUrl)
+
+        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
+
+        if (rawVideoUrl.isNullOrEmpty()) {
+            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
+            return
+        }
+
+        val finalVideoUrl = when {
+            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
+                rawVideoUrl
+            }
+            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
+                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
+                serverBaseUrl + rawVideoUrl.trimStart('/')
+            }
+            else -> {
+                val serverBaseUrl = "http://192.168.1.103:8080/"
+                if (rawVideoUrl.startsWith("/")) {
+                    serverBaseUrl + rawVideoUrl.trimStart('/')
+                } else {
+                    serverBaseUrl + rawVideoUrl
+                }
+            }
+        }
+
+        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
+
+        // Play immediately
+        prepareAndPlayVideoImmediately(finalVideoUrl, position)
+    }
+
     private suspend fun loadMoreShortsFromFeed(currentPage: Int) {
         try {
             val response = retrofitIns.apiService.getAllFeed(currentPage.toString())
@@ -1988,21 +1992,12 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             if (response.isSuccessful) {
                 val responseBody = response.body()
 
-                // CHANGE THIS - Make it var instead of val
-                var videoPosts = responseBody?.data?.data?.posts?.filter { post ->
+                val videoPosts = responseBody?.data?.data?.posts?.filter { post ->
                     post.contentType == "mixed_files" && post.fileTypes.any {
                         // FIX: Add null safety check
                         it.fileType?.contains("video", ignoreCase = true) == true
                     }
                 } ?: emptyList()
-
-                // ADD THIS FILTERING LOGIC - Fixed version
-                if (isUserFiltered && filterUserId != null) {
-                    videoPosts = videoPosts.filter { post ->
-                        post.author._id == filterUserId
-                    }
-                    Log.d("GetAllFeed", "Filtered feed videos for user $filterUsername: ${videoPosts.size} videos")
-                }
 
                 if (videoPosts.isNotEmpty()) {
                     val shortsEntity = convertFeedPostsToShortsEntity(videoPosts)
@@ -2046,6 +2041,12 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
+    private fun markVideoAsFailedToLoad(position: Int) {
+
+        Log.d("ErrorRecovery", "Marking video at position $position as failed to load")
+        // Implementation depends on your data structure
+    }
+
     private suspend fun loadMoreShortsPage1(currentPage: Int) {
         try {
             val response = retrofitIns.apiService.getShorts(currentPage.toString())
@@ -2061,15 +2062,8 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     "loadMoreShorts: followItem:  ${responseBody.data.followList}"
                 )
 
-                var shortsEntity = serverResponseToEntity(responseBody.data.posts.posts)
 
-                // ADD THIS FILTERING LOGIC
-                if (isUserFiltered && filterUserId != null) {
-                    shortsEntity = shortsEntity.filter { entity ->
-                        entity.author.account._id == filterUserId
-                    }
-                    Log.d("AllShorts3", "Filtered page 1 shorts for user $filterUsername: ${shortsEntity.size} videos")
-                }
+                val shortsEntity = serverResponseToEntity(responseBody.data.posts.posts)
 
                 val followListItem =
                     responseBody.data.followList.let { serverResponseToFollowEntity(it) }
@@ -2166,173 +2160,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    private fun playVideoAtPosition(position: Int) {
-        val videoShorts = shortsViewModel.videoShorts
-
-        if (position < 0 || position >= videoShorts.size) {
-            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
-            return
-        }
-
-        val shortVideo = videoShorts[position]
-        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
-
-        // Load thumbnail for current position ONLY
-        val currentHolder = shortsAdapter.getCurrentViewHolder()
-        val thumbnailUrl = shortVideo.thumbnail.firstOrNull()?.thumbnailUrl
-        currentHolder?.loadThumbnail(thumbnailUrl)
-
-        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
-
-        if (rawVideoUrl.isNullOrEmpty()) {
-            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
-            return
-        }
-
-        val finalVideoUrl = when {
-            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
-                rawVideoUrl
-            }
-            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
-                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
-                serverBaseUrl + rawVideoUrl.trimStart('/')
-            }
-            else -> {
-                val serverBaseUrl = "http://192.168.1.103:8080/"
-                if (rawVideoUrl.startsWith("/")) {
-                    serverBaseUrl + rawVideoUrl.trimStart('/')
-                } else {
-                    serverBaseUrl + rawVideoUrl
-                }
-            }
-        }
-
-        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
-
-        // Play immediately
-        prepareAndPlayVideoImmediately(finalVideoUrl, position)
-    }
-
-    private fun prepareAndPlayVideoImmediately(videoUrl: String, position: Int) {
-        try {
-            val videoUri = Uri.parse(videoUrl)
-            Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
-
-            // Ensure surface is ready
-            val currentHolder = shortsAdapter.getCurrentViewHolder()
-            currentHolder?.getSurface()?.let { playerView ->
-                playerView.visibility = View.VISIBLE
-                playerView.player = exoPlayer
-            }
-
-            val mediaItem = MediaItem.Builder()
-                .setUri(videoUri)
-                .apply {
-                    val detectedMimeType = getMimeTypeFromUrl(videoUrl)
-                    if (detectedMimeType != MimeTypes.VIDEO_UNKNOWN) {
-                        setMimeType(detectedMimeType)
-                    }
-                }
-                .build()
-
-            // Remove old listener
-            currentPlayerListener?.let { oldListener ->
-                exoPlayer?.removeListener(oldListener)
-            }
-
-            currentPlayerListener = createPlayerListener(position)
-
-            exoPlayer?.let { player ->
-                // Stop and clear previous media
-                player.stop()
-                player.clearMediaItems()
-
-                // Add new listener
-                player.addListener(currentPlayerListener!!)
-                player.repeatMode = Player.REPEAT_MODE_ONE
-                player.playWhenReady = true // Set to play immediately
-
-                // Set media and prepare
-                player.setMediaItem(mediaItem, true) // Reset position
-                player.prepare()
-
-                Log.d("prepareAndPlayVideo", "Video preparation started for position: $position")
-            }
-
-        } catch (e: Exception) {
-            Log.e("prepareAndPlayVideo", "Error in prepareAndPlayVideo", e)
-            handlePlaybackError(position)
-        }
-    }
-
-    private fun createPlayerListener(position: Int): Player.Listener {
-        return object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                super.onPlaybackStateChanged(playbackState)
-
-                when (playbackState) {
-                    Player.STATE_BUFFERING -> {
-                        Log.d("PlayerState", "Buffering video at position: $position")
-                    }
-                    Player.STATE_READY -> {
-                        Log.d("PlayerState", "Video ready at position: $position")
-
-                        exoPlayer?.let { player ->
-                            if (player.duration != C.TIME_UNSET) {
-                                shortSeekBar.max = player.duration.toInt()
-                                Log.d("PlayerState", "Duration set: ${player.duration}")
-                            }
-                            // playWhenReady already handles playback
-                        }
-                    }
-                    Player.STATE_ENDED -> {
-                        Log.d("PlayerState", "Video ended at position: $position")
-                    }
-                    Player.STATE_IDLE -> {
-                        Log.d("PlayerState", "Player idle at position: $position")
-                    }
-                }
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                super.onPlayerError(error)
-
-                Log.e("PlayerError", "Playback error at position $position", error)
-                Log.e("PlayerError", "Error code: ${error.errorCode}")
-
-                when (error.errorCode) {
-                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
-                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT -> {
-                        Log.e("PlayerError", "Network error: ${error.message}")
-                    }
-                    PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
-                    PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED -> {
-                        Log.e("PlayerError", "Format error: ${error.message}")
-                    }
-                    else -> {
-                        Log.e("PlayerError", "Unknown error: ${error.message}")
-                    }
-                }
-
-                handlePlaybackError(position)
-            }
-
-            override fun onPositionDiscontinuity(
-                oldPosition: Player.PositionInfo,
-                newPosition: Player.PositionInfo,
-                reason: Int
-            ) {
-                super.onPositionDiscontinuity(oldPosition, newPosition, reason)
-                updateSeekBar()
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                super.onIsPlayingChanged(isPlaying)
-                Log.d("PlayerState", "Is playing: $isPlaying at position: $position")
-            }
-        }
-    }
-    
     @SuppressLint("NotifyDataSetChanged")
     private suspend fun loadMoreShortsByFeedShortsBusinessId(feedShortsBusinessId: String) {
         try {
@@ -2442,134 +2269,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                 showToast("Failed to connect try again...")
             }
         }
-    }
-
-    private fun markVideoAsFailedToLoad(position: Int) {
-
-        Log.d("ErrorRecovery", "Marking video at position $position as failed to load")
-        // Implementation depends on your data structure
-    }
-
-    fun loadMoreVideosIfNeeded(position: Int) {
-
-        if (position >= 5 && (position - 5) % 5 == 0) {
-
-            val loadMoreValue = 2 + (position - 5) / 5
-
-            loadMoreVideos(loadMoreValue)
-        }
-    }
-
-    private fun loadMoreVideos(pageNumber: Int) {
-        // Call the function that makes a request to the server for more videos
-        lifecycleScope.launch(Dispatchers.IO) {
-            // Your code to fetch more videos goes here
-            Log.d("TAG", "Call for more videos")
-
-            delay(50)
-            loadMoreShorts(pageNumber)
-            loadMoreShortsFromFeed(pageNumber)
-            shortsViewModel.pageNumber = pageNumber
-            lifecycleScope.launch(Dispatchers.Main) {
-
-            }
-        }
-    }
-
-    private fun setupVideoPlaybackInShots(videoUrl: String) {
-        // Implement video playback logic specific to ShotsFragment
-        Log.d("ShotsFragment", "Setting up video playback for: $videoUrl")
-    }
-
-
-    override fun onStart() {
-        super.onStart()
-        if (!EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().register(this)
-            Log.d("EventBus", "ShotsFragment registered")
-        }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        if (EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().unregister(this)
-            Log.d("EventBus", "ShotsFragment unregistered")
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        // Only pause, don't release
-        exoPlayer?.pause()
-
-        lifecycleScope.launch {
-            shortsViewModel.isResuming = true
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        try {
-            exoPlayer?.apply {
-                removeListener(playbackStateListener)
-                currentPlayerListener?.let { removeListener(it) }
-                stop()
-                clearMediaItems()
-                release()
-            }
-            exoPlayer = null
-        } catch (e: Exception) {
-            Log.e("ShotsFragment", "Error destroying player", e)
-        }
-
-        if (exoPlayerItems.isNotEmpty()) {
-            for (item in exoPlayerItems) {
-                val player = item.exoPlayer
-                player.stop()
-                player.clearMediaItems()
-            }
-            exoPlayerItems.clear()
-        }
-
-        lifecycleScope.launch {
-            shortsViewModel.isResuming = true
-        }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        exoPlayer!!.pause()
-        val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
-        if (index != -1) {
-            val player = exoPlayerItems[index].exoPlayer
-            player.pause()
-
-            player.playWhenReady = false
-            player.seekTo(0)
-        }
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    override fun onResume() {
-        super.onResume()
-        (activity as? MainActivity)?.hideAppBar()
-        val vNLayout = activity?.findViewById<ConstraintLayout>(R.id.VNLayout)
-        if (vNLayout?.visibility == View.VISIBLE) {
-            pauseVideo()
-        } else {
-            exoPlayer!!.play()
-            val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
-            if (index != -1) {
-                val player = exoPlayerItems[index].exoPlayer
-                player.playWhenReady = true
-                player.play()
-                player.seekTo(0)
-            }
-        }
-        updateStatusBar()
-
     }
 
     private fun convertFeedPostsToShortsEntity(
@@ -2710,6 +2409,221 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
+    private fun prepareAndPlayVideoImmediately(videoUrl: String, position: Int) {
+        try {
+            val videoUri = Uri.parse(videoUrl)
+            Log.d("prepareAndPlayVideo", "Preparing video URI: $videoUri")
+
+            // Ensure surface is ready
+            val currentHolder = shortsAdapter.getCurrentViewHolder()
+            currentHolder?.getSurface()?.let { playerView ->
+                playerView.visibility = View.VISIBLE
+                playerView.player = exoPlayer
+            }
+
+            val mediaItem = MediaItem.Builder()
+                .setUri(videoUri)
+                .apply {
+                    val detectedMimeType = getMimeTypeFromUrl(videoUrl)
+                    if (detectedMimeType != MimeTypes.VIDEO_UNKNOWN) {
+                        setMimeType(detectedMimeType)
+                    }
+                }
+                .build()
+
+            // Remove old listener
+            currentPlayerListener?.let { oldListener ->
+                exoPlayer?.removeListener(oldListener)
+            }
+
+            currentPlayerListener = createPlayerListener(position)
+
+            exoPlayer?.let { player ->
+                // Stop and clear previous media
+                player.stop()
+                player.clearMediaItems()
+
+                // Add new listener
+                player.addListener(currentPlayerListener!!)
+                player.repeatMode = Player.REPEAT_MODE_ONE
+                player.playWhenReady = true // Set to play immediately
+
+                // Set media and prepare
+                player.setMediaItem(mediaItem, true) // Reset position
+                player.prepare()
+
+                Log.d("prepareAndPlayVideo", "Video preparation started for position: $position")
+            }
+
+        } catch (e: Exception) {
+            Log.e("prepareAndPlayVideo", "Error in prepareAndPlayVideo", e)
+            handlePlaybackError(position)
+        }
+    }
+
+    private fun createPlayerListener(position: Int): Player.Listener {
+        return object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                super.onPlaybackStateChanged(playbackState)
+
+                when (playbackState) {
+                    Player.STATE_BUFFERING -> {
+                        Log.d("PlayerState", "Buffering video at position: $position")
+                    }
+                    Player.STATE_READY -> {
+                        Log.d("PlayerState", "Video ready at position: $position")
+
+                        exoPlayer?.let { player ->
+                            if (player.duration != C.TIME_UNSET) {
+                                shortSeekBar.max = player.duration.toInt()
+                                Log.d("PlayerState", "Duration set: ${player.duration}")
+                            }
+                            // playWhenReady already handles playback
+                        }
+                    }
+                    Player.STATE_ENDED -> {
+                        Log.d("PlayerState", "Video ended at position: $position")
+                    }
+                    Player.STATE_IDLE -> {
+                        Log.d("PlayerState", "Player idle at position: $position")
+                    }
+                }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                super.onPlayerError(error)
+
+                Log.e("PlayerError", "Playback error at position $position", error)
+                Log.e("PlayerError", "Error code: ${error.errorCode}")
+
+                when (error.errorCode) {
+                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
+                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT -> {
+                        Log.e("PlayerError", "Network error: ${error.message}")
+                    }
+                    PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
+                    PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED -> {
+                        Log.e("PlayerError", "Format error: ${error.message}")
+                    }
+                    else -> {
+                        Log.e("PlayerError", "Unknown error: ${error.message}")
+                    }
+                }
+
+                handlePlaybackError(position)
+            }
+
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int
+            ) {
+                super.onPositionDiscontinuity(oldPosition, newPosition, reason)
+                updateSeekBar()
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                super.onIsPlayingChanged(isPlaying)
+                Log.d("PlayerState", "Is playing: $isPlaying at position: $position")
+            }
+        }
+    }
+
+    private fun setupVideoPlaybackInShots(videoUrl: String) {
+        // Implement video playback logic specific to ShotsFragment
+        Log.d("ShotsFragment", "Setting up video playback for: $videoUrl")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this)
+            Log.d("EventBus", "ShotsFragment registered")
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().unregister(this)
+            Log.d("EventBus", "ShotsFragment unregistered")
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // Only pause, don't release
+        exoPlayer?.pause()
+
+        lifecycleScope.launch {
+            shortsViewModel.isResuming = true
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        try {
+            exoPlayer?.apply {
+                removeListener(playbackStateListener)
+                currentPlayerListener?.let { removeListener(it) }
+                stop()
+                clearMediaItems()
+                release()
+            }
+            exoPlayer = null
+        } catch (e: Exception) {
+            Log.e("ShotsFragment", "Error destroying player", e)
+        }
+
+        if (exoPlayerItems.isNotEmpty()) {
+            for (item in exoPlayerItems) {
+                val player = item.exoPlayer
+                player.stop()
+                player.clearMediaItems()
+            }
+            exoPlayerItems.clear()
+        }
+
+        lifecycleScope.launch {
+            shortsViewModel.isResuming = true
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        exoPlayer!!.pause()
+        val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
+        if (index != -1) {
+            val player = exoPlayerItems[index].exoPlayer
+            player.pause()
+
+            player.playWhenReady = false
+            player.seekTo(0)
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    override fun onResume() {
+        super.onResume()
+        (activity as? MainActivity)?.hideAppBar()
+        val vNLayout = activity?.findViewById<ConstraintLayout>(R.id.VNLayout)
+        if (vNLayout?.visibility == View.VISIBLE) {
+            pauseVideo()
+        } else {
+            exoPlayer!!.play()
+            val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
+            if (index != -1) {
+                val player = exoPlayerItems[index].exoPlayer
+                player.playWhenReady = true
+                player.play()
+                player.seekTo(0)
+            }
+        }
+        updateStatusBar()
+
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun successEvent(event: UploadSuccessful) {
         if (event.success) {
@@ -2718,17 +2632,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         } else {
             progressBarLayout.visibility = View.VISIBLE
         }
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun shortAdapterNotifyDatasetChanged(event: ShortAdapterNotifyDatasetChanged) {
-        val TAG = "shortAdapterNotifyDatasetChanged"
-        Log.d(
-            TAG,
-            "shortAdapterNotifyDatasetChanged: in shorts adapter notify adapter: seh data set changed"
-        )
-        shortsAdapter.notifyDataSetChanged()
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -2741,14 +2644,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
 
     }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun pauseShort(event: PauseShort) {
-        if (event.pause) {
-            pauseVideo()
-        }
-    }
-
 
 
     @SuppressLint("SetTextI18n")
@@ -2792,49 +2687,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onProgressEvent(event: ProgressEvent) {
-        Log.d("EventBus", "✓ onProgressEvent CALLED - eventId: ${event.eventId}, progress: ${event.progress}")
-
-        val progressSet = eventProgressSets.getOrPut(event.eventId) { HashSet() }
-
-        if (progressSet.add(event.progress)) {
-            progressViewModel.totalProgress += 1
-            var overallProgress = (progressViewModel.totalProgress.toDouble() / TOTAL_PROGRESS) * 100
-
-            Log.d("Progress", "Overall Progress: $overallProgress - total progress ${progressViewModel.totalProgress}")
-
-            progressBarLayout.visibility = View.VISIBLE
-            progressBar.progress = overallProgress.toInt()
-
-            // Fix: Safe call for animation
-            wifiAnimation?.start()
-
-            cancelShortsUpload.setOnClickListener {
-                Log.d("Cancel", "Cancel upload clicked")
-                EventBus.getDefault().post(CancelShortsUpload(true))
-                progressBarLayout.visibility = View.GONE
-                wifiAnimation?.stop()
-                eventProgressSets.clear()
-                progressSet.clear()
-                progressViewModel.totalProgress = 0
-                overallProgress = 0.0
-            }
-
-            if (overallProgress.toInt() >= 100) {
-                Log.d("overallProgress", "onProgressEvent: $overallProgress")
-                progressViewModel.totalProgress = 0
-                overallProgress = 0.0
-                wifiAnimation?.stop()
-                eventProgressSets.clear()
-                progressSet.clear()
-                progressBarLayout.visibility = View.GONE
-            }
-        } else {
-            Log.d("Progress", "Event ${event.eventId} - Duplicate progress value: ${event.progress}")
-        }
-    }
-
     private fun updateSeekBar() {
         exoPlayer?.let { player ->
             if (!isUserSeeking) {
@@ -2855,24 +2707,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             lowerUrl.contains(".webm") -> "video/webm"
             lowerUrl.contains(".3gp") -> "video/3gpp"
             else -> MimeTypes.VIDEO_MP4 // Default fallback
-        }
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun createEnhancedMediaSource(mediaItem: MediaItem, videoUrl: String): MediaSource {
-        return try {
-            // Create a more robust data source factory
-            val dataSourceFactory = createRobustDataSourceFactory()
-
-
-            ProgressiveMediaSource.Factory(dataSourceFactory)
-                .createMediaSource(mediaItem)
-        } catch (e: Exception) {
-            Log.e("createEnhancedMediaSource", "Error creating enhanced media source", e)
-            // Ultimate fallback - basic progressive source with default factory
-            val defaultFactory = DefaultDataSource.Factory(requireContext())
-            ProgressiveMediaSource.Factory(defaultFactory)
-                .createMediaSource(mediaItem)
         }
     }
 
@@ -2939,21 +2773,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
             }
         }
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun informAdapter(event: InformAdapter) {
-
-        lifecycleScope.launch(Dispatchers.Main) {
-            followShortsViewModel._followListItems.observe(viewLifecycleOwner) {
-                shortsAdapter.addIsFollowingData(it)
-                shortsAdapter.notifyDataSetChanged()
-
-            }
-        }
-
-
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -3037,53 +2856,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onLikeUnLikeClick(event: ShortsLikeUnLike) {
-        Log.d("onLikeUnLikeClick", "onLikeUnLikeClick: ${event.isLiked}")
-
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-
-    fun likeButtonClicked(event: ShortsLikeUnLikeButton) {
-
-
-        var button = event.likeUnLikeButton
-        var shortOwnerId = event.shortsEntity.author.account._id
-        var postId = event.shortsEntity._id
-
-
-        shortsViewModel.isLiked = event.shortsEntity.isLiked
-
-        event.likeCount.text = event.shortsEntity.likes.toString()
-
-
-        if (shortsViewModel.isLiked) {
-            button.setImageResource(R.drawable.filled_favorite_like)
-
-            Log.d(
-                "likeButtonClicked",
-                "likeButtonClicked: event is liked: ${event.shortsEntity.isLiked}"
-            )
-
-        } else {
-            button.setImageResource(R.drawable.favorite_svgrepo_com)
-
-            Log.d(
-                "likeButtonClicked",
-                "likeButtonClicked: event is liked: ${event.shortsEntity.isLiked}"
-            )
-
-        }
-
-        button.setOnClickListener {
-
-            handleLikeClick(postId, event.likeCount, button, event.shortsEntity)
-        }
-
-    }
-
     private fun handleLikeClick(
         postId: String,
         likeCount: TextView,
@@ -3162,140 +2934,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    private suspend fun likeUnLikeShort(shortOwnerId: String) {
-        try {
-            val response = retrofitIns.apiService.likeUnLikeShort(shortOwnerId)
-
-
-            if (response.isSuccessful) {
-                val responseBody = response.body()
-                Log.d(
-                    "likeUnLikeShort",
-                    "likeUnLikeShort ${responseBody?.data!!.isLiked}"
-                )
-            } else {
-                Log.d("likeUnLikeShort", "Error: ${response.message()}")
-                requireActivity().runOnUiThread {
-                    showToast(response.message())
-                }
-            }
-
-        } catch (e: HttpException) {
-            Log.d("likeUnLikeShort", "Http Exception ${e.message}")
-            requireActivity().runOnUiThread {
-                showToast("Failed to connect try again...")
-            }
-        } catch (e: IOException) {
-            Log.d("likeUnLikeShort", "IOException ${e.message}")
-            requireActivity().runOnUiThread {
-                showToast("Failed to connect try again...")
-            }
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun favoriteButtonClicked(event: ShortsBookmarkButton) {
-
-
-        val button = event.favoriteButton
-        var shortOwnerId = event.shortsEntity.author.account._id
-        val postId = event.shortsEntity._id
-
-
-        shortsViewModel.isFavorite = event.shortsEntity.isBookmarked
-
-        if (shortsViewModel.isFavorite) {
-            button.setImageResource(R.drawable.filled_favorite)
-
-        } else {
-            button.setImageResource(R.drawable.favorite_svgrepo_com__1_)
-        }
-
-        button.setOnClickListener {
-            handleFavoriteClick(postId, button, event.shortsEntity)
-        }
-
-    }
-
-    private fun handleFavoriteClick(postId: String, button: ImageView, shortsEntity: ShortsEntity) {
-
-        val TAG = "handleFavoriteClick"
-        shortsViewModel.isFavorite = !shortsViewModel.isFavorite
-        EventBus.getDefault().post(ShortsFavoriteUnFavorite(postId))
-
-        if (!shortsEntity.isBookmarked) {
-
-            button.setImageResource(R.drawable.filled_favorite)
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(button)
-
-            shortsEntity.isBookmarked = true
-
-
-            shortsViewModel.isFavorite = true
-
-            val myShorts = userProfileShortsViewModel.mutableShortsList.find { it._id == postId }
-            val myFavoriteShorts =
-                userProfileShortsViewModel.mutableFavoriteShortsList.find { it._id == postId }
-
-            if (myShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myShorts._id}")
-                myShorts.isBookmarked = true
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            if (myFavoriteShorts != null) {
-                myFavoriteShorts.isBookmarked = true
-            }
-            val convertedShort = shortsEntityToUserShortsEntity(shortsEntity)
-            userProfileShortsViewModel.mutableFavoriteShortsList.add(0, convertedShort)
-        } else {
-            button.setImageResource(R.drawable.favorite_svgrepo_com__1_)
-            shortsEntity.isBookmarked = false
-
-            shortsViewModel.isFavorite = false
-
-            val myShorts = userProfileShortsViewModel.mutableShortsList.find { it._id == postId }
-            val myFavoriteShorts =
-                userProfileShortsViewModel.mutableFavoriteShortsList.find { it._id == postId }
-
-            if (myShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myShorts._id}")
-                myShorts.isBookmarked = false
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-
-            if (myFavoriteShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myFavoriteShorts._id}")
-                myFavoriteShorts.isBookmarked = false
-
-                Log.d(
-                    TAG,
-                    "handleFavoriteClick: mutableFavoriteShortsList size before ${userProfileShortsViewModel.mutableFavoriteShortsList.size}"
-                )
-
-                // Remove the item if it exists in the list
-                userProfileShortsViewModel.mutableFavoriteShortsList.removeIf { it._id == postId }
-
-                Log.d(
-                    TAG,
-                    "handleFavoriteClick: mutableFavoriteShortsList size after ${userProfileShortsViewModel.mutableFavoriteShortsList.size}"
-                )
-
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(button)
-        }
-    }
-
     private fun shortsEntityToUserShortsEntity(serverResponseItem: ShortsEntity): UserShortsEntity {
         return UserShortsEntity(
             __v = serverResponseItem.__v,
@@ -3313,36 +2951,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             thumbnail = serverResponseItem.thumbnail,
             // map other properties...
         )
-    }
-
-    private suspend fun favoriteShort(postId: String) {
-        try {
-            val response = retrofitIns.apiService.favoriteShort(postId)
-
-            if (response.isSuccessful) {
-                val responseBody = response.body()
-                Log.d(
-                    "favoriteButtonClicked",
-                    "favoriteButtonClicked ${responseBody?.data!!.isBookmarked}"
-                )
-            } else {
-                Log.d("favoriteButtonClicked", "Error: ${response.message()}")
-                requireActivity().runOnUiThread {
-                    showToast(response.message())
-                }
-            }
-
-        } catch (e: HttpException) {
-            Log.d("favoriteButtonClicked", "Http Exception ${e.message}")
-            requireActivity().runOnUiThread {
-                showToast("Failed to connect try again...")
-            }
-        } catch (e: IOException) {
-            Log.d("favoriteButtonClicked", "IOException ${e.message}")
-            requireActivity().runOnUiThread {
-                showToast("Failed to connect try again...")
-            }
-        }
     }
 
     private fun updateStatusBar() {
@@ -3385,14 +2993,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
     private var isPlaying = false
-    private fun togglesPausePlay() {
-        Log.d("Pause", "togglePausePlay")
-        if (isPlaying) {
-            pauseVideo()
-        } else {
-            playVideo()
-        }
-    }
 
     private fun playVideo() {
         exoPlayer?.playWhenReady = true
@@ -3666,25 +3266,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         TODO("Not yet implemented")
     }
 
-    fun generateUniqueValue(): String {
-        val currentTimeMillis = System.currentTimeMillis()
-
-        // You can format the timestamp as needed
-        val dateFormat = SimpleDateFormat("yyyy_MM_dd_HHmmss", Locale.getDefault())
-
-        // Create a unique value using the formatted timestamp or customize it as needed
-
-        return dateFormat.format(Date(currentTimeMillis))
-    }
-
-    private fun String.replaceLast(oldValue: String, newValue: String): String {
-        val lastIndexOf = this.lastIndexOf(oldValue)
-        return if (lastIndexOf == -1) this else this.substring(
-            0,
-            lastIndexOf
-        ) + newValue + this.substring(lastIndexOf + oldValue.length)
-    }
-
     @RequiresApi(Build.VERSION_CODES.O)
     private fun showNotification(
         context: Context,
@@ -3864,22 +3445,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         )
     }
 
-    private fun showLogoutConfirmationDialog() {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("Confirm Logout")
-        builder.setMessage("Are you sure you want to logout?")
-        builder.setPositiveButton("Yes") { dialog, which ->
-            // Handle logout here
-            performLogout()
-        }
-        builder.setNegativeButton("No") { dialog, which ->
-            // Dismiss the dialog
-            dialog.dismiss()
-        }
-        val dialog = builder.create()
-        dialog.show()
-    }
-
     private fun performLogout() {
         CoroutineScope(Dispatchers.IO).launch {
 
@@ -3892,34 +3457,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         requireActivity().finish()
         startActivity(intent)
     }
-
-
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun feedInformShortsFragment(event: InformShortsFragment2) {
-        Log.d("feedInformShortsFragment", "InformShortsFragment2: shorts fragment informed")
-        val list: MutableList<ShortsEntityFollowList> = mutableListOf()
-        list.add(ShortsEntityFollowList(event.userId, event.isFollowing))
-        val followListItem: List<ShortsEntityFollowList> = listOf(
-            ShortsEntityFollowList(
-                event.userId, event.isFollowing
-            )
-        )
-        lifecycleScope.launch(Dispatchers.IO) {
-
-            val uniqueFollowList = removeDuplicateFollowers(followListItem)
-            Log.d(
-                "feedShortsSharedViewModel",
-                "feedShortsSharedViewModel: Inserted uniqueFollowList in shorts: $uniqueFollowList"
-            )
-            delay(100)
-            followShortsViewModel.insertFollowListItems(uniqueFollowList)
-            shortsViewModel.followList.add(ShortsEntityFollowList(event.userId, event.isFollowing))
-        }
-        shortsAdapter.addIsFollowingData(list)
-        shortsAdapter.notifyDataSetChanged()
-    }
-
 
 
 }
