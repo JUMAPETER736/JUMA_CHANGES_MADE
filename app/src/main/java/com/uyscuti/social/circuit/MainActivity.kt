@@ -1802,7 +1802,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
         // Determine which position to navigate to
         val targetPosition = when {
-            userProfileFragment != null -> 4 
+            userProfileFragment != null -> 4
             navigateTo == "profile" -> 4
             navigateTo == "shorts" -> 2
             navigateTo == "feed" -> 3
