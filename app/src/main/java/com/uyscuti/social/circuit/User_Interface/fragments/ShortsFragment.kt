@@ -221,10 +221,15 @@ class ShortsAdapter(
     private val preloadHandler = Handler(Looper.getMainLooper())
 
 
-
-
     override fun onBindViewHolder(holder: StringViewHolder, position: Int) {
         val data = shortsList[position]
+
+        holder.resetForNewVideo()
+        // IMPORTANT: Reset holder state before binding
+        holder.itemView.post {
+            holder.videoView.visibility = View.VISIBLE
+            holder.getSurface().player = null  // Detach player first
+        }
 
         val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
             ?: ShortsEntityFollowList(
@@ -243,6 +248,7 @@ class ShortsAdapter(
 
         preloadVideosAround(position)
     }
+
 
     override fun onViewRecycled(holder: StringViewHolder) {
         super.onViewRecycled(holder)
@@ -491,7 +497,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
     }
 
     // UI COMPONENTS
-    private val videoView: PlayerView = itemView.findViewById(R.id.video_view)
+    val videoView: PlayerView = itemView.findViewById(R.id.video_view)
     private val bottomVideoSeekBar: SeekBar = itemView.findViewById(R.id.bottomShortsVideoProgressSeekBar)
     private val btnPlayPause: ImageView = itemView.findViewById(R.id.btnPlayPause)
     private var shortsUploadTopSeekBar: SeekBar? = null
@@ -516,6 +522,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
     private val thumbnailImageView: ImageView = itemView.findViewById(R.id.videoThumbnail)
     private val shortsViewPager: FrameLayout = itemView.findViewById(R.id.shortsViewPager)
     private val shortsUploadCancelButton: ImageButton = itemView.findViewById(R.id.shortsUploadCancelButton)
+
 
     private var currentThumbnailUrl: String? = null
 
@@ -678,16 +685,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         shortsUploadCancelButton.visibility = View.VISIBLE
     }
 
-    fun updateSeekBarProgress(progress: Long) {
-        if (!isUserSeeking) {
-            val progressInSeconds = (progress / 1000).toInt()
-            bottomVideoSeekBar.progress = progressInSeconds
-        }
-    }
-
-    fun setSeekBarMaxValue(max: Int) {
-        bottomVideoSeekBar.max = max
-    }
 
     fun onViewAttached() {
         videoView.visibility = View.VISIBLE
@@ -720,11 +717,24 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         currentShorts = shortsEntity
 
         val thumbnailUrl = shortsEntity.thumbnail.firstOrNull()?.thumbnailUrl
-        currentThumbnailUrl = thumbnailUrl
 
-        thumbnailImageView.visibility = View.GONE
+        // Always show thumbnail first when binding
+        if (thumbnailUrl != null && thumbnailUrl.isNotEmpty()) {
+            currentThumbnailUrl = thumbnailUrl
+            thumbnailImageView.visibility = View.VISIBLE
+            thumbnailImageView.alpha = 1f
+
+            Glide.with(itemView.context)
+                .load(thumbnailUrl)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .signature(ObjectKey(thumbnailUrl))
+                .into(thumbnailImageView)
+        } else {
+            thumbnailImageView.visibility = View.GONE
+            currentThumbnailUrl = null
+        }
+
         videoView.visibility = View.VISIBLE
-
         // Initialize comment counts
         initializeCommentCounts(shortsEntity)
 
@@ -742,6 +752,24 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         if (exoplayer.duration > 0) {
             bottomVideoSeekBar.max = (exoplayer.duration / 1000).toInt()
         }
+    }
+
+    fun resetForNewVideo() {
+        // Stop any ongoing animations
+        thumbnailImageView.animate().cancel()
+
+        // Reset thumbnail state
+        thumbnailImageView.visibility = View.VISIBLE
+        thumbnailImageView.alpha = 1f
+
+        // Reset video view
+        videoView.visibility = View.VISIBLE
+        videoView.player = null
+
+        // Reset progress
+        bottomVideoSeekBar.progress = 0
+
+        Log.d(TAG, "ViewHolder reset for new video")
     }
 
     // Comment count initialization
@@ -854,13 +882,18 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
     fun onViewRecycled() {
         stopProgressUpdates()
 
+        // Clear thumbnail properly
         thumbnailImageView.animate().cancel()
-        thumbnailImageView.visibility = View.GONE
         thumbnailImageView.setImageDrawable(null)
+        thumbnailImageView.visibility = View.VISIBLE  // Keep visible for next bind
         thumbnailImageView.alpha = 1f
         currentThumbnailUrl = null
 
-        videoView.visibility = View.VISIBLE
+        // Hide video view
+        videoView.visibility = View.GONE
+
+        // Clear video from view
+        videoView.player = null
 
         commentsParentLayout.setOnClickListener(null)
         btnLike.setOnClickListener(null)
@@ -1644,13 +1677,17 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
                     override fun onPageSelected(position: Int) {
                         shortsViewModel.shortIndex = position
 
-                        // Stop current video immediately
+                        // Stop current video and clear
                         exoPlayer?.let { player ->
+                            player.pause()
                             player.stop()
                             player.clearMediaItems()
                         }
 
-                        // Play next video immediately
+                        // Notify adapter about position change
+                        shortsAdapter.onPositionChanged(position)
+
+                        // Play next video
                         playVideoAtPosition(position)
                     }
 
@@ -1949,8 +1986,10 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         val shortVideo = videoShorts[position]
         Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
 
-        // Load thumbnail for current position ONLY
+        // Get current holder
         val currentHolder = shortsAdapter.getCurrentViewHolder()
+
+        // Load thumbnail FIRST before starting video
         val thumbnailUrl = shortVideo.thumbnail.firstOrNull()?.thumbnailUrl
         currentHolder?.loadThumbnail(thumbnailUrl)
 
@@ -1981,8 +2020,11 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
         Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
 
-        // Play immediately
-        prepareAndPlayVideoImmediately(finalVideoUrl, position)
+        // Small delay to ensure thumbnail is loaded
+        lifecycleScope.launch {
+            delay(50) // Short delay for thumbnail to render
+            prepareAndPlayVideoImmediately(finalVideoUrl, position)
+        }
     }
 
     private suspend fun loadMoreShortsFromFeed(currentPage: Int) {
