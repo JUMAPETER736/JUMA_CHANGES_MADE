@@ -202,7 +202,17 @@ class MyUserProfileAccount : AppCompatActivity() {
 
     @SuppressLint("UseKtx")
     private fun setupClickListeners() {
-        binding.backButton.setOnClickListener { finish() }
+
+
+        binding.backButton.setOnClickListener {
+            // Instead of just finish(), navigate back with intent
+            val intent = Intent(this, MainActivity::class.java).apply {
+                putExtra("fragment", "profile")  // Tell MainActivity to show profile
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+            startActivity(intent)
+            finish()
+        }
 
         binding.followIcon.setOnClickListener {
             isFollowing = !isFollowing

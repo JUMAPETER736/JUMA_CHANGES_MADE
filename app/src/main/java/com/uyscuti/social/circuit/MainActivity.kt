@@ -1646,6 +1646,77 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        var navigateTo = intent.getStringExtra("fragment") ?: "shorts"
+        var userProfileFragment = intent.getStringExtra("UserProfileFragment")
+
+        // Initialize bottom navigation items FIRST
+        item = NavigationItem(this@MainActivity, R.drawable.nav_notification_icon)
+        item1 = NavigationItem(this@MainActivity, R.drawable.chat_round_svgrepo_com)
+        item2 = NavigationItem(this@MainActivity, R.drawable.play_svgrepo_com)
+        item3 = NavigationItem(this@MainActivity, R.drawable.scroll_text_line_svgrepo_com)
+        item4 = NavigationItem(this@MainActivity, R.drawable.flash21)
+
+        // Set sizes...
+        item3.drawableWidth = 36
+        item3.drawableHeight = 36
+        item2.drawableWidth = 36
+        item2.drawableHeight = 36
+        item1.drawableWidth = 36
+        item1.drawablePadding = 15
+        item1.drawableHeight = 36
+        item.drawableWidth = 36
+        item.drawableHeight = 36
+        item4.drawableWidth = 36
+        item4.drawableHeight = 36
+
+        // Hide badges
+        item.hideBadge()
+        item1.hideBadge()
+        item2.hideBadge()
+        item3.hideBadge()
+        item4.hideBadge()
+
+        // Add items to bottom navigation
+        binding.bottomNavigationView.addItem(item)
+        binding.bottomNavigationView.addItem(item1)
+        binding.bottomNavigationView.addItem(item2)
+        binding.bottomNavigationView.addItem(item3)
+        binding.bottomNavigationView.addItem(item4)
+
+        // Set navigation listener
+        setNavigationListener()
+
+        // Determine which position to navigate to
+        val targetPosition = when {
+            userProfileFragment != null -> 4  // Profile
+            navigateTo == "profile" -> 4      // Profile
+            navigateTo == "shorts" -> 2       // Shorts (default)
+            navigateTo == "feed" -> 3         // Feed
+            navigateTo == "chat" -> 1         // Chat
+            navigateTo == "notifications" -> 0 // Notifications
+            else -> 2                          // Default to Shorts
+        }
+
+        // Navigate after views are laid out
+        binding.bottomNavigationView.post {
+            // Set the position in bottom navigation
+            binding.bottomNavigationView.setPosition(targetPosition, false)
+
+            // Update drawable tints
+            updateNavigationSelection(targetPosition)
+
+            // Navigate to the correct fragment
+            when (targetPosition) {
+                0 -> getNavigationController().navigate("R.id.notifications", "Notification")
+                1 -> getNavigationController().navigate("R.id.chat", "Chat")
+                2 -> getNavigationController().navigate("R.id.shots", "Shorts")
+                3 -> getNavigationController().navigate("R.id.feed", "Feed")
+                4 -> getNavigationController().navigate("R.id.profile", "Profile")
+            }
+
+            Log.d("MainActivity", "Initialized with position: $targetPosition")
+        }
+
         // Get postId from intent
         postId = intent.getStringExtra("postId") ?: ""
 
@@ -1696,9 +1767,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
         timer = Timer(this)
 
-        var navigateTo = intent.getStringExtra("fragment") ?: "shorts"
-
-        var userProfileFragment = intent.getStringExtra("UserProfileFragment")
+      
         intent.getStringExtra("title") ?: ""
 
         if (userProfileFragment != null) {
@@ -2317,6 +2386,50 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
         setupCommentCountObservers()
 
+    }
+
+    private fun setNavigationListener() {
+        binding.bottomNavigationView.setOnClickedButtonListener { button, pos ->
+            updateNavigationSelection(pos)
+        }
+    }
+
+    private fun updateNavigationSelection(pos: Int) {
+        // Reset all tints to black
+        item.drawableTint = Color.BLACK
+        item1.drawableTint = Color.BLACK
+        item2.drawableTint = Color.BLACK
+        item3.drawableTint = Color.BLACK
+        item4.drawableTint = Color.BLACK
+
+        // Set the selected item to white and navigate
+        when (pos) {
+            0 -> {
+                item.drawableTint = Color.WHITE
+                getNavigationController().navigate("R.id.notifications", "Notification")
+                Log.d("bottomNavigation", "Navigated to Notifications - position $pos")
+            }
+            1 -> {
+                item1.drawableTint = Color.WHITE
+                getNavigationController().navigate("R.id.chat", "Chat")
+                Log.d("bottomNavigation", "Navigated to Chat - position $pos")
+            }
+            2 -> {
+                item2.drawableTint = Color.WHITE
+                getNavigationController().navigate("R.id.shots", "Shorts")
+                Log.d("bottomNavigation", "Navigated to Shorts - position $pos")
+            }
+            3 -> {
+                item3.drawableTint = Color.WHITE
+                getNavigationController().navigate("R.id.feed", "Feed")
+                Log.d("bottomNavigation", "Navigated to Feed - position $pos")
+            }
+            4 -> {
+                item4.drawableTint = Color.WHITE
+                getNavigationController().navigate("R.id.profile", "Profile")
+                Log.d("bottomNavigation", "Navigated to Profile - position $pos")
+            }
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -3268,55 +3381,55 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
     }
 
-    private fun setNavigationListener() {
-
-        bottomNavigation.setOnClickedButtonListener { button, pos ->
-
-
-            item.drawableTint = Color.BLACK
-            item1.drawableTint = Color.BLACK
-            item2.drawableTint = Color.BLACK
-            item3.drawableTint = Color.BLACK
-            item4.drawableTint = Color.BLACK
-
-
-            when (pos) {
-                0 -> {
-                    item.drawableTint = Color.WHITE
-                    getNavigationController().navigate("R.id.notifications", "Notification")
-                    Log.d("bottomNavigation", "position $pos")
-                }
-
-                1 -> {
-                    item1.drawableTint = Color.WHITE
-                    getNavigationController().navigate("R.id.chat", "Chat")
-                    Log.d("bottomNavigation", "position $pos")
-                }
-
-                2 -> {
-                    item2.drawableTint = Color.WHITE
-                    getNavigationController().navigate("R.id.shots", "Shorts")
-                    Log.d("bottomNavigation", "position $pos")
-                }
-
-                3 -> {
-                    item3.drawableTint = Color.WHITE
-                    getNavigationController().navigate("R.id.feed", "Feed")
-                    Log.d("bottomNavigation", "position $pos")
-                }
-
-                4 -> {
-                    item4.drawableTint = Color.WHITE
-                    getNavigationController().navigate("R.id.profile", "Profile")
-                    Log.d("bottomNavigation", "position $pos")
-                }
-
-                else -> {
-                    Log.d("bottomNavigation", "position position")
-                }
-            }
-        }
-    }
+//    private fun setNavigationListener() {
+//
+//        bottomNavigation.setOnClickedButtonListener { button, pos ->
+//
+//
+//            item.drawableTint = Color.BLACK
+//            item1.drawableTint = Color.BLACK
+//            item2.drawableTint = Color.BLACK
+//            item3.drawableTint = Color.BLACK
+//            item4.drawableTint = Color.BLACK
+//
+//
+//            when (pos) {
+//                0 -> {
+//                    item.drawableTint = Color.WHITE
+//                    getNavigationController().navigate("R.id.notifications", "Notification")
+//                    Log.d("bottomNavigation", "position $pos")
+//                }
+//
+//                1 -> {
+//                    item1.drawableTint = Color.WHITE
+//                    getNavigationController().navigate("R.id.chat", "Chat")
+//                    Log.d("bottomNavigation", "position $pos")
+//                }
+//
+//                2 -> {
+//                    item2.drawableTint = Color.WHITE
+//                    getNavigationController().navigate("R.id.shots", "Shorts")
+//                    Log.d("bottomNavigation", "position $pos")
+//                }
+//
+//                3 -> {
+//                    item3.drawableTint = Color.WHITE
+//                    getNavigationController().navigate("R.id.feed", "Feed")
+//                    Log.d("bottomNavigation", "position $pos")
+//                }
+//
+//                4 -> {
+//                    item4.drawableTint = Color.WHITE
+//                    getNavigationController().navigate("R.id.profile", "Profile")
+//                    Log.d("bottomNavigation", "position $pos")
+//                }
+//
+//                else -> {
+//                    Log.d("bottomNavigation", "position position")
+//                }
+//            }
+//        }
+//    }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
