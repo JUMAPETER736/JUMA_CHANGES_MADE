@@ -1646,9 +1646,9 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ============================================
-        // CRITICAL: Initialize binding FIRST
-        // ============================================
+
+        //Initialize binding FIRST
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -1760,9 +1760,9 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         Log.d("ProfilePic", "Avatar path: $profilePic")
         Log.d("ProfilePic", "Avatar path2: $profilePic2")
 
-        // ============================================
+
         // Initialize bottom navigation items
-        // ============================================
+
         item = NavigationItem(this@MainActivity, R.drawable.nav_notification_icon)
         item1 = NavigationItem(this@MainActivity, R.drawable.chat_round_svgrepo_com)
         item2 = NavigationItem(this@MainActivity, R.drawable.play_svgrepo_com)
@@ -1802,13 +1802,13 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
         // Determine which position to navigate to
         val targetPosition = when {
-            userProfileFragment != null -> 4  // Profile
-            navigateTo == "profile" -> 4      // Profile
-            navigateTo == "shorts" -> 2       // Shorts (default)
-            navigateTo == "feed" -> 3         // Feed
-            navigateTo == "chat" -> 1         // Chat
-            navigateTo == "notifications" -> 0 // Notifications
-            else -> 2                          // Default to Shorts
+            userProfileFragment != null -> 4 
+            navigateTo == "profile" -> 4
+            navigateTo == "shorts" -> 2
+            navigateTo == "feed" -> 3
+            navigateTo == "chat" -> 1
+            navigateTo == "notifications" -> 0
+            else -> 2
         }
 
         // Navigate after views are laid out
