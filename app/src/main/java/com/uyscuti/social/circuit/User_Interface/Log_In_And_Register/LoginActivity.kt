@@ -232,13 +232,7 @@ class LoginActivity : AppCompatActivity() {
 
         binding.loginButton.setOnClickListener {
 
-            if (!binding.checkboxTermsConditions.isChecked) {
-
-                Toast.makeText(this, "Please accept terms and conditions to continue", Toast.LENGTH_SHORT).show()
-
-                return@setOnClickListener
-
-            }
+         
 
             val username = binding.usernameEditText.text.toString().trim()
 
