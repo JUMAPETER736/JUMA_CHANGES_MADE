@@ -232,7 +232,7 @@ class LoginActivity : AppCompatActivity() {
 
         binding.loginButton.setOnClickListener {
 
-         
+
 
             val username = binding.usernameEditText.text.toString().trim()
 
