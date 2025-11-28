@@ -3269,6 +3269,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     }
 
     private fun setNavigationListener() {
+
         bottomNavigation.setOnClickedButtonListener { button, pos ->
 
 
