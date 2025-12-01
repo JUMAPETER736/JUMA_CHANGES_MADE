@@ -211,6 +211,9 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     private var isInitialLoadComplete = false
     private val preloadScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    private var filterUserId: String? = null
+    private var filterUsername: String? = null
+    private var isFilteringByUser = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -329,7 +332,51 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
+    fun filterByUser(userId: String?, username: String?) {
+        Log.d(TAG, "filterByUser: Filtering posts for user: $username ($userId)")
 
+        this.filterUserId = userId
+        this.filterUsername = username
+        this.isFilteringByUser = userId != null
+
+        // Clear existing data
+        loadedPages.clear()
+        loadingPages.clear()
+        hasMorePages = true
+        isInitialLoadComplete = false
+        getFeedViewModel.clearAllFeedData()
+        allFeedAdapter.clearItems()
+
+        // Show loading
+        progressBar.visibility = View.VISIBLE
+
+        // Show filter indicator (optional - see below)
+        showFilterHeader(username)
+
+        // Load filtered posts
+        loadInitialBatch()
+    }
+
+
+    private fun showFilterHeader(username: String?) {
+
+
+    }
+
+    // Clear filter and show all posts
+    fun clearFilter() {
+        Log.d(TAG, "clearFilter: Clearing user filter")
+
+        filterUserId = null
+        filterUsername = null
+        isFilteringByUser = false
+
+        // Hide filter header
+        // binding.filterHeaderLayout?.visibility = View.GONE
+
+        // Reload all posts
+        refreshFeed()
+    }
 
     fun updateFollowingList(followingIds: Set<String>) {
         Log.d("AllFragment", "Received ${followingIds.size} following IDs")
