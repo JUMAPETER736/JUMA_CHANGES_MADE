@@ -138,9 +138,8 @@ private const val BATCH_SIZE = 3
 
 @AndroidEntryPoint
 class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterface,
+
     ToggleFeedFloatingActionButton {
-
-
 
     companion object {
 
