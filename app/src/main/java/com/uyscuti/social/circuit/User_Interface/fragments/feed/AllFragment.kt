@@ -371,10 +371,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         filterUsername = null
         isFilteringByUser = false
 
-        // Hide filter header
-        // binding.filterHeaderLayout?.visibility = View.GONE
 
-        // Reload all posts
         refreshFeed()
     }
 
