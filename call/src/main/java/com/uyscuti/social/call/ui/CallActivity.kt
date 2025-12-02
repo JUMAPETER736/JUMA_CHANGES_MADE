@@ -1,7 +1,6 @@
 package com.uyscuti.social.call.ui
 
 import android.app.Activity
-import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.MessagesActivity
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
@@ -466,39 +465,45 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
         callingJob = CoroutineScope(Dispatchers.IO).launch {
             delay(40000)
 
-            // Your code to execute after the specified time
             stopPlayer()
             withContext(Dispatchers.Main) {
                 views.inCallLayout.visibility = View.GONE
                 views.noResponseLayout.visibility = View.VISIBLE
 
                 views.unTarget.text = target
+
                 views.unCancel.setOnClickListener {
                     serviceRepository.sendEndCall()
+                    finish()
                 }
+
                 views.unCallAgain.setOnClickListener {
                     callAgain()
                 }
 
+                // Replace the unMessage.setOnClickListener in startCallingTimer() with this:
+
                 views.unMessage.setOnClickListener {
                     serviceRepository.sendEndCall()
 
-                    val intent = Intent(this@CallActivity, MessagesActivity::class.java).apply {
-                        putExtra("chatId", chatId)
-                        putExtra("dialogName", target)
-                        putExtra("dialogPhoto", getIntent().getStringExtra("avatar"))
-                        putExtra("isGroup", false)
-                        putExtra("temporally", false)
-                        putExtra("firstUserId", targetUserId)
-                        putExtra("firstUserName", target)
-                        putExtra("firstUserAvatar", getIntent().getStringExtra("avatar"))
-                    }
+                    // Option 1: Using ComponentName (always works)
+                    val messageIntent = Intent()
+                    messageIntent.setClassName(
+                        this@CallActivity,
+                        "com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.MessagesActivity"
+                    )
+                    messageIntent.putExtra("chatId", chatId ?: "")
+                    messageIntent.putExtra("dialogName", target ?: "")
+                    messageIntent.putExtra("dialogPhoto", getIntent().getStringExtra("avatar") ?: "")
+                    messageIntent.putExtra("isGroup", false)
+                    messageIntent.putExtra("temporally", false)
+                    messageIntent.putExtra("firstUserId", targetUserId ?: "")
+                    messageIntent.putExtra("firstUserName", target ?: "")
+                    messageIntent.putExtra("firstUserAvatar", getIntent().getStringExtra("avatar") ?: "")
 
-                    startActivity(intent)
+                    startActivity(messageIntent)
                     finish()
                 }
-
-
             }
         }
     }
