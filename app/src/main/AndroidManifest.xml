@@ -301,6 +301,25 @@
             android:name=".User_Interface.media.PlayCommentVideoActivity"
             android:exported="false" />
 
+
+        <!-- Call Activities -->
+        <activity
+            android:name=".User_Interface.OtherImportantProfileThings.MakeCallActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign"
+            tools:ignore="DuplicateActivity" />
+
+        <!-- ADD THIS -->
+        <activity
+            android:name="com.uyscuti.social.call.ui.CallActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+
+        <activity
+            android:name=".calls.CallInfoActivity"
+            android:theme="@style/Base.Theme.FlashDesign"
+            tools:ignore="DuplicateActivity" />
+
         <!-- Shorts Activities -->
         <activity
             android:name=".User_Interface.shorts.UploadShortsActivity"

@@ -3083,7 +3083,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     private fun setItemColor(item: NavigationItem) {
 
     }
-    
+
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
