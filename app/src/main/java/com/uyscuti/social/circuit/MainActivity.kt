@@ -1706,6 +1706,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         feedViewModel = ViewModelProvider(this)[GetFeedViewModel::class.java]
         userProfileShortsViewModel = ViewModelProvider(this)[GetShortsByUsernameViewModel::class.java]
         userShortsFragment = ViewModelProvider(this)[UserProfileShortsViewModel::class.java]
+
         shortsCommentViewModel = ViewModelProvider(this)[RoomCommentsViewModel::class.java]
         commentFilesViewModel = ViewModelProvider(this)[RoomCommentFilesViewModel::class.java]
         roomCommentReplyViewModel = ViewModelProvider(this)[RoomCommentReplyViewModel::class.java]
@@ -1774,6 +1775,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         item2.drawableWidth = 36
         item2.drawableHeight = 36
         item1.drawableWidth = 36
+
         item1.drawablePadding = 15
         item1.drawableHeight = 36
         item.drawableWidth = 36
@@ -1966,6 +1968,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         addCommentVN()
         addCommentReply()
         addCommentFileReply()
+
         addImageComment()
         addVideoComment()
         addDocumentComment()
@@ -2454,6 +2457,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     private fun serverResponseToEntity(serverResponse: List<Post>): List<UserShortsEntity> {
         return serverResponse.map { serverResponseItem ->
             UserShortsEntity(
+
                 __v = serverResponseItem.__v,
                 _id = serverResponseItem._id,
                 content = serverResponseItem.content,
@@ -3079,56 +3083,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     private fun setItemColor(item: NavigationItem) {
 
     }
-
-//    private fun setNavigationListener() {
-//
-//        bottomNavigation.setOnClickedButtonListener { button, pos ->
-//
-//
-//            item.drawableTint = Color.BLACK
-//            item1.drawableTint = Color.BLACK
-//            item2.drawableTint = Color.BLACK
-//            item3.drawableTint = Color.BLACK
-//            item4.drawableTint = Color.BLACK
-//
-//
-//            when (pos) {
-//                0 -> {
-//                    item.drawableTint = Color.WHITE
-//                    getNavigationController().navigate("R.id.notifications", "Notification")
-//                    Log.d("bottomNavigation", "position $pos")
-//                }
-//
-//                1 -> {
-//                    item1.drawableTint = Color.WHITE
-//                    getNavigationController().navigate("R.id.chat", "Chat")
-//                    Log.d("bottomNavigation", "position $pos")
-//                }
-//
-//                2 -> {
-//                    item2.drawableTint = Color.WHITE
-//                    getNavigationController().navigate("R.id.shots", "Shorts")
-//                    Log.d("bottomNavigation", "position $pos")
-//                }
-//
-//                3 -> {
-//                    item3.drawableTint = Color.WHITE
-//                    getNavigationController().navigate("R.id.feed", "Feed")
-//                    Log.d("bottomNavigation", "position $pos")
-//                }
-//
-//                4 -> {
-//                    item4.drawableTint = Color.WHITE
-//                    getNavigationController().navigate("R.id.profile", "Profile")
-//                    Log.d("bottomNavigation", "position $pos")
-//                }
-//
-//                else -> {
-//                    Log.d("bottomNavigation", "position position")
-//                }
-//            }
-//        }
-//    }
+    
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
