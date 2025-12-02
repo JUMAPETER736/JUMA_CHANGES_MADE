@@ -111,7 +111,7 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
         views = ActivityCallBinding.inflate(layoutInflater)
         setContentView(views.root)
 
-//        window.statusBarColor = Color.TRANSPARENT
+
         anima = Anima()
 
         val targetAvatar = intent.getStringExtra("avatar")
@@ -125,7 +125,6 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
         Glide.with(this).load(targetAvatar).apply(RequestOptions.bitmapTransform(CircleCrop())).into(views.targetImageView)
 
 
-//        getPermissions()
         getCameraAndMicPermission{
             init()
         }
@@ -146,8 +145,6 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
         }
 
 
-//        mainRepository.callListener = this
-
         Log.d("CallingActivity", "call activity target: $target")
 
         isVideoCall = intent.getBooleanExtra("isVideoCall", true)
@@ -167,13 +164,13 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
                 }
             }
 
-//            stopPulse()
+
             views.callTitleTv.text = "In call with $target"
             startTimer()
         } else {
             views.callTitleTv.text = "Video Calling $target"
             views.callTimerTv.visibility = View.GONE
-//            callingTimer()
+
             setupAnimation()
 
             startCallingTimer()
@@ -203,6 +200,7 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
                     serviceRepository.sendDeclineCall()
                     serviceRepository.sendEndCall()
                     stopPulse()
+                    finish() // Add this line to close the activity
                 } else {
                     Log.d("Receiver", "Receiver Ended The Call")
                     serviceRepository.sendEndCall()
@@ -254,30 +252,18 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
 
         if (isAnimationEnabled) {
             // Animations are enabled in developer settings.
-//            Toast.makeText(this, "Animation enabled", Toast.LENGTH_SHORT).show()
+
             startPulse()
-//            button.setOnClickListener {
-//                if (statusAnimation) {
-//                    stopPulse()
-//                    button.text = "Start"
-//                }
-//                else {
-//                    startPulse()
-//                    button.text = "Stop"
-//                }
-//                statusAnimation = !statusAnimation
-//            }
+
         } else {
             // Animations are disabled in developer settings.
-//            Toast.makeText(this, "Animation disabled", Toast.LENGTH_SHORT).show()
+
 
             CoroutineScope(Dispatchers.IO).launch {
 
             }
             showInstructionsDialog()
 
-//            val intent = Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)
-//            startActivity(intent)
         }
     }
 
@@ -425,16 +411,10 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
     }
 
 
-//    override fun onToggleCamera() {
-//        Log.d("socket", "Call Activity onToggleCamera")
-//    }
 
     override fun onCallEnded() {
         Log.d("socket", "Call Activity onCallEnded")
-//        onBackPressed()
-//        val intent = Intent(this@CallActivity, MainActivity::class.java)
-//        intent.putExtra("username",  mainRepository.getUserName())
-//        startActivity(intent)
+
         stopPulse()
         finish()
     }
@@ -464,12 +444,7 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
     private fun resetLocalView() {
         CoroutineScope(Dispatchers.IO).launch {
             withContext(Dispatchers.Main) {
-//                val layoutParams = LayoutParams(
-//                    resources.getDimensionPixelSize(R.dimen.width), // Set the width programmatically
-//                    resources.getDimensionPixelSize(R.dimen.height)
-//                )
-//
-//                layoutParams.setMargins(10, 10, 10, 10)
+
 
                 views.localView.layoutParams = defaultLayoutParams
             }
@@ -516,14 +491,14 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
                 views.unCancel.setOnClickListener {
 
                     serviceRepository.sendEndCall()
-//                    finish()
+
                 }
                 views.unCallAgain.setOnClickListener {
                     callAgain()
                 }
 
                 views.unMessage.setOnClickListener {
-//                    finish()
+
                     serviceRepository.sendEndCall()
                 }
             }
@@ -534,7 +509,7 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
         views.noResponseLayout.visibility = View.GONE
         views.inCallLayout.visibility = View.VISIBLE
         startPlayer()
-//        callingTimer()
+
         startCallingTimer()
     }
 
