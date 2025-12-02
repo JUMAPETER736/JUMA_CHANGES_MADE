@@ -133,11 +133,11 @@ class CallInfoActivity: AppCompatActivity(){
         }
         setListeners(callerId)
 
-        // FIX: Load dialog info on startup
+        //Load dialog info on startup
         loadDialogInfo(callerId)
     }
 
-    // FIX: Add method to load and cache dialog info
+    //Add method to load and cache dialog info
     private fun loadDialogInfo(callerId: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -263,7 +263,7 @@ class CallInfoActivity: AppCompatActivity(){
         }
     }
 
-    // FIX: Updated startVoiceCall with chatId and userId
+    // startVoiceCall with chatId and userId
     private fun startVoiceCall(){
         CoroutineScope(Dispatchers.IO).launch {
             // Get dialog info before making the call
@@ -314,7 +314,7 @@ class CallInfoActivity: AppCompatActivity(){
         }
     }
 
-    // FIX: Updated startVideoCall with chatId and userId
+    // startVideoCall with chatId and userId
     private fun startVideoCall(){
         CoroutineScope(Dispatchers.IO).launch {
             // Get dialog info before making the call
