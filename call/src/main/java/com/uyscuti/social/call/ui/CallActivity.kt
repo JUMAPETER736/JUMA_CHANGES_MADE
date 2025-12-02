@@ -1,6 +1,7 @@
 package com.uyscuti.social.call.ui
 
 import android.app.Activity
+import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.MessagesActivity
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
@@ -34,7 +35,6 @@ import com.uyscuti.social.call.utils.Anima
 import com.uyscuti.social.call.utils.RTCAudioManager
 import com.uyscuti.social.call.utils.convertToHumanTime
 import com.uyscuti.social.call.utils.getCameraAndMicPermission
-import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.MessagesActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -483,15 +483,17 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
                 views.unMessage.setOnClickListener {
                     serviceRepository.sendEndCall()
 
-                    // Open chat with the target user
-                    val intent = Intent(this@CallActivity, MessagesActivity::class.java)
-                    intent.putExtra("username", target)
-                    intent.putExtra("avatar", getIntent().getStringExtra("avatar"))
-                    intent.putExtra("chatId", chatId)
-                    intent.putExtra("userId", targetUserId)
-                    intent.putExtra("target", target)
-                    intent.putExtra("isVideoCall", isVideoCall)
-                    intent.putExtra("isCaller", isCaller)
+                    val intent = Intent(this@CallActivity, MessagesActivity::class.java).apply {
+                        putExtra("chatId", chatId)
+                        putExtra("dialogName", target)
+                        putExtra("dialogPhoto", getIntent().getStringExtra("avatar"))
+                        putExtra("isGroup", false)
+                        putExtra("temporally", false)
+                        putExtra("firstUserId", targetUserId)
+                        putExtra("firstUserName", target)
+                        putExtra("firstUserAvatar", getIntent().getStringExtra("avatar"))
+                    }
+
                     startActivity(intent)
                     finish()
                 }
