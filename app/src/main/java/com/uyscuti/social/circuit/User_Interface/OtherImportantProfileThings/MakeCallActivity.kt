@@ -40,8 +40,10 @@ import java.util.Date
 import javax.inject.Inject
 import kotlin.random.Random
 
+
 @AndroidEntryPoint
 class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
+
     private lateinit var binding: ActivityMakeCallBinding
     private lateinit var userListView: RecyclerView
     private lateinit var userListAdapter: CallUsersListAdapter
