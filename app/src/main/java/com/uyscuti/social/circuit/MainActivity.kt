@@ -557,7 +557,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     private var isOnRecordDurationOnPause = false
 
 
-// MEDIA PICKERS & LAUNCHERS
+    // MEDIA PICKERS & LAUNCHERS
 
     private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>

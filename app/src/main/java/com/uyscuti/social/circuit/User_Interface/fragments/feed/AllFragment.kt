@@ -124,17 +124,16 @@ import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 
+
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
-
-
-
 private const val TAG = "AllFragment"
 private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
 private val PRELOAD_THRESHOLD = 10
 private const val INITIAL_PAGES_TO_LOAD = 10
 private const val BATCH_SIZE = 3
+
 
 @AndroidEntryPoint
 class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterface,
@@ -185,17 +184,20 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     private var feedTextViewFragment: FeedTextViewFragment? = null
     private var feedImageViewFragment: FeedImageViewFragment? = null
     private var feedVideoViewFragment: FeedVideoViewFragment? = null
+
     private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
     private var feedDocsViewFragment: FeedDocumentViewFragment? = null
     private var feedAudioViewFragment: FeedAudioViewFragment? = null
     private var fragmentOriginalPostWithRepostInside: Fragment_Original_Post_With_Repost_Inside? = null
     private var feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
     private var feedRepostDocFragment: FeedRepostDocFragment? = null
+
     private var feedRepostTextFragment: FeedRepostTextFragment? = null
     private var feedRepostVideoViewFragment: FeedRepostVideoViewFragment? = null
     private var feedRepostAudioViewFragment: FeedRepostAudioViewFragment? = null
     private var feedRepostImageFragment: FeedRepostImageFragment? = null
     private val feedShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
+
     private var currentAdapterPosition = -1
     private lateinit var feedUploadRepository: FeedUploadRepository
     private var positionFromShorts: SetAllFragmentScrollPosition? = null
