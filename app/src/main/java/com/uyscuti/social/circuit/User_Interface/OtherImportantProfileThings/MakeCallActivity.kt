@@ -50,6 +50,7 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
     private lateinit var originalUserList: List<User>
 
     private lateinit var usersList: List<UserEntity>
+    private lateinit var dialogsList: List<DialogEntity> // Store original dialogs
 
     private val usersViewModel: UsersViewModel by viewModels()
     private val dialogViewModel: DialogViewModel by viewModels()
@@ -64,7 +65,6 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
     lateinit var localStorage: LocalStorage
 
     private lateinit var callViewModel: CallViewModel
-
 
     private lateinit var username: String
 
@@ -99,25 +99,21 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         }
 
         dialogViewModel.allDialogs.observe(this) { chats ->
+            // Store the original dialogs list
+            dialogsList = chats
             usersList = chats.map { it.toUser() }
             runOnUiThread {
-//                Log.d("UsersList", "$usersList")
+                Log.d("UsersList", "Loaded ${usersList.size} users from dialogs")
                 initUserList()
             }
         }
 
-
-
         supportActionBar?.title = "Call"
-
     }
-
-
 
     private fun fetchUsers() {
         GlobalScope.launch {
             val response = try {
-
                 retrofitInterface.apiService.getUsers()
             } catch (e: HttpException) {
                 Log.d("RetrofitActivity", "Http Exception ${e.message}")
@@ -128,7 +124,6 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                         Toast.LENGTH_SHORT
                     ).show()
                 }
-
                 return@launch
             } catch (e: IOException) {
                 Log.d("RetrofitActivity", "IOException ${e.message}")
@@ -147,9 +142,7 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
             if (response.isSuccessful) {
                 val responseBody = response.body()
 
-
                 if (responseBody?.data != null) {
-
                     val allUsers = mutableListOf<UserEntity>()
 
                     for (user in responseBody.data) {
@@ -160,21 +153,16 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                             online = false,
                             lastSeen = Date()
                         )
-
                         allUsers.add(userEntity)
-
                     }
+
                     allUsers.forEach {
                         insertUser(it)
-
                     }
-
-
                 } else {
                     Log.d("RetrofitActivity", "Response body or data is null")
                 }
             }
-
         }
     }
 
@@ -197,7 +185,6 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
     private fun initUserList() {
         userListView = binding.userList
         userListAdapter = CallUsersListAdapter(this) { user, video ->
-
             if (video) {
                 startVideoCall(user)
             } else {
@@ -211,7 +198,6 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         originalUserList = usersList.map { it.toUser() }.sortedBy { it.name }
 
         val converted = usersList.map { it.toUser() }
-
         val sorted = converted.sortedBy { it.name }
 
         userListAdapter.setUserList(originalUserList)
@@ -220,10 +206,8 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
 
     private fun showToast(video: Boolean, friend: String) {
         val type = if (video) "Making Video Call to $friend" else "Making Audio Call to $friend"
-
         Toast.makeText(this, type, Toast.LENGTH_SHORT).show()
     }
-
 
     private fun UserEntity.toUser(): User {
         return User(
@@ -250,9 +234,6 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         return true
     }
 
-
-
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.menu_search -> {
@@ -260,7 +241,6 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                 searchView.isIconified = false // Expand the SearchView when the icon is clicked
                 true
             }
-
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -279,8 +259,19 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         return true
     }
 
-
     private fun startVoiceCall(user: User) {
+        // Find the corresponding dialog for this user
+        val dialog = dialogsList.find { it.dialogName == user.name }
+
+        // Debug logging
+        Log.d("MakeCallActivity", "Starting voice call to: ${user.name}")
+        Log.d("MakeCallActivity", "User ID: ${user.id}")
+        Log.d("MakeCallActivity", "Dialog found: ${dialog != null}")
+        if (dialog != null) {
+            Log.d("MakeCallActivity", "Dialog ID (chatId): ${dialog.id}")
+            Log.d("MakeCallActivity", "Dialog users: ${dialog.users}")
+        }
+
         mainRepository.sendConnectionRequest(
             DataModel(
                 DataModelType.StartVoiceCall, username, user.name, null
@@ -293,9 +284,22 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                     putExtra("isCaller", true)
                     putExtra("avatar", user.avatar)
 
+                    // ✅ Add chatId and userId
+                    if (dialog != null) {
+                        putExtra("chatId", dialog.id)
+                        // Get the other user's ID from the dialog
+                        val otherUserId = dialog.users.firstOrNull()?.id ?: user.id
+                        putExtra("userId", otherUserId)
+                        Log.d("MakeCallActivity", "Passing chatId: ${dialog.id}, userId: $otherUserId")
+                    } else {
+                        Log.w("MakeCallActivity", "No dialog found for user: ${user.name}, using user.id as fallback")
+                        putExtra("chatId", user.id) // Fallback: use user.id as chatId
+                        putExtra("userId", user.id)
+                    }
                 })
             }
         }
+
         val newCallLog = CallLogEntity(
             id = Random.Default.nextLong(),
             callerName = user.name,
@@ -312,6 +316,18 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
     }
 
     private fun startVideoCall(user: User) {
+        // Find the corresponding dialog for this user
+        val dialog = dialogsList.find { it.dialogName == user.name }
+
+        // Debug logging
+        Log.d("MakeCallActivity", "Starting video call to: ${user.name}")
+        Log.d("MakeCallActivity", "User ID: ${user.id}")
+        Log.d("MakeCallActivity", "Dialog found: ${dialog != null}")
+        if (dialog != null) {
+            Log.d("MakeCallActivity", "Dialog ID (chatId): ${dialog.id}")
+            Log.d("MakeCallActivity", "Dialog users: ${dialog.users}")
+        }
+
         mainRepository.sendConnectionRequest(
             DataModel(
                 DataModelType.StartVideoCall, username, user.name, null
@@ -324,9 +340,22 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                     putExtra("isCaller", true)
                     putExtra("avatar", user.avatar)
 
+                    // Add chatId and userId
+                    if (dialog != null) {
+                        putExtra("chatId", dialog.id)
+                        // Get the other user's ID from the dialog
+                        val otherUserId = dialog.users.firstOrNull()?.id ?: user.id
+                        putExtra("userId", otherUserId)
+                        Log.d("MakeCallActivity", "Passing chatId: ${dialog.id}, userId: $otherUserId")
+                    } else {
+                        Log.w("MakeCallActivity", "No dialog found for user: ${user.name}, using user.id as fallback")
+                        putExtra("chatId", user.id) // Fallback: use user.id as chatId
+                        putExtra("userId", user.id)
+                    }
                 })
             }
         }
+
         val newCallLog = CallLogEntity(
             id = Random.Default.nextLong(),
             callerName = user.name,
