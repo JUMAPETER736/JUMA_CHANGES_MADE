@@ -481,29 +481,42 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
                     callAgain()
                 }
 
-                // Replace the unMessage.setOnClickListener in startCallingTimer() with this:
-
                 views.unMessage.setOnClickListener {
                     serviceRepository.sendEndCall()
 
-                    // Option 1: Using ComponentName (always works)
+                    // Make sure chatId is not null or empty
+                    val safeChatId = chatId ?: ""
+                    val safeTarget = target ?: ""
+                    val safeTargetUserId = targetUserId ?: ""
+                    val safeAvatar = intent.getStringExtra("avatar") ?: ""
+
+                    if (safeChatId.isEmpty()) {
+                        Log.e("CallActivity", "Cannot open MessagesActivity: chatId is empty")
+                        Toast.makeText(this@CallActivity, "Unable to open chat", Toast.LENGTH_SHORT).show()
+                        finish()
+                        return@setOnClickListener
+                    }
+
                     val messageIntent = Intent()
                     messageIntent.setClassName(
                         this@CallActivity,
                         "com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.MessagesActivity"
                     )
-                    messageIntent.putExtra("chatId", chatId ?: "")
-                    messageIntent.putExtra("dialogName", target ?: "")
-                    messageIntent.putExtra("dialogPhoto", getIntent().getStringExtra("avatar") ?: "")
+                    messageIntent.putExtra("chatId", safeChatId)
+                    messageIntent.putExtra("dialogName", safeTarget)
+                    messageIntent.putExtra("dialogPhoto", safeAvatar)
                     messageIntent.putExtra("isGroup", false)
                     messageIntent.putExtra("temporally", false)
-                    messageIntent.putExtra("firstUserId", targetUserId ?: "")
-                    messageIntent.putExtra("firstUserName", target ?: "")
-                    messageIntent.putExtra("firstUserAvatar", getIntent().getStringExtra("avatar") ?: "")
+                    messageIntent.putExtra("firstUserId", safeTargetUserId)
+                    messageIntent.putExtra("firstUserName", safeTarget)
+                    messageIntent.putExtra("firstUserAvatar", safeAvatar)
+
+                    Log.d("CallActivity", "Opening MessagesActivity with chatId: $safeChatId")
 
                     startActivity(messageIntent)
                     finish()
                 }
+
             }
         }
     }
