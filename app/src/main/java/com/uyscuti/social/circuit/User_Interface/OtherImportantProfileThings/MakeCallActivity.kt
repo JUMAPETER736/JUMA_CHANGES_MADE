@@ -259,17 +259,33 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         return true
     }
 
-    private fun startVoiceCall(user: User) {
-        // Find the corresponding dialog for this user
-        val dialog = dialogsList.find { it.dialogName == user.name }
+    // In MakeCallActivity.kt - Improved startVoiceCall and startVideoCall methods
 
-        // Debug logging
-        Log.d("MakeCallActivity", "Starting voice call to: ${user.name}")
+    private fun startVoiceCall(user: User) {
+        // FIX 1: Try multiple ways to find the dialog
+        val dialog = dialogsList.find { it.dialogName == user.name }
+            ?: dialogsList.find { it.id == user.id }
+            ?: dialogsList.find { it.users.any { u -> u.id == user.id } }
+
+        // Enhanced debug logging
+        Log.d("MakeCallActivity", "=== Starting Voice Call ===")
+        Log.d("MakeCallActivity", "User name: ${user.name}")
         Log.d("MakeCallActivity", "User ID: ${user.id}")
+        Log.d("MakeCallActivity", "Total dialogs: ${dialogsList.size}")
         Log.d("MakeCallActivity", "Dialog found: ${dialog != null}")
+
         if (dialog != null) {
-            Log.d("MakeCallActivity", "Dialog ID (chatId): ${dialog.id}")
-            Log.d("MakeCallActivity", "Dialog users: ${dialog.users}")
+            Log.d("MakeCallActivity", "Dialog ID: ${dialog.id}")
+            Log.d("MakeCallActivity", "Dialog name: ${dialog.dialogName}")
+            Log.d("MakeCallActivity", "Dialog users count: ${dialog.users.size}")
+            dialog.users.forEach { u ->
+                Log.d("MakeCallActivity", "Dialog user: ${u.name} (${u.id})")
+            }
+        } else {
+            Log.w("MakeCallActivity", "No dialog found! Available dialogs:")
+            dialogsList.forEach { d ->
+                Log.w("MakeCallActivity", "  - ${d.dialogName} (${d.id})")
+            }
         }
 
         mainRepository.sendConnectionRequest(
@@ -284,19 +300,28 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                     putExtra("isCaller", true)
                     putExtra("avatar", user.avatar)
 
-                    // ✅ Add chatId and userId
+                    // FIX 2: Always pass chatId and userId, with better fallback
+                    val finalChatId: String
+                    val finalUserId: String
+
                     if (dialog != null) {
-                        putExtra("chatId", dialog.id)
-                        // Get the other user's ID from the dialog
-                        val otherUserId = dialog.users.firstOrNull()?.id ?: user.id
-                        putExtra("userId", otherUserId)
-                        Log.d("MakeCallActivity", "Passing chatId: ${dialog.id}, userId: $otherUserId")
+                        finalChatId = dialog.id
+                        finalUserId = dialog.users.firstOrNull()?.id ?: user.id
+                        Log.d("MakeCallActivity", "✓ Using dialog data - chatId: $finalChatId, userId: $finalUserId")
                     } else {
-                        Log.w("MakeCallActivity", "No dialog found for user: ${user.name}, using user.id as fallback")
-                        putExtra("chatId", user.id) // Fallback: use user.id as chatId
-                        putExtra("userId", user.id)
+                        // Fallback: use user.id for both
+                        finalChatId = user.id
+                        finalUserId = user.id
+                        Log.w("MakeCallActivity", "⚠ Using fallback - chatId: $finalChatId, userId: $finalUserId")
                     }
+
+                    putExtra("chatId", finalChatId)
+                    putExtra("userId", finalUserId)
+
+                    Log.d("MakeCallActivity", "Final intent extras - chatId: $finalChatId, userId: $finalUserId, target: ${user.name}")
                 })
+            } else {
+                Log.e("MakeCallActivity", "Failed to send connection request")
             }
         }
 
@@ -316,16 +341,26 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
     }
 
     private fun startVideoCall(user: User) {
-        // Find the corresponding dialog for this user
+        // Same fixes for video call
         val dialog = dialogsList.find { it.dialogName == user.name }
+            ?: dialogsList.find { it.id == user.id }
+            ?: dialogsList.find { it.users.any { u -> u.id == user.id } }
 
-        // Debug logging
-        Log.d("MakeCallActivity", "Starting video call to: ${user.name}")
+        Log.d("MakeCallActivity", "=== Starting Video Call ===")
+        Log.d("MakeCallActivity", "User name: ${user.name}")
         Log.d("MakeCallActivity", "User ID: ${user.id}")
+        Log.d("MakeCallActivity", "Total dialogs: ${dialogsList.size}")
         Log.d("MakeCallActivity", "Dialog found: ${dialog != null}")
+
         if (dialog != null) {
-            Log.d("MakeCallActivity", "Dialog ID (chatId): ${dialog.id}")
-            Log.d("MakeCallActivity", "Dialog users: ${dialog.users}")
+            Log.d("MakeCallActivity", "Dialog ID: ${dialog.id}")
+            Log.d("MakeCallActivity", "Dialog name: ${dialog.dialogName}")
+            Log.d("MakeCallActivity", "Dialog users: ${dialog.users.map { it.name }}")
+        } else {
+            Log.w("MakeCallActivity", "No dialog found! Available dialogs:")
+            dialogsList.forEach { d ->
+                Log.w("MakeCallActivity", "  - ${d.dialogName} (${d.id})")
+            }
         }
 
         mainRepository.sendConnectionRequest(
@@ -340,18 +375,23 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                     putExtra("isCaller", true)
                     putExtra("avatar", user.avatar)
 
-                    // Add chatId and userId
+                    val finalChatId: String
+                    val finalUserId: String
+
                     if (dialog != null) {
-                        putExtra("chatId", dialog.id)
-                        // Get the other user's ID from the dialog
-                        val otherUserId = dialog.users.firstOrNull()?.id ?: user.id
-                        putExtra("userId", otherUserId)
-                        Log.d("MakeCallActivity", "Passing chatId: ${dialog.id}, userId: $otherUserId")
+                        finalChatId = dialog.id
+                        finalUserId = dialog.users.firstOrNull()?.id ?: user.id
+                        Log.d("MakeCallActivity", "✓ Using dialog data - chatId: $finalChatId, userId: $finalUserId")
                     } else {
-                        Log.w("MakeCallActivity", "No dialog found for user: ${user.name}, using user.id as fallback")
-                        putExtra("chatId", user.id) // Fallback: use user.id as chatId
-                        putExtra("userId", user.id)
+                        finalChatId = user.id
+                        finalUserId = user.id
+                        Log.w("MakeCallActivity", "⚠ Using fallback - chatId: $finalChatId, userId: $finalUserId")
                     }
+
+                    putExtra("chatId", finalChatId)
+                    putExtra("userId", finalUserId)
+
+                    Log.d("MakeCallActivity", "Final intent extras - chatId: $finalChatId, userId: $finalUserId, target: ${user.name}")
                 })
             }
         }
@@ -370,6 +410,8 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         )
         insertCallLog(newCallLog)
     }
+
+
 
     private fun insertCallLog(callLog: CallLogEntity) {
         callViewModel.insertCallLog(callLog)
