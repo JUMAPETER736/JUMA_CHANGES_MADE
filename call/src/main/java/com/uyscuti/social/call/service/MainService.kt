@@ -245,7 +245,7 @@ class MainService : Service(), MainRepository.Listener {
                 this, "channel1"
             ).setSmallIcon(R.drawable.ic_screen_share)
                 .setContentTitle("Screen Sharing Started")
-                .addAction(R.drawable.ic_end_call, "Exit", pendingIntent)
+                .addAction(R.drawable.ic_end_red_call, "Exit", pendingIntent)
 
             startForeground(1, notification.build())
         }

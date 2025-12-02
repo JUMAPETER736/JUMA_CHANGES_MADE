@@ -80,7 +80,7 @@
                 android:layout_width="60dp"
                 android:layout_height="60dp"
                 android:background="@android:color/transparent"
-                android:src="@drawable/ic_end_call" />
+                android:src="@drawable/ic_end_red_call" />
 
             <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/toggleMicrophoneButton"
@@ -316,7 +316,7 @@
                             android:layout_width="70dp"
                             android:layout_height="70dp"
                             android:padding="15dp"
-                            android:src="@drawable/ic_end_call" />
+                            android:src="@drawable/ic_end_white_call" />
 
                     </androidx.cardview.widget.CardView>
 
