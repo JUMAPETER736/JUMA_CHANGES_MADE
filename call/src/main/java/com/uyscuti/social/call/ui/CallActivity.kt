@@ -34,6 +34,7 @@ import com.uyscuti.social.call.utils.Anima
 import com.uyscuti.social.call.utils.RTCAudioManager
 import com.uyscuti.social.call.utils.convertToHumanTime
 import com.uyscuti.social.call.utils.getCameraAndMicPermission
+import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.MessagesActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +53,8 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
     private var target: String? = null
     private var isVideoCall: Boolean = true
     private var isCaller: Boolean = true
+    private var chatId: String? = null
+    private var targetUserId: String? = null
 
     private var isMicrophoneMuted = false
     private var isCameraMuted = false
@@ -144,6 +147,11 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
             finish()
         }
 
+        chatId = intent.getStringExtra("chatId")
+        targetUserId = intent.getStringExtra("userId")
+
+        isVideoCall = intent.getBooleanExtra("isVideoCall", true)
+        isCaller = intent.getBooleanExtra("isCaller", true)
 
         Log.d("CallingActivity", "call activity target: $target")
 
@@ -471,9 +479,24 @@ class CallActivity : AppCompatActivity() , MainService.EndCallListener,
                 views.unCallAgain.setOnClickListener {
                     callAgain()
                 }
+
                 views.unMessage.setOnClickListener {
                     serviceRepository.sendEndCall()
+
+                    // Open chat with the target user
+                    val intent = Intent(this@CallActivity, MessagesActivity::class.java)
+                    intent.putExtra("username", target)
+                    intent.putExtra("avatar", getIntent().getStringExtra("avatar"))
+                    intent.putExtra("chatId", chatId)
+                    intent.putExtra("userId", targetUserId)
+                    intent.putExtra("target", target)
+                    intent.putExtra("isVideoCall", isVideoCall)
+                    intent.putExtra("isCaller", isCaller)
+                    startActivity(intent)
+                    finish()
                 }
+
+
             }
         }
     }
