@@ -158,11 +158,11 @@
                             android:layout_height="32dp"
                             android:layout_gravity="top|end"
                             android:layout_margin="8dp"
-                            android:src="@drawable/ic_delete_"
+                            android:src="@drawable/ic_delete_24"
                             android:backgroundTint="#80000000"
                             android:clickable="true"
                             android:focusable="true"
-                            app:tint="@color/black" />
+                            app:tint="@color/error_color" />
 
                         <ImageView
                             android:id="@+id/playButton"

@@ -79,8 +79,8 @@
         android:layout_height="48dp"
         android:layout_gravity="top|end"
         android:layout_margin="16dp"
-        android:src="@drawable/ic_delete_"
-        app:tint="@color/black" />
+        android:src="@drawable/ic_delete_24"
+        app:tint="@color/error_color" />
 
     <!-- Fullscreen play/pause button -->
     <ImageView
