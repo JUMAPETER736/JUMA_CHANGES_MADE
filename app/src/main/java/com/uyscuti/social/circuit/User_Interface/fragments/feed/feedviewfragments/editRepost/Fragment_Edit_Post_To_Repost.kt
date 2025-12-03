@@ -967,39 +967,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         }
     }
 
-    @OptIn(UnstableApi::class)
-    override fun onDestroyView() {
-        try {
-            Log.d(TAG, "onDestroyView: Starting cleanup")
-
-            // Remove ViewPager adapter first
-            if (_binding != null) {
-                binding.viewPagers?.apply {
-                    isUserInputEnabled = false
-                    adapter = null
-                }
-            }
-
-            cleanupMediaResources()
-
-            // Ensure MainActivity UI is restored even if navigation didn't complete
-            if (!isNavigatingBack) {
-                (activity as? MainActivity)?.let {
-                    if (!it.isFinishing && !it.isDestroyed) {
-                        it.showAppBar()
-                        it.showBottomNavigation()
-                    }
-                }
-            }
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in onDestroyView", e)
-        } finally {
-            super.onDestroyView()
-            _binding = null
-        }
-    }
-
     private fun setupBackNavigation() {
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -1221,23 +1188,17 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
                             Log.d(TAG, "Reposting successful")
 
-                            // Show success message on main thread
+                            // Show success message and navigate back immediately
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(context, "Reposting successful!", Toast.LENGTH_SHORT).show()
-                            }
 
-                            // Increase delay to 1000ms (1 second)
-                            delay(1000)
-
-                            // Navigate back
-                            withContext(Dispatchers.Main) {
+                                // Navigate back immediately - no delay needed
                                 if (isAdded && !isNavigatingBack) {
                                     safeNavigateBack()
                                 }
                             }
 
-                        }
-                        else {
+                        } else {
                             Log.d(TAG, "Repost failed: Response body is null")
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(context, "Failed to repost", Toast.LENGTH_SHORT).show()
@@ -1312,7 +1273,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         }
     }
 
-
     private fun safeNavigateBack() {
         if (isNavigatingBack) {
             Log.d(TAG, "Navigation already in progress")
@@ -1324,40 +1284,30 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         try {
             Log.d(TAG, "Starting safe navigation back")
 
-            // Clean up resources first
-            cleanupMediaResources()
-            stopViewPagerSafely()
-            restoreSystemBars()
+            // Immediately restore MainActivity UI
+            (activity as? MainActivity)?.let { mainActivity ->
+                mainActivity.showAppBar()
+                mainActivity.showBottomNavigation()
+                Log.d(TAG, "MainActivity UI restored")
+            }
 
-            // Use lifecycleScope with much longer delay
-            lifecycleScope.launch {
-                // Wait longer for ViewPager2 to finish ALL transactions
-                delay(1000)
-
-                // Ensure we're on main thread and fragment is still valid
-                withContext(Dispatchers.Main) {
-                    if (isAdded && activity != null) {
-                        try {
-                            val currentActivity = requireActivity()
-                            if (!currentActivity.isFinishing) {
-                                // Use commitAllowingStateLoss instead of popBackStack
-                                parentFragmentManager.beginTransaction()
-                                    .remove(this@Fragment_Edit_Post_To_Repost)
-                                    .setReorderingAllowed(true)
-                                    .commitAllowingStateLoss()
-
-                                Log.d(TAG, "Navigation completed successfully")
-                            }
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error during navigation, trying alternative", e)
-                            // Fallback: just finish the activity flow
-                            try {
-                                activity?.onBackPressedDispatcher?.onBackPressed()
-                            } catch (e2: Exception) {
-                                Log.e(TAG, "Fallback navigation also failed", e2)
-                            }
-                        }
+            // Use Handler.post to queue navigation after current operations
+            Handler(Looper.getMainLooper()).post {
+                try {
+                    if (isAdded && activity != null && !requireActivity().isFinishing) {
+                        // Simple popBackStack - let FragmentManager handle everything
+                        parentFragmentManager.popBackStackImmediate()
+                        Log.d(TAG, "Navigation completed successfully")
                     }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error during popBackStack, trying alternative", e)
+                    try {
+                        // Alternative: Use activity back press
+                        activity?.onBackPressedDispatcher?.onBackPressed()
+                    } catch (e2: Exception) {
+                        Log.e(TAG, "All navigation attempts failed", e2)
+                    }
+                } finally {
                     isNavigatingBack = false
                 }
             }
@@ -1365,6 +1315,66 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         } catch (e: Exception) {
             Log.e(TAG, "Error in safeNavigateBack", e)
             isNavigatingBack = false
+        }
+    }
+    
+    @OptIn(UnstableApi::class)
+    override fun onDestroyView() {
+        try {
+            Log.d(TAG, "onDestroyView: Starting cleanup")
+
+            // Stop ViewPager2 FIRST before anything else
+            if (_binding != null) {
+                binding.viewPagers?.apply {
+                    // Disable immediately
+                    isUserInputEnabled = false
+                    // Post adapter removal to avoid transaction conflicts
+                    post {
+                        adapter = null
+                    }
+                }
+            }
+
+            // Quick cleanup without blocking
+            cleanupMediaResourcesQuick()
+
+            // Ensure MainActivity UI is visible
+            if (!isNavigatingBack) {
+                (activity as? MainActivity)?.let {
+                    if (!it.isFinishing && !it.isDestroyed) {
+                        it.showAppBar()
+                        it.showBottomNavigation()
+                    }
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in onDestroyView", e)
+        } finally {
+            super.onDestroyView()
+            _binding = null
+        }
+    }
+
+    private fun cleanupMediaResourcesQuick() {
+        try {
+            // Media player cleanup
+            mediaPlayer?.apply {
+                if (isPlaying) stop()
+                release()
+            }
+            mediaPlayer = null
+
+            // WebView quick cleanup
+            documentWebView?.loadUrl("about:blank")
+
+            // Hide keyboard
+            val imm = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.hideSoftInputFromWindow(view?.windowToken, 0)
+
+            Log.d(TAG, "Quick cleanup completed")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in quick cleanup", e)
         }
     }
 
