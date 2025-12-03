@@ -1006,6 +1006,7 @@ class FeedAdapter(
         }
 
         private fun setupBookmarkButton(data: Post) {
+
             Log.d(TAG, "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
             updateBookmarkButtonUI(data.isBookmarked ?: false)
             updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
