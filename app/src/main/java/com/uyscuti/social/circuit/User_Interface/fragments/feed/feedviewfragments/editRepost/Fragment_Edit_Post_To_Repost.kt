@@ -178,11 +178,8 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
     @Inject
     lateinit var retrofitInterface: RetrofitInstance
-
     private lateinit var retrofitInstance: RetrofitInstance
-
     private lateinit var apiService: IFlashapi
-
     private var _binding: FragmentEditPostToRepostBinding? = null
     private val binding get() = _binding!!
 
@@ -194,6 +191,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     private lateinit var cancelButton: ImageView
     private lateinit var repostButton: TextView
     private lateinit var userReposterProfile: ImageView
+
     private lateinit var hashtags: TextView
     private lateinit var shortVideoThumbNail: FrameLayout
     private lateinit var shortThumbNail: ImageView
@@ -202,6 +200,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     private lateinit var circleIndicator: CircleIndicator3
     private lateinit var originalPostProfileImage: ImageView
     private lateinit var originalPostUsername: TextView
+
     private lateinit var originalUserHandle: TextView
     private lateinit var repostedTimeIndicator: TextView
     private lateinit var originalFeedTextContent: TextView
@@ -226,6 +225,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     private var totalMixedLikesCounts = 0
     private var totalMixedBookMarkCounts = 0
     private var totalMixedShareCounts = 0
+
     private var currentVideoPosition = 0
     private lateinit var videoView: VideoView
     private var documentWebView: WebView? = null
