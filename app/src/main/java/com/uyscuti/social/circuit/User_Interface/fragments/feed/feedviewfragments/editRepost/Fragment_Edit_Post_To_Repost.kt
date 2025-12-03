@@ -828,195 +828,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         }
     }
 
-    @OptIn(UnstableApi::class)
-    private fun performNavigation() {
-        try {
-            if (isAdded && !isDetached && activity != null) {
-                val mainActivity = activity as? MainActivity
 
-                // Use popBackStack instead of manual fragment removal
-                if (parentFragmentManager.backStackEntryCount > 0) {
-                    parentFragmentManager.popBackStack()
-                } else {
-                    Log.d(TAG, "No back stack entries, removing fragment manually")
-                    parentFragmentManager.beginTransaction()
-                        .remove(this)
-                        .setReorderingAllowed(true)
-                        .commitAllowingStateLoss()
-                }
-
-                // Restore MainActivity UI with proper lifecycle awareness
-                view?.postDelayed({
-                    try {
-                        mainActivity?.let {
-                            if (!it.isFinishing && !it.isDestroyed) {
-                                it.showAppBar()
-                                it.showBottomNavigation()
-
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error restoring MainActivity UI", e)
-                    }
-                }, 200) // Longer delay to ensure fragment transaction completes
-
-            } else {
-                Log.w(TAG, "Fragment not attached, cannot navigate back")
-                fallbackNavigation()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error performing navigation", e)
-            fallbackNavigation()
-        } finally {
-            // Reset navigation flag after longer delay
-            view?.postDelayed({
-                isNavigatingBack = false
-                if (::cancelButton.isInitialized && isAdded) {
-                    cancelButton.isEnabled = true
-                }
-            }, 300)
-        }
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun fallbackNavigation() {
-        try {
-            Log.d(TAG, "Using fallback navigation")
-
-            // Ensure UI is restored
-            (activity as? MainActivity)?.let {
-                if (!it.isFinishing && !it.isDestroyed) {
-                    it.showAppBar()
-                    it.showBottomNavigation()
-
-                }
-            }
-
-            // Use system back press
-            view?.postDelayed({
-                activity?.onBackPressedDispatcher?.onBackPressed()
-            }, 100)
-        } catch (e: Exception) {
-            Log.e(TAG, "Fallback navigation failed", e)
-        } finally {
-            isNavigatingBack = false
-            if (::cancelButton.isInitialized && isAdded) {
-                cancelButton.isEnabled = true
-            }
-        }
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun restoreSystemBars() {
-        try {
-            if (!isAdded || activity == null) {
-                Log.w(TAG, "Fragment not attached, skipping system bars restoration")
-                return
-            }
-
-            val activity = requireActivity()
-            if (activity.isFinishing || activity.isDestroyed) {
-                Log.w(TAG, "Activity finishing/destroyed, skipping system bars restoration")
-                return
-            }
-
-            val window = activity.window
-            WindowCompat.setDecorFitsSystemWindows(window, true)
-            val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-            windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
-            windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-            // Force apply insets
-            window.decorView.requestApplyInsets()
-
-            Log.d(TAG, "System bars restored")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error restoring system bars", e)
-        }
-    }
-
-    private fun stopViewPagerSafely() {
-        try {
-            Log.d(TAG, "Stopping ViewPager2 safely")
-            if (_binding != null) {
-                binding.viewPagers?.apply {
-                    // Disable user input immediately
-                    isUserInputEnabled = false
-
-                    // Save reference to adapter
-                    val currentAdapter = adapter
-
-                    // Remove adapter IMMEDIATELY (not in post)
-                    adapter = null
-
-                    // If adapter was FragmentStateAdapter, we need to handle it
-                    if (currentAdapter != null) {
-                        Log.d(TAG, "ViewPager2 adapter removed immediately")
-                    }
-                }
-            }
-            Log.d(TAG, "ViewPager2 stopped safely")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error stopping ViewPager", e)
-        }
-    }
-
-    private fun cleanupMediaResources() {
-        try {
-            Log.d(TAG, "Starting media resource cleanup")
-
-            // Video cleanup
-            if (::videoView.isInitialized) {
-                try {
-                    videoView.stopPlayback()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error stopping video", e)
-                }
-            }
-
-            // Media player cleanup
-            mediaPlayer?.let {
-                try {
-                    if (it.isPlaying) it.stop()
-                    it.release()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error releasing media player", e)
-                }
-                mediaPlayer = null
-            }
-
-            // WebView cleanup
-            documentWebView?.apply {
-                try {
-                    stopLoading()
-                    loadUrl("about:blank")
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error cleaning WebView", e)
-                }
-            }
-
-            // Clear input focus
-            if (_binding != null && ::replyInput.isInitialized) {
-                try {
-                    replyInput.clearFocus()
-                    // Hide keyboard
-                    val imm = requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-                    imm?.hideSoftInputFromWindow(replyInput.windowToken, 0)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error clearing input", e)
-                }
-            }
-
-            // Reset video state
-            currentVideoPosition = 0
-            isVideoPlaying = false
-
-            Log.d(TAG, "Media resource cleanup completed")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error during media cleanup", e)
-        }
-    }
 
     override fun onPause() {
         super.onPause()
@@ -1248,6 +1060,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         }
     }
 
+    @OptIn(androidx.media3.common.util.UnstableApi::class)
     private fun safeNavigateBack() {
         if (isNavigatingBack) {
             Log.d(TAG, "Navigation already in progress")
@@ -1387,7 +1200,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
             Log.e(TAG, "Error in quick cleanup", e)
         }
     }
-    
+
 
     private fun hideKeyboard() {
         val imm =
