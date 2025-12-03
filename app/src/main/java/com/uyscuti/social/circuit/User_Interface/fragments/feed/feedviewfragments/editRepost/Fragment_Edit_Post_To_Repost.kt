@@ -829,37 +829,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     }
 
     @OptIn(UnstableApi::class)
-    private fun immediateNavigateBack() {
-        if (isNavigatingBack) {
-            Log.d(TAG, "Navigation already in progress, ignoring")
-            return
-        }
-        isNavigatingBack = true
-
-        try {
-            Log.d(TAG, "Starting immediate navigation back")
-
-            cleanupMediaResources()
-            stopViewPagerSafely()
-            restoreSystemBars()
-
-
-            view?.postDelayed({
-                try {
-                    performNavigation()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error in delayed navigation", e)
-                    fallbackNavigation()
-                }
-            }, 150) // Slightly longer delay for stability
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in immediate navigation", e)
-            fallbackNavigation()
-        }
-    }
-
-    @OptIn(UnstableApi::class)
     private fun performNavigation() {
         try {
             if (isAdded && !isDetached && activity != null) {
@@ -965,18 +934,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         } catch (e: Exception) {
             Log.e(TAG, "Error restoring system bars", e)
         }
-    }
-
-    private fun setupBackNavigation() {
-        val callback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                Log.d(TAG, "Back pressed - immediate navigation")
-                // Disable callback immediately to prevent multiple triggers
-                isEnabled = false
-                immediateNavigateBack()
-            }
-        }
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
     }
 
     private fun stopViewPagerSafely() {
@@ -1273,6 +1230,24 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         }
     }
 
+    override fun onDestroy() {
+        try {
+            // Only do cleanup that doesn't require binding here
+            Log.d(TAG, "onDestroy: Final cleanup")
+
+            // Reset flags
+            isReposting = false
+
+            // Clear any listeners or callbacks that don't need binding
+            onMultipleFilesClickListener = null
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in onDestroy", e)
+        } finally {
+            super.onDestroy()
+        }
+    }
+
     private fun safeNavigateBack() {
         if (isNavigatingBack) {
             Log.d(TAG, "Navigation already in progress")
@@ -1291,60 +1266,78 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                 Log.d(TAG, "MainActivity UI restored")
             }
 
-            // Use Handler.post to queue navigation after current operations
-            Handler(Looper.getMainLooper()).post {
+            // Post with delay to ensure all transactions complete
+            Handler(Looper.getMainLooper()).postDelayed({
                 try {
-                    if (isAdded && activity != null && !requireActivity().isFinishing) {
-                        // Simple popBackStack - let FragmentManager handle everything
-                        parentFragmentManager.popBackStackImmediate()
-                        Log.d(TAG, "Navigation completed successfully")
+                    if (isAdded && activity != null) {
+                        // Use simple popBackStack (non-immediate) - queues the transaction
+                        parentFragmentManager.popBackStack()
+                        Log.d(TAG, "Navigation queued successfully")
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error during popBackStack, trying alternative", e)
+                    Log.e(TAG, "Error during popBackStack, trying onBackPressed", e)
                     try {
-                        // Alternative: Use activity back press
                         activity?.onBackPressedDispatcher?.onBackPressed()
                     } catch (e2: Exception) {
-                        Log.e(TAG, "All navigation attempts failed", e2)
+                        Log.e(TAG, "onBackPressed also failed", e2)
                     }
                 } finally {
-                    isNavigatingBack = false
+                    // Reset flag after longer delay
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        isNavigatingBack = false
+                    }, 500)
                 }
-            }
+            }, 300) // 300ms delay to let ViewPager2 finish
 
         } catch (e: Exception) {
             Log.e(TAG, "Error in safeNavigateBack", e)
             isNavigatingBack = false
         }
     }
-    
+
+    @OptIn(UnstableApi::class)
+    private fun immediateNavigateBack() {
+        // Just call safeNavigateBack - no difference needed
+        safeNavigateBack()
+    }
+
+    private fun setupBackNavigation() {
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                Log.d(TAG, "Back pressed - safe navigation")
+                // Disable callback immediately to prevent multiple triggers
+                isEnabled = false
+                safeNavigateBack()
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
+    }
+
     @OptIn(UnstableApi::class)
     override fun onDestroyView() {
         try {
             Log.d(TAG, "onDestroyView: Starting cleanup")
 
-            // Stop ViewPager2 FIRST before anything else
+            // Disable ViewPager2 first
             if (_binding != null) {
-                binding.viewPagers?.apply {
-                    // Disable immediately
-                    isUserInputEnabled = false
-                    // Post adapter removal to avoid transaction conflicts
-                    post {
-                        adapter = null
-                    }
-                }
+                binding.viewPagers?.isUserInputEnabled = false
+
+                // Post adapter removal to next frame to avoid conflicts
+                binding.viewPagers?.postDelayed({
+                    binding.viewPagers?.adapter = null
+                    Log.d(TAG, "ViewPager2 adapter removed")
+                }, 50)
             }
 
-            // Quick cleanup without blocking
+            // Quick cleanup
             cleanupMediaResourcesQuick()
 
             // Ensure MainActivity UI is visible
-            if (!isNavigatingBack) {
-                (activity as? MainActivity)?.let {
-                    if (!it.isFinishing && !it.isDestroyed) {
-                        it.showAppBar()
-                        it.showBottomNavigation()
-                    }
+            (activity as? MainActivity)?.let {
+                if (!it.isFinishing && !it.isDestroyed) {
+                    it.showAppBar()
+                    it.showBottomNavigation()
+                    Log.d(TAG, "MainActivity UI restored in onDestroyView")
                 }
             }
 
@@ -1360,41 +1353,41 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         try {
             // Media player cleanup
             mediaPlayer?.apply {
-                if (isPlaying) stop()
+                try {
+                    if (isPlaying) stop()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error stopping media player", e)
+                }
                 release()
             }
             mediaPlayer = null
+
+            // Video cleanup
+            if (::videoView.isInitialized) {
+                try {
+                    videoView.stopPlayback()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error stopping video", e)
+                }
+            }
 
             // WebView quick cleanup
             documentWebView?.loadUrl("about:blank")
 
             // Hide keyboard
-            val imm = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-            imm?.hideSoftInputFromWindow(view?.windowToken, 0)
+            try {
+                val imm = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.hideSoftInputFromWindow(view?.windowToken, 0)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error hiding keyboard", e)
+            }
 
             Log.d(TAG, "Quick cleanup completed")
         } catch (e: Exception) {
             Log.e(TAG, "Error in quick cleanup", e)
         }
     }
-
-    override fun onDestroy() {
-        try {
-            // Only do cleanup that doesn't require binding here
-            Log.d(TAG, "onDestroy: Final cleanup")
-
-            // Reset flags
-            isReposting = false
-
-            // Clear any listeners or callbacks that don't need binding
-            onMultipleFilesClickListener = null
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in onDestroy", e)
-        } finally {
-            super.onDestroy()
-        }
-    }
+    
 
     private fun hideKeyboard() {
         val imm =
