@@ -379,7 +379,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     override fun feedRepostPostClicked(position: Int, data: Post) {}
 
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {}
-    
+
     override fun onImageClick() {}
 
 }
