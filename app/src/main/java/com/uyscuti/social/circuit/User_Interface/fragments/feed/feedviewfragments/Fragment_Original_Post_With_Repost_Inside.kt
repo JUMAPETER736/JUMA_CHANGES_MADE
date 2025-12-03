@@ -3,6 +3,8 @@ package com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
@@ -44,6 +46,7 @@ import java.util.*
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.PopupMenu
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -516,17 +519,29 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             }, 1000)
         }
 
-        headerMenuButton.setOnClickListener { handleMenuButtonClick() }
+        headerMenuButton.setOnClickListener { view ->
+            showOptionsMenu(view)
+        }
 
-        followButton.setOnClickListener { handleFollowButtonClick() }
+        followButton.setOnClickListener {
+            handleFollowButtonClick()
+        }
 
-        repostContainer.setOnClickListener { handleMainPostClick() }
+        repostContainer.setOnClickListener {
+            handleMainPostClick()
+        }
 
-        mixedFilesCardViews.setOnClickListener { handleRepostMediaClick() }
+        mixedFilesCardViews.setOnClickListener {
+            handleRepostMediaClick()
+        }
 
-        originalFeedImages.setOnClickListener { handleRepostFileClick() }
+        originalFeedImages.setOnClickListener {
+            handleRepostFileClick()
+        }
 
-        originalFeedImage.setOnClickListener { handleOriginalFileClick() }
+        originalFeedImage.setOnClickListener {
+            handleOriginalFileClick()
+        }
 
         // FIXED: Reposter Profile Image Click
         userReposterProfileImage.setOnClickListener { view ->
@@ -823,9 +838,96 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     }
 
 
+    private fun showOptionsMenu(anchor: View) {
+        val context = requireContext()
+        val popup = PopupMenu(context, anchor, Gravity.END)
+
+        // Apply custom style and force show icons (optional)
+        try {
+            val fieldPopup = PopupMenu::class.java.getDeclaredField("mPopup")
+            fieldPopup.isAccessible = true
+            val menuPopupWindow = fieldPopup.get(popup)
+            // Note: MenuPopupWindow.setForceShowIcon() might not be available in all versions
+            // You may need to handle this differently based on your target SDK
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // Inflate the menu
+        popup.menuInflater.inflate(R.menu.post_options_menu, popup.menu)
+
+        // Set menu item click listener
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.menu_report -> {
+                    handleReportPost()
+                    true
+                }
+                R.id.menu_block_user -> {
+                    handleBlockUser()
+                    true
+                }
+                R.id.menu_mute_user -> {
+                    handleMuteUser()
+                    true
+                }
+                R.id.menu_copy_link -> {
+                    handleCopyLink()
+                    true
+                }
+                R.id.menu_save_post -> {
+                    handleSavePost()
+                    true
+                }
+                R.id.menu_not_interested -> {
+                    handleNotInterested()
+                    true
+                }
+                else -> false
+            }
+        }
+
+        // Show the popup menu
+        popup.show()
+    }
+
+    private fun handleReportPost() {
+        // Show report dialog or navigate to report screen
+        Toast.makeText(requireContext(), "Report post", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleBlockUser() {
+        // Show confirmation dialog and block user
+        Toast.makeText(requireContext(), "User blocked", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleMuteUser() {
+        // Show confirmation dialog and mute user
+        Toast.makeText(requireContext(), "User muted", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleCopyLink() {
+        // Copy post link to clipboard
+        val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("Post Link", "https://example.com/post/123")
+        clipboard.setPrimaryClip(clip)
+        Toast.makeText(requireContext(), "Link copied to clipboard", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleSavePost() {
+        // Save/unsave post
+        Toast.makeText(requireContext(), "Post saved", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleNotInterested() {
+        // Mark as not interested
+        Toast.makeText(requireContext(), "We'll show you fewer posts like this", Toast.LENGTH_SHORT).show()
+    }
+
+
     private fun handleFollowButtonClick() {
         post?.let { currentPost ->
-            // ✅ Extract ACCOUNT ID and USERNAME
+            //  Extract ACCOUNT ID and USERNAME
             val feedOwnerId: String
             val feedOwnerUsername: String
 
@@ -833,7 +935,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 // Case 1: Reposted post - use original author's account ID
                 currentPost.originalPost.isNotEmpty() -> {
                     val originalAuthor = currentPost.originalPost[0].author
-                    feedOwnerId = originalAuthor.owner  // ✅ Use owner field (account ID)
+                    feedOwnerId = originalAuthor.owner  //  Use owner field (account ID)
                     feedOwnerUsername = originalAuthor.account.username
                     Log.d(TAG, "Follow button - Original author ID: $feedOwnerId (@$feedOwnerUsername)")
                 }
@@ -949,7 +1051,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    private fun handleMenuButtonClick() = showToast("Options menu")
 
     private fun handleMainPostClick() = showToast("Opening full post ...")
 
