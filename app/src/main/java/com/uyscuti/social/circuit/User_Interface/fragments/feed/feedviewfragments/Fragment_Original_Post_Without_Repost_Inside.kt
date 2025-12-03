@@ -1,6 +1,8 @@
 package com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments
 
 import android.annotation.SuppressLint
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
@@ -32,6 +34,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
+import androidx.appcompat.widget.PopupMenu
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.graphics.toColorInt
@@ -41,7 +44,6 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.media3.common.util.UnstableApi
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -612,10 +614,21 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             cleanupAndGoBack()
         }
 
-        headerMenuButton.setOnClickListener { handleMenuButtonClick() }
-        mixedFilesCardView.setOnClickListener { handleOriginalMediaClick() }
-        originalFeedImage.setOnClickListener { handleOriginalFileClick() }
-        followButton.setOnClickListener { handleFollowButtonClick() }
+        headerMenuButton.setOnClickListener { view ->
+            showOptionsMenu(view)
+        }
+
+        mixedFilesCardView.setOnClickListener {
+            handleOriginalMediaClick()
+        }
+
+        originalFeedImage.setOnClickListener {
+            handleOriginalFileClick()
+        }
+
+        followButton.setOnClickListener {
+            handleFollowButtonClick()
+        }
 
 
         originalPosterProfileImage.setOnClickListener {
@@ -635,6 +648,93 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             )
         }
 
+    }
+
+
+    private fun showOptionsMenu(anchor: View) {
+        val context = requireContext()
+        val popup = PopupMenu(context, anchor, Gravity.END)
+
+        // Apply custom style and force show icons (optional)
+        try {
+            val fieldPopup = PopupMenu::class.java.getDeclaredField("mPopup")
+            fieldPopup.isAccessible = true
+            val menuPopupWindow = fieldPopup.get(popup)
+            // Note: MenuPopupWindow.setForceShowIcon() might not be available in all versions
+            // You may need to handle this differently based on your target SDK
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // Inflate the menu
+        popup.menuInflater.inflate(R.menu.post_options_menu, popup.menu)
+
+        // Set menu item click listener
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.menu_report -> {
+                    handleReportPost()
+                    true
+                }
+                R.id.menu_block_user -> {
+                    handleBlockUser()
+                    true
+                }
+                R.id.menu_mute_user -> {
+                    handleMuteUser()
+                    true
+                }
+                R.id.menu_copy_link -> {
+                    handleCopyLink()
+                    true
+                }
+                R.id.menu_save_post -> {
+                    handleSavePost()
+                    true
+                }
+                R.id.menu_not_interested -> {
+                    handleNotInterested()
+                    true
+                }
+                else -> false
+            }
+        }
+
+        // Show the popup menu
+        popup.show()
+    }
+
+    private fun handleReportPost() {
+        // Show report dialog or navigate to report screen
+        Toast.makeText(requireContext(), "Report post", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleBlockUser() {
+        // Show confirmation dialog and block user
+        Toast.makeText(requireContext(), "User blocked", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleMuteUser() {
+        // Show confirmation dialog and mute user
+        Toast.makeText(requireContext(), "User muted", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleCopyLink() {
+        // Copy post link to clipboard
+        val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("Post Link", "https://example.com/post/123")
+        clipboard.setPrimaryClip(clip)
+        Toast.makeText(requireContext(), "Link copied to clipboard", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleSavePost() {
+        // Save/unsave post
+        Toast.makeText(requireContext(), "Post saved", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun handleNotInterested() {
+        // Mark as not interested
+        Toast.makeText(requireContext(), "We'll show you fewer posts like this", Toast.LENGTH_SHORT).show()
     }
 
     private fun navigateToFragment(fragment: Fragment, tag: String) {
@@ -6110,7 +6210,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
 
 
-    private fun handleMenuButtonClick() = showToast("Options menu")
+
 
 
     private fun formattedMongoDateTime(dateTimeString: String?): String {
