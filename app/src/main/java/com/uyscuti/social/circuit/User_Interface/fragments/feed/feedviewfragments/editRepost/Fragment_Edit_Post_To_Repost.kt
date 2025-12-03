@@ -138,6 +138,7 @@ import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
@@ -1167,6 +1168,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
     @SuppressLint("SetTextI18n")
     private fun performRepost(comment: String, newFiles: List<File>? = null) {
+
         Log.d(
             TAG,
             "performRepost called, currentPost=${currentPost?._id}, comment=$comment, newFiles=${newFiles?.size}"
@@ -1218,14 +1220,28 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                             post.isReposted = true
 
                             Log.d(TAG, "Reposting successful")
-                            Toast.makeText(context, "Reposting successful!", Toast.LENGTH_SHORT)
-                                .show()
 
-                            // Navigate back immediately after success
-                            immediateNavigateBack()
-                        } else {
+                            // Show success message on main thread
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Reposting successful!", Toast.LENGTH_SHORT).show()
+                            }
+
+                            // Increase delay to 1000ms (1 second)
+                            delay(1000)
+
+                            // Navigate back
+                            withContext(Dispatchers.Main) {
+                                if (isAdded && !isNavigatingBack) {
+                                    safeNavigateBack()
+                                }
+                            }
+
+                        }
+                        else {
                             Log.d(TAG, "Repost failed: Response body is null")
-                            Toast.makeText(context, "Failed to repost", Toast.LENGTH_SHORT).show()
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Failed to repost", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     } else {
                         // Handle API error codes
@@ -1243,7 +1259,9 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                             TAG,
                             "Repost failed with code: ${response.code()}, message: ${response.message()}"
                         )
-                        Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                        }
                     }
                 } catch (t: Throwable) {
                     Log.e(TAG, "Reposting exception - Exception type: ${t.javaClass.simpleName}")
@@ -1280,7 +1298,9 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                             "Network error: ${t.message}"
                         }
                     }
-                    Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                    }
                 } finally {
                     isReposting = false
                 }
@@ -1289,6 +1309,62 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
             Log.d(TAG, "performRepost: No post selected")
             Toast.makeText(context, "No post selected", Toast.LENGTH_SHORT).show()
             isReposting = false
+        }
+    }
+
+
+    private fun safeNavigateBack() {
+        if (isNavigatingBack) {
+            Log.d(TAG, "Navigation already in progress")
+            return
+        }
+
+        isNavigatingBack = true
+
+        try {
+            Log.d(TAG, "Starting safe navigation back")
+
+            // Clean up resources first
+            cleanupMediaResources()
+            stopViewPagerSafely()
+            restoreSystemBars()
+
+            // Use lifecycleScope with much longer delay
+            lifecycleScope.launch {
+                // Wait longer for ViewPager2 to finish ALL transactions
+                delay(1000)
+
+                // Ensure we're on main thread and fragment is still valid
+                withContext(Dispatchers.Main) {
+                    if (isAdded && activity != null) {
+                        try {
+                            val currentActivity = requireActivity()
+                            if (!currentActivity.isFinishing) {
+                                // Use commitAllowingStateLoss instead of popBackStack
+                                parentFragmentManager.beginTransaction()
+                                    .remove(this@Fragment_Edit_Post_To_Repost)
+                                    .setReorderingAllowed(true)
+                                    .commitAllowingStateLoss()
+
+                                Log.d(TAG, "Navigation completed successfully")
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error during navigation, trying alternative", e)
+                            // Fallback: just finish the activity flow
+                            try {
+                                activity?.onBackPressedDispatcher?.onBackPressed()
+                            } catch (e2: Exception) {
+                                Log.e(TAG, "Fallback navigation also failed", e2)
+                            }
+                        }
+                    }
+                    isNavigatingBack = false
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in safeNavigateBack", e)
+            isNavigatingBack = false
         }
     }
 
