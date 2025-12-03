@@ -51,11 +51,7 @@ class AnyFileMediaPagerAdapter(
         } else {
             holder.playerView.visibility = View.GONE
             holder.imageView.visibility = View.GONE
-//            Glide.with(context)
-//                .load(mediaUrl)
-//                .placeholder(R.drawable.flash21)
-//                .error(R.drawable.flash21)
-//                .into(holder.imageView)
+
         }
     }
 
