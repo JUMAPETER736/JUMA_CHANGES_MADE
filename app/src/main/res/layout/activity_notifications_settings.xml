@@ -45,10 +45,12 @@
             android:layout_height="wrap_content"
             android:text="Enable all notifications"
             android:textColor="@color/gray_dark"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            app:trackDecorationTint="@android:color/transparent"
             app:layout_constraintTop_toBottomOf="@id/generalNotificationHeader"
             app:layout_constraintStart_toStartOf="parent"
-            android:padding="16dp"
-             />
+            android:padding="16dp" />
 
         <View
             android:id="@+id/divider1"
@@ -76,6 +78,9 @@
             android:layout_height="wrap_content"
             android:text="Sound"
             android:textColor="@color/gray_dark"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            app:trackDecorationTint="@android:color/transparent"
             app:layout_constraintTop_toBottomOf="@id/alertsHeader"
             app:layout_constraintStart_toStartOf="parent"
             android:padding="16dp" />
@@ -86,6 +91,9 @@
             android:layout_height="wrap_content"
             android:text="Vibration"
             android:textColor="@color/gray_dark"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            app:trackDecorationTint="@android:color/transparent"
             app:layout_constraintTop_toBottomOf="@id/soundSwitch"
             app:layout_constraintStart_toStartOf="parent"
             android:padding="16dp" />
@@ -157,10 +165,12 @@
             android:layout_height="wrap_content"
             android:text="Likes and Reactions"
             android:textColor="@color/gray_dark"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            app:trackDecorationTint="@android:color/transparent"
             app:layout_constraintTop_toBottomOf="@id/socialActivityHeader"
             app:layout_constraintStart_toStartOf="parent"
-            android:padding="16dp"
-             />
+            android:padding="16dp" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/commentsSwitch"
@@ -168,10 +178,12 @@
             android:layout_height="wrap_content"
             android:text="Comments"
             android:textColor="@color/gray_dark"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            app:trackDecorationTint="@android:color/transparent"
             app:layout_constraintTop_toBottomOf="@id/likesSwitch"
             app:layout_constraintStart_toStartOf="parent"
-            android:padding="16dp"
-             />
+            android:padding="16dp" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/followersSwitch"
@@ -179,10 +191,12 @@
             android:layout_height="wrap_content"
             android:text="New Followers"
             android:textColor="@color/gray_dark"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            app:trackDecorationTint="@android:color/transparent"
             app:layout_constraintTop_toBottomOf="@id/commentsSwitch"
             app:layout_constraintStart_toStartOf="parent"
-            android:padding="16dp"
-             />
+            android:padding="16dp" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/tagsSwitch"
@@ -190,6 +204,9 @@
             android:layout_height="wrap_content"
             android:text="Tags and Mentions"
             android:textColor="@color/gray_dark"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            app:trackDecorationTint="@android:color/transparent"
             app:layout_constraintTop_toBottomOf="@id/followersSwitch"
             app:layout_constraintStart_toStartOf="parent"
             android:padding="16dp" />
@@ -220,10 +237,12 @@
             android:layout_height="wrap_content"
             android:text="Message notifications"
             android:textColor="@color/gray_dark"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            app:trackDecorationTint="@android:color/transparent"
             app:layout_constraintTop_toBottomOf="@id/messagesHeader"
             app:layout_constraintStart_toStartOf="parent"
-            android:padding="16dp"
-           />
+            android:padding="16dp" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/messagePrivacyLayout"
@@ -292,10 +311,12 @@
             android:layout_height="wrap_content"
             android:text="Live Stream Alerts"
             android:textColor="@color/gray_dark"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            app:trackDecorationTint="@android:color/transparent"
             app:layout_constraintTop_toBottomOf="@id/otherNotificationsHeader"
             app:layout_constraintStart_toStartOf="parent"
-            android:padding="16dp"
-            />
+            android:padding="16dp" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/suggestionsSwitch"
@@ -303,10 +324,12 @@
             android:layout_height="wrap_content"
             android:text="Friend Suggestions"
             android:textColor="@color/gray_dark"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            app:trackDecorationTint="@android:color/transparent"
             app:layout_constraintTop_toBottomOf="@id/liveStreamSwitch"
             app:layout_constraintStart_toStartOf="parent"
-            android:padding="16dp"
-             />
+            android:padding="16dp" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/eventSwitch"
@@ -314,10 +337,12 @@
             android:layout_height="wrap_content"
             android:text="Events and Reminders"
             android:textColor="@color/gray_dark"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            app:trackDecorationTint="@android:color/transparent"
             app:layout_constraintTop_toBottomOf="@id/suggestionsSwitch"
             app:layout_constraintStart_toStartOf="parent"
-            android:padding="16dp"
-             />
+            android:padding="16dp" />
 
         <!-- Do Not Disturb Section -->
         <View
