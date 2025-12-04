@@ -668,7 +668,7 @@ class FeedAdapter(
 
         private fun setupFollowButton(data: Post) {
             val feedOwnerId = data.author?.account?._id ?: return
-            val feedOwnerUsername = data.author?.account?.username ?: return  // ✅ ADD THIS LINE
+            val feedOwnerUsername = data.author?.account?.username ?: return
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
             // Check multiple sources for following status (by ID and username)
@@ -677,7 +677,7 @@ class FeedAdapter(
 
             val isUserFollowing = followingUserIds.contains(feedOwnerId) ||
                     cachedFollowingList.contains(feedOwnerId) ||
-                    cachedFollowingUsernames.contains(feedOwnerUsername)  // ✅ ADD USERNAME CHECK
+                    cachedFollowingUsernames.contains(feedOwnerUsername)
 
             Log.d(TAG, "setupFollowButton: Checking user $feedOwnerId (@$feedOwnerUsername)")
             Log.d(TAG, "  - Match by ID: ${followingUserIds.contains(feedOwnerId) || cachedFollowingList.contains(feedOwnerId)}")
@@ -701,7 +701,7 @@ class FeedAdapter(
             Log.d(TAG, "setupFollowButton: Showing follow button for $feedOwnerId (@$feedOwnerUsername)")
 
             followButton.setOnClickListener {
-                handleFollowButtonClick(feedOwnerId, feedOwnerUsername)  // ✅ PASS feedOwnerUsername
+                handleFollowButtonClick(feedOwnerId, feedOwnerUsername)
             }
         }
 
