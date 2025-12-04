@@ -1730,7 +1730,7 @@ class FeedAdapter(
         }
 
 
-        private fun setupFollowButton(feedOwnerId: String, feedOwnerUsername: String) {  // ✅ ADD username parameter
+        private fun setupFollowButton(feedOwnerId: String, feedOwnerUsername: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
             // Check multiple sources for following status (by ID and username)
@@ -1739,7 +1739,7 @@ class FeedAdapter(
 
             val isUserFollowing = followingUserIds.contains(feedOwnerId) ||
                     cachedFollowingList.contains(feedOwnerId) ||
-                    cachedFollowingUsernames.contains(feedOwnerUsername)  // ✅ ADD username check
+                    cachedFollowingUsernames.contains(feedOwnerUsername)
 
             Log.d(TAG, "setupFollowButton: Checking user $feedOwnerId (@$feedOwnerUsername)")
             Log.d(TAG, "  - Match by ID: ${followingUserIds.contains(feedOwnerId) || cachedFollowingList.contains(feedOwnerId)}")
@@ -1762,7 +1762,7 @@ class FeedAdapter(
             Log.d(TAG, "setupFollowButton: Showing follow button for $feedOwnerId (@$feedOwnerUsername)")
 
             followButton.setOnClickListener {
-                handleFollowButtonClick(feedOwnerId, feedOwnerUsername)  // ✅ PASS feedOwnerUsername
+                handleFollowButtonClick(feedOwnerId, feedOwnerUsername)
             }
         }
 
@@ -1928,7 +1928,7 @@ class FeedAdapter(
             try {
                 Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
 
-                // ✅ Extract author information from the Post
+                // Extract author information from the Post
                 val firstName = data.author?.firstName ?: ""
                 val lastName = data.author?.lastName ?: ""
                 val displayName = when {
@@ -1947,13 +1947,13 @@ class FeedAdapter(
                         putString("navigation_source", "feed_mixed_files")
                         putLong("navigation_timestamp", System.currentTimeMillis())
 
-                        // ✅ ADD AUTHOR INFORMATION
+                        // ADD AUTHOR INFORMATION
                         putString("author_name", displayName)
                         putString("author_username", data.author?.account?.username ?: "unknown_user")
                         putString("author_profile_image_url", data.author?.account?.avatar?.url ?: "")
                         putString("user_id", data.author?._id ?: "")
 
-                        // ✅ Log for debugging
+                        // Log for debugging
                         Log.d(TAG, "Author Info - Name: $displayName, Username: ${data.author?.account?.username}, ID: ${data.author?._id}")
                     }
                 }
@@ -1984,9 +1984,8 @@ class FeedAdapter(
                         .setCustomAnimations(
                             R.anim.slide_in_right,
                             R.anim.slide_out_left,
-                            //  R.anim.slide_in_left,
-                            //  R.anim.slide_out_right
-                        )
+
+                            )
                         .replace(R.id.frame_layout, fragment)
                         .addToBackStack(tag)
                         .commit()
@@ -2375,7 +2374,7 @@ class FeedAdapter(
                     val wasReposted = data.isReposted
                     data.isReposted = !wasReposted
                     totalMixedRePostCounts = if (data.isReposted) totalMixedRePostCounts + 1 else maxOf(0, totalMixedRePostCounts - 1)
-//                    data.repostCount = totalMixedRePostCounts
+
                     updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
                     updateRepostButtonAppearance(data.isReposted)
 
@@ -2399,7 +2398,7 @@ class FeedAdapter(
                             if (response.isSuccessful) {
                                 response.body()?.let { repostResponse ->
                                     if (abs(repostResponse.repostCount - totalMixedRePostCounts) > 1) {
-//                                        data.repostCount = repostResponse.repostCount
+
                                         totalMixedRePostCounts = repostResponse.repostCount
                                         updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
                                     }
@@ -2853,36 +2852,36 @@ class FeedAdapter(
         fun render(data: Post) {
             currentPost = data
 
-            // ✅ Extract ACCOUNT ID and USERNAME for follow check
+            // Extract ACCOUNT ID and USERNAME for follow check
             val feedReposterOwnerId: String
             val feedReposterUsername: String
 
             when {
                 // Case 1: Someone reposted - use their OWNER field (account ID) and username
                 data.repostedUser != null -> {
-                    feedReposterOwnerId = data.repostedUser.owner  // ✅ Use owner field, not _id!
+                    feedReposterOwnerId = data.repostedUser.owner  // Use owner field, not _id!
                     feedReposterUsername = data.repostedUser.username
-                    Log.d(TAG, "🔵 Case 1: RepostedUser account ID (owner): $feedReposterOwnerId")
-                    Log.d(TAG, "🔵 Case 1: RepostedUser username: @$feedReposterUsername")
-                    Log.d(TAG, "🔵 Case 1: (NOT using repostedUser._id which is: ${data.repostedUser._id})")
+                    Log.d(TAG, "RepostedUser account ID (owner): $feedReposterOwnerId")
+                    Log.d(TAG, "RepostedUser username: @$feedReposterUsername")
+                    Log.d(TAG, "NOT using repostedUser._id which is: ${data.repostedUser._id})")
                 }
 
                 // Case 2: Original post - use author.owner (the account ID!)
                 data.originalPost != null && data.originalPost.isNotEmpty() -> {
                     val originalAuthor = data.originalPost[0].author
-                    feedReposterOwnerId = originalAuthor.owner  // ✅ This is the account ID!
+                    feedReposterOwnerId = originalAuthor.owner  // This is the account ID!
                     feedReposterUsername = originalAuthor.account.username
-                    Log.d(TAG, "🔵 Case 2: Using author.owner (account ID): $feedReposterOwnerId")
-                    Log.d(TAG, "🔵 Case 2: Username: @$feedReposterUsername")
-                    Log.d(TAG, "🔵 Case 2: (NOT using author._id which is: ${originalAuthor._id})")
+                    Log.d(TAG, "Using author.owner (account ID): $feedReposterOwnerId")
+                    Log.d(TAG, " Username: @$feedReposterUsername")
+                    Log.d(TAG, "NOT using author._id which is: ${originalAuthor._id})")
                 }
 
                 // Case 3: Regular post - use main author's account ID
                 else -> {
                     feedReposterOwnerId = data.author?.account?._id ?: "Unknown"
                     feedReposterUsername = data.author?.account?.username ?: "unknown"
-                    Log.d(TAG, "🔵 Case 3: Main author account ID: $feedReposterOwnerId")
-                    Log.d(TAG, "🔵 Case 3: Username: @$feedReposterUsername")
+                    Log.d(TAG, "Main author account ID: $feedReposterOwnerId")
+                    Log.d(TAG, "Username: @$feedReposterUsername")
                 }
             }
 
@@ -2894,7 +2893,7 @@ class FeedAdapter(
                     cachedFollowingList.contains(feedReposterOwnerId) ||
                     cachedFollowingUsernames.contains(feedReposterUsername)
 
-            Log.d(TAG, "═══════════════════════════════════════")
+
             Log.d(TAG, "REPOST FOLLOW CHECK - Post ID: ${data._id}")
             Log.d(TAG, ">>> Account ID (for follow check): $feedReposterOwnerId")
             Log.d(TAG, ">>> Username (for follow check): @$feedReposterUsername")
@@ -2903,7 +2902,7 @@ class FeedAdapter(
             Log.d(TAG, ">>> Match in cachedList: ${cachedFollowingList.contains(feedReposterOwnerId)}")
             Log.d(TAG, ">>> Match by username: ${cachedFollowingUsernames.contains(feedReposterUsername)}")
             Log.d(TAG, "Following list (${followingUserIds.size} users): ${followingUserIds.joinToString(", ")}")
-            Log.d(TAG, "═══════════════════════════════════════")
+
 
             totalMixedComments = data.comments
             totalMixedLikesCounts = data.likes
@@ -2948,7 +2947,7 @@ class FeedAdapter(
                     cachedFollowingList.contains(accountId) ||
                     cachedFollowingUsernames.contains(username)
 
-            Log.d(TAG, "───────────────────────────────────────")
+
             Log.d(TAG, "SETUP FOLLOW BUTTON")
             Log.d(TAG, "Account ID to check: $accountId")
             Log.d(TAG, "Username to check: @$username")
@@ -2973,7 +2972,6 @@ class FeedAdapter(
                     isUserFollowing -> "Already following (local check)"
                     else -> "Unknown"
                 }}")
-                Log.d(TAG, "───────────────────────────────────────")
                 return
             }
 
@@ -2985,10 +2983,10 @@ class FeedAdapter(
                 R.color.blueJeans
             )
 
-            Log.d(TAG, "✓✓✓ SHOWING follow button for account: $accountId (@$username)")
-            Log.d(TAG, "───────────────────────────────────────")
+            Log.d(TAG, "SHOWING follow button for account: $accountId (@$username)")
 
-            // ✅ CRITICAL: Pass the ACCOUNT ID (not author ID) to handleFollowButtonClick
+
+            // Pass the ACCOUNT ID (not author ID) to handleFollowButtonClick
             followButton.setOnClickListener {
                 handleFollowButtonClick(accountId, username)  // Pass both ID and username
             }
@@ -2998,12 +2996,12 @@ class FeedAdapter(
         private fun handleFollowButtonClick(accountId: String, username: String) {
             YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
 
-            Log.d(TAG, "═══════════════════════════════════════")
+
             Log.d(TAG, "FOLLOW BUTTON CLICKED")
             Log.d(TAG, "Account ID to follow: $accountId")
             Log.d(TAG, "Username to follow: @$username")
             Log.d(TAG, "This ID will be added to following list")
-            Log.d(TAG, "═══════════════════════════════════════")
+
 
             isFollowed = !isFollowed
             val followEntity = FollowUnFollowEntity(accountId, isFollowed)
@@ -3026,7 +3024,7 @@ class FeedAdapter(
                 (bindingAdapter as? FeedAdapter)?.removeFromFollowing(accountId, username)
                 FollowingManager(itemView.context).removeFromFollowing(accountId)
 
-                Log.d(TAG, "✓ Removed account $accountId (@$username) from following list")
+                Log.d(TAG, "Removed account $accountId (@$username) from following list")
             }
 
             // Notify listener
@@ -3045,7 +3043,7 @@ class FeedAdapter(
 
             val repostedUser = data.repostedUser
             if (repostedUser != null) {
-                // ✅ Use owner field (account ID), not _id (profile ID)
+                // Use owner field (account ID), not _id (profile ID)
                 feedOwnerId = repostedUser.owner
                 profilePicUrl = repostedUser.avatar?.url
 
@@ -3060,7 +3058,7 @@ class FeedAdapter(
                 Log.d(tag, "📍 Reposted by: $feedOwnerUsername (Account/Owner: $feedOwnerId, Username: @${repostedUser.username})")
 
             } else if (data.originalPost != null && data.originalPost.isNotEmpty()) {
-                // ✅ Use author.owner (the account ID)
+                // Use author.owner (the account ID)
                 val originalAuthor = data.originalPost[0].author
                 feedOwnerId = originalAuthor.owner  // Account ID!
                 profilePicUrl = originalAuthor.account.avatar.url
@@ -3073,7 +3071,7 @@ class FeedAdapter(
                     else -> originalAuthor.account.username
                 }
                 userHandle = "@${originalAuthor.account.username}"
-                Log.d(tag, "📍 Original author: $feedOwnerUsername (Account/Owner ID: $feedOwnerId, Username: @${originalAuthor.account.username})")
+                Log.d(tag, "Original author: $feedOwnerUsername (Account/Owner ID: $feedOwnerId, Username: @${originalAuthor.account.username})")
 
             } else {
                 // Main author
@@ -3082,7 +3080,7 @@ class FeedAdapter(
                 profilePicUrl = author.account.avatar?.url
                 feedOwnerUsername = buildDisplayName(author)
                 userHandle = "@${author.account.username}"
-                Log.d(tag, "📍 Main author: $feedOwnerUsername (Account: $feedOwnerId, Username: @${author.account.username})")
+                Log.d(tag, "Main author: $feedOwnerUsername (Account: $feedOwnerId, Username: @${author.account.username})")
             }
 
             repostedUserName.text = feedOwnerUsername
@@ -3108,7 +3106,7 @@ class FeedAdapter(
 
         @SuppressLint("ClickableViewAccessibility")
         private fun setupRepostedUserProfileClicks(data: Post) {
-            // ✅ Extract ACCOUNT ID (owner field) for profile navigation
+            // Extract ACCOUNT ID (owner field) for profile navigation
             var feedOwnerId = ""
             var feedOwnerName = ""
             var feedOwnerUsername = ""
@@ -3116,7 +3114,7 @@ class FeedAdapter(
 
             val repostedUser = data.repostedUser
             if (repostedUser != null) {
-                feedOwnerId = repostedUser.owner  // ✅ Use owner field (account ID)
+                feedOwnerId = repostedUser.owner  //Use owner field (account ID)
                 feedOwnerName = when {
                     repostedUser.firstName.isNotBlank() && repostedUser.lastName.isNotBlank() ->
                         "${repostedUser.firstName} ${repostedUser.lastName}"
@@ -3128,7 +3126,8 @@ class FeedAdapter(
                 profilePicUrl = repostedUser.avatar?.url ?: ""
 
             } else if (data.originalPost != null && data.originalPost.isNotEmpty()) {
-                // ✅ Use owner field (account ID)
+
+                //Use owner field (account ID)
                 val originalAuthor = data.originalPost[0].author
                 feedOwnerId = originalAuthor.owner  // Account ID!
                 feedOwnerName = buildDisplayName(originalAuthor)
@@ -3142,7 +3141,7 @@ class FeedAdapter(
                 profilePicUrl = data.author.account.avatar?.url ?: ""
             }
 
-            Log.d(tag, "🔵 Profile click - Account ID: $feedOwnerId (@$feedOwnerUsername)")
+            Log.d(tag, "Profile click - Account ID: $feedOwnerId (@$feedOwnerUsername)")
 
             userProfileImage.setOnClickListener { view ->
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
@@ -3161,66 +3160,6 @@ class FeedAdapter(
             }
         }
 
-//        @SuppressLint("ClickableViewAccessibility")
-//        private fun setupOriginalPostAuthorClicks(data: Post) {
-//            if (data.originalPost != null && data.originalPost.isNotEmpty()) {
-//                val originalPostData = data.originalPost[0]
-//                val author = originalPostData.author
-//
-//                // ✅ Use owner field (account ID)
-//                val feedOwnerId = author.owner  // Account ID!
-//                val feedOwnerName = buildDisplayName(author)
-//                val feedOwnerUsername = author.account.username
-//                val profilePicUrl = author.account.avatar.url
-//
-//                Log.d(tag, "🟢 Original poster click - Account ID: $feedOwnerId (@$feedOwnerUsername)")
-//
-//                originalPosterProfileImage?.setOnClickListener { view ->
-//                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-//                    handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
-//                    true
-//                }
-//
-//                originalPosterProfileImage?.setOnTouchListener { _, event ->
-//                    if (event.action == MotionEvent.ACTION_UP) {
-//                        originalPosterProfileImage.performClick()
-//                        true
-//                    } else {
-//                        false
-//                    }
-//                }
-//            } else {
-//                val author = data.author
-//                val feedOwnerId = author.account._id
-//                val feedOwnerName = buildDisplayName(author)
-//                val feedOwnerUsername = author.account.username
-//                val profilePicUrl = author.account.avatar.url
-//
-//                Log.d(tag, "🟢 Main author click - Account ID: $feedOwnerId (@$feedOwnerUsername)")
-//
-//                val profileClickListener = View.OnClickListener {
-//                    handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
-//                }
-//
-//                originalPosterProfileImage?.setOnClickListener { view ->
-//                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-//                    handleProfileClick(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
-//                    true
-//                }
-//
-//                originalPosterName?.setOnClickListener(profileClickListener)
-//                tvQuotedUserHandle?.setOnClickListener(profileClickListener)
-//
-//                originalPosterProfileImage?.setOnTouchListener { _, event ->
-//                    if (event.action == MotionEvent.ACTION_UP) {
-//                        originalPosterProfileImage.performClick()
-//                        true
-//                    } else {
-//                        false
-//                    }
-//                }
-//            }
-//        }
 
         @SuppressLint("ClickableViewAccessibility")
         private fun setupOriginalPostAuthorClicks(data: Post) {
@@ -3321,6 +3260,7 @@ class FeedAdapter(
 
         @SuppressLint("ClickableViewAccessibility")
         private fun preventQuotedCardChildClickInterference() {
+
             // List of child views that should delegate clicks to their parent (quoted post card)
             val quotedCardChildren = listOfNotNull(
                 originalPosterName,
@@ -3610,6 +3550,7 @@ class FeedAdapter(
 
         @SuppressLint("ResourceType")
         private fun ensureContainerClickability() {
+
             // Helper function to resolve the selectableItemBackground attribute
             fun getSelectableItemBackground(context: Context): Drawable? {
                 val attrs = intArrayOf(android.R.attr.selectableItemBackground)
@@ -3750,6 +3691,7 @@ class FeedAdapter(
             Log.d(TAG,
                 "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}," +
                         " bookmarkCount=${totalMixedBookMarkCounts}")
+
             updateBookmarkButtonUI(data.isBookmarked ?: false)
             updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")  // Use totalMixedBookMarkCounts
 
@@ -3923,7 +3865,8 @@ class FeedAdapter(
                     val wasReposted = data.isReposted
                     data.isReposted = !wasReposted
                     totalMixedRePostCounts = if (data.isReposted) totalMixedRePostCounts + 1 else maxOf(0, totalMixedRePostCounts - 1)
-//                    data.repostCount = totalMixedRePostCounts
+
+
                     updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
                     updateRepostButtonAppearance(data.isReposted)
 
@@ -3945,7 +3888,7 @@ class FeedAdapter(
                             if (response.isSuccessful) {
                                 response.body()?.let { repostResponse ->
                                     if (abs(repostResponse.repostCount - totalMixedRePostCounts) > 1) {
-//                                        data.repostCount = repostResponse.repostCount
+
                                         totalMixedRePostCounts = repostResponse.repostCount
                                         updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
                                     }
@@ -4311,9 +4254,11 @@ class FeedAdapter(
 
                 // For other counts, use the existing content type logic
                 when (originalPostData.contentType) {
+
                     "text" -> {
                         // Only text content, no media
                     }
+
                     "image" -> {
                         if (originalPostData.files.isNotEmpty()) {
                             mixedFilesCardView?.visibility = View.VISIBLE
@@ -4334,6 +4279,7 @@ class FeedAdapter(
                             }
                         }
                     }
+
                     "mixed_files" -> {
                         if (originalPostData.files.isNotEmpty()) {
                             mixedFilesCardView?.visibility = View.VISIBLE
@@ -4344,6 +4290,7 @@ class FeedAdapter(
                             setupCleanRecyclerView(originalPostData.files.size, adapter)
                         }
                     }
+
                     "video" -> {
                         if (originalPostData.files.isNotEmpty()) {
                             mixedFilesCardView?.visibility = View.VISIBLE
@@ -4354,10 +4301,13 @@ class FeedAdapter(
                             setupCleanRecyclerView(originalPostData.files.size, adapter)
                         }
                     }
+
                     else -> {
                         Log.w(tag, "Unknown content type: ${originalPostData.contentType}")
                     }
+
                 }
+
             } catch (e: Exception) {
                 Log.e(tag, "Error setting up original post media: ${e.message}")
                 hideAllMediaViews()
@@ -4968,6 +4918,7 @@ class FeedAdapter(
 
 
         private fun ensurePostClickability(data: Post) {
+
             // Ensure main container is clickable
             repostContainer.isClickable = true
             repostContainer.isFocusable = true
@@ -5008,6 +4959,7 @@ class FeedAdapter(
         }
 
         private fun setupContentAndTags(data: Post) {
+
             // Caption setup - this is the reposter's comment
             if (data.content.isNotEmpty()) {
                 userComment.text = data.content
@@ -5031,21 +4983,22 @@ class FeedAdapter(
             // Post tag setup - differentiate between simple repost and quote repost
             if (data.files.isNotEmpty() && data.originalPost?.isNotEmpty() == true) {
                 // Quote repost with new content
-                tvPostTag.text = "💬 Quote Repost with New Content! 💬"
+                tvPostTag.text = "Quote Repost with New Content!"
             } else if (data.content.isNotEmpty() && data.originalPost?.isNotEmpty() == true) {
                 // Quote repost with comment only
-                tvPostTag.text = "💭 Quote Repost! 💭"
+                tvPostTag.text = "Quote Repost!"
             } else if (data.originalPost?.isNotEmpty() == true) {
                 // Simple repost
-                tvPostTag.text = "🔄 Reposted! 🔄"
+                tvPostTag.text = "Reposted!"
             } else {
                 // Regular post
-                tvPostTag.text = "📱 New Post! 📱"
+                tvPostTag.text = "New Post!"
             }
             tvPostTag.visibility = View.VISIBLE
         }
 
         private fun setupNewPostMediaFiles(data: Post) {
+
             val fileList: MutableList<String> = mutableListOf()
 
             // Check if this is a repost with new files added by the reposter
@@ -5124,14 +5077,18 @@ class FeedAdapter(
         }
 
         private fun setupOriginalPostContent(data: Post) {
+
             Log.d(TAG, "Original Post: ${data.originalPost}")
+
             if (data.originalPost != null && data.originalPost.isNotEmpty()) {
+
                 val originalPostData = data.originalPost[0]
                 quotedPostCard.visibility = View.VISIBLE
                 setupOriginalPosterInfo(originalPostData)
                 setupOriginalPostText(originalPostData)
                 setupOriginalPostHashtags(originalPostData)
                 setupOriginalPostMedia(originalPostData)
+
             } else {
                 Log.e(TAG, "render: originalPost is null or empty")
                 quotedPostCard.visibility = View.GONE
@@ -5139,7 +5096,9 @@ class FeedAdapter(
         }
 
         private fun setupOriginalPosterInfo(originalPostData: OriginalPost) {
+
             Log.d(TAG, "ORIGINAL POSTER Details: ${originalPostData}")
+
             try {
                 Log.d(TAG, "Setting up original poster info")
                 Log.d(TAG, "originalPostReposter size: ${originalPostData.originalPostReposter.size}")
@@ -5205,6 +5164,7 @@ class FeedAdapter(
         }
 
         private fun setupOriginalPostText(originalPostData: OriginalPost) {
+
             if (!originalPostData.content.isNullOrBlank()) {
                 originalPostText.visibility = View.VISIBLE
                 originalPostText.text = originalPostData.content
@@ -5214,14 +5174,17 @@ class FeedAdapter(
         }
 
         private fun setupOriginalPostHashtags(originalPostData: OriginalPost) {
+
             val validTags = originalPostData.tags?.filterNotNull()
                 ?.mapNotNull { it.toString().takeIf { tag -> tag.isNotBlank() } }
+
             if (!validTags.isNullOrEmpty()) {
                 val hashtagText = validTags.joinToString(" ") {
                     if (it.startsWith("#")) it else "#$it"
                 }
                 tvQuotedHashtags.text = hashtagText
                 tvQuotedHashtags.visibility = View.VISIBLE
+
             } else {
                 tvQuotedHashtags.text = "#SoftwareAppreciation #GameChanger #MustHave"
                 tvQuotedHashtags.visibility = View.VISIBLE
@@ -5229,6 +5192,7 @@ class FeedAdapter(
         }
 
         private fun setupOriginalPostMedia(originalPostData: OriginalPost) {
+
             hideAllOriginalMediaViews()
 
             try {
@@ -5269,6 +5233,7 @@ class FeedAdapter(
                             }
                         }
                     }
+
                     "mixed_files" -> {
                         if (originalPostData.files.isNotEmpty()) {
                             mixedFilesCardView.visibility = View.VISIBLE
@@ -5279,6 +5244,7 @@ class FeedAdapter(
                             setupCleanOriginalRecyclerView(originalPostData.files.size, adapter)
                         }
                     }
+
                     "video" -> {
                         if (originalPostData.files.isNotEmpty()) {
                             mixedFilesCardView.visibility = View.VISIBLE
@@ -5289,10 +5255,13 @@ class FeedAdapter(
                             setupCleanOriginalRecyclerView(originalPostData.files.size, adapter)
                         }
                     }
+
                     else -> {
                         Log.w(TAG, "Unknown content type: ${originalPostData.contentType}")
                     }
+
                 }
+
             } catch (e: Exception) {
                 Log.e(TAG, "Error setting up original post media: ${e.message}")
                 hideAllOriginalMediaViews()
@@ -5300,7 +5269,9 @@ class FeedAdapter(
         }
 
         private fun setupCleanOriginalRecyclerView(fileCount: Int, adapter: FeedRepostViewFileAdapter) {
+
             recyclerView.let { recyclerView ->
+
                 recyclerView.visibility = View.VISIBLE
                 when (fileCount) {
                     1 -> recyclerView.layoutManager = GridLayoutManager(itemView.context, 1)
@@ -5325,18 +5296,25 @@ class FeedAdapter(
         }
 
         private fun navigateToFragment(fragment: Fragment, tag: String) {
+
             try {
+
                 val activity = getActivityFromContext(itemView.context)
+
                 if (activity != null) {
+
                     val currentFragment = activity.supportFragmentManager.fragments.lastOrNull {
                         it.isVisible && it.view != null
                     }
+
                     val fragmentManager = if (currentFragment != null &&
                         currentFragment.childFragmentManager.fragments.isNotEmpty()) {
                         currentFragment.childFragmentManager
+
                     } else {
                         activity.supportFragmentManager
                     }
+
                     fragmentManager.beginTransaction()
                         .setCustomAnimations(
                             R.anim.slide_in_right,
@@ -5348,9 +5326,11 @@ class FeedAdapter(
                         .addToBackStack(tag)
                         .commit()
                     Log.d(TAG, "Successfully navigated to fragment: $tag")
+
                 } else {
                     Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
                 }
+
             } catch (e: Exception) {
                 Log.e(TAG, "Error navigating to fragment: $tag", e)
             }
@@ -5384,15 +5364,18 @@ class FeedAdapter(
         private fun setupUserInfo(data: Post, feedOwnerId: String) {
             // Profile image and user info from reposter
             val repostedUser = data.repostedUser
+
             if (repostedUser != null) {
                 val avatarUrl = repostedUser.avatar?.url
                 loadImageWithGlide(avatarUrl, userProfileImage, itemView.context)
                 repostedUserName.text = repostedUser.username
                 tvUserHandle.text = "@${repostedUser.username}"
+
             } else {
                 // Fallback to original author if reposter info is not available
                 val avatarUrl = data.author?.account?.avatar?.url
                 loadImageWithGlide(avatarUrl, userProfileImage, itemView.context)
+
                 val fullName = listOfNotNull(
                     data.author?.firstName?.takeIf { it.isNotBlank() },
                     data.author?.lastName?.takeIf { it.isNotBlank() }
@@ -5412,6 +5395,7 @@ class FeedAdapter(
         }
 
         private fun setupLikeButton(data: Post) {
+
             Log.d(TAG, "Setting up like button - Initial state: isLiked=${data.isLiked}, likes=${totalMixedLikesCounts}")
             updateLikeButtonUI(data.isLiked ?: false)
             updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
@@ -5519,8 +5503,8 @@ class FeedAdapter(
             }
         }
 
-        // Add these comment management methods
         fun updateCommentCount(newCount: Int) {
+
             Log.d(TAG, "updateCommentCount: Updating comment count from $totalRepostComments to $newCount")
             totalRepostComments = if (newCount < 0) {
                 Log.w(TAG, "updateCommentCount: Negative count received, setting to 0")
@@ -5552,9 +5536,11 @@ class FeedAdapter(
         }
 
         private fun setupBookmarkButton(data: Post) {
+
             Log.d(TAG,
                 "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}," +
                         " bookmarkCount=${totalMixedBookMarkCounts}")
+
             updateBookmarkButtonUI(data.isBookmarked ?: false)
             updateMetricDisplay(favoritesCount, totalMixedBookMarkCounts, "bookmark")
 
@@ -5586,6 +5572,7 @@ class FeedAdapter(
                 favoriteButton.alpha = 0.8f
 
                 val bookmarkRequest = BookmarkRequest(newBookmarkStatus)
+
                 RetrofitClient.bookmarkService.toggleBookmark(data._id, bookmarkRequest)
                     .enqueue(object : Callback<BookmarkResponse> {
                         override fun onResponse(call: Call<BookmarkResponse>, response: Response<BookmarkResponse>) {
@@ -5634,6 +5621,7 @@ class FeedAdapter(
         }
 
         private fun setupRepostButton(data: Post) {
+
             totalMixedRePostCounts = 0
             updateMetricDisplay(repostCountTextView, totalMixedRePostCounts, "repost")
             updateRepostButtonAppearance(data.isReposted)
@@ -5694,10 +5682,13 @@ class FeedAdapter(
         }
 
         private fun updateRepostButtonAppearance(isReposted: Boolean) {
+
             if (isReposted) {
+
                 repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
                 repostPost.scaleX = 1.1f
                 repostPost.scaleY = 1.1f
+
             } else {
                 repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
                 repostPost.scaleX = 1.0f
@@ -5706,6 +5697,7 @@ class FeedAdapter(
         }
 
         private fun setupShareButton(data: Post) {
+
             totalMixedShareCounts = data.shareCount ?: data.shareCount ?: 0
             updateMetricDisplay(shareCountTextView, totalMixedShareCounts, "share")
 
@@ -5771,6 +5763,7 @@ class FeedAdapter(
         }
 
         private fun updateLikeButtonUI(isLiked: Boolean) {
+
             Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
             try {
                 if (isLiked) {
@@ -5785,6 +5778,7 @@ class FeedAdapter(
         }
 
         private fun updateBookmarkButtonUI(isBookmarked: Boolean) {
+
             Log.d(TAG, "Updating bookmark button UI: isBookmarked=$isBookmarked")
             try {
                 if (isBookmarked) {
@@ -5799,7 +5793,9 @@ class FeedAdapter(
         }
 
         private fun navigateToEditPostToRepost(data: Post) {
+
             try {
+
                 val fragment = Fragment_Edit_Post_To_Repost(data).apply {
                     arguments = Bundle().apply {
                         putString("post_data", Gson().toJson(data))
@@ -5821,11 +5817,13 @@ class FeedAdapter(
                                     ?: originalPost.author.account.username
                             )
                             putString("original_author_avatar", originalPost.author.account.avatar.url)
+
                             if (originalPost.files.isNotEmpty()) {
                                 putString("original_files_data", Gson().toJson(originalPost.files))
                                 putInt("original_files_count", originalPost.files.size)
                             }
                         }
+
                         val currentUser = LocalStorage.getInstance(itemView.context).getUser() as? User
                         currentUser?.let { user ->
                             putString("current_user_id", user._id)
@@ -6007,53 +6005,6 @@ class FeedAdapter(
         }
 
 
-        private fun handleLikeClick() {
-            currentPost?.let { post ->
-                Log.d(TAG, "Handling like click for post: ${post._id}")
-                // Like logic is handled in setupLikeButton
-            }
-        }
-
-        private fun handleCommentClick() {
-            currentPost?.let { post ->
-                Log.d(TAG, "Handling comment click for post: ${post._id}")
-
-            }
-        }
-
-        private fun handleFavoriteClick() {
-            currentPost?.let { post ->
-                Log.d(TAG, "Handling favorite click for post: ${post._id}")
-                // Bookmark logic is handled in setupBookmarkButton
-            }
-        }
-
-        private fun handleRetweetClick() {
-            currentPost?.let { post ->
-                Log.d(TAG, "Handling retweet click for post: ${post._id}")
-                showRepostDialog(post)
-            }
-        }
-
-        private fun handleShareClick() {
-            currentPost?.let { post ->
-                Log.d(TAG, "Handling share click for post: ${post._id}")
-                sharePost(post)
-            }
-        }
-
-        private fun handleFollowClick() {
-            Log.d(TAG, "Handling follow click")
-            // Follow logic is handled in setupFollowButton
-        }
-
-        private fun handleMoreOptionsClick() {
-            currentPost?.let { post ->
-                Log.d(TAG, "Handling more options click for post: ${post._id}")
-                showMoreOptionsDialog(post)
-            }
-        }
-
         private fun navigateToOriginalPostWithRepostInside(originalPostData: Post) {
             try {
                 val fragment = Fragment_Original_Post_With_Repost_Inside.newInstance(originalPostData)
@@ -6222,24 +6173,6 @@ class FeedAdapter(
         }
 
 
-        // API and data operations (implement according to your API structure)
-        private fun makeApiCall(endpoint: String, postId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
-            // Implement your API call logic here
-            // This is a placeholder - replace with your actual API implementation
-            try {
-                // Simulate API call
-                Handler(Looper.getMainLooper()).postDelayed({
-                    onSuccess()
-                }, 500)
-            } catch (e: Exception) {
-                onError(e.message ?: "Unknown error")
-            }
-        }
-
-        private fun checkFollowStatus(userId: String, callback: (Boolean) -> Unit) {
-
-            callback(false)
-        }
 
         private fun reportPost(data: Post) {
             // Implement report functionality
