@@ -387,7 +387,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:text="Off"
-                android:textColor="@color/blueJeans"
+                android:textColor="@color/black"
                 android:textSize="12sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/scheduleLabel"
@@ -420,4 +420,5 @@
             app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
 </androidx.core.widget.NestedScrollView>
