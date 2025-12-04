@@ -246,7 +246,7 @@ class FeedAdapter(
 
 
 
-            @SuppressLint("NotifyDataSetChanged")
+    @SuppressLint("NotifyDataSetChanged")
     fun updatePosts(newPosts: List<Post>) {
         clear()
         addAll(newPosts.toMutableList())
@@ -276,7 +276,7 @@ class FeedAdapter(
                 }
                 else -> {
                     // For regular posts
-                     0
+                    0
                 }
             }
             commentCountMap[post._id] = initialCount
@@ -340,7 +340,7 @@ class FeedAdapter(
                     post.originalPost[0].commentCount ?: 0
                 }
                 else -> {
-                     0
+                    0
                 }
             }
             commentCountMap[post._id] = originalCount
@@ -672,8 +672,8 @@ class FeedAdapter(
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
             // Check multiple sources for following status (by ID and username)
-            val cachedFollowingList = FeedAdapter.getCachedFollowingList()
-            val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
+            val cachedFollowingList = getCachedFollowingList()
+            val cachedFollowingUsernames = getCachedFollowingUsernames()
 
             val isUserFollowing = followingUserIds.contains(feedOwnerId) ||
                     cachedFollowingList.contains(feedOwnerId) ||
@@ -1734,8 +1734,8 @@ class FeedAdapter(
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
             // Check multiple sources for following status (by ID and username)
-            val cachedFollowingList = FeedAdapter.getCachedFollowingList()
-            val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
+            val cachedFollowingList = getCachedFollowingList()
+            val cachedFollowingUsernames = getCachedFollowingUsernames()
 
             val isUserFollowing = followingUserIds.contains(feedOwnerId) ||
                     cachedFollowingList.contains(feedOwnerId) ||
@@ -1984,8 +1984,8 @@ class FeedAdapter(
                         .setCustomAnimations(
                             R.anim.slide_in_right,
                             R.anim.slide_out_left,
-                          //  R.anim.slide_in_left,
-                          //  R.anim.slide_out_right
+                            //  R.anim.slide_in_left,
+                            //  R.anim.slide_out_right
                         )
                         .replace(R.id.frame_layout, fragment)
                         .addToBackStack(tag)
@@ -2887,8 +2887,8 @@ class FeedAdapter(
             }
 
             // Check following status by BOTH ID and USERNAME
-            val cachedFollowingList = FeedAdapter.getCachedFollowingList()
-            val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
+            val cachedFollowingList = getCachedFollowingList()
+            val cachedFollowingUsernames = getCachedFollowingUsernames()
 
             isFollowingUser = followingUserIds.contains(feedReposterOwnerId) ||
                     cachedFollowingList.contains(feedReposterOwnerId) ||
@@ -2940,8 +2940,8 @@ class FeedAdapter(
         private fun setupFollowButton(accountId: String, username: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
-            val cachedFollowingList = FeedAdapter.getCachedFollowingList()
-            val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
+            val cachedFollowingList = getCachedFollowingList()
+            val cachedFollowingUsernames = getCachedFollowingUsernames()
 
             // Check by BOTH ID and USERNAME
             val isUserFollowing = followingUserIds.contains(accountId) ||
@@ -4733,8 +4733,8 @@ class FeedAdapter(
         private val repostCountTextView: TextView = itemView.findViewById(R.id.repostCount)
 
         private val shareSection: LinearLayout = itemView.findViewById(R.id.shareLayout)
-        private val shareImageView: ImageView = itemView.findViewById(R.id.shareButtonIcon)
         private val shareCountTextView: TextView = itemView.findViewById(R.id.shareCount)
+        private val shareImageView: TextView = itemView.findViewById(R.id.shareImageView)
 
         // State variables
         private var isFollowed = false
@@ -4746,7 +4746,10 @@ class FeedAdapter(
         private var totalMixedBookMarkCounts = 0
         private var totalMixedShareCounts = 0
         private var totalMixedRePostCounts = 0
-        private var postClicked = false // Debounce flag for post navigation
+        private var postClicked = false
+
+        private var isFollowingUser = false
+        private var totalRepostComments = 0
 
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "SuspiciousIndentation")
@@ -4756,22 +4759,73 @@ class FeedAdapter(
             // Store current post reference
             currentPost = data
 
-            val feedOwnerId = data.repostedUser?._id ?: data.author?.account?._id ?: "Unknown"
+            // ✅ Extract ACCOUNT ID and USERNAME for follow check
+            val feedReposterOwnerId: String
+            val feedReposterUsername: String
+
+            when {
+                // Case 1: Someone reposted - use their OWNER field (account ID) and username
+                data.repostedUser != null -> {
+                    feedReposterOwnerId = data.repostedUser.owner  // ✅ Use owner field, not _id!
+                    feedReposterUsername = data.repostedUser.username
+                    Log.d(TAG, "🔵 Case 1: RepostedUser account ID (owner): $feedReposterOwnerId")
+                    Log.d(TAG, "🔵 Case 1: RepostedUser username: @$feedReposterUsername")
+                    Log.d(TAG, "🔵 Case 1: (NOT using repostedUser._id which is: ${data.repostedUser._id})")
+                }
+
+                // Case 2: Original post - use author.owner (the account ID!)
+                data.originalPost != null && data.originalPost.isNotEmpty() -> {
+                    val originalAuthor = data.originalPost[0].author
+                    feedReposterOwnerId = originalAuthor.owner  // ✅ This is the account ID!
+                    feedReposterUsername = originalAuthor.account.username
+                    Log.d(TAG, "🔵 Case 2: Using author.owner (account ID): $feedReposterOwnerId")
+                    Log.d(TAG, "🔵 Case 2: Username: @$feedReposterUsername")
+                    Log.d(TAG, "🔵 Case 2: (NOT using author._id which is: ${originalAuthor._id})")
+                }
+
+                // Case 3: Regular post - use main author's account ID
+                else -> {
+                    feedReposterOwnerId = data.author?.account?._id ?: "Unknown"
+                    feedReposterUsername = data.author?.account?.username ?: "unknown"
+                    Log.d(TAG, "🔵 Case 3: Main author account ID: $feedReposterOwnerId")
+                    Log.d(TAG, "🔵 Case 3: Username: @$feedReposterUsername")
+                }
+            }
+
+            // Check following status by BOTH ID and USERNAME
+            val cachedFollowingList = FeedAdapter.getCachedFollowingList()
+            val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
+
+            isFollowingUser = followingUserIds.contains(feedReposterOwnerId) ||
+                    cachedFollowingList.contains(feedReposterOwnerId) ||
+                    cachedFollowingUsernames.contains(feedReposterUsername)
+
+            Log.d(TAG, "═══════════════════════════════════════")
+            Log.d(TAG, "REPOST FOLLOW CHECK - Post ID: ${data._id}")
+            Log.d(TAG, ">>> Account ID (for follow check): $feedReposterOwnerId")
+            Log.d(TAG, ">>> Username (for follow check): @$feedReposterUsername")
+            Log.d(TAG, ">>> Is following this account: $isFollowingUser")
+            Log.d(TAG, ">>> Match in followingUserIds: ${followingUserIds.contains(feedReposterOwnerId)}")
+            Log.d(TAG, ">>> Match in cachedList: ${cachedFollowingList.contains(feedReposterOwnerId)}")
+            Log.d(TAG, ">>> Match by username: ${cachedFollowingUsernames.contains(feedReposterUsername)}")
+            Log.d(TAG, "Following list (${followingUserIds.size} users): ${followingUserIds.joinToString(", ")}")
+            Log.d(TAG, "═══════════════════════════════════════")
 
             totalMixedComments = data.comments
             totalMixedLikesCounts = data.likes
             totalMixedBookMarkCounts = data.bookmarkCount
             totalMixedShareCounts = data.shareCount
             totalMixedRePostCounts = data.repostCount
+            totalRepostComments = totalMixedComments
 
-            setupUserInfo(data, feedOwnerId)
+            setupUserInfo(data, feedReposterOwnerId)
             setupPostInfo(data)
-            setupNewPostMediaFiles(data) // New post media (top)
+            setupNewPostMediaFiles(data)
             setupContentAndTags(data)
-            setupOriginalPostContent(data) // Quoted/original post (bottom)
+            setupOriginalPostContent(data)
             setupEngagementButtons(data)
-            setupProfileClickListeners(data, feedOwnerId)
-            setupFollowButton(feedOwnerId)
+            setupProfileClickListeners(data, feedReposterOwnerId)
+            setupFollowButton(feedReposterOwnerId, feedReposterUsername) // Pass both ID and username
             setupPostClickListeners(data)
             ensurePostClickability(data)
             setupInteractionButtonsClickPrevention()
@@ -4850,57 +4904,68 @@ class FeedAdapter(
         }
 
         private fun setupInteractionButtonsClickPrevention() {
-            val interactionButtons = listOf(
-                likeSection,
-                commentSection,
-                favoriteSection,
-                repostSection,
-                shareSection,
-                followButton,
-                moreOptionsButton
-            )
+            // Like section
+            likeSection.setOnClickListener { view ->
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                likeButton.performClick()
+            }
 
-            interactionButtons.forEach { button ->
-                button.setOnClickListener { view ->
-                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                    when (view.id) {
-                        R.id.likeButtonIcon -> {
-                            handleLikeClick()
-                            consumeClickEvent(view)
-                        }
-                        R.id.commentButtonIcon -> {
-                            handleCommentClick()
-                            consumeClickEvent(view)
-                        }
-                        R.id.favoriteSection -> {
-                            handleFavoriteClick()
-                            consumeClickEvent(view)
-                        }
-                        R.id.repostPost -> {
-                            handleRetweetClick()
-                            consumeClickEvent(view)
-                        }
-                        R.id.shareButtonIcon -> {
-                            handleShareClick()
-                            consumeClickEvent(view)
-                        }
-                        R.id.followButton -> {
-                            handleFollowClick()
-                            consumeClickEvent(view)
-                        }
-                        R.id.moreOptions -> {
-                            handleMoreOptionsClick()
-                            consumeClickEvent(view)
-                        }
+            // Comment section
+            commentSection.setOnClickListener { view ->
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                commentButton.performClick()
+            }
+
+            // Favorite section
+            favoriteSection.setOnClickListener { view ->
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                favoriteButton.performClick()
+            }
+
+            // Repost section
+            repostSection.setOnClickListener { view ->
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                repostPost.performClick()
+            }
+
+            // Share section
+            shareSection.setOnClickListener { view ->
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                shareImageView.performClick()
+            }
+
+            followButton.setOnClickListener { view ->
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+
+                // Get the correct user ID and USERNAME from current post
+                val feedReposterOwnerId: String
+                val feedReposterUsername: String
+
+                when {
+                    currentPost?.repostedUser != null -> {
+                        feedReposterOwnerId = currentPost?.repostedUser?.owner ?: ""
+                        feedReposterUsername = currentPost?.repostedUser?.username ?: "unknown"
+                    }
+                    currentPost?.author?.account != null -> {
+                        feedReposterOwnerId = currentPost?.author?.account?._id ?: ""
+                        feedReposterUsername = currentPost?.author?.account?.username ?: "unknown"
+                    }
+                    else -> {
+                        feedReposterOwnerId = ""
+                        feedReposterUsername = "unknown"
                     }
                 }
+
+                handleFollowButtonClick(feedReposterOwnerId, feedReposterUsername)
+            }
+
+            moreOptionsButton.setOnClickListener { view ->
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                setupMoreOptionsButton(currentPost ?: return@setOnClickListener)
             }
         }
 
-        private fun consumeClickEvent(view: View) {
-            view.isPressed = false
-            view.parent?.requestDisallowInterceptTouchEvent(true)
-        }
+
 
         private fun ensurePostClickability(data: Post) {
             // Ensure main container is clickable
@@ -5139,8 +5204,6 @@ class FeedAdapter(
             }
         }
 
-
-
         private fun setupOriginalPostText(originalPostData: OriginalPost) {
             if (!originalPostData.content.isNullOrBlank()) {
                 originalPostText.visibility = View.VISIBLE
@@ -5349,126 +5412,354 @@ class FeedAdapter(
         }
 
         private fun setupLikeButton(data: Post) {
-            Log.d(TAG, "Setting up like button - Initial state: isLiked=${data.isLiked}, likes=${data.likes}")
+            Log.d(TAG, "Setting up like button - Initial state: isLiked=${data.isLiked}, likes=${totalMixedLikesCounts}")
             updateLikeButtonUI(data.isLiked ?: false)
-            updateMetricDisplay(likesCount, data.likes, "like")
+            updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
 
-            likeSection.setOnClickListener {
+            likeButton.setOnClickListener {
                 if (!likeButton.isEnabled) return@setOnClickListener
 
                 Log.d(TAG, "Like clicked for post: ${data._id}")
-                Log.d(TAG, "Current state before toggle: isLiked=${data.isLiked}, likes=${data.likes}")
-
                 val newLikeStatus = !(data.isLiked ?: false)
                 val previousLikeStatus = data.isLiked ?: false
-                val previousLikesCount = data.likes
+                val previousLikesCount = totalMixedLikesCounts
 
                 // Update data immediately
                 data.isLiked = newLikeStatus
-                data.likes = if (newLikeStatus) data.likes + 1 else maxOf(0, data.likes - 1)
-                totalMixedLikesCounts = // Continuing from setupLikeButton method where it was cut off
-                    data.likes
+                totalMixedLikesCounts = if (newLikeStatus) totalMixedLikesCounts + 1 else maxOf(0, totalMixedLikesCounts - 1)
+                data.likes = totalMixedLikesCounts
 
-                Log.d(TAG, "New state after toggle: isLiked=${data.isLiked}, likes=${data.likes}")
-
-                // Update UI immediately
-                updateLikeButtonUI(newLikeStatus)
+                // Update UI immediately for better UX
+                updateLikeButtonUI(data.isLiked ?: false)
                 updateMetricDisplay(likesCount, data.likes, "like")
 
-                // Disable button temporarily to prevent rapid clicking
-                likeButton.isEnabled = false
+                // Animation
+                YoYo.with(if (newLikeStatus) Techniques.Tada else Techniques.Pulse)
+                    .duration(300)
+                    .repeat(1)
+                    .playOn(likeButton)
 
-                // Make API call
-                makeApiCall(
-                    endpoint = if (newLikeStatus) "like" else "unlike",
-                    postId = data._id,
-                    onSuccess = {
-                        Log.d(TAG, "Like API call successful")
-                        likeButton.isEnabled = true
-                    },
-                    onError = { error ->
-                        Log.e(TAG, "Like API call failed: $error")
-                        // Revert changes on error
-                        data.isLiked = previousLikeStatus
-                        data.likes = previousLikesCount
-                        totalMixedLikesCounts = previousLikesCount
-                        updateLikeButtonUI(previousLikeStatus)
-                        updateMetricDisplay(likesCount, previousLikesCount, "like")
-                        likeButton.isEnabled = true
-                    }
-                )
+                // Disable button during network call
+                likeButton.isEnabled = false
+                likeButton.alpha = 0.8f
+
+                val likeRequest = LikeRequest(newLikeStatus)
+                RetrofitClient.likeService.toggleLike(data._id, likeRequest)
+                    .enqueue(object : Callback<LikeResponse> {
+                        override fun onResponse(call: Call<LikeResponse>, response: Response<LikeResponse>) {
+                            likeButton.alpha = 1f
+                            likeButton.isEnabled = true
+
+                            if (response.isSuccessful) {
+                                response.body()?.let { likeResponse ->
+                                    Log.d(TAG, "Like API success - Server count: ${likeResponse.likesCount}")
+                                    if (likeResponse.likesCount != null &&
+                                        abs(likeResponse.likesCount - data.likes) > 1) {
+                                        data.likes = likeResponse.likesCount
+                                        totalMixedLikesCounts = data.likes
+                                        updateMetricDisplay(likesCount, data.likes, "like")
+                                    }
+                                }
+                            } else {
+                                Log.e(TAG, "Like sync failed: ${response.code()}")
+                                if (response.code() != 200) {
+                                    data.isLiked = previousLikeStatus
+                                    data.likes = previousLikesCount
+                                    totalMixedLikesCounts = data.likes
+                                    updateLikeButtonUI(data.isLiked ?: false)
+                                    updateMetricDisplay(likesCount, data.likes, "like")
+                                }
+                            }
+                        }
+
+                        override fun onFailure(call: Call<LikeResponse>, t: Throwable) {
+                            likeButton.alpha = 1f
+                            likeButton.isEnabled = true
+
+                            if (t is MalformedJsonException ||
+                                t.message?.contains("MalformedJsonException") == true) {
+                                Log.w(TAG, "Like API returned malformed JSON but operation likely succeeded")
+                                return
+                            }
+
+                            Log.e(TAG, "Like network error - reverting changes", t)
+                            data.isLiked = previousLikeStatus
+                            data.likes = previousLikesCount
+                            totalMixedLikesCounts = data.likes
+                            updateLikeButtonUI(data.isLiked ?: false)
+                            updateMetricDisplay(likesCount, data.likes, "like")
+                        }
+                    })
+
+                feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
             }
         }
 
         private fun setupCommentButton(data: Post) {
-            commentSection.setOnClickListener {
-                Log.d(TAG, "Comment clicked for post: ${data._id}")
+            commentButton.setOnClickListener {
+                if (!commentButton.isEnabled) return@setOnClickListener
+                Log.d(TAG, "Comment button clicked for post ${data._id}")
 
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(commentButton)
+
+                feedClickListener.feedCommentClicked(absoluteAdapterPosition, data)
+                commentButton.isEnabled = true
+            }
+
+            feedCommentsCount.setOnClickListener {
+                if (!feedCommentsCount.isEnabled) return@setOnClickListener
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(feedCommentsCount)
+                feedClickListener.feedCommentClicked(absoluteAdapterPosition, data)
             }
         }
 
-        private fun setupShareButton(data: Post) {
-            updateMetricDisplay(shareCountTextView, data.shareCount, "share")
-
-            shareSection.setOnClickListener {
-                Log.d(TAG, "Share clicked for post: ${data._id}")
-                handleShareClick()
+        // Add these comment management methods
+        fun updateCommentCount(newCount: Int) {
+            Log.d(TAG, "updateCommentCount: Updating comment count from $totalRepostComments to $newCount")
+            totalRepostComments = if (newCount < 0) {
+                Log.w(TAG, "updateCommentCount: Negative count received, setting to 0")
+                0
+            } else {
+                newCount
             }
+
+            currentPost?.let { post ->
+                post.comments = totalRepostComments
+            }
+
+            feedCommentsCount.text = formatCount(totalRepostComments)
+            YoYo.with(Techniques.Pulse)
+                .duration(500)
+                .playOn(feedCommentsCount)
         }
 
-        private fun setupRepostButton(data: Post) {
-            updateMetricDisplay(repostCountTextView, data.repostCount, "repost")
+        fun decrementCommentCount() {
+            val newCount = maxOf(0, totalRepostComments - 1)
+            Log.d(TAG, "decrementCommentCount: Decrementing from $totalRepostComments to $newCount")
+            updateCommentCount(newCount)
+        }
 
-            repostSection.setOnClickListener {
-                Log.d(TAG, "Repost clicked for post: ${data._id}")
-                handleRetweetClick()
-            }
+        fun incrementCommentCount() {
+            val newCount = totalRepostComments + 1
+            Log.d(TAG, "incrementCommentCount: Incrementing from $totalRepostComments to $newCount")
+            updateCommentCount(newCount)
         }
 
         private fun setupBookmarkButton(data: Post) {
-            Log.d(TAG, "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}, bookmarks=${data.bookmarkCount}")
+            Log.d(TAG,
+                "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}," +
+                        " bookmarkCount=${totalMixedBookMarkCounts}")
             updateBookmarkButtonUI(data.isBookmarked ?: false)
-            updateMetricDisplay(favoritesCount, data.bookmarkCount, "bookmark")
+            updateMetricDisplay(favoritesCount, totalMixedBookMarkCounts, "bookmark")
 
-            favoriteSection.setOnClickListener {
+            favoriteButton.setOnClickListener {
                 if (!favoriteButton.isEnabled) return@setOnClickListener
 
                 Log.d(TAG, "Bookmark clicked for post: ${data._id}")
                 val newBookmarkStatus = !(data.isBookmarked ?: false)
                 val previousBookmarkStatus = data.isBookmarked ?: false
-                val previousBookmarkCount = data.bookmarkCount
+                val previousBookmarkCount = totalMixedBookMarkCounts
 
                 // Update data immediately
                 data.isBookmarked = newBookmarkStatus
-                data.bookmarkCount = if (newBookmarkStatus) data.bookmarkCount + 1 else maxOf(0, data.bookmarkCount - 1)
-                totalMixedBookMarkCounts = data.bookmarkCount
+                totalMixedBookMarkCounts = if (newBookmarkStatus) totalMixedBookMarkCounts + 1 else maxOf(0, totalMixedBookMarkCounts - 1)
+                data.bookmarkCount = totalMixedBookMarkCounts
 
-                // Update UI immediately
-                updateBookmarkButtonUI(newBookmarkStatus)
+                // Update UI immediately for better UX
+                updateBookmarkButtonUI(data.isBookmarked ?: false)
                 updateMetricDisplay(favoritesCount, data.bookmarkCount, "bookmark")
 
-                // Disable button temporarily
-                favoriteButton.isEnabled = false
+                // Animation
+                YoYo.with(if (newBookmarkStatus) Techniques.Tada else Techniques.Pulse)
+                    .duration(500)
+                    .repeat(1)
+                    .playOn(favoriteButton)
 
-                // Make API call
-                makeApiCall(
-                    endpoint = if (newBookmarkStatus) "bookmark" else "unbookmark",
-                    postId = data._id,
-                    onSuccess = {
-                        Log.d(TAG, "Bookmark API call successful")
-                        favoriteButton.isEnabled = true
-                    },
-                    onError = { error ->
-                        Log.e(TAG, "Bookmark API call failed: $error")
-                        // Revert changes on error
-                        data.isBookmarked = previousBookmarkStatus
-                        data.bookmarkCount = previousBookmarkCount
-                        totalMixedBookMarkCounts = previousBookmarkCount
-                        updateBookmarkButtonUI(previousBookmarkStatus)
-                        updateMetricDisplay(favoritesCount, previousBookmarkCount, "bookmark")
-                        favoriteButton.isEnabled = true
+                // Disable button during network call
+                favoriteButton.isEnabled = false
+                favoriteButton.alpha = 0.8f
+
+                val bookmarkRequest = BookmarkRequest(newBookmarkStatus)
+                RetrofitClient.bookmarkService.toggleBookmark(data._id, bookmarkRequest)
+                    .enqueue(object : Callback<BookmarkResponse> {
+                        override fun onResponse(call: Call<BookmarkResponse>, response: Response<BookmarkResponse>) {
+                            favoriteButton.alpha = 1f
+                            favoriteButton.isEnabled = true
+
+                            if (response.isSuccessful) {
+                                response.body()?.let { bookmarkResponse ->
+                                    if (abs(bookmarkResponse.bookmarkCount - data.bookmarkCount) > 1) {
+                                        data.bookmarkCount = bookmarkResponse.bookmarkCount
+                                        totalMixedBookMarkCounts = data.bookmarkCount
+                                        updateMetricDisplay(favoritesCount, data.bookmarkCount, "bookmark")
+                                    }
+                                }
+                            } else {
+                                if (response.code() != 200) {
+                                    data.isBookmarked = previousBookmarkStatus
+                                    data.bookmarkCount = previousBookmarkCount
+                                    totalMixedBookMarkCounts = data.bookmarkCount
+                                    updateBookmarkButtonUI(data.isBookmarked ?: false)
+                                    updateMetricDisplay(favoritesCount, data.bookmarkCount, "bookmark")
+                                }
+                            }
+                        }
+
+                        override fun onFailure(call: Call<BookmarkResponse>, t: Throwable) {
+                            favoriteButton.alpha = 1f
+                            favoriteButton.isEnabled = true
+
+                            if (t is MalformedJsonException ||
+                                t.message?.contains("MalformedJsonException") == true) {
+                                Log.w(TAG, "Bookmark API returned malformed JSON but operation likely succeeded")
+                                return
+                            }
+
+                            data.isBookmarked = previousBookmarkStatus
+                            data.bookmarkCount = previousBookmarkCount
+                            totalMixedBookMarkCounts = data.bookmarkCount
+                            updateBookmarkButtonUI(data.isBookmarked ?: false)
+                            updateMetricDisplay(favoritesCount, data.bookmarkCount, "bookmark")
+                        }
+                    })
+
+                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
+            }
+        }
+
+        private fun setupRepostButton(data: Post) {
+            totalMixedRePostCounts = 0
+            updateMetricDisplay(repostCountTextView, totalMixedRePostCounts, "repost")
+            updateRepostButtonAppearance(data.isReposted)
+
+            repostPost.setOnClickListener { view ->
+                if (!repostPost.isEnabled) return@setOnClickListener
+                repostPost.isEnabled = false
+
+                try {
+                    val wasReposted = data.isReposted
+                    data.isReposted = !wasReposted
+                    totalMixedRePostCounts = if (data.isReposted) totalMixedRePostCounts + 1 else maxOf(0, totalMixedRePostCounts - 1)
+                    updateMetricDisplay(repostCountTextView, totalMixedRePostCounts, "repost")
+                    updateRepostButtonAppearance(data.isReposted)
+
+                    YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
+                        .duration(700)
+                        .playOn(repostPost)
+
+                    repostPost.alpha = 0.8f
+                    val apiCall = if (data.isReposted) {
+                        RetrofitClient.repostService.incrementRepost(data._id)
+                    } else {
+                        RetrofitClient.repostService.decrementRepost(data._id)
                     }
-                )
+
+                    apiCall.enqueue(object : Callback<RepostResponse> {
+                        override fun onResponse(call: Call<RepostResponse>, response: Response<RepostResponse>) {
+                            repostPost.isEnabled = true
+                            repostPost.alpha = 1f
+                            if (response.isSuccessful) {
+                                response.body()?.let { repostResponse ->
+                                    if (abs(repostResponse.repostCount - totalMixedRePostCounts) > 1) {
+                                        totalMixedRePostCounts = repostResponse.repostCount
+                                        updateMetricDisplay(repostCountTextView, totalMixedRePostCounts, "repost")
+                                    }
+                                }
+                            }
+                        }
+
+                        override fun onFailure(call: Call<RepostResponse>, t: Throwable) {
+                            repostPost.isEnabled = true
+                            repostPost.alpha = 1f
+                            Log.e(TAG, "Repost network error - will sync later", t)
+                        }
+                    })
+
+                    if (data.isReposted) {
+                        navigateToEditPostToRepost(data)
+                    }
+                    feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
+                } catch (e: Exception) {
+                    repostPost.isEnabled = true
+                    repostPost.alpha = 1f
+                    Log.e(TAG, "Exception in repost click listener", e)
+                }
+            }
+        }
+
+        private fun updateRepostButtonAppearance(isReposted: Boolean) {
+            if (isReposted) {
+                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                repostPost.scaleX = 1.1f
+                repostPost.scaleY = 1.1f
+            } else {
+                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                repostPost.scaleX = 1.0f
+                repostPost.scaleY = 1.0f
+            }
+        }
+
+        private fun setupShareButton(data: Post) {
+            totalMixedShareCounts = data.shareCount ?: data.shareCount ?: 0
+            updateMetricDisplay(shareCountTextView, totalMixedShareCounts, "share")
+
+            shareImageView.setOnClickListener {
+                if (!shareImageView.isEnabled) return@setOnClickListener
+
+                Log.d(TAG, "Share clicked for Post: ${data._id}")
+                val previousShareCount = totalMixedShareCounts
+
+                // Update immediately for better UX
+                totalMixedShareCounts += 1
+                data.shareCount = totalMixedShareCounts
+                updateMetricDisplay(shareCountTextView, totalMixedShareCounts, "share")
+
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(shareImageView)
+
+                shareImageView.isEnabled = false
+                shareImageView.alpha = 0.8f
+
+                // Make API call to sync with server
+                RetrofitClient.shareService.incrementShare(data._id)
+                    .enqueue(object : Callback<ShareResponse> {
+                        override fun onResponse(call: Call<ShareResponse>, response: Response<ShareResponse>) {
+                            shareImageView.alpha = 1f
+                            shareImageView.isEnabled = true
+
+                            if (response.isSuccessful) {
+                                response.body()?.let { shareResponse ->
+                                    if (abs(shareResponse.shareCount - 0) > 1) {
+                                        data.shareCount = shareResponse.shareCount
+                                        totalMixedShareCounts = data.shareCount
+                                        updateMetricDisplay(shareCountTextView, data.shareCount, "share")
+                                    }
+                                }
+                            } else {
+                                data.shareCount = previousShareCount
+                                totalMixedShareCounts = data.shareCount
+                                updateMetricDisplay(shareCountTextView, data.shareCount, "share")
+                            }
+                        }
+
+                        override fun onFailure(call: Call<ShareResponse>, t: Throwable) {
+                            shareImageView.alpha = 1f
+                            shareImageView.isEnabled = true
+                            data.shareCount = previousShareCount
+                            totalMixedShareCounts = data.shareCount
+                            updateMetricDisplay(shareCountTextView, data.shareCount, "share")
+                        }
+                    })
+
+                feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
             }
         }
 
@@ -5480,22 +5771,86 @@ class FeedAdapter(
         }
 
         private fun updateLikeButtonUI(isLiked: Boolean) {
-            if (isLiked) {
-                likeButton.setImageResource(R.drawable.heart_svgrepo_com)
-
-            } else {
-                likeButton.setImageResource(R.drawable.heart_svgrepo_com)
-                likeButton.imageTintList = ContextCompat.getColorStateList(itemView.context, R.color.blueJeans)
+            Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
+            try {
+                if (isLiked) {
+                    likeButton.setImageResource(R.drawable.filled_favorite_like)
+                } else {
+                    likeButton.setImageResource(R.drawable.heart_svgrepo_com)
+                    likeButton.clearColorFilter()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating like button UI", e)
             }
         }
 
         private fun updateBookmarkButtonUI(isBookmarked: Boolean) {
-            if (isBookmarked) {
-                favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+            Log.d(TAG, "Updating bookmark button UI: isBookmarked=$isBookmarked")
+            try {
+                if (isBookmarked) {
+                    favoriteButton.setImageResource(R.drawable.filled_favorite)
+                } else {
+                    favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                    favoriteButton.clearColorFilter()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating bookmark button UI", e)
+            }
+        }
 
-            } else {
-                favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
-                favoriteButton.imageTintList = ContextCompat.getColorStateList(itemView.context, R.color.blueJeans)
+        private fun navigateToEditPostToRepost(data: Post) {
+            try {
+                val fragment = Fragment_Edit_Post_To_Repost(data).apply {
+                    arguments = Bundle().apply {
+                        putString("post_data", Gson().toJson(data))
+                        putString("post_id", data._id)
+                        data.originalPost.firstOrNull()?.let { originalPost ->
+                            putString("original_post_data", Gson().toJson(originalPost))
+                            putString("original_post_id", originalPost._id)
+                            putString("original_content", originalPost.content)
+                            putString("original_content_type", originalPost.contentType)
+                            putString("original_created_at", originalPost.createdAt)
+                            putString("original_author_id", originalPost.author._id)
+                            putString("original_author_username", originalPost.author.account.username)
+                            putString(
+                                "original_author_display_name",
+                                listOfNotNull(
+                                    originalPost.author.firstName.takeIf { it.isNotBlank() },
+                                    originalPost.author.lastName.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").trim().takeIf { it.isNotEmpty() }
+                                    ?: originalPost.author.account.username
+                            )
+                            putString("original_author_avatar", originalPost.author.account.avatar.url)
+                            if (originalPost.files.isNotEmpty()) {
+                                putString("original_files_data", Gson().toJson(originalPost.files))
+                                putInt("original_files_count", originalPost.files.size)
+                            }
+                        }
+                        val currentUser = LocalStorage.getInstance(itemView.context).getUser() as? User
+                        currentUser?.let { user ->
+                            putString("current_user_id", user._id)
+                            putString("current_user_username", user.account?.username)
+                            putString(
+                                "current_user_avatar",
+                                when {
+                                    user.avatar is Avatar -> user.avatar.url
+                                    user.avatar is String -> user.avatar
+                                    else -> null
+                                }.toString()
+                            )
+                        }
+                        putString("repost_type", "quote_repost")
+                        putString("existing_comment", data.content)
+                        putBoolean("is_editing_existing_repost", data.isReposted)
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "repost_button_click")
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+                    }
+                }
+                navigateToFragment(fragment, "edit_post_to_repost")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to edit post fragment: ${e.message}")
+                e.printStackTrace()
             }
         }
 
@@ -5551,47 +5906,106 @@ class FeedAdapter(
             tvQuotedUserHandle.setOnClickListener(originalProfileClickListener)
         }
 
-        private fun setupFollowButton(feedOwnerId: String) {
-            // Check follow status and update button
-            checkFollowStatus(feedOwnerId) { isFollowed ->
-                this.isFollowed = isFollowed
-                updateFollowButtonUI(isFollowed)
+        private fun setupFollowButton(accountId: String, username: String) {
+            val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
+
+            val cachedFollowingList = getCachedFollowingList()
+            val cachedFollowingUsernames = getCachedFollowingUsernames()
+
+            // Check by BOTH ID and USERNAME
+            val isUserFollowing = followingUserIds.contains(accountId) ||
+                    cachedFollowingList.contains(accountId) ||
+                    cachedFollowingUsernames.contains(username)
+
+            Log.d(TAG, "───────────────────────────────────────")
+            Log.d(TAG, "SETUP FOLLOW BUTTON")
+            Log.d(TAG, "Account ID to check: $accountId")
+            Log.d(TAG, "Username to check: @$username")
+            Log.d(TAG, "Current user ID: $currentUserId")
+            Log.d(TAG, "isFollowingUser (from render): $isFollowingUser")
+            Log.d(TAG, "isUserFollowing (local check): $isUserFollowing")
+            Log.d(TAG, "Match in followingUserIds: ${followingUserIds.contains(accountId)}")
+            Log.d(TAG, "Match in cachedFollowingList: ${cachedFollowingList.contains(accountId)}")
+            Log.d(TAG, "Match by username: ${cachedFollowingUsernames.contains(username)}")
+
+            // Hide button if it's own post OR already following (by ID or username)
+            val shouldHideButton = accountId == currentUserId || isFollowingUser || isUserFollowing
+
+            if (shouldHideButton) {
+                followButton.visibility = View.GONE
+                Log.d(TAG, "✓✓✓ HIDING follow button - Reason: ${when {
+                    accountId == currentUserId -> "Own post"
+                    cachedFollowingUsernames.contains(username) -> "Already following (by username: @$username)"
+                    followingUserIds.contains(accountId) -> "Already following (by ID from followingUserIds)"
+                    cachedFollowingList.contains(accountId) -> "Already following (by ID from cachedList)"
+                    isFollowingUser -> "Already following (render check)"
+                    isUserFollowing -> "Already following (local check)"
+                    else -> "Unknown"
+                }}")
+                Log.d(TAG, "───────────────────────────────────────")
+                return
             }
 
+            // Show follow button
+            followButton.visibility = View.VISIBLE
+            followButton.text = "Follow"
+            followButton.backgroundTintList = ContextCompat.getColorStateList(
+                itemView.context,
+                R.color.blueJeans
+            )
+
+            Log.d(TAG, "✓✓✓ SHOWING follow button for account: $accountId (@$username)")
+            Log.d(TAG, "───────────────────────────────────────")
+
+            // ✅ CRITICAL: Pass the ACCOUNT ID (not author ID) to handleFollowButtonClick
             followButton.setOnClickListener {
-                if (!followButton.isEnabled) return@setOnClickListener
-
-                val newFollowStatus = !isFollowed
-                followButton.isEnabled = false
-
-                makeApiCall(
-                    endpoint = if (newFollowStatus) "follow" else "unfollow",
-                    postId = feedOwnerId,
-                    onSuccess = {
-                        isFollowed = newFollowStatus
-                        updateFollowButtonUI(newFollowStatus)
-                        followButton.isEnabled = true
-                        Log.d(TAG, "Follow status changed to: $newFollowStatus")
-                    },
-                    onError = { error ->
-                        Log.e(TAG, "Follow API call failed: $error")
-                        followButton.isEnabled = true
-                    }
-                )
+                handleFollowButtonClick(accountId, username)  // Pass both ID and username
             }
         }
 
-        private fun updateFollowButtonUI(isFollowed: Boolean) {
+        @SuppressLint("NotifyDataSetChanged")
+        private fun handleFollowButtonClick(accountId: String, username: String) {
+            YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
+
+            Log.d(TAG, "═══════════════════════════════════════")
+            Log.d(TAG, "FOLLOW BUTTON CLICKED")
+            Log.d(TAG, "Account ID to follow: $accountId")
+            Log.d(TAG, "Username to follow: @$username")
+            Log.d(TAG, "This ID will be added to following list")
+            Log.d(TAG, "═══════════════════════════════════════")
+
+            isFollowed = !isFollowed
+            val followEntity = FollowUnFollowEntity(accountId, isFollowed)
+
             if (isFollowed) {
-                followButton.text = "Following"
+                // Hide button immediately
+                followButton.visibility = View.GONE
 
-                followButton.setTextColor(ContextCompat.getColor(itemView.context, R.color.blueJeans))
+                // Add ACCOUNT ID and USERNAME to following list
+                (bindingAdapter as? FeedAdapter)?.addToFollowing(accountId, username)
+                FollowingManager(itemView.context).addToFollowing(accountId)
+
+                Log.d(TAG, "✓ Added account $accountId (@$username) to following list")
             } else {
+                // Show button
                 followButton.text = "Follow"
-                followButton.background = ContextCompat.getDrawable(itemView.context, R.drawable.fill_button_color)
-                followButton.setTextColor(ContextCompat.getColor(itemView.context, R.color.white))
+                followButton.visibility = View.VISIBLE
+
+                // Remove from following list
+                (bindingAdapter as? FeedAdapter)?.removeFromFollowing(accountId, username)
+                FollowingManager(itemView.context).removeFromFollowing(accountId)
+
+                Log.d(TAG, "✓ Removed account $accountId (@$username) from following list")
             }
+
+            // Notify listener
+            feedClickListener.followButtonClicked(followEntity, followButton)
+            EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
+
+            // Refresh adapter
+            (bindingAdapter as? FeedAdapter)?.notifyDataSetChanged()
         }
+
 
         private fun handleLikeClick() {
             currentPost?.let { post ->
@@ -5859,6 +6273,10 @@ class FeedAdapter(
             // Implement quote repost functionality
             Log.d(TAG, "Quote reposting: ${data._id}")
         }
+
+
+
+
     }
 
     inner class TrendingVideosPostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
