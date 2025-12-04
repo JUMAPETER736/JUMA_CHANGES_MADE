@@ -158,6 +158,7 @@ import retrofit2.Response
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.signature.ObjectKey
 import android.graphics.drawable.Drawable
+import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SettingsActivity
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
 import kotlin.jvm.java
 
@@ -1501,13 +1502,18 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         searchForAllShorts = view.findViewById(R.id.searchForAllShorts)
 
         shortsMenu.setOnClickListener {
+
             val popupMenu = PopupMenu(context, shortsMenu)
             popupMenu.menuInflater.inflate(R.menu.shorts_menu_item, popupMenu.menu)
             popupMenu.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
+
                     R.id.menu_setting -> {
+                        val intent = Intent(context, SettingsActivity::class.java)
+                        startActivity(intent)
                         true
                     }
+
                     R.id.logout -> {
                         performLogout()
                         true

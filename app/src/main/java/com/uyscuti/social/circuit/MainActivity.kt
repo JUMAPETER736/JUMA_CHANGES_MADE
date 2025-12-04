@@ -1735,11 +1735,13 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             startActivity(intent)
             true
         }
+
         settingsMenuItem?.setOnMenuItemClickListener {
             val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
             true
         }
+
         logoutMenuItem?.setOnMenuItemClickListener {
             showLogoutConfirmationDialog()
             true
