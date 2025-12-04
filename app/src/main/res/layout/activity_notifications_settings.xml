@@ -9,7 +9,7 @@
         android:id="@+id/main"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/bluejeans"
+        android:background="@color/background"
         tools:context=".User_Interface.OtherImportantProfileThings.NotificationsSettingsActivity">
 
         <!-- Header Section -->
@@ -22,7 +22,7 @@
             android:textStyle="bold"
             android:textColor="@color/black"
             android:padding="16dp"
-            android:background="@color/white"
+            android:background="@color/bluejeans"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
 
