@@ -411,7 +411,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     override fun feedClickedToOriginalPost(
         position: Int, originalPostId: String) {
-        
+
     }
 
     override fun onImageClick() {}
