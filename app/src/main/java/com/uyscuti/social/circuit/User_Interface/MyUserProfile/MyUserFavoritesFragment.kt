@@ -359,26 +359,60 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     // OnFeedClickListener implementations (stubs)
-    override fun likeUnLikeFeed(position: Int, data: Post) {}
+    override fun likeUnLikeFeed(
+        position: Int, data: Post) {
 
-    override fun feedCommentClicked(position: Int, data: Post) {}
+    }
 
-    override fun feedFavoriteClick(position: Int, data: Post) {}
+    override fun feedCommentClicked(
+        position: Int, data: Post) {
 
-    override fun moreOptionsClick(position: Int, data: Post) {}
+    }
 
-    override fun feedFileClicked(position: Int, data: Post) {}
+    override fun feedFavoriteClick(
+        position: Int, data: Post) {
 
-    override fun feedRepostFileClicked(position: Int, data: OriginalPost) {}
+    }
 
-    override fun feedShareClicked(position: Int, data: Post) {}
+    override fun moreOptionsClick(
+        position: Int, data: Post) {
 
-    override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {}
-    override fun feedRepostPost(position: Int, data: Post) {}
+    }
 
-    override fun feedRepostPostClicked(position: Int, data: Post) {}
+    override fun feedFileClicked(
+        position: Int, data: Post) {
 
-    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {}
+    }
+
+    override fun feedRepostFileClicked(
+        position: Int, data: OriginalPost) {
+
+    }
+
+    override fun feedShareClicked(
+        position: Int, data: Post) {
+
+    }
+
+    override fun followButtonClicked(
+        followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {
+
+    }
+
+    override fun feedRepostPost(
+        position: Int, data: Post) {
+
+    }
+
+    override fun feedRepostPostClicked(
+        position: Int, data: Post) {
+
+    }
+
+    override fun feedClickedToOriginalPost(
+        position: Int, originalPostId: String) {
+        
+    }
 
     override fun onImageClick() {}
 
