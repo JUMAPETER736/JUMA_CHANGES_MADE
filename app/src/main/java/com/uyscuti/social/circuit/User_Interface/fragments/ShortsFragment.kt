@@ -3204,7 +3204,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         val videoUrl = shortVideo.images.firstOrNull()?.url
         val fullShareText = if (videoUrl != null) "$shareText\n$videoUrl" else shareText
 
-        // Setup share buttons with proper intent handling
+        // Setup share buttons
         shareView.findViewById<ImageButton>(R.id.btnWhatsApp)?.setOnClickListener {
             shareToWhatsApp(context, fullShareText)
             bottomSheetDialog.dismiss()
@@ -3274,27 +3274,32 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         bottomSheetDialog.show()
     }
 
+    private fun isAppInstalled(context: Context, packageName: String): Boolean {
+        return try {
+            context.packageManager.getPackageInfo(packageName, 0)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
 
     private fun shareToWhatsApp(context: Context, text: String) {
         try {
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, text)
-                setPackage("com.whatsapp")
-            }
+            val packages = listOf("com.whatsapp", "com.whatsapp.w4b")
 
-            // Check if WhatsApp is installed
-            if (intent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(intent)
-            } else {
-                // Try WhatsApp Business as fallback
-                intent.setPackage("com.whatsapp.w4b")
-                if (intent.resolveActivity(context.packageManager) != null) {
+            for (packageName in packages) {
+                if (isAppInstalled(context, packageName)) {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, text)
+                        setPackage(packageName)
+                    }
                     context.startActivity(intent)
-                } else {
-                    Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
+                    return
                 }
             }
+
+            Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(context, "Error opening WhatsApp", Toast.LENGTH_SHORT).show()
             Log.e(TAG, "Error sharing to WhatsApp", e)
@@ -3303,23 +3308,21 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     private fun shareToInstagram(context: Context, text: String) {
         try {
-            // Instagram doesn't support text sharing via ACTION_SEND
-            // Open Instagram app or show generic share
-            val intent = context.packageManager.getLaunchIntentForPackage("com.instagram.android")
-
-            if (intent != null) {
-                // Copy text to clipboard first
+            if (isAppInstalled(context, "com.instagram.android")) {
+                // Copy text to clipboard
                 try {
                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
                     val clip = android.content.ClipData.newPlainText("Share Text", text)
                     clipboard?.setPrimaryClip(clip)
-
-                    context.startActivity(intent)
-                    Toast.makeText(context, "Text copied! Paste in Instagram", Toast.LENGTH_LONG).show()
                 } catch (clipboardError: Exception) {
-                    // If clipboard fails, just open Instagram
-                    context.startActivity(intent)
-                    Toast.makeText(context, "Instagram opened", Toast.LENGTH_SHORT).show()
+                    Log.e(TAG, "Clipboard error", clipboardError)
+                }
+
+                // Open Instagram
+                val intent = context.packageManager.getLaunchIntentForPackage("com.instagram.android")
+                intent?.let {
+                    context.startActivity(it)
+                    Toast.makeText(context, "Text copied! Paste in Instagram", Toast.LENGTH_LONG).show()
                 }
             } else {
                 Toast.makeText(context, "Instagram not installed", Toast.LENGTH_SHORT).show()
@@ -3332,23 +3335,21 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     private fun shareToMessenger(context: Context, text: String) {
         try {
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, text)
-                setPackage("com.facebook.orca")
-            }
+            val packages = listOf("com.facebook.orca", "com.facebook.mlite")
 
-            if (intent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(intent)
-            } else {
-                // Try Messenger Lite as fallback
-                intent.setPackage("com.facebook.mlite")
-                if (intent.resolveActivity(context.packageManager) != null) {
+            for (packageName in packages) {
+                if (isAppInstalled(context, packageName)) {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, text)
+                        setPackage(packageName)
+                    }
                     context.startActivity(intent)
-                } else {
-                    Toast.makeText(context, "Messenger not installed", Toast.LENGTH_SHORT).show()
+                    return
                 }
             }
+
+            Toast.makeText(context, "Messenger not installed", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(context, "Error opening Messenger", Toast.LENGTH_SHORT).show()
             Log.e(TAG, "Error sharing to Messenger", e)
@@ -3357,23 +3358,22 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     private fun shareToFacebook(context: Context, text: String) {
         try {
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, text)
-                setPackage("com.facebook.katana")
-            }
+            // Check for Facebook Lite first, then regular Facebook
+            val packages = listOf("com.facebook.lite", "com.facebook.katana")
 
-            if (intent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(intent)
-            } else {
-                // Try Facebook Lite as fallback
-                intent.setPackage("com.facebook.lite")
-                if (intent.resolveActivity(context.packageManager) != null) {
+            for (packageName in packages) {
+                if (isAppInstalled(context, packageName)) {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, text)
+                        setPackage(packageName)
+                    }
                     context.startActivity(intent)
-                } else {
-                    Toast.makeText(context, "Facebook not installed", Toast.LENGTH_SHORT).show()
+                    return
                 }
             }
+
+            Toast.makeText(context, "Facebook not installed", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(context, "Error opening Facebook", Toast.LENGTH_SHORT).show()
             Log.e(TAG, "Error sharing to Facebook", e)
@@ -3382,23 +3382,21 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     private fun shareToTelegram(context: Context, text: String) {
         try {
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, text)
-                setPackage("org.telegram.messenger")
-            }
+            val packages = listOf("org.telegram.messenger", "org.thunderdog.challegram")
 
-            if (intent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(intent)
-            } else {
-                // Try Telegram X as fallback
-                intent.setPackage("org.thunderdog.challegram")
-                if (intent.resolveActivity(context.packageManager) != null) {
+            for (packageName in packages) {
+                if (isAppInstalled(context, packageName)) {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, text)
+                        setPackage(packageName)
+                    }
                     context.startActivity(intent)
-                } else {
-                    Toast.makeText(context, "Telegram not installed", Toast.LENGTH_SHORT).show()
+                    return
                 }
             }
+
+            Toast.makeText(context, "Telegram not installed", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(context, "Error opening Telegram", Toast.LENGTH_SHORT).show()
             Log.e(TAG, "Error sharing to Telegram", e)
@@ -3408,7 +3406,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     private fun shareViaSMS(context: Context, text: String) {
         try {
             val intent = Intent(Intent.ACTION_SENDTO).apply {
-                data = Uri.parse("smsto:")  // Use SENDTO with smsto: scheme
+                data = Uri.parse("smsto:")
                 putExtra("sms_body", text)
             }
 
