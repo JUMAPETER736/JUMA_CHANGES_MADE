@@ -1338,6 +1338,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     // Media Player & ExoPlayer
     private var exoPlayer: ExoPlayer? = null
     private var currentPlayerListener: Player.Listener? = null
+
     //private var isPlayerPreparing = false
     private var isUserSeeking = false
 
@@ -1363,17 +1364,13 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     private val followShortsViewModel: FollowListItemViewModel by viewModels()
     private val followViewModel: FollowViewModel by viewModels()
     private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
-    private val userProfileShortsViewModel: UserProfileShortsViewModel by activityViewModels()
-
-
 
 
     init {
         // Increase cache size for better performance
         simpleCache.release() // Clear if needed
     }
-
-
+    
     companion object {
         const val REQUEST_UPLOAD_SHORTS_ACTIVITY = 123 // You can use any unique value
         private const val FEED_ARG_DATA = "feed_arg_data"
