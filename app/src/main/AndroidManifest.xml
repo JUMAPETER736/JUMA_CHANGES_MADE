@@ -19,6 +19,16 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
+    <queries>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.facebook.orca" />
+        <package android:name="com.facebook.katana" />
+        <package android:name="com.facebook.lite" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="com.instagram.android" />
+    </queries>
+
+
     <application
         android:name=".FlashApplication"
         android:allowBackup="true"
