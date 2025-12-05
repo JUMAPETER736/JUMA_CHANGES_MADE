@@ -1370,7 +1370,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         // Increase cache size for better performance
         simpleCache.release() // Clear if needed
     }
-    
+
     companion object {
         const val REQUEST_UPLOAD_SHORTS_ACTIVITY = 123 // You can use any unique value
         private const val FEED_ARG_DATA = "feed_arg_data"
