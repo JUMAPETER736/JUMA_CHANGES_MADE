@@ -101,6 +101,71 @@ internal const val VIEW_TYPE_VOICE_NOTE = 6
 private const val TAG = "FeedAdapter"
 
 
+
+interface OnClickListeners {
+    fun onSeekBarChanged(progress: Int)
+    fun onDownloadClick(url: String, fileLocation: String)
+
+}
+
+interface OnFeedClickListener {
+
+
+    fun likeUnLikeFeed(
+        position: Int,
+        data: Post
+    )
+
+
+    fun feedCommentClicked(
+        position: Int,
+        data: Post
+    )
+
+    fun feedFavoriteClick(
+        position: Int,
+        data: Post
+    )
+
+
+    fun moreOptionsClick(
+        position: Int,
+        data: Post
+    )
+
+    fun feedFileClicked(
+        position: Int,
+        data: Post
+    )
+
+    fun feedRepostFileClicked(
+        position: Int, data: OriginalPost
+    )
+
+    fun feedShareClicked(
+        position: Int, data: Post
+    )
+
+
+    fun followButtonClicked(
+        followUnFollowEntity: FollowUnFollowEntity,
+        followButton: AppCompatButton
+    )
+
+    fun feedRepostPost(
+        position: Int,
+        data: Post
+    )
+
+    fun feedRepostPostClicked(position: Int, data: Post)
+
+    fun feedClickedToOriginalPost(position: Int, originalPostId: String)
+
+    fun onImageClick()
+
+
+}
+
 class FeedAdapter(
 
     private val context: Context,
@@ -6760,70 +6825,6 @@ class FeedAdapter(
 }
 
 
-
-interface OnClickListeners {
-    fun onSeekBarChanged(progress: Int)
-    fun onDownloadClick(url: String, fileLocation: String)
-
-}
-
-interface OnFeedClickListener {
-
-
-    fun likeUnLikeFeed(
-        position: Int,
-        data: Post
-    )
-
-
-    fun feedCommentClicked(
-        position: Int,
-        data: Post
-    )
-
-    fun feedFavoriteClick(
-        position: Int,
-        data: Post
-    )
-
-
-    fun moreOptionsClick(
-        position: Int,
-        data: Post
-    )
-
-    fun feedFileClicked(
-        position: Int,
-        data: Post
-    )
-
-    fun feedRepostFileClicked(
-        position: Int, data: OriginalPost
-    )
-
-    fun feedShareClicked(
-        position: Int, data: Post
-    )
-
-
-    fun followButtonClicked(
-        followUnFollowEntity: FollowUnFollowEntity,
-        followButton: AppCompatButton
-    )
-
-    fun feedRepostPost(
-        position: Int,
-        data: Post
-    )
-
-    fun feedRepostPostClicked(position: Int, data: Post)
-
-    fun feedClickedToOriginalPost(position: Int, originalPostId: String)
-
-    fun onImageClick()
-
-
-}
 
 
 
