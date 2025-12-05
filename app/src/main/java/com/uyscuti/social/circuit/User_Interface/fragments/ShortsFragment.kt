@@ -1353,7 +1353,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     // ExoPlayer Data Sources
     private lateinit var httpDataSourceFactory: HttpDataSource.Factory
-    private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
     private val simpleCache: SimpleCache = FlashApplication.cache
     private val playbackStateListener: Player.Listener = playbackStateListener()
 
@@ -2757,7 +2756,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             else -> MimeTypes.VIDEO_MP4 // Default fallback
         }
     }
-    
+
 
     private fun handlePlaybackError(position: Int) {
         lifecycleScope.launch {
@@ -2886,102 +2885,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     }
 
-    private fun handleLikeClick(
-        postId: String,
-        likeCount: TextView,
-        btnLike: ImageButton,
-        shortsEntity: ShortsEntity
-    ) {
-
-        Log.d("handleLikeClick", "handleLikeClick: before ${shortsViewModel.isLiked}")
-        shortsViewModel.isLiked = !shortsViewModel.isLiked
-        Log.d("handleLikeClick", "handleLikeClick: after ! ${shortsViewModel.isLiked}")
-        EventBus.getDefault().post(ShortsLikeUnLike2(postId))
-
-        if (!shortsEntity.isLiked) {
-
-
-            shortsEntity.likes += 1
-            likeCount.text = shortsEntity.likes.toString()
-
-            btnLike.setImageResource(R.drawable.filled_favorite_like)
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(btnLike)
-
-            shortsEntity.isLiked = true
-
-
-            val myShorts = userProfileShortsViewModel.mutableShortsList.find { it._id == postId }
-            var myFavoriteShorts =
-                userProfileShortsViewModel.mutableFavoriteShortsList.find { it._id == postId }
-
-            if (myShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myShorts._id}")
-                myShorts.isLiked = true
-                myShorts.likes += 1
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            if (myFavoriteShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myFavoriteShorts._id}")
-                myFavoriteShorts.isLiked = true
-                myFavoriteShorts.likes += 1
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            shortsViewModel.isLiked = true
-        } else {
-            shortsEntity.likes -= 1
-            likeCount.text = shortsEntity.likes.toString()
-            var myShorts = userProfileShortsViewModel.mutableShortsList.find { it._id == postId }
-            var myFavoriteShorts =
-                userProfileShortsViewModel.mutableFavoriteShortsList.find { it._id == postId }
-
-            if (myShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myShorts._id}")
-                myShorts.isLiked = false
-                myShorts.likes -= 1
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            if (myFavoriteShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myFavoriteShorts._id}")
-                myFavoriteShorts.isLiked = false
-                myFavoriteShorts.likes -= 1
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            btnLike.setImageResource(R.drawable.favorite_svgrepo_com)
-            shortsEntity.isLiked = false
-
-            shortsViewModel.isLiked = false
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(btnLike)
-        }
-    }
-
-    private fun shortsEntityToUserShortsEntity(serverResponseItem: ShortsEntity): UserShortsEntity {
-        return UserShortsEntity(
-            __v = serverResponseItem.__v,
-            _id = serverResponseItem._id,
-            content = serverResponseItem.content,
-            author = serverResponseItem.author,
-            comments = serverResponseItem.comments,
-            createdAt = serverResponseItem.createdAt,
-            images = serverResponseItem.images,
-            isBookmarked = serverResponseItem.isBookmarked,
-            isLiked = serverResponseItem.isLiked,
-            likes = serverResponseItem.likes,
-            tags = serverResponseItem.tags,
-            updatedAt = serverResponseItem.updatedAt,
-            thumbnail = serverResponseItem.thumbnail,
-            // map other properties...
-        )
-    }
 
     private fun updateStatusBar() {
         val decor: View? = activity?.window?.decorView
