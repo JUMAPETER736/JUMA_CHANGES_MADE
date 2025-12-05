@@ -2757,25 +2757,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             else -> MimeTypes.VIDEO_MP4 // Default fallback
         }
     }
-
-    @OptIn(UnstableApi::class)
-    private fun createRobustDataSourceFactory(): DataSource.Factory {
-        return try {
-            // Create cache data source factory with fallback
-            val cacheFactory = if (::cacheDataSourceFactory.isInitialized) {
-                cacheDataSourceFactory
-            } else {
-                Log.w("createRobustDataSourceFactory", "Cache factory not initialized, using default")
-                DefaultDataSource.Factory(requireContext())
-            }
-
-            // Wrap with retry mechanism
-            cacheFactory
-        } catch (e: Exception) {
-            Log.e("createRobustDataSourceFactory", "Error creating robust data source factory", e)
-            DefaultDataSource.Factory(requireContext())
-        }
-    }
+    
 
     private fun handlePlaybackError(position: Int) {
         lifecycleScope.launch {
