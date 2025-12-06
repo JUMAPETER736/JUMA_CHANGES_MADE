@@ -60,7 +60,7 @@ class FeedRepostAudioViewAdapter (private val imageList: List<String>?, val cont
         }
 
         inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-  
+
             private val imageView2: ImageView = itemView.findViewById(R.id.imageView2)
             private val cardView: CardView = itemView.findViewById(R.id.cardView)
             private val countTextView: TextView = itemView.findViewById(R.id.textView)
