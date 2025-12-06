@@ -26,7 +26,9 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 private const val TAG = "FeedImageViewAdapter"
-class FeedDocumentsViewAdapter(imageList: MutableList<String>, context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class FeedDocumentsViewAdapter(
+    imageList: MutableList<String>,
+    context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val documentList = ArrayList<String>()
 
