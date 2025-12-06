@@ -114,10 +114,6 @@ public abstract class GifPaginatedAdapter<ITEM, VH extends RecyclerView.ViewHold
         mRecyclerView.setAdapter(this);
     }
 
-    public void setPageSize(int pageSize) {
-        this.mPageSize = pageSize;
-    }
-
     private void initPaginating() {
         mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override

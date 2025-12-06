@@ -44,9 +44,7 @@ class GifAdapter(private val clickListener: GifClickListener) :
                 .load(data.gifs[0].url)
                 .apply(RequestOptions.centerCropTransform())
                 .placeholder(R.drawable.flash21)
-//                    .diskCacheStrategy(
-//                        DiskCacheStrategy.ALL
-//                    )
+
                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                 .into(imageView)
 

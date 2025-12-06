@@ -49,7 +49,7 @@ class MultipleFeedImagesAdapter(
         holder: Pager2ViewHolder,
         position: Int
     ) {
-//        holder.images.setImageResource(images[position])
+
         if (type == "image") {
             Glide.with(context)
                 .load(images[position])
