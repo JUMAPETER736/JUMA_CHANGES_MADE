@@ -26,7 +26,6 @@ import com.uyscuti.social.circuit.presentation.MainViewModel
 import com.uyscuti.social.circuit.User_Interface.feedactivities.ReportNotificationActivity2
 import com.uyscuti.social.circuit.viewmodels.notificationViewModel.NotificationViewModel
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import org.greenrobot.eventbus.EventBus
 import java.util.Date
@@ -62,9 +61,6 @@ private lateinit var retrofitInterface: RetrofitInstance
         fun onNotificationLongClick(notification: INotification)
         fun onClickSingleNotification(notification: INotification)
         fun onRemoveNotificationClick(notification: INotification)
-    }
-    interface OnMarkAsUnreadListener {
-        fun onMarkAsUnread(notification: INotification)
     }
 
 
@@ -126,11 +122,11 @@ private lateinit var retrofitInterface: RetrofitInstance
     @SuppressLint("SetTextI18n", "NotifyDataSetChanged", "SuspiciousIndentation")
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val notificationItem = notifications[position]
-        /**listener for every notification item */
+
         holder.itemView.setOnLongClickListener { view ->
-            /**Scale up the view**/
+
             view.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).withEndAction {
-                /**Scale back to original size*/
+
                 view.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
             }.start()
             if (selectedItems.contains(position)) {
@@ -144,7 +140,7 @@ private lateinit var retrofitInterface: RetrofitInstance
             true
         }
         holder.itemView.setOnClickListener {
-            /**Fade to white background with animation*/
+
             notificationItem.isRead = true
             holder.itemView.setBackgroundColor(holder.itemView.context.getColor(com.uyscuti.social.chatsuit.R.color.transparent))
             EventBus.getDefault().post(NotificationRead(false, notificationItem._id))
@@ -165,7 +161,7 @@ private lateinit var retrofitInterface: RetrofitInstance
             holder.itemView.setBackgroundResource(R.color.bluejeans)
         }
         when (holder) {
-            /**TextViewHolder is used for text notifications*/
+
             is TextViewHolder -> {
                 val fullMessage = notificationItem.notificationMessage
                 // Limit the message to 40 characters
@@ -220,8 +216,7 @@ private lateinit var retrofitInterface: RetrofitInstance
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(holder.profilePic)
             }
-            /**t his is FollowViewHolder */
-       /**the is UnfollowViewHolder */
+
             is UnfollowViewHolder -> {
                 val fullMessage = notificationItem.notificationTime
                 val truncatedMessage = if (fullMessage.length > 40) {
@@ -232,14 +227,14 @@ private lateinit var retrofitInterface: RetrofitInstance
                 notificationItem.avatar
                 holder.username.text = notificationItem.name
                 holder.notificationTime.text = notificationItem.notificationTime
-//                <-------user profile image --------->
+
                 Glide.with(holder.itemView.context)
                     .load(notificationItem.avatar)
                     .apply(RequestOptions.bitmapTransform(CircleCrop()))
                     .apply(RequestOptions.placeholderOf(R.drawable.nav_user_svg))
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(holder.profilePic)
-                /**this is the listener for profilePic */
+
                 holder.profilePic.setOnClickListener {
                     notificationItem.isRead = true
                     holder.itemView.setBackgroundResource(R.color.white)
@@ -290,10 +285,10 @@ private lateinit var retrofitInterface: RetrofitInstance
                         interests = emptyList(),
                         categories = emptyList()
                     )
-//                    OtherUserProfile.openFromShorts(holder.itemView.context, otherUsersProfile)
+
                 }
             }
-            /**this is the comment REPLY VIEW HOLDER */
+
             is CommentReplyViewHolder -> {
                 val fullMessage = notificationItem.notificationMessage
                 // Limit the message to 40 characters
@@ -302,7 +297,7 @@ private lateinit var retrofitInterface: RetrofitInstance
                 } else {
                     fullMessage
                 }
-//                holder.notificationMessage.text = truncatedMessage
+
                 holder.notificationTime.text = notificationItem.notificationTime
                 holder.username.text = notificationItem.name
                 notificationItem.avatar
@@ -734,15 +729,9 @@ private lateinit var retrofitInterface: RetrofitInstance
     }
 
 
-    fun addIsFollowingData(isFollowingData: List<ShortsEntityFollowList>) {
-//      val startPosition = followingData.size
-        val followingData = null
-        followingData?.addAll(isFollowingData)
-//        android.util.Log(, "addIsFollowingData: $isFollowingData")
-    }
 }
 
-/**these are the class view holder */
+
 class TextViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     val notificationMessage: TextView = itemView.findViewById(R.id.notificationMessage)
     val username: TextView = itemView.findViewById(R.id.username)

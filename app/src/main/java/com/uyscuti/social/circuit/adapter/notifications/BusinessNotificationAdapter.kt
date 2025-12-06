@@ -12,6 +12,7 @@ import com.uyscuti.social.circuit.R
 private const val BUSINESS_NOTIFICATION_COMMENT = 1
 private const val  BUSINESS_NOTIFICATION_VIEW= 2
 private const val  BUSINESS_NOTIFICATION_LIKE = 3
+
 class BusinessNotificationAdapter(private val notifications:List<Notification>
 ): RecyclerView.Adapter<RecyclerView.ViewHolder> (){
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {

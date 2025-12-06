@@ -13,6 +13,7 @@ import com.uyscuti.social.circuit.model.notifications_data_class.NotificationByD
 import com.uyscuti.social.circuit.R
 
 class NotificationDayAdapter(
+
     private val notificationsList: MutableList<NotificationByDay>,
     private val notificationActionListener: NotificationActionListener,
 
