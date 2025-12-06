@@ -74,7 +74,7 @@ class ProfileTabsAdapter @OptIn(UnstableApi::class) constructor(
 
             2 -> {
                 user?.let { validUser ->
-                    ProfileViewFragment.newInstance(validUser) // ← Pass entire User object
+                    ProfileViewFragment.newInstance(validUser)
                 } ?: Fragment()
             }
 

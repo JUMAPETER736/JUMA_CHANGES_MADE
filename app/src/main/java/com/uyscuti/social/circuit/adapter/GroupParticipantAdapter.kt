@@ -72,8 +72,7 @@ class GroupParticipantAdapter(private val participantList: List<User>) :
 
         when (getItemViewType(position)) {
             VIEW_TYPE_ADMIN -> {
-                // Bindings specific to the admin user
-                // For example, you can customize the appearance or behavior for admin
+
                 holder.linearLayout.setOnClickListener {
                     // Handle admin click
                 }

@@ -180,10 +180,10 @@ class UserProfileShortsViewHolder(
         Log.d("Shorts", "data in view holder: $data")
 
         val url = data?.images?.get(0)?.url
-        val shortOwnerDate = data!!.author.createdAt
+        data!!.author.createdAt
         val shortOwnerUsername = data.author.account.username
-        val shortOwnerName = "${data.author.firstName} ${data.author.lastName}"
-        val shortOwnerProfilePic = data.author.account.avatar.url
+        "${data.author.firstName} ${data.author.lastName}"
+        data.author.account.avatar.url
 
 
         EventBus.getDefault().post(ShortsLikeUnLikeButton2(data, btnLike, isLiked, likeCount))
@@ -209,9 +209,7 @@ class UserProfileShortsViewHolder(
             .into(profileImageView)
 
         profileImageView.setOnClickListener {
-            val shortOwnerId = data.author.account._id
-
-            var dialog: Dialog? = null
+            data.author.account._id
 
         }
         val caption = data.content

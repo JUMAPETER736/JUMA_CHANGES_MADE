@@ -60,8 +60,7 @@ class CallUsersListAdapter(private val context: Context, private val listener:(U
         }
 
         fun bind(user: User, listener: (User, Boolean) -> Unit) {
-            // Bind data to the views
-            // For example:
+
 
             Glide.with(itemView.context)
                 .load(user.avatar)

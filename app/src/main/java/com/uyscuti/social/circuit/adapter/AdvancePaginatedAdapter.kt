@@ -1,7 +1,6 @@
 package com.uyscuti.social.circuit.adapter
 
 import android.app.Activity
-import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
@@ -19,13 +18,6 @@ abstract class AdvancePaginatedAdapter<ITEM, VH : RecyclerView.ViewHolder?> :
     private var loadMoreListener: LoadMoreListener? = null
     fun setLoadMoreListener(loadMoreListener: LoadMoreListener?) {
         this.loadMoreListener = loadMoreListener
-    }
-
-    fun loadMoreIfNeeded(position: Int) {
-        if (position == itemCount - 1 && loadMoreListener != null) {
-            val nextPageNumber = itemCount / mPageSize + 1
-            loadMoreListener!!.onLoadMore(nextPageNumber)
-        }
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -93,10 +85,6 @@ abstract class AdvancePaginatedAdapter<ITEM, VH : RecyclerView.ViewHolder?> :
 
     private fun setAdapter() {
         mRecyclerView!!.adapter = this
-    }
-
-    fun setPageSize(pageSize: Int) {
-        mPageSize = pageSize
     }
 
     private fun initPaginating() {

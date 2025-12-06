@@ -71,8 +71,7 @@ class UserListAdapter(
 
 
         fun bind(user: User, listener: (User) -> Unit) {
-            // Bind data to the views
-            // For example:
+
 
             Glide.with(itemView.context)
                 .load(user.avatar)

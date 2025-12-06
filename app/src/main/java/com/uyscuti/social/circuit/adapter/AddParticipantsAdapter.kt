@@ -14,7 +14,9 @@ import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.social.circuit.data.model.User
 import com.uyscuti.social.circuit.R
 
-class AddParticipantsAdapter (private val context: Context, private val listener: (User) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class AddParticipantsAdapter (
+    private val context: Context,
+    private val listener: (User) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var userList: MutableList<User> = mutableListOf()
 
@@ -67,8 +69,7 @@ class AddParticipantsAdapter (private val context: Context, private val listener
         }
 
         fun bind(user: User, listener: (User) -> Unit) {
-            // Bind data to the views
-            // For example:
+
 
             Glide.with(itemView.context)
                 .load(user.avatar)

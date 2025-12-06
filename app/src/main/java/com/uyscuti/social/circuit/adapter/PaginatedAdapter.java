@@ -1,5 +1,6 @@
 package com.uyscuti.social.circuit.adapter;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.view.ViewGroup;
 
@@ -12,7 +13,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class PaginatedAdapter<ITEM, VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> {
+public abstract class PaginatedAdapter<ITEM,
+        VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> {
     private final List<ITEM> mDataSet = new ArrayList<>();
     private OnPaginationListener mListener;
     private int mStartPage = 1;
@@ -26,17 +28,6 @@ public abstract class PaginatedAdapter<ITEM, VH extends RecyclerView.ViewHolder>
 
     public LoadMoreListener loadMoreListener;
 
-    public void setLoadMoreListener(LoadMoreListener loadMoreListener) {
-        this.loadMoreListener = loadMoreListener;
-    }
-
-
-    public void loadMoreIfNeeded(int position) {
-        if (position == getItemCount() - 1 && loadMoreListener != null) {
-            int nextPageNumber = getItemCount() / 10 + 1;
-            loadMoreListener.onLoadMore(nextPageNumber);
-        }
-    }
 
     @NonNull
     public abstract VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType);
@@ -60,6 +51,7 @@ public abstract class PaginatedAdapter<ITEM, VH extends RecyclerView.ViewHolder>
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     public void submitItem(ITEM item) {
         mDataSet.add(item);
         notifyDataSetChanged();
@@ -70,6 +62,7 @@ public abstract class PaginatedAdapter<ITEM, VH extends RecyclerView.ViewHolder>
         notifyDataSetChanged();
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     public void clear() {
         mDataSet.clear();
         notifyDataSetChanged();

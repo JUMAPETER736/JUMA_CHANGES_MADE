@@ -1,5 +1,6 @@
 package com.uyscuti.social.circuit.adapter
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Handler
 import android.util.TypedValue
@@ -36,6 +37,7 @@ class SearchUserAdapter(
     private val TYPE_LOADING = 3
     private val TYPE_NO_RESULTS = 4
 
+    @SuppressLint("NotifyDataSetChanged")
     fun setRecentUsers(recentUsers: List<User>) {
         this.recentUserList = recentUsers.toMutableList()
         if (displayRecentUsers) {
@@ -47,12 +49,13 @@ class SearchUserAdapter(
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     fun setSearchUsers(searchUsers: List<User>) {
         this.searchUserList = searchUsers.toMutableList()
         isLoading = false
         displayRecentUsers = false
         noResults = false
-//        noResults = searchUsers.isEmpty()
+
         notifyDataSetChanged()
     }
 
@@ -60,19 +63,8 @@ class SearchUserAdapter(
     fun setLoading(isLoading: Boolean) {
         this.isLoading = isLoading
         displayRecentUsers = false
-//        noResults = false
+
         notifyDataSetChanged()
-    }
-
-    fun performClick(user: User){
-        if (searchUserList.contains(user)){
-            val position = searchUserList.indexOf(user)
-
-        } else if (recentUserList.contains(user)){
-            val position = recentUserList.indexOf(user)
-            recentUserList.add(position,user)
-            notifyItemChanged(position)
-        }
     }
 
     fun update(user: User) {
@@ -80,8 +72,7 @@ class SearchUserAdapter(
         val recentPosition = recentUserList.indexOf(user)
 
         if (searchPosition != -1) {
-            // User is in searchUserList
-            // Handle accordingly, e.g., update UI or perform some action
+
         } else if (recentPosition != -1) {
             // User is in recentUserList
             // Update the user at its current position
@@ -92,6 +83,7 @@ class SearchUserAdapter(
     }
 
 
+    @SuppressLint("NotifyDataSetChanged")
     fun setNoResults(){
         this.noResults = true
         notifyDataSetChanged()

@@ -50,7 +50,6 @@ class ChatPagerAdapter(fragmentManager: FragmentManager) : FragmentPagerAdapter(
         }
 
 
-        // Append the unread count to the title if it's greater than 0
         val unreadCount = unreadCounts.getOrNull(position) ?: 0
         return if (unreadCount > 0) {
             "$title ($unreadCount)"

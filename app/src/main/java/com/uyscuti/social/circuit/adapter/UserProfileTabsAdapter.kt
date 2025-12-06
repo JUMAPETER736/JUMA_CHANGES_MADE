@@ -1,8 +1,6 @@
 package com.uyscuti.social.circuit.adapter
 
 import android.content.Context
-import android.graphics.drawable.Drawable
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
@@ -52,10 +50,6 @@ class UserProfileTabsAdapter(
 
     override fun getPageTitle(position: Int): CharSequence? {
         return null
-    }
-
-    fun getIcon(position: Int): Drawable? {
-        return ContextCompat.getDrawable(context, TAB_ICONS[position])
     }
 
     override fun getCount(): Int {

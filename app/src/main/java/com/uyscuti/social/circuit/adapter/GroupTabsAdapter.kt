@@ -24,7 +24,7 @@ private val TAB_ICONS = arrayOf(
 class GroupTabsAdapter(private val context: Context, fm: FragmentManager) :
     FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
 
-    private var unreadCounts = mutableListOf(0, 0, 0,0,0,0) // Initialize the unread counts for each tab
+    private var unreadCounts = mutableListOf(0, 0, 0,0,0,0)
     private var dialog: Dialog? = null
     private var adminId: String? = null
 

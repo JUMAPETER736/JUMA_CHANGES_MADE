@@ -56,9 +56,7 @@ class CommentAdapter(
         return commentList.size
     }
 
-    /**
-     * Set the initial comment list and calculate total count
-     */
+
     fun setComments(comments: ArrayList<Comment>) {
         commentList.clear()
         commentList.addAll(comments)
@@ -66,9 +64,7 @@ class CommentAdapter(
         notifyDataSetChanged()
     }
 
-    /**
-     * Adds a single comment at the beginning of the list
-     */
+
     fun addComment(comment: Comment) {
         commentList.add(0, comment) // Add to the beginning to show newest first
         totalCommentCount += 1 + (comment.replyCount ?: 0) // Add main comment + its replies
@@ -76,9 +72,7 @@ class CommentAdapter(
         onCommentCountChangeListener?.invoke(totalCommentCount)
     }
 
-    /**
-     * Remove a comment and update count
-     */
+
     fun removeComment(position: Int) {
         if (position >= 0 && position < commentList.size) {
             val removedComment = commentList.removeAt(position)
@@ -88,9 +82,7 @@ class CommentAdapter(
         }
     }
 
-    /**
-     * Update reply count for a specific comment
-     */
+
     fun updateReplyCount(commentId: String, newReplyCount: Int) {
         val position = commentList.indexOfFirst { it._id == commentId }
         if (position != -1) {
@@ -106,9 +98,7 @@ class CommentAdapter(
         }
     }
 
-    /**
-     * Calculate total comment count (main comments + all replies)
-     */
+
     private fun calculateTotalCommentCount() {
         totalCommentCount = commentList.sumOf { comment ->
             1 + (comment.replyCount ?: 0) // 1 for the main comment + reply count
@@ -116,23 +106,16 @@ class CommentAdapter(
         onCommentCountChangeListener?.invoke(totalCommentCount)
     }
 
-    /**
-     * Get current total comment count
-     */
     fun getTotalCommentCount(): Int {
         return totalCommentCount
     }
 
-    /**
-     * Set listener for comment count changes
-     */
+
     fun setOnCommentCountChangeListener(listener: (Int) -> Unit) {
         onCommentCountChangeListener = listener
     }
 
-    /**
-     * Set click listeners
-     */
+
     fun setOnReplyClickListener(listener: (Comment) -> Unit) {
         onReplyClickListener = listener
     }
@@ -145,9 +128,7 @@ class CommentAdapter(
         onViewRepliesClickListener = listener
     }
 
-    /**
-     * Refresh comment counts (useful when returning from reply screen)
-     */
+
     fun refreshCommentCounts() {
         calculateTotalCommentCount()
         notifyDataSetChanged()
@@ -361,7 +342,7 @@ class CommentAdapter(
                 )
 
 
-              //  UserProfileAccount.openFromShorts(itemView.context, otherUsersProfile)
+
             }
         }
     }

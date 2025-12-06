@@ -275,31 +275,7 @@ class SettingsAdapter(
             }
         }
     }
-    inner class DefaultItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        // Bind views for the first item layout here
 
-        private val title: TextView = itemView.findViewById(R.id.titleTextView)
-        private val subTitle: TextView = itemView.findViewById(R.id.subtitleTextView)
-        private val image: ImageView = itemView.findViewById(R.id.settingsImageView)
-
-        init {
-            val selectableItemBackground = TypedValue()
-            itemView.context.theme.resolveAttribute(android.R.attr.selectableItemBackground, selectableItemBackground, true)
-            itemView.setBackgroundResource(selectableItemBackground.resourceId)
-        }
-
-        fun bind(setting: SettingsModel, clickListener: (SettingsModel) -> Unit) {
-            // Bind data for the first item layout here
-            // Bind data for the normal item layout here
-            title.text = setting.title
-            subTitle.text = setting.subTitle
-
-
-            itemView.setOnClickListener {
-                clickListener(setting)
-            }
-        }
-    }
     inner class InviteItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         // Bind views for the first item layout here
 
