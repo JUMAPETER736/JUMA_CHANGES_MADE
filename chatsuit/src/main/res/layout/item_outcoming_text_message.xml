@@ -49,13 +49,12 @@
                 android:textSize="11sp" />
 
             <ImageView
-                android:id="@+id/messageStatus"
+                android:id="@+id/status"
                 android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_gravity="center_vertical"
+                android:layout_gravity="center"
                 android:layout_marginStart="4dp"
-                android:layout_marginLeft="4dp"
-                android:src="@drawable/ic_tick_single" />
+                android:layout_height="12dp"
+                app:tint="@color/dark_gray" />
 
         </LinearLayout>
 

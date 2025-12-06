@@ -96,12 +96,12 @@
                     tools:text="12:25" />
 
                 <ImageView
-                    android:id="@+id/messageStatus"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_tick_single"
-                    app:tint="@color/white"
-                    android:alpha="0.7" />
+                    android:id="@+id/status"
+                    android:layout_width="12dp"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="4dp"
+                    android:layout_height="12dp"
+                    app:tint="@color/dark_gray" />
 
             </LinearLayout>
 

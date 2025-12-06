@@ -779,6 +779,30 @@ public class MessageHolders {
             }
 
             ImageView tickImageView;
+
+            if (status != null) {
+
+                if (Objects.equals(message.getStatus(), "Sent")) {
+                    status.setBackgroundResource(R.drawable.status___sent);
+                } else if (Objects.equals(message.getStatus(), "Seen")) {
+
+                    status.setBackgroundResource(R.drawable.status_____seen);
+
+                } else if (Objects.equals(message.getStatus(), "Sending")) {
+
+                    status.setBackgroundResource(R.drawable.status___sending);
+
+                } else if (Objects.equals(message.getStatus(), "Delivered")) {
+
+                    status.setBackgroundResource(R.drawable.status___received);
+
+                } else {
+
+                    status.setBackgroundResource(R.drawable.status_seen);
+
+                }
+            }
+
         }
 
         @Override
@@ -906,6 +930,29 @@ public class MessageHolders {
         void onDuration(long duration);
     }
 
+
+
+
+
+    interface DefaultMessageViewHolder {
+        void applyStyle(MessagesListStyle style);
+    }
+
+    private static class DefaultIncomingTextMessageViewHolder
+            extends IncomingTextMessageViewHolder<IMessage> {
+
+        public DefaultIncomingTextMessageViewHolder(View itemView) {
+            super(itemView, null);
+        }
+    }
+
+    private static class DefaultOutcomingTextMessageViewHolder
+            extends OutcomingTextMessageViewHolder<MessageContentType.Image> {
+
+        public DefaultOutcomingTextMessageViewHolder(View itemView) {
+            super(itemView, null);
+        }
+    }
 
     //    Incoming Video Holder
     public static class IncomingVideoMessageViewHolder<MESSAGE extends MessageContentType.Image>
@@ -2315,27 +2362,6 @@ public class MessageHolders {
         public abstract void onViewRecycled();
     }
 
-
-    interface DefaultMessageViewHolder {
-        void applyStyle(MessagesListStyle style);
-    }
-
-    private static class DefaultIncomingTextMessageViewHolder
-            extends IncomingTextMessageViewHolder<IMessage> {
-
-        public DefaultIncomingTextMessageViewHolder(View itemView) {
-            super(itemView, null);
-        }
-    }
-
-    private static class DefaultOutcomingTextMessageViewHolder
-            extends OutcomingTextMessageViewHolder<MessageContentType.Image> {
-
-        public DefaultOutcomingTextMessageViewHolder(View itemView) {
-            super(itemView, null);
-        }
-    }
-
     private static class DefaultIncomingImageMessageViewHolder
             extends IncomingImageMessageViewHolder<MessageContentType.Image> {
 
@@ -2408,7 +2434,10 @@ public class MessageHolders {
         private ImageView playButton;
         private TextView duration;
         private TextView time;
-        private ImageView messageStatus;
+
+
+        protected ProgressBar progressBar;
+
         private LinearLayout waveformContainer;
 
         private boolean isPlaying = false;
@@ -2424,7 +2453,7 @@ public class MessageHolders {
             playButton = itemView.findViewById(R.id.playButton);
             duration = itemView.findViewById(R.id.duration);
             time = itemView.findViewById(R.id.time);
-            messageStatus = itemView.findViewById(R.id.messageStatus);
+            //messageStatus = itemView.findViewById(R.id.messageStatus);
             waveformContainer = itemView.findViewById(R.id.waveformContainer);
 
             Log.d("VoiceViewHolder", "Constructor called");
@@ -2440,6 +2469,29 @@ public class MessageHolders {
                 isVoiceMessage = message.getVoiceDuration() > 0 ||
                         (message.getImageUrl() != null && message.getImageUrl().endsWith(".mp3")) ||
                         (message.getAudioUrl() != null && (message.getAudioUrl().contains("/vn/") || message.getAudioUrl().contains("rec_")));
+            }
+
+            if (status != null) {
+
+                if (Objects.equals(message.getStatus(), "Sent")) {
+                    status.setBackgroundResource(R.drawable.status___sent);
+                } else if (Objects.equals(message.getStatus(), "Seen")) {
+
+                    status.setBackgroundResource(R.drawable.status_____seen);
+
+                } else if (Objects.equals(message.getStatus(), "Sending")) {
+
+                    status.setBackgroundResource(R.drawable.status___sending);
+
+                } else if (Objects.equals(message.getStatus(), "Delivered")) {
+
+                    status.setBackgroundResource(R.drawable.status___received);
+
+                } else {
+
+                    status.setBackgroundResource(R.drawable.status_seen);
+
+                }
             }
 
             if (isVoiceMessage) {
@@ -2492,7 +2544,7 @@ public class MessageHolders {
                     });
                 }
 
-                if (messageStatus != null) {
+                if (progressBar != null) {
                     setMessageStatus(message);
                 }
 
@@ -2621,8 +2673,8 @@ public class MessageHolders {
         }
 
         private void setMessageStatus(MessageContentType.Image message) {
-            if (messageStatus != null) {
-                messageStatus.setImageResource(R.drawable.ic_tick_single);
+            if (progressBar != null) {
+                progressBar = itemView.findViewById(R.id.fileSendProgress);
             }
         }
 
