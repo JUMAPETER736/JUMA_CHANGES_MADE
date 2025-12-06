@@ -5,12 +5,14 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -53,9 +55,10 @@ class MultipleFeedAudioAdapter(
         )
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onBindViewHolder(holder: Pager2ViewHolder, position: Int) {
 
-//        holder.images.setImageResource(images[position])
+
         val audioPath = audios[position]
         val albumArt = getAlbumArt(audioPath.audioPath)
         multipleAudiosListener.onAudioDisplay(audios[position])
@@ -65,10 +68,10 @@ class MultipleFeedAudioAdapter(
             val color = ContextCompat.getColor(context, com.uyscuti.social.chatsuit.R.color.transparent)
             val mode = PorterDuff.Mode.SRC_ATOP  // Or another mode as per your requirement
 
-// Create a color filter with the specified color and mode
+
             val colorFilter = PorterDuffColorFilter(color, mode)
 
-// Apply the color filter to the ImageView
+
             holder.images.colorFilter = colorFilter
             Glide.with(context)
                 .load(albumArt)

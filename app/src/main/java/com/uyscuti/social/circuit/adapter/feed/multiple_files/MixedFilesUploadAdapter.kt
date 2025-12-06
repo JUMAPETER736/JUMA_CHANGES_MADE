@@ -71,7 +71,7 @@ class MixedFilesUploadAdapter(
 
 
     override fun getItemViewType(position: Int): Int {
-//        return if (type == "image") {
+
         return if (position < images.size){
             viewTypeImage
         } else {

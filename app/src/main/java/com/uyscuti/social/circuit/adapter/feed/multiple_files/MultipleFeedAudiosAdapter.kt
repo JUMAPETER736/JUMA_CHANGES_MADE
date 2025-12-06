@@ -25,19 +25,14 @@ class MultipleFeedAudiosAdapter(
     inner class Pager2ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         val playPauseButton: ImageView = itemView.findViewById(R.id.playPauseButton)
-//        private val videoItemLayout: ConstraintLayout = itemView.findViewById(R.id.videoItemLayout)
+
         val audioDuration: TextView = itemView.findViewById(R.id.audioDuration)
         val leftAudioDuration: TextView = itemView.findViewById(R.id.leftAudioDuration)
         val seekBar: SeekBar = itemView.findViewById(R.id.seekBar)
         val artworkVn : ImageView = itemView.findViewById(R.id.artworkVn)
         val artworkImageView : ImageView = itemView.findViewById(R.id.artworkImageView)
 
-        init {
-//            videoItemLayout.setOnClickListener {
-//                val position = absoluteAdapterPosition
-//                Log.d(TAG, "${position + 1}: ")
-//            }
-        }
+
     }
 
     private var data: com.uyscuti.social.network.api.response.posts.Post?= null
@@ -65,7 +60,7 @@ class MultipleFeedAudiosAdapter(
         position: Int
     ) {
 
-//        holder.images.setImageResource(images[position])
+
 
         if(data != null) {
             val durationString = data?.duration?.let { commaSeparatedStringToList(it.toString()) }
@@ -120,14 +115,7 @@ class MultipleFeedAudiosAdapter(
                 }
             }
         }
-//        Glide.with(context)
-//            .load(Uri.fromFile(File(images[position])))
-//            .into(holder.images)
 
-//        holder.images.setOnClickListener {
-//            multipleImagesListener.onImageClick()
-//
-//        }
 
         holder.playPauseButton.setOnClickListener {
             if (audioUrl != null) {

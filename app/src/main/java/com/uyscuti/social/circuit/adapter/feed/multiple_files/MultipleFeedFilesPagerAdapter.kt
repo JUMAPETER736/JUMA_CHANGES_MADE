@@ -101,8 +101,7 @@ class MultipleFeedFilesPagerAdapter(
         val fragment = MixedFeedFilesUploadFragment.newInstance(data, isFullScreen).apply {
             setFeedTextViewFragmentInterface(feedTextViewFragmentInterface)
             setAllMediaItems(mixedFeedUploadDataClass, position)
-            // Set adapter reference for zoom control
-          //  setAdapterReference(this@MultipleFeedFilesPagerAdapter)
+
         }
 
         Log.d(TAG, "createFragment: Created fragment for position=$position, fileId=${data.fileId}, fileType=${data.fileTypes}, isFullScreen=$isFullScreen")

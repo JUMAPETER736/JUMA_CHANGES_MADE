@@ -47,11 +47,11 @@ class MultipleFeedDocAdapter(
         displayDocumentThumbnail(holder, documentData, position)
 
         // Set document title
-        val titleWithoutExtension = documentData.filename.substringBeforeLast(".")
+        documentData.filename.substringBeforeLast(".")
 
 
         // Set document info (pages, type, etc.)
-        val documentInfo = buildString {
+        buildString {
             append(documentData.documentType.uppercase())
             if (documentData.numberOfPages.isNotEmpty() && documentData.numberOfPages != "0" && documentData.numberOfPages != "1") {
                 append(" • ${documentData.numberOfPages} pages")
