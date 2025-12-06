@@ -27,6 +27,7 @@ import java.io.File
 
 private const val TAG = "FeedImageViewAdapter"
 class FeedDocumentsViewAdapter(
+
     imageList: MutableList<String>,
     context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
