@@ -57,7 +57,7 @@ class FeedRepostMultipleAudioAdapter (
         position: Int
     ) {
 
-//        holder.images.setImageResource(images[position])
+
 
         if(data != null) {
             val durationString = data?.duration?.let { commaSeparatedStringToList(it.toString()) }
@@ -92,13 +92,4 @@ class FeedRepostMultipleAudioAdapter (
     override fun getItemCount(): Int {
         return images.size
     }
-}
-interface PlayFeedAudioInterface {
-
-    fun onAudioPlayClickListener (
-        audioUrl: String,
-        playImageView: ImageView,
-        seekBar: SeekBar,
-        currentDuration: TextView
-    )
 }

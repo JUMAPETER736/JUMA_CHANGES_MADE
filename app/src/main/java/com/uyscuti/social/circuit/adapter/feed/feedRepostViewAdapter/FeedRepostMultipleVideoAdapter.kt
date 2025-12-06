@@ -73,7 +73,7 @@ class FeedRepostMultipleVideoAdapter(
             position: Int
         ) {
 
-//        holder.images.setImageResource(images[position])
+
             if (data != null) {
                 val durationString = data?.duration?.let { commaSeparatedStringToList(it.toString()) }
                 holder.finalDuration.text = durationString?.get(position) ?: "00:00"

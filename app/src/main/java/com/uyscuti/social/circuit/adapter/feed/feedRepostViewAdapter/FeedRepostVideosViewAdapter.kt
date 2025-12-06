@@ -47,11 +47,11 @@ class FeedRepostVideosViewAdapter(private val imageList: List<String>?) : Recycl
         private val cardView: CardView = itemView.findViewById(R.id.cardView)
         private val countTextView: TextView = itemView.findViewById(R.id.textView)
         private val feedVideoDurationTextView: TextView = itemView.findViewById(R.id.feedVideoDurationTextView)
-//        private val transparentView: View = itemView.findViewById(R.id.transparentView)
+
 
         @SuppressLint("ResourceAsColor", "SetTextI18n")
         fun bind(imageItem: String) {
-//            imageView.setImageResource()
+
             if(data != null) {
                 Log.d(TAG, "bind: video data duration ${data!!.duration}")
 
@@ -74,7 +74,7 @@ class FeedRepostVideosViewAdapter(private val imageList: List<String>?) : Recycl
                 val layoutParams = cardView.layoutParams
                 val newWidthInPixels = 300  // for example, 300 pixels
                 val newHeightInPixels = 160 // for example, 200 pixels
-//                val layoutParams = holder.cardView.layoutParams as RecyclerView.LayoutParams
+
                 when (absoluteAdapterPosition) {
                     0 -> {
                         layoutParams.width = newWidthInPixels
@@ -104,7 +104,7 @@ class FeedRepostVideosViewAdapter(private val imageList: List<String>?) : Recycl
                 val layoutParams = cardView.layoutParams
                 val newWidthInPixels = 300  // for example, 300 pixels
                 val newHeightInPixels = 165 // for example, 200 pixels
-//                val layoutParams = holder.cardView.layoutParams as RecyclerView.LayoutParams
+
                 when (absoluteAdapterPosition) {
                     0 -> {
                         layoutParams.width = newWidthInPixels
@@ -123,7 +123,7 @@ class FeedRepostVideosViewAdapter(private val imageList: List<String>?) : Recycl
                     }
                     3 -> {
                         Log.d("TAG", "bind: load 4th")
-//                        transparentView.visibility = View.VISIBLE
+
                         imageView2.visibility = View.VISIBLE
                         countTextView.visibility = View.VISIBLE
 
