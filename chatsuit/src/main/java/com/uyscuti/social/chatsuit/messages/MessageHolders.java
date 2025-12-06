@@ -112,7 +112,6 @@ public class MessageHolders {
     }
 
 
-
     private static class ContentTypeConfig<TYPE extends MessageContentType> {
 
         private byte type;
