@@ -112,23 +112,39 @@ public class MessageHolders {
     }
 
 
-    private static class ContentTypeConfig<TYPE extends MessageContentType> {
 
+    // ============================================================================
+// INNER CONFIGURATION CLASSES
+// ============================================================================
+
+    /**
+     * Configuration wrapper for a specific content type (e.g., image, video, audio).
+     * Holds both incoming and outgoing view holder configurations.
+     *
+     * @param <TYPE> The message content type this config represents
+     */
+    private static class ContentTypeConfig<TYPE extends MessageContentType> {
         private byte type;
         private HolderConfig<TYPE> incomingConfig;
         private HolderConfig<TYPE> outcomingConfig;
 
         private ContentTypeConfig(
-                byte type, HolderConfig<TYPE> incomingConfig, HolderConfig<TYPE> outcomingConfig) {
-
+                byte type,
+                HolderConfig<TYPE> incomingConfig,
+                HolderConfig<TYPE> outcomingConfig) {
             this.type = type;
             this.incomingConfig = incomingConfig;
             this.outcomingConfig = outcomingConfig;
         }
     }
 
+    /**
+     * Configuration for a single view holder, containing the holder class,
+     * layout resource, and optional payload data.
+     *
+     * @param <T> The message type this holder displays
+     */
     private static class HolderConfig<T extends IMessage> {
-
         protected Class<? extends BaseMessageViewHolder<? extends T>> holder;
         protected int layout;
         protected Object payload;
@@ -145,21 +161,40 @@ public class MessageHolders {
         }
     }
 
+// ============================================================================
+// CONTENT TYPE DETECTION
+// ============================================================================
+
+    /**
+     * Determines the appropriate view type for a given message.
+     * Checks for various content types in priority order:
+     * 1. Voice messages (highest priority)
+     * 2. Audio messages
+     * 3. Video messages
+     * 4. Documents
+     * 5. Images
+     * 6. Custom content types
+     * 7. Text (default fallback)
+     *
+     * @param message The message to analyze
+     * @return The view type constant for this message
+     */
     @SuppressWarnings("unchecked")
     private short getContentViewType(IMessage message) {
 
         if (message instanceof MessageContentType.Image) {
             MessageContentType.Image imageMessage = (MessageContentType.Image) message;
 
-            // Check for voice message FIRST (highest priority)
+            // PRIORITY 1: Check for voice message using dedicated voice fields
             if (imageMessage.getVoiceUrl() != null || imageMessage.getVoiceDuration() > 0) {
                 Log.d("Holder Attachments", "Voice Found, Path: " + imageMessage.getVoiceUrl());
                 return VIEW_TYPE_VOICE_MESSAGE;
             }
 
-            // Fallback: Check if audio URL contains voice note patterns
+            // PRIORITY 2: Check audio URL with voice note pattern detection
             if (imageMessage.getAudioUrl() != null) {
                 String audioPath = imageMessage.getAudioUrl();
+                // Detect voice notes by path patterns (/vn/ directory or rec_ prefix)
                 if (audioPath.contains("/vn/") || audioPath.contains("rec_")) {
                     Log.d("Holder Attachments", "Voice Found (from audioUrl pattern), Path: " + audioPath);
                     return VIEW_TYPE_VOICE_MESSAGE;
@@ -168,32 +203,32 @@ public class MessageHolders {
                 return VIEW_TYPE_AUDIO_MESSAGE;
             }
 
-            // Another fallback: Check if imageUrl is an mp3 (as your ViewHolder does)
+            // PRIORITY 3: Fallback check - MP3 files in imageUrl field are treated as voice
             if (imageMessage.getImageUrl() != null && imageMessage.getImageUrl().endsWith(".mp3")) {
                 Log.d("Holder Attachments", "Voice Found (from imageUrl), Path: " + imageMessage.getImageUrl());
                 return VIEW_TYPE_VOICE_MESSAGE;
             }
 
-            // Check for video
+            // PRIORITY 4: Check for video content
             if (imageMessage.getVideoUrl() != null) {
                 Log.d("Holder Attachments", "Video Found, Path: " + imageMessage.getVideoUrl());
                 return VIEW_TYPE_VIDEO_MESSAGE;
             }
 
-            // Check for document
+            // PRIORITY 5: Check for document attachments
             if (imageMessage.getDocUrl() != null) {
                 Log.d("Holder Attachments", "Doc Found, Path: " + imageMessage.getDocUrl());
                 return VIEW_TYPE_DOCUMENT_MESSAGE;
             }
 
-            // Check for image (regular images)
+            // PRIORITY 6: Check for regular image content (excluding MP3s already handled)
             if (imageMessage.getImageUrl() != null && !imageMessage.getImageUrl().endsWith(".mp3")) {
                 Log.d("Holder Attachments", "Image Found, Image Path: " + imageMessage.getImageUrl());
                 return VIEW_TYPE_IMAGE_MESSAGE;
             }
         }
 
-        // Check custom content types
+        // PRIORITY 7: Check for custom registered content types
         if (message instanceof MessageContentType) {
             for (int i = 0; i < customContentTypes.size(); i++) {
                 ContentTypeConfig config = customContentTypes.get(i);
@@ -205,10 +240,17 @@ public class MessageHolders {
             }
         }
 
-        // Default to text message
+        // DEFAULT: Fallback to text message if no content detected
         return VIEW_TYPE_TEXT_MESSAGE;
     }
 
+// ============================================================================
+// TEXT MESSAGE CONFIGURATION (INCOMING)
+// ============================================================================
+
+    /**
+     * Configure both holder and layout for incoming text messages
+     */
     public MessageHolders setIncomingTextConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
             @LayoutRes int layout) {
@@ -217,6 +259,9 @@ public class MessageHolders {
         return this;
     }
 
+    /**
+     * Configure holder, layout, and payload for incoming text messages
+     */
     public MessageHolders setIncomingTextConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
             @LayoutRes int layout,
@@ -227,13 +272,18 @@ public class MessageHolders {
         return this;
     }
 
+    /**
+     * Set only the view holder class for incoming text messages
+     */
     public MessageHolders setIncomingTextHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder) {
         this.incomingTextConfig.holder = holder;
         return this;
     }
 
-
+    /**
+     * Set view holder class and payload for incoming text messages
+     */
     public MessageHolders setIncomingTextHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
             Object payload) {
@@ -242,20 +292,30 @@ public class MessageHolders {
         return this;
     }
 
-
+    /**
+     * Set only the layout resource for incoming text messages
+     */
     public MessageHolders setIncomingTextLayout(@LayoutRes int layout) {
         this.incomingTextConfig.layout = layout;
         return this;
     }
 
-
+    /**
+     * Set layout resource and payload for incoming text messages
+     */
     public MessageHolders setIncomingTextLayout(@LayoutRes int layout, Object payload) {
         this.incomingTextConfig.layout = layout;
         this.incomingTextConfig.payload = payload;
         return this;
     }
 
+// ============================================================================
+// TEXT MESSAGE CONFIGURATION (OUTGOING)
+// ============================================================================
 
+    /**
+     * Configure both holder and layout for outgoing text messages
+     */
     public MessageHolders setOutcomingTextConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
             @LayoutRes int layout) {
@@ -264,7 +324,9 @@ public class MessageHolders {
         return this;
     }
 
-
+    /**
+     * Configure holder, layout, and payload for outgoing text messages
+     */
     public MessageHolders setOutcomingTextConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
             @LayoutRes int layout,
@@ -275,14 +337,18 @@ public class MessageHolders {
         return this;
     }
 
-
+    /**
+     * Set only the view holder class for outgoing text messages
+     */
     public MessageHolders setOutcomingTextHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder) {
         this.outcomingTextConfig.holder = holder;
         return this;
     }
 
-
+    /**
+     * Set view holder class and payload for outgoing text messages
+     */
     public MessageHolders setOutcomingTextHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
             Object payload) {
@@ -291,19 +357,30 @@ public class MessageHolders {
         return this;
     }
 
-
+    /**
+     * Set only the layout resource for outgoing text messages
+     */
     public MessageHolders setOutcomingTextLayout(@LayoutRes int layout) {
         this.outcomingTextConfig.layout = layout;
         return this;
     }
 
+    /**
+     * Set layout resource and payload for outgoing text messages
+     */
     public MessageHolders setOutcomingTextLayout(@LayoutRes int layout, Object payload) {
         this.outcomingTextConfig.layout = layout;
         this.outcomingTextConfig.payload = payload;
         return this;
     }
 
+// ============================================================================
+// IMAGE MESSAGE CONFIGURATION (INCOMING)
+// ============================================================================
 
+    /**
+     * Configure both holder and layout for incoming image messages
+     */
     public MessageHolders setIncomingImageConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder,
             @LayoutRes int layout) {
@@ -312,7 +389,9 @@ public class MessageHolders {
         return this;
     }
 
-
+    /**
+     * Configure holder, layout, and payload for incoming image messages
+     */
     public MessageHolders setIncomingImageConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder,
             @LayoutRes int layout,
@@ -323,14 +402,18 @@ public class MessageHolders {
         return this;
     }
 
-
+    /**
+     * Set only the view holder class for incoming image messages
+     */
     public MessageHolders setIncomingImageHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder) {
         this.incomingImageConfig.holder = holder;
         return this;
     }
 
-
+    /**
+     * Set view holder class and payload for incoming image messages
+     */
     public MessageHolders setIncomingImageHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder,
             Object payload) {
@@ -339,20 +422,30 @@ public class MessageHolders {
         return this;
     }
 
-
+    /**
+     * Set only the layout resource for incoming image messages
+     */
     public MessageHolders setIncomingImageLayout(@LayoutRes int layout) {
         this.incomingImageConfig.layout = layout;
         return this;
     }
 
-
+    /**
+     * Set layout resource and payload for incoming image messages
+     */
     public MessageHolders setIncomingImageLayout(@LayoutRes int layout, Object payload) {
         this.incomingImageConfig.layout = layout;
         this.incomingImageConfig.payload = payload;
         return this;
     }
 
+// ============================================================================
+// IMAGE MESSAGE CONFIGURATION (OUTGOING)
+// ============================================================================
 
+    /**
+     * Configure both holder and layout for outgoing image messages
+     */
     public MessageHolders setOutcomingImageConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder,
             @LayoutRes int layout) {
@@ -361,7 +454,9 @@ public class MessageHolders {
         return this;
     }
 
-
+    /**
+     * Configure holder, layout, and payload for outgoing image messages
+     */
     public MessageHolders setOutcomingImageConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder,
             @LayoutRes int layout,
@@ -372,14 +467,18 @@ public class MessageHolders {
         return this;
     }
 
-
+    /**
+     * Set only the view holder class for outgoing image messages
+     */
     public MessageHolders setOutcomingImageHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder) {
         this.outcomingImageConfig.holder = holder;
         return this;
     }
 
-
+    /**
+     * Set view holder class and payload for outgoing image messages
+     */
     public MessageHolders setOutcomingImageHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder,
             Object payload) {
@@ -388,18 +487,30 @@ public class MessageHolders {
         return this;
     }
 
+    /**
+     * Set only the layout resource for outgoing image messages
+     */
     public MessageHolders setOutcomingImageLayout(@LayoutRes int layout) {
         this.outcomingImageConfig.layout = layout;
         return this;
     }
 
+    /**
+     * Set layout resource and payload for outgoing image messages
+     */
     public MessageHolders setOutcomingImageLayout(@LayoutRes int layout, Object payload) {
         this.outcomingImageConfig.layout = layout;
         this.outcomingImageConfig.payload = payload;
         return this;
     }
 
+// ============================================================================
+// DATE HEADER CONFIGURATION
+// ============================================================================
 
+    /**
+     * Configure both holder and layout for date headers
+     */
     public MessageHolders setDateHeaderConfig(
             @NonNull Class<? extends ViewHolder<Date>> holder,
             @LayoutRes int layout) {
@@ -408,21 +519,39 @@ public class MessageHolders {
         return this;
     }
 
-
+    /**
+     * Set only the view holder class for date headers
+     */
     public MessageHolders setDateHeaderHolder(@NonNull Class<? extends ViewHolder<Date>> holder) {
         this.dateHeaderHolder = holder;
         return this;
     }
 
+    /**
+     * Set only the layout resource for date headers
+     */
     public MessageHolders setDateHeaderLayout(@LayoutRes int layout) {
         this.dateHeaderLayout = layout;
         return this;
     }
 
+// ============================================================================
+// CUSTOM CONTENT TYPE REGISTRATION
+// ============================================================================
 
+    /**
+     * Register a custom content type with the same holder for both incoming and outgoing messages
+     *
+     * @param type Unique byte identifier for this content type (cannot be 0)
+     * @param holder View holder class to use
+     * @param incomingLayout Layout resource for incoming messages
+     * @param outcomingLayout Layout resource for outgoing messages
+     * @param contentChecker Checker to determine if a message has this content type
+     */
     public <TYPE extends MessageContentType>
     MessageHolders registerContentType(
-            byte type, @NonNull Class<? extends BaseMessageViewHolder<TYPE>> holder,
+            byte type,
+            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> holder,
             @LayoutRes int incomingLayout,
             @LayoutRes int outcomingLayout,
             @NonNull ContentChecker contentChecker) {
@@ -433,12 +562,23 @@ public class MessageHolders {
                 contentChecker);
     }
 
-
+    /**
+     * Register a custom content type with different holders for incoming and outgoing messages
+     *
+     * @param type Unique byte identifier for this content type (cannot be 0)
+     * @param incomingHolder View holder class for incoming messages
+     * @param incomingLayout Layout resource for incoming messages
+     * @param outcomingHolder View holder class for outgoing messages
+     * @param outcomingLayout Layout resource for outgoing messages
+     * @param contentChecker Checker to determine if a message has this content type
+     */
     public <TYPE extends MessageContentType>
     MessageHolders registerContentType(
             byte type,
-            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> incomingHolder, @LayoutRes int incomingLayout,
-            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> outcomingHolder, @LayoutRes int outcomingLayout,
+            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> incomingHolder,
+            @LayoutRes int incomingLayout,
+            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> outcomingHolder,
+            @LayoutRes int outcomingLayout,
             @NonNull ContentChecker contentChecker) {
 
         if (type == 0)
@@ -452,12 +592,28 @@ public class MessageHolders {
         return this;
     }
 
-
+    /**
+     * Register a custom content type with different holders, layouts, and payloads
+     * for incoming and outgoing messages
+     *
+     * @param type Unique byte identifier for this content type (cannot be 0)
+     * @param incomingHolder View holder class for incoming messages
+     * @param incomingPayload Custom payload data for incoming messages
+     * @param incomingLayout Layout resource for incoming messages
+     * @param outcomingHolder View holder class for outgoing messages
+     * @param outcomingPayload Custom payload data for outgoing messages
+     * @param outcomingLayout Layout resource for outgoing messages
+     * @param contentChecker Checker to determine if a message has this content type
+     */
     public <TYPE extends MessageContentType>
     MessageHolders registerContentType(
             byte type,
-            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> incomingHolder, Object incomingPayload, @LayoutRes int incomingLayout,
-            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> outcomingHolder, Object outcomingPayload, @LayoutRes int outcomingLayout,
+            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> incomingHolder,
+            Object incomingPayload,
+            @LayoutRes int incomingLayout,
+            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> outcomingHolder,
+            Object outcomingPayload,
+            @LayoutRes int outcomingLayout,
             @NonNull ContentChecker contentChecker) {
 
         if (type == 0)
@@ -471,30 +627,64 @@ public class MessageHolders {
         return this;
     }
 
-
+    /**
+     * Interface for checking if a message contains a specific custom content type
+     */
     public interface ContentChecker<MESSAGE extends IMessage> {
-
+        /**
+         * Check if the given message has content of the specified type
+         *
+         * @param message The message to check
+         * @param type The content type identifier
+         * @return true if the message has this content type
+         */
         boolean hasContentFor(MESSAGE message, byte type);
     }
 
+// ============================================================================
+// VIEW BINDING AND TYPE DETERMINATION
+// ============================================================================
 
     private int selectedItemsCount = 0;
 
+    /**
+     * Binds data and listeners to a view holder
+     *
+     * @param holder The view holder to bind
+     * @param item The data item (IMessage or Date)
+     * @param isSelected Whether this item is selected
+     * @param isGroup Whether this is a group chat message
+     * @param imageLoader Image loading utility
+     * @param onMessageClickListener Click listener for the message view
+     * @param onMessageLongClickListener Long click listener for the message view
+     * @param dateHeadersFormatter Formatter for date headers
+     * @param clickListenersArray Array of custom click listeners for specific views
+     * @param dateFormatterListener Listener for date formatting
+     * @param downloadListener Listener for download events
+     * @param mediaClickListener Listener for media clicks
+     * @param audioPlayListener Listener for audio playback events
+     * @param adapter Reference to the adapter
+     */
     @SuppressWarnings("unchecked")
-    protected void bind(final ViewHolder holder, final Object item, boolean isSelected, boolean isGroup,
-                        final ImageLoader imageLoader,
-                        final View.OnClickListener onMessageClickListener,
-                        final View.OnLongClickListener onMessageLongClickListener,
-                        final DateFormatter.Formatter dateHeadersFormatter,
-                        final SparseArray<MessagesListAdapter.OnMessageViewClickListener> clickListenersArray,
-                        final MessagesListAdapter.DateFormatterListener dateFormatterListener,
-                        final MessagesListAdapter.OnDownloadListener downloadListener,
-                        final MessagesListAdapter.OnMediaClickListener mediaClickListener,
-                        final MessagesListAdapter.OnAudioPlayListener audioPlayListener,
-                        final MessagesListAdapter adapter  // Replace YourMessageType with your actual message type
-    ) {
+    protected void bind(
+            final ViewHolder holder,
+            final Object item,
+            boolean isSelected,
+            boolean isGroup,
+            final ImageLoader imageLoader,
+            final View.OnClickListener onMessageClickListener,
+            final View.OnLongClickListener onMessageLongClickListener,
+            final DateFormatter.Formatter dateHeadersFormatter,
+            final SparseArray<MessagesListAdapter.OnMessageViewClickListener> clickListenersArray,
+            final MessagesListAdapter.DateFormatterListener dateFormatterListener,
+            final MessagesListAdapter.OnDownloadListener downloadListener,
+            final MessagesListAdapter.OnMediaClickListener mediaClickListener,
+            final MessagesListAdapter.OnAudioPlayListener audioPlayListener,
+            final MessagesListAdapter adapter) {
 
+        // Bind message items
         if (item instanceof IMessage) {
+            // Set holder properties
             ((BaseMessageViewHolder) holder).isSelected = isSelected;
             ((BaseMessageViewHolder) holder).isGroup = isGroup;
             ((BaseMessageViewHolder) holder).adapter = adapter;
@@ -502,120 +692,175 @@ public class MessageHolders {
             ((BaseMessageViewHolder) holder).downloadListener = downloadListener;
             ((BaseMessageViewHolder) holder).mediaClickListener = mediaClickListener;
             ((BaseMessageViewHolder) holder).audioPlayListener = audioPlayListener;
+
+            // Attach base click listeners
             holder.itemView.setOnLongClickListener(onMessageLongClickListener);
             holder.itemView.setOnClickListener(onMessageClickListener);
 
-
-
+            // Attach custom view click listeners
             for (int i = 0; i < clickListenersArray.size(); i++) {
                 final int key = clickListenersArray.keyAt(i);
                 final View view = holder.itemView.findViewById(key);
                 if (view != null) {
                     view.setOnClickListener(v ->
-
-
                             clickListenersArray.get(key).onMessageViewClick(view, (IMessage) item));
                 }
             }
-        } else if (item instanceof Date) {
-
+        }
+        // Bind date header items
+        else if (item instanceof Date) {
             ((DefaultDateHeaderViewHolder) holder).dateListener = dateFormatterListener;
-
-
         }
 
+        // Trigger the holder's bind method
         holder.onBind(item);
     }
 
-
+    /**
+     * Determines the view type for an item based on its content and sender
+     *
+     * @param item The item to get view type for (IMessage or Date)
+     * @param senderId The current user's ID (to determine incoming vs outgoing)
+     * @return Positive view type for incoming, negative for outgoing, or date header type
+     */
     protected int getViewType(Object item, String senderId) {
         boolean isOutcoming = false;
         int viewType;
 
         if (item instanceof IMessage) {
             IMessage message = (IMessage) item;
+            // Check if message is from current user (outgoing)
             isOutcoming = message.getUser().getId().contentEquals(senderId);
+            // Determine content type
             viewType = getContentViewType(message);
+        } else {
+            // Default to date header for non-message items
+            viewType = VIEW_TYPE_DATE_HEADER;
+        }
 
-        } else viewType = VIEW_TYPE_DATE_HEADER;
-
+        // Return negative view type for outgoing messages to differentiate them
         return isOutcoming ? viewType * -1 : viewType;
     }
 
+
+// ============================================================================
+// VIEW HOLDER FACTORY METHODS
+// ============================================================================
+
+    /**
+     * Creates a ViewHolder using the configuration object
+     *
+     * @param parent The parent ViewGroup
+     * @param holderConfig Configuration containing holder class, layout, and payload
+     * @param style Styling configuration for the message list
+     * @return Instantiated ViewHolder
+     */
     private ViewHolder getHolder(ViewGroup parent, HolderConfig holderConfig,
                                  MessagesListStyle style) {
         return getHolder(parent, holderConfig.layout, holderConfig.holder, style, holderConfig.payload);
     }
 
+    /**
+     * Creates a ViewHolder by inflating a layout and instantiating the holder class.
+     * Attempts to use constructor with payload first, falls back to basic constructor.
+     *
+     * @param parent The parent ViewGroup
+     * @param layout Layout resource ID to inflate
+     * @param holderClass ViewHolder class to instantiate
+     * @param style Styling configuration for the message list
+     * @param payload Optional data to pass to the ViewHolder constructor
+     * @return Instantiated and styled ViewHolder
+     * @throws UnsupportedOperationException if ViewHolder instantiation fails
+     */
     private <HOLDER extends ViewHolder>
     ViewHolder getHolder(ViewGroup parent, @LayoutRes int layout, Class<HOLDER> holderClass,
                          MessagesListStyle style, Object payload) {
 
+        // Inflate the layout for this ViewHolder
         View v = LayoutInflater.from(parent.getContext()).inflate(layout, parent, false);
+
         try {
             Constructor<HOLDER> constructor = null;
             HOLDER holder;
+
             try {
+                // Try to find constructor with (View, Object) signature for payload support
                 constructor = holderClass.getDeclaredConstructor(View.class, Object.class);
                 constructor.setAccessible(true);
                 holder = constructor.newInstance(v, payload);
             } catch (NoSuchMethodException e) {
+                // Fallback to basic (View) constructor if payload constructor doesn't exist
                 constructor = holderClass.getDeclaredConstructor(View.class);
                 constructor.setAccessible(true);
                 holder = constructor.newInstance(v);
             }
+
+            // Apply styling if this is a default message ViewHolder
             if (holder instanceof DefaultMessageViewHolder && style != null) {
                 ((DefaultMessageViewHolder) holder).applyStyle(style);
             }
+
             return holder;
         } catch (Exception e) {
-            throw new UnsupportedOperationException("Somehow we couldn't create the ViewHolder for message. Please, report this issue on GitHub with full stacktrace in description.", e);
+            throw new UnsupportedOperationException(
+                    "Somehow we couldn't create the ViewHolder for message. " +
+                            "Please, report this issue on GitHub with full stacktrace in description.", e);
         }
     }
 
-
+    /**
+     * Creates the appropriate ViewHolder based on the view type.
+     * Handles both incoming and outgoing messages for various content types.
+     *
+     * @param parent The parent ViewGroup
+     * @param viewType The view type constant (negative for outgoing messages)
+     * @param messagesListStyle Styling configuration for the message list
+     * @return Instantiated ViewHolder for the specified type
+     * @throws IllegalStateException if view type is not recognized
+     */
     protected ViewHolder getHolder(ViewGroup parent, int viewType, MessagesListStyle messagesListStyle) {
         switch (viewType) {
-
+            // Date separator header
             case VIEW_TYPE_DATE_HEADER:
                 return getHolder(parent, dateHeaderLayout, dateHeaderHolder, messagesListStyle, null);
 
+            // Text messages (incoming and outgoing)
             case VIEW_TYPE_TEXT_MESSAGE:
                 return getHolder(parent, incomingTextConfig, messagesListStyle);
-
             case -VIEW_TYPE_TEXT_MESSAGE:
                 return getHolder(parent, outcomingTextConfig, messagesListStyle);
 
+            // Image messages (incoming and outgoing)
             case VIEW_TYPE_IMAGE_MESSAGE:
                 return getHolder(parent, incomingImageConfig, messagesListStyle);
-
-            case VIEW_TYPE_VIDEO_MESSAGE:
-                return getHolder(parent, inComingVideoConfig, messagesListStyle);
-
-            case VIEW_TYPE_AUDIO_MESSAGE:
-                return getHolder(parent, inComingAudioConfig, messagesListStyle);
-
-            case VIEW_TYPE_VOICE_MESSAGE:
-                return getHolder(parent, inComingVoiceConfig, messagesListStyle);
-
-            case -VIEW_TYPE_VOICE_MESSAGE:
-                return getHolder(parent, outGoingVoiceConfig, messagesListStyle);
-
             case -VIEW_TYPE_IMAGE_MESSAGE:
                 return getHolder(parent, outcomingImageConfig, messagesListStyle);
 
+            // Video messages (incoming and outgoing)
+            case VIEW_TYPE_VIDEO_MESSAGE:
+                return getHolder(parent, inComingVideoConfig, messagesListStyle);
             case -VIEW_TYPE_VIDEO_MESSAGE:
                 return getHolder(parent, outGoingVideoConfig, messagesListStyle);
 
+            // Audio messages (incoming and outgoing)
+            case VIEW_TYPE_AUDIO_MESSAGE:
+                return getHolder(parent, inComingAudioConfig, messagesListStyle);
             case -VIEW_TYPE_AUDIO_MESSAGE:
                 return getHolder(parent, outGoingAudioConfig, messagesListStyle);
 
-            case -VIEW_TYPE_DOCUMENT_MESSAGE:
-                return getHolder(parent, outGoingDocConfig, messagesListStyle);
+            // Voice messages (incoming and outgoing)
+            case VIEW_TYPE_VOICE_MESSAGE:
+                return getHolder(parent, inComingVoiceConfig, messagesListStyle);
+            case -VIEW_TYPE_VOICE_MESSAGE:
+                return getHolder(parent, outGoingVoiceConfig, messagesListStyle);
 
+            // Document messages (incoming and outgoing)
             case VIEW_TYPE_DOCUMENT_MESSAGE:
                 return getHolder(parent, inComingDocConfig, messagesListStyle);
+            case -VIEW_TYPE_DOCUMENT_MESSAGE:
+                return getHolder(parent, outGoingDocConfig, messagesListStyle);
         }
+
         throw new IllegalStateException("Wrong message view type...");
     }
 
