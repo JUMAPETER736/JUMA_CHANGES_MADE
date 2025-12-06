@@ -60,7 +60,7 @@ class FeedRepostAudioViewAdapter (private val imageList: List<String>?, val cont
         }
 
         inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            //        private val artworkImageView: ImageView = itemView.findViewById(R.id.artworkImageView)
+  
             private val imageView2: ImageView = itemView.findViewById(R.id.imageView2)
             private val cardView: CardView = itemView.findViewById(R.id.cardView)
             private val countTextView: TextView = itemView.findViewById(R.id.textView)
@@ -68,7 +68,7 @@ class FeedRepostAudioViewAdapter (private val imageList: List<String>?, val cont
             private val audioPlayButton : ImageView = itemView.findViewById(R.id.playAudio)
             @SuppressLint("ResourceAsColor", "SetTextI18n")
             fun bind(imageItem: String) {
-//            imageView.setImageResource()
+
                 if(data != null) {
                     Log.d(TAG, "bind: audio data duration ${data!!.duration}")
                     if(data!!.duration?.isNotEmpty() == true) {

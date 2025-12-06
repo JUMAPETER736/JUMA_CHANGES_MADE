@@ -27,7 +27,7 @@ class FeedRostedViewAdapter (fragmentActivity: FragmentActivity,
     override fun getItemCount(): Int {
         TODO("Not yet implemented")
     }
-//    override fun getItemCount(): Int = feedPost.files.size
+
 
     override fun createFragment(position: Int): Fragment {
         fragment = FeedMixedFilesFragment()
@@ -35,7 +35,7 @@ class FeedRostedViewAdapter (fragmentActivity: FragmentActivity,
         fragment.arguments = Bundle().apply {
             putInt("position",position)
             putInt("feedPostPosition",feedPostPosition)
-//            putSerializable("feedPost", feedPost)
+
         }
         return fragment
     }
