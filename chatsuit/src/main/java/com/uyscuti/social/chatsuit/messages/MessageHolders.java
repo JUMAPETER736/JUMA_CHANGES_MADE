@@ -89,25 +89,27 @@ public class MessageHolders {
 
 
     public MessageHolders() {
-        // Date Header
         this.dateHeaderHolder = DefaultDateHeaderViewHolder.class;
         this.dateHeaderLayout = R.layout.item_new_date;
 
-        // Outgoing Messages
+        this.incomingTextConfig = new HolderConfig<>(DefaultIncomingTextMessageViewHolder.class, R.layout.item_incoming_text_message);
         this.outcomingTextConfig = new HolderConfig<>(DefaultOutcomingTextMessageViewHolder.class, R.layout.item_outcoming_text_message);
+
+        this.incomingImageConfig = new HolderConfig<>(DefaultIncomingImageMessageViewHolder.class, R.layout.item_incoming_image_message);
         this.outcomingImageConfig = new HolderConfig<>(DefaultOutcomingImageMessageViewHolder.class, R.layout.item_outcoming_image_message);
+
         this.outGoingVideoConfig = new HolderConfig<>(DefaultOutGoingVideoMessageViewHolder.class, R.layout.item_outgoing_video);
         this.outGoingAudioConfig = new HolderConfig<>(DefaultOutGoingAudioMessageViewHolder.class, R.layout.item_outgoing_audio);
-        this.outGoingDocConfig = new HolderConfig<>(DefaultOutGoingDocMessageViewHolder.class, R.layout.item_outgoing_doc);
-        this.outGoingVoiceConfig = new HolderConfig<>(DefaultOutGoingVoiceMessageViewHolder.class, R.layout.item_outgoing_voice_message);
 
-        // Incoming Messages
-        this.incomingTextConfig = new HolderConfig<>(DefaultIncomingTextMessageViewHolder.class, R.layout.item_incoming_text_message);
-        this.incomingImageConfig = new HolderConfig<>(DefaultIncomingImageMessageViewHolder.class, R.layout.item_incoming_image_message);
-        this.inComingVideoConfig = new HolderConfig<>(DefaultIncomingVideoMessageViewHolder.class, R.layout.item_incoming_video_message);
         this.inComingAudioConfig = new HolderConfig<>(DefaultInComingAudioMessageViewHolder.class, R.layout.item_incoming_audio_message);
+        this.outGoingDocConfig = new HolderConfig<>(DefaultOutGoingDocMessageViewHolder.class, R.layout.item_outgoing_doc);
+
         this.inComingDocConfig = new HolderConfig<>(DefaultInComingDocMessageViewHolder.class, R.layout.item_incoming_doc_message);
+        this.inComingVideoConfig = new HolderConfig<>(DefaultIncomingVideoMessageViewHolder.class, R.layout.item_incoming_video_message);
+
+        this.outGoingVoiceConfig = new HolderConfig<>(DefaultOutGoingVoiceMessageViewHolder.class, R.layout.item_outgoing_voice_message);
         this.inComingVoiceConfig = new HolderConfig<>(DefaultInComingVoiceMessageViewHolder.class, R.layout.item_incoming_voice_message);
+
     }
 
     private static class ContentTypeConfig<TYPE extends MessageContentType> {
@@ -751,6 +753,7 @@ public class MessageHolders {
 
         protected ViewGroup bubble;
         protected TextView text;
+        protected ProgressBar progressBar;
 
         @Deprecated
         public OutcomingTextMessageViewHolder(View itemView) {
@@ -778,26 +781,23 @@ public class MessageHolders {
 
             ImageView tickImageView;
 
-            if (status != null) {
+            if (Objects.equals(message.getMessageStatus(), "Sending")) {
+                progressBar.setVisibility(View.VISIBLE);
+            } else {
+                progressBar.setVisibility(View.GONE);
+            }
 
+            if (status != null) {
                 if (Objects.equals(message.getStatus(), "Sent")) {
                     status.setBackgroundResource(R.drawable.status___sent);
                 } else if (Objects.equals(message.getStatus(), "Seen")) {
-
                     status.setBackgroundResource(R.drawable.status_____seen);
-
                 } else if (Objects.equals(message.getStatus(), "Sending")) {
-
                     status.setBackgroundResource(R.drawable.status___sending);
-
                 } else if (Objects.equals(message.getStatus(), "Delivered")) {
-
                     status.setBackgroundResource(R.drawable.status___received);
-
                 } else {
-
                     status.setBackgroundResource(R.drawable.status_seen);
-
                 }
             }
 
@@ -1684,6 +1684,26 @@ public class MessageHolders {
                 docSize.setText(message.getDocTitle());
             }
 
+            if (Objects.equals(message.getMessageStatus(), "Sending")) {
+                progressBar.setVisibility(View.VISIBLE);
+            } else {
+                progressBar.setVisibility(View.GONE);
+            }
+
+            if (status != null) {
+                if (Objects.equals(message.getStatus(), "Sent")) {
+                    status.setBackgroundResource(R.drawable.status___sent);
+                } else if (Objects.equals(message.getStatus(), "Seen")) {
+                    status.setBackgroundResource(R.drawable.status_____seen);
+                } else if (Objects.equals(message.getStatus(), "Sending")) {
+                    status.setBackgroundResource(R.drawable.status___sending);
+                } else if (Objects.equals(message.getStatus(), "Delivered")) {
+                    status.setBackgroundResource(R.drawable.status___received);
+                } else {
+                    status.setBackgroundResource(R.drawable.status_seen);
+                }
+            }
+
             Log.d("AudioDoc", "Document Found Title" + message.getDocTitle());
             Log.d("AudioDoc", "Document Found  Size" + message.getDocSize());
             Log.d("AudioDoc", "Document Found  Url" + message.getDocUrl());
@@ -1949,7 +1969,27 @@ public class MessageHolders {
 
 
             }
-            ;
+
+
+            if (Objects.equals(message.getMessageStatus(), "Sending")) {
+                progressBar.setVisibility(View.VISIBLE);
+            } else {
+                progressBar.setVisibility(View.GONE);
+            }
+
+            if (status != null) {
+                if (Objects.equals(message.getStatus(), "Sent")) {
+                    status.setBackgroundResource(R.drawable.status___sent);
+                } else if (Objects.equals(message.getStatus(), "Seen")) {
+                    status.setBackgroundResource(R.drawable.status_____seen);
+                } else if (Objects.equals(message.getStatus(), "Sending")) {
+                    status.setBackgroundResource(R.drawable.status___sending);
+                } else if (Objects.equals(message.getStatus(), "Delivered")) {
+                    status.setBackgroundResource(R.drawable.status___received);
+                } else {
+                    status.setBackgroundResource(R.drawable.status_seen);
+                }
+            }
 
 
             if (playAudio != null) {
@@ -2106,6 +2146,26 @@ public class MessageHolders {
                 });
 
                 imageLoader.loadImage(video, message.getVideoUrl(), getPayloadForImageLoader(message));
+            }
+
+            if (Objects.equals(message.getMessageStatus(), "Sending")) {
+                progressBar.setVisibility(View.VISIBLE);
+            } else {
+                progressBar.setVisibility(View.GONE);
+            }
+
+            if (status != null) {
+                if (Objects.equals(message.getStatus(), "Sent")) {
+                    status.setBackgroundResource(R.drawable.status___sent);
+                } else if (Objects.equals(message.getStatus(), "Seen")) {
+                    status.setBackgroundResource(R.drawable.status_____seen);
+                } else if (Objects.equals(message.getStatus(), "Sending")) {
+                    status.setBackgroundResource(R.drawable.status___sending);
+                } else if (Objects.equals(message.getStatus(), "Delivered")) {
+                    status.setBackgroundResource(R.drawable.status___received);
+                } else {
+                    status.setBackgroundResource(R.drawable.status_seen);
+                }
             }
 
             if (playVideo != null) {
@@ -3018,5 +3078,9 @@ public class MessageHolders {
             handler.removeCallbacksAndMessages(null);
         }
     }
+
+
+
+
 
 }
