@@ -768,22 +768,21 @@ public class MessageHolders {
         @Override
         public void onBind(MESSAGE message) {
             super.onBind(message);
+
             if (bubble != null) {
                 bubble.setSelected(isSelected());
-
-
             }
 
             if (text != null) {
                 text.setText(message.getText());
             }
 
-            ImageView tickImageView;
-
-            if (Objects.equals(message.getMessageStatus(), "Sending")) {
-                progressBar.setVisibility(View.VISIBLE);
-            } else {
-                progressBar.setVisibility(View.GONE);
+            if (progressBar != null) {
+                if (Objects.equals(message.getMessageStatus(), "Sending")) {
+                    progressBar.setVisibility(View.VISIBLE);
+                } else {
+                    progressBar.setVisibility(View.GONE);
+                }
             }
 
             if (status != null) {
@@ -799,7 +798,6 @@ public class MessageHolders {
                     status.setBackgroundResource(R.drawable.status_seen);
                 }
             }
-
         }
 
         @Override
@@ -826,6 +824,7 @@ public class MessageHolders {
         private void init(View itemView) {
             bubble = itemView.findViewById(R.id.bubble);
             text = itemView.findViewById(R.id.messageText);
+            progressBar = itemView.findViewById(R.id.fileSendProgress);
         }
 
         @Override
