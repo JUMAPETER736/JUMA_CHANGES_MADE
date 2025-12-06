@@ -41,7 +41,7 @@ class NotificationsHostPagerAdapter (fragmentManager: FragmentManager) :Fragment
         val unreadCount = unreadCounts.getOrNull(position) ?: 0
 
         return if (position == 1) {
-            "$title (99)" // Static badge with count 99
+            "$title (99)"
         } else {
             title
         }

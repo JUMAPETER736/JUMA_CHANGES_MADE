@@ -74,8 +74,7 @@ class SearchUserAdapter(
         if (searchPosition != -1) {
 
         } else if (recentPosition != -1) {
-            // User is in recentUserList
-            // Update the user at its current position
+
             recentUserList[recentPosition] = user
             // Notify the adapter that the item has changed
             notifyItemChanged(recentPosition)

@@ -236,6 +236,7 @@ import com.uyscuti.social.core.common.data.room.entity.ShortCommentReply
 @UnstableApi
 @AndroidEntryPoint
 class PostDetailsActivity2 : AppCompatActivity(),
+
     CommentsInput.EmojiListener, OnCommentsClickListener,
     CommentsInput.VoiceListener, CommentsInput.GifListener, CommentsInput.InputListener,
     CommentsInput.AttachmentsListener, Timer.OnTimeTickListener, OnViewRepliesClickListener,
@@ -374,11 +375,11 @@ class PostDetailsActivity2 : AppCompatActivity(),
     private fun updateRecordWaveProgress(progress: Float) {
         CoroutineScope(Dispatchers.Main).launch {
             binding.wave.progress = progress
-//            currentComment?.progress = progress
+
             Log.d("updateWaveProgress", "updateWaveProgress: $progress")
         }
     }
-//    private val showComments = intent.getBooleanExtra("show_comments", false)
+
 
     companion object {
         const val EXTRA_POST_ID = "post_id"
@@ -397,8 +398,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         context = this
         binding = ActivityPostDetails2Binding.inflate(layoutInflater)
         setContentView(binding.root)
-//        val bottomSheet1Binding = BottomSheet1Binding.inflate(layoutInflater)
-//        binding.root.addView(BottomSheet1Binding.root)
+
         permissionGranted = ActivityCompat.checkSelfPermission(
             this, permissions[0]
         ) == PackageManager.PERMISSION_GRANTED
@@ -422,7 +422,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             ActivityCompat.requestPermissions(this, permissions, IMAGES_REQUEST_CODE)
         }
 
-//        setContentView(R.layout.activity_post_details2)
+
         notificationCountViewModel = ViewModelProvider(this)[NotificationCountViewModel::class.java]
 
         commentViewModel = ViewModelProvider(this)[CommentsViewModel::class.java]
@@ -5506,8 +5506,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         exoPlayer.removeListener(playbackStateListener)
         shortPlayer.removeListener(shortPlaybackStateListener)
 
-//        shortPlayer.removeListener(shortPlaybackStateListener)
-// have added a short player here to remove when back pressed
+
         if (::shortPlayer.isInitialized) {
             Log.d("DestroyDetails", "onDestroy: shortPlayer initialized")
             if (shortPlayer.isPlaying) {
@@ -5541,9 +5540,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             e.printStackTrace()
         }
     }
-//    private val waveRunnable = Runnable {
-////                    TODO("Not yet implemented")
-//    }
+
 
     private lateinit var audioDurationTVCount: TextView
     private val waveRunnable = object : Runnable {
@@ -5592,21 +5589,13 @@ class PostDetailsActivity2 : AppCompatActivity(),
             adapter?.setSecondSeekBarProgress(0f, currentCommentAudioPosition)
             adapter?.setReplySecondSeekBarProgress(0f, currentCommentAudioPosition)
         }
-//        if (isReplyVnPlaying) {
-//        } else {
-//        }
+
         currentCommentAudioPosition = RecyclerView.NO_POSITION
         currentCommentAudioPath = ""
         adapter?.resetAudioPlay()
-//        player?.let { mediaPlayer ->
-//            if (mediaPlayer.isPlaying) {
-//                mediaPlayer.stop()
-//            }
-//            mediaPlayer.release()
-//        }
-//        player = null
+
         exoPlayer = ExoPlayer.Builder(this).build()
-//        playerView.player = exoPlayer
+
         exoPlayer.prepare()
         exoPlayer?.let { exoPlayer ->
             if (exoPlayer.isPlaying) {
@@ -5662,9 +5651,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             listOfReplies.add(comment)
 
             Log.d(TAG, "onSubmit: comment $comment")
-//        adapter.submitItems(listOf(comment) )
-//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
-//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
+
 
             adapter!!.submitItem(comment, adapter!!.itemCount)
             shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
@@ -5706,7 +5693,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             roomCommentReplyViewModel.insertCommentReply(newCommentReplyEntity)
             Log.d(TAG, "onSubmit: inserted comment $newCommentReplyEntity")
             lifecycleScope.launch {
-//                allCommentReplies2(1, commentId)
+
             }
             val mongoDbTimeStamp = generateMongoDBTimestamp()
             val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
@@ -5734,7 +5721,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     postId = data!!.postId,
                     updatedAt = data!!.updatedAt,
                     replyCount = replyCount,
-//                replies = data!!.replies
+
                     replies = data?.replies?.toMutableList()?.apply {
                         // Assuming newReply is the new reply you want to add
                         add(0, newReply)
@@ -5751,7 +5738,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     localUpdateId = localUpdateId,
                     replyCountVisible = false
                 )
-//            val updatedComment = commentWithReplies.copy(replies = commentReplies.toMutableList(), isRepliesVisible = isRepliesVisible)
+
 
             listOfReplies.add(commentWithReplies)
 
@@ -5764,7 +5751,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 "onSubmit: comment id = data is? $commentId = ${data!!._id} on position $position"
             )
             updateAdapter(commentWithReplies, position)
-//            addCommentReply(input.toString())
+
         }
         binding.replyToLayout.visibility = View.GONE
         return true
@@ -5805,7 +5792,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
     private val onRecordWaveRunnable = object : Runnable {
         override fun run() {
-//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
+
             try {
                 if (!isOnRecordDurationOnPause) {
                     val currentPosition = player?.currentPosition?.toFloat()!!
@@ -5856,14 +5843,9 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                     audioSeekBar
                                 )
 
-//                                audioSeekBar.progress = it.currentPosition.toInt()
-//                                seekBarProgress = it.currentPosition.toFloat()
-//                                audioDurationTVCount.text = String.format(
-//                                    "%s",
-//                                    TrimVideoUtils.stringForTime(it.currentPosition.toFloat())
-//                                )
+
                             } else {
-//                                adapter!!.updateWaveProgress(currentPosition, wavePosition)
+
                                 audioSeekBar.progress = it.currentPosition.toInt()
                                 seekBarProgress = it.currentPosition.toFloat()
                                 audioDurationTVCount.text = String.format(
@@ -5887,10 +5869,9 @@ class PostDetailsActivity2 : AppCompatActivity(),
     }
 
     private fun initializeShortSeekBar(shortPlayer: ExoPlayer) {
-//        shortSeekBar.max = shortPlayer.duration.toInt()
+
         Log.d("ShortSeekBar", "Short SeekBar initialized")
-//        audioSeekBar.max = exoPlayer.duration.toInt()
-// Remove callbacks from the current handler, if any
+
         currentHandler?.removeCallbacksAndMessages(currentHandler)
         val handler = Handler(Looper.getMainLooper())
         handler.postDelayed(object : Runnable {
@@ -5925,7 +5906,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
     fun commentAudioSeekBar(event: CommentAudioPlayerHandler) {
         val TAG = "commentAudioSeekBar"
         audioSeekBar = event.audioSeekBar
-//        event.audioWave.setSampleFrom(event.audioPath)
+
         audioDurationTVCount = event.leftDuration
         seekPosition = event.position
         maxDuration = event.maxDuration
@@ -6241,7 +6222,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         val TAG = "likeUnLikeComment"
 
         Log.d("CommentsRecyclerViewAdapter", "likeUnLikeComment: data.isLiked ${data.isLiked}")
-//        var updatedComment : com.uyscuti.social.circuit.data.model.Comment? = null
+
         val updatedComment = if (data.isLiked) {
             data.copy(
                 likes = data.likes + 1,
@@ -6365,7 +6346,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         } catch (e: HttpException) {
             Log.d(TAG, "Http Exception ${e.message}")
             withContext(Dispatchers.Main) {
-//                showToast(this@MainActivity, "Check Internet Connection")
+
             }
             return false
         } catch (e: IOException) {
@@ -6455,7 +6436,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             binding.input.inputEditText.setText("")
             isReply = false
             commentsViewModel.resetLiveData()
-//          hideKeyboard()
+
             hideKeyboard(binding.input.inputEditText)
             deleteRecording()
             stopPlaying()
@@ -6531,22 +6512,19 @@ class PostDetailsActivity2 : AppCompatActivity(),
     ) {
         isReplyVnPlaying = isReply
         isVnAudioToPlay = isVnAudio
-//        Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
+
         Log.d(
             "toggleAudioPlayer",
             "progress received from adapter $progress is reply $isReply    is seeking $isSeeking is vn audio $isVnAudio"
         )
-//
+
         if (currentCommentAudioPath == audioToPlayPath) {
-//            Log.d(TAG, "toggleAudioPlayer: currentCommentAudioPosition == position")
+
             if (seekTo) {
                 Log.d("SeekTo", "Seek to $progress")
                 EventBus.getDefault().post(PauseShort(true))
                 isDurationOnPause = false
-//                Log.d(
-//                    "isDurationOnPause",
-//                    " in play toggle audio player isDurationOnPause is $isDurationOnPause"
-//                )
+
                 exoPlayer.seekTo(progress.toLong())
                 exoPlayer.play()
             } else if (isSeeking) {
@@ -6557,7 +6535,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     "toggleAudioPlayer",
                     "toggleAudioPlayer: current player is playing then pause"
                 )
-//                audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
+
 
                 if (isVnAudio) {
                     Log.d("waveProgress", "toggleAudioPlayer: $waveProgress")
@@ -6575,30 +6553,21 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 isDurationOnPause = true
 
 
-//                Log.d(
-//                    "toggleAudioPlayer",
-//                    " in pause toggle audio player isDurationOnPause is $isDurationOnPause"
-//                )
 
             } else {
                 Log.d(
                     "toggleAudioPlayer",
                     "toggleAudioPlayer: current player is not playing then play"
                 )
-//                audioPlayPauseBtn.setImageResource(R.drawable.baseline_pause_black)
+
                 EventBus.getDefault().post(PauseShort(true))
                 isDurationOnPause = false
-//                Log.d(
-//                    "isDurationOnPause",
-//                    " in play toggle audio player isDurationOnPause is $isDurationOnPause"
-//                )
+
                 exoPlayer.seekTo(progress.toLong())
                 exoPlayer.play()
             }
         } else {
-//            Log.d(TAG, "toggleAudioPlayer: currentCommentAudioPosition != position")
 
-            // If a new item is clicked, stop the currently playing item (if any)
             if (exoPlayer.isPlaying == true) {
                 Log.d("toggleAudioPlayer", "toggleAudioPlayer: in else player is playing")
                 commentAudioPause(audioPlayPauseBtn, isReply)
@@ -6606,12 +6575,9 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
             if (isReply) {
                 Log.d("IsReply", "is reply position $position")
-//                adapter?.refreshMainComment(position)
+
             }
-            // Start playing the new audio
-//            if(!isReply) {
-//                commentAudioStartPlaying(audioToPlayPath, audioPlayPauseBtn)
-//            }
+
             commentAudioStartPlaying(audioToPlayPath, audioPlayPauseBtn, progress, position)
             currentCommentAudioPosition = position
             currentCommentAudioPath = audioToPlayPath
@@ -6635,11 +6601,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         if (isVnAudioToPlay) {
             startWaveRunnable()
         }
-//        Log.d(
-//            "isDurationOnPause",
-//            " in comment audio start isDurationOnPause is $isDurationOnPause"
-//        )
-//        Log.d("TAG", "commentAudioStartPlaying: start playing and change to pause icon")
+
 
         audioPlayPauseBtn.setImageResource(R.drawable.baseline_pause_black)
 
@@ -6647,11 +6609,10 @@ class PostDetailsActivity2 : AppCompatActivity(),
             val file = File(vnAudio)
             if (file.exists()) {
                 val fileUrl = Uri.fromFile(file)
-//                val fileUrl = "file://$vnAudio"
+
                 exoPlayer = ExoPlayer.Builder(this)
                     .build()
                 Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: Local file $fileUrl")
-//                val dataSourceFactory = DefaultDataSourceFactory(this, Util.getUserAgent(this, "yourApplicationName"))
 
                 val localFileUri =
                     Uri.parse(fileUrl.toString()) // Replace with the path to your local file
@@ -6684,7 +6645,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             exoPlayer.prepare()
             exoPlayer.seekTo(progress.toLong())
             exoPlayer.playWhenReady = true
-//            exoPlayer.play()
+
             exoPlayer.repeatMode = Player.REPEAT_MODE_OFF
             exoPlayer.addListener(playbackStateListener)
 
@@ -6696,9 +6657,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     playbackState: Int
                 ) {
                     if (playbackState == Player.STATE_READY && exoPlayer.duration != C.TIME_UNSET) {
-//                                    shortsSeekBar.max = exoPlayer.duration.toInt()
-//                                    shortsAdapter.setSeekBarMax(exoPlayer!!.currentPosition.toInt())
-//                    shortSeekBar.max = exoPlayer.duration.toInt()
+
                     }
                 }
 
@@ -6711,11 +6670,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
-//
-//                @Deprecated("Deprecated in Java")
-//                override fun onPositionDiscontinuity(reason: Int) {
-//                    updateSeekBar()
-//                }
+
             })
             shortPlayer.addListener(object : Player.Listener {
                 @Deprecated("Deprecated in Java")
@@ -6724,21 +6679,11 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     playbackState: Int
                 ) {
                     if (playbackState == Player.STATE_READY && shortPlayer.duration != C.TIME_UNSET) {
-//                                    shortsSeekBar.max = exoPlayer.duration.toInt()
-//                                    shortsAdapter.setSeekBarMax(exoPlayer!!.currentPosition.toInt())
+
                         shortSeekBar.max = exoPlayer.duration.toInt()
                     }
                 }
 
-//                override fun onPlayerError(error: PlaybackException) {
-//                    super.onPlayerError(error)
-//                    error.printStackTrace()
-//                    Toast.makeText(
-//                        this@PostDetailsActivity2,
-//                        "Can't play this audio",
-//                        Toast.LENGTH_SHORT
-//                    ).show()
-//                }
 
                 @Deprecated("Deprecated in Java")
                 override fun onPositionDiscontinuity(reason: Int) {
@@ -6747,18 +6692,16 @@ class PostDetailsActivity2 : AppCompatActivity(),
             })
 
             if (isReplyVnPlaying) {
-//                Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
+
                 val handler = Handler()
 
                 handler.postDelayed({
                     adapter?.refreshMainComment(position)
                 }, 200)
             } else {
-//                Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
+
             }
-//            if (isVnAudioToPlay) {
-//
-//            }
+
 
         } catch (e: Exception) {
             Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: error: ${e.message}")
@@ -6778,9 +6721,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
         audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
         adapter!!.updatePlaybackButton(currentCommentAudioPosition, isReply, audioPlayPauseBtn)
-//        val replyAdapter = ReplyCommentAdapter()
-//        ReplyCommentAdapter.update
-//        player?.pause()
+
         exoPlayer.pause()
     }
 
@@ -6799,7 +6740,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             outputFile = getOutputFilePath("rec")
             outputVnFile = getOutputFilePath("mix")
             wasPaused = false
-//            firstTimeSendVn = false
+
             mediaRecorder = MediaRecorder().apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
@@ -6818,10 +6759,9 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
             binding.deleteVN.isClickable = true
             binding.sendVN.isClickable = true
-//            mediaRecorder.
+
             recordedAudioFiles.add(outputFile)
 
-//            mediaRecorder.logSessionId
 
             Log.d("VNFile", outputFile)
             // Add any UI changes or notifications indicating recording has started
@@ -6877,13 +6817,10 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
     override fun onAddGif() {
         Log.d("onAddGif", "onAddGif: Gif Button Clicked")
-//        showInputBoxForGifSelection()
-//        selectGifFile()
-// Create an intent to navigate to ActivityB
-        // Create an intent to navigate to ActivityB
+
         val intent = Intent(this, GifActivity::class.java)
         startActivityForResult(intent, GIF_CODE)
-//        startActivity(intent)
+
 
     }
 
@@ -6931,9 +6868,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         }
     }
 
-//    override fun onNotificationLongClick(count: Int) {
-//        TODO("Not yet implemented")
-//    }
+
 
 }
 
