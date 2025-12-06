@@ -1,19 +1,11 @@
 package com.uyscuti.social.circuit.adapter.feed.postFeedActivity
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.content.Intent
-import android.media.MediaRecorder
 import android.os.Bundle
 import android.util.Log
-import android.view.View
-import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
-import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
-import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -23,60 +15,42 @@ import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
 import com.uyscuti.social.circuit.User_Interface.fragments.OnClickListeners
 import com.uyscuti.social.circuit.User_Interface.fragments.OnCommentsClickListener
 import com.uyscuti.social.circuit.data.model.Comment
-import com.uyscuti.social.circuit.service.VideoPreLoadingService
-import com.uyscuti.social.circuit.utils.Constants
 import dagger.hilt.android.AndroidEntryPoint
 import com.uyscuti.social.circuit.utils.Timer
-import com.uyscuti.social.circuit.viewmodels.comments.CommentsViewModel
 import com.uyscuti.social.circuit.viewmodels.comments.ShortCommentsViewModel
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.chatsuit.messages.CommentsInput
-import com.uyscuti.social.circuit.adapter.CommentsRecyclerViewAdapter
 import com.uyscuti.social.circuit.adapter.OnViewRepliesClickListener
 import com.uyscuti.social.circuit.databinding.ActivityPostFeedBinding
-import com.vanniktech.emoji.EmojiPopup
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import kotlin.properties.Delegates
 
 private const val TAG = "PostFeedActivity"
 
 @AndroidEntryPoint
-class PostFeedActivity : AppCompatActivity(),CommentsInput.EmojiListener, OnCommentsClickListener,
-    CommentsInput.VoiceListener, CommentsInput.GifListener, CommentsInput.InputListener,
-    CommentsInput.AttachmentsListener, Timer.OnTimeTickListener, OnViewRepliesClickListener,
-    OnClickListeners {
-    private lateinit var binding: ActivityPostFeedBinding
+class PostFeedActivity : AppCompatActivity(),
+
+    CommentsInput.EmojiListener,
+    OnCommentsClickListener,
+    CommentsInput.VoiceListener,
+    CommentsInput.GifListener,
+    CommentsInput.InputListener,
+    CommentsInput.AttachmentsListener,
+    Timer.OnTimeTickListener,
+    OnViewRepliesClickListener,
+
+    OnClickListeners { private lateinit var binding: ActivityPostFeedBinding
     private lateinit var timer: Timer
     @Inject
     lateinit var retrofitInterface: RetrofitInstance
-    private lateinit var emojiPopup: EmojiPopup
-    private lateinit var inputMethodManager: InputMethodManager
-    private var emojiShowing = false
-    private lateinit var outputFile: String
-    private var mediaRecorder: MediaRecorder? = null
-    private lateinit var postId: String
-    private lateinit var commentId: String
-    private var commentCount by Delegates.notNull<Int>()
-    private var adapter: CommentsRecyclerViewAdapter? = null
     private lateinit var commentsViewModel: ShortCommentsViewModel
-    private lateinit var commentViewModel: CommentsViewModel
-    private var isRecording = false
-    private var isPaused = false
-    private var isAudioVNPlaying = false
-    private var isAudioVNPaused = false
     var wasPaused = false
     var sending = false
-    private var isVnResuming = false
 
 
-    private lateinit var context : Context
-
-    private var feedToComment: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post? = null
-    private var favoriteFeedToComment: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post? = null
     private lateinit var data: com.uyscuti.social.network.api.response.allFeedRepostsPost.OriginalPost
     private var position = 0
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,7 +59,7 @@ class PostFeedActivity : AppCompatActivity(),CommentsInput.EmojiListener, OnComm
         setContentView(binding.root)
         enableEdgeToEdge()
         Log.d(TAG, "onCreate: Clicked")
-//        if (data.originalPostId == null)
+
         val originalPostId = intent.getStringExtra("originalPostId")
         position = intent?.getIntExtra("position", 0)!!
 
@@ -120,58 +94,6 @@ class PostFeedActivity : AppCompatActivity(),CommentsInput.EmojiListener, OnComm
                 Log.e(TAG, "comment: ${e.message}")
                 e.printStackTrace()
             }
-        }
-    }
-    private var isFeedComment = false
-    private fun generateSampleData(count: Int): List<com.uyscuti.social.circuit.data.model.shortsmodels.Comment> {
-        val itemList = mutableListOf<com.uyscuti.social.circuit.data.model.shortsmodels.Comment>()
-        for (i in 1..count) {
-            itemList.add(com.uyscuti.social.circuit.data.model.shortsmodels.Comment("Item $i"))
-        }
-        return itemList
-    }
-    // Function to hide the keyboard
-    private fun hideKeyboard(view: View) {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(view.windowToken, 0)
-    }
-
-    @SuppressLint("SetTextI18n")
-    @OptIn(UnstableApi::class)
-
-    private fun stopPlaying() {
-
-    }
-
-    private fun showProgressBar() {
-//        binding.progressBar.visibility = View.VISIBLE
-    }
-
-    private fun hideProgressBar() {
-//        binding.progressBar.visibility = View.GONE
-    }
-
-    private var vnList = ArrayList<String>()
-
-    @OptIn(UnstableApi::class)
-    private fun startPreLoadingService() {
-        Log.d("VNCache", "Preloading called")
-        val preloadingServiceIntent =
-            Intent(this, VideoPreLoadingService::class.java)
-        preloadingServiceIntent.putStringArrayListExtra(Constants.VIDEO_LIST, vnList)
-        startService(preloadingServiceIntent)
-    }
-
-
-
-    private fun observeComments() {
-        val TAG = "observeComments"
-        commentsViewModel.commentsLiveData.observe(this) { it ->
-            Log.d(TAG, "observeComments comments size: ${it.size}")
-//            val commentsWithReplies = it.find{it.}
-            val commentsWithReplies = it.filter { it.replyCount > 0 }
-            Log.d(TAG, "observeComments comments with replies size: ${commentsWithReplies.size}")
-
         }
     }
 
