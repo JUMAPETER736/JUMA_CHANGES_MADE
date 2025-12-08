@@ -113,9 +113,6 @@ public class MessageHolders {
 
 
 
-    // ============================================================================
-// INNER CONFIGURATION CLASSES
-// ============================================================================
 
     /**
      * Configuration wrapper for a specific content type (e.g., image, video, audio).
