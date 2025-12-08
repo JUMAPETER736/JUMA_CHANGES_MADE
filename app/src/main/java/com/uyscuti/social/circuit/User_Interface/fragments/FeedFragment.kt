@@ -208,7 +208,8 @@ class FeedFragment : Fragment(), Timer.OnTimeTickListener {
     private var param2: String? = null
     private var followingUserIds: Set<String> = emptySet()
 
-
+    private var filterUsername: String? = null
+    private var shouldFilter: Boolean = false
     private val waveHandler = Handler(Looper.getMainLooper())
     private val maxWaveBars = 200
     private var waveBarCount = 0
@@ -263,6 +264,8 @@ class FeedFragment : Fragment(), Timer.OnTimeTickListener {
         arguments?.let {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
+            shouldFilter = it.getBoolean("should_filter", false)  // ✅ Move inside let block
+            filterUsername = it.getString("filter_username")
         }
         feedPostPositionFromShorts = arguments?.getInt(FEED_POST_POSITION_FROM_SHORTS, -1)!!
         EventBus.getDefault().register(this)
@@ -384,13 +387,20 @@ class FeedFragment : Fragment(), Timer.OnTimeTickListener {
             try {
                 Log.d(TAG, "Loading following list for feed...")
 
+                // Check if we should filter by username
+                if (shouldFilter && !filterUsername.isNullOrEmpty()) {
+                    Log.d(TAG, "Filtering feed by username: $filterUsername")
+                    loadFilteredFeed(filterUsername!!)
+                    return@launch
+                }
+
                 // Get current user's username to fetch their following list
                 val currentUsername = LocalStorage.getInstance(requireContext()).getUsername()
 
                 val response = retrofitInterface.apiService.getOtherUserFollowing(
                     username = currentUsername,
                     page = 1,
-                    limit = 1000  // Get all following users
+                    limit = 1000
                 )
 
                 if (response.isSuccessful && response.body() != null) {
@@ -403,7 +413,6 @@ class FeedFragment : Fragment(), Timer.OnTimeTickListener {
                             Log.d(TAG, "  ✓ Following ID: $id")
                         }
 
-                        // Update child fragments with following list
                         updateChildFragmentsWithFollowingList()
                     }
                 } else {
@@ -413,6 +422,38 @@ class FeedFragment : Fragment(), Timer.OnTimeTickListener {
                 Log.e(TAG, "Error loading following list for feed: ${e.message}", e)
             }
         }
+    }
+
+    private suspend fun loadFilteredFeed(username: String) {
+        try {
+            val response = retrofitInterface.apiService.getSearchAllFeed("1", username)
+
+            if (response.isSuccessful && response.body() != null) {
+                val posts = response.body()!!.data.data.posts
+
+                withContext(Dispatchers.Main) {
+                    Log.d(TAG, "Found ${posts.size} posts for user: $username")
+
+                    // Update the AllFragment with filtered posts
+                    val currentFragment = adapter.getFragment(viewPager2.currentItem)
+                    if (currentFragment is AllFragment) {
+                        currentFragment.setFilteredPosts(posts)
+
+                        // Show filter indicator in UI
+                        showFilteredIndicator(username)
+                    }
+                }
+            } else {
+                Log.e(TAG, "Failed to load filtered feed: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading filtered feed: ${e.message}", e)
+        }
+    }
+
+    private fun showFilteredIndicator(username: String) {
+        // Optional: Show a chip or toast indicating filtered view
+        Toast.makeText(requireContext(), "Showing posts by @$username", Toast.LENGTH_SHORT).show()
     }
 
     private fun updateChildFragmentsWithFollowingList() {
