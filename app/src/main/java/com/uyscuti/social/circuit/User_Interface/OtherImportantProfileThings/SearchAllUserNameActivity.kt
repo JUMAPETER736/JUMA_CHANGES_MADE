@@ -512,7 +512,9 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 // Keep your existing adapter classes unchanged
 class SearchUserNameAdapter(
     private val onUserClicked: (Author) -> Unit
-) : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback()) {
+) :
+
+    ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback()) {
 
     fun showRecentUsers(authors: List<Author>) {
         submitList(listOf("RECENT_HEADER") + authors)
