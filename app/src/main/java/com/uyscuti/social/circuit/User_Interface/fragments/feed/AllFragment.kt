@@ -334,48 +334,28 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    fun filterByUser(userId: String?, username: String?) {
-        Log.d(TAG, "filterByUser: Filtering posts for user: $username ($userId)")
+    // Add filtered posts for a specific user
+    fun setFilteredPosts(posts: List<Post>) {
+        Log.d(TAG, "setFilteredPosts: Setting ${posts.size} filtered posts")
 
-        this.filterUserId = userId
-        this.filterUsername = username
-        this.isFilteringByUser = userId != null
+        // Set filter flag
+        isFilteringByUser = true
 
-        // Clear existing data
-        loadedPages.clear()
-        loadingPages.clear()
-        hasMorePages = true
-        isInitialLoadComplete = false
+        // Clear existing posts
         getFeedViewModel.clearAllFeedData()
-        allFeedAdapter.clearItems()
 
-        // Show loading
-        progressBar.visibility = View.VISIBLE
+        // Add filtered posts to the feed
+        posts.forEach { post ->
+            getFeedViewModel.addSingleAllFeedData(post)
+        }
 
-        // Show filter indicator (optional - see below)
-        showFilterHeader(username)
+        // Scroll to top (use view instead of binding)
+        view?.findViewById<RecyclerView>(R.id.feedRecyclerView)?.scrollToPosition(0)
 
-        // Load filtered posts
-        loadInitialBatch()
+        Log.d(TAG, "setFilteredPosts: Displayed ${posts.size} filtered posts")
     }
 
 
-    private fun showFilterHeader(username: String?) {
-
-
-    }
-
-    // Clear filter and show all posts
-    fun clearFilter() {
-        Log.d(TAG, "clearFilter: Clearing user filter")
-
-        filterUserId = null
-        filterUsername = null
-        isFilteringByUser = false
-
-
-        refreshFeed()
-    }
 
     fun updateFollowingList(followingIds: Set<String>) {
         Log.d("AllFragment", "Received ${followingIds.size} following IDs")
@@ -632,7 +612,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 content = data.content ?: "",
                 contentType = data.contentType ?: "",
                 isLiked = newLikeStatus,
-               // url = data.url // Ensure url is passed to avoid nullability issue
+                // url = data.url // Ensure url is passed to avoid nullability issue
             )
 
             // Update server with like/unlike action
