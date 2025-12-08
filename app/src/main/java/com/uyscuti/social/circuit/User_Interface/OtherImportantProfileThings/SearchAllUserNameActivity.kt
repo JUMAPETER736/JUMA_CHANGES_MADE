@@ -154,7 +154,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         })
     }
 
-    private suspend fun fetchAllAuthorsFromShortsAndFeed(): List<Author> {
+    private suspend fun fetchAllAuthorsFromShortsAndFeed(searchQuery: String? = null): List<Author> {
         val authorsMap = mutableMapOf<String, Author>()
 
         try {
@@ -186,10 +186,16 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                 }
             }
 
-            // Fetch from feed (multiple pages)
+            // Fetch from feed or search (multiple pages)
             for (page in 1..5) {
                 try {
-                    val feedResponse = apiService.getAllFeed(page.toString())
+                    // Use search endpoint if query is provided, otherwise use regular feed
+                    val feedResponse = if (!searchQuery.isNullOrBlank()) {
+                        apiService.getSearchAllFeed(page.toString(), searchQuery)
+                    } else {
+                        apiService.getAllFeed(page.toString())
+                    }
+
                     if (feedResponse.isSuccessful) {
                         val body = feedResponse.body()
                         if (body != null) {
@@ -377,13 +383,83 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
     @OptIn(UnstableApi::class)
     private fun onUserClicked(author: Author) {
+        // Show posts for this user
+        loadUserPosts(author)
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun loadUserPosts(author: Author) {
+        lifecycleScope.launch {
+            try {
+                Log.d("SearchUsers", "Loading posts for: ${author.account.username}")
+
+                // Show loading state
+                searchAdapter.showLoading()
+
+                // Fetch posts by username
+                val response = withContext(Dispatchers.IO) {
+                    apiService.getSearchAllFeed("1", author.account.username)
+                }
+
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body != null) {
+                        val posts = body.data.data.posts
+
+                        Log.d("SearchUsers", "Found ${posts.size} posts for ${author.account.username}")
+
+                        if (posts.isNotEmpty()) {
+                            // Navigate to MainActivity with posts filter
+                            val intent = Intent(this@SearchAllUserNameActivity, MainActivity::class.java).apply {
+                                putExtra("navigate_to", "feed")
+                                putExtra("user_id", author._id)
+                                putExtra("filter_username", author.account.username)
+                                putExtra("filter_user_avatar", author.account.avatar.url)
+                                putExtra("should_filter", true)
+                                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            }
+                            startActivity(intent)
+                            finish()
+                        } else {
+                            // No posts found, show message
+                            searchAdapter.showNoResults()
+                            android.widget.Toast.makeText(
+                                this@SearchAllUserNameActivity,
+                                "No posts found for ${author.account.username}",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+
+                            // Still navigate to their profile/shorts
+                            navigateToUserProfile(author)
+                        }
+                    } else {
+                        Log.e("SearchUsers", "Response body is null")
+                        // Navigate to profile anyway
+                        navigateToUserProfile(author)
+                    }
+                } else {
+                    Log.e("SearchUsers", "Failed to fetch posts: ${response.code()}")
+                    // Navigate to profile anyway
+                    navigateToUserProfile(author)
+                }
+
+            } catch (e: Exception) {
+                Log.e("SearchUsers", "Error loading posts: ${e.message}")
+                // Navigate to profile anyway
+                navigateToUserProfile(author)
+            }
+        }
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun navigateToUserProfile(author: Author) {
         val intent = Intent(this, MainActivity::class.java).apply {
             putExtra("navigate_to", "shorts")
             putExtra("user_id", author._id)
             putExtra("filter_user_id", author._id)
             putExtra("filter_username", author.account.username)
             putExtra("filter_user_avatar", author.account.avatar.url)
-            putExtra("should_filter", true)  // ADD THIS LINE
+            putExtra("should_filter", true)
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         startActivity(intent)
