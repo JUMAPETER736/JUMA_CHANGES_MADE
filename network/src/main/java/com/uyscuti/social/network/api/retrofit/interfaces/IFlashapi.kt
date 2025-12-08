@@ -326,7 +326,7 @@ interface IFlashapi {
 //    suspend fun deleteGroupChat(@Path("chatId") chatId: String): Response<DeleteGroupChatResponse>
 //
 
-//    @DELETE("chat-app/chats/leave/group/{chatId}")
+    //    @DELETE("chat-app/chats/leave/group/{chatId}")
 //    suspend fun leaveGroupChat(@Path("chatId") chatId: String): Response<LeaveGroup>
 //
 //    @PATCH("chat-app/chats/group/{chatId}")
@@ -367,10 +367,10 @@ interface IFlashapi {
 
     @POST("feed/bookmarks/{postId}")
     suspend fun favoriteFeed(@Path("postId") postId: String): Response<ShortsFavoriteResponse>
-//    @Multipart
+    //    @Multipart
     @POST("social-media/comments/post/{postId}")
     suspend fun addComment(
-    @Path("postId") postId: String, @Body requestBody: CommentRequestBody,
+        @Path("postId") postId: String, @Body requestBody: CommentRequestBody,
     ) : Response<ShortCommentResponse>
 
     @POST("feed/comments/{postId}")
@@ -515,6 +515,12 @@ interface IFlashapi {
         @Query("page") page: String,
     ): Response<FeedResponse>
 
+
+    @GET("feed/post/search")
+    suspend fun getSearchAllFeed(
+        @Query("page") page: String,
+        @Query("query") query: String
+    ): Response<FeedResponse>
 
     @Multipart
     @POST("social-media/comments/post/{postId}")
