@@ -190,8 +190,6 @@ interface OnVideoPreparedListener {
     fun onVideoPrepared(exoPlayerItem: ExoPlayerItem)
 }
 
-
-
 // DATA CLASSES
 data class MyData(
     val shortsEntity: ShortsEntity,
@@ -1338,7 +1336,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     // Media Player & ExoPlayer
     private var exoPlayer: ExoPlayer? = null
     private var currentPlayerListener: Player.Listener? = null
-
     //private var isPlayerPreparing = false
     private var isUserSeeking = false
 
@@ -1354,6 +1351,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     // ExoPlayer Data Sources
     private lateinit var httpDataSourceFactory: HttpDataSource.Factory
+    private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
     private val simpleCache: SimpleCache = FlashApplication.cache
     private val playbackStateListener: Player.Listener = playbackStateListener()
 
@@ -1364,12 +1362,13 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     private val followShortsViewModel: FollowListItemViewModel by viewModels()
     private val followViewModel: FollowViewModel by viewModels()
     private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
-
+    private val userProfileShortsViewModel: UserProfileShortsViewModel by activityViewModels()
 
     init {
         // Increase cache size for better performance
         simpleCache.release() // Clear if needed
     }
+
 
     companion object {
         const val REQUEST_UPLOAD_SHORTS_ACTIVITY = 123 // You can use any unique value
@@ -1846,6 +1845,162 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         return view
     }
 
+    override fun onStart() {
+        super.onStart()
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this)
+            Log.d("EventBus", "ShotsFragment registered")
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().unregister(this)
+            Log.d("EventBus", "ShotsFragment unregistered")
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        exoPlayer!!.pause()
+        val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
+        if (index != -1) {
+            val player = exoPlayerItems[index].exoPlayer
+            player.pause()
+
+            player.playWhenReady = false
+            player.seekTo(0)
+        }
+    }
+
+    private fun updateSeekBar() {
+        exoPlayer?.let { player ->
+            if (!isUserSeeking) {
+                val currentPosition = player.currentPosition.toInt()
+                shortSeekBar.progress = currentPosition
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        try {
+            exoPlayer?.apply {
+                removeListener(playbackStateListener)
+                currentPlayerListener?.let { removeListener(it) }
+                stop()
+                clearMediaItems()
+                release()
+            }
+            exoPlayer = null
+        } catch (e: Exception) {
+            Log.e("ShotsFragment", "Error destroying player", e)
+        }
+
+        if (exoPlayerItems.isNotEmpty()) {
+            for (item in exoPlayerItems) {
+                val player = item.exoPlayer
+                player.stop()
+                player.clearMediaItems()
+            }
+            exoPlayerItems.clear()
+        }
+
+        lifecycleScope.launch {
+            shortsViewModel.isResuming = true
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // Only pause, don't release
+        exoPlayer?.pause()
+
+        lifecycleScope.launch {
+            shortsViewModel.isResuming = true
+        }
+    }
+
+    fun loadMoreVideosIfNeeded(position: Int) {
+
+        if (position >= 5 && (position - 5) % 5 == 0) {
+
+            val loadMoreValue = 2 + (position - 5) / 5
+
+            loadMoreVideos(loadMoreValue)
+        }
+    }
+
+    private fun loadMoreVideos(pageNumber: Int) {
+        // Call the function that makes a request to the server for more videos
+        lifecycleScope.launch(Dispatchers.IO) {
+            // Your code to fetch more videos goes here
+            Log.d("TAG", "Call for more videos")
+
+            delay(50)
+            loadMoreShorts(pageNumber)
+            loadMoreShortsFromFeed(pageNumber)
+            shortsViewModel.pageNumber = pageNumber
+            lifecycleScope.launch(Dispatchers.Main) {
+
+            }
+        }
+    }
+
+    private fun playVideoAtPosition(position: Int) {
+        val videoShorts = shortsViewModel.videoShorts
+
+        if (position < 0 || position >= videoShorts.size) {
+            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
+            return
+        }
+
+        val shortVideo = videoShorts[position]
+        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
+
+        // Get current holder
+        val currentHolder = shortsAdapter.getCurrentViewHolder()
+
+        // Load thumbnail FIRST before starting video
+        val thumbnailUrl = shortVideo.thumbnail.firstOrNull()?.thumbnailUrl
+        currentHolder?.loadThumbnail(thumbnailUrl)
+
+        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
+
+        if (rawVideoUrl.isNullOrEmpty()) {
+            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
+            return
+        }
+
+        val finalVideoUrl = when {
+            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
+                rawVideoUrl
+            }
+            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
+                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
+                serverBaseUrl + rawVideoUrl.trimStart('/')
+            }
+            else -> {
+                val serverBaseUrl = "http://192.168.1.103:8080/"
+                if (rawVideoUrl.startsWith("/")) {
+                    serverBaseUrl + rawVideoUrl.trimStart('/')
+                } else {
+                    serverBaseUrl + rawVideoUrl
+                }
+            }
+        }
+
+        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
+
+        // Small delay to ensure thumbnail is loaded
+        lifecycleScope.launch {
+            delay(50) // Short delay for thumbnail to render
+            prepareAndPlayVideoImmediately(finalVideoUrl, position)
+        }
+    }
+
     @SuppressLint("NotifyDataSetChanged")
     private suspend fun loadMoreShorts(currentPage: Int) {
         try {
@@ -1948,84 +2103,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
             requireActivity().runOnUiThread {
                 showToast("Failed to connect try again...")
             }
-        }
-    }
-
-    fun loadMoreVideosIfNeeded(position: Int) {
-
-        if (position >= 5 && (position - 5) % 5 == 0) {
-
-            val loadMoreValue = 2 + (position - 5) / 5
-
-            loadMoreVideos(loadMoreValue)
-        }
-    }
-
-    private fun loadMoreVideos(pageNumber: Int) {
-        // Call the function that makes a request to the server for more videos
-        lifecycleScope.launch(Dispatchers.IO) {
-            // Your code to fetch more videos goes here
-            Log.d("TAG", "Call for more videos")
-
-            delay(50)
-            loadMoreShorts(pageNumber)
-            loadMoreShortsFromFeed(pageNumber)
-            shortsViewModel.pageNumber = pageNumber
-            lifecycleScope.launch(Dispatchers.Main) {
-
-            }
-        }
-    }
-
-    private fun playVideoAtPosition(position: Int) {
-        val videoShorts = shortsViewModel.videoShorts
-
-        if (position < 0 || position >= videoShorts.size) {
-            Log.e("playVideoAtPosition", "Invalid position: $position, size: ${videoShorts.size}")
-            return
-        }
-
-        val shortVideo = videoShorts[position]
-        Log.d("playVideoAtPosition", "Playing video for: ${shortVideo.author.account.username}")
-
-        // Get current holder
-        val currentHolder = shortsAdapter.getCurrentViewHolder()
-
-        // Load thumbnail FIRST before starting video
-        val thumbnailUrl = shortVideo.thumbnail.firstOrNull()?.thumbnailUrl
-        currentHolder?.loadThumbnail(thumbnailUrl)
-
-        val rawVideoUrl = shortVideo.images.firstOrNull()?.url
-
-        if (rawVideoUrl.isNullOrEmpty()) {
-            Log.e("playVideoAtPosition", "Video URL is null or empty at position $position")
-            return
-        }
-
-        val finalVideoUrl = when {
-            rawVideoUrl.startsWith("http://") || rawVideoUrl.startsWith("https://") -> {
-                rawVideoUrl
-            }
-            rawVideoUrl.contains("mixed_files") || rawVideoUrl.contains("temp") -> {
-                val serverBaseUrl = "http://192.168.1.103:8080/feed_mixed_files/"
-                serverBaseUrl + rawVideoUrl.trimStart('/')
-            }
-            else -> {
-                val serverBaseUrl = "http://192.168.1.103:8080/"
-                if (rawVideoUrl.startsWith("/")) {
-                    serverBaseUrl + rawVideoUrl.trimStart('/')
-                } else {
-                    serverBaseUrl + rawVideoUrl
-                }
-            }
-        }
-
-        Log.d("playVideoAtPosition", "Final video URL: $finalVideoUrl")
-
-        // Small delay to ensure thumbnail is loaded
-        lifecycleScope.launch {
-            delay(50) // Short delay for thumbnail to render
-            prepareAndPlayVideoImmediately(finalVideoUrl, position)
         }
     }
 
@@ -2578,75 +2655,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         Log.d("ShotsFragment", "Setting up video playback for: $videoUrl")
     }
 
-    override fun onStart() {
-        super.onStart()
-        if (!EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().register(this)
-            Log.d("EventBus", "ShotsFragment registered")
-        }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        if (EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().unregister(this)
-            Log.d("EventBus", "ShotsFragment unregistered")
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        // Only pause, don't release
-        exoPlayer?.pause()
-
-        lifecycleScope.launch {
-            shortsViewModel.isResuming = true
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        try {
-            exoPlayer?.apply {
-                removeListener(playbackStateListener)
-                currentPlayerListener?.let { removeListener(it) }
-                stop()
-                clearMediaItems()
-                release()
-            }
-            exoPlayer = null
-        } catch (e: Exception) {
-            Log.e("ShotsFragment", "Error destroying player", e)
-        }
-
-        if (exoPlayerItems.isNotEmpty()) {
-            for (item in exoPlayerItems) {
-                val player = item.exoPlayer
-                player.stop()
-                player.clearMediaItems()
-            }
-            exoPlayerItems.clear()
-        }
-
-        lifecycleScope.launch {
-            shortsViewModel.isResuming = true
-        }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        exoPlayer!!.pause()
-        val index = exoPlayerItems.indexOfFirst { it.position == viewPager.currentItem }
-        if (index != -1) {
-            val player = exoPlayerItems[index].exoPlayer
-            player.pause()
-
-            player.playWhenReady = false
-            player.seekTo(0)
-        }
-    }
-
     @SuppressLint("NotifyDataSetChanged")
     override fun onResume() {
         super.onResume()
@@ -2689,7 +2697,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     }
 
-
     @SuppressLint("SetTextI18n")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
@@ -2731,16 +2738,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
-    private fun updateSeekBar() {
-        exoPlayer?.let { player ->
-            if (!isUserSeeking) {
-                val currentPosition = player.currentPosition.toInt()
-                shortSeekBar.progress = currentPosition
-            }
-        }
-    }
-
-
     private fun getMimeTypeFromUrl(url: String): String {
         val lowerUrl = url.lowercase()
         return when {
@@ -2754,6 +2751,24 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         }
     }
 
+    @OptIn(UnstableApi::class)
+    private fun createRobustDataSourceFactory(): DataSource.Factory {
+        return try {
+            // Create cache data source factory with fallback
+            val cacheFactory = if (::cacheDataSourceFactory.isInitialized) {
+                cacheDataSourceFactory
+            } else {
+                Log.w("createRobustDataSourceFactory", "Cache factory not initialized, using default")
+                DefaultDataSource.Factory(requireContext())
+            }
+
+            // Wrap with retry mechanism
+            cacheFactory
+        } catch (e: Exception) {
+            Log.e("createRobustDataSourceFactory", "Error creating robust data source factory", e)
+            DefaultDataSource.Factory(requireContext())
+        }
+    }
 
     private fun handlePlaybackError(position: Int) {
         lifecycleScope.launch {
@@ -2839,6 +2854,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun followButtonClicked(event: ShortsFollowButtonClicked) {
+
         Log.d("followButtonClicked", "followButtonClicked: ${event.followUnFollowEntity}")
 
 
@@ -2882,6 +2898,104 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
     }
 
+    private fun handleLikeClick(
+        postId: String,
+        likeCount: TextView,
+        btnLike: ImageButton,
+        shortsEntity: ShortsEntity
+
+    ) {
+
+        Log.d("handleLikeClick", "handleLikeClick: before ${shortsViewModel.isLiked}")
+        shortsViewModel.isLiked = !shortsViewModel.isLiked
+        Log.d("handleLikeClick", "handleLikeClick: after ! ${shortsViewModel.isLiked}")
+        EventBus.getDefault().post(ShortsLikeUnLike2(postId))
+
+        if (!shortsEntity.isLiked) {
+
+
+            shortsEntity.likes += 1
+            likeCount.text = shortsEntity.likes.toString()
+
+            btnLike.setImageResource(R.drawable.filled_favorite_like)
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(btnLike)
+
+            shortsEntity.isLiked = true
+
+
+            val myShorts = userProfileShortsViewModel.mutableShortsList.find { it._id == postId }
+            var myFavoriteShorts =
+                userProfileShortsViewModel.mutableFavoriteShortsList.find { it._id == postId }
+
+            if (myShorts != null) {
+                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myShorts._id}")
+                myShorts.isLiked = true
+                myShorts.likes += 1
+            } else {
+                Log.d("handleLikeClick", "handleLikeClick: short not found")
+            }
+            if (myFavoriteShorts != null) {
+                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myFavoriteShorts._id}")
+                myFavoriteShorts.isLiked = true
+                myFavoriteShorts.likes += 1
+            } else {
+                Log.d("handleLikeClick", "handleLikeClick: short not found")
+            }
+            shortsViewModel.isLiked = true
+        } else {
+            shortsEntity.likes -= 1
+            likeCount.text = shortsEntity.likes.toString()
+            var myShorts = userProfileShortsViewModel.mutableShortsList.find { it._id == postId }
+            var myFavoriteShorts =
+                userProfileShortsViewModel.mutableFavoriteShortsList.find { it._id == postId }
+
+            if (myShorts != null) {
+                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myShorts._id}")
+                myShorts.isLiked = false
+                myShorts.likes -= 1
+            } else {
+                Log.d("handleLikeClick", "handleLikeClick: short not found")
+            }
+            if (myFavoriteShorts != null) {
+                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myFavoriteShorts._id}")
+                myFavoriteShorts.isLiked = false
+                myFavoriteShorts.likes -= 1
+            } else {
+                Log.d("handleLikeClick", "handleLikeClick: short not found")
+            }
+            btnLike.setImageResource(R.drawable.favorite_svgrepo_com)
+            shortsEntity.isLiked = false
+
+            shortsViewModel.isLiked = false
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(btnLike)
+        }
+    }
+
+    private fun shortsEntityToUserShortsEntity(serverResponseItem: ShortsEntity): UserShortsEntity {
+
+        return UserShortsEntity(
+            __v = serverResponseItem.__v,
+            _id = serverResponseItem._id,
+            content = serverResponseItem.content,
+            author = serverResponseItem.author,
+            comments = serverResponseItem.comments,
+            createdAt = serverResponseItem.createdAt,
+            images = serverResponseItem.images,
+            isBookmarked = serverResponseItem.isBookmarked,
+            isLiked = serverResponseItem.isLiked,
+            likes = serverResponseItem.likes,
+            tags = serverResponseItem.tags,
+            updatedAt = serverResponseItem.updatedAt,
+            thumbnail = serverResponseItem.thumbnail,
+            // map other properties...
+        )
+    }
 
     private fun updateStatusBar() {
         val decor: View? = activity?.window?.decorView
@@ -2894,6 +3008,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         position: Int,
         data: UserShortsEntity,
         isFeedComment: Boolean
+
     ) {
 
         showBottomSheet()
@@ -2906,7 +3021,6 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
 
     }
-
 
     private fun startPreLoadingService() {
         Log.d(SHORTS, "Preloading called")
@@ -3156,23 +3270,12 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         bottomSheetDialog.show()
     }
 
-    // Share helper functions
     private fun shareToWhatsApp(context: Context, text: String) {
-        try {
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                setPackage("com.whatsapp")
-                putExtra(Intent.EXTRA_TEXT, text)
-            }
-            if (intent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(intent)
-            } else {
-                // Fallback to generic share
-                shareGeneric(context, text, "WhatsApp")
-            }
-        } catch (e: Exception) {
-            Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
-        }
+        val packages = listOf(
+            "com.whatsapp",
+            "com.whatsapp.w4b"  // WhatsApp Business
+        )
+        shareToApp(context, text, packages, "WhatsApp")
     }
 
     private fun shareViaSMS(context: Context, text: String) {
@@ -3188,95 +3291,130 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     }
 
     private fun shareToInstagram(context: Context, text: String) {
-        try {
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                setPackage("com.instagram.android")
-                putExtra(Intent.EXTRA_TEXT, text)
-            }
-            if (intent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(intent)
-            } else {
-                Toast.makeText(context, "Instagram not installed", Toast.LENGTH_SHORT).show()
-            }
-        } catch (e: Exception) {
-            Toast.makeText(context, "Instagram not installed", Toast.LENGTH_SHORT).show()
-        }
+        val packages = listOf(
+            "com.instagram.android"
+        )
+        shareToApp(context, text, packages, "Instagram")
+    }
+
+    private fun shareToFacebook(context: Context, text: String) {
+        val packages = listOf(
+            "com.facebook.katana",
+            "com.facebook.lite"
+        )
+        shareToApp(context, text, packages, "Facebook")
     }
 
     private fun shareToMessenger(context: Context, text: String) {
         try {
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                setPackage("com.facebook.orca")
-                putExtra(Intent.EXTRA_TEXT, text)
+            // Try Messenger URI scheme first
+            val messengerIntent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("fb-messenger://share/?link=${Uri.encode(text)}")
             }
-            if (intent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(intent)
-            } else {
-                Toast.makeText(context, "Messenger not installed", Toast.LENGTH_SHORT).show()
+
+            if (messengerIntent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(messengerIntent)
+                return
             }
-        } catch (e: Exception) {
+
+            // Fallback to standard share with specific package
+            val packages = listOf("com.facebook.orca", "com.facebook.mlite")
+            for (packageName in packages) {
+                try {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        setPackage(packageName)
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+
+                    if (intent.resolveActivity(context.packageManager) != null) {
+                        context.startActivity(intent)
+                        return
+                    }
+                } catch (e: Exception) {
+                    continue
+                }
+            }
+
             Toast.makeText(context, "Messenger not installed", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun shareToFacebook(context: Context, text: String) {
-        try {
-            // Try Facebook first
-            var intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                setPackage("com.facebook.katana")
-                putExtra(Intent.EXTRA_TEXT, text)
-            }
-
-            if (intent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(intent)
-            } else {
-                // Try Facebook Lite
-                intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    setPackage("com.facebook.lite")
-                    putExtra(Intent.EXTRA_TEXT, text)
-                }
-
-                if (intent.resolveActivity(context.packageManager) != null) {
-                    context.startActivity(intent)
-                } else {
-                    Toast.makeText(context, "Facebook not installed", Toast.LENGTH_SHORT).show()
-                }
-            }
         } catch (e: Exception) {
-            Toast.makeText(context, "Facebook not installed", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "Messenger share error", e)
+            Toast.makeText(context, "Messenger not available", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun shareToTelegram(context: Context, text: String) {
         try {
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                setPackage("org.telegram.messenger")
-                putExtra(Intent.EXTRA_TEXT, text)
+            // Try Telegram URI scheme first
+            val telegramIntent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("tg://msg?text=${Uri.encode(text)}")
             }
-            if (intent.resolveActivity(context.packageManager) != null) {
-                context.startActivity(intent)
-            } else {
-                Toast.makeText(context, "Telegram not installed", Toast.LENGTH_SHORT).show()
+
+            if (telegramIntent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(telegramIntent)
+                return
             }
-        } catch (e: Exception) {
+
+            // Fallback to web share URL
+            val webIntent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("https://t.me/share/url?url=${Uri.encode(text)}")
+            }
+
+            if (webIntent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(webIntent)
+                return
+            }
+
+            // Last fallback - standard share with specific packages
+            val packages = listOf(
+                "org.telegram.messenger",
+                "org.telegram.messenger.web",
+                "org.thunderdog.challegram"
+            )
+
+            for (packageName in packages) {
+                try {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        setPackage(packageName)
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+
+                    if (intent.resolveActivity(context.packageManager) != null) {
+                        context.startActivity(intent)
+                        return
+                    }
+                } catch (e: Exception) {
+                    continue
+                }
+            }
+
             Toast.makeText(context, "Telegram not installed", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e(TAG, "Telegram share error", e)
+            Toast.makeText(context, "Telegram not available", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun shareGeneric(context: Context, text: String, appName: String) {
+    private fun shareToApp(context: Context, text: String, packages: List<String>, appName: String) {
         try {
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, text)
+            for (packageName in packages) {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    setPackage(packageName)
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+
+                if (intent.resolveActivity(context.packageManager) != null) {
+                    context.startActivity(intent)
+                    return
+                }
             }
-            context.startActivity(Intent.createChooser(intent, "Share via $appName"))
+
+            // If none of the specific packages work, show toast
+            Toast.makeText(context, "$appName not installed", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Toast.makeText(context, "Unable to share", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "$appName not available", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -3291,6 +3429,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         message: String,
         notificationId: Int,
         fileLocation: String
+
     ) {
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -3352,7 +3491,8 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     private fun download(
         mUrl: String,
         fileLocation: String,
-    ) {
+
+        ) {
 
         Log.d("Download", "directory path - $fileLocation")
 

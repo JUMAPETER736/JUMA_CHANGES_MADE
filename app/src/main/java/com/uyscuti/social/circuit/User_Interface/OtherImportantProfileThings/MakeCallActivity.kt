@@ -50,7 +50,7 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
     private lateinit var originalUserList: List<User>
 
     private lateinit var usersList: List<UserEntity>
-    private lateinit var dialogsList: List<DialogEntity> // Store original dialogs
+    private lateinit var dialogsList: List<DialogEntity>
 
     private val usersViewModel: UsersViewModel by viewModels()
     private val dialogViewModel: DialogViewModel by viewModels()
@@ -99,7 +99,6 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         }
 
         dialogViewModel.allDialogs.observe(this) { chats ->
-            // Store the original dialogs list
             dialogsList = chats
             usersList = chats.map { it.toUser() }
             runOnUiThread {
@@ -192,7 +191,6 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
             }
         }
 
-        // Set LinearLayoutManager for a vertical list
         userListView.layoutManager = LinearLayoutManager(this)
 
         originalUserList = usersList.map { it.toUser() }.sortedBy { it.name }
@@ -222,14 +220,31 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.options, menu)
 
-        // Get the search item
         val searchItem = menu.findItem(R.id.menu_search)
-
-        // Get the SearchView from the search item
         val searchView = searchItem.actionView as SearchView
 
-        // Set the query text listener to this activity
+        // Configure SearchView to align left and take full width
+        searchView.maxWidth = Integer.MAX_VALUE
+
+        // Set the query hint
+        searchView.queryHint = "Search contacts..."
+
+        // Set the query text listener
         searchView.setOnQueryTextListener(this)
+
+        // Handle search view expand/collapse
+        searchItem.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
+            override fun onMenuItemActionExpand(item: MenuItem): Boolean {
+                // SearchView expanded
+                return true
+            }
+
+            override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
+                // SearchView collapsed - reset the list
+                userListAdapter.setUserList(originalUserList)
+                return true
+            }
+        })
 
         return true
     }
@@ -237,8 +252,7 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.menu_search -> {
-                val searchView = item.actionView as SearchView
-                searchView.isIconified = false // Expand the SearchView when the icon is clicked
+                // Let the default behavior handle it
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -246,12 +260,10 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
     }
 
     override fun onQueryTextSubmit(query: String?): Boolean {
-        // Handle the submission of the search query if needed
         return false
     }
 
     override fun onQueryTextChange(newText: String?): Boolean {
-        // Filter the user list based on the search query
         val filteredList = originalUserList.filter { user ->
             user.name.contains(newText.toString(), true)
         }
@@ -259,15 +271,11 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         return true
     }
 
-    // In MakeCallActivity.kt - Improved startVoiceCall and startVideoCall methods
-
     private fun startVoiceCall(user: User) {
-        // FIX 1: Try multiple ways to find the dialog
         val dialog = dialogsList.find { it.dialogName == user.name }
             ?: dialogsList.find { it.id == user.id }
             ?: dialogsList.find { it.users.any { u -> u.id == user.id } }
 
-        // Enhanced debug logging
         Log.d("MakeCallActivity", "=== Starting Voice Call ===")
         Log.d("MakeCallActivity", "User name: ${user.name}")
         Log.d("MakeCallActivity", "User ID: ${user.id}")
@@ -300,7 +308,6 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                     putExtra("isCaller", true)
                     putExtra("avatar", user.avatar)
 
-                    // FIX 2: Always pass chatId and userId, with better fallback
                     val finalChatId: String
                     val finalUserId: String
 
@@ -309,7 +316,6 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
                         finalUserId = dialog.users.firstOrNull()?.id ?: user.id
                         Log.d("MakeCallActivity", "✓ Using dialog data - chatId: $finalChatId, userId: $finalUserId")
                     } else {
-                        // Fallback: use user.id for both
                         finalChatId = user.id
                         finalUserId = user.id
                         Log.w("MakeCallActivity", "⚠ Using fallback - chatId: $finalChatId, userId: $finalUserId")
@@ -341,7 +347,6 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
     }
 
     private fun startVideoCall(user: User) {
-        // Same fixes for video call
         val dialog = dialogsList.find { it.dialogName == user.name }
             ?: dialogsList.find { it.id == user.id }
             ?: dialogsList.find { it.users.any { u -> u.id == user.id } }
@@ -410,8 +415,6 @@ class MakeCallActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         )
         insertCallLog(newCallLog)
     }
-
-
 
     private fun insertCallLog(callLog: CallLogEntity) {
         callViewModel.insertCallLog(callLog)

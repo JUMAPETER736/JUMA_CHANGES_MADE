@@ -23,4 +23,5 @@ class NotificationsSettingsActivity : AppCompatActivity() {
             insets
         }
     }
+
 }

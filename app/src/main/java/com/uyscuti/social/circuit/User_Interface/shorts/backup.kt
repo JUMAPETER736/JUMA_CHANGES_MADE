@@ -1,4 +1,4 @@
-package com.uyscut.flashdesign.ui.shorts
+package com.uyscuti.social.circuit.User_Interface.shorts
 
 
 //                val uniqueShortsSet =

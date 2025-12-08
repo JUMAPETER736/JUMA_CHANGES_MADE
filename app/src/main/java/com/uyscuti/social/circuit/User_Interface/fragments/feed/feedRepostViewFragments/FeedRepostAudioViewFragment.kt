@@ -1,4 +1,4 @@
-package com.uyscut.flashdesign.ui.fragments.feed.feedRepostViewFragments
+package com.uyscuti.social.circuit.User_Interface.fragments.feed.feedRepostViewFragments
 
 import android.annotation.SuppressLint
 import android.media.AudioAttributes

@@ -1,4 +1,4 @@
-package com.uyscut.flashdesign.ui.fragments.notifications.notifications
+package com.uyscuti.social.circuit.User_Interface.fragments.notifications.notifications
 //
 ////import com.uyscut.flashcall.service.MainService.Companion.listener
 //import android.annotation.SuppressLint

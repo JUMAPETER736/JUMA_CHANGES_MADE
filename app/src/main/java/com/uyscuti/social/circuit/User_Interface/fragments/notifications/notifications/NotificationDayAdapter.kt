@@ -1,4 +1,4 @@
-package com.uyscut.flashdesign.ui.fragments.notifications.notifications//package com.uyscut.flashdesign.adapter.notifications
+package com.uyscuti.social.circuit.User_Interface.fragments.notifications.notifications//package com.uyscut.flashdesign.adapter.notifications
 //
 //import android.annotation.SuppressLint
 //import android.view.LayoutInflater

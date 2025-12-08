@@ -1,4 +1,4 @@
-package com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments
+package com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments
 
 import android.annotation.SuppressLint
 import android.media.MediaPlayer

@@ -562,7 +562,6 @@ class OtherUserProfileAccount : AppCompatActivity() {
         loadProfileImage()
     }
 
-
     private fun showFullProfilePicture() {
 
         Toast.makeText(this, "View full profile picture", Toast.LENGTH_SHORT).show()
@@ -805,8 +804,6 @@ class OtherUserProfileAccount : AppCompatActivity() {
         binding.toolbarUserName.alpha = 0f
     }
 
-
-
     private fun setupTabLayout() {
 
         val adapter = ProfilePagerAdapter(
@@ -829,8 +826,6 @@ class OtherUserProfileAccount : AppCompatActivity() {
             }
         }.attach()
     }
-
-
 
     private fun setupScrollBehavior() {
 

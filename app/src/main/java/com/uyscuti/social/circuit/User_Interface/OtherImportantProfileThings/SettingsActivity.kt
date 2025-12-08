@@ -16,6 +16,7 @@ import com.uyscuti.social.circuit.adapter.SettingsAdapter
 import com.uyscuti.social.circuit.model.SettingsModel
 
 class SettingsActivity : AppCompatActivity() {
+
     private lateinit var toolbar: Toolbar
     private lateinit var settings: SharedPreferences
     private val PREFS_NAME = "LocalSettings" // Change this to a unique name for your app
@@ -47,7 +48,7 @@ class SettingsActivity : AppCompatActivity() {
 
         toolbar = findViewById(R.id.toolbar)
 
-//        findViewById<>()
+
 
         setSupportActionBar(toolbar)
 
@@ -68,7 +69,7 @@ class SettingsActivity : AppCompatActivity() {
         )
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
 
-//        recyclerView.setBackgroundColor(ContextCompat.getColor(this, R.color.recycler_view_background))
+
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = SettingsAdapter(this, settingsList) {
             listItemClicked(it)
@@ -82,7 +83,7 @@ class SettingsActivity : AppCompatActivity() {
             "Username" -> {
                 val intent = Intent(this@SettingsActivity, ViewImagesActivity::class.java)
                 startActivity(intent)
-//                EventBus.getDefault().post(GoToUserProfileFragment2())
+
 
             }"Privacy" ->{
 

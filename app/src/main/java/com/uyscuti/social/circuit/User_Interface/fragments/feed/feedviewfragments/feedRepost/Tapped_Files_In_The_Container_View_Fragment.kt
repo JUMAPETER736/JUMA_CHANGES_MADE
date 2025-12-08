@@ -1,6 +1,6 @@
 
 
-package com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.feedRepost
+package com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.feedRepost
 
 import com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
 import android.animation.ValueAnimator
