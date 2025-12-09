@@ -982,8 +982,10 @@ class UploadFeedActivity : AppCompatActivity(), FeedVideoThumbnailAdapter.Thumbn
                     resultIntent.putExtra("tags", tags.toString())
                     resultIntent.putExtra("contentType", "mixed_files")
                     setResult(RESULT_OK, resultIntent)
-                    finish()
+
                     uploadMixedFeed(mixedFeedFiles, text, tags)
+                    finish()
+
                 } else {
                     val tagsArray = ArrayList<String>()
                     tagsArray.add(tags.toString())
@@ -993,8 +995,10 @@ class UploadFeedActivity : AppCompatActivity(), FeedVideoThumbnailAdapter.Thumbn
                     resultIntent.putExtra("tags", tags.toString())
                     resultIntent.putExtra("contentType", "mixed_files")
                     setResult(RESULT_OK, resultIntent)
-                    finish()
+
                     uploadMixedFeed(mixedFeedFiles, caption, tags)
+
+                    finish()
                 }
             } else {
                 Log.d(TAG, "onCreate: Lets upload some text")
