@@ -1045,6 +1045,7 @@ class UploadFeedActivity : AppCompatActivity(), FeedVideoThumbnailAdapter.Thumbn
     }
 
     private fun initializeViews() {
+
         actualFileClicked = findViewById(R.id.actualFileClicked)
         iconLayout = findViewById(R.id.iconLayout)
         forUploadingFileThumbNail = findViewById(R.id.forUploadingFileThumbNail)
