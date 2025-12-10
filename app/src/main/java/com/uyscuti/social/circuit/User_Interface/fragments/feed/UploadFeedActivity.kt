@@ -162,7 +162,7 @@ import android.graphics.Typeface
 import android.os.ParcelFileDescriptor
 import android.view.LayoutInflater
 import com.uyscuti.social.circuit.feed_demo.AnyFileFullScreenActivity
-//import com.uyscuti.social.network.api.response.posts.Post
+
 
 
 private val TAG = "UploadFeedActivity"

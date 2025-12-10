@@ -7084,10 +7084,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                                 }
                             }
                         }
-//                        else if(i.localPath == "video"){
-//                            Log.d("LocalPath","ready to upload video")
-//                            Log.d("LocalPath", "url ${i.url} type ${i.localPath}")
-//                        }
+
 
                     }
 
@@ -7108,14 +7105,14 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         val TAG = "addDocumentComment"
         Log.d("addDocumentComment", "addDocumentComment: is reply $isReply")
 
-//        commentsViewModel.commentAudio(postId, "", "audio", filePart, video, image, docs, gif, thumbnail)
+
 
         if (isInternetAvailable(this)) {
 
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -7146,12 +7143,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                                         file.name,
                                         requestFile
                                     )
-//                                val docs =
-//                                    MultipartBody.Part.createFormData(
-//                                        "docs",
-//                                        file.name,
-//                                        requestFile
-//                                    )
+
                                 Log.d(
                                     "addDocumentComment",
                                     "addDocumentComment: uri ${i.url.toUri()} ::i.url:: ${i.url}"
@@ -7213,10 +7205,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                                 }
                             }
                         }
-//                        else if(i.localPath == "video"){
-//                            Log.d("LocalPath","ready to upload video")
-//                            Log.d("LocalPath", "url ${i.url} type ${i.localPath}")
-//                        }
+
 
                     }
 
@@ -7243,7 +7232,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -7333,7 +7322,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                                         isFeedComment = i.isFeedComment
                                     ) {
                                         Log.d(" onSuccess()", " onSuccess(): upload successful")
-//                                    deleteFile(i.url) addCommentFileReply
+
                                         val deleted = deleteFiled(i.url)
                                         if (deleted) {
                                             Log.d(
