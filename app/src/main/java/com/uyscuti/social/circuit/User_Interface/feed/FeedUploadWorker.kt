@@ -28,7 +28,6 @@ import com.uyscuti.social.circuit.utils.feedutils.deleteTemporaryFiles
 import com.uyscuti.social.circuit.utils.feedutils.deserializeFeedUploadDataList
 import com.uyscuti.social.circuit.utils.feedutils.getFileExtension
 import com.uyscuti.social.circuit.utils.uriToFile2
-import com.uyscuti.social.circuit.feed.FeedUploadRepository
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -55,9 +54,9 @@ class FeedUploadWorker @AssistedInject constructor(
     // Inside ShortsUploadWorker class
     private var isCancelled = false
     private val uniqueId = UniqueIdGenerator.generateUniqueId()
-    private val repository = FeedUploadRepository()
 
-    //    private val getFeedViewModel: GetFeedViewModel by viewModels()
+
+
     companion object {
         const val Progress = "Progress"
         private const val delayDuration = 1L
@@ -72,8 +71,7 @@ class FeedUploadWorker @AssistedInject constructor(
         const val NOP = "numberOfPages"
         const val FILENAME = "fileName"
         const val FILETYPE = "docType"
-        const val MULTIPLE_VN = "multiple_vn"
-        const val COMPRESS_PROGRESS = "compress"
+
 
         const val MULTIPLE_IMAGES = "multiple_images"
         const val MULTIPLE_AUDIOS = "multiple_audios"
@@ -81,19 +79,12 @@ class FeedUploadWorker @AssistedInject constructor(
         const val MULTIPLE_THUMBNAILS = "multiple_thumbnails"
         const val MULTIPLE_DOCS = "multiple_docs"
         const val FEED_SHORTS_BUSINESS_ID = "feed_short_business_id"
-        const val MULTIPLE_FILETYPE = "multiple_docs"
-        const val MULTIPLE_NOP = "multiple_docs"
-        const val MULTIPLE_FILENAME = "multiple_docs"
+
 
     }
 
-    // Inside ShortsUploadWorker class
-    fun cancelWork() {
-        isCancelled = true
-    }
 
-
-    val TAG = "Worker"
+    val TAG = "FeedUploadWorker"
     override suspend fun doWork(): Result {
         try {
             Log.d(TAG, "start do work")
@@ -186,12 +177,12 @@ class FeedUploadWorker @AssistedInject constructor(
                     // Check the result of the upload and return success or failure accordingly
 
                     return if (uploadResult) {
-                        Log.d(TAG, "Upload successful")
+                        Log.d(TAG, "Feed Uploaded successfully")
                         EventBus.getDefault().post(UploadSuccessful(success = true))
                         Result.success()
 
                     } else {
-                        Log.d(TAG, "Failed to upload short")
+                        Log.d(TAG, "Failed to upload Feed")
                         EventBus.getDefault().post(UploadSuccessful(success = true))
                         Result.failure()
                     }
@@ -232,12 +223,12 @@ class FeedUploadWorker @AssistedInject constructor(
                 // Check the result of the upload and return success or failure
                 // accordingly
                 return if (uploadResult) {
-                    Log.d(TAG, "Upload successful")
+                    Log.d(TAG, "Feed Uploaded successfully")
                     EventBus.getDefault().post(UploadSuccessful(success = true))
                     Result.success()
 
                 } else {
-                    Log.d(TAG, "Failed to upload short")
+                    Log.d(TAG, "Failed to upload Feed")
                     Result.failure()
                 }
 
@@ -278,7 +269,7 @@ class FeedUploadWorker @AssistedInject constructor(
                     Result.success()
 
                 } else {
-                    Log.d(TAG, "Failed to upload short")
+                    Log.d(TAG, "Failed to upload Feed")
                     Result.failure()
                 }
 
@@ -312,7 +303,7 @@ class FeedUploadWorker @AssistedInject constructor(
                     Result.success()
 
                 } else {
-                    Log.d(TAG, "Failed to upload short")
+                    Log.d(TAG, "Failed to upload Feed")
                     Result.failure()
                 }
             } else if (contentType == "multiple_images") {
@@ -344,7 +335,7 @@ class FeedUploadWorker @AssistedInject constructor(
                     Result.success()
 
                 } else {
-                    Log.d(TAG, "Failed to upload short")
+                    Log.d(TAG, "Failed to upload Feed")
                     Result.failure()
                 }
             } else if (contentType == "audio") {
@@ -375,7 +366,7 @@ class FeedUploadWorker @AssistedInject constructor(
                     Result.success()
 
                 } else {
-                    Log.d(TAG, "Failed to upload short")
+                    Log.d(TAG, "Failed to upload Feed")
                     Result.failure()
                 }
 
@@ -461,7 +452,7 @@ class FeedUploadWorker @AssistedInject constructor(
                     Result.success()
 
                 } else {
-                    Log.d(TAG, "Failed to upload short")
+                    Log.d(TAG, "Failed to upload Feed")
                     Result.failure()
                 }
             }
