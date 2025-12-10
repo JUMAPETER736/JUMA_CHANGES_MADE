@@ -230,33 +230,56 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         return authorsMap.values.toList()
     }
 
-    // NEW: Search users from API using the search endpoint
+    // Search users from BOTH feed and shorts endpoints
     private suspend fun searchUsersFromAPI(query: String): List<Author> {
         val authorsMap = mutableMapOf<String, Author>()
 
         try {
-            // Search in feed/posts
-            for (page in 1..3) { // Search first 3 pages
+            // 1. Search in FEED posts
+            for (page in 1..3) {
                 try {
-                    val searchResponse = apiService.searchAllShorts(query, page.toString())
+                    val feedSearchResponse = apiService.getSearchAllFeed(query, page.toString())
 
-                    if (searchResponse.isSuccessful) {
-                        val body = searchResponse.body()
-                        body?.data?.posts?.posts?.forEach { post ->
-                            val author = post.author.toFeedAuthor()
+                    if (feedSearchResponse.isSuccessful) {
+                        val body = feedSearchResponse.body()
+                        // Access the nested data structure: data.data.posts
+                        body?.data?.data?.posts?.forEach { post ->
+                            val author = post.author
                             if (!authorsMap.containsKey(author._id)) {
                                 authorsMap[author._id] = author
+                                Log.d("SearchUsers", "Found feed author: ${author.account.username}")
                             }
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e("SearchUsers", "Error searching API page $page: ${e.message}")
+                    Log.e("SearchUsers", "Error searching feed API page $page: ${e.message}")
+                }
+            }
+
+            // 2. Search in SHORTS posts
+            for (page in 1..3) {
+                try {
+                    val shortsSearchResponse = apiService.searchAllShorts(query, page.toString())
+
+                    if (shortsSearchResponse.isSuccessful) {
+                        val body = shortsSearchResponse.body()
+                        body?.data?.posts?.posts?.forEach { post ->
+                            val author = post.author.toFeedAuthor()
+                            if (!authorsMap.containsKey(author._id)) {
+                                authorsMap[author._id] = author
+                                Log.d("SearchUsers", "Found shorts author: ${author.account.username}")
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("SearchUsers", "Error searching shorts API page $page: ${e.message}")
                 }
             }
         } catch (e: Exception) {
             Log.e("SearchUsers", "Error in API search: ${e.message}")
         }
 
+        Log.d("SearchUsers", "Total unique authors found: ${authorsMap.size}")
         return authorsMap.values.toList()
     }
 
@@ -403,7 +426,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         }
     }
 
-    // RENAMED: Local cache search
+    // Local cache search
     private suspend fun searchUsersLocally(query: String): List<Author> = withContext(Dispatchers.Default) {
         if (allAuthorsCache.isEmpty()) {
             return@withContext emptyList()
@@ -429,65 +452,128 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 Log.d("SearchUsers", "Loading posts for: ${author.account.username}")
-
-                // Show loading state
                 searchAdapter.showLoading()
 
-                // Use the search endpoint to find posts by this user
-                val response = withContext(Dispatchers.IO) {
-                    apiService.searchAllShorts(author.account.username, "1")
+                // Try FEED first
+                val feedResponse = withContext(Dispatchers.IO) {
+                    apiService.getSearchAllFeedByUsername(
+                        username = author.account.username,
+                        page = "1"
+                    )
                 }
 
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body != null) {
-                        val posts = body.data.posts.posts
-
-                        Log.d("SearchUsers", "Found ${posts.size} posts for ${author.account.username}")
-
-                        if (posts.isNotEmpty()) {
-                            // Navigate to MainActivity with posts filter
-                            val intent = Intent(this@SearchAllUserNameActivity, MainActivity::class.java).apply {
-                                putExtra("navigate_to", "feed")
-                                putExtra("user_id", author._id)
-                                putExtra("filter_username", author.account.username)
-                                putExtra("filter_user_avatar", author.account.avatar.url)
-                                putExtra("should_filter", true)
-                                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                            }
-                            startActivity(intent)
-                            finish()
-                        } else {
-                            // No posts found, show message
-                            searchAdapter.showNoResults()
-                            android.widget.Toast.makeText(
-                                this@SearchAllUserNameActivity,
-                                "No posts found for ${author.account.username}",
-                                android.widget.Toast.LENGTH_SHORT
-                            ).show()
-
-                            // Still navigate to their profile/shorts
-                            navigateToUserProfile(author)
-                        }
-                    } else {
-                        Log.e("SearchUsers", "Response body is null")
-                        // Navigate to profile anyway
-                        navigateToUserProfile(author)
-                    }
+                val feedPosts = if (feedResponse.isSuccessful) {
+                    feedResponse.body()?.data?.data?.posts ?: emptyList()
                 } else {
-                    Log.e("SearchUsers", "Failed to fetch posts: ${response.code()}")
-                    // Navigate to profile anyway
-                    navigateToUserProfile(author)
+                    emptyList()
+                }
+
+                // Try SHORTS
+                val shortsResponse = withContext(Dispatchers.IO) {
+                    apiService.getShortsByUsernameOnly(
+                        username = author.account.username,
+                        page = "1"
+                    )
+                }
+
+                val shortsPosts = if (shortsResponse.isSuccessful) {
+                    shortsResponse.body()?.data?.posts?.posts ?: emptyList()
+                } else {
+                    emptyList()
+                }
+
+                Log.d("SearchUsers", "Found ${feedPosts.size} feed posts and ${shortsPosts.size} shorts for ${author.account.username}")
+
+                // Decide where to navigate based on what content exists
+                when {
+                    feedPosts.isNotEmpty() && shortsPosts.isNotEmpty() -> {
+                        // User has both - show dialog to choose
+                        showContentTypeDialog(author, feedPosts.size, shortsPosts.size)
+                    }
+                    feedPosts.isNotEmpty() -> {
+                        // Only feed posts - navigate to feed
+                        navigateToFeed(author)
+                    }
+                    shortsPosts.isNotEmpty() -> {
+                        // Only shorts - navigate to shorts
+                        navigateToShorts(author)
+                    }
+                    else -> {
+                        // No content found
+                        Log.d("SearchUsers", "No posts found for ${author.account.username}")
+                        searchAdapter.showNoResults()
+                        android.widget.Toast.makeText(
+                            this@SearchAllUserNameActivity,
+                            "No posts found for ${author.account.username}",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                        loadRecentUsers()
+                    }
                 }
 
             } catch (e: Exception) {
                 Log.e("SearchUsers", "Error loading posts: ${e.message}")
-                // Navigate to profile anyway
-                navigateToUserProfile(author)
+                searchAdapter.showNoResults()
+                android.widget.Toast.makeText(
+                    this@SearchAllUserNameActivity,
+                    "Error loading posts",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+                loadRecentUsers()
             }
         }
     }
 
+    private fun showContentTypeDialog(author: Author, feedCount: Int, shortsCount: Int) {
+        val dialog = android.app.AlertDialog.Builder(this)
+            .setTitle("View ${author.account.username}'s Content")
+            .setMessage("This user has both feed posts and shorts. What would you like to view?")
+            .setPositiveButton("Feed Posts ($feedCount)") { _, _ ->
+                navigateToFeed(author)
+            }
+            .setNegativeButton("Shorts ($shortsCount)") { _, _ ->
+                navigateToShorts(author)
+            }
+            .setNeutralButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+                loadRecentUsers()
+            }
+            .create()
+
+        dialog.show()
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun navigateToFeed(author: Author) {
+        val intent = Intent(this@SearchAllUserNameActivity, MainActivity::class.java).apply {
+            putExtra("navigate_to", "feed")
+            putExtra("user_id", author._id)
+            putExtra("filter_username", author.account.username)
+            putExtra("filter_user_avatar", author.account.avatar.url)
+            putExtra("should_filter", true)
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun navigateToShorts(author: Author) {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            putExtra("navigate_to", "shorts")
+            putExtra("user_id", author._id)
+            putExtra("filter_user_id", author._id)
+            putExtra("filter_username", author.account.username)
+            putExtra("filter_user_avatar", author.account.avatar.url)
+            putExtra("should_filter", true)
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        startActivity(intent)
+        finish()
+    }
+
+
+    // Fallback navigation to shorts profile
     @OptIn(UnstableApi::class)
     private fun navigateToUserProfile(author: Author) {
         val intent = Intent(this, MainActivity::class.java).apply {
@@ -509,12 +595,11 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     }
 }
 
-// Keep your existing adapter classes unchanged
+// Adapter classes
 class SearchUserNameAdapter(
     private val onUserClicked: (Author) -> Unit
-) :
-
-    ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback()) {
+)
+    : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback()) {
 
     fun showRecentUsers(authors: List<Author>) {
         submitList(listOf("RECENT_HEADER") + authors)

@@ -223,6 +223,21 @@ interface IFlashapi {
         @Path("username") username: String
     ): Response<OtherUsersProfileShortsResponse>
 
+    // In the SOCIAL MEDIA - FEED section, add this:
+
+    @GET("feed/post/user/{username}")
+    suspend fun getSearchAllFeedByUsername(
+        @Path("username") username: String,
+        @Query("page") page: String
+    ): Response<FeedResponse>
+
+    // Also fix the existing one that's missing @GET annotation:
+    @GET("feed/post/get/u/{username}")
+    suspend fun getOtherUserFeed(
+        @Path("username") username: String,
+        @Query("page") page: String
+    ): Response<AllFeedRepostsPost>
+
     @GET("social-media/posts/get/u/{username}")
     suspend fun getShortsByUsernameWithPage(
         @Path("username") username: String,
@@ -233,6 +248,12 @@ interface IFlashapi {
     suspend fun searchAllShorts(
         @Query("query") query: String,
         @Query("page") page: String = "1"
+    ): Response<ApiResponse<ResponseData>>
+
+    @GET("social-media/posts/user/{username}")
+    suspend fun getShortsByUsernameOnly(
+        @Path("username") username: String,
+        @Query("page") page: String
     ): Response<ApiResponse<ResponseData>>
 
     @GET("social-media/posts/{postId}")
@@ -359,10 +380,6 @@ interface IFlashapi {
         @Query("page") page: String
     ): Response<AllFeedRepostsPost>
 
-    suspend fun getOtherUserFeed(
-        @Path("username") username: String,
-        @Query("page") page: String
-    ): Response<AllFeedRepostsPost>
 
     @DELETE("feed/post/{postId}")
     suspend fun deleteFeed(
