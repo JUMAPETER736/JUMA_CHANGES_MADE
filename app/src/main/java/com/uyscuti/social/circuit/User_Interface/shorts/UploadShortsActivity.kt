@@ -7,15 +7,12 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.media.MediaMetadataRetriever
 import android.media.ThumbnailUtils
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio
-import android.provider.OpenableColumns
 import android.view.Gravity
 import android.view.View
 import android.widget.EditText
@@ -44,7 +41,6 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.User_Interface.fragments.ShortsAdapter
-import com.uyscuti.social.circuit.adapter.feed.FeedAdapter
 import com.uyscuti.social.circuit.adapter.feed.multiple_files.FeedVideoThumbnailAdapter
 import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleFeedAudioAdapter
 import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleFeedFilesPagerAdapter
@@ -63,10 +59,7 @@ import com.uyscuti.social.circuit.utils.getFileSizeFromUri
 import com.uyscuti.social.circuit.utils.getRealPathFromUri
 import com.uyscuti.social.circuit.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.social.circuit.databinding.ActivityUploadShortsBinding
-import com.uyscuti.social.circuit.model.feed.FeedMultipleImages
 import com.uyscuti.social.circuit.model.feed.multiple_files.FeedMultipleDocumentsDataClass
-import com.uyscuti.social.circuit.model.feed.multiple_files.MultipleAudios
-import com.uyscuti.social.circuit.utils.PathUtil
 import com.uyscuti.social.circuit.viewmodels.feed.FeedUploadViewModel
 import com.uyscuti.social.compressor.CompressionListener
 import com.uyscuti.social.compressor.VideoCompressor
@@ -76,7 +69,6 @@ import com.uyscuti.social.compressor.config.SaveLocation
 import com.uyscuti.social.compressor.config.SharedStorageConfiguration
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
-import id.zelory.compressor.Compressor
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -93,7 +85,6 @@ import androidx.cardview.widget.CardView
 import com.google.android.material.card.MaterialCardView
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
 import android.Manifest
-import android.animation.ValueAnimator
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
@@ -197,24 +188,14 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     private lateinit var topicsChipsContainer: LinearLayout
     private lateinit var locationBadge: TextView
     private lateinit var topicsText: TextView
-    private lateinit var locationText: TextView
-    private lateinit var tagPeopleText: TextView
-
-
     private var imagePickLauncher: ActivityResultLauncher<Intent>? = null
-    private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
-    private lateinit var audioPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
-    private lateinit var documentPickerLauncher: ActivityResultLauncher<Intent>
 
 
     private var shortsAdapter: ShortsAdapter? = null
-    private lateinit var feedAdapter: FeedAdapter
     private lateinit var multipleAudioAdapter: MultipleFeedAudioAdapter
     private var multipleFeedFilesPagerAdapter: MultipleFeedFilesPagerAdapter? = null
     private lateinit var multipleSelectedFeedVideoAdapter: MultipleSelectedFeedVideoAdapter
-
-
     private lateinit var feedRecyclerView: RecyclerView
     private lateinit var allPosts: List<Post>
 
@@ -237,29 +218,17 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     private val thumbnailExtractionJobs = mutableMapOf<Int, Job>()
 
 
-    private var audioDurationStringList: MutableList<String> = mutableListOf()
-    private val audioPathList: MutableList<String> = mutableListOf()
-    private var audiosList = mutableListOf<MultipleAudios>()
-
-    private var documentsList = ArrayList<Uri>()
-
-
-
     private lateinit var caption: String
     var fileType: String = ""
-    private var durationString = ""
     val tags: MutableList<String> = mutableListOf()
     var text = ""
     private var addMoreFeedFiles = true
-    private var progressLineAnimator: ValueAnimator? = null
     private var progressLineView: View? = null
 
 
     private val selectedPeople = mutableSetOf<String>()
     private val selectedTopics = mutableSetOf<String>()
     private var selectedLocation: String? = null
-
-
     private var uploadWorkRequest: OneTimeWorkRequest? = null
 
 
@@ -313,34 +282,12 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
 
 
-        fun updateUploadProgress(progress: Int) {
-            // Get the SeekBar from the current ViewHolder in the adapter
-            val uploadSeekBar = shortsAdapter?.getCurrentViewHolderUploadSeekBar()
-            uploadSeekBar?.let {
-                it.progress = progress
-                it.visibility = if (progress > 0) View.VISIBLE else View.GONE
-            } ?: run {
-                Log.w("UploadShortsActivity", "Upload SeekBar not available for progress update")
-            }
-        }
 
-        fun updateUploadProgressForPosition(position: Int, progress: Int) {
-            val uploadSeekBar = shortsAdapter?.getViewHolderUploadSeekBar(position)
-            uploadSeekBar?.let {
-                it.progress = progress
-                it.visibility = if (progress > 0) View.VISIBLE else View.GONE
-            } ?: run {
-                Log.w("UploadShortsActivity", "Upload SeekBar not available for position $position")
-            }
-        }
 
         setContentView(binding.root)
 
         feedUploadViewModel = ViewModelProvider(this)[FeedUploadViewModel::class.java]
 
-        //EventBus.getDefault().register(this)
-
-        // Enable the Up button for back navigation
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
 
         videoUri = intent.getParcelableExtra(EXTRA_VIDEO_URI)!!
@@ -451,9 +398,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                             )
                         }
                         // Initialize the adapter with proper parameters
-//                        multipleSelectedFeedVideoAdapter = MultipleSelectedFeedVideoAdapter(
-//                            this, arrayList, this
-//                        )
                         binding.viewPager.adapter = multipleSelectedFeedVideoAdapter
                     }
 
@@ -1302,26 +1246,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
     }
 
-    private fun handleFileFullScreen() {
-        when {
-            // Video files
-            ::videoUri.isInitialized && isVideoFile(videoUri) -> {
-                playVideoInFullScreen(videoUri)
-            }
-
-            // Fallback - try to determine from videoUri
-            ::videoUri.isInitialized -> {
-                val mimeType = contentResolver.getType(videoUri)
-                when {
-                    mimeType?.startsWith("video/") == true -> playVideoInFullScreen(videoUri)
-
-                }
-            }
-            else -> {
-                Toast.makeText(this, "No file available to display", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 
     private fun isVideoFile(uri: Uri): Boolean {
         val mimeType = contentResolver.getType(uri)
@@ -1333,14 +1257,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     }
 
     private val progressUpdateHandler = Handler(Looper.getMainLooper())
-    private val progressUpdateRunnable = object : Runnable {
-        override fun run() {
-            if (binding.videoView.isPlaying) {
 
-                progressUpdateHandler.postDelayed(this, 16) // 60fps updates
-            }
-        }
-    }
 
 
     override fun onPause() {
@@ -1568,16 +1485,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
     }
 
-    private fun loadBitmapFromUri(uri: Uri): Bitmap {
-        return if (Build.VERSION.SDK_INT < 28) {
-            // For versions before Android 9 (API level 28)
-            MediaStore.Images.Media.getBitmap(contentResolver, uri)
-        } else {
-            // For Android 9 (API level 28) and above
-            val source = ImageDecoder.createSource(contentResolver, uri)
-            ImageDecoder.decodeBitmap(source)
-        }
-    }
+
 
     private fun getFirstFrameAsThumbnail(videoUri: Uri): Bitmap? {
         Log.d("getFirstFrameAsThumbnail", "getFirstFrameAsThumbnail: ")
@@ -1637,7 +1545,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
 
         // Create a unique filename for the thumbnail
-//        val fileName = "thumbnail_${System.currentTimeMillis()}.png"
+
         val fileName = "thumbnail.png"
 
         // Create the file object
@@ -1682,157 +1590,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         progressLineView = null
     }
 
-    private val pickMultipleMedia =
-        registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(10)) { uris ->
-            // Callback is invoked after the user selects media items or closes the
-            // photo picker.
-            setAddMoreFeedVisible()
-            val newImagesList: MutableList<String> = mutableListOf()
-            val newCompressedImageFiles: MutableList<File> = mutableListOf()
-            if (uris.isNotEmpty()) {
-                if (!addMoreFeedFiles) {
-                    imagesList.clear()
-                }
-                if (uris.isNotEmpty()) {
-                    Log.d(TAG, "selected more than 1 image: ${uris.size}")
-                    isMultipleImages = true
-
-                    feedUploadViewModel.mixedFilesCount += uris.size
-
-                    Log.d(
-                        TAG,
-                        "feedUploadViewModel:  mixedFilesCount = ${feedUploadViewModel.mixedFilesCount}"
-                    )
-                    for (uri in uris) {
-                        val filePath = PathUtil.getPath(
-                            this,
-                            uri
-                        ) // Use the utility class to get the real file path
-                        Log.d("PhotoPicker", "File path: $filePath")
-                        Log.d("PhotoPicker", "Selected image path from camera: $uri")
-                        if (filePath != null) {
-                            imagesList.add(filePath)
-                            newImagesList.add(filePath)
-                            val file = File(filePath)
-                            lifecycleScope.launch {
-                                val compressedImageFile =
-                                    Compressor.compress(this@UploadShortsActivity, file)
-                                Log.d(
-                                    "PhotoPicker",
-                                    "PhotoPicker: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
-                                )
-
-
-                                val fileSizeInBytes = compressedImageFile.length()
-                                val fileSizeInKB = fileSizeInBytes / 1024
-                                val fileSizeInMB = fileSizeInKB / 1024
-
-                                Log.d(
-                                    "PhotoPicker",
-                                    "PhotoPicker: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB"
-                                )
-                                compressedImageFiles.add(compressedImageFile)
-                                newCompressedImageFiles.add(compressedImageFile)
-
-                                multipleFeedFilesPagerAdapter =
-                                    MultipleFeedFilesPagerAdapter(
-                                        this@UploadShortsActivity,
-
-                                        isFullScreen = true
-                                    )
-                                binding.viewPager.adapter = multipleFeedFilesPagerAdapter
-                                val compressedImagePath =
-                                    compressedImageFile.absolutePath
-                                val fileType = File(compressedImagePath).extension
-                                Log.d(
-                                    "newCompressedImageFiles",
-                                    "newCompressedImageFiles: extension: $fileType file path: $compressedImagePath"
-                                )
-
-                                feedUploadViewModel.addMixedFeedUploadDataClass(
-                                    MixedFeedUploadDataClass(
-                                        images = FeedMultipleImages(
-                                            imagePath = filePath,
-                                            compressedImagePath = compressedImagePath
-                                        ), fileTypes = "image"
-                                    )
-                                )
-
-
-                                val mixedFeedFiles =
-                                    feedUploadViewModel.getMixedFeedUploadDataClass()
-
-                                multipleFeedFilesPagerAdapter?.setMixedFeedUploadDataClass(
-                                    mixedFeedFiles
-                                )
-
-                                this@UploadShortsActivity.fileType = "mixed_files"
-
-                                binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
-
-                                // Setup CircleIndicator for ViewPager2
-                                val indicator = findViewById<CircleIndicator3>(R.id.circleIndicator)
-                                indicator.setViewPager(binding.viewPager)
-                                binding.viewPager.registerOnPageChangeCallback(object :
-                                    ViewPager2.OnPageChangeCallback() {
-                                    override fun onPageScrolled(
-                                        position: Int,
-                                        positionOffset: Float,
-                                        positionOffsetPixels: Int
-                                    ) {
-                                        // This method will be invoked when the ViewPager2 is scrolled, but not necessarily settled (user is still swiping)
-                                    }
-
-                                    override fun onPageSelected(position: Int) {
-                                        // This method will be invoked when a new page becomes selected.
-                                        // You can perform actions here based on the selected page position.
-                                        Log.d("ViewPager2", "onPageSelected: $position")
-
-                                        binding.recyclerView2.visibility = View.INVISIBLE
-                                        binding.shortVideoThumbNail.visibility = View.VISIBLE
-                                        binding.shortThumbNail.visibility = View.GONE
-                                        binding.selectCoverText.visibility = View.VISIBLE
-                                        binding.selectCoverText.text = ""
-
-                                    }
-
-                                    override fun onPageScrollStateChanged(state: Int) {
-                                        // Called when the scroll state changes:
-                                        // SCROLL_STATE_IDLE, SCROLL_STATE_DRAGGING, SCROLL_STATE_SETTLING
-                                        when (state) {
-                                            ViewPager2.SCROLL_STATE_IDLE -> {
-                                                // The pager is in an idle, settled state.
-
-                                            }
-
-                                            ViewPager2.SCROLL_STATE_DRAGGING -> {
-                                                // The user is dragging the pager.
-
-                                            }
-
-                                            ViewPager2.SCROLL_STATE_SETTLING -> {
-                                                // The pager is settling to a final position.
-
-                                            }
-                                        }
-                                    }
-                                })
-                                // Ensure visibility settings are correct
-                                binding.recyclerView2.visibility = View.INVISIBLE
-                                binding.shortVideoThumbNail.visibility = View.VISIBLE
-                                binding.shortThumbNail.visibility = View.GONE
-                                binding.selectCoverText.visibility = View.VISIBLE
-                                binding.selectCoverText.text = ""
-                            }
-                        }
-
-                    }
-
-                }
-            } else {
-                Log.d("PhotoPicker", "No media selected")
-            }
-        }
 
 
     private fun setAddMoreFeedVisible() {
@@ -1927,30 +1684,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     }
 
 
-    val filePickerLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-            // Handle selected files URIs here
-            for (uri in uris) {
-                // Process each selected file URI
-            }
-        }
-
-    val permissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-
-            } else {
-                Toast.makeText(
-                    this,
-                    "Permission denied. Cannot select files.",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-
-
     fun openFilePicker(mimeType: String) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
@@ -1960,44 +1693,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         startActivityForResult(intent, 120)
     }
 
-    private fun copyFileToAppDirectory(uri: Uri): String? {
-        return try {
-            val fileName = getFileNameFromUri(uri) ?: "document_${System.currentTimeMillis()}"
-            val destinationFile = File(filesDir, fileName)
-
-            contentResolver.openInputStream(uri)?.use { inputStream ->
-                destinationFile.outputStream().use { outputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            }
-
-            destinationFile.absolutePath
-        } catch (e: Exception) {
-            Log.e("DocumentPicker", "Error copying file", e)
-            null
-        }
-    }
-
-    private fun getFileNameFromUri(uri: Uri): String? {
-        return try {
-            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val displayNameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                    if (displayNameIndex != -1) {
-                        cursor.getString(displayNameIndex)
-                    } else {
-                        null
-                    }
-                } else {
-                    null
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("DocumentPicker", "Error getting file name", e)
-            null
-        }
-    }
-
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -2005,19 +1700,13 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         if (requestCode == REQUEST_TOPICS_ACTIVITY) {
             if (resultCode == RESULT_OK) {
                 // Handle the result when TopicsActivity returns RESULT_OK
-                // You can use data to retrieve any additional information passed back
-                // For example, val resultValue = data?.getStringExtra("keyName")
+
                 val selectedSubtopics = data?.getStringArrayListExtra("selectedSubtopics")
-//                Log.d("selectedSubtopics", selectedSubtopics.toString())
-//                binding.editTextText.setText(selectedSubtopics.toString())
 
                 val formattedSubtopics = selectedSubtopics?.joinToString(" ") { "#$it" }
                 // Get the current text from the EditText
                 val currentText = binding.editTextText.text?.toString() ?: ""
 
-
-                // Set the formatted subtopics to the EditText
-//                binding.editTextText.setText(formattedSubtopics)
                 val updatedText = if (currentText.isEmpty()) {
                     formattedSubtopics ?: ""
                 } else {
@@ -2789,8 +2478,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     private fun initializeShortsAdapter() {
         // Make sure your shortsAdapter is properly initialized before calling upload methods
         if (shortsAdapter == null) {
-            // Initialize your adapter here with proper parameters
-            // shortsAdapter = ShortsAdapter(...)
+          
             Log.e("UploadShorts", "ShortsAdapter is not initialized")
         }
     }
