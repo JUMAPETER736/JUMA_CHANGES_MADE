@@ -264,37 +264,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
     }
 
-    public void addToStart(List<MESSAGE> messages, boolean scroll) {
-        if (messages == null || messages.isEmpty()) {
-            return; // Nothing to add
-        }
-
-        Collections.reverse(messages);
-
-        boolean isNewMessageToday = !isPreviousSameDate(0, messages.get(0).getCreatedAt());
-
-        if (isNewMessageToday) {
-            items.add(0, new Wrapper<>(messages.get(0).getCreatedAt()));
-        }
-
-        List<Wrapper<MESSAGE>> newItems = new ArrayList<>();
-
-        for (int i = messages.size() - 1; i >= 0; i--) {
-            MESSAGE message = messages.get(i);
-            newItems.add(new Wrapper<>(message));
-        }
-
-
-        items.addAll(0, newItems);
-
-        int insertedItemsCount = isNewMessageToday ? messages.size() + 1 : messages.size();
-        notifyItemRangeInserted(0, insertedItemsCount);
-
-        if (layoutManager != null && scroll) {
-            layoutManager.scrollToPosition(0);
-        }
-    }
-
 
     public void addInitialMessages(List<MESSAGE> messages) {
         if (messages == null || messages.isEmpty()) {
@@ -391,19 +360,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
     }
 
 
-    public void upsert(MESSAGE message, boolean moveToStartIfUpdate) {
-        if (moveToStartIfUpdate) {
-            if (getMessagePositionById(message.getId()) > 0) {
-                updateAndMoveToStart(message);
-            } else {
-                upsert(message);
-            }
-        } else {
-            upsert(message);
-        }
-    }
-
-
     public void delete(MESSAGE message) {
         deleteById(message.getId());
     }
@@ -430,21 +386,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         if (index >= 0) {
             items.remove(index);
             notifyItemRemoved(index);
-            recountDateHeaders();
-        }
-    }
-
-    public void deleteByIds(String[] ids) {
-        boolean result = false;
-        for (String id : ids) {
-            int index = getMessagePositionById(id);
-            if (index >= 0) {
-                items.remove(index);
-                notifyItemRemoved(index);
-                result = true;
-            }
-        }
-        if (result) {
             recountDateHeaders();
         }
     }
@@ -481,14 +422,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
     }
 
 
-
-
-    public void disableSelectionMode() {
-        this.selectionListener = null;
-        unselectAllItems();
-    }
-
-
     public ArrayList<MESSAGE> getSelectedMessages() {
         ArrayList<MESSAGE> selectedMessages = new ArrayList<>();
         for (Wrapper wrapper : items) {
@@ -511,18 +444,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         return sentMessages;
     }
 
-    public ArrayList<MESSAGE> getAllDeliveredMessages(){
-        ArrayList<MESSAGE> sentMessages = new ArrayList<>();
-
-        for (Wrapper wrapper: items){
-            if (wrapper.item instanceof IMessage && Objects.equals(((IMessage) wrapper.item).getStatus(), "Delivered") && Objects.equals(((IMessage) wrapper.item).getUser().getId(), "0")){
-                sentMessages.add((MESSAGE) wrapper.item);
-            }
-        }
-
-        return sentMessages;
-    }
-
     public ArrayList<MESSAGE> getAllMessagesToUpdate(){
         ArrayList<MESSAGE> deliveredMessages = new ArrayList<>();
 
@@ -535,12 +456,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
 
         return deliveredMessages;
-    }
-
-    public String getSelectedMessagesText(Formatter<MESSAGE> formatter, boolean reverse) {
-        String copiedText = getSelectedText(formatter, reverse);
-        unselectAllItems();
-        return copiedText;
     }
 
 
@@ -584,34 +499,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
 
     public List<MESSAGE> getAllSelectedMessages() {
         return getSelectedMessages();
-    }
-
-
-    public void setOnMessageClickListener(OnMessageClickListener<MESSAGE> onMessageClickListener) {
-        this.onMessageClickListener = onMessageClickListener;
-    }
-
-
-    public void setOnMessageViewClickListener(OnMessageViewClickListener<MESSAGE> onMessageViewClickListener) {
-        this.onMessageViewClickListener = onMessageViewClickListener;
-    }
-
-
-    public void registerViewClickListener(int viewId, OnMessageViewClickListener<MESSAGE> onMessageViewClickListener) {
-        this.viewClickListenersArray.append(viewId, onMessageViewClickListener);
-    }
-
-
-    public void setOnMessageLongClickListener(OnMessageLongClickListener<MESSAGE> onMessageLongClickListener) {
-        this.onMessageLongClickListener = onMessageLongClickListener;
-    }
-
-    public void setOnMessageSentListener(MessageSentListener<MESSAGE> onMessageSentListener){
-        this.messageSentListener = onMessageSentListener;
-    }
-
-    public void setOnMessageViewLongClickListener(OnMessageViewLongClickListener<MESSAGE> onMessageViewLongClickListener) {
-        this.onMessageViewLongClickListener = onMessageViewLongClickListener;
     }
 
 
@@ -701,14 +588,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
             Date previousPositionDate = ((MESSAGE) items.get(position).item).getCreatedAt();
             return DateFormatter.isSameDay(dateToCompare, previousPositionDate);
         } else return false;
-    }
-
-    @SuppressWarnings("unchecked")
-    private boolean isPreviousSameAuthor(String id, int position) {
-        int prevPosition = position + 1;
-        if (items.size() <= prevPosition) return false;
-        else return items.get(prevPosition).item instanceof IMessage
-                && ((MESSAGE) items.get(prevPosition).item).getUser().getId().contentEquals(id);
     }
 
     private void incrementSelectedItemsCount() {
@@ -872,11 +751,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
 
 
         void onSelectionChanged(int count);
-    }
-
-    public interface GroupListener{
-
-        void isGroup(boolean isGroup);
     }
 
     public interface MessageSentListener<MESSAGE extends IMessage> {
