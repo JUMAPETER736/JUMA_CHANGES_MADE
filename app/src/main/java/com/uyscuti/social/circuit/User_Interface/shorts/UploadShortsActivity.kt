@@ -2478,7 +2478,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     private fun initializeShortsAdapter() {
         // Make sure your shortsAdapter is properly initialized before calling upload methods
         if (shortsAdapter == null) {
-          
+
             Log.e("UploadShorts", "ShortsAdapter is not initialized")
         }
     }

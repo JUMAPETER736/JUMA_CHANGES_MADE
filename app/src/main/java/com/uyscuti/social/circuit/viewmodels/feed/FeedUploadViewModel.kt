@@ -6,9 +6,7 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.uyscuti.social.circuit.model.feed.multiple_files.MixedFeedFilesClass
 import com.uyscuti.social.circuit.model.feed.multiple_files.MixedFeedUploadDataClass
-import com.uyscuti.social.circuit.User_Interface.media.ProgressRequestBody
 import com.uyscuti.social.network.api.request.feed.FeedTextUploadRequestBody
 import com.uyscuti.social.network.api.response.feed.Data
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -16,13 +14,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
-import java.io.File
 import java.io.IOException
 import javax.inject.Inject
 
@@ -186,11 +178,7 @@ class FeedUploadViewModel @Inject constructor(internal val retrofitInstance: Ret
         Log.d(TAG, "Cleared mixed feed upload data, preserved ${documentThumbnailCache.size} document thumbnails")
     }
 
-    // Method to clear thumbnail cache if needed
-    fun clearThumbnailCache() {
-        documentThumbnailCache.clear()
-        Log.d(TAG, "Cleared document thumbnail cache")
-    }
+
 
     // Method to get thumbnail for specific document
     fun getDocumentThumbnail(filename: String): String? {
@@ -228,95 +216,6 @@ class FeedUploadViewModel @Inject constructor(internal val retrofitInstance: Ret
         }
     }
 
-    fun uploadFileFeed(filePath: String, content: String, contentType: String, tags: MutableList<String>) {
-        Log.d(TAG, "feed: inside text feed content $content, contentType: $contentType, tags $tags")
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val file = File(filePath)
-                val requestFile = file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
-                val image = MultipartBody.Part.createFormData("files", file.name, requestFile)
-                val contentPart: RequestBody = content.toRequestBody("text/plain".toMediaTypeOrNull())
-                val contentTypePart: RequestBody = content.toRequestBody("text/plain".toMediaTypeOrNull())
-                val tagsPart: RequestBody = tags.joinToString(",").toRequestBody("text/plain".toMediaTypeOrNull())
-
-                val feedRequestBody = FeedTextUploadRequestBody(content, contentType, tags)
-                val tagsRequestBody = tags.map { it.toRequestBody("text/plain".toMediaTypeOrNull()) }.toTypedArray()
-
-            } catch (e: Exception) {
-                Log.e(TAG, "comment: $e")
-                Log.e(TAG, "comment: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-    }
-
-    suspend fun uploadFeedToMongoDB(
-        file: File,
-        caption: String,
-        thumbnail: File,
-        tags: MutableList<String>,
-        duration: String,
-        contentType: String,
-        progressCallback: (Long, Long) -> Unit
-    ): Boolean {
-        Log.d(TAG, "Start uploading function")
-        val fileBytes = file.readBytes()
-
-        val requestFile: RequestBody = ProgressRequestBody(file, "files/*".toMediaTypeOrNull()!!, progressCallback)
-        val requestFileThumbnail: RequestBody = ProgressRequestBody(thumbnail, "files/*".toMediaTypeOrNull()!!, progressCallback)
-        val thumbnailFilePart: MultipartBody.Part = MultipartBody.Part.createFormData("feed_thumbnail", thumbnail.name, requestFileThumbnail)
-        val filePart: MultipartBody.Part = MultipartBody.Part.createFormData("files", file.name, requestFile)
-        val content = caption
-
-        Log.d(TAG, "Tags: $tags")
-
-        val formData = MultipartBody.Builder().setType(MultipartBody.FORM)
-        formData.addPart(filePart)
-        formData.addPart(thumbnailFilePart)
-
-        tags.forEachIndexed { index, tag ->
-            formData.addFormDataPart("tags[$index]", tag)
-        }
-
-        val tagParts = tags.mapIndexed { index, tag ->
-            tag.toRequestBody("text/plain".toMediaTypeOrNull())
-        }.toTypedArray()
-
-        val contentPart: RequestBody = content.toRequestBody("text/plain".toMediaTypeOrNull())
-        val contentTypePart: RequestBody = contentType.toRequestBody("text/plain".toMediaTypeOrNull())
-        val durationPart: RequestBody = duration.toRequestBody("text/plain".toMediaTypeOrNull())
-
-        return try {
-            Log.d(TAG, "try send Content type $contentType duration $duration thumbnail ${thumbnail.path}")
-            val response = retrofitInstance.apiService.uploadFileFeed(
-                content = contentPart,
-                contentType = contentTypePart,
-                duration = durationPart,
-                files = filePart,
-                tags = tagParts,
-                thumbnail = thumbnailFilePart
-            )
-            Log.d("Shorts", "response b4 success check: $response")
-
-            if (response.isSuccessful) {
-                Log.i("Shorts", "Shorts upload successful")
-                Log.i("Shorts", "Shorts ${response.body()!!.data}")
-                true
-            } else {
-                Log.i("Shorts", "Shorts upload failed ${response.message()}")
-                Log.i("Shorts", "Shorts upload failed ${response.code()}")
-                Log.i("Shorts", "Shorts upload failed ${response.body()?.message}")
-                Log.i("Shorts", "Shorts error response body: ${response.errorBody()?.string()}")
-                false
-            }
-        } catch (e: Exception) {
-            Log.d(TAG, "Failed to upload short because: ${e.message}")
-            Log.d(TAG, "Failed to upload short because: $e")
-            Log.d(TAG, "Failed to upload short because: ${e.printStackTrace()}")
-            false
-        }
-    }
-
     suspend fun likeUnLikeFeed(shortOwnerId: String) {
         val TAG = "likeUnLikeFeed"
         try {
@@ -351,5 +250,4 @@ class FeedUploadViewModel @Inject constructor(internal val retrofitInstance: Ret
         }
     }
 
-    var mixedFeedFilesClass: MutableList<MixedFeedFilesClass> = mutableListOf()
 }
