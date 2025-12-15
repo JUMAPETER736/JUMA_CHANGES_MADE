@@ -52,11 +52,6 @@ class MultipleSelectedFeedVideoAdapter(
         return videos
     }
 
-    fun updateSelectedVideo(position: Int, feedVideo: FeedMultipleVideos) {
-        videos[position] = feedVideo
-        notifyItemChanged(position)
-    }
-
     override fun onBindViewHolder(
         holder: Pager2ViewHolder,
         position: Int
