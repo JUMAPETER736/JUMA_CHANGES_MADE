@@ -1,9 +1,8 @@
-package com.uyscuti.social.circuit.User_Interface.fragments.feed.feedRepostViewFragments
+package com.uyscut.flashdesign.ui.fragments.feed.feedRepostViewFragments
 
 import android.annotation.SuppressLint
 import android.media.AudioAttributes
 import android.media.MediaPlayer
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -17,7 +16,6 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
@@ -75,7 +73,7 @@ class FeedRepostAudioViewFragment : Fragment(), PlayFeedAudioInterface {
     private lateinit var updateSeekBarRunnable: Runnable
     private var adapter: FeedRepostMultipleAudioAdapter? = null
 
-    @SuppressLint("SuspiciousIndentation", "LongLogTag")
+    @SuppressLint("SuspiciousIndentation")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -130,7 +128,7 @@ class FeedRepostAudioViewFragment : Fragment(), PlayFeedAudioInterface {
                     feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
                 }
             }
-            binding.commentButtonIcon.setOnClickListener {
+            binding.comment.setOnClickListener {
 
             }
 
@@ -270,7 +268,6 @@ class FeedRepostAudioViewFragment : Fragment(), PlayFeedAudioInterface {
             }
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun setupMediaPlayer(
         audioUrl: String,
         seekBar: SeekBar,

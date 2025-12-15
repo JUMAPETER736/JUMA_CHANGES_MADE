@@ -54,7 +54,7 @@ class MultipleFeedAudiosAdapter(
         )
     }
 
-    @SuppressLint("SetTextI18n")
+    @SuppressLint("SetTextI18n", "LongLogTag")
     override fun onBindViewHolder(
         holder: Pager2ViewHolder,
         position: Int
