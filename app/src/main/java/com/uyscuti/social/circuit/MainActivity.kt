@@ -38,7 +38,6 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AnimationUtils
 import android.view.animation.LinearInterpolator
 import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -140,8 +139,6 @@ import com.uyscuti.social.circuit.calls.viewmodel.CallViewModel
 import com.uyscuti.social.circuit.colorimagebottomnav.BottomNavigationView
 import com.uyscuti.social.circuit.colorimagebottomnav.NavigationItem
 import com.uyscuti.social.circuit.data.model.Dialog
-import com.uyscuti.social.circuit.data.model.Message
-import com.uyscuti.social.circuit.data.model.User
 import com.uyscuti.social.circuit.data.model.shortsmodels.Comment
 import com.uyscuti.social.circuit.data.model.shortsmodels.CommentReplyResults
 import com.uyscuti.social.circuit.databinding.ActivityMainBinding
@@ -150,7 +147,6 @@ import com.uyscuti.social.circuit.model.AudioPlayerHandler
 import com.uyscuti.social.circuit.model.CleanCache
 import com.uyscuti.social.circuit.model.CommentAudioPlayerHandler
 import com.uyscuti.social.circuit.model.FeedAdapterNotifyDatasetChanged
-import com.uyscuti.social.circuit.model.FeedCommentClicked
 import com.uyscuti.social.circuit.model.FeedDetailPage
 import com.uyscuti.social.circuit.model.GoToFeedFragment
 import com.uyscuti.social.circuit.model.GoToShortsFragment
@@ -173,7 +169,6 @@ import com.uyscuti.social.circuit.model.ShowBottomNav
 import com.uyscuti.social.circuit.model.ToggleReplyToTextView
 import com.uyscuti.social.circuit.model.UserProfileShortsStartGet
 import com.uyscuti.social.circuit.model.UserProfileShortsViewModel
-import com.uyscuti.social.circuit.model.notifications_data_class.INotification
 import com.uyscuti.social.circuit.presentation.DialogViewModel
 import com.uyscuti.social.circuit.presentation.GroupDialogViewModel
 import com.uyscuti.social.circuit.presentation.LikeUnLikeViewModel
@@ -238,7 +233,6 @@ import com.uyscuti.social.core.common.data.room.entity.UserEntity
 import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
 import com.uyscuti.social.core.common.data.room.repository.ProfileRepository
 import com.uyscuti.social.core.pushnotifications.socket.chatsocket.CoreChatSocketClient
-import com.uyscuti.social.core.pushnotifications.socket.chatsocket.social.FlashNotificationEvent
 import com.uyscuti.social.core.service.DirectReplyService
 import com.uyscuti.social.medialoader.DefaultConfigFactory
 import com.uyscuti.social.medialoader.DownloadManager
@@ -260,7 +254,6 @@ import com.vanniktech.emoji.twitter.TwitterEmojiProvider
 import dagger.hilt.android.AndroidEntryPoint
 import id.zelory.compressor.Compressor
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Runnable
@@ -269,7 +262,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.apache.poi.hwpf.HWPFDocument
@@ -7543,55 +7535,6 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         }
     }
 
-    private fun likeFeedCommentReplyFromViewsActivity(event: LikeCommentReply) {
-
-        val TAG = "likeFeedCommentReplyFromViewsActivity"
-
-        Log.d(
-            "likeFeedCommentReplyFromViewsActivity",
-            "likeCommentReplyFromViewsActivity: is liked count is ${event.commentReply.isLiked} is feed comment $isFeedComment"
-        )
-
-        val itemToUpdate = event.comment.replies.find { it._id == event.commentReply._id }
-        itemToUpdate!!.isLiked = event.commentReply.isLiked
-        if (event.commentReply.isLiked) {
-            itemToUpdate.likes += 1
-        } else {
-            itemToUpdate.likes -= 1
-        }
-
-        if (event.commentReply._id == itemToUpdate._id) {
-            Log.d(TAG, "likeCommentReplyFromViewsActivity: ids are equal")
-        } else {
-            Log.d(TAG, "likeCommentReplyFromViewsActivity: ids not equal")
-        }
-
-
-        Log.d(
-            "likeCommentReplyFromViewsActivity",
-            "likeCommentReplyFromViewsActivity: is liked count is ${event.commentReply}"
-        )
-        adapter?.updateItem(event.position, event.comment)
-        var result by Delegates.notNull<Boolean>()
-        if (isInternetAvailable(this)) {
-            Log.d(
-                TAG,
-                "likeCommentReplyFromViewsActivity: item to update id ${itemToUpdate._id} and comment reply id ${event.commentReply._id}"
-            )
-            lifecycleScope.launch {
-                result = if (isFeedComment) {
-                    commentReplyLikeUnLike(itemToUpdate._id)
-                } else {
-                    commentReplyLikeUnLike(itemToUpdate._id)
-                }
-                Log.d(TAG, "likeCommentReplyFromViewsActivity server result: $result")
-
-            }
-        } else {
-            Log.d(TAG, "likeCommentReplyFromViewsActivity: cant like offline")
-        }
-    }
-
     private val selectGifLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
@@ -7600,10 +7543,7 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                     val fileName = getFileName(uri)
                     if (fileName?.endsWith(".gif") == true) {
                         // Handle the selected GIF file here
-                        // For example, you can display it in an ImageView
-                        // val inputStream = contentResolver.openInputStream(uri)
-                        // val gifBitmap = BitmapFactory.decodeStream(inputStream)
-                        // imageView.setImageBitmap(gifBitmap)
+
                         Log.d(
                             "selectGifLauncher",
                             "selectGifLauncher: is reply $isReply gifUrlType $gifUrlType "
@@ -7617,67 +7557,6 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
                 }
             }
         }
-
-    private fun uploadGifToServer(gifPath: String, gifType: String) {
-        val TAG = "uploadGifToServer"
-        Log.d("uploadGifToServer", "uploadGifToServer: is reply $isReply")
-
-        Log.d(TAG, "url $gifPath type $gifType")
-        if (isFileExists(this, gifPath.toUri())) {
-
-            val gif = createMultipartBody(this, gifPath.toUri(), "gif")
-
-            addGif(
-                gif!!,
-                gifType,
-            )
-
-        } else {
-            Log.d(TAG, "File does not exist")
-
-        }
-
-    }
-
-    @kotlin.OptIn(DelicateCoroutinesApi::class)
-    fun addGif(
-        gif: MultipartBody.Part,
-        fileType: String,
-    ) {
-        val TAG = "addGif"
-        Log.d(TAG, "Inside addGif")
-        GlobalScope.launch(Dispatchers.IO) {
-            try {
-                Log.d(TAG, "Inside try block addGif")
-                val fileTypePart: RequestBody = fileType
-                    .toRequestBody("text/plain".toMediaTypeOrNull())
-                Log.d(TAG, "Content type is  gif type $fileType")
-                val response = retrofitInterface.apiService.addGif(
-                    gif = gif,
-                    fileType = fileTypePart
-                )
-                val responseBody = response.body()
-                Log.d(TAG, "addGif: response $response")
-                Log.d(TAG, "addGif: response message ${response.message()}")
-                Log.d(
-                    TAG,
-                    "addGif: response message error body ${response.errorBody()}"
-                )
-                Log.d(TAG, "addGif: response body $responseBody")
-                Log.d(TAG, "addGif: response body data ${responseBody?.data}")
-                Log.d(TAG, "addGif: response body message ${responseBody!!.message}")
-                val data = responseBody.data
-
-                Log.d(TAG, " addGif data response: $data")
-
-            } catch (e: Exception) {
-                Log.e(TAG, "addGif: $e")
-                Log.e(TAG, "addGif: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-
-    }
 
     private fun getFileName(uri: Uri): String? {
         var fileName: String? = null
@@ -7708,28 +7587,6 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     }
 
     private var gifUrlType = ""
-
-    private fun showInputBoxForGifSelection() {
-        // Create and show a dialog box for input
-        val inputDialog = AlertDialog.Builder(this)
-        val inputEditText = EditText(this)
-        inputDialog.setTitle("Enter Gif URL")
-        inputDialog.setView(inputEditText)
-        inputDialog.setPositiveButton("OK") { dialog, _ ->
-            val gifUrl = inputEditText.text.toString()
-            if (gifUrl.isNotEmpty()) {
-                // If URL is not empty, proceed with file selection
-                gifUrlType = gifUrl
-                selectGifFile()
-            } else {
-                // Handle case when URL is empty
-                Toast.makeText(this, "Please enter a valid GIF URL", Toast.LENGTH_SHORT).show()
-            }
-            dialog.dismiss()
-        }
-        inputDialog.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
-        inputDialog.show()
-    }
 
 
     private fun addGifComment() {
@@ -8285,19 +8142,6 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun feedEventCommentClick(event: FeedCommentClicked) {
-
-        adapter = null
-        binding.recyclerView.adapter = null
-        binding.recyclerView.layoutManager = null
-        Log.d(
-            "feedEventCommentClick",
-            "feedEventCommentClick: event bus position ${event.position}"
-        )
-        feedCommentClicked(event.position, event.data)
-    }
-
 
     fun setAdapter() {
 
@@ -8530,20 +8374,6 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
     }
 
     private var countValue = 0
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    private fun onBadgeCountEvent(event: FlashNotificationEvent) {
-        countValue++
-
-        Log.d("onBadgeCountEvent", "onBadgeCountEvent: ")
-        item.setsBadge(countValue)
-    }
-
-    private fun updateNotifications(newNotification: ArrayList<INotification>) {
-        notificationViewModel.setNotifications(newNotification)
-    }
-
-
 
 
 }
