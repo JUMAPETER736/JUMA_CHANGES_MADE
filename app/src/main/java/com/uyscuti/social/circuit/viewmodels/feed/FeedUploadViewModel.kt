@@ -32,7 +32,6 @@ class FeedUploadViewModel @Inject constructor(internal val retrofitInstance: Ret
 
     // Changed to MutableLiveData
     private val _mixedFeedUploadDataClass = MutableLiveData<MutableList<MixedFeedUploadDataClass>>(mutableListOf())
-    val mixedFeedUploadDataClassList: LiveData<MutableList<MixedFeedUploadDataClass>> get() = _mixedFeedUploadDataClass
 
     // Document thumbnail preservation map - storing file paths as strings
     private val documentThumbnailCache: MutableMap<String, String> = mutableMapOf()
@@ -74,37 +73,6 @@ class FeedUploadViewModel @Inject constructor(internal val retrofitInstance: Ret
         restoreDocumentThumbnails()
         Log.d(TAG, "getMixedFeedUploadDataClass: size: ${_mixedFeedUploadDataClass.value?.size ?: 0}")
         return _mixedFeedUploadDataClass.value ?: mutableListOf()
-    }
-
-    fun updateMixedFeedUploadDataClass(position: Int, mixedFeedUploadDataClass: MixedFeedUploadDataClass) {
-        val currentList = getMixedFeedUploadDataClass()
-        if (position in currentList.indices) {
-            // Preserve existing thumbnail if new one is missing
-            val existingData = currentList[position]
-            mixedFeedUploadDataClass.documents?.let { newDoc ->
-                existingData.documents?.let { existingDoc ->
-                    if (newDoc.documentThumbnailFilePath == null && existingDoc.documentThumbnailFilePath != null) {
-                        newDoc.documentThumbnailFilePath = existingDoc.documentThumbnailFilePath
-                        Log.d(TAG, "Restored thumbnail for document: ${newDoc.filename}")
-                    }
-                    // Also update cache
-                    if (newDoc.documentThumbnailFilePath != null) {
-                        documentThumbnailCache[newDoc.filename] = newDoc.filename
-                    }
-                }
-            }
-            currentList[position] = mixedFeedUploadDataClass
-            _mixedFeedUploadDataClass.value = currentList // Notify observers
-            Log.d(TAG, "Updated data at position: $position")
-        }
-    }
-
-    fun getUploadProgress(): Int {
-        return uploadProgress
-    }
-
-    fun setUploadProgress(progress: Int) {
-        uploadProgress = progress
     }
 
     val displayText: LiveData<String>
