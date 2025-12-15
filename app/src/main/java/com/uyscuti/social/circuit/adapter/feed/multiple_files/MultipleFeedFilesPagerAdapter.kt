@@ -10,7 +10,6 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.uyscuti.social.circuit.feed_demo.MixedFeedFilesUploadFragment
 import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
-import com.uyscuti.social.circuit.model.feed.FeedMultipleImages
 import com.uyscuti.social.circuit.model.feed.multiple_files.FeedMultipleAudios
 import com.uyscuti.social.circuit.model.feed.multiple_files.FeedMultipleDocumentsDataClass
 import com.uyscuti.social.circuit.model.feed.multiple_files.FeedMultipleVideos
@@ -135,28 +134,6 @@ class MultipleFeedFilesPagerAdapter(
         }
     }
 
-    fun getImageDetails(position: Int): FeedMultipleImages? {
-        return mixedFeedUploadDataClass.getOrNull(position)?.images.also {
-            Log.d(TAG, "getImageDetails: position=$position, fileId=${mixedFeedUploadDataClass.getOrNull(position)?.fileId}, imagePath=${it?.imagePath}")
-        } ?: run {
-            Log.w(TAG, "getImageDetails: Invalid position or no image data: $position")
-            null
-        }
-    }
-
-
-    fun updateSelectedVideo(position: Int, feedVideo: FeedMultipleVideos) {
-        if (position in mixedFeedUploadDataClass.indices) {
-            mixedFeedUploadDataClass[position].videos = feedVideo
-            currentFragment?.takeIf { it.arguments?.getInt("position", -1) == position }?.let {
-                it.updateVideo(feedVideo)
-                Log.d(TAG, "updateSelectedVideo: Updated video at position=$position, fileId=${mixedFeedUploadDataClass[position].fileId}, thumbnail=${feedVideo.thumbnail}")
-            }
-            notifyItemChanged(position)
-        } else {
-            Log.w(TAG, "updateSelectedVideo: Invalid position=$position")
-        }
-    }
 
     fun getAllItems(): List<MixedFeedUploadDataClass> {
         return mixedFeedUploadDataClass.toList().also {
@@ -254,35 +231,6 @@ class MultipleFeedFilesPagerAdapter(
             notifyItemRangeChanged(position, mixedFeedUploadDataClass.size)
         }
     }
-
-    fun setVideoLooping(position: Int, shouldLoop: Boolean) {
-        val fragment = getFragmentAt(position) as? MixedFeedFilesUploadFragment
-        fragment?.setVideoLooping(shouldLoop)
-        Log.d(TAG, "setVideoLooping: Set to $shouldLoop for position $position")
-    }
-
-    fun setAudioLooping(position: Int, shouldLoop: Boolean) {
-        val fragment = getFragmentAt(position) as? MixedFeedFilesUploadFragment
-        fragment?.setAudioLooping(shouldLoop)
-        Log.d(TAG, "setAudioLooping: Set to $shouldLoop for position $position")
-    }
-
-    // Also add this method to set looping for all fragments
-    fun setAllMediaLooping(shouldLoop: Boolean) {
-        for (i in 0 until itemCount) {
-            val fragment = getFragmentAt(i) as? MixedFeedFilesUploadFragment
-            fragment?.setVideoLooping(shouldLoop)
-            fragment?.setAudioLooping(shouldLoop)
-        }
-        Log.d(TAG, "setAllMediaLooping: Set to $shouldLoop for all ${itemCount} items")
-    }
-
-    // Method to enable/disable ViewPager swiping when zooming
-    fun setViewPagerSwipeEnabled(enabled: Boolean) {
-        viewPager2?.isUserInputEnabled = enabled
-        Log.d(TAG, "setViewPagerSwipeEnabled: $enabled")
-    }
-
 
 
     // Add this method to verify thumbnail integrity
