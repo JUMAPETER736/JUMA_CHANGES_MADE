@@ -80,7 +80,6 @@ import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.social.chatsuit.commons.ViewHolder
 import com.uyscuti.social.circuit.FlashApplication
 import com.uyscuti.social.circuit.MainActivity
@@ -158,6 +157,7 @@ import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.signature.ObjectKey
 import android.graphics.drawable.Drawable
 import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SettingsActivity
+import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost.PostItem
 import com.uyscuti.social.circuit.databinding.BottomDialogForShareBinding
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
 import kotlin.jvm.java
