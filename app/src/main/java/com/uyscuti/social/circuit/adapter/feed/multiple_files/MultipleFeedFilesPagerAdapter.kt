@@ -232,6 +232,13 @@ class MultipleFeedFilesPagerAdapter(
         }
     }
 
+    // Method to enable/disable ViewPager swiping when zooming
+    fun setViewPagerSwipeEnabled(enabled: Boolean) {
+        viewPager2?.isUserInputEnabled = enabled
+        Log.d(TAG, "setViewPagerSwipeEnabled: $enabled")
+    }
+
+
 
     // Add this method to verify thumbnail integrity
     fun verifyThumbnailIntegrity() {
