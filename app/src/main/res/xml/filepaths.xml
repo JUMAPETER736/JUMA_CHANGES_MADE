@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Original cache path for shared images -->
+    <cache-path name="shared_images" path="images/" />
+
+    <!-- ADD THESE: Missing paths for your use case -->
+    <files-path name="files" path="." />
+    <files-path name="temp_documents" path="temp_documents/" />
+    <cache-path name="cache" path="." />
+    <external-cache-path name="external_cache" path="." />
+
+    <!-- External paths for broader file access -->
+    <external-path name="external" path="." />
+    <external-files-path name="external_files" path="." />
+</paths>

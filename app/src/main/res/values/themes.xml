@@ -1,0 +1,46 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.FlashDesign" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <item name="colorPrimary">@color/bluejeans</item>
+        <item name="searchViewStyle">@style/AppTheme.SearchView</item>
+        <item name="actionBarTheme">@style/ThemeOverlay.MaterialComponents.Dark.ActionBar</item>
+        <item name="windowActionModeOverlay">true</item>
+        <item name="actionModeStyle">@style/Widget.App.ActionMode</item>
+        <item name="actionModeCloseDrawable">@drawable/ic_close_24</item>
+        <item name="android:textColorSecondary">@color/white</item>
+        <item name="rippleColor">@color/fade</item>
+    </style>
+
+    <style name="Theme.FlashDesign" parent="Base.Theme.FlashDesign" />
+
+    <style name="TextInputLayoutWithBottomLine" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"> <!-- Use Dense style for compact appearance -->
+        <item name="boxBackgroundMode">none</item> <!-- Remove the box background -->
+        <item name="hintEnabled">false</item> <!-- Disable the hint/label -->
+        <item name="hintAnimationEnabled">false</item> <!-- Disable hint animation -->
+    </style>
+
+    <style name="PopupMenu" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@color/white</item>
+    </style>
+
+    <!-- Custom theme for the specific Toolbar -->
+    <style name="CustomToolbarTheme" parent="Base.Theme.FlashDesign">
+        <item name="android:actionOverflowButtonStyle">@style/OverflowButtonStyle</item>
+        <item name="android:windowContentOverlay">@null</item>
+
+    </style>
+
+    <!-- Style for the overflow button in the custom Toolbar -->
+    <style name="OverflowButtonStyle" parent="Widget.AppCompat.ActionButton.Overflow">
+        <item name="android:tint">@color/white</item>
+    </style>
+
+    <style name="App.Custom.Indicator" parent="ShapeAppearance.Material3.NavigationBarView.ActiveIndicator">
+        <item name="android:color">@color/white</item>
+    </style>
+    <style name="ProfileTab.Custom.Indicator" parent="ShapeAppearance.Material3.NavigationBarView.ActiveIndicator">
+        <item name="android:color">@color/bluejeans</item>
+    </style>
+
+</resources>

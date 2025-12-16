@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mediaPreviewLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    android:orientation="vertical">
+
+    <!-- Image View -->
+    <ImageView
+        android:id="@+id/postImage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        tools:src="@drawable/text_placeholder" />
+
+    <!-- Video Container - FIXED LAYOUT -->
+    <FrameLayout
+        android:id="@+id/videoContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <!-- Video View (hidden initially) -->
+        <VideoView
+            android:id="@+id/videoView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <!-- Video Thumbnail (shows before play) -->
+        <ImageView
+            android:id="@+id/videoThumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            tools:src="@drawable/videoplaceholder" />
+
+        <!-- Play Button (centered on top) - No background or border -->
+        <ImageButton
+            android:id="@+id/videoPlayButton"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center"
+            android:background="@null"
+            android:elevation="4dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/play_button_filled"
+            app:tint="@android:color/white" />
+
+        <!-- Progress Bar (centered) -->
+        <ProgressBar
+            android:id="@+id/videoProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+
+    <!-- Audio Layout with Centered Waving Animation and Bottom Controls -->
+    <LinearLayout
+        android:id="@+id/artworkLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+
+
+        <!-- Centered Waveform Animation Container -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginVertical="24dp"
+            android:layout_weight="1"
+            android:gravity="center">
+
+
+            <!-- Waveform Animation (Center) -->
+            <com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
+                android:id="@+id/waveAnimation"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_gravity="center"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:alpha="1.0"
+                android:clickable="false"
+                android:enabled="false"
+                android:focusable="false"
+                android:visibility="visible"
+                app:waveColor="@android:color/white"
+                tools:ignore="RtlSymmetry" />
+
+        </FrameLayout>
+
+        <!-- Bottom Audio Controls with SeekBar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#000000"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+
+            <!-- Control Row with Play Button, SeekBar, and Total Duration -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+
+                <!-- SeekBar -->
+                <SeekBar
+                    android:id="@+id/audioSeekBar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1.5"
+                    android:max="100"
+                    android:progress="0"
+                    android:progressBackgroundTint="#838282"
+                    android:progressTint="#FFFFFF"
+                    android:thumbTint="#FFFFFF"
+                    android:minHeight="24dp"
+                    android:maxHeight="48dp" />
+
+                <!-- Total Duration -->
+                <TextView
+                    android:id="@+id/totalDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:gravity="center"
+                    android:minWidth="40dp"
+                    android:text="0:00"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:visibility="visible" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/documentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:orientation="vertical"
+        android:padding="0dp"
+        android:visibility="visible">
+
+        <!-- Fullscreen Preview Area -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="0dp"
+            android:layout_margin="0dp">
+
+            <!-- PDF Image View: Fills Entire Screen -->
+
+            <!-- File Type Icon: Top-Left Overlay -->
+            <ImageView
+                android:id="@+id/pdfImageView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:adjustViewBounds="false"
+                android:scaleType="fitXY"
+                android:visibility="gone"
+                tools:src="@drawable/documents" />
+
+            <ImageView
+                android:id="@+id/fileTypeIcon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:visibility="gone"
+                tools:src="@drawable/text_placeholder" />
+
+            <!-- Floating Download Button: Bottom-Right Overlay -->
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/documentDownloadButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="16dp"
+                android:contentDescription="Download Document"
+                android:src="@drawable/ic_download_icon"
+                app:backgroundTint="@color/blueJeans"
+                android:visibility="visible" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+
+
+    <!-- Main Play Button - Only visible for audio content -->
+    <ImageView
+        android:id="@+id/playButtonMain"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="410dp"
+        android:src="@drawable/play_svgrepo_com_white"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/pauseButtonMain"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="400dp"
+        android:src="@drawable/baseline_pause_white_24"
+        android:visibility="gone" />
+
+
+
+</RelativeLayout>

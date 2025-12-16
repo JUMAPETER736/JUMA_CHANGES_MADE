@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@android:color/white">
+
+    <!-- Root container LinearLayout to be the direct child of ScrollView -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="20dp">
+
+        <!-- Verification Title -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Enter Verification Code"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:padding="16dp"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Instruction Text -->
+        <TextView
+            android:id="@+id/tvInstructions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:text="Please Enter the Verification Code sent to your Email or Phone Number."
+            android:textSize="26sp"
+            android:textColor="@android:color/darker_gray"
+            android:gravity="center"
+            android:layout_marginBottom="20dp"/>
+
+        <!-- OTP Input Fields (horizontal layout for 4 OTP fields) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:weightSum="4"
+            android:padding="16dp"
+            android:layout_marginTop="16dp">
+
+            <EditText
+                android:id="@+id/otp1"
+                android:layout_width="0dp"
+                android:layout_height="60dp"
+                android:layout_weight="0.5"
+                android:inputType="number"
+                android:gravity="center"
+                android:textSize="20sp"
+                android:maxLength="1"
+                android:importantForAccessibility="yes"
+                android:focusable="true"
+                android:background="@drawable/ic_otp_input_box"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="First digit of verification code"
+                />
+
+
+            <EditText
+                android:id="@+id/otp2"
+                android:layout_width="0dp"
+                android:layout_height="60dp"
+                android:layout_weight="0.5"
+                android:inputType="number"
+                android:gravity="center"
+                android:textSize="20sp"
+                android:maxLength="1"
+                android:importantForAccessibility="yes"
+                android:focusable="true"
+                android:background="@drawable/ic_otp_input_box"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="2 digit of verification code"
+                />
+
+
+            <EditText
+                android:id="@+id/otp3"
+                android:layout_width="0dp"
+                android:layout_height="60dp"
+                android:layout_weight="0.5"
+                android:inputType="number"
+                android:gravity="center"
+                android:textSize="20sp"
+                android:maxLength="1"
+                android:importantForAccessibility="yes"
+                android:focusable="true"
+                android:background="@drawable/ic_otp_input_box"
+                android:layout_marginEnd="8dp"
+                android:contentDescription=" 3 digit of verification code"
+                />
+
+
+            <EditText
+                android:id="@+id/otp4"
+                android:layout_width="0dp"
+                android:layout_height="60dp"
+                android:layout_weight="0.5"
+                android:inputType="number"
+                android:gravity="center"
+                android:textSize="20sp"
+                android:maxLength="1"
+                android:importantForAccessibility="yes"
+                android:focusable="true"
+                android:background="@drawable/ic_otp_input_box"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="4 digit of verification code"
+                />
+
+        </LinearLayout>
+
+        <!-- Countdown Timer -->
+        <TextView
+            android:id="@+id/tvCountdownTimer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Time remaining: 02:00"
+            android:textSize="18sp"
+            android:textColor="@android:color/holo_red_dark"
+            android:layout_marginTop="16dp"/>
+
+        <!-- Continue Button -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnContinue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:background="@drawable/ic_login_button_bkg_color"
+            android:textAllCaps="false"
+            android:text="Continue"
+            android:textSize="18sp"
+            android:textColor="@android:color/white"
+            android:layout_marginTop="20dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="16dp">
+
+            <TextView
+                android:id="@+id/tvResendCode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Didn’t receive the Code?"
+                android:textSize="22sp"
+                android:textColor="@color/black"
+                android:paddingEnd="8dp"
+                android:gravity="center"/>
+
+            <TextView
+                android:id="@+id/btnResendCode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Resend"
+                android:textSize="22sp"
+                android:textColor="@color/sky_blue"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingStart="2dp"
+                android:gravity="center"/>
+        </LinearLayout>
+
+
+    </LinearLayout>
+
+</ScrollView>

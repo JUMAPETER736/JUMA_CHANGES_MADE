@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/black"
+
+    android:layout_height="?android:actionBarSize">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/baseline_arrow_back_ios_24"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:id="@+id/backIcon"
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="10dp"
+        />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/user_name"
+        app:layout_constraintLeft_toRightOf="@+id/backIcon"
+        app:layout_constraintTop_toTopOf="@+id/backIcon"
+        app:layout_constraintBottom_toBottomOf="@id/backIcon"
+        android:layout_marginStart="10dp"
+        android:textColor="@color/white"
+        android:id="@+id/username"
+        android:textSize="16sp"
+        />
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:src="@drawable/like_svgrepo_com_white"
+        android:visibility="gone"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="10dp"
+        android:id="@+id/likeIcon"
+      />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintRight_toLeftOf="@id/likeIcon"
+        app:layout_constraintTop_toTopOf="parent"
+        android:src="@drawable/reply_svgrepo_com"
+        android:visibility="gone"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="10dp"
+        android:id="@+id/replyIcon"
+        />
+</androidx.constraintlayout.widget.ConstraintLayout>

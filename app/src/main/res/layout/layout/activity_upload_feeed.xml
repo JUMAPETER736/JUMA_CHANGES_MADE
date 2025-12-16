@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:id="@+id/feeds"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:context=".ui.shorts.UploadShortsActivity">
+
+        <!-- App Bar / Toolbar  ?attr/actionBarSize-->
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:background="@color/blueJeans"
+            android:icon="@null"
+            android:label="@null"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:titleTextColor="@android:color/white">
+
+            <!-- Back Icon -->
+            <ImageView
+                android:id="@+id/backButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                app:tint="@color/white"
+                android:src="@drawable/baseline_arrow_back_black" />
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/titleTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="New Feed"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/backButton"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.5" />
+
+            <ImageView
+                android:id="@+id/cancelButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                app:tint="@color/white"
+                android:src="@drawable/cancel_svgrepo_com" />
+
+        </androidx.appcompat.widget.Toolbar>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            app:layout_constraintStart_toEndOf="@id/shortVideoThumbNail"
+            app:layout_constraintBottom_toBottomOf="@id/shortVideoThumbNail"
+            app:layout_constraintTop_toTopOf="@id/shortVideoThumbNail"
+            android:layout_marginStart="30dp"
+            android:visibility="invisible"
+            android:id="@+id/addMoreFeed"
+            >
+            <ImageView
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="TODO"
+                android:scaleType="centerCrop"
+                app:srcCompat="@drawable/baseline_add_24"
+                app:tint="@color/black"
+                />
+        </com.google.android.material.card.MaterialCardView>
+
+
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="3dp"
+            android:text="Upload File"
+            android:id="@+id/content"
+            app:layout_constraintBottom_toTopOf="@+id/recyclerView2"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/shortVideoThumbNail"
+            app:layout_constraintVertical_bias="0.0" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerView2"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/shortVideoThumbNail"
+            app:layout_constraintVertical_bias="0.114" />
+
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/interactionsBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            app:cardUseCompatPadding="true"
+            app:layout_collapseMode="parallax"
+            app:layout_constraintTop_toBottomOf="@id/recyclerView2"
+            app:layout_constraintEnd_toEndOf="@id/recyclerView2"
+            app:layout_constraintStart_toStartOf="@id/recyclerView2"
+           >
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/bluejeans"
+                android:orientation="horizontal"
+                android:padding="8dp"
+                app:layout_collapseMode="parallax">
+
+                <TextView
+                    android:id="@+id/saveChanges"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:paddingHorizontal="50dp"
+                    android:text="Select Cover from Camera Roll"
+                    android:textColor="@color/white"
+                    app:layout_collapseMode="parallax" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+<!--        <EditText-->
+<!--            android:id="@+id/editTextText"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginHorizontal="10dp"-->
+<!--            android:layout_marginTop="72dp"-->
+<!--            android:background="@drawable/edit_text_top_bottom_border"-->
+<!--            android:ems="10"-->
+<!--            android:gravity="top"-->
+<!--            android:hint="Caption your content to make it interesting up to 4000 words..."-->
+<!--            android:inputType="textMultiLine"-->
+<!--            android:lines="5"-->
+<!--            android:maxLines="10"-->
+<!--            android:paddingLeft="10dp"-->
+<!--            app:layout_constraintBottom_toBottomOf="parent"-->
+<!--            app:layout_constraintEnd_toEndOf="parent"-->
+<!--            app:layout_constraintHorizontal_bias="0.476"-->
+<!--            app:layout_constraintStart_toStartOf="parent"-->
+<!--            app:layout_constraintTop_toTopOf="parent"-->
+<!--            app:layout_constraintVertical_bias="0.0" />-->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="72dp"
+            app:boxCornerRadiusBottomEnd="16dp"
+            app:boxCornerRadiusBottomStart="16dp"
+            app:boxCornerRadiusTopEnd="16dp"
+            app:boxCornerRadiusTopStart="16dp"
+            android:id="@+id/editTextTextLayout"
+            android:hint="Caption your content to make it interesting up to 4000 words..."
+            android:layout_marginHorizontal="10dp"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.476"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0"
+            android:scrollbars="vertical"
+            >
+            <com.google.android.material.textfield.TextInputEditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textMultiLine"
+                android:lines="6"
+                android:id="@+id/editTextText"
+                android:gravity="top"
+                android:scrollbars="vertical"
+                />
+<!--            android:fadeScrollbars="false"-->
+<!--            <ScrollView-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="match_parent">-->
+<!--               -->
+<!--            </ScrollView>-->
+
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/materialCardView2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="20dp"
+            app:cardBackgroundColor="@color/blue_fade"
+            android:layout_marginEnd="10dp"
+            android:layout_marginStart="10dp"
+            android:background="@color/blueJeans"
+            app:layout_constraintTop_toBottomOf="@+id/editTextTextLayout"
+            tools:ignore="MissingConstraints">
+
+            <LinearLayout
+                android:id="@+id/iconLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintTop_toBottomOf="@+id/editTextTextLayout">
+
+                <!-- First Horizontal LinearLayout -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="18dp">
+
+                    <!-- Icon on the left -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="12dp"
+                        android:src="@drawable/person_svgrepo_com" />
+
+                    <!-- Text -->
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:text="Tag people"
+                        android:textStyle="bold" />
+
+                    <!-- Forward icon on the right -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/baseline_arrow_forward_ios_24" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/topics"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="18dp">
+
+                    <!-- Icon on the left -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="12dp"
+                        android:src="@drawable/topic2_svgrepo_com" />
+
+                    <!-- Text -->
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:text="Add topics"
+                        android:textStyle="bold" />
+
+                    <!-- Forward icon on the right -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/baseline_arrow_forward_ios_24" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="18dp">
+
+                    <!-- Icon on the left -->
+                    <ImageView
+                        android:id="@+id/add_location"
+                        android:layout_width="18dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="12dp"
+                        android:src="@drawable/location_svgrepo_com" />
+
+                    <!-- Text -->
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:text="Add location"
+                        android:textStyle="bold" />
+
+                    <!-- Forward icon on the right -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/baseline_arrow_forward_ios_24" />
+
+                </LinearLayout>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/optionsCard"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="12dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/blueJeans"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="10dp"
+                        android:orientation="horizontal"
+                        android:padding="18dp">
+
+                        <!-- Icon on the left -->
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="12dp"
+                            android:src="@drawable/more_horizontal_svgrepo_com" />
+
+                        <!-- Text -->
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:text="More options"
+                            android:textStyle="bold" />
+
+                        <!-- Forward icon on the right -->
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/baseline_arrow_forward_ios_24" />
+
+                    </LinearLayout>
+
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Second and Third Horizontal LinearLayouts, similar to the first one -->
+
+            </LinearLayout>
+
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/shortVideoThumbNail"
+            android:layout_width="250dp"
+            android:layout_height="292dp"
+            android:layout_marginStart="8dp"
+            android:padding="40dp"
+            android:visibility="visible"
+            app:cardCornerRadius="28dp"
+            android:layout_marginTop="12dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.495"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/materialCardView2">
+
+
+            <ImageView
+                android:id="@+id/shortThumbNail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:adjustViewBounds="true"
+                android:padding="40dp"
+                android:scaleType="centerCrop"
+                android:visibility="visible"
+                app:srcCompat="@drawable/attach_svgrepo_com" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/multipleImagesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:adjustViewBounds="true"
+                android:visibility="gone">
+
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/viewPager"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:layout_constraintBottom_toTopOf="@+id/circleIndicator" />
+
+                <me.relex.circleindicator.CircleIndicator3
+                    android:id="@+id/circleIndicator"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@color/black"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Linear Layout for Draft and Post Buttons -->
+        <LinearLayout
+            android:id="@+id/buttonsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="8dp"
+            android:layout_marginTop="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <!-- Draft Button -->
+            <Button
+                android:id="@+id/draftButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/fill_button_color"
+                android:text="Save Draft"
+                android:textColor="@color/white" />
+
+            <!-- Post Button -->
+            <Button
+                android:id="@+id/postButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/fill_button_color"
+                android:text="Share" />
+        </LinearLayout>
+
+
+        <!-- Rest of your layout goes here -->
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

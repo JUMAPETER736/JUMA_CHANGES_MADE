@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="flash">#42A6CD</color>
+    <color name="flashC">#0000FF</color>
+    <color name="fade">#CCCCCC</color>
+    <color name="cornflower_blue">#6274e2</color>
+    <color name="cornflower_blue_dark">#303F9F</color>
+    <color name="cornflower_blue_darkest">#2d3a93</color>
+    <color name="gray">#ebebeb</color>
+    <color name="gray_light">#e8e8e8</color>
+    <color name="gray_transparent">#a6efefef</color>
+    <color name="gray_dark">#858585</color>
+    <color name="gray_dark_transparent">#ae858585</color>
+    <color name="gray_darkest">#ae282828</color>
+    <color name="black_10">#19000000</color>
+    <color name="ivory">#f8efe6</color>
+    <color name="ivory_dark">#f7e8d9</color>
+    <color name="green">#38be55</color>
+    <color name="green_dark">#2da346</color>
+    <color name="red">#e94f4f</color>
+    <color name="brown">#4e342e</color>
+    <color name="primaryColor">#42A6CD</color>
+    <color name="blue">#184392</color>
+    <color name="bluejeans">#3284fc</color>
+    <color name="nextBlue">#00cafb</color>
+    <color name="settings_disc">#9F9C9C</color>
+    <color name="cardBackgroundTint">#E6E1E1</color>
+    <color name="transparent_grayish">#A6000000</color>
+<!--    'azure-radiance': {-->
+<!--    '50': '#eef6ff',-->
+<!--    '100': '#daebff',-->
+<!--    '200': '#bdddff',-->
+<!--    '300': '#90c8ff',-->
+<!--    '400': '#5ba8ff',-->
+<!--    '500': '#3284fc',-->
+<!--    '600': '#1f67f1',-->
+<!--    '700': '#1750de',-->
+<!--    '800': '#1942b4',-->
+<!--    '900': '#1b3b8d',-->
+<!--    '950': '#152656',-->
+<!--    },-->
+
+</resources>

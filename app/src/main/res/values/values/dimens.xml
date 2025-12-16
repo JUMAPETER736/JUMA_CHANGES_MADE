@@ -1,0 +1,16 @@
+<resources>
+    <dimen name="fab_margin">16dp</dimen>
+    <dimen name="icon_radius">20dp</dimen>
+    <dimen name="dialog_radius">28dp</dimen>
+    <dimen name="sender_radius">12dp</dimen>
+    <dimen name="badge_text_size">12dp</dimen>
+    <dimen name="feed_new_margin_bottom">0dp</dimen>
+    <dimen name="feed_reset_margin_bottom">70dp</dimen>
+    <dimen name="spacing_between_drawable_and_badge">2dp</dimen>
+
+
+    <dimen name="max_image_width">300dp</dimen>
+    <dimen name="max_image_height">450dp</dimen>
+
+    <dimen name="your_fixed_peek_height">300dp</dimen>
+</resources>

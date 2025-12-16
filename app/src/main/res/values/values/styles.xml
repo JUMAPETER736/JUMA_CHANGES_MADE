@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppToolbar" parent="Widget.AppCompat.Toolbar">
+        <!-- Customize the overflow icon color -->
+        <item name="android:textColorSecondary">@color/white</item>
+        <item name="android:gravity">center</item>
+        <item name="android:subtitleTextColor">@color/white_two</item>
+        <item name="subtitleTextColor">@color/white_two</item>
+    </style>
+
+    <style name="SeekBarNoThumb">
+        <item name="android:thumb">@null</item>
+    </style>
+
+    <style name="DarkTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+    </style>
+    <style name="FUllScreen" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+
+    <style name="Widget.App.ActionMode" parent="Widget.AppCompat.ActionMode">
+<!--        <item name="titleTextStyle">?attr/textAppearanceHeadline6</item>-->
+<!--        <item name="subtitleTextStyle">?attr/textAppearanceSubtitle1</item>-->
+        <item name="background">@color/white</item>
+    </style>
+
+
+    <style name="Toolbar.SubTitle" parent="TextAppearance.Widget.AppCompat.Toolbar.Subtitle">
+       <item name="android:textColorSecondary">@color/white</item>
+
+       <item name="subtitleTextColor">@color/white_two</item>
+   </style>
+
+    <style name="Toolbar.TitleText" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+
+    <style name="AppThemeWithLightStatusBar" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="rippleColor">@color/gray_dark</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="windowActionModeOverlay">true</item>
+        <item name="actionModeStyle">@style/Widget.App.ActionMode</item>
+        <item name="actionModeCloseDrawable">@drawable/ic_close_24</item>
+    </style>
+
+    <style name="Theme.AppCompat.Light" parent="Base.Theme.AppCompat.Light"/>
+    <style name="ThemeOverlay.AppCompat.Dark" parent="Base.ThemeOverlay.AppCompat.Dark"/>
+
+
+    <style name="AppThemeWithWhiteStatusBar" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Status bar color (white background) -->
+        <item name="android:statusBarColor">@android:color/white</item>
+        <!-- Status bar text color (black) -->
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <style name="AppTheme.SearchView" parent="Widget.AppCompat.SearchView">
+        <item name="searchIcon">@drawable/baseline_search_24</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="textColorSearchUrl">@color/white</item>
+        <item name="queryBackground">@android:color/transparent</item>
+        <item name="submitBackground">@android:color/transparent</item>
+<!--        <item name="searchHintIcon">@drawable/baseline_search_24</item>-->
+        <item name="closeIcon">@drawable/baseline_close_24</item>
+        <item name="searchViewStyle">@style/AppTheme.SearchViewStyle</item>
+    </style>
+
+    <style name="AppTheme.SearchViewStyle" parent="Widget.AppCompat.SearchView">
+        <!-- Customize other SearchView attributes as needed -->
+        <item name="android:textColor">@color/white</item>
+        <item name="queryBackground">@android:color/transparent</item>
+        <item name="submitBackground">@android:color/transparent</item>
+    </style>
+    <style name="BottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+    <style name="BottomSheetDialogTheme" parent="Theme.Design.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/BottomSheetStyle</item>
+    </style>
+
+    <style name="Screen_Full" parent="Theme.FlashDesign">
+        <item name="android:windowFullscreen">true</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="windowActionBar">false</item>
+    </style>
+
+    <style name="StatusBarLight" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="android:statusBarColor">@android:color/background_light</item>
+    </style>
+
+    <style name="StatusBarDark" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="android:statusBarColor">@android:color/background_dark</item>
+        <item name="android:windowLightStatusBar">true</item>
+<!--        <item name="statusBarForeground" />-->
+    </style>
+
+    <style name="CustomMenuItemTextAppearance" parent="TextAppearance.AppCompat">
+        <item name="android:textColor">#FFFFFF</item> <!-- Set text color -->
+        <item name="android:background">@color/blueJeans</item> <!-- Set background with borders -->
+        <item name="android:padding">8dp</item> <!-- Optional padding -->
+    </style>
+
+</resources>

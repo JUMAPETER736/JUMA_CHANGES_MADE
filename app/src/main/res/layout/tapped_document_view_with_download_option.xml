@@ -1,0 +1,111 @@
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/documentContainer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardElevation="1dp"
+    app:cardCornerRadius="8dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="0dp">
+
+        <!-- PDF Cover Image -->
+        <ImageView
+            android:id="@+id/pdfImageView"
+            android:layout_width="0dp"
+            android:layout_height="200dp"
+            android:adjustViewBounds="true"
+            android:scaleType="fitXY"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@drawable/documents" />
+
+        <!-- Overlay for +N (default hidden) -->
+        <ImageView
+            android:id="@+id/imageView2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="#80000000"
+            android:scaleType="center"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="@id/pdfImageView"
+            app:layout_constraintStart_toStartOf="@id/pdfImageView"
+            app:layout_constraintTop_toTopOf="@id/pdfImageView" />
+
+        <TextView
+            android:id="@+id/countTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="+99"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/imageView2"
+            app:layout_constraintEnd_toEndOf="@id/imageView2"
+            app:layout_constraintStart_toStartOf="@id/imageView2"
+            app:layout_constraintTop_toTopOf="@id/imageView2" />
+
+        <!-- File Type Icon (Top-Left Corner) -->
+        <ImageView
+            android:id="@+id/fileTypeIcon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginTop="3dp"
+            android:layout_marginStart="5dp"
+            android:visibility="visible"
+            android:contentDescription="@string/content_description"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@drawable/pdf_icon" />
+
+        <!-- Download Button (Bottom-Right Corner) -->
+        <Button
+            android:id="@+id/downloadButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:drawableStart="@drawable/ic_download_icon"
+            android:contentDescription="Download document"
+            android:padding="8dp"
+            android:visibility="visible"
+            app:layout_constraintBottom_toBottomOf="@id/pdfImageView"
+            app:layout_constraintEnd_toEndOf="@id/pdfImageView" />
+
+        <!-- Progress Bar (Centered overlay) -->
+        <ProgressBar
+            android:id="@+id/documentProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/pdfImageView"
+            app:layout_constraintEnd_toEndOf="@id/pdfImageView"
+            app:layout_constraintStart_toStartOf="@id/pdfImageView"
+            app:layout_constraintTop_toTopOf="@id/pdfImageView" />
+
+        <TextView
+            android:id="@+id/documentTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="300dp"
+            android:layout_marginBottom="8dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Document Title"
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

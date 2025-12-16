@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#fff"
+    tools:context=".ui.feedactivities.ReportNotificationActivity2">
+
+    <!-- Header -->
+<LinearLayout
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:orientation="horizontal"
+android:background="@color/blueJeans"
+    android:padding="8dp"
+    app:layout_constraintTop_toTopOf="parent">
+
+<ImageView
+android:layout_width="24dp"
+android:layout_height="24dp"
+app:tint="@color/white"
+android:src="@android:drawable/ic_menu_close_clear_cancel"
+android:contentDescription="Close"
+android:layout_gravity="start"
+android:onClick="onCloseClicked" />
+
+<TextView
+android:layout_width="0dp"
+android:layout_height="wrap_content"
+android:layout_weight="1"
+android:text="Gathering info"
+android:textSize="16sp"
+android:textColor="@android:color/white"
+android:gravity="center" />
+    </LinearLayout>
+
+<androidx.cardview.widget.CardView
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:layout_marginStart="16dp"
+android:layout_marginEnd="16dp"
+android:layout_marginTop="50dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@color/white"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent">
+
+<androidx.constraintlayout.widget.ConstraintLayout
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+>
+
+
+
+<!-- Title -->
+<TextView
+    android:id="@+id/reportTitle"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:text="What type of issue are you reporting?"
+    android:textSize="20sp"
+    android:textStyle="bold"
+    android:textColor="@color/gray_dark"
+    android:gravity="center"
+    android:layout_marginTop="16dp"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    tools:ignore="MissingConstraints" />
+
+<!-- Why Are We Asking This? -->
+<TextView
+    android:id="@+id/whyAskingText"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Why are we asking this?"
+    android:textSize="14sp"
+    android:textColor="#1A91DA"
+android:clickable="true"
+android:focusable="true"
+android:layout_marginTop="8dp"
+app:layout_constraintTop_toBottomOf="@id/reportTitle"
+app:layout_constraintStart_toStartOf="parent"
+app:layout_constraintEnd_toEndOf="parent"
+android:gravity="center" />
+
+<!-- ScrollView for Report Options -->
+<ScrollView
+    android:id="@+id/reportOptionsScroll"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    app:layout_constraintTop_toBottomOf="@id/whyAskingText"
+    app:layout_constraintBottom_toTopOf="@id/nextButton"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    android:layout_marginBottom="16dp">
+
+    <RadioGroup
+        android:id="@+id/reportReasons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <RadioButton
+            android:id="@+id/reasonHate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hate\nSlurs, Racist or sexist stereotypes, Dehumanization, Incitement of fear or discrimination, Hateful references, Hateful symbols  logos"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonAbuseHarassment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Abuse  Harassment\nInsults, Unwanted Sexual Content  Graphic Objectification, Unwanted NSFW  Graphic Content, Violent Event Denial, Targeted Harassment and Inciting Harassment"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonViolentSpeech"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Violent Speech\nViolent Threats, Wish of Harm, Glorification of Violence, Incitement of Violence, Coded Incitement of Violence"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonChildSafety"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Child Safety\nChild sexual exploitation, grooming, physical child abuse, underage user"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonPrivacy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Privacy\nSharing private information, threatening to share/expose private information, sharing non-consensual intimate images, sharing images of me that I don’t want on the platform"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonSpam"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Spam\nFake engagement, scams, fake accounts, malicious links"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonSuicideSelfHarm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Suicide or Self-Harm\nEncouraging, promoting, providing instructions or sharing strategies for self-harm."
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonSensitiveMedia"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sensitive or Disturbing Media\nGraphic Content, Gratuitous Gore, Adult Nudity  Sexual Behavior, Violent Sexual Conduct, Bestiality  Necrophilia, Media depicting a deceased individual"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonImpersonation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Impersonation\nPretending to be someone else, including non-compliant parody/fan accounts"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/reasonViolentHatefulEntities"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Violent  Hateful Entities\nViolent extremism and terrorism, hate groups  networks"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:padding="8dp" />
+    </RadioGroup>
+</ScrollView>
+
+<!-- Next Button -->
+<com.google.android.material.button.MaterialButton
+    android:id="@+id/nextButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Next"
+    android:textSize="16sp"
+    android:textColor="@color/white"
+    android:enabled="false"
+    app:backgroundTint="@color/blueJeans"
+    app:cornerRadius="10dp"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    android:layout_marginBottom="16dp" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+    </androidx.constraintlayout.widget.ConstraintLayout>

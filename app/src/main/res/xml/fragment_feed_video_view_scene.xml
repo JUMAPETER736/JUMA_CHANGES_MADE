@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MotionScene 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:motion="http://schemas.android.com/apk/res-auto">
+
+    <Transition
+        motion:constraintSetEnd="@+id/end"
+        motion:constraintSetStart="@id/start"
+        motion:duration="200">
+        <OnClick
+            motion:targetId="@+id/feedVideoParentLayout"
+            />
+       <KeyFrameSet>
+       </KeyFrameSet>
+    </Transition>
+
+    <ConstraintSet android:id="@+id/start">
+    <Constraint motion:layout_editor_absoluteY="137dp" android:layout_height="wrap_content" motion:layout_editor_absoluteX="22dp" android:layout_width="match_parent" android:id="@+id/enterText"/>
+        <Constraint
+            android:layout_height="wrap_content"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginBottom="48dp"
+            android:layout_width="match_parent"
+            android:id="@+id/options" />
+        <Constraint
+            android:layout_height="695dp"
+            motion:layout_editor_absoluteX="0dp"
+            android:layout_marginTop="108dp"
+            android:layout_width="644dp"
+            motion:layout_constraintTop_toBottomOf="@id/toolbar"
+            android:id="@+id/composeSectionContainer" />
+    </ConstraintSet>
+
+    <ConstraintSet android:id="@+id/end">
+
+        <Constraint
+            android:id="@+id/toolbar"
+            android:visibility="gone" />
+        <Constraint
+            android:id="@+id/likeButtonIcon"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginBottom="20dp"
+            motion:layout_constraintLeft_toLeftOf="parent"
+            android:layout_marginStart="50dp"
+            android:visibility="gone" />
+        <Constraint
+            android:id="@+id/likesCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="15dp"
+            motion:layout_constraintTop_toBottomOf="@+id/likeButtonIcon"
+            motion:layout_constraintLeft_toLeftOf="@id/likeButtonIcon"
+            motion:layout_constraintRight_toRightOf="@id/likeButtonIcon"
+            android:visibility="gone" />
+        <Constraint
+            android:id="@+id/commentButtonIcon"
+            motion:layout_constraintLeft_toRightOf="@id/likeButtonIcon"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            motion:layout_constraintBottom_toBottomOf="@id/likeButtonIcon"
+            android:layout_marginStart="5dp"
+            android:visibility="gone" />
+        <Constraint
+            android:id="@+id/feedCommentsCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="15dp"
+            motion:layout_constraintTop_toBottomOf="@+id/commentButtonIcon"
+            motion:layout_constraintLeft_toLeftOf="@id/commentButtonIcon"
+            motion:layout_constraintRight_toRightOf="@id/commentButtonIcon"
+            android:visibility="gone" />
+        <Constraint
+            android:id="@+id/favoriteSection"
+            motion:layout_constraintLeft_toRightOf="@id/commentButtonIcon"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            motion:layout_constraintBottom_toBottomOf="@id/likeButtonIcon"
+            android:layout_marginStart="5dp"
+            android:visibility="gone" />
+        <Constraint
+            android:id="@+id/re"
+            motion:layout_constraintLeft_toRightOf="@id/favoriteSection"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            motion:layout_constraintBottom_toBottomOf="@id/favoriteSection"
+            android:layout_marginStart="5dp"
+            android:visibility="gone" />
+        <Constraint
+            android:id="@+id/shareButtonIcon"
+            motion:layout_constraintLeft_toRightOf="@id/re"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            motion:layout_constraintBottom_toBottomOf="@id/re"
+            android:layout_marginStart="5dp"
+            android:visibility="gone" />
+        <Constraint
+            android:id="@+id/moreOptions"
+            motion:layout_constraintLeft_toRightOf="@id/shareButtonIcon"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            motion:layout_constraintBottom_toBottomOf="@id/shareButtonIcon"
+            android:layout_marginStart="5dp"
+            android:visibility="gone" />
+    </ConstraintSet>
+</MotionScene>

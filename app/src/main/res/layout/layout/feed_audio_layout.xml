@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/feedAudioLayout"
+    xmlns:expandableTextView="http://schemas.android.com/tools">
+
+    <!-- res/layout/item_text.xml -->
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:contentDescription="@string/content_description"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginHorizontal="50dp"
+        android:layout_marginVertical="10dp"
+        android:src="@drawable/document"
+        android:id="@+id/profileImageView"
+        />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:textSize="18sp"
+        android:id="@+id/textView"
+        app:layout_constraintLeft_toRightOf="@id/profileImageView"
+        android:layout_marginHorizontal="10dp"
+        android:text="Username"
+        app:layout_constraintTop_toTopOf="@id/profileImageView"
+        app:layout_constraintBottom_toBottomOf="@id/profileImageView"
+        />
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/followButton"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:textAllCaps="false"
+        android:background="@drawable/feed_follow_button_border"
+        android:text="Follow"
+        app:layout_constraintLeft_toRightOf="@id/textView"
+        app:layout_constraintTop_toTopOf="@id/textView"
+        app:layout_constraintBottom_toBottomOf="@id/textView"
+        android:layout_marginStart="10dp"
+        android:textColor="@color/black"
+        />
+
+<!--    <net.expandable.ExpandableTextView-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        app:layout_constraintTop_toBottomOf="@id/profileImageView"-->
+<!--        app:layout_constraintLeft_toLeftOf="parent"-->
+<!--        android:text=""-->
+<!--        android:textSize="16sp"-->
+<!--        app:collapse_lines="3"-->
+<!--        app:collapsedLines="3"-->
+<!--        app:expanded="false"-->
+<!--        android:justificationMode="inter_word"-->
+<!--        android:layout_marginTop="30dp"-->
+<!--        android:layout_marginStart="50dp"-->
+<!--        android:layout_marginEnd="50dp"-->
+<!--        />-->
+    <com.colormoon.readmoretextview.ReadMoreTextView
+        android:id="@+id/caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="This is Expandable text this is a simple text, this is a testing text"
+        android:textSize="16sp"
+        app:trimExpandedText=""
+        app:trimCollapsedText="@string/read_more"
+        app:layout_constraintTop_toBottomOf="@id/profileImageView"
+        app:trimMode="trimModeLength"
+        app:trimLength="50"
+        android:layout_marginTop="10dp"
+        app:colorClickableText="#039BE5"
+        android:layout_marginEnd="50dp"
+        android:layout_marginStart="50dp"
+        android:justificationMode="inter_word"
+        />
+
+    <!--   <TextView
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           app:layout_constraintLeft_toRightOf="@+id/caption"
+           app:layout_constraintBottom_toBottomOf="@+id/caption"
+           android:text="Read More"
+           android:textColor="@color/blueJeans"
+           />
+   -->
+<!--    <androidx.cardview.widget.CardView-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/tags"-->
+<!--        android:id="@+id/audioLinearLayout"-->
+<!--        android:layout_marginHorizontal="50dp"-->
+<!--        >-->
+<!--        <LinearLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="vertical"-->
+
+<!--            >-->
+
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="horizontal"-->
+<!--                >-->
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="00:00"-->
+<!--                    android:padding="10dp"-->
+<!--                    />-->
+<!--                <TextView-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="00:00"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:padding="10dp"-->
+<!--                    android:gravity="end"-->
+<!--                    android:id="@+id/audioDuration"-->
+<!--                    />-->
+<!--            </LinearLayout>-->
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="horizontal"-->
+<!--                android:gravity="center"-->
+<!--                >-->
+<!--                <ImageView-->
+<!--                    android:layout_width="50dp"-->
+<!--                    android:layout_height="50dp"-->
+<!--                    android:padding="10dp"-->
+<!--                    android:src="@drawable/play_svgrepo_com"-->
+<!--                    />-->
+<!--                <SeekBar-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:padding="10dp"-->
+<!--                    android:gravity="end"-->
+<!--                    android:progress="0"-->
+<!--                    android:progressTint="@color/bluejeans"-->
+<!--                    />-->
+
+<!--            </LinearLayout>-->
+<!--        </LinearLayout>-->
+<!--    </androidx.cardview.widget.CardView>-->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/audioLinearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginHorizontal="50dp"
+        android:layout_marginTop="10dp"
+        app:cardCornerRadius="16dp"
+        android:clickable="true"
+        app:cardElevation="2dp"
+        app:layout_constraintTop_toBottomOf="@+id/tags">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/multipleAudiosContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clickable="false"
+            android:layout_gravity="center"
+            android:adjustViewBounds="true"
+            android:visibility="visible">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:nestedScrollingEnabled="false"
+                android:clickable="false"
+                android:id="@+id/recyclerView"
+                app:spanCount="3"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.cardview.widget.CardView>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/caption"
+        android:id="@+id/tags"
+        android:text=""
+        android:textColor="@color/blueJeans"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="10dp"
+
+        android:visibility="visible"
+        app:layout_constraintLeft_toLeftOf="@+id/caption"
+        app:layout_constraintRight_toRightOf="@+id/caption"
+        />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/date_time"
+        app:layout_constraintTop_toBottomOf="@id/audioLinearLayout"
+        android:layout_marginStart="50dp"
+        android:text="Date - Time"
+        android:padding="5dp"
+        />
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:padding="10dp"
+        app:layout_constraintTop_toBottomOf="@id/date_time"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginStart="50dp"
+        android:src="@drawable/favorite_svgrepo_com"
+        android:id="@+id/like"
+        app:tint="@color/blueJeans" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/like"
+        app:layout_constraintLeft_toLeftOf="@+id/like"
+        app:layout_constraintRight_toRightOf="@+id/like"
+        android:text="0"
+        android:id="@+id/likesCount"
+        />
+
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:padding="10dp"
+        app:layout_constraintTop_toTopOf="@+id/like"
+        app:layout_constraintLeft_toRightOf="@id/like"
+        android:layout_marginStart="20dp"
+        android:src="@drawable/chat_round_svgrepo_com_shorts"
+        app:tint="@color/blueJeans"
+        android:id="@+id/comment"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/comment"
+        app:layout_constraintLeft_toLeftOf="@+id/comment"
+        app:layout_constraintRight_toRightOf="@+id/comment"
+        android:text="0"
+        android:id="@+id/feedCommentsCount"
+        />
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:padding="10dp"
+        app:layout_constraintTop_toTopOf="@+id/like"
+        app:layout_constraintLeft_toRightOf="@id/comment"
+        android:layout_marginStart="20dp"
+        android:src="@drawable/favorite_svgrepo_com__1_"
+        android:id="@+id/favorite"
+        app:tint="@color/blueJeans"
+        />
+
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:padding="10dp"
+        app:layout_constraintTop_toTopOf="@+id/like"
+        app:layout_constraintLeft_toRightOf="@id/favorite"
+        android:layout_marginStart="20dp"
+        android:src="@drawable/retweet_svgrepo_com"
+        android:id="@+id/reFeed"
+        app:tint="@color/blueJeans"
+        />
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:padding="10dp"
+        app:layout_constraintTop_toTopOf="@+id/like"
+        app:layout_constraintLeft_toRightOf="@id/reFeed"
+        android:layout_marginStart="20dp"
+        android:src="@drawable/baseline_share_24"
+        android:id="@+id/share"
+        app:tint="@color/blueJeans"
+        />
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:padding="10dp"
+        app:layout_constraintTop_toTopOf="@+id/like"
+        app:layout_constraintLeft_toRightOf="@id/share"
+        android:layout_marginStart="20dp"
+        android:src="@drawable/options_vertical_svgrepo_com"
+        android:id="@+id/moreOptions"
+        app:tint="@color/blueJeans"
+        />
+    <!--    <View-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="1dp"-->
+    <!--        app:layout_constraintTop_toBottomOf="@id/repostPost"-->
+    <!--        android:background="@android:color/black"/>-->
+
+</androidx.constraintlayout.widget.ConstraintLayout>
