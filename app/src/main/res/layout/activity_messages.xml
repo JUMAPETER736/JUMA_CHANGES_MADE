@@ -37,13 +37,13 @@
             android:layout_below="@id/toolbar_layout"
             android:layout_above="@+id/inputContainer"
             app:dateHeaderFormat="dd MMMM yyyy"
-            app:incomingDefaultBubbleColor="#053DAF"
-            app:incomingDefaultBubblePressedColor="#053DAF"
-            app:incomingDefaultBubbleSelectedColor="#053DAF"
+            app:incomingDefaultBubbleColor="@color/gray_dark_transparent"
+            app:incomingDefaultBubblePressedColor="@color/gray_dark_transparent"
+            app:incomingDefaultBubbleSelectedColor="@color/gray_dark_transparent"
             app:incomingDefaultImageOverlayPressedColor="@color/black_10"
             app:incomingDefaultImageOverlaySelectedColor="@color/gray_transparent"
-            app:incomingTextColor="#FFFFFF"
-            app:incomingTextLinkColor="#FFFFFF"
+            app:incomingTextColor="@color/black"
+            app:incomingTextLinkColor="@color/bluejeans"
             app:incomingTextSize="16sp"
             app:outcomingDefaultBubbleColor="@color/bluejeans"
             app:outcomingDefaultBubblePressedColor="@color/bluejeans"
@@ -441,4 +441,3 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </RelativeLayout>
-
