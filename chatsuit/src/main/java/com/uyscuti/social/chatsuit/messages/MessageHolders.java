@@ -114,12 +114,7 @@ public class MessageHolders {
 
 
 
-    /**
-     * Configuration wrapper for a specific content type (e.g., image, video, audio).
-     * Holds both incoming and outgoing view holder configurations.
-     *
-     * @param <TYPE> The message content type this config represents
-     */
+
     private static class ContentTypeConfig<TYPE extends MessageContentType> {
         private byte type;
         private HolderConfig<TYPE> incomingConfig;
@@ -135,12 +130,7 @@ public class MessageHolders {
         }
     }
 
-    /**
-     * Configuration for a single view holder, containing the holder class,
-     * layout resource, and optional payload data.
-     *
-     * @param <T> The message type this holder displays
-     */
+
     private static class HolderConfig<T extends IMessage> {
         protected Class<? extends BaseMessageViewHolder<? extends T>> holder;
         protected int layout;
@@ -162,21 +152,7 @@ public class MessageHolders {
 // CONTENT TYPE DETECTION
 // ============================================================================
 
-    /**
-     * Determines the appropriate view type for a given message.
-     * Checks for various content types in priority order:
-     * 1. Voice messages (highest priority)
-     * 2. Audio messages
-     * 3. Video messages
-     * 4. Documents
-     * 5. Images
-     * 6. Custom content types
-     * 7. Text (default fallback)
-     *
-     * @param message The message to analyze
-     * @return The view type constant for this message
-     */
-    @SuppressWarnings("unchecked")
+
     private short getContentViewType(IMessage message) {
 
         if (message instanceof MessageContentType.Image) {
