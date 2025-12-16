@@ -492,7 +492,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         val rootView = binding.container
 
-        emojiPopup = EmojiPopup(rootView, binding.inputEditText)
+        emojiPopup = EmojiPopup(rootView, binding.input.inputEditText)
         inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
 
 
@@ -746,13 +746,13 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             // Close the emoji keyboard
             emojiPopup.dismiss() // Dismisses the Popup.
             inputMethodManager.showSoftInput(
-                binding.inputEditText,
+                binding.input.inputEditText,
                 InputMethodManager.SHOW_IMPLICIT
             )
             false
         } else {
             // Open the emoji keyboard
-            inputMethodManager.hideSoftInputFromWindow(binding.inputEditText.windowToken, 0)
+            inputMethodManager.hideSoftInputFromWindow(binding.input.inputEditText.windowToken, 0)
             emojiPopup.toggle() // Toggles visibility of the Popup.
             true
         }
@@ -765,14 +765,14 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     // Close the emoji keyboard
                     emojiPopup.dismiss() // Dismisses the Popup.
                     inputMethodManager.showSoftInput(
-                        binding.inputEditText,
+                        binding.input.inputEditText,
                         InputMethodManager.SHOW_IMPLICIT
                     )
                     false
                 } else {
                     // Open the emoji keyboard
                     inputMethodManager.hideSoftInputFromWindow(
-                        binding.inputEditText.windowToken,
+                        binding.input.inputEditText.windowToken,
                         0
                     )
                     emojiPopup.toggle() // Toggles visibility of the Popup.
@@ -798,18 +798,18 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     // Close the emoji keyboard
                     emojiPopup.dismiss() // Dismisses the Popup.
                     inputMethodManager.showSoftInput(
-                        binding.inputEditText,
+                        binding.input.inputEditText,
                         InputMethodManager.SHOW_IMPLICIT
                     )
                     false
                 } else {
                     // Open the emoji keyboard
                     inputMethodManager.hideSoftInputFromWindow(
-                        binding.inputEditText.windowToken,
+                        binding.input.inputEditText.windowToken,
                         0,
                     )
                     inputMethodManager.hideSoftInputFromWindow(
-                        binding.inputEditText.windowToken,
+                        binding.input.inputEditText.windowToken,
                         0
                     )
                     Handler().postDelayed({
@@ -836,11 +836,11 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 emojiPopup.dismiss()
 
                 // Hiding the keyboard and sending a result
-                showKeyboard(binding.inputEditText)
+                showKeyboard(binding.input.inputEditText)
                 false
             } else {
                 // Open the emoji keyboard
-                hideKeyboard(binding.inputEditText, resultReceiver)
+                hideKeyboard(binding.input.inputEditText, resultReceiver)
 
                 Handler().postDelayed({
                     emojiPopup.toggle() // Toggles visibility of the Popup.
@@ -873,7 +873,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 //        videoCall = findViewById(R.id.videoCall)
 //        voiceCall = findViewById(R.id.voiceCall)
 
-        val emojiPopup = EmojiPopup(binding.container, binding.inputEditText)
+        val emojiPopup = EmojiPopup(binding.container, binding.messageEdit)
 
         binding.emoji.setOnClickListener {
             val inputMethodManager =
@@ -882,7 +882,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 // Close the emoji keyboard
                 emojiPopup.dismiss() // Dismisses the Popup.
                 inputMethodManager.showSoftInput(
-                    binding.inputEditText,
+                    binding.messageEdit,
                     InputMethodManager.SHOW_IMPLICIT
                 )
 //                emojiButton.background = ContextCompat.getDrawable(this, R.drawable.baseline_insert_emoticon_24)
@@ -890,7 +890,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     resources.getDrawable(com.uyscuti.social.chatsuit.R.drawable.baseline_insert_emoticon_24)
             } else {
                 // Open the emoji keyboard
-                inputMethodManager.hideSoftInputFromWindow(binding.inputEditText.windowToken, 0)
+                inputMethodManager.hideSoftInputFromWindow(binding.messageEdit.windowToken, 0)
                 emojiPopup.toggle() // Toggles visibility of the Popup.
 //                binding.emoji.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.baseline_keyboard_24))
                 binding.emoji.background =
