@@ -17,8 +17,12 @@ import com.uyscuti.social.circuit.utils.commaSeparatedStringToList
 
 
 private const val TAG = "FeedRepostVideosViewAdapter"
-class FeedRepostVideosViewAdapter(private val imageList: List<String>?) : RecyclerView.Adapter<FeedRepostVideosViewAdapter.ViewHolder>()  {
+
+class FeedRepostVideosViewAdapter(
+
+    private val imageList: List<String>?) : RecyclerView.Adapter<FeedRepostVideosViewAdapter.ViewHolder>()  {
     private var onMultipleImagesClickListener: OnMultipleImagesClickListener? = null
+
     fun setOnMultipleImagesClickListener(l: OnMultipleImagesClickListener) {
         onMultipleImagesClickListener = l
     }
@@ -162,7 +166,7 @@ class FeedRepostVideosViewAdapter(private val imageList: List<String>?) : Recycl
                 .placeholder(R.drawable.profilepic2)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(feedThumbnail)
-            // You can also add click listeners or other bindings here if needed
+
         }
     }
 }
