@@ -179,8 +179,8 @@ class FeedAudiosViewAdapter(private val imageList: List<String>?) :
                 }
             } else {
                 // Specify new width and height programmatically
-                val newWidthInPixels = 320  // for example, 300 pixels
-                val newHeightInPixels = 180 // for example, 200 pixels
+                val newWidthInPixels = 320
+                val newHeightInPixels = 180
 
                 // Get the existing layout parameters of the ImageView
                 val params = cardView.layoutParams

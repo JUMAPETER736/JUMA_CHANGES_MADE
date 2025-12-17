@@ -26,6 +26,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 private const val TAG = "FeedImageViewAdapter"
+
 class FeedDocumentsViewAdapter(
 
     imageList: MutableList<String>,

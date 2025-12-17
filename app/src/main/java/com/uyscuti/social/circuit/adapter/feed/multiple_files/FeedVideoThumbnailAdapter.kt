@@ -30,7 +30,7 @@ class FeedVideoThumbnailAdapter(
 
     private var itemWidth: Int = 0
     private var videoDetails: FeedMultipleVideos? = null
-    private var selectedPosition: Int = -1 // Track the selected thumbnail position
+    private var selectedPosition: Int = -1
 
     @SuppressLint("NotifyDataSetChanged")
     fun setItemWidth(width: Int) {

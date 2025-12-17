@@ -333,7 +333,8 @@ class MultipleFeedFilesPagerAdapter(
 
         currentData.forEachIndexed { index, mixedData ->
             mixedData.documents?.let { doc ->
-                if (doc.documentThumbnailFilePath == null) { // Fixed: Changed from isNullOrEmpty() to == null
+
+                if (doc.documentThumbnailFilePath == null) {
                     // Try to restore from ViewModel cache
                     viewModel.getDocumentThumbnail(doc.filename)?.let { cachedThumbnail ->
                         val bitmap = BitmapFactory.decodeFile(cachedThumbnail) // Fixed: Convert string path to Bitmap
