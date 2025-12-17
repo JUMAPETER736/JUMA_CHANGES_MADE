@@ -10,13 +10,10 @@ import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.charts.PieChart
@@ -24,7 +21,6 @@ import com.github.mikephil.charting.data.*
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.MyUserAnalyticsFragmentBinding
 import com.uyscuti.social.circuit.databinding.MyUserItemAnalyticsBinding
-import com.uyscuti.social.circuit.User_Interface.Log_In_And_Register.LoginActivity.UserStorageHelper.getAccessToken
 import com.uyscuti.social.circuit.User_Interface.Log_In_And_Register.LoginActivity.UserStorageHelper.getAvatarUrl
 import com.uyscuti.social.circuit.User_Interface.Log_In_And_Register.LoginActivity.UserStorageHelper.getEmail
 import com.uyscuti.social.circuit.User_Interface.Log_In_And_Register.LoginActivity.UserStorageHelper.getUserId
@@ -79,10 +75,6 @@ class MyUserAnalyticsFragment : Fragment() {
             }
         }
 
-        fun clearCache(username: String) {
-            analyticsCache.remove(username)
-            Log.d(TAG, "Cache cleared for @$username")
-        }
     }
 
     private var _binding: MyUserAnalyticsFragmentBinding? = null
@@ -192,23 +184,7 @@ class MyUserAnalyticsFragment : Fragment() {
             "@$username"
         }
 
-        // Load profile image if you have an ImageView in your layout
-        // Uncomment if you add profileImageView to your layout
-        /*
-        avatarUrl?.let { url ->
-            if (url.isNotEmpty()) {
-                Glide.with(this)
-                    .load(url)
-                    .apply(
-                        RequestOptions()
-                            .circleCrop()
-                            .placeholder(R.drawable.flash21)
-                            .error(R.drawable.flash21)
-                    )
-                    .into(binding.profileImageView)
-            }
-        }
-        */
+        
     }
 
     private fun getCacheKey(): String = "analytics_${userId}_${cleanUsername}"
