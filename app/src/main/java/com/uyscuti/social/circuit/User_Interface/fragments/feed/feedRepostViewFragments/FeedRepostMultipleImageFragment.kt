@@ -24,11 +24,7 @@ import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragment
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [FeedRepostMultipleImageFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+
 private const val TAG = "FeedMultipleImageViewFragment"
 class FeedRepostMultipleImageFragment : Fragment() , MultipleImagesListener {
     // TODO: Rename and change types of parameters
@@ -105,95 +101,14 @@ class FeedRepostMultipleImageFragment : Fragment() , MultipleImagesListener {
 //        val indicator = findViewById<CircleIndicator3>(R.id.circleIndicator)
         binding.circleIndicator.setViewPager(binding.viewPager)
         binding.toolbar.username.text = data.author[0].account.username
-//        if (data.likes <= 0) {
-//            binding.likesCount.text = "0"
-//        } else {
-//            binding.likesCount.text = data.likes.toString()
-////        }
-//        binding.feedCommentsCount.text = data.comments.toString()
-//        if (data.isLiked) {
-//            binding.like.setImageResource(R.drawable.filled_favorite_like)
-//        } else {
-//            binding.like.setImageResource(R.drawable.like_svgrepo_com)
-//        }
-//        binding.like.setOnClickListener {
-//            data.isLiked = !data.isLiked
-//            if (data.isLiked) {
-//                Log.d(com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.TAG, "onCreateView: data likes ${data.likes}")
-//                binding.likesCount.text = data.likes.toString()
-//                if (data.likes < 0) {
-//                    binding.likesCount.text = "0"
-//                } else {
-//                    binding.likesCount.text = (data.likes + 1).toString()
-//                }
-//                binding.like.setImageResource(R.drawable.filled_favorite_like)
-//                YoYo.with(Techniques.Tada)
-//                    .duration(700)
-//                    .repeat(1)
-//                    .playOn(binding.like)
-//            } else {
-//                Log.d(com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.TAG, "onCreateView: data likes ${data.likes}")
-//                binding.likesCount.text = data.likes.toString()
-//                if (data.likes <= 0) {
-//                    binding.likesCount.text = "0"
-//                } else {
-//                    binding.likesCount.text = (data.likes - 1).toString()
-//                }
-//                binding.like.setImageResource(R.drawable.like_svgrepo_com)
-//                YoYo.with(Techniques.Tada)
-//                    .duration(700)
-//                    .repeat(1)
-//                    .playOn(binding.like)
-//            }
-//            feedTextViewFragmentInterface?.onLikeUnLikeFeedFromFeedTextViewFragment(position, data)
-//
-//        }
-//        if (data.isBookmarked) {
-//            binding.fav.setImageResource(R.drawable.filled_favorite)
-//        } else {
-//            binding.fav.setImageResource(R.drawable.favorite_svgrepo_com__1_)
-//        }
-//
-//        binding.moreOptions.setOnClickListener {
-//            feedTextViewFragmentInterface?.onMoreOptionsClickFromFeedTextViewFragment(
-//                position,
-//                data
-//            )
-//        }
-//        binding.fav.setOnClickListener {
-//            data.isBookmarked = !data.isBookmarked
-//            feedTextViewFragmentInterface?.onFeedFavoriteClickFromFeedTextViewFragment(
-//                position,
-//                data
-//            )
-//            if (data.isBookmarked) {
-//                binding.fav.setImageResource(R.drawable.filled_favorite)
-//                YoYo.with(Techniques.Tada)
-//                    .duration(700)
-//                    .repeat(1)
-//                    .playOn(binding.fav)
-//            } else {
-//                binding.fav.setImageResource(R.drawable.favorite_svgrepo_com__1_)
-//                YoYo.with(Techniques.Tada)
-//                    .duration(700)
-//                    .repeat(1)
-//                    .playOn(binding.fav)
-//            }
-//        }
+
 
         return binding.root
     }
 
     companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FeedRepostMultipleImageFragment.
-         */
-        // TODO: Rename and change types and number of parameters
+        
+
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
             FeedRepostMultipleImageFragment().apply {
