@@ -115,7 +115,7 @@ class MyUserBusinessFragment : Fragment() {
 
         if (cached != null && cached.isValid()) {
             // INSTANT LOAD from cache
-            Log.d(TAG, "🚀 INSTANT LOAD - Displaying ${cached.catalogueList.size} cached items")
+            Log.d(TAG, "INSTANT LOAD - Displaying ${cached.catalogueList.size} cached items")
 
             displayCachedData(cached.catalogueList)
 
@@ -265,7 +265,7 @@ class MyUserBusinessFragment : Fragment() {
                             catalogueList.add(catalogue)
                         }
 
-                        Log.d(TAG, "✓ Loaded ${catalogueList.size} catalogue items")
+                        Log.d(TAG, "Loaded ${catalogueList.size} catalogue items")
 
                         // Cache the results
                         val cacheKey = getCacheKey()

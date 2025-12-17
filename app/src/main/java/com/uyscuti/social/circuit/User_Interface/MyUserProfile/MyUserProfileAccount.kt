@@ -347,7 +347,7 @@ class MyUserProfileAccount : AppCompatActivity() {
     private fun loadLoggedInUserDetails() {
 
         try {
-            // ✅ Use UserStorageHelper from LoginActivity instead of LocalStorage
+            // Use UserStorageHelper from LoginActivity instead of LocalStorage
             val storedUserId = getUserId(this)
             val storedUsername = getUsername(this)
             val storedEmail = getEmail(this)
@@ -395,7 +395,7 @@ class MyUserProfileAccount : AppCompatActivity() {
 
     }
 
-    // NEW: Show image source dialog (Camera/Gallery)
+    // Show image source dialog (Camera/Gallery)
     private fun showImageSourceDialog() {
         val options = arrayOf("Take Photo", "Choose from Gallery", "View Full Picture", "Cancel")
 
@@ -411,7 +411,7 @@ class MyUserProfileAccount : AppCompatActivity() {
             .show()
     }
 
-    // NEW: Check camera permission
+    // Check camera permission
     private fun checkCameraPermissionAndOpen() {
         when {
             ContextCompat.checkSelfPermission(
@@ -890,7 +890,7 @@ class MyUserProfileAccount : AppCompatActivity() {
             }
 
             userBio = bio.ifBlank {
-                "✨ Content Creator | Dancer ✨\n🎵 Music Lover | Viral Videos\n#Dance #Comedy #Viral"
+                "Content Creator | Dancer  Music Lover | Viral Videos\n#Dance #Comedy #Viral"
             }
             userLocation = location.ifBlank { "Lilongwe, Malawi" }
             joinDate = formatJoinDate(joinedDate)
@@ -922,15 +922,15 @@ class MyUserProfileAccount : AppCompatActivity() {
 
             if (!extractedOwnerId.isNullOrBlank()) {
                 userId = extractedOwnerId
-                Log.d(TAG, "✓ Using owner as userId: $userId")
+                Log.d(TAG, "Using owner as userId: $userId")
             } else {
                 val nestedAccountId = extractNestedFieldValue(userObject, "account", "_id")
                 if (!nestedAccountId.isNullOrBlank()) {
                     userId = nestedAccountId
-                    Log.d(TAG, "✓ Using account._id as userId: $userId")
+                    Log.d(TAG, "Using account._id as userId: $userId")
                 } else if (!extractedProfileId.isNullOrBlank()) {
                     userId = extractedProfileId
-                    Log.w(TAG, "⚠ Using profile _id as userId (may be incorrect): $userId")
+                    Log.w(TAG, "Using profile _id as userId (may be incorrect): $userId")
                 }
             }
 
@@ -1101,7 +1101,7 @@ class MyUserProfileAccount : AppCompatActivity() {
 
     private fun showTrendingInfo() {
         AlertDialog.Builder(this)
-            .setTitle("🔥 Trending")
+            .setTitle("Trending")
             .setMessage("$fullName is currently trending! Their content is getting lots of engagement.")
             .setPositiveButton("OK", null)
             .show()
