@@ -125,7 +125,7 @@ class FeedRepostMultipleImageFragment : Fragment() , MultipleImagesListener {
         backPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Handle back press
-//                navigateBack()
+
                 if (feedTextViewFragmentInterface != null) {
                     feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
                 }
