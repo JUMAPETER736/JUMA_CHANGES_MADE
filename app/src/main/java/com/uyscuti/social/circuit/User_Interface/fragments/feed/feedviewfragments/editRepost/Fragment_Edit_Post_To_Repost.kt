@@ -576,7 +576,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
             }
         }
 
-        // FIXED: Original Poster Profile Image Click
+        //  Original Poster Profile Image Click
         originalPostProfileImage.setOnClickListener { view ->
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
