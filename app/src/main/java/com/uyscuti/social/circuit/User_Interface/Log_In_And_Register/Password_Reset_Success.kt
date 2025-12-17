@@ -7,6 +7,11 @@ import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.uyscuti.social.circuit.R
 
+
+
+private val TAG = "Password_Reset_Success"
+
+
 class Password_Reset_Success : AppCompatActivity() {
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -49,8 +49,10 @@ import java.io.IOException
 import javax.inject.Inject
 import org.json.JSONException
 
-@AndroidEntryPoint
 
+private val TAG = "LoginActivity"
+
+@AndroidEntryPoint
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding

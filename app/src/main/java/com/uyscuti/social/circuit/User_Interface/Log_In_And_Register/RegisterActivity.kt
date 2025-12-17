@@ -42,6 +42,9 @@ import com.facebook.login.LoginResult
 import com.facebook.GraphRequest
 import org.json.JSONException
 
+
+private val TAG = "RegisterActivity"
+
 @AndroidEntryPoint
 class RegisterActivity : AppCompatActivity() {
     private lateinit var binding: ActivityRegisterBinding

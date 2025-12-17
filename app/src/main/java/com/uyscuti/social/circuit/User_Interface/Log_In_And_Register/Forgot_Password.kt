@@ -12,6 +12,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import com.uyscuti.social.circuit.R
 
+
+
+private val TAG = "Forgot_Password"
+
 class Forgot_Password : AppCompatActivity() {
 
     private lateinit var forgotPasswordEmail: EditText

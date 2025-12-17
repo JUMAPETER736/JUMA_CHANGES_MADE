@@ -13,6 +13,9 @@ import androidx.appcompat.widget.AppCompatButton
 import com.uyscuti.social.circuit.R
 
 
+
+private val TAG = "Verification_Code"
+
 class Verification_Code : AppCompatActivity() {
 
     private lateinit var tvTitle: TextView

@@ -11,6 +11,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import com.uyscuti.social.circuit.R
 
+
+private val TAG = "Create_New_Password"
+
+
 class Create_New_Password : AppCompatActivity() {
 
     // Declare views
