@@ -10,6 +10,7 @@ import com.uyscuti.social.circuit.model.feed.multiple_files.FeedMultipleVideos
 import com.uyscuti.social.circuit.R
 
 class FeedRepostVideoThumbnailAdapter(
+
     private val thumbnails: List<Bitmap>,
                                       private val clickListener: ThumbnailClickListener
 ) :    RecyclerView.Adapter<FeedRepostVideoThumbnailAdapter.VideoThumbnailViewHolder>() {
