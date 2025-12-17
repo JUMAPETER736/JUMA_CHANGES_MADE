@@ -36,7 +36,7 @@ class BottomSheetFragment : BottomSheetDialogFragment() {
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-//        val copyLink: Button = view.findViewById(R.id.copy_link)
+
         val copyLink : LinearLayout? = view.findViewById(R.id.copy_link)
         copyLink?.setOnClickListener {
 
@@ -54,11 +54,11 @@ class BottomSheetFragment : BottomSheetDialogFragment() {
    **/
         val shareToChat :LinearLayout? = view.findViewById(R.id.share_toChat)
         shareToChat?.setOnClickListener {
-//            replaceFragment(ChatFragment.newInstance("", ""))
+
         }
         val repostFeed : LinearLayout?= view.findViewById(R.id.rePostFeedLayout)
         repostFeed?.setOnClickListener {
-//            replaceFragment(NewRepostedPostFragment(data))
+
             Toast.makeText(requireContext(), "REPOST CLICKED ", Toast.LENGTH_SHORT).show()
         }
     }

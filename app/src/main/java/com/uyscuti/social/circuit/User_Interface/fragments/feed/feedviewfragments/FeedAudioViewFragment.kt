@@ -87,13 +87,7 @@ class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
         binding.playPauseButton.setOnClickListener {
             Log.d(TAG, "onCreateView: play button clicked ${mediaPlayer?.isPlaying}")
             Toast.makeText(requireContext(), "playbutton", Toast.LENGTH_SHORT).show()
-//            if(mediaPlayer?.isPlaying == true) {
-//                mediaPlayer?.pause()
-//                binding.playPauseButton.setImageResource(R.drawable.play_svgrepo_com)
-//            }else{
-//                mediaPlayer?.start()
-//                binding.playPauseButton.setImageResource(R.drawable.baseline_pause_24)
-//            }
+
         }
 
         binding = FragmentFeedAudioViewBinding.inflate(layoutInflater, container, false)
