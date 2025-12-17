@@ -419,16 +419,7 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
-//    private fun showUnfollowConfirmation(user: UserFollowingDisplayModel) {
-//        AlertDialog.Builder(this)
-//            .setTitle("Unfollow @${user.username}?")
-//            .setMessage("Are you sure you want to unfollow this user?")
-//            .setPositiveButton("Unfollow") { _, _ ->
-//                unfollowUser(user)
-//            }
-//            .setNegativeButton("Cancel", null)
-//            .show()
-//    }
+
 
     private fun showUnblockConfirmation(user: UserFollowingDisplayModel) {
         AlertDialog.Builder(this)
