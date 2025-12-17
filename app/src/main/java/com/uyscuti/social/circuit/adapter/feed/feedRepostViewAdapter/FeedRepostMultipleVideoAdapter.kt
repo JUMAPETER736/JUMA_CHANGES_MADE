@@ -32,6 +32,7 @@ class FeedRepostMultipleVideoAdapter(
         private var videoThumbnail = ""
 
         inner class Pager2ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
             val images: ImageView = itemView.findViewById(R.id.imageView)
             val playImageView: ImageView = itemView.findViewById(R.id.playImageView)
             val videoItemLayout: ConstraintLayout = itemView.findViewById(R.id.videoItemLayout)
