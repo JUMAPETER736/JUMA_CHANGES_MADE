@@ -56,8 +56,7 @@ class FeedRepostVideoViewFragment : Fragment() , PlayFeedVideoInterface {
     private var isUserSeeking = false
     private var currentDuration: TextView? = null
 
-    //    private var reply: Boolean = false
-//
+
     var isPaused = false
 
     var videoUrl = ""
@@ -85,12 +84,7 @@ class FeedRepostVideoViewFragment : Fragment() , PlayFeedVideoInterface {
             if (feedTextViewFragmentInterface != null) {
                 feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
                 adapter2?.backPressedFromFeedTextViewFragment()
-//                if (player != null) {
-//                    player?.removeListener(playbackStateListener)
-//                    player?.stop()
-//                    player?.release()
-//                    player?.clearVideoSurface()
-//                }
+
             }
         }
         Log.d(TAG, "onCreateView: data content ${data.content}")
@@ -119,23 +113,13 @@ class FeedRepostVideoViewFragment : Fragment() , PlayFeedVideoInterface {
         }
         videoUrl = data.files[0].url
         var previousPosition: Int = -1
-//        val videoUrls = listOf("url1", "url2", "url3")
-//        val viewPager: ViewPager2 = findViewById(R.id.viewPager)
-//        viewPager.adapter = VideoPagerAdapter(this, videoUrls)
-        adapter2 = VideoPagerAdapter(requireActivity(), videoList)
-//        feedTextViewFragmentInterface?.let { adapter2!!.setFeedTextViewFragmentInterface(it) }
 
-//        adapter = MultipleFeedVideosAdapter(requireContext(), videoList, this)
+        adapter2 = VideoPagerAdapter(requireActivity(), videoList)
+
         binding.viewPager.adapter = adapter2
-        // Get the RecyclerView from ViewPager2
-//        val recyclerView: RecyclerView = binding.viewPager.getChildAt(0) as RecyclerView
-//
-//// Set the ItemAnimator to null to disable animations
-//        recyclerView.itemAnimator = null
+
         binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
-//        binding.viewPager.registerOnPageChangeCallback(object :
-//            ViewPager2.OnPageChangeCallback() {
-//
+
         if (data.author.isEmpty()){
             Glide.with(this)
                 .load(data.author[0].account.avatar.url)
@@ -183,14 +167,10 @@ class FeedRepostVideoViewFragment : Fragment() , PlayFeedVideoInterface {
         backPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Handle back press
-//                navigateBack()
+
                 if (feedTextViewFragmentInterface != null) {
                     feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
-//                    if (player != null) {
-//                        player?.removeListener(playbackStateListener)
-//                        player?.stop()
-//                        player?.release()
-//                    }
+
                 }
             }
         }
@@ -199,8 +179,7 @@ class FeedRepostVideoViewFragment : Fragment() , PlayFeedVideoInterface {
 
     override fun onDestroy() {
         super.onDestroy()
-//        player?.removeListener(playbackStateListener)
-//        player?.release()
+
     }
 
     fun setListener(listener: FeedTextViewFragmentInterface) {
