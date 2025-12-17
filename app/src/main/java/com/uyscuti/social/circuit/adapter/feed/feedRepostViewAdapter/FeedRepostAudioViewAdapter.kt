@@ -203,7 +203,7 @@ class FeedRepostAudioViewAdapter (private val imageList: List<String>?, val cont
 
 
 
-                // You can also add click listeners or other bindings here if needed
+
             }
         }
 
