@@ -4150,12 +4150,12 @@ class MainPostContentFragment : Fragment() {
             Log.d(TAG, "Showing download progress")
             downloadDocumentButton?.text = "Downloading..."
             // Show progress bar or loading indicator if you have one
-            // progressBar?.visibility = View.VISIBLE
+
         } else {
             Log.d(TAG, "Hiding download progress")
             downloadDocumentButton?.text = "Download"
             // Hide progress bar or loading indicator
-            // progressBar?.visibility = View.GONE
+
         }
     }
 
@@ -4217,8 +4217,7 @@ class MainPostContentFragment : Fragment() {
         documentThumbnail?.apply {
             visibility = View.VISIBLE
             setImageResource(R.drawable.flash21)
-            //scaleType = ImageView.ScaleType.FIT_CENTER
-//            adjustViewBounds = true
+
         }
 
         // Generate preview for Office documents
@@ -4231,8 +4230,7 @@ class MainPostContentFragment : Fragment() {
                         // Fallback to document-specific preview
                         setImageResource(getDocumentPreviewResource(documentType))
                     }
-                    //scaleType = ImageView.ScaleType.FIT_CENTER
-//                    adjustViewBounds = true
+
                 }
             }
         }
@@ -4311,8 +4309,7 @@ class MainPostContentFragment : Fragment() {
         documentThumbnail?.apply {
             visibility = View.VISIBLE
             setImageResource(R.drawable.flash21)
-//            scaleType = ImageView.ScaleType.FIT_CENTER
-//            adjustViewBounds = true
+
         }
 
         // Generate text preview
@@ -4324,8 +4321,7 @@ class MainPostContentFragment : Fragment() {
                     } else {
                         setImageResource(R.drawable.text_icon)
                     }
-//                    scaleType = ImageView.ScaleType.FIT_CENTER
-//                    adjustViewBounds = true
+
                 }
             }
         }
@@ -4362,8 +4358,7 @@ class MainPostContentFragment : Fragment() {
         documentThumbnail?.apply {
             visibility = View.VISIBLE
             setImageResource(R.drawable.flash21)
-//            scaleType = ImageView.ScaleType.FIT_CENTER
-//            adjustViewBounds = true
+
         }
 
         generateWebPreview(fileUrl, fileName) { preview ->
@@ -4374,8 +4369,7 @@ class MainPostContentFragment : Fragment() {
                     } else {
                         setImageResource(getFileTypeIcon(fileName))
                     }
-//                    scaleType = ImageView.ScaleType.FIT_CENTER
-//                    adjustViewBounds = true
+
                 }
             }
         }
@@ -4413,8 +4407,7 @@ class MainPostContentFragment : Fragment() {
         documentThumbnail?.apply {
             visibility = View.VISIBLE
             setImageResource(R.drawable.flash21)
-//            scaleType = ImageView.ScaleType.FIT_CENTER
-//            adjustViewBounds = true
+
         }
 
         generateCsvPreview(fileUrl, fileName) { preview ->
@@ -4425,8 +4418,7 @@ class MainPostContentFragment : Fragment() {
                     } else {
                         setImageResource(R.drawable.excel_icon)
                     }
-//                    scaleType = ImageView.ScaleType.FIT_CENTER
-//                    adjustViewBounds = true
+
                 }
             }
         }
@@ -4463,8 +4455,7 @@ class MainPostContentFragment : Fragment() {
         documentThumbnail?.apply {
             visibility = View.VISIBLE
             setImageResource(R.drawable.flash21)
-//            scaleType = ImageView.ScaleType.FIT_CENTER
-//            adjustViewBounds = true
+
         }
 
         // For ebooks, show a generic book preview
@@ -4477,8 +4468,7 @@ class MainPostContentFragment : Fragment() {
                     } else {
                         setImageResource(R.drawable.text_icon)
                     }
-//                    scaleType = ImageView.ScaleType.FIT_CENTER
-//                    adjustViewBounds = true
+
                 }
             }
         }.start()
@@ -4492,8 +4482,7 @@ class MainPostContentFragment : Fragment() {
         documentThumbnail?.apply {
             visibility = View.VISIBLE
             setImageResource(getFileTypeIcon(fileName))
-//            scaleType = ImageView.ScaleType.FIT_CENTER
-//            adjustViewBounds = true
+
         }
     }
 
@@ -4779,12 +4768,10 @@ class MainPostContentFragment : Fragment() {
                 pdfImageView?.apply {
                     if (thumbnail != null) {
                         setImageBitmap(thumbnail)
-//                        scaleType = ImageView.ScaleType.FIT_CENTER
-//                        adjustViewBounds = true
+
                     } else {
                         setImageResource(R.drawable.pdf_icon)
-//                        scaleType = ImageView.ScaleType.FIT_CENTER
-//                        adjustViewBounds = true
+
                     }
                 }
             }
