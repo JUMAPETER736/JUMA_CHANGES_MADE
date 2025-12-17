@@ -573,22 +573,6 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     }
 
 
-    // Fallback navigation to shorts profile
-    @OptIn(UnstableApi::class)
-    private fun navigateToUserProfile(author: Author) {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            putExtra("navigate_to", "shorts")
-            putExtra("user_id", author._id)
-            putExtra("filter_user_id", author._id)
-            putExtra("filter_username", author.account.username)
-            putExtra("filter_user_avatar", author.account.avatar.url)
-            putExtra("should_filter", true)
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
     private fun hideKeyboard() {
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
