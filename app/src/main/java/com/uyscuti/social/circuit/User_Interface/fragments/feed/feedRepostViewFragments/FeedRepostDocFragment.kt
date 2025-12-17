@@ -27,11 +27,7 @@ import com.uyscuti.social.network.api.response.posts.Post
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 private lateinit var feedAdapter: FeedAdapter
-/**
- * A simple [Fragment] subclass.
- * Use the [FeedRepostDocFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+
 
 private const val TAG = "FeedDocumentViewAdapter"
 

@@ -20,11 +20,7 @@ import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragment
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [FeedRepostImageFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+
 private const val TAG = "FeedRepostImageFragment"
 class FeedRepostImageFragment : Fragment() {
     // TODO: Rename and change types of parameters

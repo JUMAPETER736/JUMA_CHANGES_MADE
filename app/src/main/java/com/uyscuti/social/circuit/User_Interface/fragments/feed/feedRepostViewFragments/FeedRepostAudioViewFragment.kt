@@ -32,8 +32,7 @@ import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragment
 import java.io.IOException
 import java.util.Locale
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 
@@ -84,7 +83,7 @@ class FeedRepostAudioViewFragment : Fragment(), PlayFeedAudioInterface {
         binding = FragmentFeedRepostAudioViewBinding.inflate(inflater, container, false)
 
             // Inflate the layout for this fragment
-            /**this code has been uncommented**/
+
             binding.playPauseButton.setOnClickListener {
                 Log.d(TAG, "onCreateView: play button clicked ${mediaPlayer?.isPlaying}")
                 Toast.makeText(requireContext(), "playbutton", Toast.LENGTH_SHORT).show()
@@ -434,7 +433,7 @@ class FeedRepostAudioViewFragment : Fragment(), PlayFeedAudioInterface {
         feedTextViewFragmentInterface = listener
     }
 
-    //    var isPlaying = false
+
     override fun onAudioPlayClickListener(
         audioUrl: String,
         playImageView: ImageView,
@@ -442,7 +441,7 @@ class FeedRepostAudioViewFragment : Fragment(), PlayFeedAudioInterface {
         currentDuration: TextView
     ) {
         Log.d(TAG, "onAudioPlayClickListener: start playing audio")
-//        isPlaying = true
+
         this.pausePlayButton = playImageView
         this.seekBar = seekBar
         this.currentDuration = currentDuration
