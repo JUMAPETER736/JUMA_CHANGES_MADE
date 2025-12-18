@@ -1,5 +1,6 @@
 package com.uyscuti.social.circuit.User_Interface.MyUserProfile
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
@@ -328,6 +329,7 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private suspend fun handleFollowersResponse(followers: List<Data>) {
         withContext(Dispatchers.Main) {
             if (currentPage == 1) {
@@ -347,6 +349,7 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private fun refreshFollowers() {
         currentPage = 1
         hasMoreData = true
@@ -356,6 +359,7 @@ class UserFollowersFragment : AppCompatActivity() {
         loadFollowers()
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private fun filterList(query: String) {
         filteredFollowersList.clear()
 
@@ -401,6 +405,7 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private fun toggleFollowUser(user: OtherUserDisplayFollowersModel) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -491,6 +496,7 @@ class UserFollowersFragment : AppCompatActivity() {
             .show()
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private fun performBlockUser(user: OtherUserDisplayFollowersModel) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -528,6 +534,7 @@ class UserFollowersFragment : AppCompatActivity() {
         binding.toolbarTitle.text = titleText
     }
 
+    @SuppressLint("DefaultLocale")
     private fun formatCount(count: Int): String {
         return when {
             count >= 1_000_000 -> {
