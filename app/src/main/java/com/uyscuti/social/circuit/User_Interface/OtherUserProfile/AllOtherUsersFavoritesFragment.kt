@@ -48,12 +48,12 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
     private val allUserFavorites = mutableListOf<Post>()
     private var hasLoadedOnce = false
 
-    // 🚀 SPEED: Caching system
+    //  Caching system
     private var cachedFavorites: List<Post>? = null
     private var cacheTimestamp: Long = 0L
     private val CACHE_DURATION_MS = 5 * 60 * 1000L // 5 minutes
 
-    // 🚀 SPEED: Pagination limits
+    //  Pagination limits
     private val MAX_PAGES = 10
     private val MAX_ITEMS = 50
 
@@ -62,7 +62,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
         private const val ARG_USER_ID = "userId"
         private const val ARG_USERNAME = "username"
 
-        // 🚀 SPEED: Static cache shared across instances
+        // Static cache shared across instances
         private val staticCache = mutableMapOf<String, Pair<List<Post>, Long>>()
 
         fun newInstance(userId: String, username: String): AllOtherUsersFavoritesFragment {
@@ -85,7 +85,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
         Log.d(TAG, "Fragment initialized - userId: $userId, username: $username")
 
-        // 🚀 SPEED: Check static cache immediately
+        // Check static cache immediately
         userId?.let { id ->
             staticCache[id]?.let { (favorites, timestamp) ->
                 if ((System.currentTimeMillis() - timestamp) < CACHE_DURATION_MS) {
@@ -112,14 +112,14 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
         setupRecyclerViewOptimized()
 
-        // 🚀 SPEED: Instant display from cache if available
+        // Instant display from cache if available
         if (cachedFavorites != null && isCacheValid()) {
             Log.d(TAG, "⚡ Displaying cached favorites instantly!")
             displayCachedData()
 
             // Background refresh if cache is getting stale
             if ((System.currentTimeMillis() - cacheTimestamp) > (CACHE_DURATION_MS / 2)) {
-                Log.d(TAG, "🔄 Refreshing stale cache in background")
+                Log.d(TAG, " Refreshing stale cache in background")
                 refreshInBackground()
             }
         } else {
@@ -148,7 +148,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
             showContent()
         }
 
-        Log.d(TAG, "⚡ Displayed ${allUserFavorites.size} cached items instantly")
+        Log.d(TAG, "Displayed ${allUserFavorites.size} cached items instantly")
     }
 
     private fun resetAndLoadFresh() {
@@ -171,7 +171,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
             adapter = feedAdapter
             visibility = View.GONE
 
-            // 🚀 PERFORMANCE OPTIMIZATIONS
+            // PERFORMANCE OPTIMIZATIONS
             setHasFixedSize(true)
             setItemViewCacheSize(20)
             isNestedScrollingEnabled = true
@@ -206,13 +206,13 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
     @SuppressLint("SetTextI18n")
     private fun loadAllFavoritesOptimized() {
-        // 🚀 SPEED: Strict limits to prevent infinite loading
+        //  Strict limits to prevent infinite loading
         if (isLoading || !hasMoreData || currentPage > MAX_PAGES || allUserFavorites.size >= MAX_ITEMS) {
             if (currentPage > MAX_PAGES) {
-                Log.d(TAG, "⚠️ Reached max pages ($MAX_PAGES) - stopping")
+                Log.d(TAG, "Reached max pages ($MAX_PAGES) - stopping")
             }
             if (allUserFavorites.size >= MAX_ITEMS) {
-                Log.d(TAG, "⚠️ Reached max items ($MAX_ITEMS) - stopping")
+                Log.d(TAG, "Reached max items ($MAX_ITEMS) - stopping")
             }
             hasMoreData = false
             hasLoadedOnce = true
@@ -263,7 +263,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
                                 totalUserFavorites = allUserFavorites.size
 
-                                Log.d(TAG, "✅ Added ${validatedPosts.size} favorites. Total: $totalUserFavorites")
+                                Log.d(TAG, "Added ${validatedPosts.size} favorites. Total: $totalUserFavorites")
 
                                 showContent()
                             }
@@ -278,7 +278,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
                     Log.d(TAG, "Pagination: hasNext=$hasNextPage, page=$currentPage/$totalPages")
 
-                    // 🚀 SPEED: Load initial batch (3-5 pages) automatically, then stop
+                    // Load initial batch (3-5 pages) automatically, then stop
                     val shouldContinueInitialLoad = !hasLoadedOnce &&
                             currentPage < 5 &&
                             currentPage < MAX_PAGES &&
@@ -286,7 +286,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
                     if (hasNextPage && currentPage < totalPages && shouldContinueInitialLoad) {
                         currentPage++
-                        Log.d(TAG, "🔄 Auto-loading next page: $currentPage")
+                        Log.d(TAG, "Auto-loading next page: $currentPage")
                         withContext(Dispatchers.Main) {
                             isLoading = false
                             loadAllFavoritesOptimized()
@@ -305,7 +305,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
                         withContext(Dispatchers.Main) {
                             hideLoading()
 
-                            // 🚀 SPEED: Update cache
+                            //Update cache
                             cachedFavorites = allUserFavorites.toList()
                             cacheTimestamp = System.currentTimeMillis()
                             userId?.let { id ->
@@ -316,7 +316,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
                                 showEmptyState()
                             }
 
-                            Log.d(TAG, "✅ FINISHED - Loaded $currentPage pages, ${allUserFavorites.size} favorites")
+                            Log.d(TAG, "FINISHED - Loaded $currentPage pages, ${allUserFavorites.size} favorites")
                             Log.d(TAG, "Cache updated - ${cachedFavorites?.size} items stored")
                         }
                     }
@@ -335,11 +335,11 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    // 🚀 SPEED: Silent background refresh
+    //Silent background refresh
     private fun refreshInBackground() {
         if (isLoading) return
 
-        Log.d(TAG, "🔄 Starting background refresh")
+        Log.d(TAG, "Starting background refresh")
         isLoading = true
 
         lifecycleScope.launch(Dispatchers.IO) {
@@ -380,9 +380,9 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
                             feedAdapter.clear()
                             feedAdapter.submitItems(allUserFavorites)
                             feedAdapter.initializeCommentCounts(allUserFavorites)
-                            Log.d(TAG, "✅ Background refresh completed - UI updated")
+                            Log.d(TAG, "Background refresh completed - UI updated")
                         } else {
-                            Log.d(TAG, "✅ Background refresh completed - no changes")
+                            Log.d(TAG, "Background refresh completed - no changes")
                         }
                     }
                     isLoading = false

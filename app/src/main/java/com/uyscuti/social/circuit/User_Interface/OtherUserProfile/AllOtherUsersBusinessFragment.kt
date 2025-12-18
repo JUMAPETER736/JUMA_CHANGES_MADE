@@ -74,7 +74,7 @@ class AllOtherUsersBusinessFragment : Fragment() {
             throw IllegalArgumentException("userId is required")
         }
 
-        // 🚀 SPEED BOOST: Check static cache immediately
+        // Check static cache immediately
         userId?.let { id ->
             staticCache[id]?.let { (catalogue, timestamp) ->
                 if ((System.currentTimeMillis() - timestamp) < CACHE_DURATION_MS) {
@@ -99,10 +99,10 @@ class AllOtherUsersBusinessFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 🚀 SPEED BOOST: Setup RecyclerView with optimizations
+        //  Setup RecyclerView with optimizations
         setupRecyclerViewOptimized()
 
-        // 🚀 SPEED BOOST: Show cached data IMMEDIATELY if available
+        //  Show cached data IMMEDIATELY if available
         if (cachedCatalogue != null && isCacheValid()) {
             Log.d(TAG, "⚡ Instant display from cache!")
             displayCachedData()
@@ -121,7 +121,7 @@ class AllOtherUsersBusinessFragment : Fragment() {
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
 
-            // 🚀 PERFORMANCE OPTIMIZATIONS
+            // PERFORMANCE OPTIMIZATIONS
             setHasFixedSize(true) // Size won't change
             setItemViewCacheSize(20) // Cache more views
 
@@ -158,7 +158,7 @@ class AllOtherUsersBusinessFragment : Fragment() {
         }
     }
 
-    // 🚀 PARALLEL LOADING: Fetch profile and catalogue simultaneously
+    //  Fetch profile and catalogue simultaneously
     private fun fetchDataParallel() {
         if (userId.isNullOrEmpty() || isLoading) return
 
@@ -186,7 +186,7 @@ class AllOtherUsersBusinessFragment : Fragment() {
                     if (profileResponse.isSuccessful) {
                         val businessProfile = profileResponse.body()
                         if (businessProfile != null) {
-                            Log.d(TAG, "✅ Profile loaded")
+                            Log.d(TAG, "Profile loaded")
                         }
                     } else {
                         Log.e(TAG, "Profile error: ${parseErrorMessage(profileResponse)}")
@@ -211,7 +211,7 @@ class AllOtherUsersBusinessFragment : Fragment() {
                             )
                         }
 
-                        Log.d(TAG, "✅ Loaded ${catalogueList.size} items in parallel")
+                        Log.d(TAG, "Loaded ${catalogueList.size} items in parallel")
 
                         // Update both instance and static cache
                         cachedCatalogue = catalogueList
@@ -249,12 +249,12 @@ class AllOtherUsersBusinessFragment : Fragment() {
         }
     }
 
-    // 🚀 BACKGROUND REFRESH: Update cache without showing loading spinner
+    //  Update cache without showing loading spinner
     private fun fetchDataInBackground() {
         if (userId.isNullOrEmpty() || isLoading) return
 
         isLoading = true
-        Log.d(TAG, "🔄 Background refresh started")
+        Log.d(TAG, "Background refresh started")
 
         lifecycleScope.launch {
             try {
@@ -291,9 +291,9 @@ class AllOtherUsersBusinessFragment : Fragment() {
                         if (catalogueList != cachedCatalogue) {
                             catalogueAdapter = CatalogueAdapter(requireActivity(), catalogueList)
                             binding.recyclerView.adapter = catalogueAdapter
-                            Log.d(TAG, "✅ Background refresh completed - UI updated")
+                            Log.d(TAG, "Background refresh completed - UI updated")
                         } else {
-                            Log.d(TAG, "✅ Background refresh completed - no changes")
+                            Log.d(TAG, "Background refresh completed - no changes")
                         }
                     }
                     isLoading = false
