@@ -31,7 +31,6 @@ import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.ActivitySearchAllUserNameBinding
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
-import com.uyscuti.social.circuit.model.ShortsViewModel
 import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import com.uyscuti.social.network.api.response.posts.Author
@@ -58,7 +57,6 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         RetrofitInstance(LocalStorage(this), this).apiService
     }
 
-    private val shortsViewModel: ShortsViewModel by viewModels()
     private val recentUserViewModel: RecentUserViewModel by viewModels()
 
     // Cache for all authors
