@@ -25,13 +25,13 @@ import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
+import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.MultipleFeedVideosAdapter
+import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.PlayFeedVideoInterface
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleFeedVideosAdapter
-import com.uyscuti.social.circuit.adapter.feed.multiple_files.PlayFeedVideoInterface
 import com.uyscuti.social.circuit.databinding.FragmentFeedVideoViewBinding
-import com.uyscuti.social.circuit.feed_demo.VideoPagerAdapter
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
-import com.uyscuti.social.circuit.model.FeedCommentClicked
+import com.uyscuti.sharedmodule.feed_demo.VideoPagerAdapter
+import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.sharedmodule.model.FeedCommentClicked
 import org.greenrobot.eventbus.EventBus
 
 // TODO: Rename parameter arguments, choose names that match
@@ -51,7 +51,7 @@ class FeedVideoViewFragment : Fragment(), PlayFeedVideoInterface {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
-    private lateinit var data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+    private lateinit var data: com.uyscuti.social.network.api.response.posts.Post
     private var position = 0
     private var videoPlayingPosition = -1;
     private lateinit var backPressedCallback: OnBackPressedCallback
@@ -79,7 +79,7 @@ class FeedVideoViewFragment : Fragment(), PlayFeedVideoInterface {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
             position = it.getInt("position")
-            data = (it.getSerializable("data") as com.uyscuti.social.network.api.response.allFeedRepostsPost.Post?)!!
+            data = (it.getSerializable("data") as com.uyscuti.social.network.api.response.posts.Post?)!!
         }
     }
 
@@ -143,7 +143,7 @@ class FeedVideoViewFragment : Fragment(), PlayFeedVideoInterface {
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(binding.toolbar.feedProfilePic)
 
-        binding.comment.setOnClickListener {
+        binding.commentButtonIcon.setOnClickListener {
             EventBus.getDefault().post(FeedCommentClicked(position, data))
         }
 
@@ -155,11 +155,11 @@ class FeedVideoViewFragment : Fragment(), PlayFeedVideoInterface {
         }
         binding.feedCommentsCount.text = data.comments.toString()
         if (data.isLiked) {
-            binding.like.setImageResource(R.drawable.filled_favorite_like)
+            binding.likeButtonIcon.setImageResource(R.drawable.filled_favorite_like)
         } else {
-            binding.like.setImageResource(R.drawable.like_svgrepo_com)
+            binding.likeButtonIcon.setImageResource(R.drawable.like_svgrepo_com)
         }
-        binding.like.setOnClickListener {
+        binding.likeButtonIcon.setOnClickListener {
             data.isLiked = !data.isLiked
             if (data.isLiked) {
                 Log.d(TAG, "onCreateView: data likes ${data.likes}")
@@ -169,11 +169,11 @@ class FeedVideoViewFragment : Fragment(), PlayFeedVideoInterface {
                 } else {
                     binding.likesCount.text = (data.likes + 1).toString()
                 }
-                binding.like.setImageResource(R.drawable.filled_favorite_like)
+                binding.likeButtonIcon.setImageResource(R.drawable.filled_favorite_like)
                 YoYo.with(Techniques.Tada)
                     .duration(700)
                     .repeat(1)
-                    .playOn(binding.like)
+                    .playOn(binding.likeButtonIcon)
             } else {
                 Log.d(TAG, "onCreateView: data likes ${data.likes}")
                 binding.likesCount.text = data.likes.toString()
@@ -182,11 +182,11 @@ class FeedVideoViewFragment : Fragment(), PlayFeedVideoInterface {
                 } else {
                     binding.likesCount.text = (data.likes - 1).toString()
                 }
-                binding.like.setImageResource(R.drawable.like_svgrepo_com)
+                binding.likeButtonIcon.setImageResource(R.drawable.like_svgrepo_com)
                 YoYo.with(Techniques.Tada)
                     .duration(700)
                     .repeat(1)
-                    .playOn(binding.like)
+                    .playOn(binding.likeButtonIcon)
             }
             feedTextViewFragmentInterface?.onLikeUnLikeFeedFromFeedTextViewFragment(position, data)
 
@@ -225,7 +225,7 @@ class FeedVideoViewFragment : Fragment(), PlayFeedVideoInterface {
             }
         }
 //        where i have stopped
-        binding.share.setOnClickListener {
+        binding.shareButtonIcon.setOnClickListener {
             val postLink = "https://yourwebsite.com/posts/${binding.feedImageCardView.id}" // Replace wi
             Toast.makeText(requireContext(), "share clicked", Toast.LENGTH_SHORT).show()
             val sendIntent = Intent().apply {

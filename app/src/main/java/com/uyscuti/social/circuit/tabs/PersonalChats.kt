@@ -1,31 +1,29 @@
 package com.uyscuti.social.circuit.tabs
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
-
 import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.MainDialogsFragment
-
-import com.uyscuti.social.circuit.interfaces.OnBackPressedListener
-import com.uyscuti.social.circuit.presentation.DialogViewModel
-import com.uyscuti.social.circuit.presentation.MainViewModel
-import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.MessagesActivity
-import com.uyscuti.social.circuit.utils.getChatNavigationController
+import com.uyscuti.sharedmodule.interfaces.OnBackPressedListener
+import com.uyscuti.sharedmodule.presentation.DialogViewModel
+import com.uyscuti.sharedmodule.presentation.MainViewModel
+import com.uyscuti.sharedmodule.utils.getChatNavigationController
 import com.uyscuti.social.chatsuit.dialogs.DialogsList
 import com.uyscuti.social.chatsuit.dialogs.DialogsListAdapter
 import com.uyscuti.social.chatsuit.utils.DateFormatter
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.data.fixtures.DialogsFixtures
-import com.uyscuti.social.circuit.data.model.Dialog
-import com.uyscuti.social.circuit.data.model.Message
-import com.uyscuti.social.circuit.data.model.User
+import com.uyscuti.sharedmodule.data.fixtures.DialogsFixtures
+import com.uyscuti.sharedmodule.data.model.Dialog
+import com.uyscuti.sharedmodule.data.model.Message
+import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.UserEntity
@@ -37,14 +35,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Date
 
+// TODO: Rename parameter arguments, choose names that match
+// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 
+/**
+ * A simple [Fragment] subclass.
+ * Use the [PersonalChats.newInstance] factory method to
+ * create an instance of this fragment.
+ */
 
 @UnstableApi
 @AndroidEntryPoint
 class PersonalChats : MainDialogsFragment(), DateFormatter.Formatter, OnBackPressedListener {
-
+    // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
     private lateinit var dialogsList: DialogsList
@@ -170,31 +175,24 @@ class PersonalChats : MainDialogsFragment(), DateFormatter.Formatter, OnBackPres
 
         dialogsAdapter.setOnDialogClickListener(this)
         dialogsAdapter.setOnDialogLongClickListener(this)
-
+//        dialogsAdapter.se
         dialogsAdapter.setDatesFormatter(this)
 
         dialogsList.setAdapter(dialogsAdapter)
     }
 
-
-
     private fun fromDialogEntity(entity: DialogEntity): Dialog {
         val users = convertUserEntitiesToUsers(entity.users)
+
         val usersList: List<User> = users
         val usersArrayList: ArrayList<User> = ArrayList(usersList)
-        val lastMessage = entity.lastMessage?.let { convertMessageEntityToMessage(it) }
 
-        // For one-on-one chats, use the other user's avatar as the dialog photo
-        val dialogPhoto = if (entity.dialogPhoto.isNullOrEmpty() && usersArrayList.size == 1) {
-            usersArrayList[0].avatar // Use the user's avatar for personal chats
-        } else {
-            entity.dialogPhoto // Use the dialog photo for group chats
-        }
+        val lastMessage = entity.lastMessage?.let { convertMessageEntityToMessage(it) }
 
         return Dialog(
             entity.id,
             entity.dialogName,
-            dialogPhoto, // This should now contain the user's avatar
+            entity.dialogPhoto,
             usersArrayList,
             lastMessage,
             entity.unreadCount
@@ -276,7 +274,15 @@ class PersonalChats : MainDialogsFragment(), DateFormatter.Formatter, OnBackPres
     }
 
     companion object {
-
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment PersonalChats.
+         */
+        // TODO: Rename and change types and number of parameters
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
             PersonalChats().apply {
@@ -310,6 +316,10 @@ class PersonalChats : MainDialogsFragment(), DateFormatter.Formatter, OnBackPres
     override fun onBackButtonPressed() {
         selectedDialogs = 0
         dialogsAdapter.resetSelectionForAll()
+    }
+
+    fun openPersonalChat() {
+        Toast.makeText(requireActivity(),"From: Open chat", Toast.LENGTH_SHORT).show()
     }
 
 }

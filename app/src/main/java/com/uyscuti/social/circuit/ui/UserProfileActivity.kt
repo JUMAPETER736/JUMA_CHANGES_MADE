@@ -17,11 +17,12 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.google.android.material.tabs.TabLayout
-import com.uyscuti.social.business.model.User
+import com.uyscuti.sharedmodule.model.User
 import com.uyscuti.social.circuit.adapter.UserProfileTabsAdapter
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.ActivityUserProfileBinding
-import com.uyscuti.social.circuit.ui.media.ViewImagesActivity
+import com.uyscuti.sharedmodule.media.ViewImagesActivity
+import com.uyscuti.sharedmodule.ui.UserProfileEditActivity
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.DelicateCoroutinesApi

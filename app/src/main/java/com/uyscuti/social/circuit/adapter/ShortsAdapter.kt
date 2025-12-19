@@ -28,21 +28,26 @@ import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
+import com.uyscuti.sharedmodule.adapter.OnClickListeners
+import com.uyscuti.sharedmodule.adapter.OnCommentsClickListener
+import com.uyscuti.sharedmodule.adapter.OnVideoPreparedListener
+import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
+import com.uyscuti.sharedmodule.model.GoToUserProfileFragment
+import com.uyscuti.sharedmodule.model.PausePlayEvent
+import com.uyscuti.sharedmodule.model.ShortsBookmarkButton
+import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
+import com.uyscuti.sharedmodule.model.ShortsLikeUnLike
+import com.uyscuti.sharedmodule.model.ShortsLikeUnLikeButton
+import com.uyscuti.sharedmodule.shorts.ExoPlayerItem
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.data.model.shortsmodels.OtherUsersProfile
-import com.uyscuti.social.circuit.model.*
-import com.uyscuti.social.circuit.User_Interface.shorts.ExoPlayerItem
+
 import com.uyscuti.social.chatsuit.commons.ViewHolder
 import com.uyscuti.social.core.common.data.room.entity.*
 import com.uyscuti.social.network.utils.LocalStorage
 import org.greenrobot.eventbus.EventBus
-import java.util.Date
-import kotlin.compareTo
-import kotlin.div
-import kotlin.text.toInt
 
 // Constants
-private const val TAG = "ShortsAdapter"
+private const val TAG = "PlayerActivity"
 private const val TAG2 = "MyData"
 private const val PROGRESS_UPDATE_INTERVAL = 100L
 
@@ -78,13 +83,11 @@ data class MyData(
 
 
 class ShortsAdapter(
-
     private val commentsClickListener: OnCommentsClickListener,
     private var clickListeners: OnClickListeners,
     private var exoplayer: ExoPlayer,
     private var videoPreparedListener: OnVideoPreparedListener,
     private val onFollow: (String, String, AppCompatButton) -> Unit
-
 ) : RecyclerView.Adapter<StringViewHolder>() {
 
     // Properties
@@ -95,6 +98,7 @@ class ShortsAdapter(
     private var surfaceList: ArrayList<PlayerView> = arrayListOf()
     private var currentActivePosition: Int = 0
 
+    // PUBLIC METHODS
 
 
     @SuppressLint("NotifyDataSetChanged")
@@ -183,7 +187,7 @@ class ShortsAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StringViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(
-            R.layout.shorts_view_pager_item, parent, false
+            R.layout.shorts_view_pager_view, parent, false
         )
         val viewHolder = StringViewHolder(
             view,
@@ -197,42 +201,27 @@ class ShortsAdapter(
         return viewHolder
     }
 
-
     override fun onBindViewHolder(holder: StringViewHolder, @SuppressLint("RecyclerView") position: Int) {
         currentViewHolder = holder
         currentActivePosition = position
         val data = shortsList[position]
-
-        // Safe handling of missing follow data
-        val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }
-            ?: ShortsEntityFollowList(
-                followersId = data.author.account._id,
-                isFollowing = false
-            )
-
+        val isFollowingData = followingData.findLast { it.followersId == data.author.account._id }!!
         val myData = MyData(data, isFollowingData)
-        ensureFollowDataExists(data)
 
         Log.d(TAG2, "onBindViewHolder: MyData position $position: follow: ${myData.followItemEntity}: follow size ${followingData.size}")
         holder.onBind(myData)
 
         val surface = holder.getSurface()
-
-        // Remove the surfaceList management - it's causing issues
-        // Just let each ViewHolder manage its own surface
-    }
-
-    fun ensureFollowDataExists(shortsEntity: ShortsEntity) {
-        val authorId = shortsEntity.author.account._id
-        val exists = followingData.any { it.followersId == authorId }
-
-        if (!exists) {
-            followingData.add(
-                ShortsEntityFollowList(
-                    followersId = authorId,
-                    isFollowing = false
-                )
-            )
+        val isAdded = surfaceList.contains(surface)
+        if (!isAdded) {
+            try {
+                surfaceList.add(position, surface)
+            } catch (e: IndexOutOfBoundsException) {
+                Log.d(TAG, "IndexOutOfBoundsException: ${e.message}")
+            }
+            Log.d("Video Adapter", "Added Surface at position $position")
+        } else {
+            Log.d("Video Adapter", "Surface at position $position already added")
         }
     }
 
@@ -253,9 +242,6 @@ class ShortsAdapter(
     override fun getItemCount(): Int {
         return shortsList.size
     }
-
-
-
 }
 
 
@@ -276,7 +262,6 @@ class StringViewHolder(
 
 
     // Video components
-
     private val videoView: PlayerView = itemView.findViewById(R.id.video_view)
     private val bottomVideoSeekBar: SeekBar = itemView.findViewById(R.id.bottomShortsVideoProgressSeekBar)
     private val btnPlayPause: ImageView = itemView.findViewById(R.id.btnPlayPause)
@@ -338,113 +323,6 @@ class StringViewHolder(
         setupUploadComponents()
     }
 
-
-
-    @OptIn(UnstableApi::class)
-    @SuppressLint("SetTextI18n")
-    override fun onBind(data: MyData) {
-        val shortsEntity = data.shortsEntity
-
-        // Clear previous player state first
-        videoView.player = null
-
-        // Small delay to ensure surface is ready
-        videoView.post {
-            // Now attach player
-            videoView.player = exoplayer
-            videoView.useController = false
-            videoView.keepScreenOn = true
-
-            // Force visibility and layout
-            videoView.visibility = View.VISIBLE
-            videoView.requestLayout()
-        }
-
-        val url = shortsEntity.images[0].url
-        val shortOwnerId = shortsEntity.author.account._id
-        val shortOwnerUsername = shortsEntity.author.account.username
-        val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
-        val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
-
-        totalComments = shortsEntity.comments
-
-        setupEventBusEvents(shortsEntity)
-        setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-        setupFollowButton(data, shortOwnerId)
-        setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
-        setupContent(shortsEntity)
-
-        // Reset video progress
-        bottomVideoSeekBar.progress = 0
-        videoDuration = 0L
-    }
-
-    fun onViewRecycled() {
-        stopProgressUpdates()
-
-        // CRITICAL: Detach player from this view
-        videoView.player = null
-
-        // Reset state
-        videoDuration = 0L
-        bottomVideoSeekBar.progress = 0
-        isPlaying = false
-    }
-
-    private fun setupPlayer() {
-        player = exoplayer
-
-        // Add surface callback to ensure video renders
-        videoView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) {
-                Log.d(TAG, "VideoView attached to window")
-                if (videoView.player == null) {
-                    videoView.player = exoplayer
-                }
-            }
-
-            override fun onViewDetachedFromWindow(v: View) {
-                Log.d(TAG, "VideoView detached from window")
-            }
-        })
-
-        exoplayer.addListener(object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                when (playbackState) {
-                    Player.STATE_READY -> {
-                        videoDuration = exoplayer.duration
-                        if (videoDuration > 0) {
-                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
-                            bottomVideoSeekBar.secondaryProgress = 0
-                            Log.d(TAG, "Video duration: ${videoDuration}ms, Bottom SeekBar max: ${bottomVideoSeekBar.max}")
-                        }
-                        // Force redraw when ready
-                        videoView.invalidate()
-                    }
-                    Player.STATE_ENDED -> {
-                        stopProgressUpdates()
-                    }
-                }
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                this@StringViewHolder.isPlaying = isPlaying
-                if (isPlaying) {
-                    startProgressUpdates()
-                    // Ensure surface is visible when playing
-                    videoView.visibility = View.VISIBLE
-                } else {
-                    stopProgressUpdates()
-                }
-                Log.d(TAG, "Player isPlaying: $isPlaying")
-            }
-
-            override fun onRenderedFirstFrame() {
-                Log.d(TAG, "First frame rendered - video is displaying")
-            }
-        })
-    }
-
     private fun setupUploadComponents() {
         shortsUploadTopSeekBar = itemView.findViewById(R.id.uploadTopSeekBar)
         if (shortsUploadTopSeekBar == null) {
@@ -491,10 +369,50 @@ class StringViewHolder(
         })
     }
 
+    private fun setupPlayer() {
+        player = exoplayer
+
+        exoplayer.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                when (playbackState) {
+                    Player.STATE_READY -> {
+                        videoDuration = exoplayer.duration
+                        if (videoDuration > 0) {
+                            bottomVideoSeekBar.max = (videoDuration / 1000).toInt()
+                            bottomVideoSeekBar.secondaryProgress = 0
+                            Log.d(TAG, "Video duration: ${videoDuration}ms, Bottom SeekBar max: ${bottomVideoSeekBar.max}")
+                        }
+                    }
+                    Player.STATE_ENDED -> {
+                        stopProgressUpdates()
+                    }
+                }
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                this@StringViewHolder.isPlaying = isPlaying
+                if (isPlaying) {
+                    startProgressUpdates()
+                } else {
+                    stopProgressUpdates()
+                }
+                Log.d(TAG, "Player isPlaying: $isPlaying")
+            }
+        })
+    }
+
+
     // UPLOAD PROGRESS METHODS
+
 
     fun getUploadTopSeekBar(): SeekBar? = shortsUploadTopSeekBar
 
+    fun startUploadWithProgress() {
+        // Access adapter through a proper reference
+        // Note: This needs to be properly implemented based on your architecture
+        // shortsAdapter.showCurrentViewHolderUploadProgress()
+        // shortsAdapter.setCurrentViewHolderUploadCancelListener { cancelUpload() }
+    }
 
     fun updateUploadProgress(progress: Int) {
         // Implementation depends on your upload progress UI
@@ -522,6 +440,7 @@ class StringViewHolder(
 
 
     // PROGRESS TRACKING METHODS
+
 
     private fun updateSeekBarProgress() {
         if (!isUserSeeking && exoplayer.duration > 0) {
@@ -554,6 +473,13 @@ class StringViewHolder(
         Log.d(TAG, "Bottom SeekBar max set to: $max")
     }
 
+    // VIEWHOLDER LIFECYCLE METHODS
+
+
+    fun onViewRecycled() {
+        stopProgressUpdates()
+    }
+
     fun onViewAttached() {
         if (isPlaying) {
             startProgressUpdates()
@@ -562,8 +488,42 @@ class StringViewHolder(
 
     fun getSurface(): PlayerView = videoView
 
+
+    // DATA BINDING
+
+
+    @OptIn(UnstableApi::class)
+    @SuppressLint("SetTextI18n")
+    override fun onBind(data: MyData) {
+        val shortsEntity = data.shortsEntity
+        val url = shortsEntity.images[0].url
+        val shortOwnerId = shortsEntity.author.account._id
+        val shortOwnerUsername = shortsEntity.author.account.username
+        val shortOwnerName = "${shortsEntity.author.firstName} ${shortsEntity.author.lastName}"
+        val shortOwnerProfilePic = shortsEntity.author.account.avatar.url
+
+        totalComments = shortsEntity.comments
+
+        setupEventBusEvents(shortsEntity)
+        setupClickListeners(data, url, shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+        setupFollowButton(data, shortOwnerId)
+        setupProfileImage(shortOwnerId, shortOwnerName, shortOwnerUsername, shortOwnerProfilePic)
+        setupContent(shortsEntity)
+
+        // Reset video progress
+        bottomVideoSeekBar.progress = 0
+        videoDuration = 0L
+    }
+
     private fun setupEventBusEvents(shortsEntity: ShortsEntity) {
-        EventBus.getDefault().post(ShortsLikeUnLikeButton(shortsEntity, btnLike, isLiked, likeCount))
+        EventBus.getDefault().post(
+            ShortsLikeUnLikeButton(
+                shortsEntity,
+                btnLike,
+                isLiked,
+                likeCount
+            )
+        )
         EventBus.getDefault().post(ShortsBookmarkButton(shortsEntity, favorite))
     }
 
@@ -691,45 +651,11 @@ class StringViewHolder(
         shortOwnerId: String
     ) {
         Log.d(TAG, "onBind: Clicked on another users profile")
-        OtherUsersProfile(
-            shortOwnerName, shortOwnerUsername, shortOwnerProfilePic, shortOwnerId,
-            isVerified = false,
-            bio = "",
-            linkInBio = "",
-            isCreator = false,
-            isTrending = false,
-            isFollowing = false,
-            isPrivate = false,
-            followersCount = 0L,
-            followingCount = 0L,
-            postsCount = 0L,
-            shortsCount = 0L,
-            videosCount = 0L,
-            isOnline = false,
-            lastSeen = null,
-            joinedDate = Date(),
-            location = "",
-            website = "",
-            email = "",
-            phoneNumber = "",
-            dateOfBirth = null,
-            gender = "",
-            accountType = "user",
-            isBlocked = false,
-            isMuted = false,
-            badgeType = null,
-            level = 1,
-            reputation = 0L,
-            coverPhoto = null,
-            theme = null,
-            language = null,
-            timezone = null,
-            notificationsEnabled = true,
-            privacySettings = emptyMap(),
-            socialLinks = emptyMap(),
-            achievements = emptyList(),
-            interests = emptyList(),
-            categories = emptyList()
+        val otherUsersProfile = OtherUsersProfile(
+            shortOwnerName,
+            shortOwnerUsername,
+            shortOwnerProfilePic,
+            shortOwnerId,
         )
        // UserProfileAccount.openFromShorts(profileImageView.context, otherUsersProfile)
     }
@@ -820,5 +746,4 @@ class StringViewHolder(
             favorite.setImageResource(R.drawable.favorite_svgrepo_com__1_)
         }
     }
-
 }

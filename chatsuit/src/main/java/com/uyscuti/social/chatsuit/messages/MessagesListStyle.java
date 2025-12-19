@@ -277,6 +277,10 @@ class MessagesListStyle extends Style {
         return incomingTextSize;
     }
 
+    protected int getIncomingTextStyle() {
+        return incomingTextStyle;
+    }
+
     protected Drawable getOutcomingBubbleDrawable() {
         if (outcomingBubbleDrawable == -1) {
             return getMessageSelector(outcomingDefaultBubbleColor, outcomingDefaultBubbleSelectedColor,
@@ -319,12 +323,20 @@ class MessagesListStyle extends Style {
         return outcomingTextSize;
     }
 
+    protected int getOutcomingTextStyle() {
+        return outcomingTextStyle;
+    }
+
     protected int getOutcomingTimeTextColor() {
         return outcomingTimeTextColor;
     }
 
     protected int getOutcomingTimeTextSize() {
         return outcomingTimeTextSize;
+    }
+
+    protected int getOutcomingTimeTextStyle() {
+        return outcomingTimeTextStyle;
     }
 
     protected int getOutcomingImageTimeTextColor() {
@@ -335,12 +347,20 @@ class MessagesListStyle extends Style {
         return outcomingImageTimeTextSize;
     }
 
+    protected int getOutcomingImageTimeTextStyle() {
+        return outcomingImageTimeTextStyle;
+    }
+
     protected int getDateHeaderTextColor() {
         return dateHeaderTextColor;
     }
 
     protected int getDateHeaderTextSize() {
         return dateHeaderTextSize;
+    }
+
+    protected int getDateHeaderTextStyle() {
+        return dateHeaderTextStyle;
     }
 
     protected int getDateHeaderPadding() {
@@ -355,6 +375,10 @@ class MessagesListStyle extends Style {
         return incomingTimeTextSize;
     }
 
+    protected int getIncomingTimeTextStyle() {
+        return incomingTimeTextStyle;
+    }
+
     protected int getIncomingTimeTextColor() {
         return incomingTimeTextColor;
     }
@@ -365,6 +389,10 @@ class MessagesListStyle extends Style {
 
     protected int getIncomingImageTimeTextSize() {
         return incomingImageTimeTextSize;
+    }
+
+    protected int getIncomingImageTimeTextStyle() {
+        return incomingImageTimeTextStyle;
     }
 
     protected Drawable getIncomingBubbleDrawable() {

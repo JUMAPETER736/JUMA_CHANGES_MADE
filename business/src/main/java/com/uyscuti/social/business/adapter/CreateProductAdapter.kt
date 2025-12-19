@@ -1,5 +1,6 @@
 package com.uyscuti.social.business.adapter
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -13,7 +14,7 @@ import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
-import com.uyscuti.social.business.model.Catalogue
+import com.uyscuti.sharedmodule.model.Catalogue
 import com.uyscuti.social.business.R
 
 
@@ -133,7 +134,7 @@ class CreateProductAdapter(private var context: Activity) :
                         nameEditText!!.text.toString(),
                         descriptionEditText!!.text.toString(),
                         priceEditText!!.text.toString(),
-                        images
+                        images,
                     )
                 )
                 context.finish()
@@ -142,9 +143,10 @@ class CreateProductAdapter(private var context: Activity) :
         }
     }
 
+
     fun addImage(image: String) {
         Log.d("CreateProduct", "addImage: $image")
-        images.removeLast()
+        images.removeAt((images.size - 1))
         images.add(image)
         images.add("")
         showIndicator = true

@@ -20,8 +20,8 @@ import com.uyscuti.social.core.common.data.room.entity.UserEntity
 import com.uyscuti.social.circuit.adapter.SearchUserAdapter
 import com.uyscuti.social.circuit.adapter.SelectedUsersAdapter
 import com.uyscuti.social.circuit.databinding.ActivityCreateGroupChatBinding
-import com.uyscuti.social.circuit.presentation.DialogViewModel
-import com.uyscuti.social.circuit.presentation.RecentUserViewModel
+import com.uyscuti.sharedmodule.presentation.DialogViewModel
+import com.uyscuti.sharedmodule.presentation.RecentUserViewModel
 import com.uyscuti.social.network.api.models.User
 import com.uyscuti.social.network.api.request.search.SearchUsersRequest
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -43,8 +43,8 @@ class CreateGroupChat : AppCompatActivity() {
     private lateinit var userListView: RecyclerView
     private lateinit var selectedUserListView: RecyclerView
     private lateinit var userListAdapter: SearchUserAdapter
-    private lateinit var originalUserList: List<com.uyscuti.social.circuit.data.model.User>
-    private  var selectedUserList: ArrayList<com.uyscuti.social.circuit.data.model.User> = arrayListOf()
+    private lateinit var originalUserList: List<com.uyscuti.sharedmodule.data.model.User>
+    private  var selectedUserList: ArrayList<com.uyscuti.sharedmodule.data.model.User> = arrayListOf()
 
     private lateinit var selectedUsersAdapter: SelectedUsersAdapter
 
@@ -119,8 +119,8 @@ class CreateGroupChat : AppCompatActivity() {
     }
 
 
-    private fun RecentUser.toUser():com.uyscuti.social.circuit.data.model.User{
-        return com.uyscuti.social.circuit.data.model.User(
+    private fun RecentUser.toUser(): com.uyscuti.sharedmodule.data.model.User {
+        return com.uyscuti.sharedmodule.data.model.User(
             id, name, avatar, online, lastSeen
         )
     }
@@ -218,8 +218,8 @@ class CreateGroupChat : AppCompatActivity() {
         userListView.adapter = userListAdapter
     }
 
-    private fun User.toUser(): com.uyscuti.social.circuit.data.model.User{
-        return com.uyscuti.social.circuit.data.model.User(
+    private fun User.toUser(): com.uyscuti.sharedmodule.data.model.User {
+        return com.uyscuti.sharedmodule.data.model.User(
             _id,
             username,
             avatar.url,
@@ -228,7 +228,7 @@ class CreateGroupChat : AppCompatActivity() {
         )
     }
 
-    private fun com.uyscuti.social.circuit.data.model.User.toRecentUser(): RecentUser {
+    private fun com.uyscuti.sharedmodule.data.model.User.toRecentUser(): RecentUser {
         return RecentUser(
             id,
             name,

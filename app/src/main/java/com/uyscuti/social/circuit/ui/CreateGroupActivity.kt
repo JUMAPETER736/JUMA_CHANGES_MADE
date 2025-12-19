@@ -1,7 +1,6 @@
 package com.uyscuti.social.circuit.ui
 
 import android.animation.ObjectAnimator
-import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import androidx.appcompat.app.AppCompatActivity
@@ -18,14 +17,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 import com.uyscuti.social.circuit.adapter.AddParticipantsAdapter
-import com.uyscuti.social.circuit.adapter.UserListAdapter
+import com.uyscuti.sharedmodule.adapter.UserListAdapter
 
-import com.uyscuti.social.circuit.presentation.DialogViewModel
-import com.uyscuti.social.circuit.presentation.GroupDialogViewModel
-import com.uyscuti.social.circuit.presentation.UsersViewModel
+import com.uyscuti.sharedmodule.presentation.DialogViewModel
+import com.uyscuti.sharedmodule.presentation.GroupDialogViewModel
+import com.uyscuti.sharedmodule.presentation.UsersViewModel
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.data.model.Dialog
-import com.uyscuti.social.circuit.data.model.User
+import com.uyscuti.sharedmodule.data.model.Dialog
+import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.social.circuit.databinding.ActivityCreateGroupBinding
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.core.common.data.room.entity.GroupDialogEntity
@@ -42,6 +42,7 @@ import retrofit2.HttpException
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.TimeZone
 import javax.inject.Inject
 
 
@@ -86,7 +87,7 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
         supportActionBar?.title = "New Group Chat"
 
         val connectivityManager =
-            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
 
         val networkInfo = connectivityManager.activeNetworkInfo
         val isConnected = networkInfo != null && networkInfo.isConnected
@@ -368,7 +369,7 @@ class CreateGroupActivity : AppCompatActivity(), SearchView.OnQueryTextListener 
 
     private fun convertIso8601ToUnixTimestamp(iso8601Date: String): Long {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-        sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+        sdf.timeZone = TimeZone.getTimeZone("UTC")
 
 
         val date = sdf.parse(iso8601Date)

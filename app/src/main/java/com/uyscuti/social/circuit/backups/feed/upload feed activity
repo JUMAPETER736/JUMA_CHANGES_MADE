@@ -76,7 +76,7 @@ import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleFeedDocAda
 import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleFeedFilesPagerAdapter
 import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleSelectedFeedVideoAdapter
 import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleVideosListener
-import com.uyscuti.social.circuit.adapter.feed.multiple_files.UriTypeAdapter
+import com.uyscuti.sharedmodule.adapter.UriTypeAdapter
 import com.uyscut.flashdesign.databinding.ActivityUploadFeeedBinding
 import com.uyscuti.social.circuit.feed_demo.VideoPagerAdapter
 import com.uyscuti.social.circuit.model.ProgressEvent

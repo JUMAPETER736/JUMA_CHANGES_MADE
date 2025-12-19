@@ -10,9 +10,15 @@ import com.uyscuti.social.circuit.tabs.Calls
 import com.uyscuti.social.circuit.tabs.GroupChats
 import com.uyscuti.social.circuit.tabs.PersonalChats
 
+@UnstableApi
 class ChatPagerAdapter(fragmentManager: FragmentManager) : FragmentPagerAdapter(fragmentManager) {
 
     private var unreadCounts = mutableListOf(0, 0, 0, 0) // Initialize the unread counts for each tab
+
+    // Store fragment instances to ensure single instance
+    private var personalChatsFragment: PersonalChats? = null
+    private var groupChatsFragment: GroupChats? = null
+    private var callsFragment: Calls? = null
 
 
 
@@ -28,16 +34,30 @@ class ChatPagerAdapter(fragmentManager: FragmentManager) : FragmentPagerAdapter(
 
     override fun getItem(position: Int): Fragment {
         return when (position) {
-            0 -> PersonalChats.newInstance("personal","")
-            1 -> GroupChats.newInstance("","")
-            2 -> Calls.newInstance("","")
-            3 -> BusinessProfileEditFragment.newInstance("","")
+            0 -> {
+                if (personalChatsFragment == null) {
+                    personalChatsFragment = PersonalChats.newInstance("personal", "")
+                }
+                personalChatsFragment!!
+            }
+            1 -> {
+                if (groupChatsFragment == null) {
+                    groupChatsFragment = GroupChats.newInstance("", "")
+                }
+                groupChatsFragment!!
+            }
+            2 -> {
+                if (callsFragment == null) {
+                    callsFragment = Calls.newInstance("", "")
+                }
+                callsFragment!!
+            }
             else -> throw IllegalArgumentException("Invalid tab position: $position")
         }
     }
 
     override fun getCount(): Int {
-        return 4 // Number of tabs
+        return 3 // Number of tabs
     }
 
     override fun getPageTitle(position: Int): CharSequence {
@@ -45,11 +65,11 @@ class ChatPagerAdapter(fragmentManager: FragmentManager) : FragmentPagerAdapter(
             0 -> "Chats"
             1 -> "Groups"
             2 -> "Calls"
-            3 -> "Business"
             else -> ""
         }
 
 
+        // Append the unread count to the title if it's greater than 0
         val unreadCount = unreadCounts.getOrNull(position) ?: 0
         return if (unreadCount > 0) {
             "$title ($unreadCount)"
@@ -58,6 +78,9 @@ class ChatPagerAdapter(fragmentManager: FragmentManager) : FragmentPagerAdapter(
         }
     }
 
-
+    // Methods to get specific fragment instances
+    fun getPersonalChatsFragment(): PersonalChats? = personalChatsFragment
+    fun getGroupChatsFragment(): GroupChats? = groupChatsFragment
+    fun getCallsFragment(): Calls? = callsFragment
 
 }

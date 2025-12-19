@@ -4,8 +4,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.uyscuti.social.circuit.User_Interface.fragments.feed.FavoriteFragment
-import com.uyscuti.social.circuit.User_Interface.fragments.feed.MyFeedFragment
+import com.uyscuti.social.circuit.ui.fragments.feed.FavoriteFragment
+import com.uyscuti.social.circuit.ui.fragments.feed.MyFeedFragment
 
 class UserProfileMyFeedFragmentAdapter(
     fragmentManager: FragmentManager,

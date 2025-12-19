@@ -16,7 +16,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        jcenter()
+        //jcenter()
         maven(uri("https://jitpack.io"))
         maven(uri("https://oss.sonatype.org/content/repositories/snapshots"))
         maven(uri("https://jcenter.bintray.com"))
@@ -34,3 +34,4 @@ include(":compressor")
 include(":chatsuit")
 include(":call")
 include(":business")
+include(":sharedModule")

@@ -8,8 +8,8 @@ import com.uyscuti.social.network.api.response.business.response.profile.Locatio
 data class ProfileResponse(
     val __v: Int,
     val _id: String,
-    val backgroundPhoto: BackgroundPhoto,
-    val backgroundVideo: BackgroundVideo,
+    val backgroundPhoto: BackgroundPhoto?,
+    val backgroundVideo: BackgroundVideo?,
     val businessCatalogue: List<Any>,
     val businessDescription: String,
     val businessName: String,

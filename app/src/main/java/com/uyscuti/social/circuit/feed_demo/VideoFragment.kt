@@ -13,10 +13,10 @@ import androidx.activity.OnBackPressedCallback
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
-import com.uyscuti.social.circuit.utils.formatDuration
+import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.sharedmodule.model.feed.multiple_files.MixedFeedUploadDataClass
+import com.uyscuti.sharedmodule.utils.formatDuration
 import com.uyscuti.social.circuit.databinding.FragmentVideoBinding
-import com.uyscuti.social.circuit.model.feed.multiple_files.MixedFeedUploadDataClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -236,19 +236,4 @@ class VideoFragment : Fragment(), FeedTextViewFragmentInterface {
         TODO("Not yet implemented")
     }
 
-    override fun onFullScreenClicked(data: MixedFeedUploadDataClass) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onMediaClick(data: MixedFeedUploadDataClass) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onMediaPrepared(mp: MediaPlayer) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onMediaError() {
-        TODO("Not yet implemented")
-    }
 }

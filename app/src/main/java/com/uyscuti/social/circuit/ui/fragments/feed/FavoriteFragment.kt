@@ -3,95 +3,177 @@ package com.uyscuti.social.circuit.ui.fragments.feed
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity.RESULT_OK
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Context.INPUT_METHOD_SERVICE
+import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.drawable.AnimationDrawable
 import android.media.MediaPlayer
+import android.media.MediaRecorder
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
+import android.provider.OpenableColumns
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.webkit.MimeTypeMap
-import android.widget.FrameLayout
 import android.widget.ImageButton
-import android.widget.ProgressBar
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.SeekBar
+import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSourceFactory
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.HttpDataSource
+import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.cache.SimpleCache
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.MediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
-
-import com.uyscuti.social.circuit.adapter.feed.FeedAdapter
-import com.uyscuti.social.circuit.adapter.feed.OnFeedClickListener
+import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.uyscuti.social.circuit.adapter.feed.ShareFeedPostAdapter
-import com.uyscuti.social.circuit.eventbus.FeedFavoriteClick
-import com.uyscuti.social.circuit.eventbus.FeedFavoriteFollowUpdate
-import com.uyscuti.social.circuit.eventbus.FeedLikeClick
-import com.uyscuti.social.circuit.eventbus.FromFavoriteFragmentFeedFavoriteClick
-import com.uyscuti.social.circuit.eventbus.FromFavoriteFragmentFeedLikeClick
-import com.uyscuti.social.circuit.eventbus.HideFeedFloatingActionButton
-import com.uyscuti.social.circuit.eventbus.ShowFeedFloatingActionButton
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
-import com.uyscuti.social.circuit.model.ContentType
-import com.uyscuti.social.circuit.model.FeedAdapterNotifyDatasetChanged
-import com.uyscuti.social.circuit.model.FeedCommentClicked
-import com.uyscuti.social.circuit.model.HideAppBar
-import com.uyscuti.social.circuit.model.HideBottomNav
-import com.uyscuti.social.circuit.model.ShowAppBar
-import com.uyscuti.social.circuit.model.ShowBottomNav
 import com.uyscuti.social.circuit.ui.feedactivities.FeedVideoViewFragment
-import com.uyscuti.social.circuit.ui.feedactivities.ReportNotificationActivity2
-import com.uyscut.flashdesign.ui.fragments.feed.feedRepostViewFragments.FeedRepostAudioViewFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostDocFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostImageFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostTextFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostVideoViewFragment
 import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedAudioViewFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedviewfragments.FeedMixedFilesViewFragment
 import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedMultipleImageViewFragment
 import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedTextViewFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedviewfragments.NewRepostedPostFragment
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
-import com.uyscuti.social.circuit.utils.removeDuplicateFollowers
-import com.uyscuti.social.circuit.viewmodels.FeedShortsViewModel
-import com.uyscuti.social.circuit.viewmodels.FollowUnfollowViewModel
-import com.uyscuti.social.circuit.viewmodels.GetShortsByUsernameViewModel
-import com.uyscuti.social.circuit.viewmodels.feed.FeedUploadViewModel
-import com.uyscuti.social.circuit.viewmodels.feed.GetFeedViewModel
+import com.uyscuti.sharedmodule.FlashApplication
+import com.uyscuti.sharedmodule.ReportNotificationActivity2
+import com.uyscuti.sharedmodule.adapter.CommentsRecyclerViewAdapter
+import com.uyscuti.sharedmodule.adapter.OnViewRepliesClickListener
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
+import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
+import com.uyscuti.sharedmodule.adapter.notifications.AdPaginatedAdapter
+import com.uyscuti.sharedmodule.data.model.Comment
+import com.uyscuti.sharedmodule.eventbus.FeedFavoriteClick
+import com.uyscuti.sharedmodule.eventbus.FeedFavoriteFollowUpdate
+import com.uyscuti.sharedmodule.eventbus.FeedLikeClick
+import com.uyscuti.sharedmodule.eventbus.FromFavoriteFragmentFeedFavoriteClick
+import com.uyscuti.sharedmodule.eventbus.FromFavoriteFragmentFeedLikeClick
+import com.uyscuti.sharedmodule.eventbus.HideFeedFloatingActionButton
+import com.uyscuti.sharedmodule.eventbus.ShowFeedFloatingActionButton
+import com.uyscuti.sharedmodule.media.CameraActivity
+import com.uyscuti.sharedmodule.model.AudioPlayerHandler
+import com.uyscuti.sharedmodule.model.CommentAudioPlayerHandler
+import com.uyscuti.sharedmodule.model.ContentType
+import com.uyscuti.sharedmodule.model.FeedAdapterNotifyDatasetChanged
+import com.uyscuti.sharedmodule.model.FeedCommentClicked
+import com.uyscuti.sharedmodule.model.HideAppBar
+import com.uyscuti.sharedmodule.model.HideBottomNav
+import com.uyscuti.sharedmodule.model.PauseShort
+import com.uyscuti.sharedmodule.model.ShowAppBar
+import com.uyscuti.sharedmodule.model.ShowBottomNav
+import com.uyscuti.sharedmodule.popupDialog.DialogManager
+import com.uyscuti.sharedmodule.presentation.DialogViewModel
+import com.uyscuti.sharedmodule.ui.GifActivity
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FeedMixedFilesViewFragment
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.NewRepostedPostFragment
+import com.uyscuti.sharedmodule.uploads.AudioActivity
+import com.uyscuti.sharedmodule.uploads.VideosActivity
+import com.uyscuti.sharedmodule.utils.AndroidUtil.showToast
+import com.uyscuti.sharedmodule.utils.AudioDurationHelper
+import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
+import com.uyscuti.sharedmodule.utils.NetworkUtil
+import com.uyscuti.sharedmodule.utils.PathUtil
+import com.uyscuti.sharedmodule.utils.Timer
+import com.uyscuti.sharedmodule.utils.TrimVideoUtils
+import com.uyscuti.sharedmodule.utils.WaveFormExtractor
+import com.uyscuti.sharedmodule.utils.audiomixer.AudioMixer
+import com.uyscuti.sharedmodule.utils.audiomixer.input.GeneralAudioInput
+import com.uyscuti.sharedmodule.utils.deleteFiles
+import com.uyscuti.sharedmodule.utils.fileType
+import com.uyscuti.sharedmodule.utils.formatFileSize
+import com.uyscuti.sharedmodule.utils.generateRandomId
+import com.uyscuti.sharedmodule.utils.getFileNameFromLocalPath
+import com.uyscuti.sharedmodule.utils.getOutputFilePath
+import com.uyscuti.sharedmodule.utils.isFileSizeGreaterThan2MB
+import com.uyscuti.sharedmodule.utils.removeDuplicateFollowers
+import com.uyscuti.sharedmodule.utils.waveformseekbar.SeekBarOnProgressChanged
+import com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
+import com.uyscuti.sharedmodule.viewmodels.FeedShortsViewModel
+import com.uyscuti.sharedmodule.viewmodels.FollowUnfollowViewModel
+import com.uyscuti.sharedmodule.viewmodels.GetShortsByUsernameViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.FeedUploadViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
+import com.uyscuti.social.business.CatalogueDetailsActivity
+import com.uyscuti.social.business.adapter.business.BusinessCatalogueAdapter
+import com.uyscuti.social.business.adapter.business.OnBusinessClickedListener
+import com.uyscuti.social.business.repository.IFlashApiRepositoryImplementation
+import com.uyscuti.social.business.viewmodel.business.BusinessCatalogueViewModel
+import com.uyscuti.social.business.viewmodel.business.BusinessCatalogueViewModelFactory
+import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
+import com.uyscuti.social.chatsuit.messages.CommentsInput
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.feed.FeedPaginatedAdapter
-import com.uyscuti.social.circuit.model.feed.multiple_files.MixedFeedUploadDataClass
+import com.uyscuti.social.circuit.databinding.FragmentFavoriteBinding
+import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostAudioViewFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragmentsimport.FeedRepostMultipleImageFragment
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
+import com.uyscuti.social.network.api.response.business.response.post.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+import com.uyscuti.social.network.utils.LocalStorage
+import com.vanniktech.emoji.EmojiPopup
 import dagger.hilt.android.AndroidEntryPoint
+import id.zelory.compressor.Compressor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.apache.poi.hwpf.HWPFDocument
+import org.apache.poi.hwpf.usermodel.Range
+import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
@@ -99,6 +181,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.properties.Delegates
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -114,16 +197,30 @@ private const val ARG_PARAM2 = "param2"
 private const val TAG = "FavoriteFragment"
 private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
 
+@UnstableApi
 @AndroidEntryPoint
- class FavoriteFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterface {
+class FavoriteFragment : Fragment(),
+    OnFeedClickListener,
+    com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface,
+    OnBusinessClickedListener,
+    CommentsInput.InputListener,
+    CommentsInput.EmojiListener,
+    CommentsInput.VoiceListener,
+    CommentsInput.GifListener,
+    CommentsInput.AttachmentsListener,
+    OnViewRepliesClickListener,
+    Timer.OnTimeTickListener
+
+{
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
-    private lateinit var myFeedAdapter: FeedAdapter
-    private lateinit var frameLayout: FrameLayout
+
+    private lateinit var binding: FragmentFavoriteBinding
+
+
     private val requestCode = 2024
     private val WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 12
-    private var wifiAnimation: AnimationDrawable? = null
     private val shortsViewModel: GetShortsByUsernameViewModel by activityViewModels()
     private val getFeedViewModel: GetFeedViewModel by activityViewModels()
     private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
@@ -133,9 +230,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
     private var feedAudioViewFragment: FeedAudioViewFragment? = null
     private var feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
     private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
-    private lateinit var allFeedAdapterRecyclerView: RecyclerView
     private lateinit var favoriteFeedAdapter: FeedAdapter
-    private lateinit var progressBar: ProgressBar
     private val feesShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
     private var fragmentOriginalPostWithRepostInside: Fragment_Original_Post_With_Repost_Inside? = null
     private var feedRepostDocFragment : FeedRepostDocFragment? = null
@@ -145,10 +240,169 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
     private var feedRepostImageFragment : FeedRepostImageFragment? = null
     private var feedRepostMultipleImageFragment: FeedRepostMultipleImageFragment? = null
 
-    private lateinit var feedListView: RecyclerView
+
+    private lateinit var businessAdapter: BusinessCatalogueAdapter
+
+    private val businessPostsViewModel: BusinessPostsViewModel by activityViewModels()
+
+    private lateinit var catalogueViewModel: BusinessCatalogueViewModel
+
+    private val dialogViewModel: DialogViewModel by activityViewModels()
+
+    private lateinit var dialogManager: DialogManager
+
+    private var catalogueList: ArrayList<Post> = ArrayList()
+
+
+    private lateinit var gifsPickerLauncher: ActivityResultLauncher<Intent>
+    private lateinit var audioPickerLauncher: ActivityResultLauncher<Intent>
+    private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
+    private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
+
+    private var commentAdapter: CommentsRecyclerViewAdapter? = null
+    private lateinit var commentRecyclerView: RecyclerView
+
+    private lateinit var inputMethodManager: InputMethodManager
+    private lateinit var emojiPopup: EmojiPopup
+
+    private var emojiShowing = false
+
+    private var isReply = false
+    private var businessPostId = ""
+    private var postPosition = 0
+    private var commentId = ""
+
+    private var commentToAddReplies: Comment? = null
+    private var commentPosition = 0
+
+
+    private var exoPlayer: ExoPlayer? = null
+
+    private val recordedAudioFiles = mutableListOf<String>()
+
+    private var mediaRecorder: MediaRecorder? = null
+
+
+    private var player: MediaPlayer? = null
+    private val waveHandler = Handler()
+
+    private lateinit var outputFile: String
+
+    private var outputVnFile: String = ""
+
+    private lateinit var amplitudes: ArrayList<Float>
+
+    private var amps = 0
+
+    var wasPaused = false
+    var sending = false
+    var firstTimeSendVn = false
+
+    private var isRecording = false
+    private var isPaused = false
+    private var isAudioVNPlaying = false
+    private var isAudioVNPaused = false
+
+    private var mixingCompleted = false
+
+    private var isVnResuming = false
+
+
+    var vnRecordAudioPlaying = false
+    var vnRecordProgress = 0
+    var isOnRecordDurationOnPause = false
+
+    private var currentHandler: Handler? = null
+    var seekBarProgress = 0f
+    var waveProgress = 0f
+    private var wavePosition = -1
+    private var seekPosition = -1
+    private var position: Int = 0
+    var maxDuration = 0L
+
+    private val simpleCache: SimpleCache = FlashApplication.cache
+
+
+    private lateinit var audioDurationTVCount: TextView
+    private lateinit var audioFormWave: WaveformSeekBar
+
+    private lateinit var audioSeekBar: SeekBar
+
+    private lateinit var httpDataSourceFactory: HttpDataSource.Factory
+    private lateinit var defaultDataSourceFactory: DefaultDataSourceFactory
+    private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
+
+
+    private var isReplyVnPlaying = false
+    private var isVnAudioToPlay = false
+    var isDurationOnPause = false
+    private var currentCommentAudioPosition = RecyclerView.NO_POSITION
+    private var currentCommentAudioPath = ""
+
+
+    private lateinit var timer: Timer
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+
+    }
+
+
+
+
+
+    private lateinit var repository: IFlashApiRepositoryImplementation
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
+
+    @Inject
+    lateinit var localStorage: LocalStorage
+
+    private fun setUpViewModel() {
+
+        repository = IFlashApiRepositoryImplementation(retrofitInstance)
+
+        val factory = BusinessCatalogueViewModelFactory(repository)
+
+        catalogueViewModel = ViewModelProvider(this,factory)[BusinessCatalogueViewModel::class.java]
+
+    }
+
+    private fun observeViewModel() {
+        // Observe catalogue items and update adapter
+        catalogueViewModel.catalogueItems.observe(viewLifecycleOwner) { items ->
+            val list = ArrayList<Post>()
+            items.forEach {
+                if (it.isBookmarked) {
+                    list.add(it)
+                }
+            }
+            businessAdapter.updateCatalogue(list)
+        }
+
+
+        businessPostsViewModel.commentLiveData.observe(viewLifecycleOwner) { commentState ->
+            if (binding.motionLayout.isVisible) {
+                if (commentState.isReply) {
+                    processReplyComments(commentState.comment)
+                } else {
+                    commentAdapter!!.submitItem(commentState.comment,0)
+                    businessAdapter.updateCommentCount(postPosition)
+
+                    if(commentAdapter!!.itemCount == 1) {
+                        updateUI(false)
+                    }
+                }
+            }
+        }
+
+
+
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
@@ -157,32 +411,67 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
         }
         EventBus.getDefault().register(this)
     }
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("CutPasteId")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        val view = inflater.inflate(R.layout.fragment_favorite, container, false)
-        allFeedAdapterRecyclerView = view.findViewById(R.id.rv)
-        feedListView = view.findViewById(R.id.rv)
+        binding = FragmentFavoriteBinding.inflate(layoutInflater)
 
-        frameLayout = view.findViewById(R.id.feed_text_view)
-//        allFeedAdapterRecyclerView.adapter = favoriteFeedAdapter  // or allFeedAdapter depending on your needs
+
+        setUpViewModel()
+
+        val config = ConcatAdapter.Config.Builder()
+            .setIsolateViewTypes(true) // Prevents view type conflicts
+            .setStableIdMode(ConcatAdapter.Config.StableIdMode.NO_STABLE_IDS)
+            .build()
+
+
         favoriteFeedAdapter = FeedAdapter(
             requireActivity(),
+            retrofitInstance,
             this
         )
+
+        businessAdapter = BusinessCatalogueAdapter(
+            requireActivity(),
+            retrofitInstance,
+            localStorage,
+            catalogueList,
+            onItemClick = { item ->
+                // Handle item click - navigate to detail screen
+               navigateToItemDetail(item)
+            },
+            this,
+            onBookmarkClick = {item ->
+               bookmarkBusinessPost(item)
+            },
+            onFollowClick = { item ->
+               followBusinessPostOwner(item)
+            },
+            onMessageClick = { user, post ->
+                dialogManager = DialogManager(
+                    requireActivity(),
+                    dialogViewModel,
+                    post.owner
+                )
+                dialogManager.openChat(user)
+            }
+        )
+
         var isScrollingDown = false
         val scrollThreshold = 5 // M
         Log.d("RecyclerViewTwo", "Adapter set: $favoriteFeedAdapter")
-        feedListView.adapter = favoriteFeedAdapter
 
-        feedListView.layoutManager = LinearLayoutManager(requireContext())
-        allFeedAdapterRecyclerView.itemAnimator = null
-        allFeedAdapterRecyclerView.layoutManager = LinearLayoutManager(requireContext())
-        favoriteFeedAdapter.setOnPaginationListener(object :
-            FeedPaginatedAdapter.OnPaginationListener {
+
+
+        binding.rv.layoutManager = LinearLayoutManager(requireContext())
+        val concatAdapter = ConcatAdapter(config, favoriteFeedAdapter, businessAdapter)
+        binding.rv.adapter = concatAdapter
+
+        favoriteFeedAdapter.setOnPaginationListener(object : com. uyscuti. sharedmodule. adapter. FeedPaginatedAdapter. OnPaginationListener {
             override fun onCurrentPage(page: Int) {
 //                Toast.makeText(requireContext(), "Page $page loaded!", Toast.LENGTH_SHORT).show()
                 Log.d(TAG, "currentPage: page number $page")
@@ -202,7 +491,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
         })
 
 
-        feedListView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+        binding.rv.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             private var totalDy = 0 // Track accumulated scroll distance
 
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
@@ -232,72 +521,202 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 }
             }
         })
-        favoriteFeedAdapter.recyclerView = allFeedAdapterRecyclerView
 
 
-        lifecycleScope.launch(Dispatchers.Main)
-        {
-            Log.d(
-                TAG,
-                "onCreateView: getAllFavoriteFeedData size: ${getFeedViewModel.getAllFavoriteFeedData().size}"
-            )
-            if (getFeedViewModel.getAllFavoriteFeedData().isEmpty()) {
-                Log.d(TAG, "onCreateView: get all feed data is empty")
-                getAllFeed(favoriteFeedAdapter.startPage)
+        val callback = object : OnBackPressedCallback(true) {
+
+            override fun handleOnBackPressed() {
+                if (binding.motionLayout.isVisible) {
+                    toggleBusinessCommentBottomSheet()
+                } else {
+                    isEnabled = false
+                    requireActivity().onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        }
+
+
+        inputMethodManager = requireActivity().getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
+
+        timer = Timer(this)
+        audioDurationTVCount = TextView(requireActivity())
+        audioFormWave = WaveformSeekBar(requireActivity())
+        audioSeekBar = SeekBar(requireActivity())
+
+
+        getAllFeed(favoriteFeedAdapter.startPage)
+        setupInputManager()
+
+        registerGifPickerLauncher()
+        registerVideoPickerLauncher()
+        registerAudioPickerLauncher()
+        registerCameraLauncher()
+        handleEventsLister()
+
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        catalogueViewModel.refreshCatalogue()
+
+        observeViewModel()
+
+        getFeedViewModel.isFavoritesFeedDataAvailable.observe(viewLifecycleOwner) { isDataAvailable ->
+            // Handle the updated value of isResuming here
+            if (isDataAvailable) {
+                // Do something when isResuming is true
+                Log.d(
+                    TAG,
+                    "onCreateView: data is available and size is ${getFeedViewModel.getAllFavoriteFeedData().size}"
+                )
+//                    allFeedAdapter.item
+                favoriteFeedAdapter.submitItems(getFeedViewModel.getAllFavoriteFeedData())
+                getFeedViewModel.setIsDataAvailable(false)
+
             } else {
-                Log.d(TAG, "onCreateView: get all feed data is not empty")
+                // Do something when isResuming is false
+                Log.d(TAG, "onCreateView: data not added")
+
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun handleEventsLister() {
+        binding.click.setOnClickListener {
+            hideKeyboard(binding.input.inputEditText)
+            toggleBusinessCommentBottomSheet()
+        }
+
+        binding.deleteVN.setOnClickListener {
+
+            if (mediaRecorder != null) {
+                Log.d(TAG, "onCreate: media recorder not null")
+            } else {
+                Log.d(TAG, "onCreate: media recorder null")
+            }
+            lifecycleScope.launch(Dispatchers.Main) {
+                delay(500)
+                deleteRecording()
+                binding.sendVN.isClickable = true
+            }
+            if (player?.isPlaying == true) {
+                stopPlayingVn()
             }
 
-            Log.d(
-                TAG,
-                "onCreateView: isFavoritesFeedDataAvailable ${getFeedViewModel.isFavoritesFeedDataAvailable}"
-            )
+            binding.VnLayout.visibility = View.GONE
+        }
 
-            getFeedViewModel.isFavoritesFeedDataAvailable.observe(viewLifecycleOwner) { isDataAvailable ->
-                // Handle the updated value of isResuming here
-                if (isDataAvailable) {
-                    // Do something when isResuming is true
-                    Log.d(
-                        TAG,
-                        "onCreateView: data is available and size is ${getFeedViewModel.getAllFavoriteFeedData().size}"
-                    )
-//                    allFeedAdapter.item
-                    favoriteFeedAdapter.submitItems(getFeedViewModel.getAllFavoriteFeedData())
-                    getFeedViewModel.setIsDataAvailable(false)
+        binding.sendVN.setOnClickListener {
+            sending = true
+            CoroutineScope(Dispatchers.Main).launch {
+                if (!wasPaused) {
+                    timer.stop()
+                    mediaRecorder?.apply {
+                        stop()
+                        release()
+                    }
+                    mediaRecorder = null
+                    Log.d("SendVN", "When sending vn was paused was false")
+                    mixVN() // Execute mixVN asynchronously
+                }
 
-                } else {
-                    // Do something when isResuming is false
-                    Log.d(TAG, "onCreateView: data not added")
+                lifecycleScope.launch(Dispatchers.Main) {
+                    delay(500)
+                    stopRecordingAndSendVn()
+                }
+
+            }
+        }
+
+        binding.recordVN.setOnClickListener {
+            when {
+                isPaused -> resumeRecordingVn()
+                isRecording -> pauseRecordingVn()
+                else -> {
+                    if( ContextCompat.checkSelfPermission(
+                            requireActivity(),
+                            Manifest.permission.RECORD_AUDIO
+                        ) == PackageManager.PERMISSION_GRANTED) {
+                        startRecordingVn()
+                    } else {
+                        requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
 
                 }
             }
         }
 
-        return view
     }
 
+    @androidx.annotation.OptIn(UnstableApi::class)
+    private fun navigateToItemDetail(item: Post) {
+        // Navigate to item detail screen
+        val intent = Intent(requireActivity(), CatalogueDetailsActivity::class.java)
+        intent.putExtra("catalogue", item)
+        requireActivity().startActivity(intent)
+    }
+
+    private fun followBusinessPostOwner(post: Post) {
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            if (NetworkUtil.isConnected(requireActivity())) {
+                catalogueViewModel.refreshCatalogue()
+                val success =   businessPostsViewModel.followUnfollowBusinessPostOwner(post.owner)
+                if (success) {
+                    withContext(Dispatchers.Main) {
+                        showToast(requireActivity(), "You have started following ${post.userDetails.username}")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun bookmarkBusinessPost(data: Post) {
+        if (NetworkUtil.isConnected(requireActivity())) {
+            businessPostsViewModel.bookmarkUnBookmarkBusinessPost(data._id)
+        }
+    }
+
+
+
     private fun getAllFeed(page: Int) {
-        Log.d(
-            TAG,
-            "getAllFeed: page number $page feed data empty?: ${
-                getFeedViewModel.getAllFavoriteFeedData().isEmpty()
-            }"
-        )
         CoroutineScope(Dispatchers.IO).launch {
             try {
+
+                Log.d(
+                    TAG,
+                    "getAllFeed: page number $page feed data empty?: ${
+                        getFeedViewModel.getAllFavoriteFeedData().isEmpty()
+                    }"
+                )
+
                 val response = retrofitInstance.apiService.getFavoriteFeed(
                     page.toString()
                 )
-                val responseBody = response.body()
-                Log.d(TAG, "feed: response $response")
-                Log.d(TAG, "feed: response body message ${responseBody!!.message}")
-                Log.d(TAG, "getAllFeed: size ${responseBody.data.totalBookmarkedPosts}")
-                val data = responseBody.data
-                Log.d(TAG, "getAllFeed: ${data.bookmarkedPosts.toMutableList()}")
-                getFeedViewModel.addAllFavoriteFeedData(data.bookmarkedPosts.toMutableList())
-                withContext(Dispatchers.Main) {
+
+                Log.d(TAG,"Response: $response")
+
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    Log.d(TAG, "feed: response $response")
+                    Log.d(TAG, "feed: response body message ${responseBody!!.message}")
+                    Log.d(TAG, "getAllFeed: size ${responseBody.data.totalBookmarkedPosts}")
+                    val data = responseBody.data
+                    Log.d(TAG, "getAllFeed: ${data.bookmarkedPosts.toMutableList()}")
+                    getFeedViewModel.addAllFavoriteFeedData(data.bookmarkedPosts.toMutableList())
+                    withContext(Dispatchers.Main) {
+                        favoriteFeedAdapter.submitItems(data.bookmarkedPosts.toMutableList())
+                    }
+                    Log.d(TAG, "text comment data response: $data")
+                } else {
+                    Log.d(TAG, "text comment data response: $response")
                 }
-                Log.d(TAG, "text comment data response: $data")
+
             } catch (e: Exception) {
                 Log.e(TAG, "comment: $e")
                 Log.e(TAG, "comment: ${e.message}")
@@ -323,11 +742,11 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                     putString(ARG_PARAM2, param2)
                 }
             }
-        }
+    }
 
 
 
-    override fun likeUnLikeFeed(position: Int, data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
+    override fun likeUnLikeFeed(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         try {
             val updatedComment = if (data.isLiked) {
                 data.copy(
@@ -383,11 +802,16 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
         }
     }
 
-    override fun feedCommentClicked(position: Int, data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
-        EventBus.getDefault().post(FeedCommentClicked(position, data))
+    override fun feedCommentClicked(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
+        EventBus.getDefault().post(
+            FeedCommentClicked(
+                position,
+                data
+            )
+        )
     }
 
-    override fun feedFavoriteClick(position: Int, data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
+    override fun feedFavoriteClick(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         EventBus.getDefault().post(FromFavoriteFragmentFeedFavoriteClick(position, data))
         val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
         if (!isMyFeedEmpty) {
@@ -662,7 +1086,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
     }
 
     @SuppressLint("InflateParams", "MissingInflatedId")
-    override fun moreOptionsClick(position: Int, data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
+    override fun moreOptionsClick(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         Log.d(TAG, "moreOptionsClick: More options clicked")
         val view: View = layoutInflater.inflate(R.layout.feed_more_options_layout, null)
         val dialog = BottomSheetDialog(requireContext())
@@ -689,7 +1113,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
         followUnfollowLayout.visibility = View.GONE
         QuoteFeedLayout.setOnClickListener {
             Log.d("QuoteButton", "Data: $data")
-            val fragment = NewRepostedPostFragment(data )
+            val fragment = NewRepostedPostFragment(data)
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
             transaction.replace(R.id.frame_layout, fragment) // Ensure fragment_container is correct
             transaction.addToBackStack(null)
@@ -746,7 +1170,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
         }
     }
 
-    private fun handleNotInterested(data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
+    private fun handleNotInterested(data: com.uyscuti.social.network.api.response.posts.Post) {
 
         val sharedPrefs = requireContext().getSharedPreferences("NotInterestedPosts", Context.MODE_PRIVATE)
         with(sharedPrefs.edit()) {
@@ -758,7 +1182,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
         Toast.makeText(requireContext(), "We'll show you less content like this", Toast.LENGTH_SHORT).show()
     }
     @SuppressLint("NotifyDataSetChanged")
-    private fun hideSinglePost(position: Int, data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
+    private fun hideSinglePost(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         Log.d(TAG, "hideSinglePost: Hiding post at position: $position, PostId: ${data._id}")
         try {
             if (::favoriteFeedAdapter.isInitialized) {
@@ -768,7 +1192,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 favoriteFeedAdapter.notifyItemRemoved(position)
 //                allFeedAdapter.notifyItemChanged(position)
                 // Optional: Add fade-out animation
-                val viewHolder = feedListView.findViewHolderForAdapterPosition(position)
+                val viewHolder = binding.rv.findViewHolderForAdapterPosition(position)
                 if (viewHolder != null) {
                     viewHolder.itemView.animate()
                         .alpha(0f)
@@ -783,7 +1207,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 }
 
                 // Show Snackbar with Undo button
-                Snackbar.make(feedListView, "Post hidden", Snackbar.LENGTH_LONG)
+                Snackbar.make(binding.rv, "Post hidden", Snackbar.LENGTH_LONG)
                     .setAction("Undo") {
                         // Restore the post
 
@@ -920,7 +1344,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
             Log.d(TAG, "handleDeleteAction isSuccessful: ${response.isSuccessful}")
             if(response.isSuccessful) {
                 getFeedViewModel.removeMyFeed(position)
-                myFeedAdapter.removeItem(position)
+                favoriteFeedAdapter.removeItem(position)
 
 
                 shortsViewModel.postCount -= 1
@@ -1010,20 +1434,20 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
     }
 
 
-    override fun feedFileClicked(position: Int, data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
+    override fun feedFileClicked(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         val contentType = data.contentType
         if (contentType.isNullOrEmpty()) {
             Log.e("FavoriteFragment", "Invalid or null contentType for data: $data at position: $position")
             Toast.makeText(requireContext(), "Unsupported content type", Toast.LENGTH_SHORT).show()
             return
         }
-            when (data.contentType){
+        when (data.contentType){
             "text" -> {
                 EventBus.getDefault().post(HideBottomNav())
                 EventBus.getDefault().post(HideAppBar())
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
-                frameLayout.visibility = View.VISIBLE
-                allFeedAdapterRecyclerView.visibility = View.GONE
+                binding.feedTextView.visibility = View.VISIBLE
+                //allFeedAdapterRecyclerView.visibility = View.GONE
                 val args = Bundle().apply {
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
@@ -1045,8 +1469,8 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 EventBus.getDefault().post(HideBottomNav())
                 EventBus.getDefault().post(HideAppBar())
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
-                frameLayout.visibility = View.VISIBLE
-                allFeedAdapterRecyclerView.visibility = View.GONE
+                binding.feedTextView.visibility = View.VISIBLE
+                binding.rv.visibility = View.GONE
                 val args = Bundle().apply {
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
@@ -1068,8 +1492,8 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 EventBus.getDefault().post(HideBottomNav())
                 EventBus.getDefault().post(HideAppBar())
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
-                frameLayout.visibility = View.VISIBLE
-                allFeedAdapterRecyclerView.visibility = View.GONE
+                binding.feedTextView.visibility = View.VISIBLE
+                binding.rv.visibility = View.GONE
 
 
                 feedMixedFilesViewFragment = FeedMixedFilesViewFragment()
@@ -1094,8 +1518,8 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 EventBus.getDefault().post(HideBottomNav())
                 EventBus.getDefault().post(HideAppBar())
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
-                frameLayout.visibility = View.VISIBLE
-                allFeedAdapterRecyclerView.visibility = View.GONE
+                binding.feedTextView.visibility = View.VISIBLE
+                binding.rv.visibility = View.GONE
                 val args = Bundle().apply {
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
@@ -1116,8 +1540,8 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 EventBus.getDefault().post(HideBottomNav())
                 EventBus.getDefault().post(HideAppBar())
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
-                frameLayout.visibility = View.VISIBLE
-                allFeedAdapterRecyclerView.visibility = View.GONE
+                binding.feedTextView.visibility = View.VISIBLE
+                binding.rv.visibility = View.GONE
                 val args = Bundle().apply {
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
@@ -1140,7 +1564,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
 
 
 
-    override fun feedRepostFileClicked(position: Int,data: com.uyscuti.social.network.api.response.allFeedRepostsPost.OriginalPost
+    override fun feedRepostFileClicked(position: Int,data: com.uyscuti.social.network.api.response.posts.OriginalPost
     ) {
         when (data.contentType){
             "mixed_files" -> {
@@ -1148,8 +1572,8 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 EventBus.getDefault().post(HideBottomNav())
                 EventBus.getDefault().post(HideAppBar())
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
-                frameLayout.visibility = View.VISIBLE
-                feedListView.visibility = View.GONE
+                binding.feedTextView.visibility = View.VISIBLE
+                binding.rv.visibility = View.GONE
                 feedMixedFilesViewFragment?.setListener(this)
                 val args = Bundle().apply {
                     putInt("position", position)
@@ -1169,8 +1593,8 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 EventBus.getDefault().post(HideBottomNav())
                 EventBus.getDefault().post(HideAppBar())
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
-                frameLayout.visibility = View.VISIBLE
-                feedListView.visibility = View.GONE
+                binding.feedTextView.visibility = View.VISIBLE
+                binding.rv.visibility = View.GONE
                 val args = Bundle().apply {
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
@@ -1192,8 +1616,8 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 EventBus.getDefault().post(HideBottomNav())
                 EventBus.getDefault().post(HideAppBar())
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
-                frameLayout.visibility = View.VISIBLE
-                feedListView.visibility = View.GONE
+                binding.feedTextView.visibility = View.VISIBLE
+                binding.rv.visibility = View.GONE
                 val args = Bundle().apply {
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
@@ -1215,8 +1639,8 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 EventBus.getDefault().post(HideBottomNav())
                 EventBus.getDefault().post(HideAppBar())
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
-                frameLayout.visibility = View.VISIBLE
-                feedListView.visibility = View.GONE
+                binding.feedTextView.visibility = View.VISIBLE
+                binding.rv.visibility = View.GONE
                 val args = Bundle().apply {
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
@@ -1237,8 +1661,8 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 EventBus.getDefault().post(HideBottomNav())
                 EventBus.getDefault().post(HideAppBar())
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
-                frameLayout.visibility = View.VISIBLE
-                feedListView.visibility = View.GONE
+                binding.feedTextView.visibility = View.VISIBLE
+                binding.rv.visibility = View.GONE
                 val args = Bundle().apply {
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
@@ -1260,8 +1684,8 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 EventBus.getDefault().post(HideBottomNav())
                 EventBus.getDefault().post(HideAppBar())
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
-                frameLayout.visibility = View.VISIBLE
-                feedListView.visibility = View.GONE
+                binding.feedTextView.visibility = View.VISIBLE
+                binding.rv.visibility = View.GONE
                 val args = Bundle().apply {
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
@@ -1284,8 +1708,8 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
                 EventBus.getDefault().post(HideBottomNav())
                 EventBus.getDefault().post(HideAppBar())
                 EventBus.getDefault().post(HideFeedFloatingActionButton())
-                frameLayout.visibility = View.VISIBLE
-                feedListView.visibility = View.GONE
+                binding.feedTextView.visibility = View.VISIBLE
+                binding.rv.visibility = View.GONE
                 val args = Bundle().apply {
                     putInt("position", position)
                     putSerializable("data", data) // Adjust type if needed
@@ -1313,7 +1737,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
         }
         // Verify that the Intent will resolve to an activity
         if (sendIntent.resolveActivity(requireContext().packageManager) != null) {
-        // Start the activity to share the text
+            // Start the activity to share the text
             startActivity(Intent.createChooser(sendIntent, "Share via"))
         }
 
@@ -1330,7 +1754,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
 
     @SuppressLint("MissingInflatedId", "ServiceCast", "InflateParams")// Suppresses lint warning for missing inflated ID check
     override fun feedShareClicked
-                (position: Int, data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post)
+                (position: Int, data: com.uyscuti.social.network.api.response.posts.Post)
     {
         val context = requireContext()
 
@@ -1371,16 +1795,16 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
 
         feesShortsSharedViewModel.setData(
             FollowUnFollowEntity(
-            followUnFollowEntity.userId,
-            followUnFollowEntity.isFollowing
-        )
+                followUnFollowEntity.userId,
+                followUnFollowEntity.isFollowing
+            )
         )
 
         followClicked(followUnFollowEntity)
 
     }
 
-    override fun feedRepostPost(position: Int,data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
+    override fun feedRepostPost(position: Int,data: com.uyscuti.social.network.api.response.posts.Post) {
         val view: View = layoutInflater.inflate(R.layout.feed_moreoptions_bottomsheet_layout, null)
         val reportUser : MaterialCardView = view.findViewById(R.id.reportOptionLayout)
         val quoteButton: MaterialCardView = view.findViewById(R.id.rePostFeedLayout)
@@ -1418,7 +1842,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
 
     override fun feedRepostPostClicked(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         TODO("Not yet implemented")
     }
@@ -1455,16 +1879,21 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
 
     override fun backPressedFromFeedTextViewFragment() {
         Log.d(TAG, "backPressedFromFeedTextViewFragment: listening back pressed ")
-        allFeedAdapterRecyclerView.visibility = View.VISIBLE
-        frameLayout.visibility = View.GONE
+        binding.rv.visibility = View.VISIBLE
+        binding.feedTextView.visibility = View.GONE
         EventBus.getDefault().post(ShowBottomNav(false))
         EventBus.getDefault().post(ShowAppBar(false))
         EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
     }
-    override fun onCommentClickFromFeedTextViewFragment(position: Int, data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
-        EventBus.getDefault().post(FeedCommentClicked(position, data))
+    override fun onCommentClickFromFeedTextViewFragment(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
+        EventBus.getDefault().post(
+            FeedCommentClicked(
+                position,
+                data
+            )
+        )
     }
-    override fun onLikeUnLikeFeedFromFeedTextViewFragment(position: Int, data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
+    override fun onLikeUnLikeFeedFromFeedTextViewFragment(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         try {
 
             val updatedComment = if (data.likes>1) {
@@ -1530,7 +1959,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
         }
     }
 
-    override fun onFeedFavoriteClickFromFeedTextViewFragment(position: Int, data:com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
+    override fun onFeedFavoriteClickFromFeedTextViewFragment(position: Int, data:com.uyscuti.social.network.api.response.posts.Post) {
         EventBus.getDefault().post(FeedFavoriteClick(position, data))
 
         val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
@@ -1567,7 +1996,7 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
         }
     }
 
-    override fun onMoreOptionsClickFromFeedTextViewFragment(position: Int, data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
+    override fun onMoreOptionsClickFromFeedTextViewFragment(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         val view: View = layoutInflater.inflate(R.layout.feed_moreoptions_bottomsheet_layout, null)
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(view)
@@ -1589,24 +2018,8 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
 
     override fun onRePostClickFromFeedTextViewFragment(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onFullScreenClicked(data: MixedFeedUploadDataClass) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onMediaClick(data: MixedFeedUploadDataClass) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onMediaPrepared(mp: MediaPlayer) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onMediaError() {
         TODO("Not yet implemented")
     }
 
@@ -1621,6 +2034,2055 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
         }
     }
 
+    private val getDocumentContent =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                result.data?.data?.let { uri ->
+                    // Handle the selected document URI
+                    handleDocumentUri(uri)
+                }
+            }
+        }
+
+
+    private fun getFileNameWithExtension(uri: Uri): String {
+        var fileName = "document_${System.currentTimeMillis()}"
+
+        // Try to get the original filename
+        requireActivity().contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (cursor.moveToFirst()) {
+                fileName = cursor.getString(nameIndex) ?: fileName
+            }
+        }
+
+        // If filename doesn't have an extension, get it from MIME type
+        if (!fileName.contains(".")) {
+            val mimeType = requireActivity().contentResolver.getType(uri)
+            val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
+            if (extension != null) {
+                fileName = "${fileName}.${extension}"
+            }
+        }
+
+        return fileName
+    }
+
+    private fun getFileFromUri(uri: Uri): File? {
+        return try {
+            val inputStream = requireActivity().contentResolver.openInputStream(uri)
+            val fileName = getFileNameWithExtension(uri)
+            val tempFile = File(requireActivity().cacheDir, fileName)
+
+            inputStream?.use { input ->
+                tempFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            // Debug: Check if file exists and has content
+            Log.d("FileDebug", "File path: ${tempFile.absolutePath}")
+            Log.d("FileDebug", "File exists: ${tempFile.exists()}")
+            Log.d("FileDebug", "File size: ${tempFile.length()} bytes")
+
+            if (tempFile.exists() && tempFile.length() > 0) {
+                tempFile
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun handleDocumentUri(uri: Uri) {
+        val file = getFileFromUri(uri)
+
+        requireActivity().contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+            cursor.moveToFirst()
+            val fileName = cursor.getString(nameIndex)
+            val fileSize = cursor.getLong(sizeIndex)
+//            val numberOfPages = getNumberOfPagesFromUri(this, uri)
+            var numberOfPages = 0
+            val formattedFileSize = formatFileSize(fileSize)
+
+            val fileSizes = isFileSizeGreaterThan2MB(fileSize)
+            val documentType = fileType(fileName)
+            Log.d("handleDocumentUri", ": $fileName")
+            Log.d("handleDocumentUri", "uri $uri")
+            Log.d("handleDocumentUri", "formattedFileSize $formattedFileSize")
+            Log.d("handleDocumentUri", "Document type $documentType")
+
+            numberOfPages = when (documentType) {
+                "doc" -> {
+                    getNumberOfPagesFromUriForDoc(uri)
+                }
+
+                "docx", "xlsx", "pptx" -> {
+                    getNumberOfPagesFromUriForDocx(uri)
+                }
+
+                else -> {
+                    getNumberOfPagesFromUriForPDF(requireActivity(), uri)
+                }
+            }
+
+
+            Log.d("handleDocumentUri", "File path: ${file?.absolutePath}")
+
+            if (fileSizes) {
+                if (!isReply) {
+                    Log.d("handleDocumentUri", "handleDocumentUri for main document")
+
+                    uploadDocumentComment(
+                        file?.absolutePath!!,
+                        numberOfPages,
+                        formattedFileSize,
+                        documentType,
+                        fileName,
+                        isReply
+                    )
+                } else {
+                    Log.d("handleDocumentUri", "This is for document reply")
+                    uploadDocumentComment(
+                        file?.absolutePath!!,
+                        numberOfPages,
+                        formattedFileSize,
+                        documentType,
+                        fileName,
+                        isReply
+                    )
+                }
+
+            } else {
+
+                if (!isReply) {
+                    Log.d("handleDocumentUri", "handleDocumentUri for main document")
+                    uploadDocumentComment(
+                        file?.absolutePath!!,
+                        numberOfPages,
+                        formattedFileSize,
+                        documentType,
+                        fileName,
+                        isReply
+                    )
+                } else {
+                    Log.d("handleDocumentUri", "This is for document reply")
+                    uploadDocumentComment(
+                        file?.absolutePath!!,
+                        numberOfPages,
+                        formattedFileSize,
+                        documentType,
+                        fileName,
+                        isReply
+                    )
+                }
+            }
+
+        }
+    }
+
+    private fun getNumberOfPagesFromUriForDoc(uri: Uri): Int {
+        var numberOfPages = 0
+        val inputStream: InputStream = requireActivity().contentResolver.openInputStream(uri) ?: return 0
+        val hwpfDocument = HWPFDocument(inputStream)
+        val range = hwpfDocument.range
+
+        // Count the paragraphs within the range
+        val paragraphs = Range(range.startOffset, range.endOffset, hwpfDocument).numParagraphs()
+        numberOfPages = paragraphs
+
+        hwpfDocument.close()
+        inputStream.close()
+
+        return numberOfPages
+
+    }
+
+    private fun getNumberOfPagesFromUriForPDF(context: Context, uri: Uri): Int {
+        var inputStream: InputStream? = null
+        var numberOfPages = 0
+        try {
+            inputStream = requireActivity().contentResolver.openInputStream(uri)
+            if (inputStream != null) {
+                val document = PDDocument.load(inputStream)
+                numberOfPages = document.numberOfPages
+                document.close()
+            }
+        } catch (e: Exception) {
+            // Handle exceptions
+            Log.e("getNumberOfPagesFromUri", "getNumberOfPagesFromUri ex $e")
+            e.printStackTrace()
+        } finally {
+            inputStream?.close()
+        }
+        return numberOfPages
+    }
+
+
+    private fun getNumberOfPagesFromUriForDocx(uri: Uri): Int {
+        var numberOfPages = 0
+        val inputStream: InputStream = requireActivity().contentResolver.openInputStream(uri) ?: return 0
+        val xwpfDocument = XWPFDocument(inputStream)
+
+        // Count the paragraphs or sections in the document
+        numberOfPages = xwpfDocument.paragraphs.size
+
+        xwpfDocument.close()
+        inputStream.close()
+
+        return numberOfPages
+
+    }
+
+
+    private fun registerCameraLauncher() {
+        cameraLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val data = result.data
+
+                // Get media type (photo or video)
+                val mediaType = data?.getStringExtra(CameraActivity.EXTRA_MEDIA_TYPE)
+                val mediaUri = data?.getStringExtra(CameraActivity.EXTRA_MEDIA_URI)
+                val mediaPath = data?.getStringExtra(CameraActivity.EXTRA_MEDIA_PATH)
+
+                when (mediaType) {
+                    CameraActivity.MEDIA_TYPE_PHOTO -> {
+                        Log.d("From Camera activity", "Image url: $mediaUri \n Image path: $mediaPath")
+                        //handlePhotoResult(mediaUri, mediaPath)
+                    }
+                    CameraActivity.MEDIA_TYPE_VIDEO -> {
+                        Log.d("From Camera activity", "Video url: $mediaUri \n Video path: $mediaPath")
+                        //  handleVideoResult(mediaUri, mediaPath)
+                    }
+                }
+            } else {
+                Toast.makeText(requireActivity(), "Camera cancelled", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun registerVideoPickerLauncher() {
+        // Register the launcher in onCreate
+        videoPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+
+                if (result.resultCode == RESULT_OK) {
+                    val data = result.data
+
+                    val videoPath = data?.getStringExtra("video_url")
+                    val uriString = data?.getStringExtra("vUri")
+                    val vUri = Uri.parse(uriString)
+
+                    val uri = Uri.parse(videoPath)
+
+                    if(videoPath != null) {
+                        Log.d("VideoPicker", "File path: $videoPath")
+                        val durationString = getFormattedDuration(videoPath)
+                        val file = File(videoPath)
+                        Log.d("VideoPicker", "File path durationString: $durationString")
+
+                        if(file.exists()) {
+                            val fileSizeInBytes = file.length()
+                            val fileSizeInKB = fileSizeInBytes / 1024
+                            val fileSizeInMB = fileSizeInKB / 1024
+
+                            val fileSizeInGB = fileSizeInMB / 1024 // Conversion from MB to GB
+
+                            Log.d("VideoPicker", "File size: $fileSizeInMB MB")
+
+                            if (fileSizeInGB.toInt() == 1) {
+                                showToast(requireActivity(), "File size too large")
+                            } else if(fileSizeInMB > 10) {
+                                Log.d("VideoPicker", "File size: greater than $fileSizeInMB MB")
+                                if(isReply) {
+                                    uploadVideoComment(videoPath, isReply)
+                                } else {
+                                    uploadVideoComment(videoPath)
+                                }
+                            } else {
+                                Log.d("VideoPicker", "File size: less than $fileSizeInMB MB")
+                                if(isReply) {
+                                    uploadVideoComment(videoPath, isReply)
+                                } else {
+                                    uploadVideoComment(videoPath)
+                                }
+                            }
+                        }
+                    }
+
+
+                }
+            }
+
+    }
+
+    private fun registerAudioPickerLauncher() {
+        audioPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+
+            val data = result.data
+            val audioPath = data?.getStringExtra("audio_url")
+            val uriString = data?.getStringExtra("aUri")
+
+            if (audioPath != null) {
+                Log.d("AudioPicker", "File path: $audioPath")
+                val durationString = getFormattedDuration(audioPath)
+                val fileName = getFileNameFromLocalPath(audioPath)
+
+                Log.d("AudioPicker", "File name: $fileName")
+                Log.d("AudioPicker", "durationString: $durationString")
+//                        Log.d("AudioPicker", "reverseDurationString: $reverseDurationString")
+                val file = File(audioPath)
+
+                var fileSizeInBytes by Delegates.notNull<Long>()
+                var fileSizeInKB by Delegates.notNull<Long>()
+                var fileSizeInMB by Delegates.notNull<Long>()
+
+
+                fileSizeInBytes = file.length()
+                fileSizeInKB = fileSizeInBytes / 1024
+                fileSizeInMB = fileSizeInKB / 1024
+
+                if (isReply) {
+                    uploadAudioComment(
+                        file.absolutePath,
+                        isReply1 = isReply,
+                        fileType = file.extension
+                    )
+                } else {
+                    Log.d("AudioPicker", "Calling upload audio comment")
+                    uploadAudioComment(
+                        file.absolutePath,
+                        isReply1 = isReply,
+                        fileType = file.extension
+                    )
+                }
+
+            }
+        }
+
+    }
+
+    private fun  registerGifPickerLauncher() {
+        gifsPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val data = result.data
+            val gifUri = data?.getStringExtra("gifUri")
+            Log.d(TAG, "Gif Uri $gifUri")
+
+            if(gifUri!!.isNotEmpty()) {
+
+                val localUpdateId = generateRandomId()
+
+                if (isReply) {
+                    businessPostsViewModel.addCommentReply(
+                        commentId,
+                        contentType = "gif",
+                        localUpdateId = localUpdateId,
+                        gif = gifUri,
+                        isReply = isReply
+                    )
+                    isReply = false
+                } else {
+                    businessPostsViewModel.addComment(
+                        businessPostId,
+                        contentType = "gif",
+                        localUpdateId = localUpdateId,
+                        gif = gifUri
+                    )
+                }
+
+            }
+
+        }
+    }
+
+    private fun openDocPickerLauncher() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/*"
+        }
+
+        getDocumentContent.launch(intent)
+
+    }
+
+    private val pickMultipleMedia =
+        registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(2)) { uris ->
+            // Callback is invoked after the user selects media items or closes the
+            // photo picker.
+            if (uris.isNotEmpty()) {
+                for (uri in uris) {
+                    val filePath = PathUtil.getPath(
+                        requireActivity(),
+                        uri
+                    ) // Use the utility class to get the real file path
+                    Log.d("PhotoPicker", "File path: $filePath")
+                    Log.d("PhotoPicker", "File path: $isReply")
+                    Log.d(
+                        "PhotoPicker", "Selected image path from camera: $uri"
+                    )
+
+                    val file = filePath?.let { File(it) }
+                    if (file?.exists() == true) {
+                        lifecycleScope.launch {
+                            val compressedImageFile = Compressor.compress(this@FavoriteFragment.requireActivity(), file)
+                            Log.d(
+                                "PhotoPicker",
+                                "PhotoPicker: compressedImageFile absolutePath: ${compressedImageFile.absolutePath}"
+                            )
+
+                            val fileSizeInBytes = compressedImageFile.length()
+                            val fileSizeInKB = fileSizeInBytes / 1024
+                            val fileSizeInMB = fileSizeInKB / 1024
+
+                            Log.d(
+                                "PhotoPicker",
+                                "PhotoPicker: compressedImageFile size $fileSizeInKB KB, $fileSizeInMB MB"
+                            )
+
+                            if (!isReply) {
+                                uploadImageComment(
+                                    compressedImageFile.absolutePath,
+                                    isReply
+                                )
+                            } else {
+                                uploadImageComment(
+                                    compressedImageFile.absolutePath,
+                                    isReply
+                                )
+                            }
+                        }
+                    }
+
+                }
+
+            } else {
+                Log.d("PhotoPicker", "No media selected")
+            }
+        }
+
+    private fun openImagePicker() {
+        pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
+
+
+    private fun uploadVideoComment(
+        videoFilePathToUpload: String,
+        isReply1: Boolean = false
+    ) {
+        Log.d("uploadVideoComment", "uploadVideoComment: $videoFilePathToUpload")
+
+        val file = File(videoFilePathToUpload)
+
+        val localUpdateId = generateRandomId()
+
+        if (file.exists()) {
+            if (isReply) {
+                businessPostsViewModel.addCommentReply(
+                    commentId,
+                    contentType = "video",
+                    localUpdateId = localUpdateId,
+                    file = file,
+                    isReply = isReply1
+                )
+                isReply = false
+            } else {
+                businessPostsViewModel.addComment(
+                    businessPostId,
+                    contentType = "video",
+                    localUpdateId = localUpdateId,
+                    file = file
+                )
+            }
+        }
+
+    }
+
+    private fun uploadImageComment(
+        imageFilePathToUpload: String,
+        isReply1: Boolean
+    ) {
+
+        Log.d("uploadImageComment", "uploadImageComment: $imageFilePathToUpload")
+        Log.d("uploadImageComment", "uploadImageComment: isReply is $isReply")
+
+        val file = File(imageFilePathToUpload)
+
+        val localUpdateId = generateRandomId()
+
+        if (file.exists()) {
+            if (isReply) {
+                businessPostsViewModel.addCommentReply(
+                    commentId,
+                    contentType = "image",
+                    localUpdateId = localUpdateId,
+                    file = file,
+                    isReply = isReply1
+                )
+                isReply = false
+            } else {
+                businessPostsViewModel.addComment(
+                    businessPostId,
+                    contentType = "image",
+                    localUpdateId = localUpdateId,
+                    file = file
+                )
+            }
+        }
+
+    }
+
+    private fun uploadDocumentComment(
+        documentFilePathToUpload: String,
+        numberOfPages: Int,
+        fileSize: String,
+        fileType: String,
+        fileName: String,
+        isReply1: Boolean
+    ) {
+
+        val file = File(documentFilePathToUpload)
+
+        val localUpdateId = generateRandomId()
+        Log.d("UploadingDocument", "File exist: ${file.exists()}")
+        if(file.exists()) {
+            Log.d("UploadingDocument", "Upload document called")
+
+            if (isReply) {
+                businessPostsViewModel.addCommentReply(
+                    commentId,
+                    file = file,
+                    contentType = "docs",
+                    localUpdateId = localUpdateId,
+                    numberOfPages = numberOfPages,
+                    fileType = fileType,
+                    fileName = fileName,
+                    fileSize = fileSize,
+                    isReply = isReply1
+                )
+
+                isReply = false
+            } else {
+                businessPostsViewModel.addComment(
+                    businessPostId,
+                    file = file,
+                    contentType = "docs",
+                    localUpdateId = localUpdateId,
+                    numberOfPages = numberOfPages,
+                    fileType = fileType,
+                    fileName = fileName,
+                    fileSize = fileSize
+                )
+            }
+
+        }
+
+    }
+
+
+    private fun uploadAudioComment(
+        audio: String,
+        contentType: String = "audio",
+        isReply1: Boolean,
+        fileType: String
+    ) {
+        val localUpdateId = generateRandomId()
+        val file = File(audio)
+
+        if (file.exists()) {
+            if (isReply) {
+                businessPostsViewModel.addCommentReply(
+                    commentId,
+                    file = file,
+                    contentType = contentType,
+                    localUpdateId = localUpdateId,
+                    isReply = isReply1,
+                    fileType = fileType
+                )
+
+                isReply = false
+            } else {
+                businessPostsViewModel.addComment(
+                    businessPostId,
+                    file = file,
+                    contentType = contentType,
+                    localUpdateId = localUpdateId,
+                    fileType = fileType
+                )
+            }
+
+        }
+    }
+
+
+
+    private fun updateRecordWaveProgress(progress: Float) {
+
+        CoroutineScope(Dispatchers.Main).launch {
+            binding.wave.progress = progress
+//            currentComment?.progress = progress
+            Log.d("updateWaveProgress", "updateWaveProgress: $progress")
+        }
+    }
+
+    private val onRecordWaveRunnable = object : kotlinx.coroutines.Runnable {
+        override fun run() {
+            try {
+                if (!isOnRecordDurationOnPause) {
+                    val currentPosition = player?.currentPosition?.toFloat()!!
+                    updateRecordWaveProgress(currentPosition)
+                }
+                waveHandler.postDelayed(this, 20)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.d("Exception", "run: ${e.message}")
+            }
+
+        }
+    }
+
+    private val waveRunnable = object : kotlinx.coroutines.Runnable {
+        override fun run() {
+//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
+            if (!isDurationOnPause) {
+                val currentPosition = exoPlayer?.currentPosition?.toFloat()!!
+
+                Log.d("ExoPlayerPosition", "Current Position: $currentPosition")
+
+                waveProgress = currentPosition
+                if (isReplyVnPlaying) {
+                    commentAdapter!!.updateReplyWaveProgress(currentPosition, audioFormWave)
+                } else {
+                    commentAdapter!!.updateWaveProgress(currentPosition, wavePosition)
+                }
+                audioDurationTVCount.text = String.format(
+                    "%s",
+                    TrimVideoUtils.stringForTime(currentPosition)
+                )
+            }
+            waveHandler.postDelayed(this, 20)
+        }
+    }
+
+    private fun startWaveRunnable() {
+        try {
+            waveHandler.removeCallbacks(waveRunnable)
+            waveHandler.post(waveRunnable)
+            isDurationOnPause = false
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun startRecordWaveRunnable() {
+        try {
+            waveHandler.removeCallbacks(onRecordWaveRunnable)
+            waveHandler.post(onRecordWaveRunnable)
+            isOnRecordDurationOnPause = false
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun stopRecordWaveRunnable() {
+        try {
+            waveHandler.removeCallbacks(onRecordWaveRunnable)
+            isOnRecordDurationOnPause = true
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun stopPlayingVn() {
+        binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.play_svgrepo_com)
+        player?.release()
+        player = null
+        isAudioVNPlaying = false
+        vnRecordAudioPlaying = false
+        isOnRecordDurationOnPause = false
+        stopRecordWaveRunnable()
+        binding.wave.progress = 0F
+        vnRecordProgress = 0
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun resumeRecordingVn() {
+        if (isPaused) {
+            isVnResuming = true
+            startRecordingVn() // Start a new recording session, appending to the previous file
+            binding.waveForm.visibility = View.VISIBLE
+            binding.timerTv.visibility = View.VISIBLE
+            binding.playAudioLayout.visibility = View.GONE
+            binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.play_svgrepo_com)
+            binding.recordVN.setImageResource(com.uyscuti.social.business.R.drawable.baseline_pause_black)
+        }
+
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun pauseRecordingVn() {
+        val TAG = "pauseRecording"
+//        firstTimeSendVn = true
+        if (isRecording && !isPaused) {
+
+            try {
+                mediaRecorder?.apply {
+                    stop()
+                    release()
+                }
+                mediaRecorder = null
+            } catch (e: Exception) {
+                Log.d(TAG, " failed to stop media recorder: $e")
+                e.printStackTrace()
+            }
+
+            isPaused = true
+            timer.pause() // Pause the recording timer
+            binding.timerTv.visibility = View.INVISIBLE
+            binding.waveForm.visibility = View.GONE
+            binding.playAudioLayout.visibility = View.VISIBLE
+            binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.play_svgrepo_com)
+            binding.recordVN.setImageResource(com.uyscuti.social.business.R.drawable.mic_2)
+
+
+            Log.d(TAG, "pauseRecording: list of recordings  size: ${recordedAudioFiles.size}")
+            Log.d(TAG, "pauseRecording: list of recordings $recordedAudioFiles")
+
+            mixVN()
+        }
+    }
+
+    private fun startPlayingVn(vnAudio: String) {
+        binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.baseline_pause_white_24)
+        EventBus.getDefault().post(PauseShort(true))
+//        player?.reset()
+        isAudioVNPlaying = true
+        vnRecordAudioPlaying = true
+
+        isOnRecordDurationOnPause = false
+        startRecordWaveRunnable()
+        if (isAudioVNPaused) {
+//            progressAnim.resume()
+            Log.d("startPlaying", "(isAudioVNPaused)->vnRecordProgress $vnRecordProgress")
+
+            if (vnRecordProgress != 0) {
+                player?.seekTo(vnRecordProgress)
+            }
+            player?.start()
+        } else {
+
+            player = MediaPlayer().apply {
+                try {
+                    setDataSource(vnAudio)
+//                inputStream.close()
+                    prepare()
+                    Log.d("startPlaying", "vnRecordProgress $vnRecordProgress")
+                    if (vnRecordProgress != 0) {
+                        player?.seekTo(vnRecordProgress)
+                    }
+                    start()
+                    setOnCompletionListener {
+                        // Playback completed, restart playback
+                        isAudioVNPaused = false
+                        stopPlayingVn()
+                    }
+                } catch (e: IOException) {
+                    Log.e("MediaRecorder", "prepare() failed")
+                }
+            }
+
+        }
+    }
+
+    private fun pauseVn(progress: Int) {
+        Log.d("pauseVn", "vnRecordProgress $vnRecordProgress..... progress $progress")
+
+        player?.pause()
+        player?.seekTo(progress)
+        isAudioVNPlaying = false
+        isAudioVNPaused = true
+        isOnRecordDurationOnPause = true
+
+//        progressAnim.pause()
+        binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.play_svgrepo_com)
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun inflateWave(outputVN: String) {
+
+//        outputVnFile = outputVN
+
+        val TAG = "inflateWave"
+        Log.d("playVnAudioBtn", "inflateWave: outputvn $outputVN")
+
+        val audioFile = File(outputVN)
+        binding.wave.visibility = View.VISIBLE
+        binding.playerTimerTv.visibility = View.VISIBLE
+        Log.d(TAG, "render: does not start with http")
+        //                audioDuration = 100L
+        val file = File(outputVN)
+        Log.d(TAG, "render: file $outputVN exists: ${file.exists()}")
+        val locaAudioDuration = AudioDurationHelper.getLocalAudioDuration(outputVN)
+        if (locaAudioDuration != null) {
+            // Duration is available, do something with it
+            //                    println("Audio duration: ${duration}ms")
+            val minutes = (locaAudioDuration / 1000) / 60
+            val seconds = (locaAudioDuration / 1000) % 60
+            //                println("Audio duration: $minutes minutes $seconds seconds")
+            binding.thirdTimerTv.text = String.format("%02d:%02d", minutes, seconds)
+        } else {
+            // File does not exist or error retrieving duration
+//            println("Unable to retrieve audio duration.")
+            Log.e(TAG, "render: failed to retrieve audio duration")
+
+        }
+
+
+        //                Log.d(TAG, "render: file $audioUrl can execute: ${file.canExecute()}")
+
+//        binding.wave.setSampleFrom(audioFile)
+        CoroutineScope(Dispatchers.IO).launch {
+            WaveFormExtractor.getSampleFrom(requireActivity().applicationContext, outputVN) {
+
+                CoroutineScope(Dispatchers.Main).launch {
+//                    binding.wave.progress = 0F
+//                    binding.wave.progress = currentItem.progress
+
+                    if (locaAudioDuration != null) {
+                        binding.wave.maxProgress = locaAudioDuration.toFloat()
+                    }
+                    binding.wave.setSampleFrom(it)
+
+                    binding.wave.onProgressChanged = object : SeekBarOnProgressChanged {
+                        override fun onProgressChanged(
+                            waveformSeekBar: WaveformSeekBar,
+                            progress: Float,
+                            fromUser: Boolean
+                        ) {
+//                                    wave.progress = progress
+                            binding.secondTimerTv.text = String.format(
+                                "%s",
+                                TrimVideoUtils.stringForTime(progress)
+                            )
+
+//                            currentItem.progress = progress
+
+                            if (fromUser) {
+                                if (vnRecordAudioPlaying) {
+                                    pauseVn(progress = progress.toInt())
+                                } else {
+                                    vnRecordProgress = progress.toInt()
+                                    Log.d("FromUser", "Scroll to this $progress")
+                                }
+
+                            }
+                        }
+
+                        override fun onRelease(event: MotionEvent?, progress: Float) {
+                            if (outputVN.isNotEmpty()) {
+//                                inflateWave(outputVN)
+                                if (vnRecordAudioPlaying) {
+                                    Log.d(
+                                        "onRelease",
+                                        "vnRecordAudioPlaying $isAudioVNPlaying progress $progress"
+                                    )
+                                    vnRecordProgress = progress.toInt()
+                                    startPlayingVn(outputVN)
+                                } else {
+                                    Log.d("onRelease", "Start playing from this progress $progress")
+                                    vnRecordProgress = progress.toInt()
+                                }
+
+                            } else {
+                                Log.d("onRelease", "output vn is empty")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    private fun mixVN() {
+        val TAG = "mixVN"
+        try {
+            wasPaused = true
+            Log.d(TAG, "pauseRecording: outputFile: $outputVnFile")
+
+            val audioMixer = AudioMixer(outputVnFile)
+
+            for (input in recordedAudioFiles) {
+                val ai = GeneralAudioInput(input)
+                audioMixer.addDataSource(ai)
+            }
+            audioMixer.mixingType = AudioMixer.MixingType.SEQUENTIAL
+
+            audioMixer.setProcessingListener(object : AudioMixer.ProcessingListener {
+                override fun onProgress(progress: Double) {
+                    // Not used in this example, but you can handle progress updates if needed
+                }
+
+                override fun onEnd() {
+                    requireActivity().runOnUiThread {
+                        audioMixer.release()
+                        mixingCompleted = true // Set the flag to indicate mixing is completed
+                        // Additional code as needed
+                        val file = File(outputVnFile)
+                        Log.d(TAG, "onEnd: output vn file exists ${file.exists()}")
+                        Log.d(TAG, "onEnd: media muxed success")
+
+                        inflateWave(outputVnFile)
+
+                        binding.playVnAudioBtn.setOnClickListener {
+                            Log.d("playVnAudioBtn", "onEnd: play vn button clicked")
+                            when {
+                                !isAudioVNPlaying -> {
+                                    binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.baseline_pause_black)
+                                    Log.d(
+                                        "playVnAudioBtn",
+                                        "play vn"
+                                    )
+                                    startPlayingVn(outputVnFile)
+                                }
+
+                                else -> {
+                                    Log.d(
+                                        "playVnAudioBtn",
+                                        "pause VN"
+                                    )
+                                    binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.play_svgrepo_com)
+                                    vnRecordAudioPlaying = true
+                                    pauseVn(vnRecordProgress)
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+
+            try {
+                audioMixer.start()
+                audioMixer.processAsync()
+            } catch (e: IOException) {
+                audioMixer.release()
+                e.printStackTrace()
+                Log.d(TAG, "pauseRecording: exception 1 $e")
+                Log.d(TAG, "pauseRecording: exception 1 ${e.message}")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.d(TAG, "pauseRecording: exception 2 $e")
+            Log.d(TAG, "pauseRecording: exception 2 ${e.message}")
+        }
+    }
+
+    private fun startRecordingVn() {
+
+        Log.d("StartRecording", "startRecoding vn called")
+        try {
+
+            if (player?.isPlaying == true) {
+                stopPlayingVn()
+            }
+
+            binding.playerTimerTv.visibility = View.GONE
+            outputFile = getOutputFilePath("rec")
+            outputVnFile = getOutputFilePath("mix")
+            wasPaused = false
+
+            mediaRecorder = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setOutputFile(outputFile)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+
+//                setAudioSource(MediaRecorder.AudioSource.MIC)
+//                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+//                setOutputFile(outputFile)
+//                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+
+                prepare()
+                start()
+            }
+
+            isRecording = true
+            isPaused = false
+            isVnResuming = false
+            binding.recordVN.setImageResource(com.uyscuti.social.business.R.drawable.baseline_pause_white_24)
+            binding.sendVN.setBackgroundResource(com.uyscuti.social.business.R.drawable.ic_ripple)
+            binding.deleteVN.setBackgroundResource(com.uyscuti.social.business.R.drawable.ic_ripple)
+            timer.start()
+
+            binding.deleteVN.isClickable = true
+            binding.sendVN.isClickable = true
+            recordedAudioFiles.add(outputFile)
+
+            Log.d("VNFile", outputFile)
+
+        } catch (e: Exception) {
+            Log.d("VNFile", "Failed to record audio properly")
+            e.printStackTrace()
+        }
+    }
+
+    private fun deleteRecording() {
+
+        val TAG = "Recording"
+
+        try {
+            mediaRecorder?.apply {
+                stop()
+                release()
+            }
+            mediaRecorder = null
+            isRecording = false
+            isPaused = false
+            isAudioVNPlaying = false
+
+            binding.timerTv.text = "00:00.00"
+            binding.secondTimerTv.visibility = View.GONE
+            binding.thirdTimerTv.visibility = View.GONE
+//            binding.recordVN.setImageResource(R.drawable.baseline_pause_24)
+            binding.recordVN.setImageResource(com.uyscuti.social.business.R.drawable.mic_2)
+
+
+            binding.sendVN.setBackgroundResource(com.uyscuti.social.business.R.drawable.ic_ripple_disabled)
+            binding.sendVN.isClickable = false
+
+            amplitudes = binding.waveForm.clear()
+            amps = 0
+            timer.stop()
+            Log.d("TAG", "deleteRecording: recorded files size ${recordedAudioFiles.size}")
+            deleteVn()
+//            if()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle exceptions as needed
+        }
+    }
+
+    private fun deleteVn() {
+        recordedAudioFiles.clear()
+//        if (recordedAudioFiles.isNotEmpty()) {
+        val isDeleted = deleteFiles(recordedAudioFiles)
+        var outputVnFileList = mutableListOf<String>()
+        outputVnFileList.add(outputVnFile)
+        val deleteMixVn = deleteFiles(outputVnFileList)
+        if (isDeleted) {
+            Log.d(TAG, "File record deleted successfully")
+        } else {
+            println("Failed to delete file.")
+        }
+
+        if (deleteMixVn) {
+            Log.d(TAG, "File mix vn deleted successfully")
+        } else {
+            println("Failed to delete file.")
+        }
+//        }
+    }
+
+    private fun stopRecordingAndSendVn() {
+
+        try {
+
+            if (mediaRecorder != null) {
+                mediaRecorder?.apply {
+                    stop()
+                    release()
+                }
+                mediaRecorder = null
+            }
+            isRecording = false
+            isPaused = false
+
+            binding.timerTv.text = "00:00.00"
+            binding.recordVN.setImageResource(com.uyscuti.social.business.R.drawable.ic_mic_on)
+            binding.sendVN.setBackgroundResource(com.uyscuti.social.business.R.drawable.ic_ripple_disabled)
+            binding.sendVN.isClickable = false
+
+            amplitudes = binding.waveForm.clear()
+            amps = 0
+            timer.stop()
+            if (player?.isPlaying == true) {
+                stopPlayingVn()
+            }
+            binding.VnLayout.visibility = View.GONE
+
+            // Add any UI changes or notifications indicating recording has stopped
+            binding.secondTimerTv.text = " 00:00"
+            binding.thirdTimerTv.text = "00:00"
+            binding.thirdTimerTv.visibility = View.GONE
+            binding.secondTimerTv.visibility = View.GONE
+            binding.replyToLayout.visibility = View.GONE
+
+
+            if (!isReply) {
+
+                if (recordedAudioFiles.size != 1) {
+                    uploadAudioComment(outputVnFile, isReply1 = isReply,  fileType = "vnAudio")
+                } else {
+                    uploadAudioComment(outputVnFile, isReply1 = isReply, fileType = "vnAudio")
+                }
+            } else {
+                if (recordedAudioFiles.size != 1) {
+                    uploadAudioComment(outputVnFile, isReply1 = isReply, fileType = "vnAudio")
+                } else {
+                    uploadAudioComment(outputVnFile, isReply1 = isReply, fileType = "vnAudio")
+                }
+            }
+
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle exceptions as needed
+        }
+    }
+
+
+    private fun commentAudioStartPlaying(
+        audio: String,
+        audioPlayPauseBtn: ImageView,
+        progress: Float,
+        position: Int
+    ) {
+
+        EventBus.getDefault().post(PauseShort(true))
+        isDurationOnPause = false
+
+        if (isVnAudioToPlay) {
+            startWaveRunnable()
+        }
+
+
+        audioPlayPauseBtn.setImageResource(com.uyscuti.social.business.R.drawable.baseline_pause_black)
+
+        try {
+
+            val file = File(audio)
+
+            if (file.exists()) {
+                val fileUrl = Uri.fromFile(file)
+                exoPlayer = ExoPlayer.Builder(requireActivity())
+                    .build()
+
+                Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: Local file $fileUrl")
+
+                val localFileUri =
+                    Uri.parse(fileUrl.toString()) // Replace with the path to your local file
+                val mediaItem = MediaItem.fromUri(localFileUri)
+                exoPlayer!!.setMediaItem(mediaItem)
+            } else {
+                Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: server file $audio")
+
+                val audioUri = Uri.parse(audio)
+                Log.d("commentAudioStartPlaying", "audioUri $audioUri")
+                val mediaItem = MediaItem.fromUri(audioUri)
+
+                httpDataSourceFactory = DefaultHttpDataSource.Factory()
+                    .setAllowCrossProtocolRedirects(true)
+                defaultDataSourceFactory = DefaultDataSourceFactory(
+                    requireActivity(), httpDataSourceFactory
+                )
+                cacheDataSourceFactory = CacheDataSource.Factory()
+                    .setCache(simpleCache)
+                    .setUpstreamDataSourceFactory(httpDataSourceFactory)
+                    .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+                val mediaSourceFactory: MediaSource.Factory =
+                    DefaultMediaSourceFactory(requireActivity())
+                        .setDataSourceFactory(cacheDataSourceFactory)
+                exoPlayer = ExoPlayer.Builder(requireActivity())
+                    .setMediaSourceFactory(mediaSourceFactory)
+                    .build()
+
+                // Create media source
+                val mediaSource = ProgressiveMediaSource.Factory(cacheDataSourceFactory)
+                    .createMediaSource(mediaItem)
+
+                exoPlayer!!.setMediaSource(mediaSource)
+            }
+
+            exoPlayer!!.prepare()
+            exoPlayer!!.seekTo(progress.toLong())
+            exoPlayer!!.playWhenReady = true
+            exoPlayer!!.repeatMode = Player.REPEAT_MODE_OFF
+            exoPlayer!!.addListener(playbackStateListener())
+            exoPlayer!!.addListener(object : Player.Listener {
+                @Deprecated("Deprecated in Java")
+                override fun onPlayerStateChanged(
+                    playWhenReady: Boolean,
+                    playbackState: Int
+                ) {
+                    if (playbackState == Player.STATE_READY && exoPlayer!!.duration != C.TIME_UNSET) {
+
+                    }
+                }
+
+                override fun onPlayerError(error: PlaybackException) {
+                    super.onPlayerError(error)
+                    error.printStackTrace()
+                    showToast(this@FavoriteFragment.requireActivity(), "Can't play this audio")
+                }
+
+
+            })
+
+            if (isReplyVnPlaying) {
+                val handler = Handler()
+                handler.postDelayed({
+                    commentAdapter?.refreshMainComment(position)
+                }, 200)
+            }
+
+        } catch (e: Exception) {
+            Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: error: ${e.message}")
+            e.printStackTrace()
+        }
+
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun audioWave(event: AudioPlayerHandler) {
+
+        val TAG = "audioWave"
+
+        audioFormWave = event.audioWave
+//        event.audioWave.setSampleFrom(event.audioPath)
+        audioDurationTVCount = event.leftDuration
+        wavePosition = event.position
+        Log.d(TAG, "audioWave: position $wavePosition ")
+
+
+    }
+
+    private fun commentAudioStop() {
+        Log.d(
+            "TAG",
+            "commentAudioStop: Comment audio completed playing player is playing ${player?.isPlaying}"
+        )
+
+        Log.d("isDurationOnPause", " in comment audio stop isDurationOnPause is $isDurationOnPause")
+
+        Log.d("commentAudioStop", "commentAudioStop: was reply playing $isReplyVnPlaying")
+
+        if (isVnAudioToPlay) {
+            if (::audioFormWave.isInitialized) {
+                audioFormWave.progress = 0f
+            }
+            commentAdapter?.setSecondWaveFormProgress(0f, currentCommentAudioPosition)
+            commentAdapter?.setReplySecondWaveFormProgress(0f, currentCommentAudioPosition)
+        } else {
+            commentAdapter?.setSecondSeekBarProgress(0f, currentCommentAudioPosition)
+            commentAdapter?.setReplySecondSeekBarProgress(0f, currentCommentAudioPosition)
+        }
+
+
+        currentCommentAudioPosition = RecyclerView.NO_POSITION
+        currentCommentAudioPath = ""
+        commentAdapter?.resetAudioPlay()
+
+        exoPlayer?.let { exoPlayer ->
+            if (exoPlayer.isPlaying) {
+                exoPlayer.stop()
+            }
+        }
+    }
+
+
+    private fun initializeSeekBar(exoPlayer: ExoPlayer) {
+        audioSeekBar.max = exoPlayer.duration.toInt()
+// Remove callbacks from the current handler, if any
+        currentHandler?.removeCallbacksAndMessages(currentHandler)
+        val handler = Handler(Looper.getMainLooper())
+        handler.postDelayed(object : Runnable {
+            override fun run() {
+                try {
+                    Log.d(
+                        "initializeSeekBar",
+                        "Position $currentCommentAudioPosition is reply $isReplyVnPlaying"
+                    )
+                    if (!isVnAudioToPlay && exoPlayer.isPlaying) {
+
+                        exoPlayer.let {
+                            if (isReplyVnPlaying) {
+                                commentAdapter!!.updateReplySeekBarProgress(
+                                    it.currentPosition.toFloat(),
+                                    audioSeekBar
+                                )
+                            } else {
+
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    audioSeekBar.progress = it.currentPosition.toInt()
+                                    seekBarProgress = it.currentPosition.toFloat()
+                                    commentAdapter!!.setSecondSeekBarProgress(seekBarProgress, currentCommentAudioPosition)
+                                    audioDurationTVCount.text = String.format(
+                                        "%s",
+                                        TrimVideoUtils.stringForTime(it.currentPosition.toFloat())
+                                    )
+                                }
+
+                            }
+
+                            handler.postDelayed(this, 1000)
+
+                        }
+                    }
+                } catch (e: Exception) {
+                    audioSeekBar.progress = 0
+                    e.printStackTrace()
+                }
+            }
+        }, 0)
+        // Set the new handler as the current handler
+        currentHandler = handler
+    }
+
+
+    private fun stopWaveRunnable() {
+        try {
+            waveHandler.removeCallbacks(waveRunnable)
+            isDurationOnPause = true
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun commentAudioPause(audioPlayPauseBtn: ImageView, isReply: Boolean) {
+        Log.d("TAG", "commentAudioPause: is Reply $isReply")
+        isDurationOnPause = true
+
+        Log.d(
+            "isDurationOnPause",
+            " in comment audio pause isDurationOnPause is $isDurationOnPause"
+        )
+
+        audioPlayPauseBtn.setImageResource(com.uyscuti.social.business.R.drawable.play_svgrepo_com)
+        commentAdapter!!.updatePlaybackButton(currentCommentAudioPosition, isReply, audioPlayPauseBtn)
+        exoPlayer?.pause()
+    }
+
+    private fun playbackStateListener() = object : Player.Listener {
+        @SuppressLint("SetTextI18n")
+        override fun onPlaybackStateChanged(state: Int) {
+            when (state) {
+                ExoPlayer.STATE_ENDED -> {
+//                     The video playback ended. Move to the next video if available.
+                    Log.d(
+                        "playbackStateListener",
+                        "commentAudioStartPlaying: comment audio completed"
+                    )
+//                    audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
+                    if (isVnAudioToPlay) {
+                        if (::audioDurationTVCount.isInitialized) {
+                            audioDurationTVCount.text = "00:00"
+                            commentAdapter?.updateReplyWaveProgress(0f, audioFormWave)
+                            if (isReplyVnPlaying) {
+                                Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
+                                val handler = Handler()
+
+                                handler.postDelayed({
+                                    commentAdapter?.refreshMainComment(position)
+                                }, 200)
+                            } else {
+                                Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
+                            }
+                        }
+                    }
+
+                    if (isVnAudioToPlay) {
+                        audioFormWave.progress = 0f
+                    } else {
+                        if (::audioDurationTVCount.isInitialized) {
+                            audioDurationTVCount.text = "00:00"
+                        }
+                        audioSeekBar.progress = 0
+                        commentAdapter?.refreshAudioComment(currentCommentAudioPosition)
+                    }
+
+                    Log.d(
+                        "audioSeekBar",
+                        "currentCommentAudioPosition $currentCommentAudioPosition"
+                    )
+
+                    commentAdapter?.refreshMainComment(position)
+                    commentAdapter?.changePlayingStatus()
+//                    adapter?.resetWaveForm()
+//                    adapter?.notifyDataSetChanged()
+                    if (isVnAudioToPlay) {
+                        stopWaveRunnable()
+
+                    }
+                    commentAudioStop()
+                }
+                // Add other cases if needed
+                Player.STATE_BUFFERING -> {
+
+                }
+
+                Player.STATE_IDLE -> {
+                }
+
+                Player.STATE_READY -> {
+                    if (!isVnAudioToPlay) {
+                        exoPlayer?.let { initializeSeekBar(it) }
+                    }
+                    Log.d("TAG", "STATE_READY")
+//                    startUpdatingSeekBar()
+//                    shortsAdapter.setSeekBarProgress(exoPlayer!!.currentPosition.toInt())
+
+                }
+
+                else -> {
+                    Log.d("TAG", "STOP SEEK BAR")
+                    // Stop updating seek bar in other states
+//                    stopUpdatingSeekBar()
+                }
+            }
+        }
+
+        override fun onIsPlayingChanged(isVideoPlaying: Boolean) {
+//        super.onIsPlayingChanged(isPlaying)
+
+        }
+
+        override fun onEvents(player: Player, events: Player.Events) {
+//        super.onEvents(player, events)
+            if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
+                events.contains(Player.EVENT_IS_PLAYING_CHANGED)
+            ) {
+
+//                progressBar.visibility = View.GONE
+            }
+
+            if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)
+            ) {
+//                player.seekTo(5000L)
+            }
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun commentAudioSeekBar(event: CommentAudioPlayerHandler) {
+        val TAG = "commentAudioSeekBar"
+        audioSeekBar = event.audioSeekBar
+//        event.audioWave.setSampleFrom(event.audioPath)
+        audioDurationTVCount = event.leftDuration
+        seekPosition = event.position
+        maxDuration = event.maxDuration
+        Log.d(TAG, "commentAudioSeekBar: position $wavePosition ")
+    }
+
+
+    private fun processReplyComments(comment: Comment) {
+
+        if (comment.contentType == "text") {
+            val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
+                __v = comment.__v,
+                _id = comment._id,
+                author = getReliesAuthor(),
+                content = comment.content!!,
+                contentType = comment.contentType,
+                createdAt = comment.createdAt,
+                isLiked = false,
+                likes = 0,
+                commentId = commentId,
+                updatedAt = comment.updatedAt,
+            )
+
+            commentToAddReplies?.replies?.add(0, newReply)
+
+        } else if (comment.contentType == "image") {
+            val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
+                __v = comment.__v,
+                _id = comment._id,
+                author = getReliesAuthor(),
+                contentType = comment.contentType,
+                createdAt = comment.createdAt,
+                isLiked = false,
+                likes = 0,
+                commentId = commentId,
+                updatedAt = comment.updatedAt,
+                images = comment.images
+            )
+
+            commentToAddReplies?.replies?.add(0, newReply)
+
+        } else if(comment.contentType == "gif") {
+            val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
+                __v = comment.__v,
+                _id = comment._id,
+                author = getReliesAuthor(),
+                contentType = comment.contentType,
+                createdAt = comment.createdAt,
+                isLiked = comment.isLiked,
+                likes = comment.likes,
+                commentId = commentId,
+                updatedAt = comment.updatedAt,
+                gifs = comment.gifs
+            )
+
+            commentToAddReplies?.replies?.add(0, newReply)
+
+        } else if(comment.contentType == "video") {
+            val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
+                __v = comment.__v,
+                _id = comment._id,
+                author = getReliesAuthor(),
+                contentType = comment.contentType,
+                createdAt = comment.createdAt,
+                isLiked = comment.isLiked,
+                likes = comment.likes,
+                commentId = commentId,
+                updatedAt = comment.updatedAt,
+                duration = comment.duration,
+                videos = comment.videos
+            )
+
+            commentToAddReplies?.replies?.add(0, newReply)
+        }  else if(comment.contentType == "audio") {
+            val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
+                __v = comment.__v,
+                _id = comment._id,
+                author = getReliesAuthor(),
+                contentType = comment.contentType,
+                createdAt = comment.createdAt,
+                isLiked = comment.isLiked,
+                likes = comment.likes,
+                commentId = commentId,
+                updatedAt = comment.updatedAt,
+                duration = comment.duration,
+                audios = comment.audios,
+                fileSize = comment.fileSize,
+                fileType = comment.fileType,
+                fileName = comment.fileName
+            )
+
+            commentToAddReplies?.replies?.add(0, newReply)
+        } else if(comment.contentType == "docs") {
+            val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
+                __v = comment.__v,
+                _id = comment._id,
+                author = getReliesAuthor(),
+                contentType = comment.contentType,
+                createdAt = comment.createdAt,
+                isLiked = comment.isLiked,
+                likes = comment.likes,
+                commentId = commentId,
+                updatedAt = comment.updatedAt,
+                docs = comment.docs,
+                fileSize = comment.fileSize,
+                fileType = comment.fileType,
+                fileName = comment.fileName,
+                numberOfPages = comment.numberOfPages
+            )
+
+            commentToAddReplies?.replies?.add(0, newReply)
+        }
+
+
+        val replyCount = commentToAddReplies?.replyCount?.plus(1)
+        commentToAddReplies?.replyCount = replyCount!!
+        commentAdapter?.updateItem(commentPosition, commentToAddReplies)
+    }
+
+    private fun getReliesAuthor(): com.uyscuti.social.network.api.response.commentreply.allreplies.Author {
+        val localSettings = requireActivity().getSharedPreferences("LocalSettings", MODE_PRIVATE)
+        val profilePic = localSettings.getString("profile_pic", "").toString()
+
+        val avatar = com.uyscuti.social.network.api.response.commentreply.allreplies.Avatar(
+            "", "", url = profilePic
+        )
+
+        val account = com.uyscuti.social.network.api.response.commentreply.allreplies.Account(
+            _id = "", avatar = avatar, "", LocalStorage.getInstance(requireActivity()).getUsername()
+        )
+        val author =
+            com.uyscuti.social.network.api.response.commentreply.allreplies.Author(
+                _id = "21", account = account, firstName = "", lastName = ""
+            )
+
+        return author
+    }
+
+
+    private fun setupInputManager() {
+        emojiPopup = EmojiPopup(binding.motionLayout, binding.input.inputEditText)
+
+        binding.input.setInputListener(this)
+        binding.input.setAttachmentsListener(this)
+        binding.input.setVoiceListener(this)
+        binding.input.setEmojiListener(this)
+        binding.input.setGifListener(this)
+    }
+
+    private fun toggleBusinessCommentBottomSheet() {
+        val currentVisibility = binding.motionLayout.visibility
+
+        if(currentVisibility == View.VISIBLE) {
+            binding.motionLayout.visibility = View.GONE
+            binding.VnLayout.visibility = View.GONE
+
+            binding.replyToLayout.visibility = View.GONE
+            binding.input.inputEditText.setText("")
+
+            deleteRecording()
+            stopPlayingVn()
+            commentAudioStop()
+            stopWaveRunnable()
+            stopRecordWaveRunnable()
+            exoPlayer?.release()
+           // EventBus.getDefault().post(ShowBottomNav(true))
+
+        } else {
+           // EventBus.getDefault().post(HideBottomNav(true))
+            binding.motionLayout.visibility = View.VISIBLE
+            binding.motionLayout.transitionToStart()
+        }
+
+    }
+
+    private fun initCommentAdapter() {
+        commentAdapter = CommentsRecyclerViewAdapter(requireActivity(), this)
+        commentAdapter?.setDefaultRecyclerView(requireActivity(), R.id.commentSRecyclerView)
+
+        commentRecyclerView = binding.commentSRecyclerView
+
+        commentRecyclerView.itemAnimator = null
+    }
+
+    private fun getBusinessComments(page: Int) {
+
+        lifecycleScope.launch(Dispatchers.IO) {
+
+            withContext(Dispatchers.Main) {
+                if(page == 1) {
+                    showShimmer()
+                } else {
+                    showProgressBar()
+                }
+            }
+
+            try {
+
+                val commentsWithReplies = businessPostsViewModel.getBusinessPostComments(businessPostId, page)
+                withContext(Dispatchers.Main) {
+
+                    if(page == 1) {
+                        hideShimmer()
+                    } else {
+                        hideProgressBar()
+                    }
+
+                    commentAdapter!!.submitItems(commentsWithReplies)
+                    if(commentsWithReplies.isEmpty()) {
+                        updateUI(true)
+                    } else {
+                        updateUI(false)
+                    }
+                }
+
+            } catch (e: Exception) {
+                lifecycleScope.launch {
+
+                    if (page == 1) {
+                        hideShimmer()
+                    } else {
+                        hideProgressBar()
+                    }
+                }
+                e.printStackTrace()
+            }
+
+        }
+    }
+
+    private fun showProgressBar() {
+        binding.progressBar.visibility = View.VISIBLE
+    }
+
+    private fun hideProgressBar() {
+        binding.progressBar.visibility = View.GONE
+    }
+
+    private fun updateUI(dataEmpty: Boolean) {
+        if (dataEmpty) {
+            commentRecyclerView.visibility = View.GONE
+            binding.placeholderLayout.visibility = View.VISIBLE
+        } else {
+            binding.placeholderLayout.visibility = View.GONE
+            commentRecyclerView.visibility = View.VISIBLE
+        }
+    }
+
+    private fun showShimmer() {
+        binding.shimmerLayout.startShimmerAnimation()
+        binding.shimmerLayout.visibility = View.VISIBLE
+    }
+
+    private fun hideShimmer() {
+        binding.shimmerLayout.stopShimmerAnimation()
+        binding.shimmerLayout.visibility = View.GONE
+    }
+
+    private fun hideKeyboard(view: View) {
+        val imm = inputMethodManager
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
+    }
+
+
+    private fun initEmojiView() {
+        if (emojiShowing) {
+            emojiPopup.dismiss()
+            // Show keyboard after a slight delay to ensure smooth transition
+            binding.input.inputEditText?.postDelayed({
+                inputMethodManager.showSoftInput(
+                    binding.input.inputEditText, InputMethodManager.SHOW_IMPLICIT
+                )
+            }, 50)
+            emojiShowing = false
+        } else {
+            // Hide keyboard first
+            inputMethodManager.hideSoftInputFromWindow(
+                binding.input.inputEditText?.windowToken, 0
+            )
+            // Show emoji popup after a slight delay
+            binding.input.inputEditText?.postDelayed({
+                emojiPopup.toggle()
+            }, 50)
+            emojiShowing = true
+        }
+    }
+
+    @SuppressLint("InflateParams")
+    private fun showAttachmentDialog() {
+        val dialog = BottomSheetDialog(requireActivity())
+
+        val view = LayoutInflater.from(requireActivity()).inflate(
+            com.uyscuti.social.business.R.layout.file_upload_dialog,
+            null
+        )
+
+        val video = view.findViewById<LinearLayout>(com.uyscuti.social.business.R.id.upload_video)
+        val audio = view.findViewById<LinearLayout>(com.uyscuti.social.business.R.id.upload_audio)
+        val image = view.findViewById<LinearLayout>(com.uyscuti.social.business.R.id.upload_image)
+        val camera = view.findViewById<LinearLayout>(com.uyscuti.social.business.R.id.open_camera)
+        val doc = view.findViewById<LinearLayout>(com.uyscuti.social.business.R.id.upload_doc)
+        val location = view.findViewById<LinearLayout>(com.uyscuti.social.business.R.id.share_location)
+
+        image!!.setOnClickListener {
+            openImagePicker()
+            dialog.dismiss()
+        }
+
+        video!!.setOnClickListener {
+            val intent = Intent(requireActivity(), VideosActivity::class.java)
+            videoPickerLauncher.launch(intent)
+            dialog.dismiss()
+        }
+
+        audio!!.setOnClickListener {
+            val intent = Intent(requireActivity(), AudioActivity::class.java)
+            audioPickerLauncher.launch(intent)
+            dialog.dismiss()
+        }
+
+        doc?.setOnClickListener {
+            openDocPickerLauncher()
+            dialog.dismiss()
+        }
+
+        camera!!.setOnClickListener {
+            val intent = Intent(requireActivity(), CameraActivity::class.java)
+            cameraLauncher.launch(intent)
+            dialog.dismiss()
+        }
+
+        location?.visibility = View.INVISIBLE
+        dialog.setContentView(view)
+        dialog.show()
+
+    }
+
+    override fun businessCommentClickedListener(
+        position: Int,
+        post: Post
+    ) {
+        businessPostId = post._id
+        postPosition = position
+
+        initCommentAdapter()
+
+        toggleBusinessCommentBottomSheet()
+
+
+        commentAdapter!!.setOnPaginationListener(object : AdPaginatedAdapter.OnPaginationListener {
+
+            override fun onCurrentPage(page: Int) {
+                Log.d(TAG, "currentPage: page number $page")
+            }
+
+            override fun onNextPage(page: Int) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Log.d(TAG, "onNextPage: page number $page")
+                    getBusinessComments(page)
+                }
+            }
+
+            override fun onFinish() {
+                Log.d(TAG, "finished: page number")
+            }
+        })
+
+        lifecycleScope.launch(Dispatchers.Main) {
+            getBusinessComments(commentAdapter!!.startPage)
+        }
+
+    }
+
+    override fun onSubmit(input: CharSequence?): Boolean {
+        hideKeyboard(binding.input.inputEditText)
+        val localUpdateId = generateRandomId()
+
+        if (!isReply) {
+            businessPostsViewModel.addComment(
+                businessPostId,
+                input.toString(),
+                "text",
+                localUpdateId
+            )
+
+        } else {
+            businessPostsViewModel.addCommentReply(
+                commentId,
+                input.toString(),
+                "text",
+                localUpdateId,
+                isReply = isReply
+            )
+
+            isReply = false
+        }
+
+        return true
+    }
+
+    override fun onAddEmoji() {
+        initEmojiView()
+    }
+
+    override fun onAddVoiceNote() {
+        binding.VnLayout.visibility = View.VISIBLE
+        binding.playAudioLayout.visibility = View.GONE
+        binding.waveForm.visibility = View.VISIBLE
+        binding.timerTv.visibility = View.VISIBLE
+    }
+
+    override fun onAddGif() {
+        val intent = Intent(requireActivity(), GifActivity::class.java)
+        gifsPickerLauncher.launch(intent)
+    }
+
+    override fun onAddAttachments() {
+        showAttachmentDialog()
+    }
+
+    override fun onViewRepliesClick(
+        data: Comment,
+        repliesRecyclerView: RecyclerView,
+        position: Int
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun onViewRepliesClick(
+        data: Comment,
+        position: Int,
+        commentRepliesTV: TextView,
+        hideCommentReplies: TextView,
+        repliesRecyclerView: RecyclerView,
+        isRepliesVisible: Boolean,
+        page: Int
+    ) {
+        lifecycleScope.launch {
+
+            if (data.hasNextPage) {
+
+                withContext(Dispatchers.Main) {
+                    commentRepliesTV.text = "Loading..."
+                }
+
+
+                if (commentRepliesTV.text.equals("Loading...")) {
+
+                    withContext(Dispatchers.Main) {
+                        hideCommentReplies.visibility = View.GONE
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        commentRepliesTV.visibility = View.GONE
+                        hideCommentReplies.visibility = View.VISIBLE
+                    }
+                }
+            }
+        }
+    }
+
+    override fun toggleAudioPlayer(
+        audioPlayPauseBtn: ImageView,
+        audioToPlayPath: String,
+        position: Int,
+        isReply: Boolean,
+        progress: Float,
+        isSeeking: Boolean,
+        seekTo: Boolean,
+        isVnAudio: Boolean
+    ) {
+
+        isReplyVnPlaying = isReply
+        isVnAudioToPlay = isVnAudio
+
+        wavePosition = position
+
+        if (currentCommentAudioPath == audioToPlayPath) {
+
+            if (seekTo) {
+                Log.d("SeekTo", "Seek to $progress")
+                EventBus.getDefault().post(PauseShort(true))
+                isDurationOnPause = false
+                exoPlayer?.seekTo(progress.toLong())
+                exoPlayer?.play()
+            } else if (isSeeking) {
+                Log.d("toggleAudioPlayer", "user is seeking so i paused the audio")
+                exoPlayer?.pause()
+            } else if (exoPlayer?.isPlaying == true) {
+                Log.d(
+                    "toggleAudioPlayer",
+                    "toggleAudioPlayer: current player is playing then pause"
+                )
+
+                if (isVnAudio) {
+                    Log.d("waveProgress", "toggleAudioPlayer: $waveProgress")
+
+                    commentAdapter?.setReplySecondWaveFormProgress(waveProgress, position)
+                    commentAdapter?.setSecondWaveFormProgress(waveProgress, position)
+                } else {
+                    //for seek bar
+                    commentAdapter?.setSecondSeekBarProgress(seekBarProgress, position)
+                    commentAdapter?.setReplySecondSeekBarProgress(seekBarProgress, position)
+                }
+                exoPlayer?.pause()
+                isDurationOnPause = true
+
+            }  else {
+                Log.d(
+                    "toggleAudioPlayer",
+                    "toggleAudioPlayer: current player is not playing then play"
+                )
+                EventBus.getDefault().post(PauseShort(true))
+                isDurationOnPause = false
+                exoPlayer?.seekTo(progress.toLong())
+                exoPlayer?.play()
+            }
+        } else {
+
+            if (exoPlayer?.isPlaying == true) {
+                Log.d("toggleAudioPlayer", "toggleAudioPlayer: in else player is playing")
+                commentAudioPause(audioPlayPauseBtn, isReply)
+            }
+
+            commentAudioStartPlaying(audioToPlayPath, audioPlayPauseBtn, progress, position)
+
+
+            currentCommentAudioPosition = position
+            currentCommentAudioPath = audioToPlayPath
+        }
+
+    }
+
+    override fun onReplyButtonClick(
+        position: Int,
+        data: Comment
+    ) {
+        isReply = true
+        var username = data.author!!.account.username
+
+        binding.replyToLayout.visibility = View.VISIBLE
+
+        binding.replyToTextView.text = "Replying to $username"
+        commentId = data._id
+        commentToAddReplies = data
+        commentPosition = position
+
+        binding.exitReply.setOnClickListener {
+            binding.replyToLayout.visibility = View.GONE
+            binding.input.inputEditText.setText("")
+            isReply = false
+        }
+        binding.input.inputEditText.setText("@$username")
+        binding.input.inputEditText.setSelection(binding.input.inputEditText.text!!.length)
+    }
+
+    override fun likeUnLikeComment(
+        position: Int,
+        data: Comment
+    ) {
+        if (NetworkUtil.isConnected(requireActivity())) {
+            val updatedComment = if (data.isLiked) {
+                data.copy(
+                    likes = data.likes + 1,
+                )
+            } else {
+                data.copy(
+                    likes = data.likes - 1,
+                )
+            }
+            commentAdapter?.updateItem(position, updatedComment)
+            businessPostsViewModel.likeUnlikeBusinessComment(data._id)
+        } else {
+            showToast(requireActivity(), "Like failed. No internet access.")
+        }
+    }
+
+    override fun likeUnlikeCommentReply(
+        replyPosition: Int,
+        replyData: com.uyscuti.social.network.api.response.commentreply.allreplies.Comment,
+        mainCommentPosition: Int,
+        mainComment: Comment
+    ) {
+        if (NetworkUtil.isConnected(requireActivity())) {
+            if(replyData.isLiked) {
+                replyData.copy(
+                    likes = replyData.likes + 1
+                )
+            }  else {
+                replyData.copy(
+                    likes = replyData.likes - 1
+                )
+            }
+            mainComment.replies[replyPosition] = replyData
+
+            commentAdapter?.updateItem(mainCommentPosition, mainComment)
+            businessPostsViewModel.likeUnlikeBusinessCommentReplies(replyData._id)
+
+        }  else {
+            showToast(requireActivity(), "Like failed. No internet access.")
+        }
+    }
+
+    override fun onTimerTick(duration: String) {
+        binding.timerTv.text = duration
+
+        var amplitude = mediaRecorder!!.maxAmplitude.toFloat()
+        amplitude = if (amplitude > 0) amplitude else 130f
+
+        binding.waveForm.addAmplitude(amplitude)
+    }
 
 
 }

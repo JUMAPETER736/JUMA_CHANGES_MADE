@@ -18,7 +18,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.uyscuti.social.business.R
 import com.uyscuti.social.business.adapter.ViewAdapter
 import com.uyscuti.social.business.adapter.ViewProductAdapter
-import com.uyscuti.social.business.model.Catalogue
+import com.uyscuti.sharedmodule.model.Catalogue
 
 
 class ImageViewActivity : AppCompatActivity() {

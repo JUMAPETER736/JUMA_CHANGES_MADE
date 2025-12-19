@@ -7,9 +7,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
-import com.uyscuti.social.circuit.adapter.feed.feedRepostedRepostViewAdapter.FeedRostedViewAdapter
+import com.uyscuti.sharedmodule.adapter.feed.feed.feedRepostedRepostViewAdapter.FeedRostedViewAdapter
 import com.uyscuti.social.circuit.databinding.FragmentFeedRepostedRepostViewBinding
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER

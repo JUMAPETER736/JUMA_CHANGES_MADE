@@ -22,7 +22,6 @@ import com.uyscuti.social.circuit.R
 import android.widget.TextView
 import android.widget.Toast
 import androidx.media3.common.Player
-import kotlin.math.max
 
 class FullScreenPagerAdapter(
     private val mediaUrls: List<String>,
@@ -52,7 +51,7 @@ class FullScreenPagerAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_view_pager, parent, false)
+            .inflate(R.layout.item_view_pager_1, parent, false)
         return ViewHolder(view)
     }
 

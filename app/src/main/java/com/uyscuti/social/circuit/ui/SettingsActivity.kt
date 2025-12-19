@@ -12,8 +12,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.adapter.SettingsAdapter
-import com.uyscuti.social.circuit.model.SettingsModel
-import com.uyscuti.social.circuit.ui.media.ViewImagesActivity
+import com.uyscuti.sharedmodule.media.ViewImagesActivity
+import com.uyscuti.sharedmodule.model.SettingsModel
 
 class SettingsActivity : AppCompatActivity() {
     private lateinit var toolbar: Toolbar

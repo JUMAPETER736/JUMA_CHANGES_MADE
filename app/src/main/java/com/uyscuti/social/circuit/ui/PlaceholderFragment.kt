@@ -9,7 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.uyscuti.social.circuit.databinding.FragmentTabsBinding
-import com.uyscuti.social.circuit.presentation.PageViewModel
+import com.uyscuti.sharedmodule.presentation.PageViewModel
 
 class PlaceholderFragment : Fragment() {
 

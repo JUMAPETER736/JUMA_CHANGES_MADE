@@ -13,19 +13,17 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
-import com.uyscuti.social.circuit.adapter.feed.OnFeedClickListener
+import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.feed.FeedAdapter
 //import com.uyscuti.social.circuit.adapter.feed.feedRepostViewAdapter.FeedRepostDocumentViewAdapter
 import com.uyscuti.social.circuit.databinding.FragmentFeedRepostDocBinding
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
-private lateinit var feedAdapter: FeedAdapter
 /**
  * A simple [Fragment] subclass.
  * Use the [FeedRepostDocFragment.newInstance] factory method to
@@ -99,12 +97,12 @@ class FeedRepostDocFragment : Fragment(), OnFeedClickListener {
             if (feedTextViewFragmentInterface != null) {
                 feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
             }
-        }
-        binding.comment.setOnClickListener {
-//            feedTextViewFragmentInterface?.onCommentClickFromFeedTextViewFragment(position, data)
-//            binding.feedCommentsCount.text = (data.comments + 1).toString()
-//            EventBus.getDefault().post(FeedCommentClicked(position, data))
-        }
+       }
+//        binding.comment.setOnClickListener {
+////            feedTextViewFragmentInterface?.onCommentClickFromFeedTextViewFragment(position, data)
+////            binding.feedCommentsCount.text = (data.comments + 1).toString()
+////            EventBus.getDefault().post(FeedCommentClicked(position, data))
+//        }
 
         val documentList:MutableList<String> = mutableListOf()
         if(data.files.isNotEmpty()) {
@@ -170,42 +168,42 @@ class FeedRepostDocFragment : Fragment(), OnFeedClickListener {
 
     override fun likeUnLikeFeed(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         TODO("Not yet implemented")
     }
 
     override fun feedCommentClicked(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         TODO("Not yet implemented")
     }
 
     override fun feedFavoriteClick(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         TODO("Not yet implemented")
     }
 
     override fun moreOptionsClick(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         TODO("Not yet implemented")
     }
 
     override fun feedFileClicked(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         TODO("Not yet implemented")
     }
 
     override fun feedRepostFileClicked(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.OriginalPost
+        data: com.uyscuti.social.network.api.response.posts.OriginalPost
     ) {
         TODO("Not yet implemented")
     }
@@ -214,7 +212,7 @@ class FeedRepostDocFragment : Fragment(), OnFeedClickListener {
 
     override fun feedShareClicked(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         TODO("Not yet implemented")
     }
@@ -228,14 +226,14 @@ class FeedRepostDocFragment : Fragment(), OnFeedClickListener {
 
     override fun feedRepostPost(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         TODO("Not yet implemented")
     }
 
     override fun feedRepostPostClicked(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         TODO("Not yet implemented")
     }

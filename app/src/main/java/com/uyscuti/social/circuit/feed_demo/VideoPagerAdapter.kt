@@ -7,8 +7,9 @@ import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
-import com.uyscuti.social.circuit.model.feed.multiple_files.MixedFeedUploadDataClass
+import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.sharedmodule.model.feed.multiple_files.MixedFeedUploadDataClass
+
 
 class VideoPagerAdapter(fragmentActivity: FragmentActivity, private val videoUrls: List<String>) :
     FragmentStateAdapter(fragmentActivity), FeedTextViewFragmentInterface {
@@ -64,19 +65,4 @@ class VideoPagerAdapter(fragmentActivity: FragmentActivity, private val videoUrl
         TODO("Not yet implemented")
     }
 
-    override fun onFullScreenClicked(data: MixedFeedUploadDataClass) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onMediaClick(data: MixedFeedUploadDataClass) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onMediaPrepared(mp: MediaPlayer) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onMediaError() {
-        TODO("Not yet implemented")
-    }
 }

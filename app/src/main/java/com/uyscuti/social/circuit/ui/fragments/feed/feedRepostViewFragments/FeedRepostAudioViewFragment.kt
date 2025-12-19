@@ -1,4 +1,4 @@
-package com.uyscut.flashdesign.ui.fragments.feed.feedRepostViewFragments
+package com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments
 
 import android.annotation.SuppressLint
 import android.media.AudioAttributes
@@ -22,11 +22,12 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
+import com.uyscuti.sharedmodule.adapter.feed.feed.feedRepostViewAdapter.FeedRepostMultipleAudioAdapter
+import com.uyscuti.sharedmodule.adapter.feed.feed.feedRepostViewAdapter.PlayFeedAudioInterface
+import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.feed.feedRepostViewAdapter.FeedRepostMultipleAudioAdapter
-import com.uyscuti.social.circuit.adapter.feed.multiple_files.PlayFeedAudioInterface
 import com.uyscuti.social.circuit.databinding.FragmentFeedRepostAudioViewBinding
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.OriginalPost
 import java.io.IOException
 import java.util.Locale
 
@@ -41,11 +42,11 @@ private const val ARG_PARAM2 = "param2"
  * create an instance of this fragment.
  */private const val TAG = "FeedRepostAudioViewFragment"
 
-class FeedRepostAudioViewFragment : Fragment(), PlayFeedAudioInterface {
+class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
-    private lateinit var data:  com.uyscuti.social.network.api.response.allFeedRepostsPost.OriginalPost
+    private lateinit var data:  OriginalPost
     private var position = 0
     private lateinit var backPressedCallback: OnBackPressedCallback
     private var feedTextViewFragmentInterface: FeedTextViewFragmentInterface? = null
@@ -61,7 +62,7 @@ class FeedRepostAudioViewFragment : Fragment(), PlayFeedAudioInterface {
         arguments?.let {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
-            data = (it.getSerializable("data") as  com.uyscuti.social.network.api.response.allFeedRepostsPost.OriginalPost?)!!
+            data = (it.getSerializable("data") as  OriginalPost?)!!
             position = it.getInt("position")
 
         }
@@ -128,7 +129,7 @@ class FeedRepostAudioViewFragment : Fragment(), PlayFeedAudioInterface {
                     feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
                 }
             }
-            binding.comment.setOnClickListener {
+            binding.commentButtonIcon.setOnClickListener {
 
             }
 
@@ -139,7 +140,7 @@ class FeedRepostAudioViewFragment : Fragment(), PlayFeedAudioInterface {
 
             }
 
-            val audioList: MutableList<String> = mutableListOf()
+            val audioList: ArrayList<String> = ArrayList()
             if (data.files.isNotEmpty()) {
                 for (audio in data.files) {
 //                Log.d(TAG, "render: images ${audio.url}")
@@ -149,7 +150,11 @@ class FeedRepostAudioViewFragment : Fragment(), PlayFeedAudioInterface {
                 Log.d(TAG, "render: data files is empty")
             }
 
-            adapter = FeedRepostMultipleAudioAdapter(requireContext(), audioList, this@FeedRepostAudioViewFragment)
+            adapter = FeedRepostMultipleAudioAdapter(
+                requireContext(),
+                audioList,
+                this)
+
             binding.viewPager.adapter = adapter
 
             binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
@@ -260,7 +265,8 @@ class FeedRepostAudioViewFragment : Fragment(), PlayFeedAudioInterface {
         // TODO: Rename and change types and number of parameters
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
-            FeedRepostAudioViewFragment().apply {
+            FeedRepostAudioViewFragment()
+                .apply {
                 arguments = Bundle().apply {
                     putString(ARG_PARAM1, param1)
                     putString(ARG_PARAM2, param2)

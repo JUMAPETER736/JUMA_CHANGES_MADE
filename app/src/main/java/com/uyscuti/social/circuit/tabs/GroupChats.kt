@@ -1,7 +1,6 @@
 package com.uyscuti.social.circuit.tabs
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,19 +12,19 @@ import androidx.media3.common.util.UnstableApi
 import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.MainDialogsFragment
 
-import com.uyscuti.social.circuit.interfaces.OnBackPressedListener
-import com.uyscuti.social.circuit.presentation.GroupDialogViewModel
-import com.uyscuti.social.circuit.presentation.MainViewModel
-import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.MessagesActivity
-import com.uyscuti.social.circuit.utils.getChatNavigationController
+import com.uyscuti.sharedmodule.interfaces.OnBackPressedListener
+import com.uyscuti.sharedmodule.presentation.GroupDialogViewModel
+import com.uyscuti.sharedmodule.presentation.MainViewModel
+import com.uyscuti.sharedmodule.utils.getChatNavigationController
 import com.uyscuti.social.chatsuit.dialogs.DialogsList
 import com.uyscuti.social.chatsuit.dialogs.DialogsListAdapter
 import com.uyscuti.social.chatsuit.utils.DateFormatter
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.data.fixtures.DialogsFixtures
-import com.uyscuti.social.circuit.data.model.Dialog
-import com.uyscuti.social.circuit.data.model.Message
-import com.uyscuti.social.circuit.data.model.User
+import com.uyscuti.sharedmodule.data.fixtures.DialogsFixtures
+import com.uyscuti.sharedmodule.data.model.Dialog
+import com.uyscuti.sharedmodule.data.model.Message
+import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.social.core.common.data.room.entity.GroupDialogEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.UserEntity

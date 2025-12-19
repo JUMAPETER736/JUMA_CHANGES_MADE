@@ -8,9 +8,9 @@ import android.widget.Toast
 import androidx.annotation.RequiresExtension
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
-import com.uyscuti.social.business.adapter.MediaPagerAdapter
-import com.uyscuti.social.business.adapter.ProfileViewAdapter
-import com.uyscuti.social.business.model.Catalogue
+import com.uyscuti.sharedmodule.adapter.MediaPagerAdapter
+import com.uyscuti.sharedmodule.adapter.ProfileViewAdapter
+import com.uyscuti.sharedmodule.model.Catalogue
 //import com.example.mylibrary.retro.RetrofitClient
 import com.uyscuti.social.network.api.request.business.users.GetBusinessProfileById
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -92,7 +92,7 @@ class ProfileViewActivity : AppCompatActivity() {
                                         product.itemName,
                                         product.description,
                                         product.price,
-                                        product.images
+                                        product.images,
                                     )
                                     catalogueList.add(catalogue)
                                 }

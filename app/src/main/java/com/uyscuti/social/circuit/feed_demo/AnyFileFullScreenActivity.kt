@@ -27,18 +27,19 @@ import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.tbuonomo.viewpagerdotsindicator.DotsIndicator
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleFeedFilesPagerAdapter
 import com.uyscuti.social.circuit.databinding.ActivityFullScreenAnyFileBinding
-import com.uyscuti.social.circuit.model.feed.FeedMultipleImages
-import com.uyscuti.social.circuit.model.feed.multiple_files.FeedMultipleAudios
-import com.uyscuti.social.circuit.model.feed.multiple_files.FeedMultipleDocumentsDataClass
-import com.uyscuti.social.circuit.model.feed.multiple_files.FeedMultipleVideos
-import com.uyscuti.social.circuit.model.feed.multiple_files.MixedFeedUploadDataClass
-import com.uyscuti.social.circuit.utils.AudioDurationHelper.getVideoDuration
-import com.uyscuti.social.circuit.utils.generateRandomId
+
 import java.io.File
 import kotlin.math.max
 import androidx.core.net.toUri
+import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.MultipleFeedFilesPagerAdapter
+import com.uyscuti.sharedmodule.model.feed.FeedMultipleImages
+import com.uyscuti.sharedmodule.model.feed.multiple_files.FeedMultipleAudios
+import com.uyscuti.sharedmodule.model.feed.multiple_files.FeedMultipleDocumentsDataClass
+import com.uyscuti.sharedmodule.model.feed.multiple_files.FeedMultipleVideos
+import com.uyscuti.sharedmodule.model.feed.multiple_files.MixedFeedUploadDataClass
+import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getVideoDuration
+import com.uyscuti.sharedmodule.utils.generateRandomId
 
 class AnyFileFullScreenActivity : AppCompatActivity() {
 
@@ -173,8 +174,8 @@ class AnyFileFullScreenActivity : AppCompatActivity() {
         }
 
         // Setup ViewPager
-        mediaPagerAdapter = MultipleFeedFilesPagerAdapter(this, isFullScreen = true).apply {
-            setMixedFeedUploadDataClass(mediaItems)
+        mediaPagerAdapter = MultipleFeedFilesPagerAdapter(this).apply {
+            setMixedFeedUploadDataClass2(mediaItems as MutableList<MixedFeedUploadDataClass>)
         }
 
         binding.viewPager.adapter = mediaPagerAdapter
@@ -330,14 +331,14 @@ class AnyFileFullScreenActivity : AppCompatActivity() {
                         val currentItem = mediaPagerAdapter?.getItem(viewPager.currentItem)
                         if (currentItem?.fileTypes in listOf("video", "audio", "audio_vn")) {
                             currentPosition = when (currentItem?.fileTypes) {
-                                "video" -> mediaPagerAdapter?.getCurrentVideoPosition(viewPager.currentItem) ?: 0L
-                                "audio", "audio_vn" -> mediaPagerAdapter?.getCurrentAudioPosition(viewPager.currentItem) ?: 0L
+//                                "video" -> mediaPagerAdapter?.getCurrentVideoPosition(viewPager.currentItem) ?: 0L
+//                                "audio", "audio_vn" -> mediaPagerAdapter?.getCurrentAudioPosition(viewPager.currentItem) ?: 0L
                                 else -> 0L
                             }
 
                             totalDuration = when (currentItem?.fileTypes) {
-                                "video" -> mediaPagerAdapter?.getVideoDuration(viewPager.currentItem) ?: 0L
-                                "audio", "audio_vn" -> mediaPagerAdapter?.getAudioDuration(viewPager.currentItem) ?: 0L
+//                                "video" -> mediaPagerAdapter?.getVideoDuration(viewPager.currentItem) ?: 0L
+//                                "audio", "audio_vn" -> mediaPagerAdapter?.getAudioDuration(viewPager.currentItem) ?: 0L
                                 else -> 0L
                             }
 
@@ -367,13 +368,13 @@ class AnyFileFullScreenActivity : AppCompatActivity() {
             when (item.fileTypes) {
                 "video" -> {
                     audioIcon.visibility = View.GONE
-                    mediaPagerAdapter?.playVideo(viewPager.currentItem)
+                   // mediaPagerAdapter?.playVideo(viewPager.currentItem)
                     Log.d(TAG, "setupVideoAudioControls: Playing video for fileId=${item.fileId}")
                 }
                 "audio" -> {
                     audioIcon.setImageResource(R.drawable.ic_audio_white_icon)
                     audioIcon.visibility = View.VISIBLE
-                    mediaPagerAdapter?.playAudio(viewPager.currentItem)
+                    //mediaPagerAdapter?.playAudio(viewPager.currentItem)
                     Log.d(TAG, "setupVideoAudioControls: Playing audio for fileId=${item.fileId}")
                 }
                 "audio_vn" -> {
@@ -386,9 +387,11 @@ class AnyFileFullScreenActivity : AppCompatActivity() {
                             parent.setBackgroundColor(Color.BLACK)
                         }
                     }
-                    mediaPagerAdapter?.playAudio(viewPager.currentItem)
+                    //mediaPagerAdapter?.playAudio(viewPager.currentItem)
                     Log.d(TAG, "setupVideoAudioControls: Playing audio_vn for fileId=${item.fileId}")
                 }
+
+                else -> {}
             }
         }
     }
@@ -493,8 +496,8 @@ class AnyFileFullScreenActivity : AppCompatActivity() {
                     val currentItem = mediaPagerAdapter?.getItem(viewPager.currentItem)
                     if (currentItem?.fileTypes in listOf("video", "audio", "audio_vn")) {
                         totalDuration = when (currentItem?.fileTypes) {
-                            "video" -> mediaPagerAdapter?.getVideoDuration(viewPager.currentItem) ?: 0L
-                            "audio", "audio_vn" -> mediaPagerAdapter?.getAudioDuration(viewPager.currentItem) ?: 0L
+//                            "video" -> mediaPagerAdapter?.getVideoDuration(viewPager.currentItem) ?: 0L
+//                            "audio", "audio_vn" -> mediaPagerAdapter?.getAudioDuration(viewPager.currentItem) ?: 0L
                             else -> 0L
                         }
 
@@ -504,8 +507,8 @@ class AnyFileFullScreenActivity : AppCompatActivity() {
                             updateDurationDisplay()
 
                             when (currentItem?.fileTypes) {
-                                "video" -> mediaPagerAdapter?.seekVideo(viewPager.currentItem, newPosition)
-                                "audio", "audio_vn" -> mediaPagerAdapter?.seekAudio(viewPager.currentItem, newPosition)
+//                                "video" -> mediaPagerAdapter?.seekVideo(viewPager.currentItem, newPosition)
+//                                "audio", "audio_vn" -> mediaPagerAdapter?.seekAudio(viewPager.currentItem, newPosition)
                             }
                         }
                     }
@@ -547,8 +550,8 @@ class AnyFileFullScreenActivity : AppCompatActivity() {
         if (currentItem?.fileTypes in listOf("video", "audio", "audio_vn")) {
             isPlaying = true
             when (currentItem?.fileTypes) {
-                "video" -> mediaPagerAdapter?.playVideo(viewPager.currentItem)
-                "audio", "audio_vn" -> mediaPagerAdapter?.playAudio(viewPager.currentItem)
+//                "video" -> mediaPagerAdapter?.playVideo(viewPager.currentItem)
+//                "audio", "audio_vn" -> mediaPagerAdapter?.playAudio(viewPager.currentItem)
             }
             Log.d(TAG, "playCurrentlyPlayingMedia: Playing ${currentItem?.fileTypes} for fileId=${currentItem?.fileId}")
             startTimer()
@@ -560,8 +563,8 @@ class AnyFileFullScreenActivity : AppCompatActivity() {
         if (currentItem?.fileTypes in listOf("video", "audio", "audio_vn")) {
             isPlaying = false
             when (currentItem?.fileTypes) {
-                "video" -> mediaPagerAdapter?.pauseVideo(viewPager.currentItem)
-                "audio", "audio_vn" -> mediaPagerAdapter?.pauseAudio(viewPager.currentItem)
+//                "video" -> mediaPagerAdapter?.pauseVideo(viewPager.currentItem)
+//                "audio", "audio_vn" -> mediaPagerAdapter?.pauseAudio(viewPager.currentItem)
             }
             Log.d(TAG, "pauseCurrentlyPlayingMedia: Pausing ${currentItem?.fileTypes} for fileId=${currentItem?.fileId}")
             stopTimer()
@@ -599,7 +602,7 @@ class AnyFileFullScreenActivity : AppCompatActivity() {
             stopTimer()
 
             // Remove item from adapter
-            adapter.removeItem(currentPosition)
+           // adapter.removeItem(currentPosition)
 
             // Update dots indicator visibility
             val dotsIndicator: DotsIndicator = binding.wormDotsIndicator
@@ -668,7 +671,7 @@ class AnyFileFullScreenActivity : AppCompatActivity() {
         Log.d(TAG, "onDestroy called")
         isActivityReady = false
         try {
-            mediaPagerAdapter?.releaseAllPlayers()
+          //  mediaPagerAdapter?.releaseAllPlayers()
         } catch (e: Exception) {
             Log.e(TAG, "onDestroy error: ${e.message}")
         }

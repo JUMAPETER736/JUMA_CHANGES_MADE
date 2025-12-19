@@ -1,26 +1,25 @@
 package com.uyscuti.social.circuit.ui
 
-import android.content.Context
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-
-import com.uyscuti.social.circuit.adapter.SearchUserAdapter
+import com.uyscuti.sharedmodule.data.model.Dialog
+import com.uyscuti.sharedmodule.data.model.Message
+import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.sharedmodule.presentation.DialogViewModel
+import com.uyscuti.sharedmodule.presentation.RecentUserViewModel
+import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.data.model.Dialog
-import com.uyscuti.social.circuit.data.model.Message
-import com.uyscuti.social.network.api.models.User
+import com.uyscuti.social.circuit.adapter.SearchUserAdapter
 import com.uyscuti.social.circuit.databinding.ActivityCreateUserChatBinding
-import com.uyscuti.social.circuit.presentation.DialogViewModel
-import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
@@ -47,12 +46,12 @@ class CreateUserChat : AppCompatActivity() {
     private lateinit var searchEditText: EditText
     private lateinit var userListView: RecyclerView
     private lateinit var userListAdapter: SearchUserAdapter
-    private lateinit var originalUserList: List<com.uyscuti.social.circuit.data.model.User>
+    private lateinit var originalUserList: List<User>
 
     private var chatParticipant: ArrayList<UserEntity> = arrayListOf()
 
 
-    private var participants: ArrayList<com.uyscuti.social.circuit.data.model.User> = arrayListOf()
+    private var participants: ArrayList<User> = arrayListOf()
 
     @Inject
     lateinit var retrofitInterface: RetrofitInstance
@@ -126,8 +125,8 @@ class CreateUserChat : AppCompatActivity() {
     }
 
 
-    private fun RecentUser.toUser(): com.uyscuti.social.circuit.data.model.User{
-        return com.uyscuti.social.circuit.data.model.User(
+    private fun RecentUser.toUser(): User {
+        return User(
             id, name, avatar, online, lastSeen
         )
     }
@@ -163,18 +162,18 @@ class CreateUserChat : AppCompatActivity() {
 
     private fun initUserList() {
         userListView = binding.userList
-        userListAdapter = SearchUserAdapter(this) {
+        userListAdapter = SearchUserAdapter(this) { user ->
 
-            Log.d("RecentUsers", "RecentUsers: $it")
-            addUserToRecent(it.toRecentUser())
+            Log.d("RecentUsers", "RecentUsers: $user")
+            addUserToRecent(user.toRecentUser())
 
             CoroutineScope(Dispatchers.Main).launch {
-                chatExist(it.name) { exists, dialogEntity ->
+                chatExist(user.name) { exists, dialogEntity ->
                     if (exists && dialogEntity?.id != dialogEntity?.dialogName) {
 
                         Log.d("UserDialog", "Dialog exists, and you can use dialogEntity")
                         // Dialog exists, and you can use dialogEntity
-                        participants.add(it)
+                        participants.add(user)
 
                         val lastMessage = dialogEntity?.lastMessage?.toMessage()
 
@@ -194,7 +193,7 @@ class CreateUserChat : AppCompatActivity() {
                         finish()
                     } else {
                         Log.d("UserDialog", "Dialog does not exist")
-                        doInBackGround(it)
+                        doInBackGround(user)
                     }
                 }
             }
@@ -218,8 +217,8 @@ class CreateUserChat : AppCompatActivity() {
         userListView.adapter = userListAdapter
     }
 
-    private fun User.toUser(): com.uyscuti.social.circuit.data.model.User{
-        return com.uyscuti.social.circuit.data.model.User(
+    private fun com.uyscuti.social.network.api.models.User.toUser(): User {
+        return User(
             _id,
             username,
             avatar.url,
@@ -228,7 +227,7 @@ class CreateUserChat : AppCompatActivity() {
         )
     }
 
-    private fun com.uyscuti.social.circuit.data.model.User.toRecentUser(): RecentUser{
+    private fun User.toRecentUser(): RecentUser {
         return RecentUser(
             id,
             name,
@@ -271,10 +270,10 @@ class CreateUserChat : AppCompatActivity() {
         }
     }
 
-    private suspend fun searchUsers(query: String): List<User> {
+    private suspend fun searchUsers(query: String): List<com.uyscuti.social.network.api.models.User> {
         userListAdapter.setLoading(true)
         return withContext(Dispatchers.IO) {
-            val users = mutableListOf<User>()
+            val users = mutableListOf<com.uyscuti.social.network.api.models.User>()
 
             try {
                 val request = SearchUsersRequest("")
@@ -285,7 +284,7 @@ class CreateUserChat : AppCompatActivity() {
                     Log.d("SearchUsers", "Success Message: ${response.body()?.message}")
                     Log.d("SearchUsers", "Success Data: ${response.body()?.data}")
 
-                    users.addAll(response.body()?.data as List<User>)
+                    users.addAll(response.body()?.data as List<com.uyscuti.social.network.api.models.User>)
                 } else {
                     Log.e("SearchUsers", "Error: ${response.message()}")
                 }
@@ -299,7 +298,7 @@ class CreateUserChat : AppCompatActivity() {
     }
 
     private fun hideKeyboard() {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(searchEditText.windowToken, 0)
     }
 
@@ -545,7 +544,7 @@ class CreateUserChat : AppCompatActivity() {
         val userId = if (userId == myId) "0" else "1"
         val status = status
         val user =
-            com.uyscuti.social.circuit.data.model.User(
+            User(
                 userId,
                 user.name,
                 user.avatar,
@@ -646,7 +645,7 @@ class CreateUserChat : AppCompatActivity() {
         return parts.last()
     }
 
-    private fun doInBackGround(user: com.uyscuti.social.circuit.data.model.User) {
+    private fun doInBackGround(user: User) {
         val singleUserList = arrayListOf(user)
 //        singleUserList.size
 
@@ -688,7 +687,7 @@ class CreateUserChat : AppCompatActivity() {
         finish()
     }
 
-    private fun com.uyscuti.social.circuit.data.model.User.toUserEntity(): UserEntity {
+    private fun User.toUserEntity(): UserEntity {
         return UserEntity(
             id,
             name,
@@ -699,4 +698,3 @@ class CreateUserChat : AppCompatActivity() {
     }
 
 }
-

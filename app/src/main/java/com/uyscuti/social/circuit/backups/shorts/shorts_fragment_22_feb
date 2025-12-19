@@ -82,14 +82,14 @@ import com.uyscut.core.common.data.room.entity.ShortsEntity
 import com.uyscut.core.common.data.room.entity.ShortsEntityFollowList
 import com.uyscut.core.common.data.room.entity.UserShortsEntity
 import com.uyscut.core.common.data.room.repository.ProfileRepository
-import com.uyscuti.social.circuit.FlashApplication
+import com.uyscuti.sharedmodule.FlashApplication
 import com.uyscuti.social.circuit.MainActivity
 import com.uyscut.flashdesign.R
-import com.uyscuti.social.circuit.adapter.CommentAdapter
-import com.uyscuti.social.circuit.adapter.OnClickListeners
-import com.uyscuti.social.circuit.adapter.OnCommentsClickListener
-import com.uyscuti.social.circuit.adapter.OnVideoPreparedListener
-import com.uyscuti.social.circuit.adapter.ShortsAdapter
+import com.uyscuti.social.business.adapter.CommentAdapter
+import com.uyscuti.sharedmodule.adapter.OnClickListeners
+import com.uyscuti.sharedmodule.adapter.OnCommentsClickListener
+import com.uyscuti.sharedmodule.adapter.OnVideoPreparedListener
+import com.uyscuti.sharedmodule.adapter.ShortsAdapter
 import com.uyscut.flashdesign.colorimagebottomnav.BottomNavigationView
 import com.uyscuti.social.circuit.model.CancelShortsUpload
 import com.uyscuti.social.circuit.model.FollowListItemViewModel
@@ -111,8 +111,8 @@ import com.uyscuti.social.circuit.model.UserProfileShortsViewModel
 import com.uyscuti.social.circuit.presentation.GetOtherUsersProfileViewModel
 import com.uyscuti.social.circuit.presentation.LikeUnLikeViewModel
 import com.uyscuti.social.circuit.service.VideoPreLoadingService
-import com.uyscuti.social.circuit.ui.Log_In_And_Register.LoginActivity
-//import com.uyscuti.social.circuit.ui.OtherImportantProfileThings.TAG
+import com.uyscuti.social.circuit.ui.LoginActivity
+//import com.uyscuti.social.circuit.ui.TAG
 import com.uyscuti.social.circuit.ui.shorts.ExoPlayerItem
 import com.uyscuti.social.circuit.ui.shorts.UploadShortsActivity
 import com.uyscuti.social.circuit.utils.Constants
@@ -167,6 +167,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
     private lateinit var shortsDownloadProgressBar: ProgressBar
     private lateinit var progressBarLayout: LinearLayout
     private lateinit var downloadProgressBarLayout: LinearLayout
+    private lateinit var shortsUploadImageView: ImageView
     private lateinit var shortsDownloadImageView: ImageView
     private lateinit var cancelShortsUpload: ImageView
     private lateinit var playerView: PlayerView
@@ -397,6 +398,8 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
 
             progressBarLayout.visibility = View.VISIBLE
             progressBar.progress = overallProgress.toInt()
+            shortsUploadImageView.setBackgroundResource(R.drawable.shorts_upload_animation)
+            wifiAnimation = shortsUploadImageView.background as AnimationDrawable
             wifiAnimation!!.start()
             cancelShortsUpload.setOnClickListener {
                 Log.d("Cancel", "Cancel upload clicked")
@@ -463,6 +466,7 @@ class ShotsFragment : Fragment(), OnCommentsClickListener, OnClickListeners {
         shortsDownloadProgressBar = view.findViewById(R.id.shortsDownloadProgressBar)
         progressBarLayout = view.findViewById(R.id.progressBarLayout)
         downloadProgressBarLayout = view.findViewById(R.id.downloadProgressBarLayout)
+        shortsUploadImageView = view.findViewById(R.id.shortsUploadImageView)
         shortsDownloadImageView = view.findViewById(R.id.shortsDownloadImageView)
         cancelShortsUpload = view.findViewById(R.id.cancelShortsUpload)
         playerView = view.findViewById(R.id.playerView)

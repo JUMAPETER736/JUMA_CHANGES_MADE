@@ -10,7 +10,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.SimpleTarget
 import com.uyscuti.social.chatsuit.commons.ImageLoader
 import com.uyscuti.social.chatsuit.dialogs.DialogsListAdapter
-import com.uyscuti.social.circuit.data.model.Dialog
+import com.uyscuti.sharedmodule.data.model.Dialog
 
 import dagger.hilt.android.AndroidEntryPoint
 

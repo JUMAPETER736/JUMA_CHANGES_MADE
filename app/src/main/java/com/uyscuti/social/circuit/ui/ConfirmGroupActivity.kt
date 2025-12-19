@@ -10,12 +10,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 import com.uyscuti.social.circuit.adapter.AddParticipantsAdapter
-import com.uyscuti.social.circuit.presentation.DialogViewModel
-import com.uyscuti.social.circuit.presentation.GroupDialogViewModel
-import com.uyscuti.social.circuit.presentation.UsersViewModel
+import com.uyscuti.sharedmodule.presentation.DialogViewModel
+import com.uyscuti.sharedmodule.presentation.GroupDialogViewModel
+import com.uyscuti.sharedmodule.presentation.UsersViewModel
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.data.model.Dialog
-import com.uyscuti.social.circuit.data.model.User
+import com.uyscuti.sharedmodule.data.model.Dialog
+import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.social.circuit.databinding.ActivityConfirmGroupBinding
 import com.uyscuti.social.core.common.data.room.entity.GroupDialogEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
@@ -31,6 +32,7 @@ import retrofit2.HttpException
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.TimeZone
 import javax.inject.Inject
 
 
@@ -148,7 +150,7 @@ class ConfirmGroupActivity : AppCompatActivity() {
 
     private fun convertIso8601ToUnixTimestamp(iso8601Date: String): Long {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-        sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+        sdf.timeZone = TimeZone.getTimeZone("UTC")
 
 
         val date = sdf.parse(iso8601Date)

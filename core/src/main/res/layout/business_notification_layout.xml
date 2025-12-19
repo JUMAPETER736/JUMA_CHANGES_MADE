@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_content_area"
+    android:layout_width="match_parent"
+    android:layout_height="256dp"
+    android:minHeight="256dp"
+    android:maxHeight="256dp"
+    android:orientation="vertical"
+    android:background="@drawable/notification_background"
+    android:paddingTop="16dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <!-- Header Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
+        <ImageView
+            android:id="@+id/iv_notification_icon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_location_pin"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="@string/location_icon_desc" />
+
+        <TextView
+            android:id="@+id/tv_header_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/nearby_business"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:id="@+id/tv_distance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sample_distance"
+            android:textSize="11sp"
+            android:textColor="@color/text_hint"
+            android:background="@drawable/distance_badge_bg"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp" />
+
+    </LinearLayout>
+
+    <!-- Main Content Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+
+        <!-- Business Image Container -->
+        <FrameLayout
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/image_container_bg">
+
+            <ImageView
+                android:id="@+id/iv_business_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/sample_shop_image"
+                android:contentDescription="@string/business_image_desc" />
+
+        </FrameLayout>
+
+        <!-- Business Info -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="start">
+
+            <!-- Business Name -->
+            <TextView
+                android:id="@+id/tv_business_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/sample_business_name"
+                android:textSize="16sp"
+                android:textColor="@color/text_primary"
+                android:fontFamily="sans-serif-black"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Business Description -->
+            <TextView
+                android:id="@+id/tv_business_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/sample_business_description"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:fontFamily="sans-serif"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:lineSpacingMultiplier="1.2"
+                tools:ignore="SmallSp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Items List Section -->
+    <LinearLayout
+        android:id="@+id/ll_items_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/items_section_bg"
+        android:padding="8dp"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:id="@+id/tv_items_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/available_items"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginBottom="6dp" />
+
+        <!-- Items Text (RemoteViews compatible) -->
+        <TextView
+            android:id="@+id/tv_items_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="@color/text_secondary"
+            android:fontFamily="sans-serif"
+            android:maxLines="3"
+            android:lineSpacingMultiplier="1.1" />
+
+        <!-- Fallback items layout (for static content) -->
+        <LinearLayout
+            android:id="@+id/ll_items_fallback"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/item_vegetables"
+                android:textSize="11sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginEnd="16dp"
+                android:drawablePadding="4dp"
+                app:drawableStartCompat="@drawable/bullet_point" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/item_dairy"
+                android:textSize="11sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginEnd="16dp"
+                android:drawablePadding="4dp"
+                app:drawableStartCompat="@drawable/bullet_point" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/item_snacks"
+                android:textSize="11sp"
+                android:textColor="@color/text_secondary"
+                android:drawablePadding="4dp"
+                app:drawableStartCompat="@drawable/bullet_point" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <Button
+            android:id="@+id/btn_dismiss"
+            style="@android:style/Widget.Material.Button.Borderless.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="@string/dismiss"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginEnd="8dp"
+            android:minWidth="72dp"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <Button
+            android:id="@+id/btn_view_more"
+            style="@android:style/Widget.Material.Button.Colored"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="@string/view_more"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-medium"
+            android:backgroundTint="@color/primary_blue"
+            android:minWidth="96dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
 
     <attr name="MessageInput" format="reference" />
@@ -55,6 +54,15 @@
 
         <attr name="delayTypingStatus" format="integer" />
     </declare-styleable>
+<!--    <declare-styleable name="CommentsInput">-->
+
+
+<!--        <attr name="inputBackground" format="dimension|reference" />-->
+<!--        <attr name="gifButtonWidth" format="dimension|reference" />-->
+<!--        <attr name="gifButtonHeight" format="dimension|reference" />-->
+
+
+<!--    </declare-styleable>-->
 
     <attr name="MessagesList" format="reference" />
 
@@ -220,7 +228,6 @@
 
         <attr name="dialogAvatarWidth" format="dimension|reference" />
         <attr name="dialogAvatarHeight" format="dimension|reference" />
-        <attr name="dialogAvatarSize" format="dimension|reference" />
 
         <attr name="dialogMessageAvatarEnabled" format="boolean" />
         <attr name="dialogMessageAvatarWidth" format="dimension|reference" />
@@ -233,14 +240,7 @@
 
         <attr name="dialogItemBackground" format="color|reference" />
         <attr name="dialogUnreadItemBackground" format="color|reference" />
-        <attr name="dialogItemBackgroundColor" format="color|reference" />
-        <attr name="dialogItemSelectedBackgroundColor" format="color|reference" />
 
-        <attr name="dialogItemPadding" format="dimension|reference" />
-        <attr name="dialogDateTextColor" format="color|reference" />
-        <attr name="dialogDateTextSize" format="dimension|reference" />
-        <attr name="dialogAvatarBorderColor" format="color|reference" />
-        <attr name="dialogAvatarBorderWidth" format="dimension|reference" />
     </declare-styleable>
 
 </resources>

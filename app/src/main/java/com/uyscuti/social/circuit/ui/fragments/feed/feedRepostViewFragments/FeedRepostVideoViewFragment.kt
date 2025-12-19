@@ -20,12 +20,12 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
+import com.uyscuti.sharedmodule.adapter.feed.feed.feedRepostViewAdapter.FeedRepostMultipleAudioAdapter
+import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.PlayFeedVideoInterface
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.feed.feedRepostViewAdapter.FeedRepostMultipleAudioAdapter
-import com.uyscuti.social.circuit.adapter.feed.multiple_files.PlayFeedVideoInterface
 import com.uyscuti.social.circuit.databinding.FragmentFeedRepostVideoViewBinding
-import com.uyscuti.social.circuit.feed_demo.VideoPagerAdapter
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.sharedmodule.feed_demo.VideoPagerAdapter
+import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER

@@ -13,7 +13,7 @@ import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.FragmentFeedRepostImageBinding
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -99,7 +99,7 @@ class FeedRepostImageFragment : Fragment() {
                 Log.d(TAG, "onCreateView: feedTextViewFragmentInterface is null")
             }
         }
-        binding.comment.setOnClickListener {
+        binding.commentButtonIcon.setOnClickListener {
 //            feedTextViewFragmentInterface?.onCommentClickFromFeedTextViewFragment(position, data)
 //            binding.feedCommentsCount.text = (data.comments + 1).toString()
 //            EventBus.getDefault().post(FeedCommentClicked(position, data))

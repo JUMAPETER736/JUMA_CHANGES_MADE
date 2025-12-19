@@ -17,14 +17,14 @@ import com.uyscuti.social.circuit.R
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.core.common.data.room.entity.UserEntity
-import com.uyscuti.social.circuit.adapter.UserListAdapter
-import com.uyscuti.social.circuit.data.model.Dialog
-import com.uyscuti.social.circuit.data.model.Message
-import com.uyscuti.social.circuit.data.model.User
+import com.uyscuti.sharedmodule.adapter.UserListAdapter
+import com.uyscuti.sharedmodule.data.model.Dialog
+import com.uyscuti.sharedmodule.data.model.Message
+import com.uyscuti.sharedmodule.data.model.User
 import com.uyscuti.social.circuit.databinding.ActivityCreateChatBinding
-import com.uyscuti.social.circuit.ui.MessagesActivity
-import com.uyscuti.social.circuit.presentation.DialogViewModel
-import com.uyscuti.social.circuit.presentation.UsersViewModel
+import com.uyscuti.sharedmodule.presentation.DialogViewModel
+import com.uyscuti.sharedmodule.presentation.UsersViewModel
+import com.uyscuti.sharedmodule.MessagesActivity
 //import com.uyscuti.social.flashdesign.utils.ChatOperationResult
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
@@ -428,7 +428,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
         Log.d("UserList", "Single User List Size : ${singleUserList.size}")
 
         val tempDialog = Dialog(
-            user.name,
+            user.id,
             user.name,
             user.avatar,
             singleUserList,

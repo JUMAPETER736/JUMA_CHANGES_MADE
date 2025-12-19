@@ -41,64 +41,62 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
-
 import com.uyscuti.social.circuit.adapter.UserListAdapter
-import com.uyscuti.social.circuit.adapter.feed.FeedAdapter
-import com.uyscuti.social.circuit.adapter.feed.OnFeedClickListener
 import com.uyscuti.social.circuit.adapter.feed.ShareFeedPostAdapter
-import com.uyscuti.social.circuit.adapter.feed.postFeedActivity.PostFeedActivity
-import com.uyscuti.social.circuit.eventbus.AllFeedUpdateLike
-import com.uyscuti.social.circuit.eventbus.FeedFavoriteClick
-import com.uyscuti.social.circuit.eventbus.FeedFavoriteFollowUpdate
-import com.uyscuti.social.circuit.eventbus.FeedLikeClick
-import com.uyscuti.social.circuit.eventbus.FeedUploadResponseEvent
-import com.uyscuti.social.circuit.eventbus.FromFavoriteFragmentFeedFavoriteClick
-import com.uyscuti.social.circuit.eventbus.FromFavoriteFragmentFeedLikeClick
-import com.uyscuti.social.circuit.eventbus.FromOtherUsersFeedFavoriteClick
-import com.uyscuti.social.circuit.eventbus.HideFeedFloatingActionButton
-import com.uyscuti.social.circuit.eventbus.ShowFeedFloatingActionButton
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.ToggleFeedFloatingActionButton
-import com.uyscuti.social.circuit.model.FeedAdapterNotifyDatasetChanged
-import com.uyscuti.social.circuit.model.FeedCommentClicked
-import com.uyscuti.social.circuit.model.FeedUploadProgress
-import com.uyscuti.social.circuit.model.HideAppBar
-import com.uyscuti.social.circuit.model.HideBottomNav
-import com.uyscuti.social.circuit.model.ShowAppBar
-import com.uyscuti.social.circuit.model.ShowBottomNav
-import com.uyscuti.social.circuit.model.feed.SetAllFragmentScrollPosition
 import com.uyscuti.social.circuit.ui.feedactivities.FeedVideoViewFragment
-import com.uyscuti.social.circuit.ui.feedactivities.ReportNotificationActivity2
-import com.uyscuti.social.circuit.ui.fragments.FeedFragment
-import com.uyscut.flashdesign.ui.fragments.feed.feedRepostViewFragments.FeedRepostAudioViewFragment
+import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedAudioViewFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostDocFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostImageFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostTextFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostVideoViewFragment
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedAudioViewFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedviewfragments.FeedDocumentViewFragment
 import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedImageViewFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedviewfragments.FeedMixedFilesViewFragment
 import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedMultipleImageViewFragment
 import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedTextViewFragment
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
-
-import com.uyscuti.social.circuit.utils.removeDuplicateFollowers
-import com.uyscuti.social.circuit.viewmodels.FeedShortsViewModel
-import com.uyscuti.social.circuit.viewmodels.FollowUnfollowViewModel
-import com.uyscuti.social.circuit.viewmodels.GetShortsByUsernameViewModel
-import com.uyscuti.social.circuit.viewmodels.feed.FeedUploadViewModel
-import com.uyscuti.social.circuit.viewmodels.feed.GetFeedViewModel
+import com.uyscuti.sharedmodule.ReportNotificationActivity2
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
+import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
+import com.uyscuti.sharedmodule.adapter.feed.feed.postFeedActivity.PostFeedActivity
+import com.uyscuti.sharedmodule.eventbus.AllFeedUpdateLike
+import com.uyscuti.sharedmodule.eventbus.FeedFavoriteClick
+import com.uyscuti.sharedmodule.eventbus.FeedFavoriteFollowUpdate
+import com.uyscuti.sharedmodule.eventbus.FeedLikeClick
+import com.uyscuti.sharedmodule.eventbus.FeedUploadResponseEvent
+import com.uyscuti.sharedmodule.eventbus.FromFavoriteFragmentFeedFavoriteClick
+import com.uyscuti.sharedmodule.eventbus.FromFavoriteFragmentFeedLikeClick
+import com.uyscuti.sharedmodule.eventbus.FromOtherUsersFeedFavoriteClick
+import com.uyscuti.sharedmodule.eventbus.HideFeedFloatingActionButton
+import com.uyscuti.sharedmodule.eventbus.ShowFeedFloatingActionButton
+import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.sharedmodule.interfaces.feedinterfaces.ToggleFeedFloatingActionButton
+import com.uyscuti.sharedmodule.model.FeedAdapterNotifyDatasetChanged
+import com.uyscuti.sharedmodule.model.FeedCommentClicked
+import com.uyscuti.sharedmodule.model.FeedUploadProgress
+import com.uyscuti.sharedmodule.model.HideAppBar
+import com.uyscuti.sharedmodule.model.HideBottomNav
+import com.uyscuti.sharedmodule.model.ShowAppBar
+import com.uyscuti.sharedmodule.model.ShowBottomNav
+import com.uyscuti.sharedmodule.model.feed.SetAllFragmentScrollPosition
+import com.uyscuti.sharedmodule.model.feed.multiple_files.MixedFeedUploadDataClass
+import com.uyscuti.sharedmodule.presentation.DialogViewModel
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FeedDocumentViewFragment
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FeedMixedFilesViewFragment
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
+import com.uyscuti.sharedmodule.utils.removeDuplicateFollowers
+import com.uyscuti.sharedmodule.viewmodels.FeedShortsViewModel
+import com.uyscuti.sharedmodule.viewmodels.FollowUnfollowViewModel
+import com.uyscuti.sharedmodule.viewmodels.GetShortsByUsernameViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.FeedUploadViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.adapter.feed.FeedPaginatedAdapter
 import com.uyscuti.social.circuit.feed.FeedUploadRepository
-import com.uyscuti.social.circuit.model.feed.multiple_files.MixedFeedUploadDataClass
+import com.uyscuti.social.circuit.ui.fragments.chat.FeedFragment
+import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostAudioViewFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragmentsimport.FeedRepostMultipleImageFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -151,7 +149,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
     private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
     private val shortsViewModel: GetShortsByUsernameViewModel by activityViewModels()
-    private lateinit var myFeedAdapter: FeedAdapter
 
     private lateinit var feedListView: RecyclerView
     private lateinit var allFeedAdapter: FeedAdapter
@@ -177,6 +174,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     private var feedRepostAudioViewFragment: FeedRepostAudioViewFragment? = null
     private var feedRepostImageFragment: FeedRepostImageFragment? = null
     private val feedShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
+    private val dialogViewModel: DialogViewModel by activityViewModels()
     private var currentAdapterPosition = -1
     private lateinit var feedUploadRepository: FeedUploadRepository
     private var positionFromShorts: SetAllFragmentScrollPosition? = null
@@ -218,8 +216,12 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         frameLayout = view.findViewById(R.id.feed_text_view_fragment)
         allFeedAdapter = FeedAdapter(
             requireActivity(),
+            retrofitInstance,
             this@AllFragment
         )
+
+        allFeedAdapter.initialize(viewLifecycleOwner, dialogViewModel)
+
         Log.d("RecyclerViewTwo", "Adapter set: $allFeedAdapter")
         feedListView.adapter = allFeedAdapter
         Log.d("RecyclerViewTwo", "Adapter set: $allFeedAdapter")
@@ -234,7 +236,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
             Log.d(TAG, "Data already available, using the cached data")
         }
-        allFeedAdapter.setOnPaginationListener(object : FeedPaginatedAdapter.OnPaginationListener {
+        allFeedAdapter.setOnPaginationListener(object : com. uyscuti. sharedmodule. adapter. FeedPaginatedAdapter. OnPaginationListener {
             override fun onCurrentPage(page: Int) {
                 Log.d(TAG, "Feed Feed currentPage: page number $page")
             }
@@ -414,15 +416,15 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 )
                 val data = responseBody.data
                 // Safely access the 4th element if it exists
-                val posts = responseBody.data.posts.posts
+                val posts = responseBody.data.data.posts
                 if (posts.size > 4) {
                     Log.d(TAG, "Feed Feed getAllFeed feed: response body data ${posts[4]}")
                 } else {
                     Log.d(TAG, "Feed Feed getAllFeed feed: Not enough posts, size=${posts.size}")
                 }
-                Log.d(TAG, "Feed Feed getAllFeed feed: response body data ${data.posts.posts.size}")
+                Log.d(TAG, "Feed Feed getAllFeed feed: response body data ${data.data.posts.size}")
                 withContext(Dispatchers.Main) {
-                    getFeedViewModel.addAllFeedData(data.posts.posts.toMutableList())
+                    getFeedViewModel.addAllFeedData(data.data.posts.toMutableList())
                     allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
                     val posts = getFeedViewModel.getAllFeedData()
                     Log.d(TAG, "getAllFeed: posts :$posts")
@@ -538,7 +540,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     override fun likeUnLikeFeed(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         Log.d("likeUnLikeFeed", "likeUnLikeFeed: $data")
         try {
@@ -618,11 +620,16 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     override fun feedCommentClicked(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         //implemented in main activity kt
         Log.d(TAG, "feedCommentClick: this is the one listening")
-        EventBus.getDefault().post(FeedCommentClicked(position, data))
+        EventBus.getDefault().post(
+            FeedCommentClicked(
+                position,
+                data
+            )
+        )
     }
 
     private fun hidingBottomNav() {
@@ -631,7 +638,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     override fun feedFavoriteClick(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         Log.d(TAG, "feedFavoriteClick: favorite clicked")
         EventBus.getDefault().post(FeedFavoriteClick(position, data))
@@ -706,7 +713,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     @SuppressLint("InflateParams", "MissingInflatedId", "ServiceCast")
     override fun moreOptionsClick(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         Log.d(TAG, "moreOptionsClick: More options clicked")
         val view: View = layoutInflater.inflate(
@@ -958,7 +965,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     @SuppressLint("NotifyDataSetChanged")
     private fun hideSinglePost(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         Log.d(TAG,
             "hideSinglePost: Hiding post at position: $position, PostId: ${data._id}")
@@ -1026,7 +1033,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     }
 
     private fun handleNotInterested(
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
+        data: com.uyscuti.social.network.api.response.posts.Post) {
 
         val sharedPrefs =
             requireContext().getSharedPreferences("NotInterestedPosts", Context.MODE_PRIVATE)
@@ -1096,7 +1103,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             Log.d(TAG, "handleDeleteAction isSuccessful: ${response.isSuccessful}")
             if (response.isSuccessful) {
                 getFeedViewModel.removeMyFeed(position)
-                myFeedAdapter.removeItem(position)
+                allFeedAdapter.removeItem(position)
 
 
                 shortsViewModel.postCount -= 1
@@ -1190,7 +1197,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             .show()
     }
 
-    override fun feedFileClicked(position: Int, data: Post) {
+    override fun feedFileClicked(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         Log.d(TAG, "feedFileClicked: clicked on isBookmarked ${data.isBookmarked}")
 
         // Hide UI elements
@@ -1224,7 +1231,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     }
     override fun feedRepostFileClicked(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.OriginalPost
+        data: com.uyscuti.social.network.api.response.posts.OriginalPost
     ) {
         // Hide UI elements
         EventBus.getDefault().post(HideBottomNav())
@@ -1260,7 +1267,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     override fun feedShareClicked(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         val context = requireContext()
 
@@ -1336,7 +1343,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     @SuppressLint("MissingInflatedId", "CommitTransaction")
     override fun feedRepostPost(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         val view: View = layoutInflater.inflate(
             R.layout.feed_moreoptions_bottomsheet_layout, null)
@@ -1382,7 +1389,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     override fun feedRepostPostClicked(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         TODO("Not yet implemented")
     }
@@ -1521,15 +1528,20 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     override fun onCommentClickFromFeedTextViewFragment(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        EventBus.getDefault().post(FeedCommentClicked(position, data))
+        EventBus.getDefault().post(
+            FeedCommentClicked(
+                position,
+                data
+            )
+        )
         Log.d(TAG, "onCommentClickFromFeedTextViewFragment: comment clicked")
     }
 
     override fun onLikeUnLikeFeedFromFeedTextViewFragment(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         try {
             val updatedComment = if (data.isLiked) {
@@ -1598,7 +1610,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     override fun onFeedFavoriteClickFromFeedTextViewFragment(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         EventBus.getDefault().post(FeedFavoriteClick(position, data))
 //        EventBus.getDefault().post(FromFavoriteFragmentFeedFavoriteClick(position, data))
@@ -1640,7 +1652,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     @SuppressLint("InflateParams")
     override fun onMoreOptionsClickFromFeedTextViewFragment(
         position: Int,
-        data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         val view: View = layoutInflater.inflate(R.layout.more_options_redesign_layout, null)
         val dialog = BottomSheetDialog(requireContext())
@@ -1671,25 +1683,10 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         allFeedAdapter.notifyItemChanged(position)
     }
 
-    override fun onRePostClickFromFeedTextViewFragment(position: Int, data: Post) {
+    override fun onRePostClickFromFeedTextViewFragment(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         TODO("Not yet implemented")
     }
 
-    override fun onFullScreenClicked(data: MixedFeedUploadDataClass) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onMediaClick(data: MixedFeedUploadDataClass) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onMediaPrepared(mp: MediaPlayer) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onMediaError() {
-        TODO("Not yet implemented")
-    }
 
     @SuppressLint("NotifyDataSetChanged")
     fun onBackPressed() {

@@ -7,8 +7,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
+import com.uyscuti.social.circuit.adapter.UserProfileMyFeedFragmentAdapter
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.feed.UserProfileMyFeedFragmentAdapter
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject

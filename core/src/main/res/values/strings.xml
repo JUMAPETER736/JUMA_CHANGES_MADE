@@ -1,0 +1,33 @@
+<resources>
+    <!-- Notification Labels -->
+    <string name="nearby_business">Nearby Business</string>
+    <string name="available_items">Available Items:</string>
+    <string name="km_away">%1$s km away</string>
+
+    <!-- Button Labels -->
+    <string name="dismiss">DISMISS</string>
+    <string name="view_more">VIEW MORE</string>
+
+    <!-- Sample Data -->
+    <string name="sample_business_name">Fresh Market Corner</string>
+    <string name="sample_business_description">Your local grocery store with fresh produce, dairy products, and daily essentials</string>
+    <string name="sample_distance">200 meters away</string>
+
+    <!-- Sample Items -->
+    <string name="item_vegetables">Fresh Vegetables</string>
+    <string name="item_dairy">Dairy Products</string>
+    <string name="item_snacks">Snacks</string>
+    <string name="item_beverages">Beverages</string>
+    <string name="item_bakery">Bakery Items</string>
+
+    <!-- Content Descriptions -->
+    <string name="location_icon_desc">Location indicator</string>
+    <string name="business_image_desc">Business storefront image</string>
+    <string name="sample_item">Sample Item</string>
+    <string name="fresh_vegetables_dairy_products_snacks">• Fresh Vegetables • Dairy Products • Snacks • Fresh Vegetables • Dairy Products • Snacks• Fresh Vegetables • Dairy Products • Snacks</string>
+    <string name="business_logo">Business logo</string>
+    <string name="ad">Ad</string>
+    <string name="view">VIEW MORE</string>
+    <string name="plus_sample">"+12 more "</string>
+    <string name="sample_location_name">Located in Lilongwe</string>
+</resources>

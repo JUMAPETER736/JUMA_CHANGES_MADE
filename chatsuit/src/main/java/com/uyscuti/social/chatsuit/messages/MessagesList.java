@@ -28,7 +28,9 @@ import androidx.recyclerview.widget.SimpleItemAnimator;
 import com.uyscuti.social.chatsuit.commons.models.IMessage;
 
 
-
+/**
+ * Component for displaying list of messages
+ */
 public class MessagesList extends RecyclerView {
     private MessagesListStyle messagesListStyle;
 
@@ -46,18 +48,33 @@ public class MessagesList extends RecyclerView {
         parseStyle(context, attrs);
     }
 
-
+    /**
+     * Don't use this method for setting your adapter, otherwise exception will by thrown.
+     * Call {@link #setAdapter(MessagesListAdapter)} instead.
+     */
     @Override
     public void setAdapter(Adapter adapter) {
         throw new IllegalArgumentException("You can't set adapter to MessagesList. Use #setAdapter(MessagesListAdapter) instead.");
     }
 
-
+    /**
+     * Sets adapter for MessagesList
+     *
+     * @param adapter   Adapter. Must extend MessagesListAdapter
+     * @param <MESSAGE> Message model class
+     */
     public <MESSAGE extends IMessage>
     void setAdapter(MessagesListAdapter<MESSAGE> adapter) {
         setAdapter(adapter, true);
     }
 
+    /**
+     * Sets adapter for MessagesList
+     *
+     * @param adapter       Adapter. Must extend MessagesListAdapter
+     * @param reverseLayout weather to use reverse layout for layout manager.
+     * @param <MESSAGE>     Message model class
+     */
     public <MESSAGE extends IMessage>
     void setAdapter(MessagesListAdapter<MESSAGE> adapter, boolean reverseLayout) {
         SimpleItemAnimator itemAnimator = new DefaultItemAnimator();

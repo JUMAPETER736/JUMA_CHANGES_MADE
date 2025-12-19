@@ -11,8 +11,8 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.activityViewModels
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
-import com.uyscuti.social.circuit.viewmodels.feed.FeedLiveDataViewModel
+import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.sharedmodule.viewmodels.feed.FeedLiveDataViewModel
 import com.uyscuti.social.circuit.databinding.FragmentFeedRepostTextBinding
 
 // TODO: Rename parameter arguments, choose names that match
@@ -105,7 +105,7 @@ class FeedRepostTextFragment : Fragment() {
 
         }
 
-        binding.share.setOnClickListener {
+        binding.shareButtonIcon.setOnClickListener {
 //              Create an Intent with action Intent.ACTION_SEND
             Toast.makeText(requireContext(), "share clicked", Toast.LENGTH_SHORT).show()
             val sendIntent = Intent().apply {
@@ -126,7 +126,7 @@ class FeedRepostTextFragment : Fragment() {
 //            val totalComments = data.comments.
 //            binding.feedCommentsCount.text = "$totalComments"
         }
-        binding.comment.setOnClickListener {
+        binding.commentButtonIcon.setOnClickListener {
 //            Log.d(TAG, "Comments: comment clicked")
 //            feedTextViewFragmentInterface?.onCommentClickFromFeedTextViewFragment(position, data)
 //            binding.feedCommentsCount.text = (data.comments + 1).toString()

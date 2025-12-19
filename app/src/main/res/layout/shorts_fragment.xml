@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/black"
     android:theme="@style/FUllScreen"
-    tools:context=".User_Interface.fragments.ShotsFragment">
+    >
 
 
 

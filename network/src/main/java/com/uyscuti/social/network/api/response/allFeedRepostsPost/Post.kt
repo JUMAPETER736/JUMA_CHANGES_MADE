@@ -13,8 +13,6 @@ import retrofit2.http.*
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.Serializable
 
-
-
 data class Post(
     val __v: Int,
     var _id: String,
@@ -23,12 +21,12 @@ data class Post(
     var content: String,
     val contentType: String,
     val createdAt: String,
-    var duration: List<Duration>,
-    var fileIds: List<Any?>,
+    val duration: List<Duration>,
+    val fileIds: List<Any?>,
     val fileNames: List<FileName>,
     val fileSizes: List<FileSize>,
-    var fileTypes: List<FileType>,
-    var files: List<File>,
+    val fileTypes: List<FileType>,
+    val files: List<File>,
     val isExpanded: Boolean,
     val isLocal: Boolean,
     val isFollowing: Boolean,
@@ -36,10 +34,10 @@ data class Post(
     val numberOfPages: List<NumberOfPages>,
     val originalPost: List<OriginalPost>,
     val repostedByUserId: String,
-    val repostedUser: RepostedUser?,
+    val repostedUser: RepostedUser,
     val repostedUsers: List<String>,
     val tags: List<Any?>,
-    var thumbnail: List<Thumbnail>,
+    val thumbnail: List<Thumbnail>,
     val updatedAt: String,
     var likes: Int,
     var bookmarkCount: Int,
@@ -52,12 +50,6 @@ data class Post(
     var isReposted: Boolean,
     val url: String,
     val type: String,
-    val profilePicUrl: String?,
-    val username: String?,
-    val fullName: String?,
-    val isLikedCount: Boolean = false,
-    val isBookmarkCount: Boolean = false,
-
     val description: String,
     val location: String?,
     val latitude: Double?,
@@ -71,10 +63,7 @@ data class Post(
     val isFromInfluencer: Boolean = false,
 
 
-
-
-
-    ) : Serializable {
+) : Serializable {
 
     val safeCommentCount: Int get() = commentCount ?: comments
     val safeLikes: Int get() = likes
@@ -136,11 +125,6 @@ data class RepostRequest(
     val tags: List<String>? = null
 )
 
-data class RepostRequestMultiPart(
-    val comment: String,
-    val originalPostId: String,
-    val hasNewFiles: Boolean = false
-)
 
 data class RepostResponse(
     val success: Boolean,
@@ -172,7 +156,6 @@ data class BookmarkRequest(
 data class LikeRequest(
     val isLiked: Boolean
 )
-
 
 interface BookmarkService {
     @POST("posts/{postId}/bookmark")
@@ -231,6 +214,7 @@ interface CommentService {
         @Query("limit") limit: Int = 20
     ): Call<CommentsResponse>
 
+
     @GET("posts/{postId}/comments")
     fun getCommentsForPost(
         @Path("postId") postId: String,
@@ -266,8 +250,15 @@ data class ShareResponse(
 )
 
 
+
+
+
+
+
+
+
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.1.103:8080/api/v1/"
+    private const val BASE_URL =  "http://192.168.1.103:8080/api/v1/"
 
     private val retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)

@@ -14,10 +14,10 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
+import com.uyscuti.sharedmodule.adapter.feed.feed.MultipleFeedImagesAdapter
+import com.uyscuti.sharedmodule.adapter.feed.feed.MultipleImagesListener
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.feed.MultipleFeedImagesAdapter
-import com.uyscuti.social.circuit.adapter.feed.MultipleImagesListener
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -83,7 +83,7 @@ class FeedRepostMultipleImageFragment : Fragment() , MultipleImagesListener {
                 feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
             }
         }
-        binding.comment.setOnClickListener {
+        binding.commentButtonIcon.setOnClickListener {
 //            feedTextViewFragmentInterface?.onCommentClickFromFeedTextViewFragment(position, data)
 //            binding.feedCommentsCount.text = (data.comments + 1).toString()
 //            EventBus.getDefault().post(FeedCommentClicked(position, data))

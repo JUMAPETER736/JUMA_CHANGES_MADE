@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/black"
     android:theme="@style/FUllScreen"
-    tools:context=".User_Interface.shorts.UserProfileShortsPlayerActivity">
+    tools:context="com.uyscuti.sharedmodule.shorts.UserProfileShortsPlayerActivity">
 
 
     <androidx.media3.ui.PlayerView
@@ -136,7 +136,7 @@
                 android:layout_height="match_parent"
                 android:layout_above="@+id/progressBar"
 
-                tools:listitem="@layout/bottom_sheet_1_item" />
+                tools:listitem="@layout/comment_text_item" />
             <!--            <include-->
             <!--                android:id="@+id/placeholderLayout"-->
             <!--                layout="@layout/placeholder_layout"-->
@@ -314,7 +314,7 @@
 
                 </LinearLayout>
 
-                <com.uyscuti.social.circuit.views.WaveFormView
+                <com.uyscuti.sharedmodule.views.WaveFormView
                     android:layout_width="match_parent"
                     android:layout_height="90dp"
                     android:layout_marginTop="5dp"
@@ -365,7 +365,7 @@
                     <!--                        app:touchable="true"-->
                     <!--                        app:waveColor="@color/bluejeans"-->
                     <!--                        />-->
-                    <com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
+                    <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
                         android:id="@+id/wave"
                         android:layout_width="0dp"
                         android:layout_height="32dp"
@@ -421,7 +421,6 @@
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:padding="8dp"
-                        android:visibility="gone"
                         android:src="@drawable/send_svgrepo_com__1_"
                         app:tint="@color/white"
                         android:id="@+id/sendVN"
