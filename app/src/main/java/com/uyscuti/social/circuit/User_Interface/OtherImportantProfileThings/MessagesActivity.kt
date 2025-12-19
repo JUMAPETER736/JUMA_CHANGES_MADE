@@ -5520,9 +5520,9 @@ class MessagesActivity : MainMessagesActivity(),
             val dueTimeSeconds = (durationSeconds - playedTimeSeconds).coerceAtLeast(0)
             val dueMinutes = dueTimeSeconds / 60
             val dueSeconds = dueTimeSeconds % 60
-//
+
             audioDuration.text = String.format("%02d:%02d", playedMinutes, playedSeconds)
-//            endDurationTv.text = String.format("%02d:%02d", dueMinutes, dueSeconds)
+
 
             handler.postDelayed(runnable, 1000)
         }
@@ -5552,9 +5552,9 @@ class MessagesActivity : MainMessagesActivity(),
                 date
             )
 
-//            val newFilePath = getOutputFilePath(this)
+
             val newFile = File(vnPath)
-//            Log.d("AudioFile", "File created: $newFile")
+
             Log.d("AudioFile", "vn file path: $vnPath")
 
             try {
@@ -5602,7 +5602,7 @@ class MessagesActivity : MainMessagesActivity(),
             message.status = "Sending"
 
             CoroutineScope(Dispatchers.Main).launch {
-//                            delay(500)
+
                 super.messagesAdapter?.addToStart(message, true)
             }
         }

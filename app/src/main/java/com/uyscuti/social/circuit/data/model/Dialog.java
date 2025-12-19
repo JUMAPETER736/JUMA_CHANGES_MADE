@@ -90,7 +90,7 @@ public class Dialog implements IDialog<Message>, Parcelable {
         users = in.createTypedArrayList(User.CREATOR);
         lastMessage = in.readParcelable(Message.class.getClassLoader());
         unreadCount = in.readInt();
-        // Fixed: Read as byte since writeToParcel writes as byte
+
         isSelected = in.readByte() != 0;
     }
 
@@ -119,7 +119,7 @@ public class Dialog implements IDialog<Message>, Parcelable {
         dest.writeTypedList(users);
         dest.writeParcelable(lastMessage, flags);
         dest.writeInt(unreadCount);
-        // Fixed: Write as byte to match the read operation
+
         dest.writeByte((byte) (isSelected ? 1 : 0));
     }
 }
