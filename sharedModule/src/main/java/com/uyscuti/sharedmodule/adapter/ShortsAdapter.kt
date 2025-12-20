@@ -402,6 +402,7 @@ interface OnVideoPreparedListener {
     fun onVideoPrepared(exoPlayerItem: ExoPlayerItem)
 }
 
+
 class ShortsAdapter(
     private val commentsClickListener: OnCommentsClickListener,
     private var clickListeners: OnClickListeners,
@@ -447,6 +448,7 @@ class ShortsAdapter(
 //        Log.d(TAG, "addIsFollowingData: $isFollowingData")
     }
 
+
     fun updateBtn(text: String) {
         currentViewHolder?.updateButton(text)
     }
@@ -477,6 +479,7 @@ class ShortsAdapter(
     private fun getIsFollowingData(): MutableList<ShortsEntityFollowList> {
         return followingData
     }
+
     override fun onBindViewHolder(holder: StringViewHolder, position: Int) {
         currentViewHolder = holder
         val data = shortsList[position]
