@@ -2358,5 +2358,5 @@ interface OnMultipleFilesClickListener {
         files: List<com.uyscuti.social.network.api.response.posts.File>,
         fileIds: List<String>
     )
-    
+
 }

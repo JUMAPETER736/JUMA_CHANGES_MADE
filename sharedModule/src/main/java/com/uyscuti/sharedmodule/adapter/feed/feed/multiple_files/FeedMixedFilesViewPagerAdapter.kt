@@ -59,6 +59,7 @@ class  FeedMixedFilesViewPagerAdapter(
     }
 
     override fun finishedPlayingVideo(position: Int) { }
+
     override fun onRePostClickFromFeedTextViewFragment(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
