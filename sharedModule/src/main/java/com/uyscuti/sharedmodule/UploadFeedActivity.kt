@@ -207,7 +207,7 @@ class UploadFeedActivity : AppCompatActivity(),
 
     // Full screen views
     private lateinit var fullScreenFileContainer: FrameLayout
-    private lateinit var fullScreenFileView: VideoView  // This is correct - matches XML id
+    private lateinit var fullScreenFileView: VideoView 
     private lateinit var fullScreenAnyFileView: ImageView
 
     private lateinit var closeFullScreenButton: ImageView
