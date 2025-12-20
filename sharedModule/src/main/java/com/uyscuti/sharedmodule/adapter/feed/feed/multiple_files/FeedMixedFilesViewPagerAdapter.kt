@@ -9,6 +9,7 @@ import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedMixedFiles
 import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
 
 class  FeedMixedFilesViewPagerAdapter(
+
     fragmentActivity: FragmentActivity,
     private val feedPost: com.uyscuti.social.network.api.response.posts.Post) :
     FragmentStateAdapter(fragmentActivity), FeedTextViewFragmentInterface {
