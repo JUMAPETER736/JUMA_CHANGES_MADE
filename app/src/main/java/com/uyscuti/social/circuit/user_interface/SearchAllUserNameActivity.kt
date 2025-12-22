@@ -3,6 +3,7 @@ package com.uyscuti.social.circuit.user_interface
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,6 +16,7 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -291,7 +293,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                     Log.e("SearchUsers", "API ERROR")
                     Log.e("SearchUsers", "Code: ${response.code()}")
                     Log.e("SearchUsers", "Message: ${response.message()}")
-            
+
                     searchAdapter.showNoResults()
                 }
 
@@ -324,6 +326,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         finish()
     }
 
+    @RequiresApi(Build.VERSION_CODES.CUPCAKE)
     private fun hideKeyboard() {
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
