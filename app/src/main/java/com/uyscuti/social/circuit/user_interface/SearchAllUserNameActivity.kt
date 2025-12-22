@@ -1,9 +1,9 @@
 package com.uyscuti.social.circuit.user_interface
 
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -16,7 +16,6 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -37,6 +36,7 @@ import com.uyscuti.social.circuit.databinding.ActivitySearchAllUserNameBinding
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import com.uyscuti.social.network.api.response.posts.Author
+import com.uyscuti.social.network.api.response.getallshorts.Author as ShortsAuthor
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
@@ -62,6 +62,9 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     private val shortsViewModel: ShortsViewModel by viewModels()
     private val recentUserViewModel: RecentUserViewModel by viewModels()
 
+    // Cache for all authors
+    private val allAuthorsCache = mutableListOf<Author>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -78,6 +81,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         initSearchResults()
         setupSearch()
         loadRecentUsers()
+        loadAllAuthors()
     }
 
     private fun setupToolbar() {
@@ -92,6 +96,20 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                 recentUserViewModel.getRecentUsers()
             }
             searchAdapter.showRecentUsers(recentUsers.map { it.toAuthor() })
+        }
+    }
+
+    private fun loadAllAuthors() {
+        lifecycleScope.launch {
+            searchAdapter.showLoading()
+            val authors = withContext(Dispatchers.IO) {
+                fetchAllAuthorsFromShortsAndFeed()
+            }
+            allAuthorsCache.clear()
+            allAuthorsCache.addAll(authors)
+
+            // After loading, show recent users
+            loadRecentUsers()
         }
     }
 
@@ -114,14 +132,158 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             if (query.isEmpty()) {
                 loadRecentUsers()
             } else {
-                // Start new search job with debounce
+                // Start new search job with slight delay for better performance
                 searchJob = lifecycleScope.launch {
-                    delay(500) // Debounce 500ms to avoid too many API calls
-                    performSearch(query)
+                    // Optional: Add a small delay (300ms) to avoid too many searches
+                    // Remove this line if you want instant results without debounce
+                    delay(300)
+
+                    Log.d("SearchUsers", "Searching for: '$query', Cache size: ${allAuthorsCache.size}")
+                    val results = searchUsers(query).sortedBy { it.account.username }
+                    Log.d("SearchUsers", "Found ${results.size} results")
+
+                    if (results.isNotEmpty()) {
+                        results.take(3).forEach {
+                            Log.d("SearchUsers", "Result: ${it.account.username}")
+                        }
+                        searchAdapter.showSearchResults(results)
+                    } else {
+                        searchAdapter.showNoResults()
+                    }
                 }
             }
         })
     }
+
+    private suspend fun fetchAllAuthorsFromShortsAndFeed(): List<Author> {
+        val authorsMap = mutableMapOf<String, Author>()
+
+        try {
+            // Fetch from shorts (multiple pages)
+            for (page in 1..5) {
+                try {
+                    val shortsResponse = apiService.getShorts(page.toString())
+                    if (shortsResponse.isSuccessful) {
+                        val body = shortsResponse.body()
+                        if (body != null) {
+                            val responseData = body.data
+                            if (responseData != null) {
+                                val postsData = responseData.posts
+                                if (postsData != null) {
+                                    val postsList = postsData.posts
+                                    for (post in postsList) {
+                                        val shortsAuthor = post.author
+                                        val author = shortsAuthor.toFeedAuthor()
+                                        if (!authorsMap.containsKey(author._id)) {
+                                            authorsMap[author._id] = author
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("SearchUsers", "Error fetching shorts page $page: ${e.message}")
+                }
+            }
+
+            // Fetch from feed (multiple pages)
+            for (page in 1..5) {
+                try {
+                    val feedResponse = apiService.getAllFeed(page.toString())
+                    if (feedResponse.isSuccessful) {
+                        val body = feedResponse.body()
+                        if (body != null) {
+                            val data = body.data
+                            if (data != null) {
+                                val dataX = data.data
+                                if (dataX != null) {
+                                    val postsList = dataX.posts
+                                    for (post in postsList) {
+                                        val author = post.author
+                                        if (!authorsMap.containsKey(author._id)) {
+                                            authorsMap[author._id] = author
+                                        }
+
+                                        // Also get authors from reposted content
+                                        val originalPosts = post.originalPost
+                                        for (originalPost in originalPosts) {
+                                            val originalAuthor = originalPost.author
+                                            if (!authorsMap.containsKey(originalAuthor._id)) {
+                                                authorsMap[originalAuthor._id] = originalAuthor.toAuthor()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("SearchUsers", "Error fetching feed page $page: ${e.message}")
+                }
+            }
+
+        } catch (e: HttpException) {
+            Log.e("SearchUsers", "HTTP error: ${e.message}")
+        } catch (e: IOException) {
+            Log.e("SearchUsers", "Network error: ${e.message}")
+        } catch (e: Exception) {
+            Log.e("SearchUsers", "Unexpected error: ${e.message}")
+        }
+
+        return authorsMap.values.toList()
+    }
+
+    // Extension function to convert ShortsAuthor to Feed Author
+    private fun ShortsAuthor.toFeedAuthor() = Author(
+        __v = __v,
+        _id = _id,
+        account = com.uyscuti.social.network.api.response.posts.Account(
+            _id = account._id,
+            avatar = com.uyscuti.social.network.api.response.posts.Avatar(
+                _id = account.avatar._id,
+                localPath = account.avatar.localPath,
+                url = account.avatar.url
+            ),
+            createdAt = "",
+            email = account.email,
+            updatedAt = "",
+            username = account.username
+        ),
+        bio = bio,
+        countryCode = countryCode,
+        coverImage = com.uyscuti.social.network.api.response.posts.CoverImage(
+            _id = coverImage._id,
+            localPath = coverImage.localPath,
+            url = coverImage.url
+        ),
+        createdAt = createdAt,
+        dob = dob,
+        firstName = firstName,
+        lastName = lastName,
+        location = location,
+        owner = owner,
+        phoneNumber = phoneNumber,
+        updatedAt = updatedAt
+    )
+
+    // Extension function to convert AuthorX (from OriginalPost) to Author
+    private fun com.uyscuti.social.network.api.response.posts.AuthorX.toAuthor() = Author(
+        __v = 0,
+        _id = _id,
+        account = account,
+        bio = bio,
+        countryCode = countryCode,
+        coverImage = coverImage,
+        createdAt = createdAt,
+        dob = dob,
+        firstName = firstName,
+        lastName = lastName,
+        location = location,
+        owner = owner,
+        phoneNumber = phoneNumber,
+        updatedAt = updatedAt
+    )
 
     // Extension functions to convert between Author and RecentUser
     private fun Author.toRecentUser() = RecentUser(
@@ -166,8 +328,8 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     )
 
     private fun initSearchResults() {
-        searchAdapter = SearchUserNameAdapter { author, postCount ->
-            Log.d("SearchResults", " User clicked: @${author.account.username} (${author._id}) - $postCount posts")
+        searchAdapter = SearchUserNameAdapter { author ->
+            Log.d("SearchResults", "User clicked: @${author.account.username} (${author._id})")
             addUserToRecent(author.toRecentUser())
             onUserClicked(author)
         }
@@ -185,145 +347,32 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     }
 
     private fun performSearch(query: String) {
-        if (query.isBlank()) {
-            loadRecentUsers()
-            return
-        }
-
         lifecycleScope.launch {
-            searchAdapter.showLoading()
-
-            try {
-                Log.d("SearchUsers", "========================================")
-                Log.d("SearchUsers", "CALLING BACKEND API")
-                Log.d("SearchUsers", "Query: '$query'")
-
-                // Call your backend search endpoint
-                val response = withContext(Dispatchers.IO) {
-                    apiService.getSearchAllFeedByUserId(query, page = "1", limit = "100")
+            Log.d("SearchUsers", "Searching for: '$query', Cache size: ${allAuthorsCache.size}")
+            val results = searchUsers(query).sortedBy { it.account.username }
+            Log.d("SearchUsers", "Found ${results.size} results")
+            if (results.isNotEmpty()) {
+                results.take(3).forEach {
+                    Log.d("SearchUsers", "Result: ${it.account.username}")
                 }
-
-                // ADD THIS: Log response details BEFORE checking if successful
-                Log.d("SearchUsers", "Response Code: ${response.code()}")
-                Log.d("SearchUsers", "Response Message: ${response.message()}")
-                Log.d("SearchUsers", "Is Successful: ${response.isSuccessful}")
-
-                // Log error body if not successful
-                if (!response.isSuccessful) {
-                    val errorBody = response.errorBody()?.string()
-                    Log.e("SearchUsers", "Error Body: $errorBody")
-                    searchAdapter.showNoResults()
-                    return@launch
-                }
-
-                // Log raw body
-                val body = response.body()
-                Log.d("SearchUsers", "Response Body: $body")
-
-                if (body != null && body.success) {
-                    // Access nested data object
-                    val data = body.data?.data
-                    val matchingUsers = data?.matchingUsers ?: emptyList()
-                    val totalPosts = data?.totalPosts ?: 0
-
-                    Log.d("SearchUsers", "API RESPONSE SUCCESS")
-                    Log.d("SearchUsers", "Total Posts: $totalPosts")
-                    Log.d("SearchUsers", "Matching Users: ${matchingUsers.size}")
-
-                    if (matchingUsers.isNotEmpty()) {
-                        val userPostCounts = mutableMapOf<String, Int>()
-
-                        data?.posts?.forEach { post ->
-                            val authorId = post.author._id
-                            userPostCounts[authorId] = (userPostCounts[authorId] ?: 0) + 1
-                        }
-
-                        val authorsWithCounts = matchingUsers.map { user ->
-                            val postCount = userPostCounts[user._id] ?: 0
-                            Log.d("SearchUsers", "    @${user.username}: $postCount posts (User ID: ${user._id})")
-
-                            val authorFromPost = data?.posts?.find { it.author._id == user._id }?.author
-
-                            if (authorFromPost != null) {
-                                AuthorWithCount(authorFromPost, postCount)
-                            } else {
-                                AuthorWithCount(
-                                    Author(
-                                        __v = 0,
-                                        _id = user._id,
-                                        account = com.uyscuti.social.network.api.response.posts.Account(
-                                            _id = user._id,
-                                            avatar = com.uyscuti.social.network.api.response.posts.Avatar(
-                                                _id = "",
-                                                localPath = "",
-                                                url = ""
-                                            ),
-                                            createdAt = "",
-                                            email = user.email,
-                                            updatedAt = "",
-                                            username = user.username
-                                        ),
-                                        bio = "",
-                                        countryCode = "",
-                                        coverImage = com.uyscuti.social.network.api.response.posts.CoverImage(
-                                            _id = "",
-                                            localPath = "",
-                                            url = ""
-                                        ),
-                                        createdAt = "",
-                                        dob = "",
-                                        firstName = "",
-                                        lastName = "",
-                                        location = "",
-                                        owner = "",
-                                        phoneNumber = "",
-                                        updatedAt = ""
-                                    ),
-                                    postCount
-                                )
-                            }
-                        }
-
-                        Log.d("SearchUsers", "========================================")
-                        searchAdapter.showSearchResults(authorsWithCounts)
-                    } else {
-                        Log.d("SearchUsers", "No users found matching '$query'")
-                        Log.d("SearchUsers", "========================================")
-                        searchAdapter.showNoResults()
-                    }
-                } else {
-                    Log.e("SearchUsers", "Response body is null or success=false")
-                    Log.e("SearchUsers", "Body success: ${body?.success}")
-                    Log.e("SearchUsers", "Body message: ${body?.message}")
-                    Log.e("SearchUsers", "========================================")
-                    searchAdapter.showNoResults()
-                }
-
-            } catch (e: HttpException) {
-                Log.e("SearchUsers", "========================================")
-                Log.e("SearchUsers", "HTTP EXCEPTION")
-                Log.e("SearchUsers", "Code: ${e.code()}")
-                Log.e("SearchUsers", "Message: ${e.message()}")
-                try {
-                    val errorBody = e.response()?.errorBody()?.string()
-                    Log.e("SearchUsers", "Error Body: $errorBody")
-                } catch (ex: Exception) {
-                    Log.e("SearchUsers", "Could not read error body: ${ex.message}")
-                }
-                Log.e("SearchUsers", "========================================")
-                searchAdapter.showNoResults()
-            } catch (e: IOException) {
-                Log.e("SearchUsers", "========================================")
-                Log.e("SearchUsers", "NETWORK ERROR: ${e.message}", e)
-                Log.e("SearchUsers", "========================================")
-                searchAdapter.showNoResults()
-            } catch (e: Exception) {
-                Log.e("SearchUsers", "========================================")
-                Log.e("SearchUsers", "UNEXPECTED ERROR: ${e.message}", e)
-                e.printStackTrace()
-                Log.e("SearchUsers", "========================================")
+                searchAdapter.showSearchResults(results)
+            } else {
                 searchAdapter.showNoResults()
             }
+        }
+    }
+
+    private suspend fun searchUsers(query: String): List<Author> = withContext(Dispatchers.Default) {
+        if (allAuthorsCache.isEmpty()) {
+            return@withContext emptyList()
+        }
+
+        val lowerQuery = query.lowercase()
+        allAuthorsCache.filter { author ->
+            author.account.username.lowercase().contains(lowerQuery) ||
+                    author.firstName.lowercase().contains(lowerQuery) ||
+                    author.lastName.lowercase().contains(lowerQuery) ||
+                    "${author.firstName} ${author.lastName}".lowercase().contains(lowerQuery)
         }
     }
 
@@ -335,36 +384,29 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             putExtra("filter_user_id", author._id)
             putExtra("filter_username", author.account.username)
             putExtra("filter_user_avatar", author.account.avatar.url)
-            putExtra("should_filter", true)
+            putExtra("should_filter", true)  // ADD THIS LINE
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         startActivity(intent)
         finish()
     }
 
-    @RequiresApi(Build.VERSION_CODES.CUPCAKE)
     private fun hideKeyboard() {
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
     }
 }
 
-// Data class to hold author with post count
-data class AuthorWithCount(
-    val author: Author,
-    val postCount: Int
-)
-
 class SearchUserNameAdapter(
-    private val onUserClicked: (Author, Int) -> Unit
+    private val onUserClicked: (Author) -> Unit
 ) : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback()) {
 
     fun showRecentUsers(authors: List<Author>) {
-        submitList(listOf("RECENT_HEADER") + authors.map { AuthorWithCount(it, 0) })
+        submitList(listOf("RECENT_HEADER") + authors)
     }
 
-    fun showSearchResults(authorsWithCounts: List<AuthorWithCount>) {
-        submitList(listOf("SEARCH_HEADER") + authorsWithCounts)
+    fun showSearchResults(authors: List<Author>) {
+        submitList(listOf("SEARCH_HEADER") + authors)
     }
 
     fun showLoading() {
@@ -377,7 +419,7 @@ class SearchUserNameAdapter(
 
     override fun getItemViewType(position: Int): Int = when (getItem(position)) {
         "RECENT_HEADER", "SEARCH_HEADER" -> 0
-        is AuthorWithCount -> 1
+        is Author -> 1
         "LOADING" -> 2
         "NO_RESULTS" -> 3
         else -> -1
@@ -402,8 +444,8 @@ class SearchUserNameAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is UserViewHolder -> {
-                val authorWithCount = getItem(position) as AuthorWithCount
-                holder.bind(authorWithCount.author, authorWithCount.postCount, onUserClicked)
+                val author = getItem(position) as Author
+                holder.bind(author, onUserClicked)
             }
             is LoadingViewHolder -> holder.showLoading()
         }
@@ -412,8 +454,8 @@ class SearchUserNameAdapter(
 
 private class SearchDiffCallback : DiffUtil.ItemCallback<Any>() {
     override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
-        if (oldItem is AuthorWithCount && newItem is AuthorWithCount) {
-            return oldItem.author._id == newItem.author._id
+        if (oldItem is Author && newItem is Author) {
+            return oldItem._id == newItem._id
         }
         return oldItem::class == newItem::class
     }
@@ -429,21 +471,14 @@ private class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
     private val avatar = itemView.findViewById<ImageView>(R.id.avatar)
     private val username = itemView.findViewById<TextView>(R.id.name)
 
-    fun bind(author: Author, postCount: Int, listener: (Author, Int) -> Unit) {
+    fun bind(author: Author, listener: (Author) -> Unit) {
         Glide.with(itemView.context)
             .load(author.account.avatar.url)
             .apply(RequestOptions.bitmapTransform(CircleCrop()))
             .placeholder(R.drawable.flash21)
             .into(avatar)
-
-        // Show username with post count
-        username.text = if (postCount > 0) {
-            "@${author.account.username} ($postCount posts)"
-        } else {
-            "@${author.account.username}"
-        }
-
-        itemView.setOnClickListener { listener(author, postCount) }
+        username.text = "${author.account.username}"
+        itemView.setOnClickListener { listener(author) }
     }
 }
 
