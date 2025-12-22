@@ -35,7 +35,6 @@ import com.uyscuti.social.circuit.databinding.ActivitySearchAllUserNameBinding
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import com.uyscuti.social.network.api.response.posts.Author
-import com.uyscuti.social.network.api.response.getallshorts.Author as ShortsAuthor
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
@@ -61,14 +60,6 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     private val shortsViewModel: ShortsViewModel by viewModels()
     private val recentUserViewModel: RecentUserViewModel by viewModels()
 
-    // Cache for all authors with their post counts
-    private val allAuthorsMap = mutableMapOf<String, AuthorWithCount>()
-
-    data class AuthorWithCount(
-        val author: Author,
-        var postCount: Int = 0
-    )
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -85,7 +76,6 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         initSearchResults()
         setupSearch()
         loadRecentUsers()
-        loadAllAuthorsWithCounts()
     }
 
     private fun setupToolbar() {
@@ -100,92 +90,6 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                 recentUserViewModel.getRecentUsers()
             }
             searchAdapter.showRecentUsers(recentUsers.map { it.toAuthor() })
-        }
-    }
-
-    private fun loadAllAuthorsWithCounts() {
-        lifecycleScope.launch {
-            searchAdapter.showLoading()
-
-            withContext(Dispatchers.IO) {
-                try {
-                    Log.d("SearchUsers", "🔄 Starting to fetch all authors and count their posts...")
-
-                    // Fetch from shorts (multiple pages)
-                    for (page in 1..10) {
-                        try {
-                            val shortsResponse = apiService.getShorts(page.toString())
-                            if (shortsResponse.isSuccessful) {
-                                val body = shortsResponse.body()
-                                body?.data?.posts?.posts?.forEach { post ->
-                                    val author = post.author.toFeedAuthor()
-                                    val authorId = author._id
-
-                                    if (allAuthorsMap.containsKey(authorId)) {
-                                        allAuthorsMap[authorId]!!.postCount++
-                                    } else {
-                                        allAuthorsMap[authorId] = AuthorWithCount(author, 1)
-                                    }
-                                }
-                                Log.d("SearchUsers", "📱 Shorts page $page: ${allAuthorsMap.size} unique authors so far")
-                            }
-                        } catch (e: Exception) {
-                            Log.e("SearchUsers", "Error fetching shorts page $page: ${e.message}")
-                        }
-                    }
-
-                    // Fetch from feed (multiple pages)
-                    for (page in 1..10) {
-                        try {
-                            val feedResponse = apiService.getAllFeed(page.toString())
-                            if (feedResponse.isSuccessful) {
-                                val body = feedResponse.body()
-                                body?.data?.data?.posts?.forEach { post ->
-                                    val author = post.author
-                                    val authorId = author._id
-
-                                    if (allAuthorsMap.containsKey(authorId)) {
-                                        allAuthorsMap[authorId]!!.postCount++
-                                    } else {
-                                        allAuthorsMap[authorId] = AuthorWithCount(author, 1)
-                                    }
-
-                                    // Also count posts from reposted content
-                                    post.originalPost?.forEach { originalPost ->
-                                        val originalAuthor = originalPost.author.toAuthor()
-                                        val originalAuthorId = originalAuthor._id
-
-                                        if (allAuthorsMap.containsKey(originalAuthorId)) {
-                                            allAuthorsMap[originalAuthorId]!!.postCount++
-                                        } else {
-                                            allAuthorsMap[originalAuthorId] = AuthorWithCount(originalAuthor, 1)
-                                        }
-                                    }
-                                }
-                                Log.d("SearchUsers", "📰 Feed page $page: ${allAuthorsMap.size} unique authors so far")
-                            }
-                        } catch (e: Exception) {
-                            Log.e("SearchUsers", "Error fetching feed page $page: ${e.message}")
-                        }
-                    }
-
-                    Log.d("SearchUsers", "✅ Finished loading. Total unique authors: ${allAuthorsMap.size}")
-
-                    // Log top 5 authors with most posts
-                    allAuthorsMap.values
-                        .sortedByDescending { it.postCount }
-                        .take(5)
-                        .forEach { authorWithCount ->
-                            Log.d("SearchUsers", "👤 ${authorWithCount.author.account.username}: ${authorWithCount.postCount} posts")
-                        }
-
-                } catch (e: Exception) {
-                    Log.e("SearchUsers", "❌ Error loading authors: ${e.message}", e)
-                }
-            }
-
-            // After loading, show recent users
-            loadRecentUsers()
         }
     }
 
@@ -210,63 +114,12 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             } else {
                 // Start new search job with debounce
                 searchJob = lifecycleScope.launch {
-                    delay(300)
+                    delay(500) // Debounce 500ms to avoid too many API calls
                     performSearch(query)
                 }
             }
         })
     }
-
-    // Extension function to convert ShortsAuthor to Feed Author
-    private fun ShortsAuthor.toFeedAuthor() = Author(
-        __v = __v,
-        _id = _id,
-        account = com.uyscuti.social.network.api.response.posts.Account(
-            _id = account._id,
-            avatar = com.uyscuti.social.network.api.response.posts.Avatar(
-                _id = account.avatar._id,
-                localPath = account.avatar.localPath,
-                url = account.avatar.url
-            ),
-            createdAt = "",
-            email = account.email,
-            updatedAt = "",
-            username = account.username
-        ),
-        bio = bio,
-        countryCode = countryCode,
-        coverImage = com.uyscuti.social.network.api.response.posts.CoverImage(
-            _id = coverImage._id,
-            localPath = coverImage.localPath,
-            url = coverImage.url
-        ),
-        createdAt = createdAt,
-        dob = dob,
-        firstName = firstName,
-        lastName = lastName,
-        location = location,
-        owner = owner,
-        phoneNumber = phoneNumber,
-        updatedAt = updatedAt
-    )
-
-    // Extension function to convert AuthorX (from OriginalPost) to Author
-    private fun com.uyscuti.social.network.api.response.posts.AuthorX.toAuthor() = Author(
-        __v = 0,
-        _id = _id,
-        account = account,
-        bio = bio,
-        countryCode = countryCode,
-        coverImage = coverImage,
-        createdAt = createdAt,
-        dob = dob,
-        firstName = firstName,
-        lastName = lastName,
-        location = location,
-        owner = owner,
-        phoneNumber = phoneNumber,
-        updatedAt = updatedAt
-    )
 
     // Extension functions to convert between Author and RecentUser
     private fun Author.toRecentUser() = RecentUser(
@@ -311,11 +164,8 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     )
 
     private fun initSearchResults() {
-        searchAdapter = SearchUserNameAdapter { author ->
-            // Find the post count for this author
-            val postCount = allAuthorsMap[author._id]?.postCount ?: 0
-            Log.d("SearchResults", "User clicked: @${author.account.username} (${author._id}) - $postCount posts")
-
+        searchAdapter = SearchUserNameAdapter { author, postCount ->
+            Log.d("SearchResults", "✅ User clicked: @${author.account.username} (${author._id}) - $postCount posts")
             addUserToRecent(author.toRecentUser())
             onUserClicked(author)
         }
@@ -339,31 +189,121 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-            Log.d("SearchUsers", "🔍 Searching for: '$query', Cache size: ${allAuthorsMap.size}")
+            searchAdapter.showLoading()
 
-            val lowerQuery = query.lowercase()
-            val results = allAuthorsMap.values
-                .filter { authorWithCount ->
-                    val author = authorWithCount.author
-                    author.account.username.lowercase().contains(lowerQuery) ||
-                            author.firstName.lowercase().contains(lowerQuery) ||
-                            author.lastName.lowercase().contains(lowerQuery) ||
-                            "${author.firstName} ${author.lastName}".lowercase().contains(lowerQuery)
+            try {
+                Log.d("SearchUsers", "\n========================================")
+                Log.d("SearchUsers", "🔍 CALLING BACKEND API")
+                Log.d("SearchUsers", "Query: '$query'")
+                Log.d("SearchUsers", "========================================")
+
+                // Call your backend search endpoint
+                val response = withContext(Dispatchers.IO) {
+                    apiService.getSearchAllFeedByUserId(query, page = "1", limit = "100")
                 }
-                .sortedByDescending { it.postCount } // Sort by post count
-                .map { it.author }
 
-            Log.d("SearchUsers", "📊 Found ${results.size} users matching '$query'")
+                if (response.isSuccessful) {
+                    val body = response.body()
 
-            // Log results with their post counts
-            results.take(5).forEach { author ->
-                val postCount = allAuthorsMap[author._id]?.postCount ?: 0
-                Log.d("SearchUsers", "👤 @${author.account.username}: $postCount posts")
-            }
+                    if (body != null && body.success) {
+                        val data = body.data
+                        val matchingUsers = data?.matchingUsers ?: emptyList()
+                        val totalPosts = data?.totalPosts ?: 0
 
-            if (results.isNotEmpty()) {
-                searchAdapter.showSearchResults(results)
-            } else {
+                        Log.d("SearchUsers", "\n✅ API RESPONSE SUCCESS")
+                        Log.d("SearchUsers", "📊 Total Posts: $totalPosts")
+                        Log.d("SearchUsers", "👥 Matching Users: ${matchingUsers.size}")
+
+                        if (matchingUsers.isNotEmpty()) {
+                            // Create a map to track post counts per user
+                            val userPostCounts = mutableMapOf<String, Int>()
+
+                            // Count posts per user from the returned posts
+                            data.posts?.forEach { post ->
+                                val authorId = post.author._id
+                                userPostCounts[authorId] = (userPostCounts[authorId] ?: 0) + 1
+                            }
+
+                            // Convert matching users to Author objects with post counts
+                            val authorsWithCounts = matchingUsers.map { user ->
+                                val postCount = userPostCounts[user._id] ?: 0
+
+                                Log.d("SearchUsers", "   👤 @${user.username}: $postCount posts (User ID: ${user._id})")
+
+                                // Find the author details from posts if available
+                                val authorFromPost = data.posts?.find { it.author._id == user._id }?.author
+
+                                if (authorFromPost != null) {
+                                    AuthorWithCount(authorFromPost, postCount)
+                                } else {
+                                    // Create minimal author from user data
+                                    AuthorWithCount(
+                                        Author(
+                                            __v = 0,
+                                            _id = user._id,
+                                            account = com.uyscuti.social.network.api.response.posts.Account(
+                                                _id = user._id,
+                                                avatar = com.uyscuti.social.network.api.response.posts.Avatar(
+                                                    _id = "",
+                                                    localPath = "",
+                                                    url = ""
+                                                ),
+                                                createdAt = "",
+                                                email = user.email,
+                                                updatedAt = "",
+                                                username = user.username
+                                            ),
+                                            bio = "",
+                                            countryCode = "",
+                                            coverImage = com.uyscuti.social.network.api.response.posts.CoverImage(
+                                                _id = "",
+                                                localPath = "",
+                                                url = ""
+                                            ),
+                                            createdAt = "",
+                                            dob = "",
+                                            firstName = "",
+                                            lastName = "",
+                                            location = "",
+                                            owner = "",
+                                            phoneNumber = "",
+                                            updatedAt = ""
+                                        ),
+                                        postCount
+                                    )
+                                }
+                            }
+
+                            Log.d("SearchUsers", "========================================\n")
+
+                            searchAdapter.showSearchResults(authorsWithCounts)
+                        } else {
+                            Log.d("SearchUsers", "❌ No users found matching '$query'")
+                            Log.d("SearchUsers", "========================================\n")
+                            searchAdapter.showNoResults()
+                        }
+                    } else {
+                        Log.e("SearchUsers", "⚠️ Response body is null or unsuccessful")
+                        Log.e("SearchUsers", "Response: $body")
+                        searchAdapter.showNoResults()
+                    }
+                } else {
+                    Log.e("SearchUsers", "❌ API ERROR")
+                    Log.e("SearchUsers", "Code: ${response.code()}")
+                    Log.e("SearchUsers", "Message: ${response.message()}")
+                    Log.e("SearchUsers", "========================================\n")
+                    searchAdapter.showNoResults()
+                }
+
+            } catch (e: HttpException) {
+                Log.e("SearchUsers", "❌ HTTP EXCEPTION: ${e.message()}", e)
+                searchAdapter.showNoResults()
+            } catch (e: IOException) {
+                Log.e("SearchUsers", "❌ NETWORK ERROR: ${e.message}", e)
+                searchAdapter.showNoResults()
+            } catch (e: Exception) {
+                Log.e("SearchUsers", "❌ UNEXPECTED ERROR: ${e.message}", e)
+                e.printStackTrace()
                 searchAdapter.showNoResults()
             }
         }
@@ -390,16 +330,22 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     }
 }
 
+// Data class to hold author with post count
+data class AuthorWithCount(
+    val author: Author,
+    val postCount: Int
+)
+
 class SearchUserNameAdapter(
-    private val onUserClicked: (Author) -> Unit
+    private val onUserClicked: (Author, Int) -> Unit
 ) : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback()) {
 
     fun showRecentUsers(authors: List<Author>) {
-        submitList(listOf("RECENT_HEADER") + authors)
+        submitList(listOf("RECENT_HEADER") + authors.map { AuthorWithCount(it, 0) })
     }
 
-    fun showSearchResults(authors: List<Author>) {
-        submitList(listOf("SEARCH_HEADER") + authors)
+    fun showSearchResults(authorsWithCounts: List<AuthorWithCount>) {
+        submitList(listOf("SEARCH_HEADER") + authorsWithCounts)
     }
 
     fun showLoading() {
@@ -412,7 +358,7 @@ class SearchUserNameAdapter(
 
     override fun getItemViewType(position: Int): Int = when (getItem(position)) {
         "RECENT_HEADER", "SEARCH_HEADER" -> 0
-        is Author -> 1
+        is AuthorWithCount -> 1
         "LOADING" -> 2
         "NO_RESULTS" -> 3
         else -> -1
@@ -437,8 +383,8 @@ class SearchUserNameAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is UserViewHolder -> {
-                val author = getItem(position) as Author
-                holder.bind(author, onUserClicked)
+                val authorWithCount = getItem(position) as AuthorWithCount
+                holder.bind(authorWithCount.author, authorWithCount.postCount, onUserClicked)
             }
             is LoadingViewHolder -> holder.showLoading()
         }
@@ -447,8 +393,8 @@ class SearchUserNameAdapter(
 
 private class SearchDiffCallback : DiffUtil.ItemCallback<Any>() {
     override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
-        if (oldItem is Author && newItem is Author) {
-            return oldItem._id == newItem._id
+        if (oldItem is AuthorWithCount && newItem is AuthorWithCount) {
+            return oldItem.author._id == newItem.author._id
         }
         return oldItem::class == newItem::class
     }
@@ -464,14 +410,21 @@ private class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
     private val avatar = itemView.findViewById<ImageView>(R.id.avatar)
     private val username = itemView.findViewById<TextView>(R.id.name)
 
-    fun bind(author: Author, listener: (Author) -> Unit) {
+    fun bind(author: Author, postCount: Int, listener: (Author, Int) -> Unit) {
         Glide.with(itemView.context)
             .load(author.account.avatar.url)
             .apply(RequestOptions.bitmapTransform(CircleCrop()))
             .placeholder(R.drawable.flash21)
             .into(avatar)
-        username.text = "${author.account.username}"
-        itemView.setOnClickListener { listener(author) }
+
+        // Show username with post count
+        username.text = if (postCount > 0) {
+            "@${author.account.username} ($postCount posts)"
+        } else {
+            "@${author.account.username}"
+        }
+
+        itemView.setOnClickListener { listener(author, postCount) }
     }
 }
 

@@ -26,6 +26,7 @@ import com.uyscuti.social.network.api.request.messages.SendMessageRequest
 import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
 import com.uyscuti.social.network.api.request.register.RegisterRequest
 import com.uyscuti.social.network.api.request.search.SearchUsersRequest
+import com.uyscuti.social.network.api.response.GeneralSearch.SearchUserFeedResponse
 import com.uyscuti.social.network.api.response.MainResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.AllFeedRepostsPost
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostRequest
@@ -1009,6 +1010,6 @@ interface IFlashapi {
         @Path("username") username: String,
         @Query("page") page: String,
         @Query("limit") limit: String
-    ): Response<SearchUserResponse>
+    ): Response<SearchUserFeedResponse>
 
 }
