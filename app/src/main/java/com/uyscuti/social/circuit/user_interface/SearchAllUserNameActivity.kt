@@ -274,12 +274,12 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                                 }
                             }
 
-                            Log.d("SearchUsers", "========================================\n")
+
 
                             searchAdapter.showSearchResults(authorsWithCounts)
                         } else {
                             Log.d("SearchUsers", "No users found matching '$query'")
-                            Log.d("SearchUsers", "========================================\n")
+
                             searchAdapter.showNoResults()
                         }
                     } else {
@@ -291,7 +291,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                     Log.e("SearchUsers", "API ERROR")
                     Log.e("SearchUsers", "Code: ${response.code()}")
                     Log.e("SearchUsers", "Message: ${response.message()}")
-                    Log.e("SearchUsers", "========================================\n")
+            
                     searchAdapter.showNoResults()
                 }
 

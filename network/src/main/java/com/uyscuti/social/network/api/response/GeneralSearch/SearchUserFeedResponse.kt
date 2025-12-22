@@ -4,13 +4,13 @@ import com.uyscuti.social.network.api.response.posts.Post
 
 data class SearchUserFeedResponse(
     val statusCode: Int,
-    val data: SearchUserFeedWrapper?,  // Changed: Wrapped in another data object
+    val data: SearchUserFeedWrapper?,
     val message: String,
     val success: Boolean
 )
 
 data class SearchUserFeedWrapper(
-    val data: SearchUserFeedData?  // Added: This matches the API's nested structure
+    val data: SearchUserFeedData?
 )
 
 data class SearchUserFeedData(
