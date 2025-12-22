@@ -12,21 +12,32 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.uyscuti.sharedmodule.R
+import android.content.pm.ServiceInfo
+import androidx.annotation.RequiresApi
 
 class NetworkConnectivityService : Service() {
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Your network callback registration code here
         Log.d("NetworkConnectivityService", "onStartCommand , starting foreground service")
 
-        // Start service in the foreground
-        startForeground(NOTIFICATION_ID, createNotification())
+        // IMPORTANT: This service uses mediaProjection type, so:
+        // - You MUST request user consent FIRST using MediaProjectionManager.createScreenCaptureIntent()
+        //   in the activity that starts this service (e.g., RegisterActivity or MainActivity).
+        // - Only start this service AFTER the user grants permission (RESULT_OK).
+        // - Without consent, Android 14+ will throw SecurityException even with permissions.
 
-        // Delay stopping the foreground service for 20 minutes
+        // Start foreground with the REQUIRED type for mediaProjection
+        startForeground(
+            NOTIFICATION_ID,
+            createNotification(),
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+        )
+
+        // Optional: Delay stopping foreground mode (e.g., after 20 minutes)
         Handler().postDelayed({
             stopForeground(false)
         }, 20 * 60 * 1000) // 20 minutes in milliseconds
-
 
         return START_NOT_STICKY
     }
@@ -36,27 +47,25 @@ class NetworkConnectivityService : Service() {
     }
 
     override fun onDestroy() {
-        // Your cleanup code here
+        // Cleanup code here (e.g., unregister network callbacks)
         super.onDestroy()
     }
 
     private fun createNotification(): Notification {
         val channelId = "network_check_channel"
-        val notificationId = 123 // Choose any unique ID for your notification
 
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Flash")
             .setContentText("Connecting...")
-            .setPriority(NotificationCompat.PRIORITY_LOW) // Adjust priority as needed
-            .setVisibility(NotificationCompat.VISIBILITY_SECRET) // Set visibility to secret
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setVisibility(NotificationCompat.VISIBILITY_SECRET)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setDefaults(0)
             .setSilent(true)
 
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
-        // Create a NotificationChannel for Android Oreo and higher
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
@@ -66,13 +75,8 @@ class NetworkConnectivityService : Service() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        // Create the notification and display it
-        val notification = notificationBuilder.build()
-        startForeground(notificationId, notification)
-
-        return notification
+        return notificationBuilder.build()  // Just build and return - no startForeground here!
     }
-
 
     companion object {
         const val NOTIFICATION_ID = 1515
