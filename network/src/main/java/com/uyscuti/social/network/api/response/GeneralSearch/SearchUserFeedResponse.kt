@@ -26,12 +26,6 @@ data class SearchUserFeedData(
     val debug: DebugInfo?
 )
 
-data class MatchingUser(
-    val _id: String,
-    val username: String,
-    val email: String
-)
-
 data class DebugInfo(
     val userIdsSearched: Int?,
     val socialProfileIdsSearched: Int?,
@@ -39,4 +33,39 @@ data class DebugInfo(
     val postsReturnedAfterAggregation: Int?,
     val currentPage: Int?,
     val totalPages: Int?
+)
+
+
+data class GeneralSearchResponse(
+    val statusCode: Int,
+    val data: GeneralSearchWrapper?,
+    val message: String,
+    val success: Boolean
+)
+
+data class GeneralSearchWrapper(
+    val data: GeneralSearchData?,
+    val searchQuery: String?,
+    val filter: String?,
+    val matchingUsers: List<MatchingUser>?,
+    val totalResults: Int?
+)
+
+data class GeneralSearchData(
+    val posts: List<Post>?,
+    val totalPosts: Int?,
+    val limit: Int?,
+    val page: Int?,
+    val totalPages: Int?,
+    val serialNumberStartFrom: Int?,
+    val hasNextPage: Boolean?,
+    val hasPrevPage: Boolean?,
+    val prevPage: Int?,
+    val nextPage: Int?
+)
+
+data class MatchingUser(
+    val _id: String,
+    val username: String,
+    val email: String
 )

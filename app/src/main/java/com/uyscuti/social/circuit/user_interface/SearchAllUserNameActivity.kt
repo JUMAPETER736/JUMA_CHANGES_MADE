@@ -1,6 +1,5 @@
 package com.uyscuti.social.circuit.user_interface
 
-
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -62,7 +61,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     private val shortsViewModel: ShortsViewModel by viewModels()
     private val recentUserViewModel: RecentUserViewModel by viewModels()
 
-    // Cache for all authors
+    // Cache for all authors (fallback)
     private val allAuthorsCache = mutableListOf<Author>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,7 +80,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         initSearchResults()
         setupSearch()
         loadRecentUsers()
-        loadAllAuthors()
+        loadAllAuthors() // Keep for fallback
     }
 
     private fun setupToolbar() {
@@ -101,15 +100,11 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
     private fun loadAllAuthors() {
         lifecycleScope.launch {
-            searchAdapter.showLoading()
             val authors = withContext(Dispatchers.IO) {
                 fetchAllAuthorsFromShortsAndFeed()
             }
             allAuthorsCache.clear()
             allAuthorsCache.addAll(authors)
-
-            // After loading, show recent users
-            loadRecentUsers()
         }
     }
 
@@ -132,27 +127,94 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             if (query.isEmpty()) {
                 loadRecentUsers()
             } else {
-                // Start new search job with slight delay for better performance
+                // Start new search job with debounce
                 searchJob = lifecycleScope.launch {
-                    // Optional: Add a small delay (300ms) to avoid too many searches
-                    // Remove this line if you want instant results without debounce
-                    delay(300)
+                    delay(300) // Debounce for 300ms
 
-                    Log.d("SearchUsers", "Searching for: '$query', Cache size: ${allAuthorsCache.size}")
-                    val results = searchUsers(query).sortedBy { it.account.username }
-                    Log.d("SearchUsers", "Found ${results.size} results")
+                    Log.d("SearchUsers", "Searching API for: '$query'")
+                    searchAdapter.showLoading()
 
-                    if (results.isNotEmpty()) {
-                        results.take(3).forEach {
-                            Log.d("SearchUsers", "Result: ${it.account.username}")
+                    try {
+                        val results = searchUsersFromAPI(query)
+                        Log.d("SearchUsers", "API returned ${results.size} results")
+
+                        if (results.isNotEmpty()) {
+                            results.take(3).forEach {
+                                Log.d("SearchUsers", "Result: ${it.account.username}")
+                            }
+                            searchAdapter.showSearchResults(results)
+                        } else {
+                            searchAdapter.showNoResults()
                         }
-                        searchAdapter.showSearchResults(results)
-                    } else {
-                        searchAdapter.showNoResults()
+                    } catch (e: Exception) {
+                        Log.e("SearchUsers", "API search failed: ${e.message}")
+                        // Fallback to local cache search
+                        Log.d("SearchUsers", "Falling back to cache search")
+                        val cacheResults = searchUsersFromCache(query)
+                        if (cacheResults.isNotEmpty()) {
+                            searchAdapter.showSearchResults(cacheResults)
+                        } else {
+                            searchAdapter.showNoResults()
+                        }
                     }
                 }
             }
         })
+    }
+
+    // NEW: Search using the API endpoint
+    private suspend fun searchUsersFromAPI(query: String): List<Author> = withContext(Dispatchers.IO) {
+        try {
+            // Use the new search endpoint
+            val response = apiService.getSearchAllFeed(
+                query = query,
+                filter = "people", // Search only for people
+                page = "1",
+                limit = "50"
+            )
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.success) {
+                    val matchingUsers = body.data?.matchingUsers ?: emptyList()
+                    val posts = body.data?.data?.posts ?: emptyList()
+
+                    // Extract unique authors from posts
+                    val authorsFromPosts = posts.mapNotNull { it.author }.distinctBy { it._id }
+
+                    Log.d("SearchUsersAPI", "Found ${matchingUsers.size} matching users")
+                    Log.d("SearchUsersAPI", "Found ${authorsFromPosts.size} authors from posts")
+
+                    // Return the authors sorted by username
+                    return@withContext authorsFromPosts.sortedBy { it.account.username }
+                }
+            } else {
+                Log.e("SearchUsersAPI", "API error: ${response.code()} - ${response.message()}")
+            }
+        } catch (e: HttpException) {
+            Log.e("SearchUsersAPI", "HTTP error: ${e.message}")
+        } catch (e: IOException) {
+            Log.e("SearchUsersAPI", "Network error: ${e.message}")
+        } catch (e: Exception) {
+            Log.e("SearchUsersAPI", "Unexpected error: ${e.message}")
+        }
+
+        return@withContext emptyList()
+    }
+
+    // Fallback: Search from local cache
+    private suspend fun searchUsersFromCache(query: String): List<Author> = withContext(Dispatchers.Default) {
+        if (allAuthorsCache.isEmpty()) {
+            return@withContext emptyList()
+        }
+
+        val lowerQuery = query.lowercase()
+        allAuthorsCache.filter { author ->
+            author.account.username.lowercase().contains(lowerQuery) ||
+                    author.firstName.lowercase().contains(lowerQuery) ||
+                    author.lastName.lowercase().contains(lowerQuery) ||
+                    "${author.firstName} ${author.lastName}".lowercase().contains(lowerQuery)
+        }.sortedBy { it.account.username }
     }
 
     private suspend fun fetchAllAuthorsFromShortsAndFeed(): List<Author> {
@@ -348,31 +410,31 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
     private fun performSearch(query: String) {
         lifecycleScope.launch {
-            Log.d("SearchUsers", "Searching for: '$query', Cache size: ${allAuthorsCache.size}")
-            val results = searchUsers(query).sortedBy { it.account.username }
-            Log.d("SearchUsers", "Found ${results.size} results")
-            if (results.isNotEmpty()) {
-                results.take(3).forEach {
-                    Log.d("SearchUsers", "Result: ${it.account.username}")
+            Log.d("SearchUsers", "Performing API search for: '$query'")
+            searchAdapter.showLoading()
+
+            try {
+                val results = searchUsersFromAPI(query)
+                Log.d("SearchUsers", "Found ${results.size} results from API")
+
+                if (results.isNotEmpty()) {
+                    results.take(3).forEach {
+                        Log.d("SearchUsers", "Result: ${it.account.username}")
+                    }
+                    searchAdapter.showSearchResults(results)
+                } else {
+                    // Try cache as fallback
+                    val cacheResults = searchUsersFromCache(query)
+                    if (cacheResults.isNotEmpty()) {
+                        searchAdapter.showSearchResults(cacheResults)
+                    } else {
+                        searchAdapter.showNoResults()
+                    }
                 }
-                searchAdapter.showSearchResults(results)
-            } else {
+            } catch (e: Exception) {
+                Log.e("SearchUsers", "Search failed: ${e.message}")
                 searchAdapter.showNoResults()
             }
-        }
-    }
-
-    private suspend fun searchUsers(query: String): List<Author> = withContext(Dispatchers.Default) {
-        if (allAuthorsCache.isEmpty()) {
-            return@withContext emptyList()
-        }
-
-        val lowerQuery = query.lowercase()
-        allAuthorsCache.filter { author ->
-            author.account.username.lowercase().contains(lowerQuery) ||
-                    author.firstName.lowercase().contains(lowerQuery) ||
-                    author.lastName.lowercase().contains(lowerQuery) ||
-                    "${author.firstName} ${author.lastName}".lowercase().contains(lowerQuery)
         }
     }
 
@@ -384,7 +446,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             putExtra("filter_user_id", author._id)
             putExtra("filter_username", author.account.username)
             putExtra("filter_user_avatar", author.account.avatar.url)
-            putExtra("should_filter", true)  // ADD THIS LINE
+            putExtra("should_filter", true)
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         startActivity(intent)

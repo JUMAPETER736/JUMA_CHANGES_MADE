@@ -26,6 +26,7 @@ import com.uyscuti.social.network.api.request.messages.SendMessageRequest
 import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
 import com.uyscuti.social.network.api.request.register.RegisterRequest
 import com.uyscuti.social.network.api.request.search.SearchUsersRequest
+import com.uyscuti.social.network.api.response.GeneralSearch.GeneralSearchResponse
 import com.uyscuti.social.network.api.response.GeneralSearch.SearchUserFeedResponse
 import com.uyscuti.social.network.api.response.MainResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.AllFeedRepostsPost
@@ -1005,11 +1006,26 @@ interface IFlashapi {
     suspend fun getPostById(@Path("postId")postId: String ):Response<GetPostById>
 
 
-    @GET("social-media/feed/user/{username}")
+    @GET("feed/post/search")
+    suspend fun getSearchAllFeed(
+        @Query("query") query: String,
+        @Query("filter") filter: String = "all",
+        @Query("page") page: String = "1",
+        @Query("limit") limit: String = "10"
+    ): Response<GeneralSearchResponse>
+
+    /**
+     * Search feed posts by specific username
+     *
+     * @param username Username to search for
+     * @param page Page number (default: "1")
+     * @param limit Results per page (default: "10")
+     */
+    @GET("feed/post/user/{username}")
     suspend fun getSearchAllFeedByUserId(
         @Path("username") username: String,
-        @Query("page") page: String,
-        @Query("limit") limit: String
+        @Query("page") page: String = "1",
+        @Query("limit") limit: String = "10"
     ): Response<SearchUserFeedResponse>
 
 }
