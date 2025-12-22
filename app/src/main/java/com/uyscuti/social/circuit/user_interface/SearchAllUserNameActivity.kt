@@ -196,8 +196,6 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                 Log.d("SearchUsers", "CALLING BACKEND API")
                 Log.d("SearchUsers", "Query: '$query'")
 
-
-
                 // Call your backend search endpoint
                 val response = withContext(Dispatchers.IO) {
                     apiService.getSearchAllFeedByUserId(query, page = "1", limit = "100")
@@ -207,7 +205,8 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                     val body = response.body()
 
                     if (body != null && body.success) {
-                        val data = body.data
+                        // CHANGED: Access nested data object
+                        val data = body.data?.data
                         val matchingUsers = data?.matchingUsers ?: emptyList()
                         val totalPosts = data?.totalPosts ?: 0
 
