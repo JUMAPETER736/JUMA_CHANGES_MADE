@@ -385,11 +385,7 @@
 
         <service
             android:name="com.uyscuti.sharedmodule.callbacks.NetworkConnectivityService"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Network monitoring" />
-        </service>
+            android:foregroundServiceType="dataSync" />
 
         <service
             android:name="com.uyscuti.sharedmodule.callbacks.SocketJobService"

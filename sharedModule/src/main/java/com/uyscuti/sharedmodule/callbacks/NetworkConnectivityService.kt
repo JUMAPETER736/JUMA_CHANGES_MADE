@@ -4,7 +4,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Handler
@@ -21,17 +20,11 @@ class NetworkConnectivityService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("NetworkConnectivityService", "onStartCommand , starting foreground service")
 
-        // IMPORTANT: This service uses mediaProjection type, so:
-        // - You MUST request user consent FIRST using MediaProjectionManager.createScreenCaptureIntent()
-        //   in the activity that starts this service (e.g., RegisterActivity or MainActivity).
-        // - Only start this service AFTER the user grants permission (RESULT_OK).
-        // - Without consent, Android 14+ will throw SecurityException even with permissions.
-
-        // Start foreground with the REQUIRED type for mediaProjection
+        // Start foreground with the correct type for network monitoring
         startForeground(
             NOTIFICATION_ID,
             createNotification(),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
         )
 
         // Optional: Delay stopping foreground mode (e.g., after 20 minutes)
@@ -75,7 +68,7 @@ class NetworkConnectivityService : Service() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        return notificationBuilder.build()  // Just build and return - no startForeground here!
+        return notificationBuilder.build()
     }
 
     companion object {
