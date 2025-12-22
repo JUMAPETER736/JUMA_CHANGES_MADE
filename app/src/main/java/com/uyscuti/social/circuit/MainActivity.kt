@@ -61,6 +61,7 @@ import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
@@ -316,6 +317,7 @@ import com.uyscuti.sharedmodule.viewmodels.comments.ShortCommentReplyViewModel
 import com.uyscuti.sharedmodule.viewmodels.comments.ShortCommentsViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.FeedLiveDataViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
+import com.uyscuti.social.circuit.user_interface.SearchAllUserNameActivity
 import com.uyscuti.social.circuit.user_interface.userProfile.MyUserProfileAccount
 import com.uyscuti.social.core.service.LocationService
 import com.uyscuti.social.core.util.LocationServiceUtil
@@ -2522,7 +2524,7 @@ class MainActivity : AppCompatActivity(),
             }
 
             R.id.menu_search -> {
-                val intent = Intent(this, SearchShortActivity::class.java)
+                val intent = Intent(this, SearchAllUserNameActivity::class.java)
                 startActivity(intent)
                 true
             }
