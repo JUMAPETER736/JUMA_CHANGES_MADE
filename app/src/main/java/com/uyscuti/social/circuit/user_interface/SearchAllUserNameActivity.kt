@@ -165,7 +165,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
     private fun initSearchResults() {
         searchAdapter = SearchUserNameAdapter { author, postCount ->
-            Log.d("SearchResults", "✅ User clicked: @${author.account.username} (${author._id}) - $postCount posts")
+            Log.d("SearchResults", " User clicked: @${author.account.username} (${author._id}) - $postCount posts")
             addUserToRecent(author.toRecentUser())
             onUserClicked(author)
         }
@@ -192,10 +192,11 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             searchAdapter.showLoading()
 
             try {
-                Log.d("SearchUsers", "\n========================================")
-                Log.d("SearchUsers", "🔍 CALLING BACKEND API")
+
+                Log.d("SearchUsers", "CALLING BACKEND API")
                 Log.d("SearchUsers", "Query: '$query'")
-                Log.d("SearchUsers", "========================================")
+
+
 
                 // Call your backend search endpoint
                 val response = withContext(Dispatchers.IO) {
@@ -210,16 +211,16 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                         val matchingUsers = data?.matchingUsers ?: emptyList()
                         val totalPosts = data?.totalPosts ?: 0
 
-                        Log.d("SearchUsers", "\n✅ API RESPONSE SUCCESS")
-                        Log.d("SearchUsers", "📊 Total Posts: $totalPosts")
-                        Log.d("SearchUsers", "👥 Matching Users: ${matchingUsers.size}")
+                        Log.d("SearchUsers", "\nAPI RESPONSE SUCCESS")
+                        Log.d("SearchUsers", "Total Posts: $totalPosts")
+                        Log.d("SearchUsers", "Matching Users: ${matchingUsers.size}")
 
                         if (matchingUsers.isNotEmpty()) {
                             // Create a map to track post counts per user
                             val userPostCounts = mutableMapOf<String, Int>()
 
                             // Count posts per user from the returned posts
-                            data.posts?.forEach { post ->
+                            data?.posts?.forEach { post ->
                                 val authorId = post.author._id
                                 userPostCounts[authorId] = (userPostCounts[authorId] ?: 0) + 1
                             }
@@ -228,10 +229,10 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                             val authorsWithCounts = matchingUsers.map { user ->
                                 val postCount = userPostCounts[user._id] ?: 0
 
-                                Log.d("SearchUsers", "   👤 @${user.username}: $postCount posts (User ID: ${user._id})")
+                                Log.d("SearchUsers", "    @${user.username}: $postCount posts (User ID: ${user._id})")
 
                                 // Find the author details from posts if available
-                                val authorFromPost = data.posts?.find { it.author._id == user._id }?.author
+                                val authorFromPost = data?.posts?.find { it.author._id == user._id }?.author
 
                                 if (authorFromPost != null) {
                                     AuthorWithCount(authorFromPost, postCount)
@@ -278,17 +279,17 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
                             searchAdapter.showSearchResults(authorsWithCounts)
                         } else {
-                            Log.d("SearchUsers", "❌ No users found matching '$query'")
+                            Log.d("SearchUsers", "No users found matching '$query'")
                             Log.d("SearchUsers", "========================================\n")
                             searchAdapter.showNoResults()
                         }
                     } else {
-                        Log.e("SearchUsers", "⚠️ Response body is null or unsuccessful")
+                        Log.e("SearchUsers", "Response body is null or unsuccessful")
                         Log.e("SearchUsers", "Response: $body")
                         searchAdapter.showNoResults()
                     }
                 } else {
-                    Log.e("SearchUsers", "❌ API ERROR")
+                    Log.e("SearchUsers", "API ERROR")
                     Log.e("SearchUsers", "Code: ${response.code()}")
                     Log.e("SearchUsers", "Message: ${response.message()}")
                     Log.e("SearchUsers", "========================================\n")
@@ -296,13 +297,13 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                 }
 
             } catch (e: HttpException) {
-                Log.e("SearchUsers", "❌ HTTP EXCEPTION: ${e.message()}", e)
+                Log.e("SearchUsers", "HTTP EXCEPTION: ${e.message()}", e)
                 searchAdapter.showNoResults()
             } catch (e: IOException) {
-                Log.e("SearchUsers", "❌ NETWORK ERROR: ${e.message}", e)
+                Log.e("SearchUsers", "NETWORK ERROR: ${e.message}", e)
                 searchAdapter.showNoResults()
             } catch (e: Exception) {
-                Log.e("SearchUsers", "❌ UNEXPECTED ERROR: ${e.message}", e)
+                Log.e("SearchUsers", "UNEXPECTED ERROR: ${e.message}", e)
                 e.printStackTrace()
                 searchAdapter.showNoResults()
             }
