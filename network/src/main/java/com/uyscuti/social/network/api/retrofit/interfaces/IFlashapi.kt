@@ -1005,7 +1005,7 @@ interface IFlashapi {
     suspend fun getPostById(@Path("postId")postId: String ):Response<GetPostById>
 
 
-    @GET("api/v1/social-media/feed/user/{username}")
+    @GET("social-media/feed/user/{username}")
     suspend fun getSearchAllFeedByUserId(
         @Path("username") username: String,
         @Query("page") page: String,

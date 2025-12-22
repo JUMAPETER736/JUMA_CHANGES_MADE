@@ -194,7 +194,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             searchAdapter.showLoading()
 
             try {
-
+                Log.d("SearchUsers", "========================================")
                 Log.d("SearchUsers", "CALLING BACKEND API")
                 Log.d("SearchUsers", "Query: '$query'")
 
@@ -203,109 +203,125 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                     apiService.getSearchAllFeedByUserId(query, page = "1", limit = "100")
                 }
 
-                if (response.isSuccessful) {
-                    val body = response.body()
+                // ADD THIS: Log response details BEFORE checking if successful
+                Log.d("SearchUsers", "Response Code: ${response.code()}")
+                Log.d("SearchUsers", "Response Message: ${response.message()}")
+                Log.d("SearchUsers", "Is Successful: ${response.isSuccessful}")
 
-                    if (body != null && body.success) {
-                        // CHANGED: Access nested data object
-                        val data = body.data?.data
-                        val matchingUsers = data?.matchingUsers ?: emptyList()
-                        val totalPosts = data?.totalPosts ?: 0
+                // Log error body if not successful
+                if (!response.isSuccessful) {
+                    val errorBody = response.errorBody()?.string()
+                    Log.e("SearchUsers", "Error Body: $errorBody")
+                    searchAdapter.showNoResults()
+                    return@launch
+                }
 
-                        Log.d("SearchUsers", "\nAPI RESPONSE SUCCESS")
-                        Log.d("SearchUsers", "Total Posts: $totalPosts")
-                        Log.d("SearchUsers", "Matching Users: ${matchingUsers.size}")
+                // Log raw body
+                val body = response.body()
+                Log.d("SearchUsers", "Response Body: $body")
 
-                        if (matchingUsers.isNotEmpty()) {
-                            // Create a map to track post counts per user
-                            val userPostCounts = mutableMapOf<String, Int>()
+                if (body != null && body.success) {
+                    // Access nested data object
+                    val data = body.data?.data
+                    val matchingUsers = data?.matchingUsers ?: emptyList()
+                    val totalPosts = data?.totalPosts ?: 0
 
-                            // Count posts per user from the returned posts
-                            data?.posts?.forEach { post ->
-                                val authorId = post.author._id
-                                userPostCounts[authorId] = (userPostCounts[authorId] ?: 0) + 1
-                            }
+                    Log.d("SearchUsers", "API RESPONSE SUCCESS")
+                    Log.d("SearchUsers", "Total Posts: $totalPosts")
+                    Log.d("SearchUsers", "Matching Users: ${matchingUsers.size}")
 
-                            // Convert matching users to Author objects with post counts
-                            val authorsWithCounts = matchingUsers.map { user ->
-                                val postCount = userPostCounts[user._id] ?: 0
+                    if (matchingUsers.isNotEmpty()) {
+                        val userPostCounts = mutableMapOf<String, Int>()
 
-                                Log.d("SearchUsers", "    @${user.username}: $postCount posts (User ID: ${user._id})")
+                        data?.posts?.forEach { post ->
+                            val authorId = post.author._id
+                            userPostCounts[authorId] = (userPostCounts[authorId] ?: 0) + 1
+                        }
 
-                                // Find the author details from posts if available
-                                val authorFromPost = data?.posts?.find { it.author._id == user._id }?.author
+                        val authorsWithCounts = matchingUsers.map { user ->
+                            val postCount = userPostCounts[user._id] ?: 0
+                            Log.d("SearchUsers", "    @${user.username}: $postCount posts (User ID: ${user._id})")
 
-                                if (authorFromPost != null) {
-                                    AuthorWithCount(authorFromPost, postCount)
-                                } else {
-                                    // Create minimal author from user data
-                                    AuthorWithCount(
-                                        Author(
-                                            __v = 0,
+                            val authorFromPost = data?.posts?.find { it.author._id == user._id }?.author
+
+                            if (authorFromPost != null) {
+                                AuthorWithCount(authorFromPost, postCount)
+                            } else {
+                                AuthorWithCount(
+                                    Author(
+                                        __v = 0,
+                                        _id = user._id,
+                                        account = com.uyscuti.social.network.api.response.posts.Account(
                                             _id = user._id,
-                                            account = com.uyscuti.social.network.api.response.posts.Account(
-                                                _id = user._id,
-                                                avatar = com.uyscuti.social.network.api.response.posts.Avatar(
-                                                    _id = "",
-                                                    localPath = "",
-                                                    url = ""
-                                                ),
-                                                createdAt = "",
-                                                email = user.email,
-                                                updatedAt = "",
-                                                username = user.username
-                                            ),
-                                            bio = "",
-                                            countryCode = "",
-                                            coverImage = com.uyscuti.social.network.api.response.posts.CoverImage(
+                                            avatar = com.uyscuti.social.network.api.response.posts.Avatar(
                                                 _id = "",
                                                 localPath = "",
                                                 url = ""
                                             ),
                                             createdAt = "",
-                                            dob = "",
-                                            firstName = "",
-                                            lastName = "",
-                                            location = "",
-                                            owner = "",
-                                            phoneNumber = "",
-                                            updatedAt = ""
+                                            email = user.email,
+                                            updatedAt = "",
+                                            username = user.username
                                         ),
-                                        postCount
-                                    )
-                                }
+                                        bio = "",
+                                        countryCode = "",
+                                        coverImage = com.uyscuti.social.network.api.response.posts.CoverImage(
+                                            _id = "",
+                                            localPath = "",
+                                            url = ""
+                                        ),
+                                        createdAt = "",
+                                        dob = "",
+                                        firstName = "",
+                                        lastName = "",
+                                        location = "",
+                                        owner = "",
+                                        phoneNumber = "",
+                                        updatedAt = ""
+                                    ),
+                                    postCount
+                                )
                             }
-
-
-
-                            searchAdapter.showSearchResults(authorsWithCounts)
-                        } else {
-                            Log.d("SearchUsers", "No users found matching '$query'")
-
-                            searchAdapter.showNoResults()
                         }
+
+                        Log.d("SearchUsers", "========================================")
+                        searchAdapter.showSearchResults(authorsWithCounts)
                     } else {
-                        Log.e("SearchUsers", "Response body is null or unsuccessful")
-                        Log.e("SearchUsers", "Response: $body")
+                        Log.d("SearchUsers", "No users found matching '$query'")
+                        Log.d("SearchUsers", "========================================")
                         searchAdapter.showNoResults()
                     }
                 } else {
-                    Log.e("SearchUsers", "API ERROR")
-                    Log.e("SearchUsers", "Code: ${response.code()}")
-                    Log.e("SearchUsers", "Message: ${response.message()}")
-
+                    Log.e("SearchUsers", "Response body is null or success=false")
+                    Log.e("SearchUsers", "Body success: ${body?.success}")
+                    Log.e("SearchUsers", "Body message: ${body?.message}")
+                    Log.e("SearchUsers", "========================================")
                     searchAdapter.showNoResults()
                 }
 
             } catch (e: HttpException) {
-                Log.e("SearchUsers", "HTTP EXCEPTION: ${e.message()}", e)
+                Log.e("SearchUsers", "========================================")
+                Log.e("SearchUsers", "HTTP EXCEPTION")
+                Log.e("SearchUsers", "Code: ${e.code()}")
+                Log.e("SearchUsers", "Message: ${e.message()}")
+                try {
+                    val errorBody = e.response()?.errorBody()?.string()
+                    Log.e("SearchUsers", "Error Body: $errorBody")
+                } catch (ex: Exception) {
+                    Log.e("SearchUsers", "Could not read error body: ${ex.message}")
+                }
+                Log.e("SearchUsers", "========================================")
                 searchAdapter.showNoResults()
             } catch (e: IOException) {
+                Log.e("SearchUsers", "========================================")
                 Log.e("SearchUsers", "NETWORK ERROR: ${e.message}", e)
+                Log.e("SearchUsers", "========================================")
                 searchAdapter.showNoResults()
             } catch (e: Exception) {
+                Log.e("SearchUsers", "========================================")
                 Log.e("SearchUsers", "UNEXPECTED ERROR: ${e.message}", e)
                 e.printStackTrace()
+                Log.e("SearchUsers", "========================================")
                 searchAdapter.showNoResults()
             }
         }
