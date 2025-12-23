@@ -26,6 +26,8 @@ import com.uyscuti.social.network.api.request.messages.SendMessageRequest
 import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
 import com.uyscuti.social.network.api.request.register.RegisterRequest
 import com.uyscuti.social.network.api.request.search.SearchUsersRequest
+import com.uyscuti.social.network.api.response.GeneralSearch.GeneralSearchResponse
+import com.uyscuti.social.network.api.response.GeneralSearch.SearchUserFeedResponse
 import com.uyscuti.social.network.api.response.MainResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.AllFeedRepostsPost
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostRequest
@@ -926,5 +928,28 @@ interface IFlashapi {
     suspend fun getGif(
         @Query("page") page: String
     ): Response<AllGifsResponse>
+
+
+
+    // ============================================================================
+    // GIF MANAGEMENT
+    // ============================================================================
+
+
+    @GET("feed/post/search")
+    suspend fun getSearchAllFeed(
+        @Query("query") query: String,
+        @Query("filter") filter: String = "all",
+        @Query("page") page: String = "1",
+        @Query("limit") limit: String = "10"
+    ): Response<GeneralSearchResponse>
+
+
+    @GET("feed/post/user/{username}")
+    suspend fun getSearchAllFeedByUserId(
+        @Path("username") username: String,
+        @Query("page") page: String = "1",
+        @Query("limit") limit: String = "10"
+    ): Response<SearchUserFeedResponse>
 
 }

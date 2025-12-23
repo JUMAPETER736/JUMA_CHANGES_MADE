@@ -1,5 +1,6 @@
 package com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings
 
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -27,12 +28,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
+
 import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.ActivitySearchAllUserNameBinding
-import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.circuit.model.ShortsViewModel
 import com.uyscuti.social.circuit.presentation.RecentUserViewModel
+import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.response.getallshorts.Author as ShortsAuthor
@@ -61,7 +63,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     private val shortsViewModel: ShortsViewModel by viewModels()
     private val recentUserViewModel: RecentUserViewModel by viewModels()
 
-    // Cache for all authors
+    // Cache for all authors (fallback)
     private val allAuthorsCache = mutableListOf<Author>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,7 +82,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         initSearchResults()
         setupSearch()
         loadRecentUsers()
-        loadAllAuthors()
+        loadAllAuthors() // Keep for fallback
     }
 
     private fun setupToolbar() {
@@ -100,15 +102,11 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
     private fun loadAllAuthors() {
         lifecycleScope.launch {
-            searchAdapter.showLoading()
             val authors = withContext(Dispatchers.IO) {
                 fetchAllAuthorsFromShortsAndFeed()
             }
             allAuthorsCache.clear()
             allAuthorsCache.addAll(authors)
-
-            // After loading, show recent users
-            loadRecentUsers()
         }
     }
 
@@ -131,43 +129,94 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             if (query.isEmpty()) {
                 loadRecentUsers()
             } else {
-                // Start new search job with slight delay for better performance
+                // Start new search job with debounce
                 searchJob = lifecycleScope.launch {
-                    delay(300) // Debounce delay
+                    delay(300) // Debounce for 300ms
 
-                    if (query.length < 2) {
-                        // Query too short, show recent users or message
-                        loadRecentUsers()
-                        return@launch
-                    }
+                    Log.d("SearchUsers", "Searching API for: '$query'")
+                    searchAdapter.showLoading()
 
-                    // First try local cache search
-                    Log.d("SearchUsers", "Searching locally for: '$query', Cache size: ${allAuthorsCache.size}")
-                    val localResults = searchUsersLocally(query).sortedBy { it.account.username }
+                    try {
+                        val results = searchUsersFromAPI(query)
+                        Log.d("SearchUsers", "API returned ${results.size} results")
 
-                    if (localResults.isNotEmpty()) {
-                        Log.d("SearchUsers", "Found ${localResults.size} local results")
-                        searchAdapter.showSearchResults(localResults)
-                    } else {
-                        // No local results, try API search
-                        Log.d("SearchUsers", "No local results, searching API for: '$query'")
-                        searchAdapter.showLoading()
-
-                        val apiResults = withContext(Dispatchers.IO) {
-                            searchUsersFromAPI(query)
-                        }
-
-                        if (apiResults.isNotEmpty()) {
-                            Log.d("SearchUsers", "Found ${apiResults.size} API results")
-                            searchAdapter.showSearchResults(apiResults.sortedBy { it.account.username })
+                        if (results.isNotEmpty()) {
+                            results.take(3).forEach {
+                                Log.d("SearchUsers", "Result: ${it.account.username}")
+                            }
+                            searchAdapter.showSearchResults(results)
                         } else {
-                            Log.d("SearchUsers", "No results found")
+                            searchAdapter.showNoResults()
+                        }
+                    } catch (e: Exception) {
+                        Log.e("SearchUsers", "API search failed: ${e.message}")
+                        // Fallback to local cache search
+                        Log.d("SearchUsers", "Falling back to cache search")
+                        val cacheResults = searchUsersFromCache(query)
+                        if (cacheResults.isNotEmpty()) {
+                            searchAdapter.showSearchResults(cacheResults)
+                        } else {
                             searchAdapter.showNoResults()
                         }
                     }
                 }
             }
         })
+    }
+
+    // NEW: Search using the API endpoint
+    private suspend fun searchUsersFromAPI(query: String): List<Author> = withContext(Dispatchers.IO) {
+        try {
+            // Use the new search endpoint
+            val response = apiService.getSearchAllFeed(
+                query = query,
+                filter = "people", // Search only for people
+                page = "1",
+                limit = "50"
+            )
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.success) {
+                    val matchingUsers = body.data?.matchingUsers ?: emptyList()
+                    val posts = body.data?.data?.posts ?: emptyList()
+
+                    // Extract unique authors from posts
+                    val authorsFromPosts = posts.mapNotNull { it.author }.distinctBy { it._id }
+
+                    Log.d("SearchUsersAPI", "Found ${matchingUsers.size} matching users")
+                    Log.d("SearchUsersAPI", "Found ${authorsFromPosts.size} authors from posts")
+
+                    // Return the authors sorted by username
+                    return@withContext authorsFromPosts.sortedBy { it.account.username }
+                }
+            } else {
+                Log.e("SearchUsersAPI", "API error: ${response.code()} - ${response.message()}")
+            }
+        } catch (e: HttpException) {
+            Log.e("SearchUsersAPI", "HTTP error: ${e.message}")
+        } catch (e: IOException) {
+            Log.e("SearchUsersAPI", "Network error: ${e.message}")
+        } catch (e: Exception) {
+            Log.e("SearchUsersAPI", "Unexpected error: ${e.message}")
+        }
+
+        return@withContext emptyList()
+    }
+
+    // Fallback: Search from local cache
+    private suspend fun searchUsersFromCache(query: String): List<Author> = withContext(Dispatchers.Default) {
+        if (allAuthorsCache.isEmpty()) {
+            return@withContext emptyList()
+        }
+
+        val lowerQuery = query.lowercase()
+        allAuthorsCache.filter { author ->
+            author.account.username.lowercase().contains(lowerQuery) ||
+                    author.firstName.lowercase().contains(lowerQuery) ||
+                    author.lastName.lowercase().contains(lowerQuery) ||
+                    "${author.firstName} ${author.lastName}".lowercase().contains(lowerQuery)
+        }.sortedBy { it.account.username }
     }
 
     private suspend fun fetchAllAuthorsFromShortsAndFeed(): List<Author> {
@@ -180,10 +229,20 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                     val shortsResponse = apiService.getShorts(page.toString())
                     if (shortsResponse.isSuccessful) {
                         val body = shortsResponse.body()
-                        body?.data?.posts?.posts?.forEach { post ->
-                            val author = post.author.toFeedAuthor()
-                            if (!authorsMap.containsKey(author._id)) {
-                                authorsMap[author._id] = author
+                        if (body != null) {
+                            val responseData = body.data
+                            if (responseData != null) {
+                                val postsData = responseData.posts
+                                if (postsData != null) {
+                                    val postsList = postsData.posts
+                                    for (post in postsList) {
+                                        val shortsAuthor = post.author
+                                        val author = shortsAuthor.toFeedAuthor()
+                                        if (!authorsMap.containsKey(author._id)) {
+                                            authorsMap[author._id] = author
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -196,20 +255,29 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             for (page in 1..5) {
                 try {
                     val feedResponse = apiService.getAllFeed(page.toString())
-
                     if (feedResponse.isSuccessful) {
                         val body = feedResponse.body()
-                        body?.data?.data?.posts?.forEach { post ->
-                            val author = post.author
-                            if (!authorsMap.containsKey(author._id)) {
-                                authorsMap[author._id] = author
-                            }
+                        if (body != null) {
+                            val data = body.data
+                            if (data != null) {
+                                val dataX = data.data
+                                if (dataX != null) {
+                                    val postsList = dataX.posts
+                                    for (post in postsList) {
+                                        val author = post.author
+                                        if (!authorsMap.containsKey(author._id)) {
+                                            authorsMap[author._id] = author
+                                        }
 
-                            // Also get authors from reposted content
-                            post.originalPost.forEach { originalPost ->
-                                val originalAuthor = originalPost.author.toAuthor()
-                                if (!authorsMap.containsKey(originalAuthor._id)) {
-                                    authorsMap[originalAuthor._id] = originalAuthor
+                                        // Also get authors from reposted content
+                                        val originalPosts = post.originalPost
+                                        for (originalPost in originalPosts) {
+                                            val originalAuthor = originalPost.author
+                                            if (!authorsMap.containsKey(originalAuthor._id)) {
+                                                authorsMap[originalAuthor._id] = originalAuthor.toAuthor()
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -227,59 +295,6 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             Log.e("SearchUsers", "Unexpected error: ${e.message}")
         }
 
-        return authorsMap.values.toList()
-    }
-
-    // Search users from BOTH feed and shorts endpoints
-    private suspend fun searchUsersFromAPI(query: String): List<Author> {
-        val authorsMap = mutableMapOf<String, Author>()
-
-        try {
-            // 1. Search in FEED posts
-            for (page in 1..3) {
-                try {
-                    val feedSearchResponse = apiService.getSearchAllFeed(query, page.toString())
-
-                    if (feedSearchResponse.isSuccessful) {
-                        val body = feedSearchResponse.body()
-                        // Access the nested data structure: data.data.posts
-                        body?.data?.data?.posts?.forEach { post ->
-                            val author = post.author
-                            if (!authorsMap.containsKey(author._id)) {
-                                authorsMap[author._id] = author
-                                Log.d("SearchUsers", "Found feed author: ${author.account.username}")
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e("SearchUsers", "Error searching feed API page $page: ${e.message}")
-                }
-            }
-
-            // 2. Search in SHORTS posts
-            for (page in 1..3) {
-                try {
-                    val shortsSearchResponse = apiService.searchAllShorts(query, page.toString())
-
-                    if (shortsSearchResponse.isSuccessful) {
-                        val body = shortsSearchResponse.body()
-                        body?.data?.posts?.posts?.forEach { post ->
-                            val author = post.author.toFeedAuthor()
-                            if (!authorsMap.containsKey(author._id)) {
-                                authorsMap[author._id] = author
-                                Log.d("SearchUsers", "Found shorts author: ${author.account.username}")
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e("SearchUsers", "Error searching shorts API page $page: ${e.message}")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("SearchUsers", "Error in API search: ${e.message}")
-        }
-
-        Log.d("SearchUsers", "Total unique authors found: ${authorsMap.size}")
         return authorsMap.values.toList()
     }
 
@@ -397,185 +412,36 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
     private fun performSearch(query: String) {
         lifecycleScope.launch {
-            if (query.length < 2) {
-                loadRecentUsers()
-                return@launch
-            }
+            Log.d("SearchUsers", "Performing API search for: '$query'")
+            searchAdapter.showLoading()
 
-            // First try local cache
-            Log.d("SearchUsers", "Searching locally for: '$query', Cache size: ${allAuthorsCache.size}")
-            val localResults = searchUsersLocally(query).sortedBy { it.account.username }
+            try {
+                val results = searchUsersFromAPI(query)
+                Log.d("SearchUsers", "Found ${results.size} results from API")
 
-            if (localResults.isNotEmpty()) {
-                Log.d("SearchUsers", "Found ${localResults.size} local results")
-                searchAdapter.showSearchResults(localResults)
-            } else {
-                // Try API search
-                searchAdapter.showLoading()
-                val apiResults = withContext(Dispatchers.IO) {
-                    searchUsersFromAPI(query)
-                }
-
-                if (apiResults.isNotEmpty()) {
-                    Log.d("SearchUsers", "Found ${apiResults.size} API results")
-                    searchAdapter.showSearchResults(apiResults.sortedBy { it.account.username })
+                if (results.isNotEmpty()) {
+                    results.take(3).forEach {
+                        Log.d("SearchUsers", "Result: ${it.account.username}")
+                    }
+                    searchAdapter.showSearchResults(results)
                 } else {
-                    searchAdapter.showNoResults()
+                    // Try cache as fallback
+                    val cacheResults = searchUsersFromCache(query)
+                    if (cacheResults.isNotEmpty()) {
+                        searchAdapter.showSearchResults(cacheResults)
+                    } else {
+                        searchAdapter.showNoResults()
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e("SearchUsers", "Search failed: ${e.message}")
+                searchAdapter.showNoResults()
             }
-        }
-    }
-
-    // Local cache search
-    private suspend fun searchUsersLocally(query: String): List<Author> = withContext(Dispatchers.Default) {
-        if (allAuthorsCache.isEmpty()) {
-            return@withContext emptyList()
-        }
-
-        val lowerQuery = query.lowercase()
-        allAuthorsCache.filter { author ->
-            author.account.username.lowercase().contains(lowerQuery) ||
-                    author.firstName.lowercase().contains(lowerQuery) ||
-                    author.lastName.lowercase().contains(lowerQuery) ||
-                    "${author.firstName} ${author.lastName}".lowercase().contains(lowerQuery)
         }
     }
 
     @OptIn(UnstableApi::class)
     private fun onUserClicked(author: Author) {
-        // Show posts for this user
-        loadUserPosts(author)
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun loadUserPosts(author: Author) {
-        lifecycleScope.launch {
-            try {
-                Log.d("SearchUsers", "Loading posts for: ${author.account.username}")
-                searchAdapter.showLoading()
-
-                // Try FEED first
-                val feedResponse = withContext(Dispatchers.IO) {
-                    apiService.getSearchAllFeedByUsername(
-                        username = author.account.username,
-                        page = "1"
-                    )
-                }
-
-                val feedPosts = if (feedResponse.isSuccessful) {
-                    feedResponse.body()?.data?.data?.posts ?: emptyList()
-                } else {
-                    emptyList()
-                }
-
-                // Try SHORTS
-                val shortsResponse = withContext(Dispatchers.IO) {
-                    apiService.getShortsByUsernameOnly(
-                        username = author.account.username,
-                        page = "1"
-                    )
-                }
-
-                val shortsPosts = if (shortsResponse.isSuccessful) {
-                    shortsResponse.body()?.data?.posts?.posts ?: emptyList()
-                } else {
-                    emptyList()
-                }
-
-                Log.d("SearchUsers", "Found ${feedPosts.size} feed posts and ${shortsPosts.size} shorts for ${author.account.username}")
-
-                // Decide where to navigate based on what content exists
-                when {
-                    feedPosts.isNotEmpty() && shortsPosts.isNotEmpty() -> {
-                        // User has both - show dialog to choose
-                        showContentTypeDialog(author, feedPosts.size, shortsPosts.size)
-                    }
-                    feedPosts.isNotEmpty() -> {
-                        // Only feed posts - navigate to feed
-                        navigateToFeed(author)
-                    }
-                    shortsPosts.isNotEmpty() -> {
-                        // Only shorts - navigate to shorts
-                        navigateToShorts(author)
-                    }
-                    else -> {
-                        // No content found
-                        Log.d("SearchUsers", "No posts found for ${author.account.username}")
-                        searchAdapter.showNoResults()
-                        android.widget.Toast.makeText(
-                            this@SearchAllUserNameActivity,
-                            "No posts found for ${author.account.username}",
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
-                        loadRecentUsers()
-                    }
-                }
-
-            } catch (e: Exception) {
-                Log.e("SearchUsers", "Error loading posts: ${e.message}")
-                searchAdapter.showNoResults()
-                android.widget.Toast.makeText(
-                    this@SearchAllUserNameActivity,
-                    "Error loading posts",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
-                loadRecentUsers()
-            }
-        }
-    }
-
-    private fun showContentTypeDialog(author: Author, feedCount: Int, shortsCount: Int) {
-        val dialog = android.app.AlertDialog.Builder(this)
-            .setTitle("View ${author.account.username}'s Content")
-            .setMessage("This user has both feed posts and shorts. What would you like to view?")
-            .setPositiveButton("Feed Posts ($feedCount)") { _, _ ->
-                navigateToFeed(author)
-            }
-            .setNegativeButton("Shorts ($shortsCount)") { _, _ ->
-                navigateToShorts(author)
-            }
-            .setNeutralButton("Cancel") { dialog, _ ->
-                dialog.dismiss()
-                loadRecentUsers()
-            }
-            .create()
-
-        dialog.show()
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun navigateToFeed(author: Author) {
-        val intent = Intent(this@SearchAllUserNameActivity, MainActivity::class.java).apply {
-            putExtra("navigate_to", "feed")
-            putExtra("user_id", author._id)
-            putExtra("filter_username", author.account.username)
-            putExtra("filter_user_avatar", author.account.avatar.url)
-            putExtra("should_filter", true)
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun navigateToShorts(author: Author) {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            putExtra("navigate_to", "shorts")
-            putExtra("user_id", author._id)
-            putExtra("filter_user_id", author._id)
-            putExtra("filter_username", author.account.username)
-            putExtra("filter_user_avatar", author.account.avatar.url)
-            putExtra("should_filter", true)
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
-        startActivity(intent)
-        finish()
-    }
-
-
-    // Fallback navigation to shorts profile
-    @OptIn(UnstableApi::class)
-    private fun navigateToUserProfile(author: Author) {
         val intent = Intent(this, MainActivity::class.java).apply {
             putExtra("navigate_to", "shorts")
             putExtra("user_id", author._id)
@@ -595,11 +461,9 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     }
 }
 
-// Adapter classes
 class SearchUserNameAdapter(
     private val onUserClicked: (Author) -> Unit
-)
-    : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback()) {
+) : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback()) {
 
     fun showRecentUsers(authors: List<Author>) {
         submitList(listOf("RECENT_HEADER") + authors)
