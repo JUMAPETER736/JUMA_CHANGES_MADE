@@ -1,0 +1,405 @@
+//    private fun showSaveConfirmationDialog(vnPath: String) {
+//        val builder = android.app.AlertDialog.Builder(this)
+//        builder.setTitle("Send Audio Comment?")
+//
+//        val TAG = "showSaveConfirmationDialog"
+//        builder.setPositiveButton("Send") { _, _ ->
+//
+////            val newFilePath = getOutputFilePath(this)
+//            val newFile = File(vnPath)
+////            Log.d("AudioFile", "File created: $newFile")
+//            Log.d("AudioFile", "vn file path: $vnPath")
+//
+//            try {
+//                Log.d("AudioFile", "File created: $newFile")
+//
+//                if (!isReply) {
+//
+//                    val profilePic2 = settings.getString("profile_pic", "").toString()
+//                    val avatar = Avatar("", "", url = profilePic2)
+//                    val account =
+//                        Account(
+//                            _id = "",
+//                            avatar = avatar,
+//                            "",
+//                            LocalStorage.getInstance(this).getUsername()
+//                        )
+//                    val author =
+//                        Author(_id = "12", account = account, firstName = "", lastName = "")
+//                    val comment = com.uyscuti.social.circuit.data.model.Comment(
+//                        __v = 1,
+//                        _id = "12",
+//                        author = author,
+//                        content = "no content",
+//                        createdAt = "",
+//                        isLiked = false,
+//                        likes = 0,
+//                        postId = postId,
+//                        updatedAt = "",
+//                        replyCount = 0,
+//                        vnComment = vnPath
+//                    )
+//
+////                    addAudioComment(postId, "no content", newFile)
+////                    val newCommentEntity = ShortCommentEntity(postId, vnPath)
+////                    shortsCommentViewModel.insertComment(newCommentEntity)
+////                    Log.d(TAG, "onSubmit: inserted comment $newCommentEntity")
+//
+//                    Log.d(TAG, "onSubmit: comment $comment")
+////        adapter.submitItems(listOf(comment) )
+////            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
+////            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
+//
+//                    adapter!!.submitItem(comment, adapter!!.itemCount)
+//                    shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
+//                    Log.d(TAG, "onSubmit: count before ${shortToComment!!.comments}")
+//
+////                    if (shortToComment != null) {
+////                        shortToComment!!.comments += 1
+////
+////                        // Update the count in the mutableShortsList
+////                        // Update the count in the mutableShortsList
+////                        shortsViewModel.mutableShortsList.forEach { short ->
+////                            if (short._id == postId) {
+////                                short.comments = shortToComment!!.comments
+////                            }
+////                        }
+////                        val newShortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
+////                        Log.d(TAG, "onSubmit: count after ${newShortToComment!!.comments}")
+////
+////                        EventBus.getDefault().post(ShortAdapterNotifyDatasetChanged())
+////                    }
+//                }
+//                // Now you can use 'newFile' as needed, for example, setting it in your message.
+//                val audioUrl = Uri.fromFile(newFile)
+//
+//
+//            } catch (e: IOException) {
+//                Log.e("AudioFile", "Error creating file", e)
+//            }
+//
+//        }
+//
+//        builder.setNegativeButton("Delete") { dialog, which ->
+//            // Handle the case when the user chooses not to save the recording
+//            // You may want to delete the recording or take other actions here
+//            val audioFile = File(vnPath)
+//            if (audioFile.exists() && audioFile.delete()) {
+//                // File was successfully deleted
+//                Log.i("VoiceNote", "Recording discarded and deleted.")
+//            } else {
+//                // Error occurred while deleting the file
+//                Log.e("VoiceNote", "Failed to delete recording.")
+//            }
+//        }
+//
+//        builder.create().show()
+//    }
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.UserProfileEditActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="Edit Profile"
+        app:titleTextAppearance="@style/Toolbar.TitleText" />
+
+    <LinearLayout
+        android:id="@+id/userProfileBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_collapseMode="parallax"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <RelativeLayout
+            android:layout_width="140dp"
+            android:layout_height="140dp">
+
+
+            <ImageView
+                android:id="@+id/avatar"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:scaleType="centerCrop"
+                android:layout_centerInParent="true"
+                app:layout_collapseMode="parallax"
+                app:srcCompat="@drawable/user" />
+
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/addPhotoWrapper"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="18dp"
+                app:layout_collapseMode="parallax">
+
+                <ImageView
+                    android:id="@+id/addPhoto"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:background="@color/bluejeans"
+                    android:padding="8dp"
+                    android:scaleType="centerCrop"
+                    app:layout_collapseMode="parallax"
+                    app:srcCompat="@drawable/baseline_camera_alt_24"
+                    app:tint="@color/white" />
+            </androidx.cardview.widget.CardView>
+
+
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/emoji"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="16dp"
+            android:text="&#64;dennis"
+            android:textStyle="bold"
+            app:layout_collapseMode="parallax" />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/myNameBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardUseCompatPadding="true"
+            app:layout_collapseMode="parallax">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="8dp"
+                    android:text="Firstname" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:id="@+id/firstNameContainer"
+                    app:layout_collapseMode="parallax">
+
+                    <TextView
+                        android:id="@+id/myNameTV"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:text="Dennis"
+                        android:textColor="@color/black"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        app:layout_collapseMode="parallax" />
+
+                    <EditText
+                        android:id="@+id/myNameET"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:backgroundTint="@color/bluejeans"
+                        android:hint="Enter Your Firstname"
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+
+                    <ImageView
+                        android:id="@+id/myNameEditBtn"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center_vertical"
+                        android:src="@drawable/baseline_edit_24" />
+
+
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/myLastNameBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardUseCompatPadding="true"
+            app:layout_collapseMode="parallax">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="8dp"
+                    android:text="Lastname" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:id="@+id/lastNameContainer"
+                    app:layout_collapseMode="parallax">
+
+                    <TextView
+                        android:id="@+id/myLastNameTV"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:text="Reuben"
+                        android:textColor="@color/black"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        app:layout_collapseMode="parallax" />
+
+                    <EditText
+                        android:id="@+id/myLastNameET"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:backgroundTint="@color/bluejeans"
+                        android:hint="Enter Last Name"
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+
+                    <ImageView
+                        android:id="@+id/myLastNameEditBtn"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center_vertical"
+                        android:src="@drawable/baseline_edit_24" />
+
+
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/userBioBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/userRepoBox"
+            app:cardUseCompatPadding="true"
+            app:layout_collapseMode="parallax">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="8dp"
+                    android:text="Bio" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:id="@+id/bioContainer"
+                    app:layout_collapseMode="parallax">
+
+                    <TextView
+                        android:id="@+id/bioTV"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:text="Software Developer"
+                        android:textColor="@color/black"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        app:layout_collapseMode="parallax" />
+
+                    <EditText
+                        android:id="@+id/bioET"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:backgroundTint="@color/bluejeans"
+                        android:hint="Describe YourSelf"
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+
+                    <ImageView
+                        android:id="@+id/bioEditBTN"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center_vertical"
+                        android:src="@drawable/baseline_edit_24" />
+
+
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+
+        </androidx.cardview.widget.CardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/interactionsBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/userBioBox"
+            android:layout_marginTop="20dp"
+            app:cardUseCompatPadding="true"
+
+            app:layout_collapseMode="parallax">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="8dp"
+                app:layout_collapseMode="parallax">
+
+                <TextView
+                    android:id="@+id/saveChanges"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:paddingHorizontal="50dp"
+                    android:text="Save Changes"
+                    android:textColor="@color/bluejeans"
+                    app:layout_collapseMode="parallax" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

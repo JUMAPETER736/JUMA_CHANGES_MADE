@@ -20,6 +20,8 @@ import android.content.Context;
 
 import androidx.annotation.Nullable;
 
+import com.uyscuti.social.chatsuit.messages.MessageHolders;
+
 
 /*
  * Created by troy379 on 28.03.17.
@@ -61,6 +63,8 @@ public interface MessageContentType extends IMessage {
         String getDocSize();
 
         long getAudioDuration();
+
+        int getVoiceDuration();
         @Nullable
         String getDocUrl();
 

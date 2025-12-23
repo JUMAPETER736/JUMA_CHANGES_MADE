@@ -1,8 +1,6 @@
 package com.uyscuti.social.business.fragment
 
 
-import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -17,12 +15,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresExtension
-import androidx.annotation.RequiresPermission
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.social.business.adapter.ProfileAdapter
-import com.uyscuti.sharedmodule.model.Catalogue
+import com.uyscuti.social.business.model.Catalogue
 //import com.example.mylibrary.retro.RetrofitClient
 import com.uyscuti.social.network.api.request.business.create.BusinessLocation
 import com.uyscuti.social.network.api.request.business.create.Contact
@@ -37,7 +34,6 @@ import com.uyscuti.social.business.room.entity.MyProductEntity
 import com.uyscuti.social.business.room.repository.BusinessRepository
 import com.uyscuti.social.business.util.ImagePicker
 import com.uyscuti.social.business.R
-import com.uyscuti.social.network.api.request.business.create.LocationInformation
 import com.uyscuti.social.network.api.response.business.response.product.AddProductResponse
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
@@ -56,9 +52,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 import javax.inject.Inject
 
-
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
 @AndroidEntryPoint
 class ProfileFragment : Fragment() {
@@ -90,26 +83,6 @@ class ProfileFragment : Fragment() {
 
     private val roomCatalogueList = arrayListOf<Catalogue>()
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment PersonalChats.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            ProfileFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
-
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -132,83 +105,30 @@ class ProfileFragment : Fragment() {
             Log.d(API_TAG, "businessId: $businessId")
         }
 
-        // getting products from room database
         CoroutineScope(Dispatchers.IO).launch {
             val business = getBusiness()
 
-            if(business == null) {
-                val getBusinessProfile = retrofitInterface.apiService.getBusinessProfile()
+            val myProducts = getMyProducts()
 
-                if(getBusinessProfile.isSuccessful) {
-                    val businessProfile = getBusinessProfile.body()!!
-
-
-                    val _id = businessProfile._id
-                    val businessName = businessProfile.businessName
-                    val businessDescription = businessProfile.businessDescription
-                    val businessType = businessProfile.businessType
-                    val owner = businessProfile.owner
-                    val contact = businessProfile.contact
-                    val __v = businessProfile.__v
-                    val backgroundPhoto = businessProfile.backgroundPhoto!!.url
-                    val backgroundVideo = businessProfile.backgroundVideo!!.url
-                    val videoThumbnail = businessProfile.backgroundVideo!!.thumbnail
-                    val createdAt = businessProfile.createdAt
-                    val updatedAt = businessProfile.updatedAt
-                    val location = businessProfile.location
-
-                    val editor = sharedPreferences.edit()
-
-                    editor.putString("businessId", businessProfile._id)
-                    editor.putString("businessName", businessProfile.businessName)
-                    editor.putString("businessDescription", businessProfile.businessDescription)
-                    editor.putString("businessType", businessProfile.businessType)
-                    editor.putString("businessOwner", businessProfile.owner)
-                    editor.putString("backgroundPhoto", businessProfile.backgroundPhoto!!.url)
-                    editor.putString("businessEmail", businessProfile.contact.email)
-                    editor.putString("businessPhone", businessProfile.contact.phoneNumber)
-                    editor.putString("businessAddress", businessProfile.contact.address)
-
-                    editor.apply()
-
-                    val business = BusinessEntity(
-                        _id,
-                        __v,
-                        backgroundPhoto,
-                        backgroundVideo,
-                        videoThumbnail,
-                        listOf<BusinessCatalogueEntity>(),
-                        businessDescription,
-                        businessName,
-                        businessType,
-                        Contact(
-                            contact.address,
-                            contact.email,
-                            contact.phoneNumber,
-                            contact.website
-                        ),
-                        createdAt,
-                        com.uyscuti.social.network.api.response.business.response.profile.Location(
-                            BusinessLocation(
-                                location.businessLocation.enabled,
-                                location.businessLocation.locationInfo
-                            ),
-                            WalkingBillboard(
-                                location.walkingBillboard.enabled,
-                                location.walkingBillboard.liveLocationInfo
-                            )
-                        ),
-                        owner,
-                        updatedAt
+            Log.d(API_TAG, "onCreateView: business $business")
+            if (myProducts.isNotEmpty()){
+                for (product in myProducts){
+                    Log.d(API_TAG, "Room product: $product")
+                    val catalogue = Catalogue(
+                        product._id,
+                        product.itemName,
+                        product.description,
+                        product.price,
+                        product.images
                     )
-                    this@ProfileFragment.business = business
-                    insertBusiness(business)
 
-                    withContext(Dispatchers.Main) {
-                        this@ProfileFragment.profileAdapter.setProfile(business)
+                    roomCatalogueList.add(catalogue)
+                    if (::profileAdapter.isInitialized){
+                        profileAdapter.addCatalogueItem(catalogue)
                     }
                 }
-            } else {
+            }
+            if (business != null) {
                 this@ProfileFragment.business = business
 
                 Log.d(API_TAG, "Found Business from room: $business")
@@ -217,6 +137,43 @@ class ProfileFragment : Fragment() {
                     this@ProfileFragment.profileAdapter.setProfile(business)
                 }
 
+                try {
+                    val response = retrofitInterface.apiService.getProducts()
+
+                    if (response.isSuccessful) {
+                        val catalogueList = response.body()!!.data
+
+                        Log.d(API_TAG, "Catalogue: $catalogueList")
+
+                        for (catalogue in catalogueList) {
+                            Log.d(API_TAG, "Catalogue: $catalogue")
+
+                            val myProductEntity = MyProductEntity(
+                                catalogue._id,
+                                catalogue.__v,
+                                catalogue.catalogue,
+                                catalogue.createdAt,
+                                catalogue.description,
+                                catalogue.features,
+                                catalogue.images,
+                                catalogue.itemName,
+                                catalogue.owner,
+                                catalogue.price,
+                                catalogue.updatedAt
+                            )
+
+                            insertMyProduct(myProductEntity)
+                        }
+                    }else{
+                        Log.d(API_TAG, "Error: ${response.errorBody()?.string()}")
+                    }
+
+                }catch (e: HttpException){
+                    Log.d(API_TAG, "Error: $e")
+                    Log.d(API_TAG, "Error: ${e.response()?.errorBody()?.string()}")
+                }catch (e:Throwable){
+                    Log.d(API_TAG, "Error: $e")
+                }
             }
         }
 
@@ -224,7 +181,6 @@ class ProfileFragment : Fragment() {
         return view
     }
 
-    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     fun getCoordinates(){
         profileAdapter.getLocation()
     }
@@ -286,12 +242,12 @@ class ProfileFragment : Fragment() {
                         contact.website
                     ),
                     createdAt,
-                    com.uyscuti.social.network.api.response.business.response.profile.Location(
-                        com.uyscuti.social.network.api.request.business.create.BusinessLocation(
+                    Location(
+                        BusinessLocation(
                             location.businessLocation.enabled,
                             location.businessLocation.locationInfo
                         ),
-                        com.uyscuti.social.network.api.request.business.create.WalkingBillboard(
+                        WalkingBillboard(
                             location.walkingBillboard.enabled,
                             location.walkingBillboard.liveLocationInfo
                         )
@@ -390,23 +346,21 @@ class ProfileFragment : Fragment() {
                         contact.website
                     ),
                     createdAt,
-                    com.uyscuti.social.network.api.response.business.response.profile.Location(
-                        com.uyscuti.social.network.api.request.business.create.BusinessLocation(
+                    Location(
+                        BusinessLocation(
                             location.businessLocation.enabled,
                             location.businessLocation.locationInfo
                         ),
-                        com.uyscuti.social.network.api.request.business.create.WalkingBillboard(
+                        WalkingBillboard(
                             location.walkingBillboard.enabled,
                             location.walkingBillboard.liveLocationInfo
                         )
-
                     ),
                     owner,
                     updatedAt
                 )
 
                 insertBusiness(business)
-
             } else {
                 Log.d(API_TAG, "Error: ${response.errorBody()?.string()}")
             }
@@ -450,7 +404,7 @@ class ProfileFragment : Fragment() {
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
-    private fun   setupRecyclerView() {
+    private fun setupRecyclerView() {
         val profileList = listOf("Profile Item 1", "Profile Item 2", "Profile Item 3")
         profileAdapter = ProfileAdapter(requireActivity(),business) { profile ->
             Log.d(API_TAG, "Profile clicked: $profile")
@@ -514,16 +468,15 @@ class ProfileFragment : Fragment() {
                                 contact.website
                             ),
                             createdAt,
-                            com.uyscuti.social.network.api.response.business.response.profile.Location(
-                                com.uyscuti.social.network.api.request.business.create.BusinessLocation(
+                            Location(
+                                BusinessLocation(
                                     location.businessLocation.enabled,
                                     location.businessLocation.locationInfo
                                 ),
-                                com.uyscuti.social.network.api.request.business.create.WalkingBillboard(
+                                WalkingBillboard(
                                     location.walkingBillboard.enabled,
                                     location.walkingBillboard.liveLocationInfo
                                 )
-
                             ),
                             owner,
                             updatedAt
@@ -537,8 +490,7 @@ class ProfileFragment : Fragment() {
                             Log.d(API_TAG, "imagePath: $imagePath")
                             Log.d(API_TAG, "background imageUri: $imageUri")
 
-
-                            updateBackgroundImage(imageUri?.path!!)
+                            updateBackgroundImage(imagePath!!)
                         }
 
                         if (videoUri != null) {
@@ -555,6 +507,73 @@ class ProfileFragment : Fragment() {
 
 
                         }
+
+                        if (catalogueList.isNotEmpty()) {
+                            for (catalogue in catalogueList) {
+                                val imageFiles = arrayListOf<File>()
+                                for (image in catalogue.images) {
+//                                    val imagePath = getRealPathFromUri(image)
+
+//
+//                                    val encodedFilePath = URLDecoder.decode(Uri.parse(image).path, "UTF-8")
+//                                    val decoded = Uri.decode(encodedFilePath)
+//
+////                                    val uniqueId = System.currentTimeMillis().toString()
+////                                    val newFilePath = addIdToFilePath(decoded, uniqueId)
+//
+//                                    val newAttachmentFile = File(decoded)
+//
+////            val encodedFilePath = URLDecoder.decode(filePath, "UTF-8")
+//                                    val attachmentFile = java.io.File(decoded)
+//                                    val imagePath = Uri.encode(decoded)
+                                    val imageFile = File(image)
+                                    imageFiles.add(imageFile)
+                                }
+
+
+                                try {
+                                    val createProductResponse = createProduct(
+                                        catalogue.name,
+                                        catalogue.description,
+                                        "none",
+                                        catalogue.price,
+                                        imageFiles
+                                    )
+
+                                    if (createProductResponse.isSuccessful) {
+                                        Log.d(API_TAG, "Product created successfully")
+                                        Log.d(API_TAG, "Response: ${createProductResponse.body()}")
+                                        val product = createProductResponse.body()!!.data
+
+                                        val myProduct = MyProductEntity(
+                                            product._id,
+                                            product.__v,
+                                            product.catalogue,
+                                            product.createdAt,
+                                            product.description,
+                                            product.features,
+                                            product.images,
+                                            product.itemName,
+                                            product.owner,
+                                            product.price,
+                                            product.updatedAt
+                                        )
+
+                                        insertMyProduct(myProduct)
+                                    } else {
+                                        Log.d(API_TAG, "Error: ${createProductResponse.errorBody()?.string()}")
+                                    }
+                                }catch (e:HttpException){
+                                    Log.d(API_TAG, "Error: $e")
+                                    Log.d(API_TAG, "Error: ${e.response()?.errorBody()?.string()}")
+                                }catch (e:IOException){
+                                    Log.d(API_TAG, "Error: $e")
+                                }
+                            }
+
+                            catalogueList.clear()
+                        }
+
 
                     } else {
                         Log.d(API_TAG, "Error: ${response.errorBody()?.string()}")
@@ -583,6 +602,9 @@ class ProfileFragment : Fragment() {
 
         recyclerView.recycledViewPool.setMaxRecycledViews(0, 0)
 
+        for (catalogue in roomCatalogueList){
+            profileAdapter.addCatalogueItem(catalogue)
+        }
     }
 
     private fun extractThumbnail(videoUri: Uri): String {
@@ -614,7 +636,7 @@ class ProfileFragment : Fragment() {
         return thumbnailFile.absolutePath
     }
 
-     fun getRealPathFromUri(uri: Uri): String? {
+    private fun getRealPathFromUri(uri: Uri): String? {
         val projection = arrayOf(MediaStore.Images.Media.DATA)
         val cursor = requireActivity().contentResolver.query(uri, projection, null, null, null)
         cursor?.use {
@@ -648,7 +670,20 @@ class ProfileFragment : Fragment() {
     }
 
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
 
+
+        Log.d(API_TAG, "onActivityResult: $data  code: $requestCode result: $resultCode")
+
+//        val imageUri = ImagePicker.onActivityResult(requestCode, resultCode, data)
+//
+//        if (imageUri != null) {
+//            // Update the selected image in your data model
+//            // and notify the adapter about the change
+//            profileAdapter.setBackgroundImage(imageUri)
+//        }
+    }
 
     fun pickImage() {
         ImagePicker.pickMedia(requireActivity())
@@ -672,6 +707,8 @@ class ProfileFragment : Fragment() {
     fun addCatalogue(catalogue: Catalogue) {
 
         catalogueList.add(catalogue)
+
+        profileAdapter.addCatalogueItem(catalogue)
 
         val imageFiles = arrayListOf<File>()
         for (image in catalogue.images) {
@@ -728,6 +765,10 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    fun deleteSelectedItems() {
+        profileAdapter.deleteSelectedItems()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
 
@@ -739,11 +780,16 @@ class ProfileFragment : Fragment() {
         profileAdapter.pausePlayer()
     }
 
+    fun getSelectedProductsIds(): List<String> {
+        return profileAdapter.getSelectedProductsIds()
+
+    }
 
     // Function to update EditText fields with Catalogue data
     fun updateFields(catalogue: Catalogue) {
         // Set the text of the EditText fields to the corresponding values from the Catalogue object
 
     }
+
 
 }

@@ -38,7 +38,6 @@ class PushNotificationService : IntentService("NotificationService") {
         localStorage = CoreStorage.getInstance(applicationContext)
     }
 
-    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     override fun onHandleIntent(intent: Intent?) {
 
         Log.d("PushNotificationService", "onHandleIntent")
@@ -159,7 +158,7 @@ class PushNotificationService : IntentService("NotificationService") {
 //                .setPriority(NotificationCompat.PRIORITY_HIGH)
 //                .setAutoCancel(true)
 //                .setWhen(currentTimeMillis)
-//                .addAction(replyAction)
+////            .addAction(replyAction)
 //                .build())
 
         // Replace `5858` with a unique ID for your foreground service

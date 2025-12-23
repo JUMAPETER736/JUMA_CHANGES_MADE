@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.fragments.feed.feedviewfragments.FeedMixedFilesFragment">
+    tools:context=".User_Interface.fragments.feed.feedviewfragments.FeedMixedFilesFragment">
 
 
     <ImageView

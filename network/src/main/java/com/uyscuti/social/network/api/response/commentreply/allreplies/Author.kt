@@ -1,5 +1,6 @@
 package com.uyscuti.social.network.api.response.commentreply.allreplies
 
+import com.uyscuti.social.network.api.response.commentreply.allreplies.Account
 import java.io.Serializable
 
 data class Author(

@@ -143,11 +143,11 @@
 
         <!-- Following Button -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/followButton"
+            android:id="@+id/sendMessage"
             android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:minWidth="90dp"
-            android:text="Following"
+            android:text="Message"
             android:textSize="13sp"
             android:textAllCaps="false"
             android:textStyle="bold"

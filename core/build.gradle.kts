@@ -9,10 +9,10 @@ plugins {
 
 android {
     namespace = "com.uyscuti.social.core"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -45,7 +45,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -57,21 +56,12 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.0-alpha02")
     kapt("androidx.room:room-compiler:2.6.0-alpha02")
 
-
-    // For Google Play Services Location
-    implementation ("com.google.android.gms:play-services-location:21.0.1")
-
-    // For Google Play Services Maps (includes LatLng)
-    implementation ("com.google.android.gms:play-services-maps:18.2.0")
-
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:okhttp:4.9.1")
     implementation("org.greenrobot:eventbus:3.3.1")
 
     implementation("io.socket:socket.io-client:2.0.0")
-
-    implementation("com.google.code.gson:gson:2.10.1")
 
     implementation(project(":notifications"))
     implementation(project(":network"))

@@ -13,8 +13,9 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.uyscuti.sharedmodule.FullSellerActivity
 import com.uyscuti.social.business.BusinessCommentsClicked
+import com.uyscuti.social.business.FullSellerActivity
+
 import com.uyscuti.social.business.model.Catalogue
 import com.uyscuti.social.business.R
 import org.greenrobot.eventbus.EventBus

@@ -762,10 +762,10 @@ public class DialogsListAdapter<DIALOG extends IDialog>
             } else  {
                 applyDefaultStyle();
             }
-//
-//            if(dialog.getIsSelected()){
-//                applyUnreadStyle();
-//            }
+            //Set Dialog avatar
+            if (imageLoader != null) {
+                imageLoader.loadImage(ivAvatar, dialog.getDialogPhoto(), null);
+            }
 
             //Set Name
             tvName.setText(dialog.getDialogName());

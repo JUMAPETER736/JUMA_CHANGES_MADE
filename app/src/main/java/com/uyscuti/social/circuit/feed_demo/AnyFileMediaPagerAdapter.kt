@@ -11,6 +11,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
+import com.bumptech.glide.Glide
 import com.uyscuti.social.circuit.R
 import java.util.concurrent.TimeUnit
 
@@ -29,7 +31,7 @@ class AnyFileMediaPagerAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_view_pager_1, parent, false)
+            .inflate(R.layout.item_view_pager, parent, false)
         return MediaViewHolder(view)
     }
 
@@ -49,11 +51,7 @@ class AnyFileMediaPagerAdapter(
         } else {
             holder.playerView.visibility = View.GONE
             holder.imageView.visibility = View.GONE
-//            Glide.with(context)
-//                .load(mediaUrl)
-//                .placeholder(R.drawable.flash21)
-//                .error(R.drawable.flash21)
-//                .into(holder.imageView)
+
         }
     }
 

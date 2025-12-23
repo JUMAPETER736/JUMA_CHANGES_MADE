@@ -1,0 +1,647 @@
+//    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+//    private fun showVNDialog() {
+//        val dialog = BottomSheetDialog(this)
+//
+//        dialog.setContentView(R.layout.vn_record_layout)
+//        deleteVN = dialog.findViewById(R.id.deleteVN)!!
+//        recordVN = dialog.findViewById<ImageView>(R.id.recordVN)!!
+//        playVnAudioBtn = dialog.findViewById<ImageView>(R.id.playVnAudioBtn)!!
+//        sendVN = dialog.findViewById<ImageView>(R.id.sendVN)!!
+//
+//        timerTv = dialog.findViewById<TextView>(R.id.timerTv)!!
+//        playerTimerTv = dialog.findViewById(R.id.playerTimerTv)!!
+//        secondTimerTv = dialog.findViewById<TextView>(R.id.secondTimerTv)!!
+//        thirdTimerTv = dialog.findViewById<TextView>(R.id.thirdTimerTv)!!
+//
+//        waveForm = dialog.findViewById<WaveFormView>(R.id.waveForm)!!
+//        wave = dialog.findViewById<WaveformSeekBar>(R.id.wave)!!
+//
+//        playAudioLayout = dialog.findViewById<LinearLayout>(R.id.playAudioLayout)!!
+//
+//        val dialogView =
+//            dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+//        dialogView?.startAnimation(AnimationUtils.loadAnimation(this, R.anim.slide_up))
+//
+//        val selectableItemBackground = TypedValue()
+//        deleteVN!!.context?.theme?.resolveAttribute(
+//            android.R.attr.selectableItemBackground, selectableItemBackground, true
+//        )
+//        recordVN!!.context?.theme?.resolveAttribute(
+//            android.R.attr.selectableItemBackground, selectableItemBackground, true
+//        )
+//        playVnAudioBtn.context?.theme?.resolveAttribute(
+//            android.R.attr.selectableItemBackground, selectableItemBackground, true
+//        )
+//
+//        sendVN!!.context?.theme?.resolveAttribute(
+//            android.R.attr.selectableItemBackground, selectableItemBackground, true
+//        )
+//        timerTv!!.context?.theme?.resolveAttribute(
+//            android.R.attr.selectableItemBackground, selectableItemBackground, true
+//        )
+//        playerTimerTv!!.context?.theme?.resolveAttribute(
+//            android.R.attr.selectableItemBackground, selectableItemBackground, true
+//        )
+//        secondTimerTv!!.context?.theme?.resolveAttribute(
+//            android.R.attr.selectableItemBackground, selectableItemBackground, true
+//        )
+//        thirdTimerTv!!.context?.theme?.resolveAttribute(
+//            android.R.attr.selectableItemBackground, selectableItemBackground, true
+//        )
+//        waveForm!!.context?.theme?.resolveAttribute(
+//            android.R.attr.selectableItemBackground, selectableItemBackground, true
+//        )
+//        wave!!.context?.theme?.resolveAttribute(
+//            android.R.attr.selectableItemBackground, selectableItemBackground, true
+//        )
+//        playAudioLayout!!.context?.theme?.resolveAttribute(
+//            android.R.attr.selectableItemBackground, selectableItemBackground, true
+//        )
+//        startRecording()
+//        deleteVN!!.setOnClickListener {
+//            if (mediaRecorder != null) {
+//                Log.d(TAG, "onCreate: media recorder not null")
+//            } else {
+//                Log.d(TAG, "onCreate: media recorder null")
+//            }
+//            deleteRecording()
+//            if (player?.isPlaying == true) {
+//                stopPlaying()
+//            }
+//            dialog.dismiss()
+//        }
+//        recordVN!!.setOnClickListener {
+//            when {
+//                isPaused -> resumeRecording()
+//                isRecording -> pauseRecording()
+//                else -> Log.d("recordVN", "onCreate: else in vn record btn on click")
+//                //                else->startRecording()
+//            }
+//        }
+//
+//        sendVN!!.setOnClickListener {
+//            CoroutineScope(Dispatchers.Main).launch {
+//                Log.d(TAG, "sendVN: recorded files size ${recordedAudioFiles.size}")
+//                Log.d(TAG, "sendVN: wasPaused $wasPaused")
+//
+//                if (!wasPaused) {
+//
+//                    timer.stop()
+//                    mediaRecorder?.apply {
+//                        stop()
+//                        release()
+//                    }
+//                    mediaRecorder = null
+//                    Log.d("SendVN", "When sending vn was paused was false")
+//                    // Execute mixVN asynchronously
+//                    mixVN()
+//
+//
+//                }
+//
+//                lifecycleScope.launch(Dispatchers.Main) {
+////                    timer.stop()
+//                    delay(500)
+//                    stopRecording()
+//                }
+//
+//                // Stop recording after mixVN finishes executing or immediately if wasPaused is true
+//            }
+//            dialog.dismiss()
+//        }
+//
+//        dialog.show()
+//    }
+
+//    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+//    private fun resumeRecording() {
+//        if (isPaused) {
+//            isVnResuming = true
+//            startRecording() // Start a new recording session, appending to the previous file
+//            waveForm!!.visibility = View.VISIBLE
+//            timerTv!!.visibility = View.VISIBLE
+//            playAudioLayout!!.visibility = View.GONE
+//            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+//            recordVN!!.setImageResource(R.drawable.baseline_pause_black)
+//        }
+//
+//    }
+//
+//    override fun onTimerTick(duration: String) {
+//        timerTv!!.text = duration
+//
+//        var amplitude = mediaRecorder!!.maxAmplitude.toFloat()
+//        amplitude = if (amplitude > 0) amplitude else 130f
+//
+////        Log.d("onTimerTick", "onTimerTick: media recorder amplitude: ${mediaRecorder?.maxAmplitude}")
+//        waveForm!!.addAmplitude(amplitude)
+//
+//    }
+//
+//    @RequiresApi(Build.VERSION_CODES.R)
+//    private fun pauseRecording() {
+//        val TAG = "pauseRecording"
+////        firstTimeSendVn = true
+//        if (isRecording && !isPaused) {
+//
+//            try {
+//                mediaRecorder?.apply {
+//                    stop()
+//                    release()
+//                }
+//                mediaRecorder = null
+//            } catch (e: Exception) {
+//                Log.d(TAG, " failed to stop media recorder: $e")
+//                e.printStackTrace()
+//            }
+//            isPaused = true
+//            timer.pause() // Pause the recording timer
+//            timerTv!!.visibility = View.INVISIBLE
+//            waveForm!!.visibility = View.GONE
+//            playAudioLayout!!.visibility = View.VISIBLE
+//            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+//            recordVN!!.setImageResource(com.uyscut.flashcall.R.drawable.ic_mic_on)
+//
+//
+//            Log.d(TAG, "pauseRecording: list of recordings  size: ${recordedAudioFiles.size}")
+//            Log.d(TAG, "pauseRecording: list of recordings $recordedAudioFiles")
+//
+//            mixVN()
+//        }
+//    }
+//
+//    private fun mixVN() {
+//        val TAG = "mixVN"
+//        try {
+//            wasPaused = true
+//            Log.d(TAG, "pauseRecording: outputFile: $outputVnFile")
+//
+//            val audioMixer = AudioMixer(outputVnFile)
+//
+//            for (input in recordedAudioFiles) {
+//                val ai = GeneralAudioInput(input)
+//                audioMixer.addDataSource(ai)
+//            }
+//            audioMixer.mixingType = AudioMixer.MixingType.SEQUENTIAL
+//
+//            audioMixer.setProcessingListener(object : AudioMixer.ProcessingListener {
+//                override fun onProgress(progress: Double) {
+//                    // Not used in this example, but you can handle progress updates if needed
+//                }
+//
+//                override fun onEnd() {
+//                    runOnUiThread {
+//                        audioMixer.release()
+////                        mixingCompleted = true // Set the flag to indicate mixing is completed
+//                        // Additional code as needed
+//                        val file = File(outputVnFile)
+//                        Log.d(TAG, "onEnd: output vn file exists ${file.exists()}")
+//                        Log.d(TAG, "onEnd: media muxed success")
+//
+//                        inflateWave(outputVnFile)
+//
+////                        if(stopRecording) {
+////                            stopRecording()
+////                        }
+//                        playVnAudioBtn.setOnClickListener {
+//                            Log.d("playVnAudioBtn", "onEnd: play vn button clicked")
+//                            when {
+//                                !isAudioVNPlaying -> {
+//                                    playVnAudioBtn.setImageResource(R.drawable.baseline_pause_black)
+//                                    Log.d(
+//                                        "playVnAudioBtn",
+//                                        "play vn"
+//                                    )
+//                                    startPlaying(outputVnFile)
+//                                }
+//
+//                                else -> {
+//                                    Log.d(
+//                                        "playVnAudioBtn",
+//                                        "pause VN"
+//                                    )
+//                                    playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+//                                    vnRecordAudioPlaying = true
+//                                    pauseVn(vnRecordProgress)
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            })
+//
+//            try {
+//                audioMixer.start()
+//                audioMixer.processAsync()
+//            } catch (e: IOException) {
+//                audioMixer.release()
+//                e.printStackTrace()
+//                Log.d(TAG, "pauseRecording: exception 1 $e")
+//                Log.d(TAG, "pauseRecording: exception 1 ${e.message}")
+//            }
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            Log.d(TAG, "pauseRecording: exception 2 $e")
+//            Log.d(TAG, "pauseRecording: exception 2 ${e.message}")
+//        }
+//    }
+//
+//    private fun pauseVn(progress: Int) {
+//        Log.d("pauseVn", "vnRecordProgress $vnRecordProgress..... progress $progress")
+//
+//        player?.pause()
+//        player?.seekTo(progress)
+//        isAudioVNPlaying = false
+//        isAudioVNPaused = true
+//        isOnRecordDurationOnPause = true
+//
+//        playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+//    }
+//
+//    private fun startPlaying(vnAudio: String) {
+//        playVnAudioBtn.setImageResource(R.drawable.baseline_pause_24)
+//        EventBus.getDefault().post(PauseShort(true))
+////        player?.reset()
+//        isAudioVNPlaying = true
+//        vnRecordAudioPlaying = true
+//
+//        isOnRecordDurationOnPause = false
+//        startRecordWaveRunnable()
+//        if (isAudioVNPaused) {
+////            progressAnim.resume()
+//            Log.d("startPlaying", "(isAudioVNPaused)->vnRecordProgress $vnRecordProgress")
+//
+//            if (vnRecordProgress != 0) {
+//                player?.seekTo(vnRecordProgress)
+//            }
+//            player?.start()
+//        } else {
+//
+//            player = MediaPlayer().apply {
+//                try {
+//                    setDataSource(vnAudio)
+////                inputStream.close()
+//                    prepare()
+//                    Log.d("startPlaying", "vnRecordProgress $vnRecordProgress")
+//                    if (vnRecordProgress != 0) {
+//                        player?.seekTo(vnRecordProgress)
+//                    }
+//                    start()
+//                    setOnCompletionListener {
+//                        // Playback completed, restart playback
+//                        isAudioVNPaused = false
+//                        stopPlaying()
+//                    }
+//                } catch (e: IOException) {
+//                    Log.e("MediaRecorder", "prepare() failed")
+//                }
+//            }
+//
+//        }
+//    }
+//
+//    @SuppressLint("DefaultLocale")
+//    private fun inflateWave(outputVN: String) {
+//
+////        outputVnFile = outputVN
+//
+//        val TAG = "inflateWave"
+//        Log.d("playVnAudioBtn", "inflateWave: outputvn $outputVN")
+//
+//        val audioFile = File(outputVN)
+//        wave!!.visibility = View.VISIBLE
+//        playerTimerTv!!.visibility = View.VISIBLE
+//        Log.d(TAG, "render: does not start with http")
+//        //                audioDuration = 100L
+//        val file = File(outputVN)
+//        Log.d(TAG, "render: file $outputVN exists: ${file.exists()}")
+//        val locaAudioDuration = AudioDurationHelper.getLocalAudioDuration(outputVN)
+//        if (locaAudioDuration != null) {
+//            // Duration is available, do something with it
+//            //                    println("Audio duration: ${duration}ms")
+//            val minutes = (locaAudioDuration / 1000) / 60
+//            val seconds = (locaAudioDuration / 1000) % 60
+//            //                println("Audio duration: $minutes minutes $seconds seconds")
+//            thirdTimerTv!!.text = String.format("%02d:%02d", minutes, seconds)
+//        } else {
+//            // File does not exist or error retrieving duration
+////            println("Unable to retrieve audio duration.")
+//            Log.e(TAG, "render: failed to retrieve audio duration")
+//
+//        }
+//
+//
+//        //                Log.d(TAG, "render: file $audioUrl can execute: ${file.canExecute()}")
+//
+////        binding.wave.setSampleFrom(audioFile)
+//        CoroutineScope(Dispatchers.IO).launch {
+//            WaveFormExtractor.getSampleFrom(applicationContext, outputVN) {
+//
+//                CoroutineScope(Dispatchers.Main).launch {
+//
+//                    if (locaAudioDuration != null) {
+//                        wave!!.maxProgress = locaAudioDuration.toFloat()
+//                    }
+//                    wave!!.setSampleFrom(it)
+//
+//                    wave!!.onProgressChanged = object : SeekBarOnProgressChanged {
+//                        override fun onProgressChanged(
+//                            waveformSeekBar: WaveformSeekBar,
+//                            progress: Float,
+//                            fromUser: Boolean
+//                        ) {
+//                            secondTimerTv!!.text = String.format(
+//                                "%s",
+//                                TrimVideoUtils.stringForTime(progress)
+//                            )
+//                            vnRecordProgress = progress.toInt()
+//                            if (fromUser) {
+//                                if (vnRecordAudioPlaying) {
+//                                    vnRecordProgress = progress.toInt()
+//                                    pauseVn(progress = progress.toInt())
+//                                } else {
+//                                    vnRecordProgress = progress.toInt()
+//                                    Log.d("FromUser", "Scroll to this $progress")
+//                                }
+//
+//                            }
+//                        }
+//
+//                        override fun onRelease(event: MotionEvent?, progress: Float) {
+//                            if (outputVN.isNotEmpty()) {
+////                                inflateWave(outputVN)
+//                                if (vnRecordAudioPlaying) {
+//                                    Log.d(
+//                                        "onRelease",
+//                                        "vnRecordAudioPlaying $isAudioVNPlaying progress $progress"
+//                                    )
+//                                    vnRecordProgress = progress.toInt()
+//                                    startPlaying(outputVN)
+//                                } else {
+//                                    Log.d("onRelease", "Start playing from this progress $progress")
+//                                    vnRecordProgress = progress.toInt()
+//                                }
+//
+//                            } else {
+//                                Log.d("onRelease", "output vn is empty")
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+////        binding.wave.setRawData(audioFile.readBytes()) { progressAnim.start() }
+//    }
+//
+//    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+//    private fun startRecording() {
+//        if (!permissionGranted) {
+//            ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
+//            return
+//        }
+//        try {
+//
+//            Log.d(TAG, "recorded files size ${recordedAudioFiles.size}")
+//            if (player?.isPlaying == true) {
+//                stopPlaying()
+//            }
+//            playerTimerTv!!.visibility = View.GONE
+//            outputFile = getOutputFilePath("rec")
+//            outputVnFile = getOutputFilePath("mix")
+//            wasPaused = false
+////            firstTimeSendVn = false
+//
+//
+//            mediaRecorder = MediaRecorder().apply {
+//                setAudioSource(MediaRecorder.AudioSource.MIC)
+//                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+//                setOutputFile(outputFile)
+//                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+//
+////                setAudioSource(MediaRecorder.AudioSource.MIC)
+////                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+////                setOutputFile(outputFile)
+////                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+//
+//                prepare()
+//                start()
+//            }
+//
+//            isRecording = true
+//            isPaused = false
+////            isVnResuming = false
+//            recordVN!!.setImageResource(R.drawable.baseline_pause_24)
+//            sendVN!!.setBackgroundResource(R.drawable.ic_ripple)
+//            deleteVN!!.setBackgroundResource(R.drawable.ic_ripple)
+//            timer.start()
+//
+//            deleteVN!!.isClickable = true
+//            sendVN!!.isClickable = true
+////            mediaRecorder.
+//            recordedAudioFiles.add(outputFile)
+//
+////            mediaRecorder.logSessionId
+//
+//            Log.d("VNFile", outputFile)
+//            // Add any UI changes or notifications indicating recording has started
+//        } catch (e: Exception) {
+//            Log.d("VNFile", "Failed to record audio properly")
+//            e.printStackTrace()
+//            // Handle exceptions as needed
+//        }
+//    }
+
+//    private val waveHandler = Handler(Looper.getMainLooper())
+//
+//    private val onRecordWaveRunnable = object : Runnable {
+//        override fun run() {
+////            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
+//            try {
+//                if (!isOnRecordDurationOnPause) {
+//                    val currentPosition = player?.currentPosition?.toFloat()!!
+//                    updateRecordWaveProgress(currentPosition)
+//                }
+//                waveHandler.postDelayed(this, 20)
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//                Log.d("Exception", "run: ${e.message}")
+//            }
+//
+//        }
+//    }
+//
+//    private fun updateRecordWaveProgress(progress: Float) {
+//
+//        CoroutineScope(Dispatchers.Main).launch {
+//            wave!!.progress = progress
+//            Log.d("updateWaveProgress", "updateWaveProgress: $progress")
+//        }
+//    }
+//
+//    private fun stopRecordWaveRunnable() {
+//        try {
+//            waveHandler.removeCallbacks(onRecordWaveRunnable)
+//            isOnRecordDurationOnPause = true
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
+//    }
+//
+//    private fun startRecordWaveRunnable() {
+//        try {
+//            Log.d(
+//                "isDurationOnPause",
+//                " in comment audio start wave isDurationOnPause is $isOnRecordDurationOnPause"
+//            )
+//
+//            waveHandler.removeCallbacks(onRecordWaveRunnable)
+//            waveHandler.post(onRecordWaveRunnable)
+//            isOnRecordDurationOnPause = false
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
+//    }
+//
+//    private fun stopPlaying() {
+//        playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+//        player?.release()
+//        player = null
+//        isAudioVNPlaying = false
+//
+//        stopRecordWaveRunnable()
+//        wave!!.progress = 0F
+////        vnRecordProgress = 0
+//    }
+
+//    private fun deleteRecording() {
+//
+//        val TAG = "Recording"
+//
+//        try {
+//            mediaRecorder?.apply {
+//                stop()
+//                release()
+//            }
+//            mediaRecorder = null
+//            isRecording = false
+//            isPaused = false
+////            isAudioVNPlaying = false
+//
+//            timerTv!!.text = "00:00.00"
+////            binding.recordVN.setImageResource(R.drawable.baseline_pause_24)
+//            recordVN!!.setImageResource(com.uyscut.flashcall.R.drawable.ic_mic_on)
+//
+////            binding.deleteVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
+////            binding.deleteVN.isClickable = false
+//            sendVN!!.setBackgroundResource(R.drawable.ic_ripple_disabled)
+//            sendVN!!.isClickable = false
+//
+//            amplitudes = waveForm!!.clear()
+//            amps = 0
+//            timer.stop()
+//            Log.d("TAG", "deleteRecording: recorded files size ${recordedAudioFiles.size}")
+//
+//
+//
+//            deleteVn()
+////            if()
+//            // Add any UI changes or notifications indicating recording has stopped
+////            showSaveConfirmationDialog(outputFile)
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            // Handle exceptions as needed
+//        }
+//    }
+
+//    private fun deleteVn() {
+//        recordedAudioFiles.clear()
+////        if (recordedAudioFiles.isNotEmpty()) {
+//        val isDeleted = deleteFiles(recordedAudioFiles)
+//        val outputVnFileList = mutableListOf<String>()
+//        outputVnFileList.add(outputVnFile)
+//        val deleteMixVn = deleteFiles(outputVnFileList)
+//        if (isDeleted) {
+//            Log.d(RTAG, "File record deleted successfully")
+//        } else {
+//            println("Failed to delete file.")
+//        }
+//
+//        if (deleteMixVn) {
+//            Log.d(RTAG, "File mix vn deleted successfully")
+//        } else {
+//            println("Failed to delete file.")
+//        }
+////        }
+//    }
+//    @SuppressLint("SetTextI18n")
+//    private fun stopRecording() {
+//
+////        val TAG = "StopRecording"
+//        try {
+//
+//            if (mediaRecorder != null) {
+//                mediaRecorder?.apply {
+//                    stop()
+//                    release()
+//                }
+//                mediaRecorder = null
+//            }
+//            isRecording = false
+//            isPaused = false
+//            wasPaused = false
+//            timerTv!!.text = "00:00.00"
+////            binding.recordVN.setImageResource(R.drawable.baseline_pause_24)
+//            recordVN!!.setImageResource(com.uyscut.flashcall.R.drawable.ic_mic_on)
+////            binding.deleteVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
+////            binding.deleteVN.isClickable = false
+//            sendVN!!.setBackgroundResource(R.drawable.ic_ripple_disabled)
+//            sendVN!!.isClickable = false
+//
+//            amplitudes = waveForm!!.clear()
+//            amps = 0
+//            timer.stop()
+//            if (player?.isPlaying == true) {
+//                stopPlaying()
+//            }
+////           VNLayout.visibility = View.GONE
+//
+//
+//            val file = File(outputVnFile)
+//            val file2 = File(outputFile)
+////            Log.d(TAG, "vn file exists outputVnFile: $outputVnFile")
+////            Log.d(TAG, "vn file2 exists: $outputFile")
+////            Log.d(TAG, "vn file exists: ${file.exists()}")
+////            Log.d(TAG, "vn file2 exists: ${file2.exists()}")
+//            Log.d(TAG, "stopRecording: recorded files size ${recordedAudioFiles.size}")
+//
+//            var fileName = ""
+//            var durationString = ""
+//            if (recordedAudioFiles.size != 1) {
+//                durationString = getFormattedDuration(outputVnFile)
+//                fileName = getFileNameFromLocalPath(outputVnFile)
+//                Log.d("AudioPicker", "File path: $outputVnFile")
+//                Log.d("AudioPicker", "File name: $fileName")
+//                Log.d("AudioPicker", "durationString: $durationString")
+//            } else {
+//                durationString = getFormattedDuration(outputFile)
+//                fileName = getFileNameFromLocalPath(outputFile)
+//                Log.d("AudioPicker", "File path: $outputFile")
+//                Log.d("AudioPicker", "File name: $fileName")
+//                Log.d("AudioPicker", "durationString: $durationString")
+//            }
+//
+//            binding.shortThumbNail.setImageResource(R.drawable.baseline_headphones_24)
+//
+//            val tintColor = getColor(R.color.black)
+//            binding.recyclerView2.visibility = View.INVISIBLE
+//            // Apply tint to the image
+//            binding.shortThumbNail.setColorFilter(tintColor, PorterDuff.Mode.SRC_ATOP)
+//            feedUploadViewModel.setText("File name: $fileName \nDuration: $durationString")
+//            recordedAudioFiles.clear()
+//        } catch (e: Exception) {
+//            Log.d(TAG, "stopRecording: $e")
+//            e.printStackTrace()
+//            // Handle exceptions as needed
+//        }
+//    }

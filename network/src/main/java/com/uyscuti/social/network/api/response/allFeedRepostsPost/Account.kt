@@ -1,5 +1,6 @@
 package com.uyscuti.social.network.api.response.allFeedRepostsPost
 
+import com.uyscuti.social.network.api.response.posts.Avatar
 import java.io.Serializable
 
 data class Account(

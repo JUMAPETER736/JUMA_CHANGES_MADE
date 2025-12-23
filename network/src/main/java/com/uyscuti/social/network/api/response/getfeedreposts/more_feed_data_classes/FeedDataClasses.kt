@@ -9,7 +9,7 @@ data class RefreshFeedData(val position: Int, val booleanValue: Boolean)
 @Parcelize
 data class FeedMultipleImages(
     var imagePath: String = "",
-    var compressedImagePath:String = ""
+    var compressedImagePath: String = ""
 ): Parcelable, Serializable
 
 @Parcelize

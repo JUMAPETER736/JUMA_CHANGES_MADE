@@ -21,13 +21,15 @@ import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.model.PlayPauseEvent
-import com.uyscuti.sharedmodule.model.ShortsBookmarkButton2
-import com.uyscuti.sharedmodule.model.ShortsCommentButtonClicked
-import com.uyscuti.sharedmodule.model.ShortsLikeUnLikeButton2
+import com.uyscuti.social.circuit.model.PlayPauseEvent
+import com.uyscuti.social.circuit.model.ShortsBookmarkButton2
+import com.uyscuti.social.circuit.model.ShortsCommentButtonClicked
+import com.uyscuti.social.circuit.model.ShortsLikeUnLikeButton2
 import com.uyscuti.social.chatsuit.commons.ViewHolder
 import com.uyscuti.social.circuit.R
+import com.uyscuti.social.circuit.User_Interface.fragments.OnClickListeners
+import com.uyscuti.social.circuit.User_Interface.fragments.OnCommentsClickListener
+import com.uyscuti.social.circuit.data.model.Dialog
 import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
 import org.greenrobot.eventbus.EventBus
 
@@ -67,7 +69,7 @@ class UserProfileShortsAdapter(
 
 
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.shorts_view_pager_view, parent, false)
+            .inflate(R.layout.shorts_view_pager_item, parent, false)
 
         val viewHolder = UserProfileShortsViewHolder(view, commentsClickListener, clickListeners)
         viewHolderList.add(viewHolder)
@@ -178,10 +180,10 @@ class UserProfileShortsViewHolder(
         Log.d("Shorts", "data in view holder: $data")
 
         val url = data?.images?.get(0)?.url
-        val shortOwnerDate = data!!.author.createdAt
+        data!!.author.createdAt
         val shortOwnerUsername = data.author.account.username
-        val shortOwnerName = "${data.author.firstName} ${data.author.lastName}"
-        val shortOwnerProfilePic = data.author.account.avatar.url
+        "${data.author.firstName} ${data.author.lastName}"
+        data.author.account.avatar.url
 
 
         EventBus.getDefault().post(ShortsLikeUnLikeButton2(data, btnLike, isLiked, likeCount))
@@ -189,8 +191,7 @@ class UserProfileShortsViewHolder(
 
         commentsParentLayout.setOnClickListener {
             EventBus.getDefault().post(
-                ShortsCommentButtonClicked(position = absoluteAdapterPosition, data)
-            )
+                ShortsCommentButtonClicked(position = absoluteAdapterPosition, data))
 
         }
 
@@ -208,9 +209,7 @@ class UserProfileShortsViewHolder(
             .into(profileImageView)
 
         profileImageView.setOnClickListener {
-            val shortOwnerId = data.author.account._id
-
-            var dialog: Dialog? = null
+            data.author.account._id
 
         }
         val caption = data.content

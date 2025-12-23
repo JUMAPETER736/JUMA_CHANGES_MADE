@@ -7,7 +7,7 @@ data class Post(
     val author: Author,
     var bookmarkCount: Int,
     var comments: Int,
-    var content: String,
+    val content: String,
     var contentType: String,
     val createdAt: String,
     val duration: List<Duration>,
@@ -37,45 +37,9 @@ data class Post(
     // Business/Shop related fields
     val isBusinessPost: Boolean? = null,
     val category: String? = null,
-    val businessDetails: BusinessPost? = null,
 
     // Favorites related fields
     var isFavorited: Boolean? = null,
     val favorites: List<String>? = null
 
-): Serializable
-
-
-data class BusinessPost(
-    val _id: String,
-    val owner: String,
-    val catalogue: String,
-    val itemName: String,
-    val description: String,
-    val features: List<String>,
-    val images: List<String>,
-    val price: String,
-    val createdAt: String,
-    val updatedAt: String,
-    val __v: Int,
-    val author: AuthorB
-): Serializable
-
-data class AuthorB(
-    val _id: String,
-    val firstName: String,
-    val lastName: String,
-    val account: AccountB
-): Serializable
-
-data class AccountB(
-    val _id: String,
-    val avatar: AvatarB,
-    val username: String
-): Serializable
-
-data class AvatarB(
-    val url: String,
-    val localPath: String,
-    val _id: String
 ): Serializable

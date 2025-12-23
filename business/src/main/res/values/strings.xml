@@ -23,7 +23,6 @@
     <string name="fullscreen_image_desc">fullscreen_image_desc</string>
     <string name="seller_information">Seller Information</string>
     <string name="follow">Follow</string>
-    <string name="following">Following</string>
     <string name="ayscut_business">AYSCUT BUSINESS</string>
     <string name="ayscut_Business">ayscut\n</string>
     <string name="is_this_item_available">Is this Item available</string>
@@ -31,39 +30,4 @@
     <string name="pick_images">Pick Images</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="content_description">Add catalogue button</string>
-    <string name="create_delete_and_view_catalogues_for_your_business">Create, Delete, Edit and View Catalogues for your business</string>
-    <string name="viewing_product">Viewing Product</string>
-    <string name="price">Price</string>
-    <string name="message">Message</string>
-    <string name="description">Description</string>
-    <string name="user_image">User image</string>
-    <string name="back_icon">back_icon</string>
-    <string name="search_icon">Search icon</string>
-    <string name="search_v2">Search...</string>
-    <string name="clear_search">Clear search</string>
-    <string name="search">Search</string>
-    <string name="close">Close</string>
-    <string name="repost">Repost</string>
-    <string name="by_enabling_this_feature_every_customer_using_flash_app_will_be_receiving_a_notification_with_a_radius_of_5_meters_depending_on_your_current_location_this_will_make_it_easier_to_advertise_your_business_everywhere_you_go">By enabling this feature, every customer using Flash App will be receiving a notification with a radius of 5 meters depending on your current location. This will make it easier to advertise your business everywhere you go.</string>
-    <string name="enable_walking_billboard">Enable walking billboard.</string>
-    <string name="tag_where_your_business_is_situated_this_information_can_be_used_for_various_purposes_including_advertising_and_reaching_out_to_potential_customers_in_that_area">Tag where your business is situated. This information can be used for various purposes, including advertising and reaching out to potential customers in that area.</string>
-    <string name="tag_your_business_location">Tag your business location.</string>
-    <string name="location">location</string>
-    <string name="what_s_your_contact_details">what\'s your contact details ?</string>
-    <string name="email_address">Email address</string>
-    <string name="phone_number">Phone Number</string>
-    <string name="address">Address</string>
-    <string name="describe_your_business">describe your business</string>
-    <string name="business_description">Business description</string>
-    <string name="what_s_your_business_profession_type">What\'s your business / profession type?</string>
-    <string name="business_profession_type">Business/Profession Type</string>
-    <string name="whats_your_business_profession_name">whats your business/profession name ?</string>
-    <string name="business_profession">Business/Profession</string>
-    <string name="upload_profession_profile">upload profession profile</string>
-    <string name="getting_your_current_location_nplease_wait">Getting your current location\nPlease wait...</string>
-    <string name="boost">Boost</string>
-    <string name="mwk">MWK</string>
-    <string name="offer_price">Offer price</string>
-    <string name="be_the_first_to_comment">Be the first to comment</string>
 </resources>

@@ -1,0 +1,236 @@
+package com.uyscut.flashdesign.adapter
+///////////////////////////////////////////////////////////////////////////
+\\\\\\\\\\\\\\\\\\\\\\\8 march 2023\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+class CommentsRecyclerViewAdapter(private val context: Context) :
+    AdPaginatedAdapter<CommentsAndRepliesModel, RecyclerView.ViewHolder>() {
+
+    private val VIEW_TYPE_COMMENT = 0
+    private val VIEW_TYPE_EMPTY = 1
+
+    inner class CommentViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val imageView: ImageView = itemView.findViewById(R.id.profilePic)
+        private val username: TextView = itemView.findViewById(R.id.username)
+        private val content: TextView = itemView.findViewById(R.id.content)
+        private val time: TextView = itemView.findViewById(R.id.time)
+        private val reply: TextView = itemView.findViewById(R.id.reply)
+        private val commentReplies: TextView = itemView.findViewById(R.id.commentReplies)
+        private val repliesRecyclerView: RecyclerView = itemView.findViewById(R.id.repliesRecyclerView)
+
+        fun render(data: CommentsAndRepliesModel) {
+            Glide.with(context)
+                .load(data.mainComment.author!!.account.avatar.url)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(imageView)
+
+            EventBus.getDefault().post(CommentRepliesHandler(data.mainComment, commentReplies))
+
+            username.text = data.mainComment.author!!.account.username
+            content.text = data.mainComment.content
+            time.text = TimeUtils.formatMongoTimestamp(data.mainComment.createdAt)
+            reply.setOnClickListener {
+                EventBus.getDefault().post(ToggleReplyToTextView(data.mainComment))
+            }
+
+//            val replyCommentAdapter = data.commentReply?.let { ReplyCommentAdapter(it) }
+            val replyCommentAdapter = ReplyCommentAdapter(data.commentReply!!)
+            repliesRecyclerView.adapter = replyCommentAdapter
+
+            commentReplies.setOnClickListener {
+                repliesRecyclerView.visibility = if(repliesRecyclerView.isShown) View.GONE else View.VISIBLE
+            }
+        }
+    }
+
+    inner class EmptyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        // You can customize this ViewHolder if needed
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+
+        return when (viewType) {
+            VIEW_TYPE_COMMENT -> {
+                val itemView = inflater.inflate(R.layout.bottom_sheet_1_item, parent, false)
+                CommentViewHolder(itemView)
+            }
+            VIEW_TYPE_EMPTY -> {
+                val itemView = inflater.inflate(R.layout.placeholder_layout, parent, false)
+                EmptyViewHolder(itemView)
+            }
+            else -> throw IllegalArgumentException("Invalid view type")
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (holder is CommentViewHolder) {
+            holder.render(getItem(position))
+        } else if (holder is EmptyViewHolder) {
+            // You can customize this part if needed
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        Log.d("getItemViewType", "getItemViewType: itemCount $itemCount")
+        return if (itemCount == 0) VIEW_TYPE_EMPTY else VIEW_TYPE_COMMENT
+    }
+
+//    override fun getItemViewType(position: Int): Int {
+//        return if (mDataSet.isEmpty()) VIEW_TYPE_EMPTY else VIEW_TYPE_COMMENT
+//    }
+
+//    fun setLoadMoreListener(listener: (Int) -> Unit) {
+//        setLoadMoreListener(LoadMoreListener { pageNumber -> listener.invoke(pageNumber) })
+//    }
+}
+
+
+
+\\\\\\\\\\\\\\\\\\\\\\\\\\end of 8-3-23///////////////////////////////////////
+import android.content.Context
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.annotation.NonNull
+import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.bitmap.CircleCrop
+import com.bumptech.glide.request.RequestOptions
+import com.uyscut.core.common.data.room.entity.UserShortsEntity
+import com.uyscut.flashdesign.R
+import com.uyscut.flashdesign.adapter.notifications.AdPaginatedAdapter
+import com.uyscuti.social.circuit.utils.TimeUtils
+import com.uyscuti.social.circuit.utils.TimeUtilsLiveData
+import com.uyscut.network.api.response.comment.allcomments.Comment
+import com.uyscut.network.api.response.comment.allcomments.Data
+
+class CommentsRecyclerViewAdapter(private val context: Context) :
+    AdPaginatedAdapter<Comment, RecyclerView.ViewHolder>() {
+
+    private val VIEW_TYPE_COMMENT = 0
+    private val VIEW_TYPE_EMPTY = 1
+
+    inner class CommentViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val imageView: ImageView = itemView.findViewById(R.id.profilePic)
+        private val username: TextView = itemView.findViewById(R.id.username)
+        private val content: TextView = itemView.findViewById(R.id.content)
+        private val time: TextView = itemView.findViewById(R.id.time)
+
+        fun render(data: Comment) {
+            Glide.with(context)
+                .load(data.author!!.account.avatar.url)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(imageView)
+
+            username.text = data.author!!.account.username
+            content.text = data.content
+            time.text = TimeUtils.formatMongoTimestamp(data.createdAt)
+        }
+    }
+
+    inner class EmptyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        // You can customize this ViewHolder if needed
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+
+        return when (viewType) {
+            VIEW_TYPE_COMMENT -> {
+                val itemView = inflater.inflate(R.layout.bottom_sheet_1_item, parent, false)
+                CommentViewHolder(itemView)
+            }
+            VIEW_TYPE_EMPTY -> {
+                val itemView = inflater.inflate(R.layout.placeholder_layout, parent, false)
+                EmptyViewHolder(itemView)
+            }
+            else -> throw IllegalArgumentException("Invalid view type")
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (holder is CommentViewHolder) {
+            holder.render(getItem(position))
+        } else if (holder is EmptyViewHolder) {
+            // You can customize this part if needed
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        Log.d("getItemViewType", "getItemViewType: itemCount $itemCount")
+        return if (itemCount == 0) VIEW_TYPE_EMPTY else VIEW_TYPE_COMMENT
+    }
+
+//    override fun getItemViewType(position: Int): Int {
+//        return if (mDataSet.isEmpty()) VIEW_TYPE_EMPTY else VIEW_TYPE_COMMENT
+//    }
+
+//    fun setLoadMoreListener(listener: (Int) -> Unit) {
+//        setLoadMoreListener(LoadMoreListener { pageNumber -> listener.invoke(pageNumber) })
+//    }
+}
+
+//class CommentsRecyclerViewAdapter(private val context: Context) :
+//    PaginatedAdapter<Comment, CommentsRecyclerViewAdapter.ViewHolder>() {
+//
+//    var firstPageLoaded = false;
+//
+//    private val timeUtilsLiveData = TimeUtilsLiveData.formattedTimestampLiveData
+//
+//    @NonNull
+//    override fun onCreateViewHolder(@NonNull parent: ViewGroup, viewType: Int): ViewHolder {
+//        return ViewHolder(
+//            LayoutInflater.from(parent.context)
+//                .inflate(R.layout.bottom_sheet_1_item, parent, false),
+//        )
+//    }
+//
+//    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+//
+//    }
+//
+//    fun setLoadMoreListener(listener: (Int) -> Unit) {
+//        setLoadMoreListener(LoadMoreListener { pageNumber -> listener.invoke(pageNumber) })
+//    }
+//
+//
+//    inner class ViewHolder(@NonNull itemView: View) : RecyclerView.ViewHolder(itemView) {
+//        var imageView: ImageView
+//        var username: TextView
+//        lateinit var content: TextView
+//        lateinit var time: TextView
+//
+//        init {
+//            imageView = itemView.findViewById(R.id.profilePic)
+//            username = itemView.findViewById(R.id.username)
+//            content = itemView.findViewById(R.id.content)
+//            time = itemView.findViewById(R.id.time)
+//        }
+//
+//        //        fun  itemCount
+//        fun render(data: Comment) {
+//            Glide.with(context)
+//                .load(data.author!!.account.avatar.url)
+//                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+//                .placeholder(R.drawable.flash21)
+//                .diskCacheStrategy(DiskCacheStrategy.ALL)
+//                .into(imageView)
+//
+//            val formattedTime = TimeUtils.formatMongoTimestamp(data.createdAt)
+//
+//            username.text = data.author!!.account.username
+//            content.text = data.content
+//            time.text = formattedTime
+//        }
+//
+//    }
+//}
+
+

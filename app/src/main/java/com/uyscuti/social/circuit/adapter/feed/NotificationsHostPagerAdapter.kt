@@ -3,8 +3,8 @@ package com.uyscuti.social.circuit.adapter.feed
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.BusinessNotificationsFragment
-import com.uyscuti.social.circuit.ui.fragments.chat.NotificationsFragment
+import com.uyscuti.social.circuit.User_Interface.fragments.NotificationsFragment
+import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.BusinessNotificationsFragment
 
 class NotificationsHostPagerAdapter (fragmentManager: FragmentManager) :FragmentPagerAdapter(fragmentManager) {
     private var unreadCounts = mutableListOf(0, 0) // Initialize the unread counts for each tab
@@ -41,7 +41,7 @@ class NotificationsHostPagerAdapter (fragmentManager: FragmentManager) :Fragment
         val unreadCount = unreadCounts.getOrNull(position) ?: 0
 
         return if (position == 1) {
-            "$title (99)" // Static badge with count 99
+            "$title (99)"
         } else {
             title
         }

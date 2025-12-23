@@ -1,0 +1,599 @@
+package com.uyscut.flashdesign.ui.feedactivities
+
+import android.annotation.SuppressLint
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
+import androidx.fragment.app.Fragment
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.SeekBar
+import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
+import androidx.annotation.OptIn
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
+import androidx.recyclerview.widget.RecyclerView
+import androidx.transition.TransitionInflater
+import androidx.viewpager2.widget.ViewPager2
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.bitmap.CircleCrop
+import com.bumptech.glide.request.RequestOptions
+import com.daimajia.androidanimations.library.Techniques
+import com.daimajia.androidanimations.library.YoYo
+import com.uyscut.flashdesign.R
+import com.uyscuti.social.circuit.adapter.feed.MultipleFeedImagesAdapter
+import com.uyscuti.social.circuit.adapter.feed.MultipleImagesListener
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleFeedVideosAdapter
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.PlayFeedVideoInterface
+import com.uyscut.flashdesign.databinding.FragmentFeedVideoViewBinding
+import com.uyscuti.social.circuit.feed_demo.VideoPagerAdapter
+import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.social.circuit.model.FeedCommentClick
+import com.uyscuti.social.circuit.utils.formatDuration
+import com.uyscut.network.api.response.feed.getallfeed.Post
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.greenrobot.eventbus.EventBus
+
+// TODO: Rename parameter arguments, choose names that match
+// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+private const val ARG_PARAM1 = "param1"
+private const val ARG_PARAM2 = "param2"
+
+/**
+ * A simple [Fragment] subclass.
+ * Use the [FeedVideoViewFragment.newInstance] factory method to
+ * create an instance of this fragment.
+ */
+
+private const val TAG = "FeedVideoViewFragment"
+
+class FeedVideoViewFragment : Fragment(), PlayFeedVideoInterface {
+    // TODO: Rename and change types of parameters
+    private var param1: String? = null
+    private var param2: String? = null
+
+    private lateinit var data: Post
+    private var position = 0
+    private var videoPlayingPosition = -1;
+    private lateinit var backPressedCallback: OnBackPressedCallback
+    private var feedTextViewFragmentInterface: FeedTextViewFragmentInterface? = null
+
+    private lateinit var binding: FragmentFeedVideoViewBinding
+
+    private var player: ExoPlayer? = null
+    private var seekBar: SeekBar? = null
+    var adapter: MultipleFeedVideosAdapter? = null
+    private var adapter2: VideoPagerAdapter? = null
+
+    //    private var isPlaying = false
+    private var isUserSeeking = false
+    private var currentDuration: TextView? = null
+
+    //    private var reply: Boolean = false
+//
+    var isPaused = false
+    private val playbackStateListener: Player.Listener = playbackStateListener()
+    private fun updateSeekBar() {
+//        Log.d(TAG, "updateSeekBar: ")
+        player?.let { player ->
+            if (!isUserSeeking) {
+                val currentPosition = player.currentPosition.toInt()
+                seekBar?.progress = currentPosition
+            }
+        }
+    }
+
+    var videoUrl = ""
+    var owner = ""
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val inflater = TransitionInflater.from(requireContext())
+        enterTransition = inflater.inflateTransition(R.transition.feed_slide_from_top)
+        arguments?.let {
+            param1 = it.getString(ARG_PARAM1)
+            param2 = it.getString(ARG_PARAM2)
+            position = it.getInt("position")
+            data = (it.getSerializable("data") as Post?)!!
+        }
+    }
+
+    @OptIn(UnstableApi::class)
+    @SuppressLint("SetTextI18n")
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        // Inflate the layout for this fragment
+        binding = FragmentFeedVideoViewBinding.inflate(layoutInflater, container, false)
+        activity?.window?.navigationBarColor =
+            ContextCompat.getColor(requireContext(), R.color.black)
+        binding.toolbar.backIcon.setOnClickListener {
+            if (feedTextViewFragmentInterface != null) {
+                feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+                if (player != null) {
+                    player?.removeListener(playbackStateListener)
+                    player?.stop()
+                    player?.release()
+                    player?.clearVideoSurface()
+                }
+            }
+        }
+        Log.d(TAG, "onCreateView: data content ${data.content}")
+        if (data.content == "") {
+            binding.feedTextContent.text = ""
+        } else {
+            binding.feedTextContent.text = data.content
+        }
+
+        if (data.tags.isEmpty()) {
+            binding.tags.visibility = View.GONE
+        } else {
+            binding.tags.visibility = View.VISIBLE
+            val formattedTags = data.tags.joinToString(" ") { "#$it" }
+
+            binding.tags.text = formattedTags
+        }
+        val videoList: MutableList<String> = mutableListOf()
+        if (data.files.isNotEmpty()) {
+            for (image in data.files) {
+                Log.d(TAG, "render: images ${image.url}")
+                videoList.add(image.url)
+            }
+        } else {
+            Log.d(TAG, "render: data files is empty")
+        }
+        videoUrl = data.files[0].url
+        var previousPosition: Int = -1
+//        val videoUrls = listOf("url1", "url2", "url3")
+//        val viewPager: ViewPager2 = findViewById(R.id.viewPager)
+//        viewPager.adapter = VideoPagerAdapter(this, videoUrls)
+        adapter2 = VideoPagerAdapter(requireActivity(), videoList)
+//        adapter = MultipleFeedVideosAdapter(requireContext(), videoList, this)
+        binding.viewPager.adapter = adapter2
+        // Get the RecyclerView from ViewPager2
+//        val recyclerView: RecyclerView = binding.viewPager.getChildAt(0) as RecyclerView
+//
+//// Set the ItemAnimator to null to disable animations
+//        recyclerView.itemAnimator = null
+        binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
+//        binding.viewPager.registerOnPageChangeCallback(object :
+//            ViewPager2.OnPageChangeCallback() {
+//            override fun onPageScrolled(
+//                position: Int,
+//                positionOffset: Float,
+//                positionOffsetPixels: Int
+//            ) {
+//
+//            }
+//
+//            override fun onPageSelected(position: Int) {
+//                Log.d(
+//                    "ViewPager2",
+//                    "Page selected: $position previous position $previousPosition is paused $isPaused"
+//                )
+//                val videoThumbnail = adapter?.getVideoThumbnail()
+////                player = null
+//                Log.d("ViewPager2", "onPageSelected: video thumbnail $videoThumbnail")
+//
+//                viewLifecycleOwner.lifecycleScope.launch {
+//
+//                }
+//                videoPlayingPosition = position
+//
+//                if (player == null) {
+//                    Log.d("ViewPager2", "onPageSelected: player is null")
+//
+//                } else {
+//                    Log.d("ViewPager2", "onPageSelected: player not null")
+////                    player?.apply {
+//////                        pause()
+////                    }
+//
+//                    player?.removeListener(playbackStateListener)
+//                    player?.stop()
+//                    player?.release()
+//                    player?.clearVideoSurface()
+//                    isPaused = true
+//                    if (previousPosition != -1) {
+//                        adapter?.refreshVideo(previousPosition)
+//                    }
+//
+////                    player = null
+//
+//                }
+//                previousPosition = position
+//            }
+//
+//            @SuppressLint("NotifyDataSetChanged")
+//            override fun onPageScrollStateChanged(state: Int) {
+//                // Called when the scroll state changes:
+//                // SCROLL_STATE_IDLE, SCROLL_STATE_DRAGGING, SCROLL_STATE_SETTLING
+//                when (state) {
+//                    ViewPager2.SCROLL_STATE_IDLE -> {
+//                        // The pager is in an idle, settled state.
+//                        Log.d("ViewPager2", "Page selected: SCROLL_STATE_IDLE")
+//                        adapter?.notifyDataSetChanged()
+//                    }
+//
+//                    ViewPager2.SCROLL_STATE_DRAGGING -> {
+//                        // The user is dragging the pager.
+//                        Log.d("ViewPager2", "Page selected: SCROLL_STATE_DRAGGING")
+//                    }
+//
+////                    ViewPager2.
+//                    ViewPager2.SCROLL_STATE_SETTLING -> {
+//                        // The pager is settling to a final position.
+//                        Log.d("ViewPager2", "Page selected: SCROLL_STATE_SETTLING")
+//                    }
+//                }
+//            }
+//        })
+//        adapter?.setVideoData(data)
+        // Setup CircleIndicator for ViewPager2
+//        val indicator = findViewById<CircleIndicator3>(R.id.circleIndicator)
+        binding.circleIndicator.setViewPager(binding.viewPager)
+
+
+//        binding.playerView.setOnClickListener {
+////            isPlaying = !isPlaying
+//            if (player!!.isPlaying) {
+//                binding.playImageView.visibility = View.VISIBLE
+//                binding.playImageView.setImageResource(R.drawable.comment_play_button)
+//                player?.pause()
+//            } else {
+//                binding.playImageView.visibility = View.GONE
+//                player?.play()
+//            }
+//
+//        }
+
+        Glide.with(this)
+            .load(data.author.account.avatar.url)
+            .apply(RequestOptions.bitmapTransform(CircleCrop()))
+            .placeholder(R.drawable.profilepic2)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .into(binding.toolbar.feedProfilePic)
+
+//        binding.toolbar.backIcon.setOnClickListener {
+//            if (feedTextViewFragmentInterface != null) {
+//                feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+//                if(player != null) {
+//                    player?.removeListener(playbackStateListener)
+//                    player?.stop()
+//                    player?.release()
+//                }
+//            }
+//
+//        }
+        binding.comment.setOnClickListener {
+            EventBus.getDefault().post(FeedCommentClick(position, data))
+        }
+
+        binding.toolbar.username.text = data.author.account.username
+        if (data.likes <= 0) {
+            binding.likesCount.text = "0"
+        } else {
+            binding.likesCount.text = data.likes.toString()
+        }
+        binding.feedCommentsCount.text = data.comments.toString()
+        if (data.isLiked) {
+            binding.like.setImageResource(R.drawable.filled_favorite_like)
+        } else {
+            binding.like.setImageResource(R.drawable.like_svgrepo_com)
+        }
+        binding.like.setOnClickListener {
+            data.isLiked = !data.isLiked
+            if (data.isLiked) {
+                Log.d(TAG, "onCreateView: data likes ${data.likes}")
+//                binding.likesCount.text = data.likes.toString()
+                if (data.likes < 0) {
+                    binding.likesCount.text = "0"
+                } else {
+                    binding.likesCount.text = (data.likes + 1).toString()
+                }
+                binding.like.setImageResource(R.drawable.filled_favorite_like)
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(binding.like)
+            } else {
+                Log.d(TAG, "onCreateView: data likes ${data.likes}")
+//                binding.likesCount.text = data.likes.toString()
+                if (data.likes <= 0) {
+                    binding.likesCount.text = "0"
+                } else {
+                    binding.likesCount.text = (data.likes - 1).toString()
+                }
+                binding.like.setImageResource(R.drawable.like_svgrepo_com)
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(binding.like)
+            }
+            feedTextViewFragmentInterface?.onLikeUnLikeFeedFromFeedTextViewFragment(position, data)
+
+        }
+        if (data.isBookmarked) {
+            binding.fav.setImageResource(R.drawable.filled_favorite)
+        } else {
+            binding.fav.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+        }
+
+        binding.moreOptions.setOnClickListener {
+            feedTextViewFragmentInterface?.onMoreOptionsClickFromFeedTextViewFragment(
+                position,
+                data
+            )
+        }
+        binding.fav.setOnClickListener {
+            data.isBookmarked = !data.isBookmarked
+            feedTextViewFragmentInterface?.onFeedFavoriteClickFromFeedTextViewFragment(
+                position,
+                data
+            )
+            if (data.isBookmarked) {
+                binding.fav.setImageResource(R.drawable.filled_favorite)
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(binding.fav)
+            } else {
+                binding.fav.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(binding.fav)
+            }
+        }
+        return binding.root
+    }
+
+    companion object {
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment FeedVideoViewFragment.
+         */
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedVideoViewFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (player != null) {
+            player?.pause()
+        }
+
+    }
+
+    private var updateSeekBarJob: Job? = null
+
+    private fun startUpdatingSeekBar() {
+        updateSeekBarJob = CoroutineScope(Dispatchers.Main).launch {
+            while (true) {
+
+//                Log.d(TAG, "startUpdatingSeekBar: ")
+                updateSeekBar()
+                delay(50) // Update seek bar every second (adjust as needed)
+                val currentPositionMs = player?.currentPosition ?: 0
+
+                // Format current playback position into "mm:ss" format
+                val formattedPosition = formatDuration(currentPositionMs)
+
+                // Update TextView with formatted playback position
+                currentDuration?.text = formattedPosition
+
+            }
+        }
+    }
+
+    private fun stopUpdatingSeekBar() {
+        updateSeekBarJob?.cancel()
+    }
+
+    private fun playbackStateListener() = object : Player.Listener {
+        @SuppressLint("SetTextI18n", "NotifyDataSetChanged")
+        override fun onPlaybackStateChanged(state: Int) {
+            when (state) {
+                ExoPlayer.STATE_ENDED -> {
+                    Log.d(TAG, "onPlaybackStateChanged: playing video end")
+                    player?.removeListener(playbackStateListener)
+                    player?.stop()
+                    player?.release()
+                    player?.clearVideoSurface()
+                    player = null
+//                    if (player != null) {
+//                        Log.d(TAG, "onPlaybackStateChanged: player not null")
+//
+////                        feedTextViewFragmentInterface?.finishedPlayingVideo(position)
+//                    } else {
+//                        Log.d(TAG, "onPlaybackStateChanged: player null")
+//                    }
+
+                    feedTextViewFragmentInterface?.finishedPlayingVideo(position)
+                    val handler = Handler(Looper.getMainLooper())
+
+                    handler.postDelayed({
+                        adapter?.refreshVideo(videoPlayingPosition)
+                    }, 500)
+
+                }
+
+                Player.STATE_BUFFERING -> {
+
+                }
+
+                Player.STATE_IDLE -> {
+                }
+
+                Player.STATE_READY -> {
+
+                    Log.d("TAG", "STATE_READY")
+                    val durationMs: Long? = player?.duration
+                    seekBar?.max = player?.duration?.toInt()!!
+//                    if (durationMs != null) {
+//                        val formattedDuration = formatDuration(durationMs)
+//                        binding.finalDuration.text = formattedDuration
+//                    } else {
+//                        binding.finalDuration.text = "Duration not available"
+//                    }
+                    startUpdatingSeekBar()
+                }
+
+                else -> {
+                    Log.d("TAG", "STOP SEEK BAR")
+                    stopUpdatingSeekBar()
+                }
+            }
+        }
+
+
+        override fun onIsPlayingChanged(isVideoPlaying: Boolean) {
+//        super.onIsPlayingChanged(isPlaying)
+
+        }
+
+        override fun onEvents(player: Player, events: Player.Events) {
+//        super.onEvents(player, events)
+//            if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
+//                events.contains(Player.EVENT_IS_PLAYING_CHANGED)
+//            ) {
+//
+////                progressBar.visibility = View.GONE
+//            }
+//
+//            if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)
+//            ) {
+////                player.seekTo(5000L)
+//            }
+        }
+    }
+
+    override fun onResume() {
+        Log.d(TAG, "onResume: ")
+        super.onResume()
+        backPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Handle back press
+//                navigateBack()
+                if (feedTextViewFragmentInterface != null) {
+                    feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
+                    if (player != null) {
+                        player?.removeListener(playbackStateListener)
+                        player?.stop()
+                        player?.release()
+                    }
+                }
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        player?.removeListener(playbackStateListener)
+        player?.release()
+    }
+
+    fun setListener(listener: FeedTextViewFragmentInterface) {
+        feedTextViewFragmentInterface = listener
+    }
+
+    @OptIn(UnstableApi::class)
+    override fun onPlayClickListener(
+        videoUrl: String,
+        playerView: PlayerView,
+        playImageView: ImageView,
+        seekBars: SeekBar,
+        currentDuration: TextView
+    ) {
+        Log.d(TAG, "onPlayClickListener: play this $videoUrl")
+
+        player = ExoPlayer.Builder(requireContext()).build()
+
+
+        this.seekBar = seekBars
+
+        this.currentDuration = currentDuration
+        playerView.player = player
+
+        // Disable default controls
+        playerView.useController = false
+        val mediaItem = MediaItem.fromUri(videoUrl)
+
+        player!!.setMediaItem(mediaItem)
+        player!!.prepare()
+        player!!.play()
+        playImageView.setOnClickListener {
+            if (player!!.isPlaying) {
+                player!!.pause()
+                playImageView.visibility = View.VISIBLE
+            } else {
+                player!!.play()
+                playImageView.visibility = View.GONE
+
+            }
+        }
+//        playerView.setOnClickListener {
+//            if (player!!.isPlaying) {
+//                player!!.pause()
+//                playImageView.visibility = View.VISIBLE
+//            } else {
+//                player!!.play()
+//                playImageView.visibility = View.GONE
+//            }
+//        }
+        this.seekBar!!.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    player?.seekTo(progress.toLong())
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+        player?.repeatMode = Player.REPEAT_MODE_OFF
+        player?.addListener(playbackStateListener)
+
+        player?.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                super.onPlaybackStateChanged(state)
+                if (state == Player.STATE_READY) {
+                    seekBars.max = player?.duration?.toInt()!!
+                }
+            }
+
+            @Deprecated("Deprecated in Java")
+            override fun onPositionDiscontinuity(reason: Int) {
+                updateSeekBar()
+            }
+
+        })
+    }
+}

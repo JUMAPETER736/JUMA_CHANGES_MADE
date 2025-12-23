@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F0F0F0">
+
+    <!-- Main media display -->
+    <ImageView
+        android:id="@+id/mediaImageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:background="#FFFFFF" />
+
+    <!-- Play button for video/audio -->
+    <ImageView
+        android:id="@+id/playButton"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="center"
+        android:src="@drawable/play_button_filled"
+        android:background="@drawable/circle_background"
+        android:backgroundTint="#80000000"
+        android:padding="12dp"
+        android:visibility="gone"
+        app:tint="@android:color/white" />
+
+    <!-- File Type Icon -->
+    <ImageView
+        android:id="@+id/fileTypeIcon"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_gravity="top|start"
+        android:layout_margin="4dp"
+        android:padding="2dp"
+        android:visibility="visible"
+        android:contentDescription="@string/content_description"
+        tools:src="@drawable/pdf_icon" />
+
+    <!-- Video duration and icon container -->
+    <LinearLayout
+        android:id="@+id/videoInfoContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="8dp"
+        android:orientation="horizontal"
+        android:padding="4dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/videoIcon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_video_call"
+            app:tint="@android:color/white" />
+
+        <TextView
+            android:id="@+id/videoDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Remove button -->
+    <ImageView
+        android:id="@+id/removeButton"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="8dp"
+        android:src="@drawable/ic_delete_"
+        app:tint="@color/black" />
+
+</FrameLayout>

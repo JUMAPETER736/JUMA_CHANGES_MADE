@@ -1,0 +1,109 @@
+import android.content.Context
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+
+class CustomAdapter(private val context: Context, private val itemList: List<ContentItem>) :
+    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    companion object {
+        const val VIEW_TYPE_TEXT = 0
+        const val VIEW_TYPE_AUDIO = 1
+        const val VIEW_TYPE_VIDEO = 2
+        const val VIEW_TYPE_IMAGE = 3
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return when (viewType) {
+            VIEW_TYPE_TEXT -> {
+                val view = LayoutInflater.from(context).inflate(R.layout.item_text, parent, false)
+                TextViewHolder(view)
+            }
+            VIEW_TYPE_AUDIO -> {
+                val view = LayoutInflater.from(context).inflate(R.layout.item_audio, parent, false)
+                AudioViewHolder(view)
+            }
+            VIEW_TYPE_VIDEO -> {
+                val view = LayoutInflater.from(context).inflate(R.layout.item_video, parent, false)
+                VideoViewHolder(view)
+            }
+            VIEW_TYPE_IMAGE -> {
+                val view = LayoutInflater.from(context).inflate(R.layout.item_image, parent, false)
+                ImageViewHolder(view)
+            }
+            else -> throw IllegalArgumentException("Invalid view type")
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = itemList[position]
+        when (holder.itemViewType) {
+            VIEW_TYPE_TEXT -> {
+                val textHolder = holder as TextViewHolder
+                textHolder.bind(item)
+            }
+            VIEW_TYPE_AUDIO -> {
+                val audioHolder = holder as AudioViewHolder
+                audioHolder.bind(item)
+            }
+            VIEW_TYPE_VIDEO -> {
+                val videoHolder = holder as VideoViewHolder
+                videoHolder.bind(item)
+            }
+            VIEW_TYPE_IMAGE -> {
+                val imageHolder = holder as ImageViewHolder
+                imageHolder.bind(item)
+            }
+        }
+    }
+
+    override fun getItemCount(): Int {
+        return itemList.size
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        val item = itemList[position]
+        return when (item.contentType) {
+            ContentType.TEXT -> VIEW_TYPE_TEXT
+            ContentType.AUDIO -> VIEW_TYPE_AUDIO
+            ContentType.VIDEO -> VIEW_TYPE_VIDEO
+            ContentType.IMAGE -> VIEW_TYPE_IMAGE
+            ContentType.DEFAULT -> VIEW_TYPE_TEXT // Default to text if ContentType is not specified
+        }
+    }
+
+    // ViewHolder classes for each view type
+    inner class TextViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val textView: TextView = itemView.findViewById(R.id.text)
+
+        fun bind(item: ContentItem) {
+            textView.text = item.content
+        }
+    }
+
+    inner class AudioViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        // Implement audio view holder
+    }
+
+    inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        // Implement video view holder
+    }
+
+    inner class ImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        // Implement image view holder
+    }
+}
+
+// Define your data class for content items
+data class ContentItem(val content: String, val contentType: ContentType = ContentType.DEFAULT)
+
+// Define enum for content types
+enum class ContentType {
+    TEXT,
+    AUDIO,
+    VIDEO,
+    IMAGE,
+    DEFAULT // Default value
+}

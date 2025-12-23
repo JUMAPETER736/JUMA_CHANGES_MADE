@@ -23,7 +23,7 @@ data class OriginalPost(
     val likeCount: Int,
     val numberOfPages: List<NumberOfPageX>,
     val originalPostId: Any,
-    val originalPostReposter: List<OriginalUser>,
+    val originalPostReposter: List<Any?>,
     val repostCount: Int,
     val repostedByUserId: Any,
     val repostedUsers: List<Any?>,
@@ -42,18 +42,3 @@ data class OriginalPost(
 
 
 ): Serializable
-
-data class OriginalUser(
-    val _id: String,
-    val avatar: Avatar,
-    val username: String,
-    val email: String,
-    val createdAt: String,
-    val updatedAt: String,
-    val coverImage: CoverImage,
-    val firstName: String,
-    val lastName: String,
-    val bio: String,
-    val owner: String
-): Serializable
-

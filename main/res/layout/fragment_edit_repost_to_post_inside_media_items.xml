@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/materialCardView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="0dp"
+    android:clipToOutline="true"
+    android:clipChildren="true"
+    android:layout_margin="2dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Main Image View -->
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:background="@color/light_gray" />
+
+        <!-- Audio Container -->
+        <LinearLayout
+            android:id="@+id/audioContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@color/bluejeans"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/audioIcon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/music_icon"
+                app:tint="@android:color/white" />
+
+            <TextView
+                android:id="@+id/audioDurationText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="@android:color/white"
+                android:textSize="10sp"
+                android:layout_marginTop="4dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- Document Container -->
+        <LinearLayout
+            android:id="@+id/documentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@color/gray_dark"
+            android:padding="8dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/fileTypeIcon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/pdf_icon" />
+
+            <TextView
+                android:id="@+id/fileNameText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Document"
+                android:textColor="@android:color/white"
+                android:textSize="8sp"
+                android:gravity="center"
+                android:layout_marginTop="4dp"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+        </LinearLayout>
+
+        <!-- PDF Preview (only for documents) -->
+        <ImageView
+            android:id="@+id/pdfImageView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
+
+        <!-- Video Play Button -->
+        <ImageView
+            android:id="@+id/playButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:src="@drawable/baseline_play_arrow_24"
+            android:padding="6dp"
+            android:visibility="gone" />
+
+        <!-- Video Duration -->
+        <TextView
+            android:id="@+id/feedVideoDurationTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:text="00:00"
+            android:textColor="@android:color/white"
+            android:textSize="8sp"
+            android:padding="2dp"
+            android:layout_margin="4dp"
+            android:background="@drawable/rounded_background_corners"
+            android:visibility="gone" />
+
+        <!-- Multiple Files Overlay -->
+        <View
+            android:id="@+id/imageViewOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#CC000000"
+            android:visibility="gone" />
+
+        <!-- Count Text for 4+ items -->
+        <TextView
+            android:id="@+id/countTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="+3"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:fontFamily="sans-serif-medium"
+            android:visibility="gone" />
+
+        <!-- File Type Indicator (top-right corner) -->
+        <TextView
+            android:id="@+id/fileTypeIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:text="PDF"
+            android:textColor="@android:color/white"
+            android:textSize="8sp"
+            android:padding="2dp"
+            android:layout_margin="4dp"
+            android:background="@drawable/rounded_background_corners"
+            android:visibility="gone" />
+
+        <!-- Hidden views for compatibility -->
+        <ImageView
+            android:id="@+id/feedVideoImageView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/fileSizeText"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+</com.google.android.material.card.MaterialCardView>

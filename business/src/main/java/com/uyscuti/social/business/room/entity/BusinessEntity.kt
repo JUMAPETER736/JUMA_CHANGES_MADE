@@ -6,11 +6,12 @@ import androidx.room.TypeConverters
 import com.uyscuti.social.business.room.converter.BusinessCatalogueTypeConverter
 import com.uyscuti.social.business.room.converter.BusinessLocationTypeConverter
 import com.uyscuti.social.business.room.converter.ContactTypeConverter
-import com.uyscuti.social.business.room.converter.Location2TypeConverter
 import com.uyscuti.social.business.room.converter.LocationInformationTypeConverter
 import com.uyscuti.social.business.room.converter.LocationTypeConverter
 import com.uyscuti.social.business.room.converter.WalkingBillboardTypeConverter
 import com.uyscuti.social.network.api.request.business.create.Contact
+import com.uyscuti.social.network.api.request.business.create.Location
+import com.uyscuti.social.business.room.entity.BusinessCatalogueEntity
 
 
 @Entity(tableName = "business")
@@ -18,7 +19,7 @@ import com.uyscuti.social.network.api.request.business.create.Contact
     LocationInformationTypeConverter::class, ContactTypeConverter::class,
     WalkingBillboardTypeConverter::class,
     BusinessLocationTypeConverter::class, BusinessCatalogueTypeConverter::class,
-    LocationTypeConverter::class, Location2TypeConverter::class
+    LocationTypeConverter::class
    )
 data class BusinessEntity(
     @PrimaryKey val _id: String,
@@ -32,7 +33,7 @@ data class BusinessEntity(
     val businessType: String,
     val contact: Contact,
     val createdAt: String,
-    val location: com.uyscuti.social.network.api.response.business.response.profile.Location,
+    val location: Location,
     val owner: String,
     val updatedAt: String
 )

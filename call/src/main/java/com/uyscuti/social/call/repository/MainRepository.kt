@@ -1,7 +1,10 @@
 package com.uyscuti.social.call.repository
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 
 import android.content.Intent
 import android.util.Log
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.Gson
 
 import com.uyscuti.social.call.models.DataModel
@@ -69,34 +72,16 @@ class MainRepository @Inject constructor(
     lateinit var callViewModel: CallViewHandler
 
     val TAG = "MainRepository"
-//    interface Listener {
-//        fun onLatestEventReceived(data: DataModel)
-//        fun endCall()
-//    }
 
-//    suspend fun init(username: String):  Result<Unit> {
-////        socketClient.listener = this
-//        callSocketClient.listener = this
-//        //        socketClient.init(username)
-//        return callSocketClient.initialize()
-//    }
 
     fun init(username: String){
-//        socketClient.listener = this
+
         callSocketClient.listener = this
         //        socketClient.init(username)
         callSocketClient.init()
     }
 
-//    suspend fun init(username: String): CallResult {
-//        callSocketClient.listener = this
-//        val initializationResult = callSocketClient.initialize()
-//        return if (initializationResult.isSuccess) {
-//            CallResult.Success("Initialization successful")
-//        } else {
-//            CallResult.Failure("Failed to initialize")
-//        }
-//    }
+
 
     fun setTarget(value: String) {
         target = value
@@ -174,14 +159,224 @@ class MainRepository @Inject constructor(
         return dialogRepository.checkDialogByName(username)
     }
 
-//    fun sendEndCall() {
-//        onTransferEventToSocket(
-//            DataModel(
-//                type = DataModelType.EndCall,
-//                target = target!!
-//            )
-//        )
-//    }
+
+    fun reportProfile(userId: String, reason: String): LiveData<Result<Boolean>> {
+        val liveData = MutableLiveData<Result<Boolean>>()
+
+        // Simulate async work (e.g., network request)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // TODO: Replace with actual API call
+                Log.d(TAG, "Reporting user: $userId, reason: $reason")
+                delay(500) // simulate network delay
+                liveData.postValue(Result.success(true))
+            } catch (e: Exception) {
+                liveData.postValue(Result.failure(e))
+            }
+        }
+
+        return liveData
+    }
+
+    fun blockUser(userId: String): LiveData<Result<Boolean>> {
+        val liveData = MutableLiveData<Result<Boolean>>()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // TODO: Replace with actual API call
+                Log.d(TAG, "Blocking user: $userId")
+                delay(500)
+                liveData.postValue(Result.success(true))
+            } catch (e: Exception) {
+                liveData.postValue(Result.failure(e))
+            }
+        }
+
+        return liveData
+    }
+
+    fun addFriend(userId: String): LiveData<Result<Boolean>> {
+        val liveData = MutableLiveData<Result<Boolean>>()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // TODO: Replace with actual API call
+                Log.d(TAG, "Adding friend: $userId")
+                delay(500) // simulate network delay
+
+                // Simulate API call success/failure
+                val success = true // Replace with actual API response
+                if (success) {
+                    liveData.postValue(Result.success(true))
+                } else {
+                    liveData.postValue(Result.failure(Exception("Failed to add friend")))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error adding friend", e)
+                liveData.postValue(Result.failure(e))
+            }
+        }
+
+        return liveData
+    }
+
+    fun addToCloseFriends(userId: String): LiveData<Result<Boolean>> {
+        val liveData = MutableLiveData<Result<Boolean>>()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // TODO: Replace with actual API call
+                Log.d(TAG, "Adding to close friends: $userId")
+                delay(500)
+
+                val success = true // Replace with actual API response
+                if (success) {
+                    liveData.postValue(Result.success(true))
+                } else {
+                    liveData.postValue(Result.failure(Exception("Failed to add to close friends")))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error adding to close friends", e)
+                liveData.postValue(Result.failure(e))
+            }
+        }
+
+        return liveData
+    }
+
+    fun muteNotifications(userId: String): LiveData<Result<Boolean>> {
+        val liveData = MutableLiveData<Result<Boolean>>()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // TODO: Replace with actual API call
+                Log.d(TAG, "Muting notifications for: $userId")
+                delay(500)
+
+                val success = true // Replace with actual API response
+                if (success) {
+                    liveData.postValue(Result.success(true))
+                } else {
+                    liveData.postValue(Result.failure(Exception("Failed to mute notifications")))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error muting notifications", e)
+                liveData.postValue(Result.failure(e))
+            }
+        }
+
+        return liveData
+    }
+
+
+    fun sendGift(userId: String, giftName: String, coinCost: Int): LiveData<Result<Boolean>> {
+        val liveData = MutableLiveData<Result<Boolean>>()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // TODO: Replace with actual API call
+                Log.d(TAG, "Sending gift: $giftName to user: $userId, cost: $coinCost")
+                delay(1000) // simulate network delay
+
+                // Simulate API call - replace with actual implementation
+                val success = true // Replace with actual API response
+                if (success) {
+                    // Log the gift transaction
+                    Log.d(TAG, "Gift sent successfully: $giftName")
+                    liveData.postValue(Result.success(true))
+                } else {
+                    liveData.postValue(Result.failure(Exception("Failed to send gift")))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sending gift", e)
+                liveData.postValue(Result.failure(e))
+            }
+        }
+
+        return liveData
+    }
+
+
+    fun getUserPostsCount(userId: String): Int {
+        return (10..150).random()
+    }
+
+    // In MainRepository.kt
+
+    fun requestVideoCollab(userId: String): LiveData<Result<Boolean>> {
+        val liveData = MutableLiveData<Result<Boolean>>()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // TODO: Replace with actual API call
+                Log.d(TAG, "Requesting video collab with user: $userId")
+                delay(500) // simulate network delay
+                liveData.postValue(Result.success(true))
+            } catch (e: Exception) {
+                liveData.postValue(Result.failure(e))
+            }
+        }
+        return liveData
+    }
+
+    fun requestLiveCollab(userId: String): LiveData<Result<Boolean>> {
+        val liveData = MutableLiveData<Result<Boolean>>()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                Log.d(TAG, "Requesting live collab with user: $userId")
+                delay(500)
+                liveData.postValue(Result.success(true))
+            } catch (e: Exception) {
+                liveData.postValue(Result.failure(e))
+            }
+        }
+        return liveData
+    }
+
+    fun requestChallengeCollab(userId: String): LiveData<Result<Boolean>> {
+        val liveData = MutableLiveData<Result<Boolean>>()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                Log.d(TAG, "Requesting challenge collab with user: $userId")
+                delay(500)
+                liveData.postValue(Result.success(true))
+            } catch (e: Exception) {
+                liveData.postValue(Result.failure(e))
+            }
+        }
+        return liveData
+    }
+
+    fun requestSeriesCollab(userId: String): LiveData<Result<Boolean>> {
+        val liveData = MutableLiveData<Result<Boolean>>()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                Log.d(TAG, "Requesting series collab with user: $userId")
+                delay(500)
+                liveData.postValue(Result.success(true))
+            } catch (e: Exception) {
+                liveData.postValue(Result.failure(e))
+            }
+        }
+        return liveData
+    }
+
+    fun enableLiveGifts(userId: String): LiveData<Result<Boolean>> {
+        val liveData = MutableLiveData<Result<Boolean>>()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                Log.d(TAG, "Enabling live gifts for user: $userId")
+                delay(500)
+                // Here you can also update a flag in your DB/Firestore
+                liveData.postValue(Result.success(true))
+            } catch (e: Exception) {
+                liveData.postValue(Result.failure(e))
+            }
+        }
+        return liveData
+    }
+
+
+
 
     private fun changeMyStatus(status: UserStatus) {
 //        firebaseClient.changeMyStatus(status)
@@ -199,9 +394,7 @@ class MainRepository @Inject constructor(
         webRTCClient.switchCamera()
     }
 
-//    override fun onTransferEventToSocket(data: DataModel) {
-////        firebaseClient.sendMessageToOtherClient(data) {}
-//    }
+
 
     fun setScreenCaptureIntent(screenPermissionIntent: Intent) {
         webRTCClient.setPermissionIntent(screenPermissionIntent)
@@ -277,9 +470,7 @@ class MainRepository @Inject constructor(
                 Log.d("IceCandidates", "snapshot receiver : ${model.username}")
 
                 logCall(false,model.username)
-//                mainViewModel.showSimpleNotification(model.target!!)
-                //Toast.makeText(, "${model.username}", Toast.LENGTH_SHORT).show()
-                //notify ui, conneciton request is being made, so show it
+
                 listener?.onConnectionRequestReceived(model.username)
 
                 notificationServiceRepository.startCallService(false)

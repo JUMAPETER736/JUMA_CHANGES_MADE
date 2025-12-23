@@ -36,7 +36,7 @@ data class OriginalPost(
     val feedShortsBusinessId: String,
     val thumbnail: List<Thumbnail>,
     val updatedAt: String,
-    val commentCount: Int,
+    var commentCount: Int,
     val likeCount: Int,
     val shareCount: Int,
     val repostCount: Int,

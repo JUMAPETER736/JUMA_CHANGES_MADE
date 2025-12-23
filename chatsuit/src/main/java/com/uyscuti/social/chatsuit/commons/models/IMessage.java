@@ -54,4 +54,12 @@ public interface IMessage {
 
 
     String getStatus();
+
+
+    /**
+     * Sets message status (Sent, Delivered, Seen)
+     *
+     * @param status the message status to set
+     */
+    void setStatus(String status);
 }

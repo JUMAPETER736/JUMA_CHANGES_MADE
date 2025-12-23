@@ -1,18 +1,16 @@
 package com.uyscuti.social.circuit.adapter
 
 import android.content.Context
-import android.graphics.drawable.Drawable
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
-import com.uyscuti.sharedmodule.model.User
-import com.uyscuti.social.circuit.ui.fragments.feed.FavoriteFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.MyFeedFragment
+import com.uyscuti.social.business.forapp.fragment.ProfileViewFragment
+import com.uyscuti.social.business.model.User
+import com.uyscuti.social.circuit.User_Interface.fragments.GroupPlaceholderFragment
+import com.uyscuti.social.circuit.User_Interface.fragments.feed.FavoriteFragment
+import com.uyscuti.social.circuit.User_Interface.fragments.feed.MyFeedFragment
+import com.uyscuti.social.circuit.User_Interface.fragments.user_profile_fragments.UserShortsFragment
 import com.uyscuti.social.circuit.R
-import com.uyscuti.sharedmodule.fragments.GroupPlaceholderFragment
-import com.uyscuti.sharedmodule.fragments.ProfileViewFragment
-import com.uyscuti.social.circuit.ui.fragments.user_profile_fragments.UserShortsFragment
 
 class UserProfileTabsAdapter(
     private val context: Context, fm: FragmentManager, private val user: User) :
@@ -52,10 +50,6 @@ class UserProfileTabsAdapter(
 
     override fun getPageTitle(position: Int): CharSequence? {
         return null
-    }
-
-    fun getIcon(position: Int): Drawable? {
-        return ContextCompat.getDrawable(context, TAB_ICONS[position])
     }
 
     override fun getCount(): Int {

@@ -1,0 +1,2064 @@
+package com.uyscut.flashdesign.adapter.feed
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.GridLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.appcompat.widget.AppCompatButton
+import androidx.cardview.widget.CardView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleCoroutineScope
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
+import com.borjabravo.readmoretextview.ReadMoreTextView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.bitmap.CircleCrop
+import com.bumptech.glide.request.RequestOptions
+import com.daimajia.androidanimations.library.Techniques
+import com.daimajia.androidanimations.library.YoYo
+import com.rajat.pdfviewer.PdfRendererView
+import com.uyscut.core.common.data.room.entity.FollowUnFollowEntity
+import com.uyscut.flashdesign.R
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.FeedAudiosViewAdapter
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.FeedDocumentsViewAdapter
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.FeedVideosViewAdapter
+import com.uyscuti.social.circuit.model.ShortsFollowButtonClicked
+import com.uyscut.network.api.response.feed.getallfeed.Follow
+import com.uyscut.network.api.response.feed.getallfeed.Post
+import com.uyscut.network.utils.LocalStorage
+import me.relex.circleindicator.CircleIndicator3
+import net.expandable.ExpandableTextView
+import org.greenrobot.eventbus.EventBus
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlin.math.log
+
+
+private const val VIEW_TYPE_TEXT_FEED = 0
+private const val VIEW_TYPE_AUDIO_FEED = 1
+private const val VIEW_TYPE_IMAGE_FEED = 2
+private const val VIEW_TYPE_VIDEO_FEED = 3
+private const val VIEW_TYPE_DOCUMENT_FEED = 4
+private const val VIEW_TYPE_GIF = 5
+private const val VIEW_TYPE_EMPTY = 10
+private const val VIEW_TYPE_VN_FEED = 6
+private const val VIEW_TYPE_MULTIPLE_IMAGES_FEED = 7
+
+private const val TAG = "FeedAdapter"
+
+class FeedAdapter(
+    private val context: Context,
+    private val feedClickListener: OnFeedClickListener,
+    private val lifecycle: Lifecycle,
+    private val lifecycleCoroutineScope: LifecycleCoroutineScope
+) :
+    FeedPaginatedAdapter<RecyclerView.ViewHolder>(), MultipleImagesListener {
+
+    inner class EmptyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        // You can customize this ViewHolder if needed
+    }
+
+
+    inner class FeedTextViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        val tag = "FeedTextViewHolder"
+
+        private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
+        private val likeButton: ImageView = itemView.findViewById(R.id.like)
+        private val commentButton: ImageView = itemView.findViewById(R.id.comment)
+        private val favoriteButton: ImageView = itemView.findViewById(R.id.favorite)
+        private val moreOptionsButton: ImageView = itemView.findViewById(R.id.moreOptions)
+
+        private val textView: TextView = itemView.findViewById(R.id.textView)
+        private val caption: ReadMoreTextView = itemView.findViewById(R.id.caption)
+        private val tags: TextView = itemView.findViewById(R.id.tags)
+        private val dateTime: TextView = itemView.findViewById(R.id.date_time)
+        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
+        private val feedCommentsCount: TextView = itemView.findViewById(R.id.feedCommentsCount)
+
+        private val feedTextLayoutContainer: ConstraintLayout =
+            itemView.findViewById(R.id.feedTextLayoutContainer)
+
+        private val feedShare: ImageView = itemView.findViewById(R.id.share)
+        private var isFollowed = false
+        private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
+
+        @SuppressLint("SetTextI18n", "SimpleDateFormat")
+        fun render(data: Post) {
+//            Log.d(tag, "render: data likes:: ${data.likes} isLiked ${data.isLiked}")
+
+            Log.d(tag, "render: follow list $followList")
+            var isFollowingData: Follow? = null
+            if (followList.isNotEmpty()) {
+                isFollowingData =
+                    followList.findLast { it.followersId == data.author.account._id }!!
+            }
+
+
+            Log.d(tag, "render: is following = $isFollowingData")
+            val feedOwnerId = data.author.account._id
+            if (feedOwnerId == LocalStorage.getInstance(profileImageView.context).getUserId()) {
+
+                followButton.visibility = View.INVISIBLE
+                Log.d(tag, "onBind: feed owner id == logged user id")
+            } else {
+                followButton.visibility = View.VISIBLE
+//            EventBus.getDefault().post(HandleInShortsFollowButtonClick(followButton, shortOwnerId, shortOwnerUsername))
+
+
+                if (isFollowingData != null) {
+                    if (isFollowingData.isFollowing) {
+                        followButton.text = "Following"
+                        followButton.isAllCaps = false
+                        followButton.setBackgroundResource(R.drawable.shorts_following_button)
+                        isFollowed = true
+                    } else {
+                        followButton.text = "Follow"
+                        followButton.setBackgroundResource(R.drawable.feed_follow_button_border)
+                        isFollowed = false
+                    }
+                }
+//
+//                followButton.setOnClickListener {
+////                onFollow.invoke(shortOwnerId, shortOwnerUsername, followButton)
+//
+//                    handleFollowButtonClick(shortOwnerId)
+//
+//                }
+                Log.d(tag, "onBind: short owner id != logged user id")
+
+            }
+            followButton.setOnClickListener {
+//                onFollow.invoke(shortOwnerId, shortOwnerUsername, followButton)
+
+                handleFollowButtonClick(feedOwnerId)
+
+            }
+            val captionText = data.content
+            val readMoreText = "Read More"
+            val profilePicUrl = data.author.account.avatar.url
+            val feedOwnerUsername = data.author.account.username
+
+            caption.text = captionText
+            Glide.with(context)
+                .load(profilePicUrl)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(profileImageView)
+            profileImageView.setOnClickListener {
+                Log.d(TAG, "render: profile pic clicked")
+            }
+            textView.setOnClickListener {
+                Log.d(TAG, "render: username clicked")
+            }
+
+            textView.text = feedOwnerUsername
+
+            // Example date string from MongoDB
+            val mongoDateString = data.createdAt
+
+
+            dateTime.text = formattedMongoDateTime(mongoDateString)
+
+            // Define input and output date formats
+//            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+//            val outputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+
+
+//            if (caption.isExpanded) {
+//                Log.d(TAG, "render: $absoluteAdapterPosition caption is expanded")
+//            }
+
+//            caption.isExpanded = false
+
+//            if (!data.isExpanded) {
+//                caption.text = captionText
+//                caption.collapseLines = 3
+////                caption.isExpandEnabled =
+//            } else {
+//                caption.text = captionText
+//            }
+
+//            caption.setOnExpandableClickListener(
+//                onExpand = {
+////                        showToast("Expand")
+//                    Log.d(TAG, "render: onExpand $captionText")
+//                    caption.text = captionText
+//                    data.isExpanded = true
+//                },
+//                onCollapse = {
+//
+//                    Log.d(TAG, "render: onCollapse")
+//                    // Create a SpannableString to apply different styles to parts of the text
+//                    val spannableString = SpannableString("${caption.text} $readMoreText")
+//
+//                    // Apply blue color to the "Read More" part
+//                    val blueJeansColor = ContextCompat.getColor(context, R.color.bluejeans)
+//                    val startIndex =
+//                        caption.text.length + 1  // +1 to account for the space between captionText and readMoreText
+//                    val endIndex = spannableString.length
+//                    spannableString.setSpan(
+//                        ForegroundColorSpan(blueJeansColor),
+//                        startIndex,
+//                        endIndex,
+//                        0
+//                    )
+//
+//                    caption.text = spannableString
+//                    data.isExpanded = false
+////                        Log.d(TAG, "render: onCollapse $captionText Read More")
+////                        caption.text = "${caption.text} Read More"
+////                        showToast("Collapse")
+//                }
+//            )
+
+            if (data.tags.isNotEmpty()) {
+                tags.visibility = View.VISIBLE
+                val formattedTags = data.tags.joinToString(" ") { "#$it" }
+
+                tags.text = formattedTags
+            } else {
+                tags.visibility = View.INVISIBLE
+            }
+
+            likesCount.text = data.likes.toString()
+            feedCommentsCount.text = data.comments.toString()
+            if (data.isLiked) {
+                likeButton.setImageResource(R.drawable.filled_favorite_like)
+            } else {
+                likeButton.setImageResource(R.drawable.like_svgrepo_com)
+            }
+
+            likeButton.setOnClickListener {
+                data.isLiked = !data.isLiked
+                feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
+                if (data.isLiked) {
+                    likeButton.setImageResource(R.drawable.filled_favorite_like)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                } else {
+                    likeButton.setImageResource(R.drawable.like_svgrepo_com)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                }
+            }
+            commentButton.setOnClickListener {
+                Log.d(TAG, "render: button clicked")
+                feedClickListener.feedCommentClick(absoluteAdapterPosition, data)
+            }
+
+            if (data.isBookmarked) {
+                favoriteButton.setImageResource(R.drawable.filled_favorite)
+            } else {
+                favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+            }
+            favoriteButton.setOnClickListener {
+                data.isBookmarked = !data.isBookmarked
+                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
+                if (data.isBookmarked) {
+                    favoriteButton.setImageResource(R.drawable.filled_favorite)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                } else {
+                    favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                }
+            }
+
+            moreOptionsButton.setOnClickListener {
+                feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
+            }
+            feedTextLayoutContainer.setOnClickListener {
+                Log.d(TAG, "render: text container clicked")
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+            caption.setOnClickListener {
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+            feedShare.setOnClickListener {
+                feedClickListener.feedShare(absoluteAdapterPosition, data)
+            }
+        }
+
+        @SuppressLint("SetTextI18n")
+        private fun handleFollowButtonClick(shortOwnerId: String) {
+            Log.d(TAG, "handleFollowButtonClick: is followed value $isFollowed")
+            isFollowed = !isFollowed
+            if (isFollowed) {
+                followButton.text = "Following"
+
+                Log.d(TAG, "handleFollowButtonClick: following $isFollowed")
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, true)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+            } else {
+                Log.d(TAG, "handleFollowButtonClick: follow $isFollowed")
+
+                followButton.text = "Follow"
+
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, false)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+            }
+
+        }
+
+    }
+
+    inner class FeedMultipleImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        val tag = "FeedMultipleImageViewHolder"
+        private val moreOptionsButton: ImageView = itemView.findViewById(R.id.moreOptions)
+        private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
+
+        //        private val feedImage: ImageView = itemView.findViewById(R.id.feedImage)
+        private val textView: TextView = itemView.findViewById(R.id.textView)
+        private val caption: ExpandableTextView = itemView.findViewById(R.id.caption)
+        private val tags: TextView = itemView.findViewById(R.id.tags)
+        private val dateTime: TextView = itemView.findViewById(R.id.date_time)
+
+        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
+        private val likeButton: ImageView = itemView.findViewById(R.id.like)
+        private val commentButton: ImageView = itemView.findViewById(R.id.comment)
+        private val favoriteButton: ImageView = itemView.findViewById(R.id.favorite)
+        private val feedImageCardView: CardView = itemView.findViewById(R.id.feedImageCardView)
+        private val feedCommentsCount: TextView = itemView.findViewById(R.id.feedCommentsCount)
+        private val feedImageLayoutContainer: ConstraintLayout =
+            itemView.findViewById(R.id.feedImageLayoutContainer)
+        private val feedShare: ImageView = itemView.findViewById(R.id.share)
+
+        //        private val viewPager: ViewPager2 = itemView.findViewById(R.id.viewPager)
+//        val indicator: CircleIndicator3 = itemView.findViewById<CircleIndicator3>(R.id.circleIndicator)
+        val recyclerView: RecyclerView = itemView.findViewById(R.id.recyclerView)
+        private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
+        private var isFollowed = false
+
+        @SuppressLint("SetTextI18n")
+        fun render(data: Post) {
+            Log.d(tag, "render: data:: ${data.contentType}")
+            Log.d(tag, "render: follow list $followList")
+            var isFollowingData: Follow? = null
+            if (followList.isNotEmpty()) {
+                isFollowingData =
+                    followList.findLast { it.followersId == data.author.account._id }!!
+            }
+
+
+            Log.d(tag, "render: is following = $isFollowingData")
+            val feedOwnerId = data.author.account._id
+            if (feedOwnerId == LocalStorage.getInstance(profileImageView.context).getUserId()) {
+
+                followButton.visibility = View.INVISIBLE
+                Log.d(tag, "onBind: feed owner id == logged user id")
+            } else {
+                followButton.visibility = View.VISIBLE
+//            EventBus.getDefault().post(HandleInShortsFollowButtonClick(followButton, shortOwnerId, shortOwnerUsername))
+
+
+                if (isFollowingData != null) {
+                    if (isFollowingData.isFollowing) {
+                        followButton.text = "Following"
+                        followButton.isAllCaps = false
+                        followButton.setBackgroundResource(R.drawable.shorts_following_button)
+                        isFollowed = true
+                    } else {
+                        followButton.text = "Follow"
+                        followButton.setBackgroundResource(R.drawable.feed_follow_button_border)
+                        isFollowed = false
+                    }
+                }
+//
+//                followButton.setOnClickListener {
+////                onFollow.invoke(shortOwnerId, shortOwnerUsername, followButton)
+//
+//                    handleFollowButtonClick(shortOwnerId)
+//
+//                }
+                Log.d(tag, "onBind: short owner id != logged user id")
+
+            }
+            followButton.setOnClickListener {
+//                onFollow.invoke(shortOwnerId, shortOwnerUsername, followButton)
+
+                handleFollowButtonClick(feedOwnerId)
+
+            }
+            Glide.with(context)
+                .load(data.author.account.avatar.url)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(profileImageView)
+
+            commentButton.setOnClickListener {
+                Log.d(TAG, "render: button clicked")
+                feedClickListener.feedCommentClick(absoluteAdapterPosition, data)
+            }
+//            Glide.with(context)
+//                .load(data.files[0].url)
+//                .placeholder(R.drawable.flash21)
+//                .diskCacheStrategy(DiskCacheStrategy.ALL)
+//                .into(feedImage)
+            val imageList: MutableList<String> = mutableListOf()
+            if (data.files.isNotEmpty()) {
+                for (image in data.files) {
+                    Log.d(TAG, "render: images ${image.url}")
+                    imageList.add(image.url)
+                }
+            } else {
+                Log.d(TAG, "render: data files is empty")
+            }
+
+            val adapter = FeedMultipleImagesRecyclerViewAdapter(imageList)
+            if (imageList.size <= 2) {
+                recyclerView.layoutManager = GridLayoutManager(context, 2) // 2 columns in the grid
+                recyclerView.setHasFixedSize(true) // Ensures items won't change size
+                recyclerView.adapter = adapter // Replace with your adapter
+            } else if (imageList.size == 3) {
+                // Use a GridLayoutManager with span size 2 for the first row and 1 for the second row
+                val layoutManager = GridLayoutManager(context, 2)
+                layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int {
+                        return if (position < 2) 1 else 2
+                    }
+                }
+                recyclerView.layoutManager = layoutManager
+
+                recyclerView.setHasFixedSize(true) // Ensures items won't change size
+
+                recyclerView.adapter = adapter // Replace with your adapter
+            } else {
+                val layoutManager = GridLayoutManager(context, 2)
+//                layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+//                    override fun getSpanSize(position: Int): Int {
+//                        // Return 1 for the first item in each row, and 2 for the second item
+//                        return if (position % 2 == 0) 1 else 2
+//                    }
+//                }
+
+                // Set span size lookup to customize the span of items
+                layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int {
+                        return when (position) {
+                            0, 1 -> 1  // First and second items span 2 columns
+                            else -> 1   // All other items span 1 column
+                        }
+                    }
+                }
+                recyclerView.layoutManager = layoutManager
+                recyclerView.adapter = adapter
+            }
+            adapter.setOnMultipleImagesClickListener(object : OnMultipleImagesClickListener {
+                override fun multipleImagesClickListener() {
+                    feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+                }
+
+            })
+
+
+            textView.text = data.author.account.username
+
+            val mongoDateString = data.createdAt
+            feedCommentsCount.text = data.comments.toString()
+            dateTime.text = formattedMongoDateTime(mongoDateString)
+
+            caption.isExpanded = false
+            if (data.content.isNotEmpty()) {
+                caption.text = data.content
+                caption.collapseLines = 3
+                caption.setOnExpandableClickListener(
+                    onExpand = {
+//                        showToast("Expand")
+                        Log.d(TAG, "render: onExpand ${caption.text}")
+                    },
+                    onCollapse = {
+                        Log.d(TAG, "render: onCollapse ${caption.text}")
+//                        showToast("Collapse")
+                    }
+                )
+            } else {
+                caption.visibility = View.INVISIBLE
+            }
+
+
+            if (data.tags.isNotEmpty()) {
+                tags.visibility = View.VISIBLE
+                val formattedTags = data.tags.joinToString(" ") { "#$it" }
+
+                tags.text = formattedTags
+            } else {
+                tags.visibility = View.INVISIBLE
+            }
+
+            likesCount.text = data.likes.toString()
+            if (data.isLiked) {
+                likeButton.setImageResource(R.drawable.filled_favorite_like)
+            } else {
+                likeButton.setImageResource(R.drawable.like_svgrepo_com)
+            }
+
+            likeButton.setOnClickListener {
+                data.isLiked = !data.isLiked
+                feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
+                if (data.isLiked) {
+                    likeButton.setImageResource(R.drawable.filled_favorite_like)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                } else {
+                    likeButton.setImageResource(R.drawable.like_svgrepo_com)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                }
+            }
+
+            if (data.isBookmarked) {
+                favoriteButton.setImageResource(R.drawable.filled_favorite)
+            } else {
+                favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+            }
+            favoriteButton.setOnClickListener {
+                data.isBookmarked = !data.isBookmarked
+                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
+                if (data.isBookmarked) {
+                    favoriteButton.setImageResource(R.drawable.filled_favorite)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                } else {
+                    favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                }
+            }
+            moreOptionsButton.setOnClickListener {
+                feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
+            }
+
+//            feedImage.setOnClickListener {
+//                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+//            }
+
+            feedImageLayoutContainer.setOnClickListener {
+                Log.d(TAG, "render: text container clicked")
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+
+
+//            recyclerView.setOnClickListener {
+//                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+//            }
+            feedImageCardView.setOnClickListener {
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+            feedShare.setOnClickListener {
+                feedClickListener.feedShare(absoluteAdapterPosition, data)
+            }
+        }
+
+        @SuppressLint("SetTextI18n")
+        private fun handleFollowButtonClick(shortOwnerId: String) {
+            Log.d(TAG, "handleFollowButtonClick: is followed value $isFollowed")
+            isFollowed = !isFollowed
+            if (isFollowed) {
+                followButton.text = "Following"
+
+                Log.d(TAG, "handleFollowButtonClick: following $isFollowed")
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, true)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+            } else {
+                Log.d(TAG, "handleFollowButtonClick: follow $isFollowed")
+
+                followButton.text = "Follow"
+
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, false)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+            }
+
+        }
+    }
+
+    inner class FeedAudioViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        val tag = "FeedAudioViewHolder"
+
+        private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
+        private val likeButton: ImageView = itemView.findViewById(R.id.like)
+        private val commentButton: ImageView = itemView.findViewById(R.id.comment)
+        private val favoriteButton: ImageView = itemView.findViewById(R.id.favorite)
+        private val textView: TextView = itemView.findViewById(R.id.textView)
+
+        //        private val caption: ExpandableTextView = itemView.findViewById(R.id.caption)
+        private val caption: ReadMoreTextView = itemView.findViewById(R.id.caption)
+        private val tags: TextView = itemView.findViewById(R.id.tags)
+        private val dateTime: TextView = itemView.findViewById(R.id.date_time)
+
+        //        private val audioDuration: TextView = itemView.findViewById(R.id.audioDuration)
+        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
+        private val feedCommentsCount: TextView = itemView.findViewById(R.id.feedCommentsCount)
+        private val moreOptionsButton: ImageView = itemView.findViewById(R.id.moreOptions)
+
+        private val multipleAudiosContainer: ConstraintLayout =
+            itemView.findViewById(R.id.multipleAudiosContainer)
+        private val feedAudioLayout: ConstraintLayout = itemView.findViewById(R.id.feedAudioLayout)
+        val recyclerView: RecyclerView = itemView.findViewById(R.id.recyclerView)
+        private val audioCardView: CardView = itemView.findViewById(R.id.audioLinearLayout)
+        private var isFollowed = false
+        private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
+
+        @SuppressLint("SetTextI18n", "SimpleDateFormat")
+        fun render(data: Post) {
+            Log.d(tag, "render: data:: ${data}")
+            Log.d(tag, "render: follow list $followList")
+            var isFollowingData: Follow? = null
+            if (followList.isNotEmpty()) {
+                isFollowingData =
+                    followList.findLast { it.followersId == data.author.account._id }!!
+            }
+
+
+            Log.d(tag, "render: is following = $isFollowingData")
+            val feedOwnerId = data.author.account._id
+            if (feedOwnerId == LocalStorage.getInstance(profileImageView.context).getUserId()) {
+
+                followButton.visibility = View.INVISIBLE
+                Log.d(tag, "onBind: feed owner id == logged user id")
+            } else {
+                followButton.visibility = View.VISIBLE
+//            EventBus.getDefault().post(HandleInShortsFollowButtonClick(followButton, shortOwnerId, shortOwnerUsername))
+
+
+                if (isFollowingData != null) {
+                    if (isFollowingData.isFollowing) {
+                        followButton.text = "Following"
+                        followButton.isAllCaps = false
+                        followButton.setBackgroundResource(R.drawable.shorts_following_button)
+                        isFollowed = true
+                    } else {
+                        followButton.text = "Follow"
+                        followButton.setBackgroundResource(R.drawable.feed_follow_button_border)
+                        isFollowed = false
+                    }
+                }
+//
+//                followButton.setOnClickListener {
+////                onFollow.invoke(shortOwnerId, shortOwnerUsername, followButton)
+//
+//                    handleFollowButtonClick(shortOwnerId)
+//
+//                }
+                Log.d(tag, "onBind: short owner id != logged user id")
+
+            }
+            followButton.setOnClickListener {
+//                onFollow.invoke(shortOwnerId, shortOwnerUsername, followButton)
+
+                handleFollowButtonClick(feedOwnerId)
+
+            }
+            val captionText = data.content
+            val readMoreText = "Read More"
+            val profilePicUrl = data.author.account.avatar.url
+            val feedOwnerUsername = data.author.account.username
+
+
+            Glide.with(context)
+                .load(profilePicUrl)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(profileImageView)
+
+            textView.text = feedOwnerUsername
+//            audioDuration.text = data.duration
+            // Example date string from MongoDB
+            val mongoDateString = data.createdAt
+            feedCommentsCount.text = data.comments.toString()
+
+            dateTime.text = formattedMongoDateTime(mongoDateString)
+            feedCommentsCount.text = data.comments.toString()
+            // Define input and output date formats
+//            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+//            val outputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+
+
+//            if (caption.isExpanded) {
+//                Log.d(TAG, "render: $absoluteAdapterPosition caption is expanded")
+//            } else {
+//                Log.d(TAG, "render: $absoluteAdapterPosition caption not expanded")
+//            }
+//
+//            caption.isExpanded = false
+//
+//            caption.text = captionText
+//            caption.collapseLines = 3
+//            caption.setOnExpandableClickListener(
+//                onExpand = {
+////                        showToast("Expand")
+//                    Log.d(TAG, "render: onExpand $captionText")
+//                    caption.text = captionText
+//                },
+//                onCollapse = {
+//
+//                    // Create a SpannableString to apply different styles to parts of the text
+//                    val spannableString = SpannableString("${caption.text} $readMoreText")
+//
+//                    // Apply blue color to the "Read More" part
+//                    val blueJeansColor = ContextCompat.getColor(context, R.color.bluejeans)
+//                    val startIndex =
+//                        caption.text.length + 1  // +1 to account for the space between captionText and readMoreText
+//                    val endIndex = spannableString.length
+//                    spannableString.setSpan(
+//                        ForegroundColorSpan(blueJeansColor),
+//                        startIndex,
+//                        endIndex,
+//                        0
+//                    )
+//
+//                    caption.text = spannableString
+////                        Log.d(TAG, "render: onCollapse $captionText Read More")
+////                        caption.text = "${caption.text} Read More"
+////                        showToast("Collapse")
+//                }
+//            )
+
+            caption.text = captionText
+            caption.setOnClickListener {
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+            if (data.tags.isNotEmpty()) {
+                tags.visibility = View.VISIBLE
+                val formattedTags = data.tags.joinToString(" ") { "#$it" }
+
+                tags.text = formattedTags
+            } else {
+                tags.visibility = View.INVISIBLE
+            }
+
+            likesCount.text = data.likes.toString()
+            if (data.isLiked) {
+                likeButton.setImageResource(R.drawable.filled_favorite_like)
+            } else {
+                likeButton.setImageResource(R.drawable.like_svgrepo_com)
+            }
+
+            likeButton.setOnClickListener {
+                data.isLiked = !data.isLiked
+                feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
+                if (data.isLiked) {
+                    likeButton.setImageResource(R.drawable.filled_favorite_like)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                } else {
+                    likeButton.setImageResource(R.drawable.like_svgrepo_com)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                }
+            }
+
+            commentButton.setOnClickListener {
+                Log.d(TAG, "render: button clicked")
+                feedClickListener.feedCommentClick(absoluteAdapterPosition, data)
+            }
+
+            if (data.isBookmarked) {
+                favoriteButton.setImageResource(R.drawable.filled_favorite)
+            } else {
+                favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+            }
+            favoriteButton.setOnClickListener {
+                data.isBookmarked = !data.isBookmarked
+                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
+                if (data.isBookmarked) {
+                    favoriteButton.setImageResource(R.drawable.filled_favorite)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                } else {
+                    favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                }
+            }
+            moreOptionsButton.setOnClickListener {
+                feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
+            }
+
+            multipleAudiosContainer.setOnClickListener {
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+            feedAudioLayout.setOnClickListener {
+                Log.d("feedAudioLayout", "render: feedAudioLayout clicked")
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+            val audiosList: MutableList<String> = mutableListOf()
+            if (data.files.isNotEmpty()) {
+                for (audios in data.files) {
+//                    Log.d(TAG, "render: videosList ${thumbnails.thumbnailUrl}")
+                    audiosList.add(audios.url)
+                }
+            } else {
+                Log.d(TAG, "render: data files is empty")
+            }
+            val layoutParams = audioCardView.layoutParams
+
+            val adapter = FeedAudiosViewAdapter(audiosList)
+            adapter.setData(data)
+            if (audiosList.size == 1) {
+                val newHeightInPixels = 200
+                layoutParams.height = newHeightInPixels
+                audioCardView.layoutParams = layoutParams
+                recyclerView.layoutManager = GridLayoutManager(context, 1) // 2 columns in the grid
+                recyclerView.setHasFixedSize(true) // Ensures items won't change size
+                recyclerView.adapter = adapter // Replace with your adapter
+            } else if (audiosList.size <= 2) {
+                val newHeightInPixels = 200
+                layoutParams.height = newHeightInPixels
+                audioCardView.layoutParams = layoutParams
+                recyclerView.layoutManager = GridLayoutManager(context, 2) // 2 columns in the grid
+                recyclerView.setHasFixedSize(true) // Ensures items won't change size
+                recyclerView.adapter = adapter // Replace with your adapter
+            } else if (audiosList.size == 3) {
+                // Use a GridLayoutManager with span size 2 for the first row and 1 for the second row
+                val newHeightInPixels = 400
+                layoutParams.height = newHeightInPixels
+                audioCardView.layoutParams = layoutParams
+                val layoutManager = GridLayoutManager(context, 2)
+                layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int {
+                        return if (position < 2) 1 else 2
+                    }
+                }
+                recyclerView.layoutManager = layoutManager
+
+                recyclerView.setHasFixedSize(true) // Ensures items won't change size
+
+                recyclerView.adapter = adapter // Replace with your adapter
+            } else {
+                val newHeightInPixels = 400
+                layoutParams.height = newHeightInPixels
+                audioCardView.layoutParams = layoutParams
+                val layoutManager = GridLayoutManager(context, 2)
+//                layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+//                    override fun getSpanSize(position: Int): Int {
+//                        // Return 1 for the first item in each row, and 2 for the second item
+//                        return if (position % 2 == 0) 1 else 2
+//                    }
+//                }
+
+                // Set span size lookup to customize the span of items
+                layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int {
+                        return when (position) {
+                            0, 1 -> 1  // First and second items span 2 columns
+                            else -> 1   // All other items span 1 column
+                        }
+                    }
+                }
+                recyclerView.layoutManager = layoutManager
+                recyclerView.adapter = adapter
+            }
+            adapter.setOnMultipleImagesClickListener(object : OnMultipleImagesClickListener {
+                override fun multipleImagesClickListener() {
+                    feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+                }
+
+            })
+        }
+
+        @SuppressLint("SetTextI18n")
+        private fun handleFollowButtonClick(shortOwnerId: String) {
+            Log.d(TAG, "handleFollowButtonClick: is followed value $isFollowed")
+            isFollowed = !isFollowed
+            if (isFollowed) {
+                followButton.text = "Following"
+
+                Log.d(TAG, "handleFollowButtonClick: following $isFollowed")
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, true)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+            } else {
+                Log.d(TAG, "handleFollowButtonClick: follow $isFollowed")
+
+                followButton.text = "Follow"
+
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, false)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+            }
+
+        }
+    }
+
+    inner class FeedVnViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        val tag = "FeedAudioViewHolder"
+        private val moreOptionsButton: ImageView = itemView.findViewById(R.id.moreOptions)
+        private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
+        private val textView: TextView = itemView.findViewById(R.id.textView)
+        private val caption: ExpandableTextView = itemView.findViewById(R.id.caption)
+        private val tags: TextView = itemView.findViewById(R.id.tags)
+        private val dateTime: TextView = itemView.findViewById(R.id.date_time)
+        private val audioDuration: TextView = itemView.findViewById(R.id.audioDuration)
+        private val commentButton: ImageView = itemView.findViewById(R.id.comment)
+
+        @SuppressLint("SetTextI18n", "SimpleDateFormat")
+        fun render(data: Post) {
+            Log.d(tag, "render: data:: ${data.createdAt}")
+
+            val captionText = data.content
+            val readMoreText = "Read More"
+            val profilePicUrl = data.author.account.avatar.url
+            val feedOwnerUsername = data.author.account.username
+
+
+            Glide.with(context)
+                .load(profilePicUrl)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(profileImageView)
+
+            textView.text = feedOwnerUsername
+//            audioDuration.text =  data.duration
+            // Example date string from MongoDB
+            val mongoDateString = data.createdAt
+
+
+            dateTime.text = formattedMongoDateTime(mongoDateString)
+
+            // Define input and output date formats
+//            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+//            val outputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+
+
+            if (caption.isExpanded) {
+                Log.d(TAG, "render: $absoluteAdapterPosition caption is expanded")
+            } else {
+                Log.d(TAG, "render: $absoluteAdapterPosition caption not expanded")
+            }
+
+            caption.isExpanded = false
+
+            caption.text = captionText
+            caption.collapseLines = 3
+            caption.setOnExpandableClickListener(
+                onExpand = {
+//                        showToast("Expand")
+                    Log.d(TAG, "render: onExpand $captionText")
+                    caption.text = captionText
+                },
+                onCollapse = {
+
+                    // Create a SpannableString to apply different styles to parts of the text
+                    val spannableString = SpannableString("${caption.text} $readMoreText")
+
+                    // Apply blue color to the "Read More" part
+                    val blueJeansColor = ContextCompat.getColor(context, R.color.bluejeans)
+                    val startIndex =
+                        caption.text.length + 1  // +1 to account for the space between captionText and readMoreText
+                    val endIndex = spannableString.length
+                    spannableString.setSpan(
+                        ForegroundColorSpan(blueJeansColor),
+                        startIndex,
+                        endIndex,
+                        0
+                    )
+
+                    caption.text = spannableString
+//                        Log.d(TAG, "render: onCollapse $captionText Read More")
+//                        caption.text = "${caption.text} Read More"
+//                        showToast("Collapse")
+                }
+            )
+
+            if (data.tags.isNotEmpty()) {
+                tags.visibility = View.VISIBLE
+                val formattedTags = data.tags.joinToString(" ") { "#$it" }
+
+                tags.text = formattedTags
+            } else {
+                tags.visibility = View.INVISIBLE
+            }
+
+        }
+
+    }
+
+    inner class FeedImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        val tag = "FeedTextViewHolder"
+        private val moreOptionsButton: ImageView = itemView.findViewById(R.id.moreOptions)
+        private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
+        private val feedImage: ImageView = itemView.findViewById(R.id.feedImage)
+        private val textView: TextView = itemView.findViewById(R.id.textView)
+        private val caption: ExpandableTextView = itemView.findViewById(R.id.caption)
+        private val tags: TextView = itemView.findViewById(R.id.tags)
+        private val dateTime: TextView = itemView.findViewById(R.id.date_time)
+
+        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
+        private val likeButton: ImageView = itemView.findViewById(R.id.like)
+        private val commentButton: ImageView = itemView.findViewById(R.id.comment)
+        private val favoriteButton: ImageView = itemView.findViewById(R.id.favorite)
+        private val feedImageCardView: CardView = itemView.findViewById(R.id.feedImageCardView)
+        private val feedCommentsCount: TextView = itemView.findViewById(R.id.feedCommentsCount)
+        private val feedImageLayoutContainer: ConstraintLayout =
+            itemView.findViewById(R.id.feedImageLayoutContainer)
+        private val feedShare: ImageView = itemView.findViewById(R.id.share)
+        private var isFollowed = false
+        private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
+
+        @SuppressLint("SetTextI18n")
+        fun render(data: Post) {
+            Log.d(tag, "render: data:: ${data.tags}")
+            Log.d(tag, "render: follow list $followList")
+            var isFollowingData: Follow? = null
+            if (followList.isNotEmpty()) {
+                isFollowingData =
+                    followList.findLast { it.followersId == data.author.account._id }!!
+            }
+
+
+            Log.d(tag, "render: is following = $isFollowingData")
+            val feedOwnerId = data.author.account._id
+            if (feedOwnerId == LocalStorage.getInstance(profileImageView.context).getUserId()) {
+
+                followButton.visibility = View.INVISIBLE
+                Log.d(tag, "onBind: feed owner id == logged user id")
+            } else {
+                followButton.visibility = View.VISIBLE
+//            EventBus.getDefault().post(HandleInShortsFollowButtonClick(followButton, shortOwnerId, shortOwnerUsername))
+
+
+                if (isFollowingData != null) {
+                    if (isFollowingData.isFollowing) {
+                        followButton.text = "Following"
+                        followButton.isAllCaps = false
+                        followButton.setBackgroundResource(R.drawable.shorts_following_button)
+                        isFollowed = true
+                    } else {
+                        followButton.text = "Follow"
+                        followButton.setBackgroundResource(R.drawable.feed_follow_button_border)
+                        isFollowed = false
+                    }
+                }
+//
+//                followButton.setOnClickListener {
+////                onFollow.invoke(shortOwnerId, shortOwnerUsername, followButton)
+//
+//                    handleFollowButtonClick(shortOwnerId)
+//
+//                }
+                Log.d(tag, "onBind: short owner id != logged user id")
+
+            }
+            followButton.setOnClickListener {
+//                onFollow.invoke(shortOwnerId, shortOwnerUsername, followButton)
+
+                handleFollowButtonClick(feedOwnerId)
+
+            }
+            Glide.with(context)
+                .load(data.author.account.avatar.url)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(profileImageView)
+
+            commentButton.setOnClickListener {
+                Log.d(TAG, "render: button clicked")
+                feedClickListener.feedCommentClick(absoluteAdapterPosition, data)
+            }
+            Glide.with(context)
+                .load(data.files[0].url)
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(feedImage)
+
+            textView.text = data.author.account.username
+
+            val mongoDateString = data.createdAt
+            feedCommentsCount.text = data.comments.toString()
+            dateTime.text = formattedMongoDateTime(mongoDateString)
+
+            caption.isExpanded = false
+            if (data.content.isNotEmpty()) {
+                caption.text = data.content
+                caption.collapseLines = 3
+                caption.setOnExpandableClickListener(
+                    onExpand = {
+//                        showToast("Expand")
+                        Log.d(TAG, "render: onExpand ${caption.text}")
+                    },
+                    onCollapse = {
+                        Log.d(TAG, "render: onCollapse ${caption.text}")
+//                        showToast("Collapse")
+                    }
+                )
+            } else {
+                caption.visibility = View.INVISIBLE
+            }
+
+
+            if (data.tags.isNotEmpty()) {
+                tags.visibility = View.VISIBLE
+                val formattedTags = data.tags.joinToString(" ") { "#$it" }
+
+                tags.text = formattedTags
+            } else {
+                tags.visibility = View.INVISIBLE
+            }
+
+            likesCount.text = data.likes.toString()
+            if (data.isLiked) {
+                likeButton.setImageResource(R.drawable.filled_favorite_like)
+            } else {
+                likeButton.setImageResource(R.drawable.like_svgrepo_com)
+            }
+
+            likeButton.setOnClickListener {
+                data.isLiked = !data.isLiked
+                feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
+                if (data.isLiked) {
+                    likeButton.setImageResource(R.drawable.filled_favorite_like)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                } else {
+                    likeButton.setImageResource(R.drawable.like_svgrepo_com)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                }
+            }
+
+            if (data.isBookmarked) {
+                favoriteButton.setImageResource(R.drawable.filled_favorite)
+            } else {
+                favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+            }
+            favoriteButton.setOnClickListener {
+                data.isBookmarked = !data.isBookmarked
+                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
+                if (data.isBookmarked) {
+                    favoriteButton.setImageResource(R.drawable.filled_favorite)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                } else {
+                    favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                }
+            }
+            moreOptionsButton.setOnClickListener {
+                feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
+            }
+
+            feedImage.setOnClickListener {
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+
+            feedImageLayoutContainer.setOnClickListener {
+                Log.d(TAG, "render: text container clicked")
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+
+            feedShare.setOnClickListener {
+                feedClickListener.feedShare(absoluteAdapterPosition, data)
+            }
+        }
+
+        @SuppressLint("SetTextI18n")
+        private fun handleFollowButtonClick(shortOwnerId: String) {
+            Log.d(TAG, "handleFollowButtonClick: is followed value $isFollowed")
+            isFollowed = !isFollowed
+            if (isFollowed) {
+                followButton.text = "Following"
+
+                Log.d(TAG, "handleFollowButtonClick: following $isFollowed")
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, true)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+            } else {
+                Log.d(TAG, "handleFollowButtonClick: follow $isFollowed")
+
+                followButton.text = "Follow"
+
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, false)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+            }
+
+        }
+    }
+
+    inner class FeedDocViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        val tag = "FeedDocViewHolder"
+        private val moreOptionsButton: ImageView = itemView.findViewById(R.id.moreOptions)
+        private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
+
+        //        private val documentIcon: ImageView = itemView.findViewById(R.id.documentIcon)
+        private val commentButton: ImageView = itemView.findViewById(R.id.comment)
+
+        //        private val pdfImageView: ImageView = itemView.findViewById(R.id.pdfImageView)
+        private val feedDocImageCardView: CardView =
+            itemView.findViewById(R.id.feedDocImageCardView)
+        private val textView: TextView = itemView.findViewById(R.id.textView)
+
+        //        private val caption: ExpandableTextView = itemView.findViewById(R.id.caption)
+        private val caption: ReadMoreTextView = itemView.findViewById(R.id.caption)
+        private val tags: TextView = itemView.findViewById(R.id.tags)
+
+        //        private val docName: TextView = itemView.findViewById(R.id.docName)
+//        private val docInfo: TextView = itemView.findViewById(R.id.docInfo)
+//        private val pdfView: PdfRendererView = itemView.findViewById(R.id.pdfView)
+        private val dateTime: TextView = itemView.findViewById(R.id.date_time)
+
+        //        private val pdfViewContainer: LinearLayout = itemView.findViewById(R.id.pdfViewContainer)
+        private val favoriteButton: ImageView = itemView.findViewById(R.id.favorite)
+        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
+        private val likeButton: ImageView = itemView.findViewById(R.id.like)
+        private val feedCommentsCount: TextView = itemView.findViewById(R.id.feedCommentsCount)
+        private val feedDocLayout: ConstraintLayout = itemView.findViewById(R.id.feedDocLayout)
+        val recyclerView: RecyclerView = itemView.findViewById(R.id.recyclerView)
+        private var isFollowed = false
+        private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
+
+        @SuppressLint("SetTextI18n")
+        fun render(data: Post) {
+//            Log.d(tag, "render: data:: ${data.docType}")
+            Log.d(tag, "render: follow list $followList")
+            var isFollowingData: Follow? = null
+            if (followList.isNotEmpty()) {
+                isFollowingData =
+                    followList.findLast { it.followersId == data.author.account._id }!!
+            }
+
+
+            Log.d(tag, "render: is following = $isFollowingData")
+            val feedOwnerId = data.author.account._id
+            if (feedOwnerId == LocalStorage.getInstance(profileImageView.context).getUserId()) {
+
+                followButton.visibility = View.INVISIBLE
+                Log.d(tag, "onBind: feed owner id == logged user id")
+            } else {
+                followButton.visibility = View.VISIBLE
+//            EventBus.getDefault().post(HandleInShortsFollowButtonClick(followButton, shortOwnerId, shortOwnerUsername))
+
+
+                if (isFollowingData != null) {
+                    if (isFollowingData.isFollowing) {
+                        followButton.text = "Following"
+                        followButton.isAllCaps = false
+                        followButton.setBackgroundResource(R.drawable.shorts_following_button)
+                        isFollowed = true
+                    } else {
+                        followButton.text = "Follow"
+                        followButton.setBackgroundResource(R.drawable.feed_follow_button_border)
+                        isFollowed = false
+                    }
+                }
+//
+//                followButton.setOnClickListener {
+////                onFollow.invoke(shortOwnerId, shortOwnerUsername, followButton)
+//
+//                    handleFollowButtonClick(shortOwnerId)
+//
+//                }
+                Log.d(tag, "onBind: short owner id != logged user id")
+
+            }
+            followButton.setOnClickListener {
+//                onFollow.invoke(shortOwnerId, shortOwnerUsername, followButton)
+
+                handleFollowButtonClick(feedOwnerId)
+
+            }
+            feedDocLayout.setOnClickListener {
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+            likesCount.text = data.likes.toString()
+            if (data.isLiked) {
+                likeButton.setImageResource(R.drawable.filled_favorite_like)
+            } else {
+                likeButton.setImageResource(R.drawable.like_svgrepo_com)
+            }
+            commentButton.setOnClickListener {
+                Log.d(TAG, "render: button clicked")
+                feedClickListener.feedCommentClick(absoluteAdapterPosition, data)
+            }
+            likeButton.setOnClickListener {
+                data.isLiked = !data.isLiked
+                feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
+                if (data.isLiked) {
+                    likeButton.setImageResource(R.drawable.filled_favorite_like)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                } else {
+                    likeButton.setImageResource(R.drawable.like_svgrepo_com)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                }
+            }
+            Glide.with(context)
+                .load(data.author.account.avatar.url)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(profileImageView)
+
+            feedCommentsCount.text = data.comments.toString()
+//            Glide.with(context)
+//                .load(data.files[0].url)
+//                .placeholder(R.drawable.flash21)
+//                .diskCacheStrategy(DiskCacheStrategy.ALL)
+//                .into(feedImage)
+
+//            PdfViewerActivity.launchPdfFromUrl(
+//                context = context,
+//                pdfUrl = "your_pdf_url_here",
+//                pdfTitle = "PDF Title",
+//                saveTo = saveTo.DOWNLOADS,
+//                enableDownload = true
+//            )
+
+            val layoutParams = feedDocImageCardView.layoutParams
+
+//            docName.text = data.fileName
+//            docInfo.text = "${data.numberOfPages} pages . ${data.docType}"
+
+//            if (data.docType == "pdf") {
+////                pdfView.initWithUri(uri = data.files[0].url.toUri())
+////                pdfView.jumpToPage(3)
+//                // Set the height to 300dp
+//                val heightInDp = 300 // Change this value to the desired height in dp
+//                val density = context.resources.displayMetrics.density
+//                layoutParams.height = (heightInDp * density).toInt()
+//
+//                feedDocImageCardView.layoutParams = layoutParams
+//
+//
+//                documentIcon.visibility = View.GONE
+////                pdfViewContainer.visibility = View.VISIBLE
+////
+////                pdfView.initWithUrl(
+////                    url = data.files[0].url,
+////                    lifecycleCoroutineScope = lifecycleCoroutineScope,
+////                    lifecycle = lifecycle
+////                )
+////                pdfView.jumpToPage(0)
+//
+////                val pdfBitmap = pdfView.getLoadedBitmaps()
+////                Log.d(TAG, "render: bitmap size ${pdfBitmap.size}")
+//
+////                val pdfPageBitmap = pdfView.getBitmapByPage(0)
+//
+//
+////                Log.d(TAG, "render: getBitmapByPage: $pdfPageBitmap")
+////                pdfImageView.setImageBitmap(pdfPageBitmap)
+//            }
+//            else {
+//                // Get the existing layout parameters
+//                layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+//                layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+//                feedDocImageCardView.layoutParams = layoutParams
+////                pdfViewContainer.visibility = View.GONE
+//                documentIcon.visibility = View.VISIBLE
+//            }
+
+
+            textView.text = data.author.account.username
+            val mongoDateString = data.createdAt
+
+            dateTime.text = formattedMongoDateTime(mongoDateString)
+//            caption.text = data.content
+//            docTitle.text = data.
+//            caption.isExpanded = false
+            if (data.content.isNotEmpty()) {
+//                caption.text = data.content
+//                caption.collapseLines = 3
+//                caption.setOnExpandableClickListener(
+//                    onExpand = {
+////                        showToast("Expand")
+//                        Log.d(TAG, "render: onExpand ${caption.text}")
+//                    },
+//                    onCollapse = {
+//                        Log.d(TAG, "render: onCollapse ${caption.text}")
+////                        showToast("Collapse")
+//                    }
+//                )
+                val captionText = data.content
+                caption.visibility = View.VISIBLE
+                caption.text = captionText
+                caption.setOnClickListener {
+                    feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+                }
+            } else {
+                caption.visibility = View.INVISIBLE
+            }
+
+
+            if (data.tags.isNotEmpty()) {
+                tags.visibility = View.VISIBLE
+                val formattedTags = data.tags.joinToString(" ") { "#$it" }
+
+                tags.text = formattedTags
+            } else {
+                tags.visibility = View.INVISIBLE
+            }
+
+            if (data.isBookmarked) {
+                favoriteButton.setImageResource(R.drawable.filled_favorite)
+            } else {
+                favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+            }
+            favoriteButton.setOnClickListener {
+                data.isBookmarked = !data.isBookmarked
+                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
+                if (data.isBookmarked) {
+                    favoriteButton.setImageResource(R.drawable.filled_favorite)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                } else {
+                    favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                }
+            }
+            moreOptionsButton.setOnClickListener {
+                feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
+            }
+
+            val docsList: MutableList<String> = mutableListOf()
+            if (data.files.isNotEmpty()) {
+                for (doc in data.files) {
+                    Log.d(TAG, "render: videosList ${doc.url}")
+                    docsList.add(doc.url)
+                }
+            } else {
+                Log.d(TAG, "render: data files is empty")
+            }
+            val adapter = FeedDocumentsViewAdapter(docsList, context)
+            adapter.setData(data)
+            if (docsList.size == 1) {
+//                val feedDocImageCardViewLayoutParams = feedDocImageCardView.layoutParams
+//                feedDocImageCardViewLayoutParams.height = 100
+//
+//                feedDocImageCardView.layoutParams = feedDocImageCardViewLayoutParams
+                recyclerView.layoutManager = GridLayoutManager(context, 1) // 2 columns in the grid
+                recyclerView.setHasFixedSize(true) // Ensures items won't change size
+                recyclerView.adapter = adapter // Replace with your adapter
+            } else if (docsList.size <= 2) {
+                recyclerView.layoutManager = GridLayoutManager(context, 2) // 2 columns in the grid
+                recyclerView.setHasFixedSize(true) // Ensures items won't change size
+                recyclerView.adapter = adapter // Replace with your adapter
+            } else if (docsList.size == 3) {
+                // Use a GridLayoutManager with span size 2 for the first row and 1 for the second row
+                val layoutManager = GridLayoutManager(context, 2)
+                layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int {
+                        return if (position < 2) 1 else 2
+                    }
+                }
+                recyclerView.layoutManager = layoutManager
+
+                recyclerView.setHasFixedSize(true) // Ensures items won't change size
+
+                recyclerView.adapter = adapter // Replace with your adapter
+            } else {
+                val layoutManager = GridLayoutManager(context, 2)
+//                layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+//                    override fun getSpanSize(position: Int): Int {
+//                        // Return 1 for the first item in each row, and 2 for the second item
+//                        return if (position % 2 == 0) 1 else 2
+//                    }
+//                }
+
+                // Set span size lookup to customize the span of items
+                layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int {
+                        return when (position) {
+                            0, 1 -> 1  // First and second items span 2 columns
+                            else -> 1   // All other items span 1 column
+                        }
+                    }
+                }
+                recyclerView.layoutManager = layoutManager
+                recyclerView.adapter = adapter
+            }
+            adapter.setOnMultipleImagesClickListener(object : OnMultipleImagesClickListener {
+                override fun multipleImagesClickListener() {
+                    feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+                }
+
+            })
+        }
+
+        @SuppressLint("SetTextI18n")
+        private fun handleFollowButtonClick(shortOwnerId: String) {
+            Log.d(TAG, "handleFollowButtonClick: is followed value $isFollowed")
+            isFollowed = !isFollowed
+            if (isFollowed) {
+                followButton.text = "Following"
+
+                Log.d(TAG, "handleFollowButtonClick: following $isFollowed")
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, true)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+            } else {
+                Log.d(TAG, "handleFollowButtonClick: follow $isFollowed")
+
+                followButton.text = "Follow"
+
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, false)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+            }
+
+        }
+    }
+
+    inner class FeedVideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val moreOptionsButton: ImageView = itemView.findViewById(R.id.moreOptions)
+        val tag = "FeedTextViewHolder"
+        private val commentButton: ImageView = itemView.findViewById(R.id.comment)
+        private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
+
+        //        private val feedThumbnail: ImageView = itemView.findViewById(R.id.feedThumbnail)
+        private val textView: TextView = itemView.findViewById(R.id.textView)
+
+        //        private val caption: ExpandableTextView = itemView.findViewById(R.id.caption)
+        private val caption: ReadMoreTextView = itemView.findViewById(R.id.caption)
+        private val tags: TextView = itemView.findViewById(R.id.tags)
+        private val dateTime: TextView = itemView.findViewById(R.id.date_time)
+
+        //        private val feedVideoDurationTextView: TextView =
+//            itemView.findViewById(R.id.feedVideoDurationTextView)
+        private val favoriteButton: ImageView = itemView.findViewById(R.id.favorite)
+        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
+        private val likeButton: ImageView = itemView.findViewById(R.id.like)
+        private val feedCommentsCount: TextView = itemView.findViewById(R.id.feedCommentsCount)
+        private val feedVideoLayoutContainer: ConstraintLayout =
+            itemView.findViewById(R.id.feedVideoLayoutContainer)
+        val recyclerView: RecyclerView = itemView.findViewById(R.id.recyclerView)
+        private var isFollowed = false
+        private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
+
+        @SuppressLint("SetTextI18n")
+        fun render(data: Post) {
+            Log.d(tag, "render: data:: $data")
+            Log.d(tag, "render: follow list $followList")
+            var isFollowingData: Follow? = null
+            if (followList.isNotEmpty()) {
+                isFollowingData =
+                    followList.findLast { it.followersId == data.author.account._id }!!
+            }
+
+
+            Log.d(tag, "render: is following = $isFollowingData")
+            val feedOwnerId = data.author.account._id
+            if (feedOwnerId == LocalStorage.getInstance(profileImageView.context).getUserId()) {
+
+                followButton.visibility = View.INVISIBLE
+                Log.d(tag, "onBind: feed owner id == logged user id")
+            } else {
+                followButton.visibility = View.VISIBLE
+//            EventBus.getDefault().post(HandleInShortsFollowButtonClick(followButton, shortOwnerId, shortOwnerUsername))
+
+
+                if (isFollowingData != null) {
+                    if (isFollowingData.isFollowing) {
+                        followButton.text = "Following"
+                        followButton.isAllCaps = false
+                        followButton.setBackgroundResource(R.drawable.shorts_following_button)
+                        isFollowed = true
+                    } else {
+                        followButton.text = "Follow"
+                        followButton.setBackgroundResource(R.drawable.feed_follow_button_border)
+                        isFollowed = false
+                    }
+                }
+//
+//                followButton.setOnClickListener {
+////                onFollow.invoke(shortOwnerId, shortOwnerUsername, followButton)
+//
+//                    handleFollowButtonClick(shortOwnerId)
+//
+//                }
+                Log.d(tag, "onBind: short owner id != logged user id")
+
+            }
+            followButton.setOnClickListener {
+//                onFollow.invoke(shortOwnerId, shortOwnerUsername, followButton)
+
+                handleFollowButtonClick(feedOwnerId)
+
+            }
+
+            commentButton.setOnClickListener {
+                Log.d(TAG, "render: button clicked")
+                feedClickListener.feedCommentClick(absoluteAdapterPosition, data)
+            }
+//            val videoThumbnailUrl = data.thumbnail[0].url
+//            if (data.thumbnail.isNotEmpty()) {
+//                Log.d(tag, "render: thumbnail:: ${data.thumbnail[0].thumbnailUrl}")
+//                Glide.with(context)
+//                    .load(data.thumbnail[0].thumbnailUrl)
+//                    .placeholder(R.drawable.profilepic2)
+//                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+//                    .into(feedThumbnail)
+//            }
+            Glide.with(context)
+                .load(data.author.account.avatar.url)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.profilepic2)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(profileImageView)
+            feedCommentsCount.text = data.comments.toString()
+
+            textView.text = data.author.account.username
+//            feedVideoDurationTextView.text = data.duration
+            val mongoDateString = data.createdAt
+
+            dateTime.text = formattedMongoDateTime(mongoDateString)
+            if (data.content.isNotEmpty()) {
+                caption.text = data.content
+
+//                caption.collapseLines = 3
+//                caption.setOnExpandableClickListener(
+//                    onExpand = {
+////                        showToast("Expand")
+//                        Log.d(TAG, "render: onExpand ${caption.text}")
+//                    },
+//                    onCollapse = {
+//                        Log.d(TAG, "render: onCollapse ${caption.text}")
+////                        showToast("Collapse")
+//                    }
+//                )
+            }
+            caption.setOnClickListener {
+                Log.d(TAG, "render: caption clicked")
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+//            caption.isExpanded = false
+            if (data.tags.isNotEmpty()) {
+                tags.visibility = View.VISIBLE
+                val formattedTags = data.tags.joinToString(" ") { "#$it" }
+                tags.text = formattedTags
+            } else {
+                tags.visibility = View.INVISIBLE
+            }
+
+            likesCount.text = data.likes.toString()
+            if (data.isLiked) {
+                likeButton.setImageResource(R.drawable.filled_favorite_like)
+            } else {
+                likeButton.setImageResource(R.drawable.like_svgrepo_com)
+            }
+
+            likeButton.setOnClickListener {
+                data.isLiked = !data.isLiked
+                feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
+                if (data.isLiked) {
+                    likeButton.setImageResource(R.drawable.filled_favorite_like)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                } else {
+                    likeButton.setImageResource(R.drawable.like_svgrepo_com)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(likeButton)
+                }
+            }
+
+            if (data.isBookmarked) {
+                favoriteButton.setImageResource(R.drawable.filled_favorite)
+            } else {
+                favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+            }
+            favoriteButton.setOnClickListener {
+                data.isBookmarked = !data.isBookmarked
+                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
+                if (data.isBookmarked) {
+                    favoriteButton.setImageResource(R.drawable.filled_favorite)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                } else {
+                    favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                    YoYo.with(Techniques.Tada)
+                        .duration(700)
+                        .repeat(1)
+                        .playOn(favoriteButton)
+                }
+            }
+            moreOptionsButton.setOnClickListener {
+                feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
+            }
+
+            feedVideoLayoutContainer.setOnClickListener {
+                Log.d(TAG, "render: text container clicked")
+                feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+            }
+
+//            val videosList = data.thumbnail
+            val videosList: MutableList<String> = mutableListOf()
+            if (data.thumbnail.isNotEmpty()) {
+                for (thumbnails in data.thumbnail) {
+                    Log.d(TAG, "render: videosList ${thumbnails.thumbnailUrl}")
+                    videosList.add(thumbnails.thumbnailUrl)
+                }
+            } else {
+                Log.d(TAG, "render: data files is empty")
+            }
+            val adapter = FeedVideosViewAdapter(videosList)
+            adapter.setData(data)
+            if (videosList.size == 1) {
+                recyclerView.layoutManager = GridLayoutManager(context, 1) // 2 columns in the grid
+                recyclerView.setHasFixedSize(true) // Ensures items won't change size
+                recyclerView.adapter = adapter // Replace with your adapter
+            } else if (videosList.size <= 2) {
+                recyclerView.layoutManager = GridLayoutManager(context, 2) // 2 columns in the grid
+                recyclerView.setHasFixedSize(true) // Ensures items won't change size
+                recyclerView.adapter = adapter // Replace with your adapter
+            } else if (videosList.size == 3) {
+                // Use a GridLayoutManager with span size 2 for the first row and 1 for the second row
+                val layoutManager = GridLayoutManager(context, 2)
+                layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int {
+                        return if (position < 2) 1 else 2
+                    }
+                }
+                recyclerView.layoutManager = layoutManager
+
+                recyclerView.setHasFixedSize(true) // Ensures items won't change size
+
+                recyclerView.adapter = adapter // Replace with your adapter
+            } else {
+                val layoutManager = GridLayoutManager(context, 2)
+//                layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+//                    override fun getSpanSize(position: Int): Int {
+//                        // Return 1 for the first item in each row, and 2 for the second item
+//                        return if (position % 2 == 0) 1 else 2
+//                    }
+//                }
+
+                // Set span size lookup to customize the span of items
+                layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int {
+                        return when (position) {
+                            0, 1 -> 1  // First and second items span 2 columns
+                            else -> 1   // All other items span 1 column
+                        }
+                    }
+                }
+                recyclerView.layoutManager = layoutManager
+                recyclerView.adapter = adapter
+            }
+            adapter.setOnMultipleImagesClickListener(object : OnMultipleImagesClickListener {
+                override fun multipleImagesClickListener() {
+                    feedClickListener.feedFileClicked(absoluteAdapterPosition, data)
+                }
+
+            })
+        }
+
+        @SuppressLint("SetTextI18n")
+        private fun handleFollowButtonClick(shortOwnerId: String) {
+            Log.d(TAG, "handleFollowButtonClick: is followed value $isFollowed")
+            isFollowed = !isFollowed
+            if (isFollowed) {
+                followButton.text = "Following"
+
+                Log.d(TAG, "handleFollowButtonClick: following $isFollowed")
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, true)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+            } else {
+                Log.d(TAG, "handleFollowButtonClick: follow $isFollowed")
+
+                followButton.text = "Follow"
+
+                val followUnFollowEntity = FollowUnFollowEntity(shortOwnerId, false)
+                feedClickListener.followButtonClicked(followUnFollowEntity)
+//                EventBus.getDefault().post(ShortsFollowButtonClicked(followUnFollowEntity))
+
+            }
+
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+
+//        Log.d(TAG, "onCreateViewHolder: view type $viewType")
+        return when (viewType) {
+            VIEW_TYPE_TEXT_FEED -> {
+                val itemView = inflater.inflate(R.layout.feed_caption_layout, parent, false)
+                FeedTextViewHolder(itemView)
+            }
+
+            VIEW_TYPE_AUDIO_FEED -> {
+                val itemView = inflater.inflate(R.layout.feed_audio_layout, parent, false)
+                FeedAudioViewHolder(itemView)
+            }
+//
+            VIEW_TYPE_VN_FEED -> {
+                val itemView = inflater.inflate(R.layout.feed_audio_layout, parent, false)
+                FeedAudioViewHolder(itemView)
+            }
+
+            VIEW_TYPE_IMAGE_FEED -> {
+                val itemView = inflater.inflate(R.layout.feed_image_layout, parent, false)
+                FeedImageViewHolder(itemView)
+            }
+//
+            VIEW_TYPE_VIDEO_FEED -> {
+                val itemView = inflater.inflate(R.layout.feed_video_layout, parent, false)
+                FeedVideoViewHolder(itemView)
+            }
+//
+            VIEW_TYPE_DOCUMENT_FEED -> {
+                val itemView = inflater.inflate(R.layout.feed_doc_layout, parent, false)
+                FeedDocViewHolder(itemView)
+            }
+
+            VIEW_TYPE_MULTIPLE_IMAGES_FEED -> {
+                val itemView = inflater.inflate(R.layout.feed_multiple_image_layout, parent, false)
+                FeedMultipleImageViewHolder(itemView)
+            }
+
+            else -> throw IllegalArgumentException("Invalid view type")
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+
+    }
+
+    private var currentItemDisplayPosition = -1
+
+    fun getCurrentItemDisplayPosition(): Int {
+        return currentItemDisplayPosition
+    }
+
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        @SuppressLint("RecyclerView") position: Int,
+        payloads: MutableList<Any>
+    ) {
+
+//        Log.d(TAG, "onBindViewHolder: position $position")
+        currentItemDisplayPosition = position
+        when (holder) {
+
+            is FeedTextViewHolder -> {
+                holder.render(getItem(position))
+            }
+
+            is FeedAudioViewHolder -> {
+                holder.render(getItem(position))
+            }
+//
+            is FeedImageViewHolder -> {
+                // You can customize this part if needed
+                holder.render(getItem(position))
+            }
+//
+            is FeedVideoViewHolder -> {
+                holder.render(getItem(position))
+            }
+
+            is FeedDocViewHolder -> {
+                holder.render(getItem(position))
+            }
+
+            is FeedMultipleImageViewHolder -> {
+                holder.render(getItem(position))
+            }
+//            is CommentGifViewHolder -> {
+//                holder.render(getItem(position))
+//            }
+//            is EmptyViewHolder -> {
+//                // You can customize this part if needed
+//                Log.d("EmptyViewHolder", "This is for empty view holder")
+//            }
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        val tag = "FeedType"
+        return when (getItem(position).contentType) {
+            "text" -> {
+//                Log.d(tag, "getItemViewType: text type")
+                VIEW_TYPE_TEXT_FEED
+            }
+
+            "audio" -> {
+//                Log.d(TAG, "getItemViewType: audio type")
+                VIEW_TYPE_AUDIO_FEED
+            }
+//
+            "vn" -> {
+                VIEW_TYPE_AUDIO_FEED
+            }
+//
+//
+            "image" -> {
+//                Log.d(tag, "getItemViewType: text type")
+                VIEW_TYPE_IMAGE_FEED
+            }
+//
+            "video" -> {
+                VIEW_TYPE_VIDEO_FEED
+            }
+//
+            "docs" -> {
+                VIEW_TYPE_DOCUMENT_FEED
+            }
+
+            "multiple_images" -> {
+                VIEW_TYPE_MULTIPLE_IMAGES_FEED
+            }
+//            "gif" -> {
+//                VIEW_TYPE_GIF
+//            }
+            else -> {
+                Log.d(tag, "getItemViewType: unknown type")
+                VIEW_TYPE_EMPTY
+            }
+        }
+    }
+
+    override fun onImageClick() {
+
+    }
+
+    private var followList: MutableList<Follow> = mutableListOf()
+    fun addFollowList(follow: List<Follow>) {
+        this.followList.addAll(follow)
+    }
+
+    fun getFollowList(): List<Follow> {
+        return followList
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun addSingleFollowList(follow: Follow) {
+        followList.add(follow)
+        notifyDataSetChanged()
+    }
+
+}
+
+
+@SuppressLint("SimpleDateFormat")
+private fun formattedMongoDateTime(mongoDateString: String): String {
+    try {
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+        val dateFormat = SimpleDateFormat("HH:mm:ss '-' dd-MM-yyyy")
+        // Parse the MongoDB date string into a Date object
+        val date: Date? = inputFormat.parse(mongoDateString)
+
+        // Format the Date object into desired output format
+        val formattedDate: String = date?.let { dateFormat.format(it) }.toString()
+//            val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+
+
+        // Format the date
+//            val formattedDate: String = dateFormat.format()
+        return formattedDate
+    } catch (e: Exception) {
+        e.printStackTrace()
+        return "Upload Time Date not available"
+    }
+}
+
+// Method to add an item
+//fun addItem(item: Post) {
+//    items.add(item)
+//    notifyItemInserted(items.size - 1)
+//}
+//
+//// Method to remove an item
+//fun removeItem(position: Int) {
+//    items.removeAt(position)
+//    notifyItemRemoved(position)
+//}
+interface OnFeedClickListener {
+    fun likeUnLikeFeed(position: Int, data: Post)
+    fun feedCommentClick(position: Int, data: Post)
+    fun feedFavoriteClick(position: Int, data: Post)
+    fun moreOptionsClick(position: Int, data: Post)
+    fun feedFileClicked(position: Int, data: Post)
+    fun feedShare(position: Int, data: Post)
+    fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity)
+}

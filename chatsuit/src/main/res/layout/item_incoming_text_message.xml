@@ -1,3 +1,4 @@
+<!-- INCOMING MESSAGE LAYOUT -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -25,6 +26,7 @@
         android:layout_toEndOf="@id/messageUserAvatar"
         android:layout_toRightOf="@id/messageUserAvatar"
         android:layout_height="wrap_content">
+
         <TextView
             android:id="@+id/userName"
             android:layout_marginTop="2dp"
@@ -33,32 +35,39 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
-        <com.google.android.flexbox.FlexboxLayout
+        <RelativeLayout
             android:id="@id/bubble"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            app:alignContent="stretch"
-            app:alignItems="stretch"
-            app:flexWrap="wrap"
-            app:justifyContent="flex_end">
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp">
 
             <com.vanniktech.emoji.EmojiTextView
                 android:id="@id/messageText"
                 android:text="@string/test_message"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:minWidth="50dp"
+                android:paddingEnd="8dp"
+                android:paddingRight="8dp"
+                android:paddingBottom="20dp" />
 
             <TextView
                 android:id="@id/messageTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/messageText"
-                android:layout_marginLeft="8dp"
-                android:layout_marginStart="8dp"
-                app:layout_alignSelf="center" />
+                android:layout_alignEnd="@id/messageText"
+                android:layout_alignRight="@id/messageText"
+                android:layout_alignBottom="@id/messageText"
+                android:layout_marginBottom="2dp"
+                android:textColor="@color/white"
+                android:textColorHint="@color/white"
+                android:textSize="11sp"
+                android:gravity="end" />
 
-        </com.google.android.flexbox.FlexboxLayout>
+        </RelativeLayout>
 
     </LinearLayout>
 

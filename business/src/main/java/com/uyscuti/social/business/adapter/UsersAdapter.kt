@@ -12,7 +12,7 @@ import com.uyscuti.social.business.retro.model.User
 
 
 class UsersAdapter(
-    private val users: ArrayList<com.uyscuti.sharedmodule.model.User>,
+    private val users: ArrayList<com.uyscuti.social.business.model.User>,
     private val onItemClick: (User) -> Unit
 ) : RecyclerView.Adapter<UsersAdapter.UserViewHolder>() {
 
@@ -43,5 +43,5 @@ class UsersAdapter(
     }
 }
 
-private fun UsersAdapter.onItemClick(user: com.uyscuti.sharedmodule.model.User) {}
+private fun UsersAdapter.onItemClick(user: com.uyscuti.social.business.model.User) {}
 

@@ -4,33 +4,42 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.CreateUserChat">
-
+    tools:context=".User_Interface.OtherImportantProfileThings.CreateUserChat">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
+        android:layout_height="56dp"
         android:background="?attr/colorPrimary"
+        android:paddingEnd="16dp"
+        android:paddingStart="16dp"
+        app:contentInsetStart="0dp"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         android:titleTextColor="@android:color/white">
 
+        <!-- Search Input in Toolbar -->
         <EditText
             android:id="@+id/searchEditText"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:hint="@string/search"
             android:imeOptions="actionSearch"
             android:inputType="text"
-            android:background="@color/bluejeans"
+            android:background="@drawable/search_input_border"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textSize="15sp"
+            android:textColor="@color/black"
+            android:textColorHint="#B3100F0F"
             android:maxLines="1"
-            android:singleLine="true"/>
+            android:singleLine="true" />
+
     </androidx.appcompat.widget.Toolbar>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:layout_width="match_parent"
         android:id="@+id/userList"
-        android:layout_below="@id/toolbar"
-        android:layout_height="match_parent"/>
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar" />
 
 </RelativeLayout>

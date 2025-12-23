@@ -1,6 +1,5 @@
 package com.uyscuti.social.business.adapter
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Build
 import android.util.Log
@@ -14,7 +13,7 @@ import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
-import com.uyscuti.sharedmodule.model.Catalogue
+import com.uyscuti.social.business.model.Catalogue
 import com.uyscuti.social.business.R
 
 import java.util.concurrent.TimeUnit
@@ -244,7 +243,6 @@ class EditCatalogueAdapter(private var context: Activity, private val catalogue:
         notifyItemRemoved(0)
     }
 
-    @SuppressLint("NewApi")
     fun addVideo(video: String) {
         if (images.isNotEmpty()) {
             if (isVideoUrl(images[0])) {
@@ -275,7 +273,6 @@ class EditCatalogueAdapter(private var context: Activity, private val catalogue:
             e.printStackTrace()
         }
     }
-    @SuppressLint("NewApi")
     fun replaceImage(image: String) {
         try {
             val position = editMediaPagerAdapter.getSelectedPosition()
@@ -296,7 +293,6 @@ class EditCatalogueAdapter(private var context: Activity, private val catalogue:
 
     }
 
-
     private fun validateFields(): Boolean {
         nameError = nameEditText?.text.toString().isEmpty()
         priceError = priceEditText?.text.toString().isEmpty()
@@ -313,7 +309,7 @@ class EditCatalogueAdapter(private var context: Activity, private val catalogue:
 
         }
 
-        images.removeAt((images.size - 1))
+        images.removeLast()
 
 //        val imageUrl = arrayListOf<String>()
 //        images.forEach {

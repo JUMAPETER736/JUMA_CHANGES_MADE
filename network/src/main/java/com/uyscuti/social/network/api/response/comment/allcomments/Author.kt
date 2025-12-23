@@ -8,5 +8,5 @@ data class Author(
     var account: Account,
     var firstName: String,
     var lastName: String,
-    var avatar: Avatar? = null,
+    val avatar: Avatar?,
 ): Serializable

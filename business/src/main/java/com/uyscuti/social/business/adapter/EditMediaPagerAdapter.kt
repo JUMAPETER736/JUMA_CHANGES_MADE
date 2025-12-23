@@ -54,11 +54,7 @@ class EditMediaPagerAdapter(
         val view = LayoutInflater.from(parent.context).inflate(R.layout.add_media, parent, false)
         return ViewHolder(view)
 
-//        val images = mutableListOf("image1.jpg", "image2.jpg", "image3.jpg") // Replace with actual image paths
-//        var imageAdapter = ImageAdapter(images) { image, position ->
-//            var selectedImage = image
-//            var selectedPosition = position
-//        }
+
 
     }
 
@@ -233,7 +229,7 @@ class EditMediaPagerAdapter(
         ) // Set the maximum number of images to quickstartActivityForResult(intent, PICK_IMAGE_REQUEST)
         val PICK_IMAGE_REQUEST = 525
         context.startActivityForResult(intent, PICK_IMAGE_REQUEST)
-//        context.startActivity()
+
 
     }
 

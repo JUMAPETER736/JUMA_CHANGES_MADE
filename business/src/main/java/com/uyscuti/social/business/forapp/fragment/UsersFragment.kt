@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import retrofit2.HttpException
-import com.uyscuti.sharedmodule.model.User
+import com.uyscuti.social.business.model.User
 import com.uyscuti.social.business.R
 
 

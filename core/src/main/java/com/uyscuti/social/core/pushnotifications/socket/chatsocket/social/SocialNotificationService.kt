@@ -1,11 +1,8 @@
 package com.uyscuti.social.core.pushnotifications.socket.chatsocket.social
 
 import android.Manifest
-import android.annotation.SuppressLint
-import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.ContextWrapper
@@ -13,16 +10,13 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.RingtoneManager
 import android.os.Build
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 
 import androidx.core.content.getSystemService
 import com.uyscuti.social.core.R
@@ -38,50 +32,21 @@ import java.util.Locale
 
 
 class SocialNotificationService : Service() {
-    private val CHANNEL_ID = "FlashSocialNotifications"
-    val foregroundNotificationId = 5757
-
-    private var isForegroundStarted = false
-
-
-    private val handler = Handler(Looper.getMainLooper())
-
+    private val CHANNEL_ID = "FlashChatNotifications"
     override fun onBind(p0: Intent?): IBinder? = null
 
     var localStorage: CoreStorage? = null
     override fun onCreate() {
         super.onCreate()
         localStorage = CoreStorage.getInstance(applicationContext)
-        createNotificationChannel()
     }
 
-    @SuppressLint("MissingPermission")
+    @RequiresApi(Build.VERSION_CODES.ECLAIR)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
-        if(!isForegroundStarted) {
-
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-                stopSelf()
-                return START_NOT_STICKY // Can't show notification, permissions need to be requested from Activity
-            }
-
-            startForeground(foregroundNotificationId, createMinimalServiceNotification())
-            isForegroundStarted = true
-
-            handler.postDelayed({
-                stopForeground(true)
-                stopSelf()
-            }, 2 * 1000)
-        }
-
-
-
         intent?.let { cm ->
-            val socialNotification = cm.getSerializableExtra("notification") as Notification
-
+            val message = cm.getSerializableExtra("notification") as Notification
             when (cm.action) {
-                ON_ONE_ON_ONE_MESSAGE.name -> showNotification(socialNotification)
+                ON_ONE_ON_ONE_MESSAGE.name -> handleNotification(message._id,message.message,message.sender.username,message)
                 ON_GROUP_MESSAGE.name -> showGroup()
                 else -> {}
             }
@@ -90,17 +55,72 @@ class SocialNotificationService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun showOne(socialNotification: Notification) {
-        createNotificationChannel()
+    private fun showOne(message: Message) {
+        val chatId = message.chat
+        val text = message.content
+        val sender = message.sender.username
+        val attachments = message.attachments
+        var notificationContent = ""
 
-        val text = socialNotification.message
-        val sender = socialNotification.sender.username
-        val notificationContent = text
+        if (!attachments.isNullOrEmpty()) {
+            for (attachment in attachments) {
+                when (getFileType(attachment.url)) {
+                    FileType.IMAGE -> {
+                        notificationContent = "📷 Image"
+                    }
 
+                    FileType.AUDIO -> {
+                        notificationContent = "🎵 Audio"
+                    }
 
-        handleNotifications(notificationContent, sender)
+                    FileType.VIDEO -> {
+                        notificationContent = "🎬 Video"
+                    }
 
+                    FileType.DOCUMENT -> {
+                        notificationContent = "📄 Document"
+                    }
 
+                    FileType.OTHER -> {
+                        // Handle other types, if needed
+                        notificationContent = "📎 Attachment"
+                    }
+                }
+            }
+        } else {
+            notificationContent = text
+        }
+        handleNotifications(chatId, notificationContent, sender)
+
+//        val avatar = Avatar(
+//            _id = "1",
+//            localPath = "local",
+//            url = "url"
+//        )
+//
+//        val lastseen = Date()
+
+//        val sender = User(
+//            _id = "1",
+//            avatar = avatar,
+//            email = "email",
+//            isEmailVerified = true,
+//            role = "USER",
+//            username = "username",
+//            lastseen = lastseen
+//        )
+
+//        val message = Message(
+//            _id = "1",
+//            sender = sender,
+//            content = "message",
+//            chat = "1",
+//            attachments = null,
+//            createdAt = "createdAt",
+//            updatedAt = "updatedAt",
+//        )
+//        createNotificationChannel()
+//        showNotification(message)
     }
 
     private fun showGroup() {
@@ -108,11 +128,10 @@ class SocialNotificationService : Service() {
     }
 
 
-    @SuppressLint("ObsoleteSdkInt")
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Social Notifications Channel"
-            val description = "Push Notifications for Social"
+            val name = "Chat Notifications Channel"
+            val description = "Push Notifications for Chat"
             val importance = NotificationManager.IMPORTANCE_HIGH
             val channel = NotificationChannel(CHANNEL_ID, name, importance)
             channel.description = description
@@ -122,49 +141,77 @@ class SocialNotificationService : Service() {
     }
 
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-    private fun showNotification(socialNotification: Notification) {
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-            != PackageManager.PERMISSION_GRANTED) {
-            return // Can't show notification, permissions need to be requested from Activity
-        }
-        val currentTimeMillis = System.currentTimeMillis()
-
-        val notificationId = "notification_id_${socialNotification._id}".hashCode()
-
+    private fun showNotification(message: Message) {
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(com.uyscuti.social.notifications.R.drawable.ic_launcher_foreground)
-            .setContentTitle(socialNotification.sender.username)
-            .setContentText(socialNotification.message)
+            .setContentTitle("New Message")
+            .setContentText("${message.sender.username}: ${message.content}")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
             .setAutoCancel(true) // Automatically remove the notification when clicked
-            .setOngoing(false) // Allows swiping to dismiss
-            .setWhen(currentTimeMillis)
 
+        val notificationManager = NotificationManagerCompat.from(this)
 
-        // This is safe - won't interfere with foreground notification
-        NotificationManagerCompat.from(this).notify(notificationId, notificationBuilder.build())
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return
+        }
+        notificationManager.notify(message._id.hashCode(), notificationBuilder.build())
     }
-
-    private fun createMinimalServiceNotification(): android.app.Notification {
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Circuit")
-            .setContentText("New notifications")
-            .setSmallIcon(com.uyscuti.social.core.R.drawable.ic_notification) // Use a very small, subtle icon
-            .setPriority(NotificationCompat.PRIORITY_MIN) // Even lower than LOW
-            .setOngoing(true)
-            .setShowWhen(false)
-            .setVisibility(NotificationCompat.VISIBILITY_SECRET)
-            .setCategory(NotificationCompat.CATEGORY_SERVICE)
-            .setDefaults(0)
-            .setSilent(true)
-            .build()
-    }
-    private fun handleNotifications(message: String, user: String, ) {
-     //   localStorage?.setChatId(chatId)
+    private fun handleNotifications(chatId: String, message: String, user: String, ) {
+        localStorage?.setChatId(chatId)
         val currentTimeMillis = System.currentTimeMillis()
 
+
+        // Get the current system time in milliseconds
+
+//        Log.d(TAG, "ChatId from notification :$chatId")
+//        val flag =
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//                PendingIntent.FLAG_MUTABLE
+//            } else
+//                0
+//        val remoteInput = RemoteInput.Builder(RESULT_KEY)
+//            .setLabel("Reply")
+//            .build()
+//        val replyIntent = Intent(this, MyReceiver::class.java)
+//        replyIntent.putExtra("chatId", chatId)
+//        val replyPendingIntent = PendingIntent.getBroadcast(
+//            this,
+//            1,
+//            replyIntent,
+//            flag
+//        )
+//        val replyAction = NotificationCompat.Action.Builder(
+//            0,
+//            "Reply",
+//            replyPendingIntent
+//        ).addRemoteInput(remoteInput).build()
+
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return
+        }
 //        notificationManage().notify(
 //            5858, notificationBuilder()
 //                .setContentTitle(user)
@@ -174,14 +221,12 @@ class SocialNotificationService : Service() {
 //                .setWhen(currentTimeMillis)
 ////            .addAction(replyAction)
 //                .build())
-
-        // Replace `5757` with a unique ID for your foreground service
-
+        // Replace `5858` with a unique ID for your foreground service
+        val foregroundNotificationId = 5858
 
         val vibratePattern = longArrayOf(0, 1000, 500, 1000)
-
         // Build the notification as before
-        val notification = notificationBuilder()
+        val notification = notificationBuilder(chatId)
             .setContentTitle(user)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -193,6 +238,7 @@ class SocialNotificationService : Service() {
 // added but event
         Log.d("SocialNotificationService"," notification created")
         EventBus.getDefault().post(FlashNotificationEvent(true))
+//        EventBus.getDefault().post(FlashNotificationsEvents())
 
         // Start the service as a foreground service with the notification
         startForeground(foregroundNotificationId, notification)
@@ -204,12 +250,44 @@ class SocialNotificationService : Service() {
         localStorage?.setChatId(chatId)
         val currentTimeMillis = System.currentTimeMillis()
 
+
+        // Get the current system time in milliseconds
+
+//        Log.d(TAG, "ChatId from notification :$chatId")
+//        val flag =
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//                PendingIntent.FLAG_MUTABLE
+//            } else
+//                0
+//        val remoteInput = RemoteInput.Builder(RESULT_KEY)
+//            .setLabel("Reply")
+//            .build()
+//        val replyIntent = Intent(this, MyReceiver::class.java)
+//        replyIntent.putExtra("chatId", chatId)
+//        val replyPendingIntent = PendingIntent.getBroadcast(
+//            this,
+//            1,
+//            replyIntent,
+//            flag
+//        )
+//        val replyAction = NotificationCompat.Action.Builder(
+//            0,
+//            "Reply",
+//            replyPendingIntent
+//        ).addRemoteInput(remoteInput).build()
+
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.POST_NOTIFICATIONS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
             return
         }
 //        notificationManage().notify(
@@ -222,12 +300,12 @@ class SocialNotificationService : Service() {
 ////            .addAction(replyAction)
 //                .build())
 
-        // Replace `5757` with a unique ID for your foreground service
-        val foregroundNotificationId = 5757
+        // Replace `5858` with a unique ID for your foreground service
+        val foregroundNotificationId = 5858
 
         val vibratePattern = longArrayOf(0, 1000, 500, 1000)
         // Build the notification as before
-        val notification = notificationBuilder()
+        val notification = notificationBuilder(chatId)
             .setContentTitle(user)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -246,9 +324,32 @@ class SocialNotificationService : Service() {
     }
 
 
-    private fun notificationBuilder(): NotificationCompat.Builder {
+    private fun notificationBuilder(chatId: String): NotificationCompat.Builder {
+//        val flag =
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//                PendingIntent.FLAG_MUTABLE
+//            } else
+//                0
+//        val remoteInput = RemoteInput.Builder(RESULT_KEY)
+//            .setLabel("Type here...")
+//            .build()
+//        val replyIntent = Intent(this, ChatReceiver::class.java)
+//        replyIntent.putExtra("chatId", chatId)
+//
+//        val replyPendingIntent = PendingIntent.getBroadcast(
+//            this,
+//            1,
+//            replyIntent,
+//            flag
+//        )
+//        val replyAction = NotificationCompat.Action.Builder(
+//            0,
+//            "Reply",
+//            replyPendingIntent
+//        ).addRemoteInput(remoteInput).build()
+//
 
-        return NotificationCompat.Builder(applicationContext, "Social_Notification")
+        return NotificationCompat.Builder(this, "Chat_Notification")
             .setSmallIcon(R.drawable.ic_notification)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)

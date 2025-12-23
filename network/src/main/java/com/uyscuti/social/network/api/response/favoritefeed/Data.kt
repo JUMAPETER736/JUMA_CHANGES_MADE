@@ -1,6 +1,6 @@
 package com.uyscuti.social.network.api.response.favoritefeed
 
-import com.uyscuti.social.network.api.response.posts.Post
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
 
 data class Data(
     val bookmarkedPosts: List<Post>,

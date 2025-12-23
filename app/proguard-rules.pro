@@ -19,3 +19,28 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# ============================================================================
+# Keep Parcelable classes to prevent ClassNotFoundException
+# ============================================================================
+
+# Keep Dialog and related data models
+-keep class com.uyscuti.social.circuit.data.model.Dialog { *; }
+-keep class com.uyscuti.social.circuit.data.model.Message { *; }
+-keep class com.uyscuti.social.circuit.data.model.User { *; }
+
+# Keep all Parcelable implementations and their CREATOR fields
+-keep class * implements android.os.Parcelable {
+    public static final ** CREATOR;
+    *;
+}
+
+-keepclassmembers class * implements android.os.Parcelable {
+    public static final android.os.Parcelable$Creator CREATOR;
+}
+
+# Keep chatsuit library interfaces and models
+-keep class com.uyscuti.social.chatsuit.commons.models.** { *; }
+
+# Keep all data models (if you have more in the package)
+-keep class com.uyscuti.social.circuit.data.model.** { *; }

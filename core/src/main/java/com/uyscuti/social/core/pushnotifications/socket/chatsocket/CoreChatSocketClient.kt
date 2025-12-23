@@ -9,7 +9,6 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
-import com.google.gson.Gson
 import com.uyscuti.social.core.common.data.room.database.ChatDatabase
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.core.common.data.room.entity.GroupDialogEntity
@@ -19,10 +18,6 @@ import com.uyscuti.social.core.common.data.room.repository.DialogRepository
 import com.uyscuti.social.core.common.data.room.repository.GroupDialogRepository
 import com.uyscuti.social.core.common.data.room.repository.MessageRepository
 import com.uyscuti.social.core.local.utils.FileType
-import com.uyscuti.social.core.models.AdsNotification
-import com.uyscuti.social.core.models.BillboardAdvertisement
-import com.uyscuti.social.core.models.BusinessNotificationData
-import com.uyscuti.social.core.pushnotifications.AdvertisementNotificationService
 import com.uyscuti.social.core.pushnotifications.socket.chatsocket.social.FlashNotificationsEvents
 import com.uyscuti.social.core.pushnotifications.socket.chatsocket.social.SocialNotificationService
 import com.uyscuti.social.network.api.models.Attachment
@@ -58,7 +53,6 @@ import javax.inject.Singleton
 import kotlin.random.Random
 
 
-
 @Singleton
 class CoreChatSocketClient @Inject constructor(
     private val localStorage: LocalStorage,
@@ -69,9 +63,10 @@ class CoreChatSocketClient @Inject constructor(
     private var token: String = localStorage.getToken()
     private val myId: String = localStorage.getUserId()
 
-    private var listenersSetup = false
-    private var isConnecting = false
-    
+    private var listenersAdded = false
+    private var onConnectListenerAdded = false
+    private var onMessageListenerAdded = false
+
     private val onSocketAvailableListeners = mutableListOf<OnSocketAvailableListener>()
 
     private var messageRepository: MessageRepository = MessageRepository(
@@ -92,8 +87,6 @@ class CoreChatSocketClient @Inject constructor(
 
     val TAG = "CoreChatSocketClient"
 
-    private val gson = Gson()
-
     var chatListener: ChatSocketEvents? = null
 
     private var opened = false
@@ -104,161 +97,89 @@ class CoreChatSocketClient @Inject constructor(
 
     private val socketConnectedObserver = Observer<Boolean> { connected ->
         if (connected) {
-//            // The socket is connected, you can register listeners and use it here
-//            socket.on(Socket.EVENT_CONNECT, onConnect)
-//            socket.on("messageReceived", onMessageReceived)
+            // The socket is connected, you can register listeners and use it here
+            socket.on(Socket.EVENT_CONNECT, onConnect)
+            socket.on("messageReceived", onMessageReceived)
         }
     }
 
     fun connect() {
-        if (isConnecting) {
-            Log.d(TAG, "Connection already in progress, ignoring")
-            return
-        }
-
-        Log.d(TAG, "=== STARTING SOCKET CONNECTION ===")
-        isConnecting = true
+        Log.d(TAG, "connect, socket initializing...............")
         initialize()
     }
 
-    fun debugSocketEvents() {
-        if (!isReady()) {
-            Log.w(TAG, "Socket not ready for testing")
-            return
-        }
-
-        Log.d(TAG, "=== DEBUGGING SOCKET EVENTS ===")
-
-        // Test each event type your server should send
-        Log.d(TAG, "Listening for these events:")
-        val expectedEvents = listOf(
-            "messageReceived", "newChat", "typing", "stopTyping",
-            "messageDelivered", "messageSeen", "downloaded", "lastSeen",
-            "updateGroupName", "followed", "unfollowed", "postLiked",
-            "bookMarked", "onCommentPosted", "commentReply", "friendsSuggestions",
-            "socketError", "error"
-        )
-
-        expectedEvents.forEach { eventName ->
-            Log.d(TAG, "- $eventName")
-        }
-
-        // Try to join a test room or trigger server events
-        try {
-            val joinData = org.json.JSONObject().apply {
-                put("userId", myId)
-                put("action", "join")
-            }
-            socket.emit("join", joinData)
-            Log.d(TAG, "Sent join event with userId: $myId")
-
-            // Request server to send test notification
-            socket.emit("requestTest", "please send test events")
-            Log.d(TAG, "Requested test events from server")
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error sending test events", e)
-        }
-    }
-
-    private fun setupSocketObserver() {
-        Log.d(TAG, "Setting up socket connection observer")
-
-        // Use observeForever with proper cleanup
-        ChatSocketManager.socketConnectedLiveData.observeForever { connected ->
-            Log.d(TAG, "Socket connection state changed: $connected")
-
-            if (connected && !listenersSetup) {
-                Log.d(TAG, "Socket connected, setting up event listeners")
-                setupAllEventListeners()
-                listenersSetup = true
-                isConnecting = false
-
-                // Notify that socket is ready
-                onSocketAvailableListeners.forEach { it.onSocketAvailable(socket) }
-
-            } else if (!connected) {
-                Log.d(TAG, "Socket disconnected")
-                listenersSetup = false
-                isConnecting = false
-            }
-        }
-    }
-
-    private fun setupAllEventListeners() {
-        Log.d(TAG, "Setting up all event listeners...")
-
-        try {
-            // Connection events
-                CoroutineScope(Dispatchers.Main).launch {
-
-                    socket.on("messageReceived", onMessageReceived)
-                    socket.on("newChat", onNewChat)
-                    socket.on("socketError", onSocketError)
-                    socket.on("typing", onTyping)
-                    socket.on("stopTyping", onStopTyping)
-                    socket.on("updateGroupName", updateGroupName)
-                    socket.on("messageDelivered", onMessageDelivered)
-                    socket.on("lastSeen", onLastSeenUpdate)
-                    socket.on("messageSeen", onMessageOpened)
-                    socket.on("downloaded", onDownloaded)
-                    socket.on("followed", onFollow)
-                    socket.on("postLiked", onLike)
-                    socket.on("bookMarked", onBookmarkedPost)
-                    socket.on("onCommentPosted", onComment)
-                    socket.on("commentReply", onCommentReplyComment)
-                    socket.on("unfollowed", unFollowed)
-                    socket.on("friendsSuggestions", friendSuggestions)
-                    socket.on("businessLocationAdvertisement", onBusinessLocationAdvertisement)
-                    socket.on("walkingBillboardLocationAdvertisement", onWalkingBillboardLocationAdvertisement)
-                }
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to setup event listeners", e)
-        }
-    }
-
-
-    fun isConnected(): Boolean {
-        return ChatSocketManager.socketConnectedLiveData.value == true
-    }
-
-    fun getConnectionStatus(): String {
-        return "Connected: ${isConnected()}, Listeners: $listenersSetup, Socket ID: ${if (::socket.isInitialized) socket.id() else "N/A"}"
-    }
-
-    // Add a method to check if everything is ready
-    fun isReady(): Boolean {
-        return isConnected() && listenersSetup && ::socket.isInitialized
-    }
-
-    fun debugReadiness() {
-        Log.d(TAG, "=== READINESS DEBUG ===")
-        Log.d(TAG, "isConnected(): ${isConnected()}")
-        Log.d(TAG, "listenersSetup: $listenersSetup")
-        Log.d(TAG, "socket initialized: ${::socket.isInitialized}")
-        Log.d(TAG, "socket.connected(): ${if (::socket.isInitialized) socket.connected() else "socket not initialized"}")
-        Log.d(TAG, "LiveData value: ${ChatSocketManager.socketConnectedLiveData.value}")
-    }
 
     private fun initialize() {
-        try {
-            Log.d(TAG, "Initializing ChatSocketManager with token length: ${token.length}")
-            ChatSocketManager.initSocket(token)
+        token.let { ChatSocketManager.initSocket(it) }
+        socket = ChatSocketManager.getSocket()!!
+        ChatSocketManager.connectSocket()
 
-            socket = ChatSocketManager.getSocket() ?: run {
-                Log.e(TAG, "Failed to get socket from ChatSocketManager")
-                isConnecting = false
+        // Only add listeners if not already added
+        if (!listenersAdded) {
+            CoroutineScope(Dispatchers.Main).launch {
+                // Listen for socket connection
+                ChatSocketManager.socketConnectedLiveData.observeForever { connected ->
+                    if (connected) {
+                        // The socket is connected, you can register listeners and use it here
+//                        socket.on(Socket.EVENT_CONNECT, onConnect)
+                        // Add listeners only if not already added
+                        if (!onConnectListenerAdded) {
+                            socket.on(Socket.EVENT_CONNECT, onConnect)
+                            onConnectListenerAdded = true
+                        }
+                        if (!onMessageListenerAdded){
+                            socket.on("messageReceived", onMessageReceived)
+                            onMessageListenerAdded = true
+                        }
+//                       socket.on(Socket.EVENT_DISCONNECT, onDisconnect)
+                        socket.on("newChat", onNewChat)
+                        socket.on("socketError", onSocketError)
+                        socket.on("typing", onTyping)
+                        socket.on("stopTyping", onStopTyping)
+                        socket.on("updateGroupName", updateGroupName)
+                        socket.on("messageDelivered", onMessageDelivered)
+                        socket.on("lastSeen", onLastSeenUpdate)
+                        socket.on("messageSeen", onMessageOpened)
+                        socket.on("downloaded", onDownloaded)
+                        socket.on("followed", onFollow)
+                        socket.on("postLiked",onLike)
+                        socket.on("bookMarked",onBookmarkedPost)
+                        socket.on ("onCommentPosted",onComment)
+                        socket.on("commentReply",onCommentReplyComment)
+                        socket.on("followed", unFollowed)
+                        socket.on("friendsSuggestions",friendSuggestions)
+                        listenersAdded = true
+                    }
+                }
+            }
+        }
+
+
+//        ChatSocketManager.connectSocket()
+
+//        socket.on(Socket.EVENT_CONNECT, onConnect)
+//        socket.on("messageReceived", onMessageReceived)
+    }
+
+
+    fun sendMessageOpenedReport(chatId: String, senderId: String) {
+        try {
+            // Add this check
+            if (!::socket.isInitialized) {
+                Log.w(TAG, "Socket not initialized, cannot send message opened report")
                 return
             }
 
-            setupSocketObserver()
-            ChatSocketManager.connectSocket()
-
+            val seenReport = JSONObject().apply {
+                put("roomId", chatId)
+                put("sender", senderId)
+            }
+            socket.emit("messageSeen", seenReport)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to initialize socket", e)
-            isConnecting = false
+            e.printStackTrace()
         }
     }
+
 
     fun unregisterSocketObserver() {
         ChatSocketManager.socketConnectedLiveData.removeObserver(socketConnectedObserver)
@@ -266,7 +187,6 @@ class CoreChatSocketClient @Inject constructor(
 
     fun disconnect() {
         ChatSocketManager.disconnectSocket()
-        Log.d(TAG, "Client has disconnected")
     }
 
 
@@ -288,7 +208,7 @@ class CoreChatSocketClient @Inject constructor(
             val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
             val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
-          //  val postId = notificationData.getJSONObject("data").getString("postId")
+            val postId = notificationData.getJSONObject("data").getString("postId")
 //            val commentId = notificationData.getJSONObject("data").getString("commentId")
             val note = Notification(
                 _id = _id,
@@ -298,7 +218,7 @@ class CoreChatSocketClient @Inject constructor(
                 message = message,
                 read = false,
                 owner = owner,
-                postId = "",//postId,
+                postId = postId,
                 commentId = "",
                 sender = Sender(
                     _id = senderId,
@@ -326,19 +246,7 @@ class CoreChatSocketClient @Inject constructor(
 //                  ContextCompat.startForegroundService(context, notificationIntent)
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
-            EventBus.getDefault().post(FlashNotificationsEvents(
-                note.sender.username,
-                note.message,
-                "postBooked",
-                "bookMarked",
-                note.createdAt,
-                note.avatar,
-                note._id,
-                note.sender._id,
-                note.read,
-                note.postId,
-                note.commentId))
-
+            EventBus.getDefault().post(FlashNotificationsEvents(note.sender.username,note.message,"postBooked","bookMarked",note.createdAt,note.avatar,note._id,note.sender._id,note.read,note.postId,note.commentId))
         } catch (e: JSONException) {
             // Handle JSON parsing errors here
             e.printStackTrace()
@@ -347,7 +255,6 @@ class CoreChatSocketClient @Inject constructor(
     private val onLike = Emitter.Listener { args->
         val notificationData = args[0] as JSONObject
         Log.d(TAG, "Notification Data: $notificationData")
-
         try {
             val _id = notificationData.getString("_id")
             val message = notificationData.getString("message")
@@ -362,7 +269,7 @@ class CoreChatSocketClient @Inject constructor(
             val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
             val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
-          //  val postId = notificationData.getJSONObject("data").getString("postId")
+            val postId = notificationData.getJSONObject("data").getString("postId")
             val note = Notification(
                 _id = _id,
                 avatar = avatarUrl,
@@ -371,7 +278,7 @@ class CoreChatSocketClient @Inject constructor(
                 message = message,
                 read = false,
                 owner = owner,
-                postId = "", //postId,
+                postId = postId,
                 commentId = "",
                 sender = Sender(
                     _id = senderId,
@@ -385,8 +292,6 @@ class CoreChatSocketClient @Inject constructor(
                 )
             )
             chatListener?.onNotification(note)
-
-            Log.d(TAG, "Starting Social Notification service")
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 //                startForegroundService(context,notificationIntent)
@@ -401,17 +306,7 @@ class CoreChatSocketClient @Inject constructor(
 //                  ContextCompat.startForegroundService(context, notificationIntent)
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
-            EventBus.getDefault().post(FlashNotificationsEvents(
-                note.sender.username,
-                note.message,
-                "onLiked",
-                "postLiked",
-                note.createdAt,
-                note.avatar,note._id,
-                note.sender._id,
-                note.read,
-                note.postId,
-                note.commentId ))
+            EventBus.getDefault().post(FlashNotificationsEvents(note.sender.username,note.message,"onLiked","postLiked",note.createdAt,note.avatar,note._id,note.sender._id,note.read, note.postId,note.commentId ))
 
 
         } catch (e: JSONException) {
@@ -436,7 +331,6 @@ class CoreChatSocketClient @Inject constructor(
             val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
             val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
-
             val note = Notification(
                 _id = _id,
                 avatar = avatarUrl,
@@ -459,9 +353,6 @@ class CoreChatSocketClient @Inject constructor(
                 )
             )
             chatListener?.onNotification(note)
-
-            Log.d(TAG, "Starting Social Notification service")
-
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 //                startForegroundService(context,notificationIntent)
@@ -476,19 +367,7 @@ class CoreChatSocketClient @Inject constructor(
 //                  ContextCompat.startForegroundService(context, notificationIntent)
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
-
-            EventBus.getDefault().post(FlashNotificationsEvents(
-                note.sender.username,
-                note.message,
-                "follow",
-                "followed",
-                note.createdAt,
-                note.avatar,note._id,
-                note.sender._id,
-                note.read,
-                "",
-                "" ))
-
+            EventBus.getDefault().post(FlashNotificationsEvents(note.sender.username,note.message,"follow","followed",note.createdAt,note.avatar,note._id,note.sender._id,note.read,"","" ))
         } catch (e: JSONException) {
             // Handle JSON parsing errors here
             e.printStackTrace()
@@ -627,9 +506,6 @@ class CoreChatSocketClient @Inject constructor(
                 )
             )
             chatListener?.onNotification(note)
-
-            Log.d(TAG, "Starting Social Notification service")
-
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
 
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -646,17 +522,7 @@ class CoreChatSocketClient @Inject constructor(
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
 
-            EventBus.getDefault().post(FlashNotificationsEvents(
-                note.sender.username,
-                note.message,
-                "unfollowed",
-                "unfollow",
-                note.createdAt,
-                note.avatar,
-                note._id,
-                note.sender._id,
-                note.read,
-                "",""))
+            EventBus.getDefault().post(FlashNotificationsEvents(note.sender.username,note.message,"unfollowed","unfollow",note.createdAt,note.avatar,note._id,note.sender._id,note.read,"",""))
 
 
         } catch (e: JSONException) {
@@ -683,8 +549,8 @@ class CoreChatSocketClient @Inject constructor(
             val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
             val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
-//            val postId = notificationData.getJSONObject("data").getString("postId")
-//            val commentId = notificationData.getJSONObject("data").getString("commentId")
+            val postId = notificationData.getJSONObject("data").getString("postId")
+            val commentId = notificationData.getJSONObject("data").getString("commentId")
             val note = Notification(
                 _id = _id,
                 avatar = avatarUrl,
@@ -693,8 +559,8 @@ class CoreChatSocketClient @Inject constructor(
                 message = message,
                 read = false,
                 owner = owner,
-                postId = "", //postId,
-                commentId = "", // commentId,
+                postId = postId,
+                commentId = commentId,
                 sender = Sender(
                     _id = senderId,
                     email = senderEmail,
@@ -707,9 +573,6 @@ class CoreChatSocketClient @Inject constructor(
                 )
             )
             chatListener?.onNotification(note)
-
-            Log.d(TAG, "Starting Social Notification service")
-
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
 
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -726,17 +589,7 @@ class CoreChatSocketClient @Inject constructor(
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
 
-            EventBus.getDefault().post(FlashNotificationsEvents(
-                note.sender.username,
-                note.message,
-                "onCommentReply",
-                "reply",
-                note.createdAt,
-                note.avatar,note._id,
-                note.sender._id,
-                note.read,
-                note.postId,
-                note.commentId))
+            EventBus.getDefault().post(FlashNotificationsEvents(note.sender.username,note.message,"onCommentReply","reply",note.createdAt,note.avatar,note._id,note.sender._id,note.read,note.postId,note.commentId))
 
 
         } catch (e: JSONException) {
@@ -764,8 +617,8 @@ class CoreChatSocketClient @Inject constructor(
             val avatarUrl = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("url")
             val avatarId = notificationData.getJSONObject("sender").getJSONObject("avatar").getString("_id")
             val avatarLocalPath = ""
-//            val postId = notificationData.getJSONObject("data").getString("postId")
-//            val commentId = notificationData.getJSONObject("data").getString("commentId")
+            val postId = notificationData.getJSONObject("data").getString("postId")
+            val commentId = notificationData.getJSONObject("data").getString("commentId")
 
             val note = Notification(
                 _id = _id,
@@ -775,8 +628,8 @@ class CoreChatSocketClient @Inject constructor(
                 message = message,
                 read = false,
                 owner = owner,
-                postId = "", //postId,
-                commentId = "", //commentId,
+                postId = postId,
+                commentId = commentId,
                 sender = Sender(
                     _id = senderId,
                     email = senderEmail,
@@ -789,9 +642,6 @@ class CoreChatSocketClient @Inject constructor(
                 )
             )
             chatListener?.onNotification(note)
-
-            Log.d(TAG, "Starting Social Notification service")
-
             val socialNotificationService = Intent(context, SocialNotificationService::class.java)
 
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -807,19 +657,7 @@ class CoreChatSocketClient @Inject constructor(
 //                  ContextCompat.startForegroundService(context, notificationIntent)
                 ContextCompat.startForegroundService(context, socialNotificationService)
             }
-
-            EventBus.getDefault().post(FlashNotificationsEvents(
-                note.sender.username,
-                note.message,
-                "onComment",
-                "onCommentPost",
-                note.createdAt,
-                note.avatar,note._id,
-                note.sender._id,
-                note.read,
-                note.postId,
-                note.commentId))
-
+            EventBus.getDefault().post(FlashNotificationsEvents(note.sender.username,note.message,"onComment","onCommentPost",note.createdAt,note.avatar,note._id,note.sender._id,note.read,note.postId,note.commentId))
 //            val event = FlashNotificationsEvents(note.sender.username,note.message,"onComment","onCommentPost",note.createdAt,note.avatar,note._id,note.sender._id,note.read,note.postId,note.commentId)
         } catch (e: JSONException) {
             // Handle JSON parsing errors here
@@ -832,82 +670,6 @@ class CoreChatSocketClient @Inject constructor(
         Log.d(TAG, "Socket Connection Successful")
     }
 
-    private val onBusinessLocationAdvertisement = Emitter.Listener  { args ->
-        val advertisement = args[0].toString()
-        try {
-
-            val businessAds: BusinessNotificationData = gson.fromJson(advertisement,
-                BusinessNotificationData::class.java)
-
-            val limitedProducts = if(businessAds.items.size > 10){
-                businessAds.items.subList(0, 10)
-            } else {
-                businessAds.items
-            }
-
-            val products = ArrayList<String>(10)
-
-            limitedProducts.forEach { product ->
-                when (product) {
-                    is String -> {
-                    }
-
-                    is Map<*,*> -> {
-                        val productName = product["itemName"] as? String ?: ""
-                        products.add(productName)
-                    }
-                }
-            }
-
-            val adsNotification = AdsNotification(
-                businessAds.owner,
-                businessAds.businessId,
-                businessAds.businessName,
-                businessAds.businessDescription,
-                businessAds.distance,
-                businessAds.image?.url,
-                products
-            )
-
-            val advertisementService = Intent(context, AdvertisementNotificationService::class.java)
-
-            CoroutineScope(Dispatchers.Main).launch {
-                advertisementService.putExtra("adsNotification", adsNotification)
-                advertisementService.action = AdvertisementNotificationService.BUSINESS_LOCATION_ADVERTISEMENT
-                ContextCompat.startForegroundService(context, advertisementService)
-            }
-
-        } catch (e: JSONException){
-            e.printStackTrace()
-        }
-
-    }
-
-    private val onWalkingBillboardLocationAdvertisement = Emitter.Listener  { args ->
-        val advertisement = args[0].toString()
-        Log.d(TAG, "Advertisement data: $advertisement")
-
-        try{
-
-            val businessAd: BillboardAdvertisement = gson.fromJson(advertisement,
-                BillboardAdvertisement::class.java)
-
-            Log.d(TAG, "Business Ad Data: $businessAd")
-
-
-            val advertisementService = Intent(context, AdvertisementNotificationService::class.java)
-
-            CoroutineScope(Dispatchers.Main).launch {
-                advertisementService.putExtra("adsBillboard", businessAd)
-                advertisementService.action = AdvertisementNotificationService.BILLBOARD_LOCATION_ADVERTISEMENT
-                ContextCompat.startForegroundService(context, advertisementService)
-            }
-
-        } catch (e: JSONException){
-            e.printStackTrace()
-        }
-
-    }
     private val onMessageReceived = Emitter.Listener { args ->
         val messageData = args[0] as JSONObject
 
@@ -981,12 +743,12 @@ class CoreChatSocketClient @Inject constructor(
 
             updateDB(message)
 
-            Log.d(TAG, "Starting Chat Notification service")
+            Log.d(TAG, "Starting Notification service")
 
 
             // Start the NotificationService to show the notification
-//          val notificationIntent = Intent(context, PushNotificationService::class.java)
-//            notificationIntent.putExtra("message", message)
+            val notificationIntent = Intent(context, PushNotificationService::class.java)
+            notificationIntent.putExtra("message", message)
 //            notificationIntent.putExtra("isGroup", chatId)
 
             val chatNotificationService = Intent(context, ChatNotificationService::class.java)
@@ -1000,7 +762,8 @@ class CoreChatSocketClient @Inject constructor(
             CoroutineScope(Dispatchers.Main).launch {
 //                context.startService(notificationIntent)
                 chatNotificationService.putExtra("message", message)
-                chatNotificationService.action = ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
+                chatNotificationService.action =
+                    ChatNotificationServiceActions.ON_ONE_ON_ONE_MESSAGE.name
 //                ContextCompat.startForegroundService(context, notificationIntent)
                 ContextCompat.startForegroundService(context, chatNotificationService)
             }
@@ -1241,7 +1004,6 @@ class CoreChatSocketClient @Inject constructor(
 //                                    firstUser = users.firstOrNull { it.id != userId }
                             chatName = firstUser.name
                                 ?: "" // Set dialogName to the name of the first user or an empty string if there are no users.
-                            Log.d(TAG, "CHAT USERS $users")
                             filteredUsers = users.filter { user -> user.id != myId }
                             chatAvatar = filteredUsers.firstOrNull()?.avatar ?: ""
 
@@ -1574,28 +1336,49 @@ class CoreChatSocketClient @Inject constructor(
     }
 
 
-    // Example function to send a typing event
+
+    fun observeSocketAvailability(listener: OnSocketAvailableListener) {
+        onSocketAvailableListeners.add(listener)
+    }
+
+    interface OnSocketAvailableListener {
+        fun onSocketAvailable(socket: Socket?)
+    }
+
+
     fun sendTypingEvent(chatId: String) {
-        // Example payload for the typing event
+        // Add initialization check
+        if (!::socket.isInitialized) {
+            Log.w(TAG, "Socket not initialized, cannot send typing event")
+            return
+        }
+
         val typingData = JSONObject().apply {
             put("chatId", chatId)
         }
-
-        // Emit the TYPING_EVENT
         socket.emit("typing", typingData)
     }
 
-    // Example function to send a stop typing event
     fun sendStopTypingEvent(chatId: String) {
-        // Example payload for the stop typing event
+        // Add initialization check
+        if (!::socket.isInitialized) {
+            Log.w(TAG, "Socket not initialized, cannot send stop typing event")
+            return
+        }
+
         val stopTypingData = JSONObject().apply {
             put("chatId", chatId)
         }
-        // Emit the STOP_TYPING_EVENT
         socket.emit("stopTyping", stopTypingData)
     }
 
     fun sendDeliveryReport(chatId: String, senderId: String) {
+        // Add initialization check
+        if (!::socket.isInitialized) {
+            Log.w(TAG, "Socket not initialized, cannot send delivery report")
+            return
+        }
+
         val delivery = JSONObject().apply {
             put("roomId", chatId)
             put("sender", senderId)
@@ -1604,43 +1387,31 @@ class CoreChatSocketClient @Inject constructor(
     }
 
     private fun sendAcknowledgement(userId: String, messageId: String) {
+        // Add initialization check
+        if (!::socket.isInitialized) {
+            Log.w(TAG, "Socket not initialized, cannot send acknowledgement")
+            return
+        }
+
         val acknowledgment = JSONObject().apply {
             put("messageId", messageId)
             put("userId", userId)
         }
-
         socket.emit("messageAck", acknowledgment)
     }
 
     fun sendDownLoadedEvent(userId: String, messageId: String) {
+        // Add initialization check
+        if (!::socket.isInitialized) {
+            Log.w(TAG, "Socket not initialized, cannot send downloaded event")
+            return
+        }
+
         val downloaded = JSONObject().apply {
             put("messageId", messageId)
             put("userId", userId)
         }
-
         socket.emit("downloaded", downloaded)
-    }
-
-    fun sendMessageOpenedReport(chatId: String, senderId: String) {
-        try {
-            val seenReport = JSONObject().apply {
-                put("roomId", chatId)
-                put("sender", senderId)
-            }
-            socket.emit("messageSeen", seenReport)
-        }catch (e:Exception){
-            e.printStackTrace()
-        }
-    }
-
-    // Other functions...
-
-    fun observeSocketAvailability(listener: OnSocketAvailableListener) {
-        onSocketAvailableListeners.add(listener)
-    }
-
-    interface OnSocketAvailableListener {
-        fun onSocketAvailable(socket: Socket?)
     }
 
 }
