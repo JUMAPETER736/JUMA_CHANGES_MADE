@@ -122,17 +122,26 @@
                         android:textSize="@dimen/timestamp_text_size"
                         android:layout_marginEnd="@dimen/small_margin" />
 
+                    <!-- Follow Button - wraps content, no squeezing -->
                     <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/followButton"
-                        android:layout_width="@dimen/follow_button_width"
-                        android:layout_height="@dimen/follow_button_height"
-                        android:background="@drawable/fill_button_color"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:minWidth="100dp"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:background="@drawable/follow_button_background"
                         android:text="Follow"
+                        android:textAlignment="center"
                         android:textAllCaps="false"
                         android:textColor="@color/white"
-                        android:textSize="@dimen/button_text_size"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
                         android:clickable="true"
-                        android:focusable="true"/>
+                        android:focusable="true"
+                        android:elevation="2dp"
+                        android:stateListAnimator="@null"/>
+
                 </LinearLayout>
             </LinearLayout>
 
