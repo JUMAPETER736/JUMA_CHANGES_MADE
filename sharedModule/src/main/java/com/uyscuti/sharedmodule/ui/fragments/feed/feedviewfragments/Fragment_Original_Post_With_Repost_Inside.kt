@@ -130,23 +130,13 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     // Data
     private var originalPost: OriginalPost? = null
-
     private var post: Post? = null
-
     private var isFollowing = false
-
     private var _binding: FragmentOriginalPostWithRepostInsideBinding? = null
     private val binding get() = _binding!!
-
     private lateinit var onBackPressedCallback: OnBackPressedCallback
-
-    private lateinit var fileTypeIcon: ImageView
-
-    private lateinit var originalImageContainer: LinearLayout
-
     private var containerLayout: LinearLayout? = null
-    private var imageView: ImageView? = null
-    private var materialCardView: MaterialCardView? = null
+
 
 
 
