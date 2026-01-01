@@ -25,9 +25,32 @@
                         <!--  Wrap both date and button to allow flexible alignment  -->
                         <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginEnd="@dimen/medium_margin" android:background="@color/white">
                             <TextView android:id="@+id/date_time_create" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="date_time" android:textSize="@dimen/timestamp_text_size" android:layout_marginEnd="@dimen/small_margin" android:background="@color/white"/>
-                            <androidx.appcompat.widget.AppCompatButton android:id="@+id/followButton" android:layout_width="@dimen/follow_button_width" android:layout_height="@dimen/follow_button_height" android:background="@drawable/fill_button_color" android:text="Follow" android:textAllCaps="false" android:textColor="@color/white" android:textSize="@dimen/button_text_size" android:clickable="true" android:focusable="true"/>
+
+                            <!-- Follow Button - wraps content, no squeezing -->
+                            <androidx.appcompat.widget.AppCompatButton
+                                android:id="@+id/followButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="32dp"
+                                android:minWidth="100dp"
+                                android:paddingStart="20dp"
+                                android:paddingEnd="20dp"
+                                android:background="@drawable/follow_button_background"
+                                android:text="Follow"
+                                android:textAlignment="center"
+                                android:textAllCaps="false"
+                                android:textColor="@color/white"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:elevation="2dp"
+                                android:stateListAnimator="@null"/>
+
+
                         </LinearLayout>
+
                     </LinearLayout>
+
                     <!--  Post Content  -->
                     <TextView android:id="@+id/tvPostTag" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/medium_margin" android:text="📱 Had to Repost This! 📱" android:textColor="@color/black" android:textSize="@dimen/post_text_size" android:visibility="gone" android:background="@color/white"/>
                     <TextView android:id="@+id/userComment" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/medium_margin" android:text="Couldn't agree more! [Software Name] is truly a game-changer..." android:textColor="@color/black" android:textSize="@dimen/body_text_size" android:background="@color/white"/>
