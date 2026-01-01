@@ -898,8 +898,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 // Hide button immediately
                 followButton.visibility = View.GONE
 
-                // ✅ Add to local following list
-                followingUserIds.add(feedOwnerId)
 
                 // Update FeedAdapter cache
                 FeedAdapter.addToFollowingCache(feedOwnerId)
@@ -936,15 +934,14 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 Log.d(TAG, "✓ Added account $feedOwnerId (@$feedOwnerUsername) to following list")
 
             } else {
-                // ✅ Check if they follow you to show correct button text
+
+                // Check if they follow you to show correct button text
                 val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
 
                 // Show button with appropriate text
                 followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
                 followButton.visibility = View.VISIBLE
 
-                // ✅ Remove from local following list
-                followingUserIds.remove(feedOwnerId)
 
                 // Update FeedAdapter cache
                 FeedAdapter.removeFromFollowingCache(feedOwnerId)
@@ -991,7 +988,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         } else {
             followButton.visibility = View.VISIBLE
 
-            // ✅ Check if this user follows us back
+            // Check if this user follows us back
             val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
             followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
 
@@ -1013,7 +1010,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         currentPost.author?.account?._id ?: ""
                 }
 
-                // ✅ Just read from cache - FollowingFragment already loaded this
+                //Just read from cache - FollowingFragment already loaded this
                 val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
                 followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
 
@@ -1024,20 +1021,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
-    // ✅ OPTIONAL: Add this method to make the API call for follow/unfollow
-    private fun makeFollowApiCall(userId: String, isFollowing: Boolean) {
-        lifecycleScope.launch {
-            try {
-                // Replace with your actual ViewModel call
-                // followUnfollowViewModel.followUnFollow(userId)
-                Log.d(TAG, "API call - ${if (isFollowing) "Following" else "Unfollowing"} user: $userId")
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to make follow API call", e)
-                // Optionally revert UI state on error
-            }
-        }
-    }
-    
 
     private fun handleReportPost() {
         // Show report dialog or navigate to report screen
