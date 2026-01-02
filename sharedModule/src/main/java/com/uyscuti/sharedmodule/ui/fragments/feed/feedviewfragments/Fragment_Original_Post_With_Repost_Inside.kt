@@ -452,6 +452,46 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
+    private fun handleMenuButtonClick() = showToast("Options menu")
+    private fun handleFollowButtonClick() = toggleFollow()
+    private fun handleMainPostClick() = showToast("Opening full post ...")
+    private fun handleOriginalPostClick() = showToast("Opening original post...")
+    private fun handleLikeClick() = toggleLike()
+    private fun handleCommentClick() = showToast("Opening comments...")
+    private fun handleFavoriteClick() = toggleFavorite()
+    private fun handleRetweetClick() = showRetweetOptions()
+    private fun handleShareClick() = sharePost()
+
+    private fun updateFollowButtonUI() {
+        originalPost?.let { post ->
+            if (post.originalPostReposter.isNotEmpty()) {
+                val reposterId = post.originalPostReposter[0]._id ?: return@let
+                val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
+
+                // Hide button if it's your own post or you're already following
+                if (reposterId == currentUserId || isFollowing) {
+                    followButton?.visibility = View.GONE
+                    return@let
+                }
+
+                // Check if they follow you
+                val theyFollowMe = FeedAdapter.isUserInMyFollowersList(reposterId)
+
+                // Show button with appropriate text
+                followButton?.visibility = View.VISIBLE
+                if (theyFollowMe) {
+                    followButton?.text = "Follow Back"
+                } else {
+                    followButton?.text = "Follow"
+                }
+
+                followButton?.backgroundTintList = ContextCompat.getColorStateList(
+                    requireContext(),
+                    R.color.blueJeans
+                )
+            }
+        }
+    }
 
     // Update existing media click handlers to also handle file navigation
     private fun handleRepostMediaClick() {
@@ -2806,15 +2846,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         onBackPressedCallback.remove()
     }
 
-    private fun handleMenuButtonClick() = showToast("Options menu")
-    private fun handleFollowButtonClick() = toggleFollow()
-    private fun handleMainPostClick() = showToast("Opening full post ...")
-    private fun handleOriginalPostClick() = showToast("Opening original post...")
-    private fun handleLikeClick() = toggleLike()
-    private fun handleCommentClick() = showToast("Opening comments...")
-    private fun handleFavoriteClick() = toggleFavorite()
-    private fun handleRetweetClick() = showRetweetOptions()
-    private fun handleShareClick() = sharePost()
+
 
 
     // UI update methods
@@ -2832,36 +2864,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         )
     }
 
-    private fun updateFollowButtonUI() {
-        originalPost?.let { post ->
-            if (post.originalPostReposter.isNotEmpty()) {
-                val reposterId = post.originalPostReposter[0]._id ?: return@let
-                val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
 
-                // Hide button if it's your own post or you're already following
-                if (reposterId == currentUserId || isFollowing) {
-                    followButton?.visibility = View.GONE
-                    return@let
-                }
-
-                // Check if they follow you
-                val theyFollowMe = FeedAdapter.isUserInMyFollowersList(reposterId)
-
-                // Show button with appropriate text
-                followButton?.visibility = View.VISIBLE
-                if (theyFollowMe) {
-                    followButton?.text = "Follow Back"
-                } else {
-                    followButton?.text = "Follow"
-                }
-
-                followButton?.backgroundTintList = ContextCompat.getColorStateList(
-                    requireContext(),
-                    R.color.blueJeans
-                )
-            }
-        }
-    }
 
     // Helper methods
     private fun isPostLiked() = false
