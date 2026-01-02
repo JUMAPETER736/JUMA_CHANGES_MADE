@@ -339,6 +339,9 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
     private fun setupClickListeners() {
+
+        setupInitialFollowButtonState()
+
         // Header click listeners
         backButton.setOnClickListener {
             Log.d(TAG, "Cancel button clicked")
@@ -454,7 +457,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
     private fun handleMenuButtonClick() = showToast("Options menu")
-    private fun handleFollowButtonClick() = toggleFollow()
+
     private fun handleMainPostClick() = showToast("Opening full post ...")
     private fun handleOriginalPostClick() = showToast("Opening original post...")
     private fun handleLikeClick() = toggleLike()
@@ -462,82 +465,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private fun handleFavoriteClick() = toggleFavorite()
     private fun handleRetweetClick() = showRetweetOptions()
     private fun handleShareClick() = sharePost()
-
-    private fun updateFollowButtonUI() {
-        originalPost?.let { post ->
-            if (post.originalPostReposter.isNotEmpty()) {
-                val reposterId = post.originalPostReposter[0]._id ?: return@let
-                val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
-
-                // Hide button if it's your own post or you're already following
-                if (reposterId == currentUserId || isFollowing) {
-                    followButton?.visibility = View.GONE
-                    return@let
-                }
-
-                // Check if they follow you
-                val theyFollowMe = FeedAdapter.isUserInMyFollowersList(reposterId)
-
-                // Show button with appropriate text
-                followButton?.visibility = View.VISIBLE
-                if (theyFollowMe) {
-                    followButton?.text = "Follow Back"
-                } else {
-                    followButton?.text = "Follow"
-                }
-
-                followButton?.backgroundTintList = ContextCompat.getColorStateList(
-                    requireContext(),
-                    R.color.blueJeans
-                )
-            }
-        }
-    }
-
-
-    private fun toggleFollow() {
-        isFollowing = !isFollowing
-        updateFollowButtonUI()
-
-        originalPost?.let { post ->
-            if (post.originalPostReposter.isNotEmpty()) {
-                val reposterId = post.originalPostReposter[0]._id ?: return@let
-                val reposterName = post.originalPostReposter[0].username ?: "User"
-
-                if (isFollowing) {
-                    // Add to following cache
-                    FeedAdapter.addToFollowingCache(reposterId)
-
-                    showToast("Now following $reposterName")
-                } else {
-                    // Remove from following cache
-                    FeedAdapter.removeFromFollowingCache(reposterId)
-
-                    // Check if they follow you to show correct button text
-                    val theyFollowMe = FeedAdapter.isUserInMyFollowersList(reposterId)
-
-                    // Update button text based on whether they follow you
-                    if (theyFollowMe) {
-                        // They still follow you, so show "Follow Back"
-                        followButton?.text = "Follow Back"
-                    } else {
-                        // They don't follow you, show "Follow"
-                        followButton?.text = "Follow"
-                    }
-
-                    showToast("Unfollowed $reposterName")
-                }
-
-                // Post EventBus event to sync across app
-                val followEntity = FollowUnFollowEntity(
-                    userId = reposterId,
-                    isFollowing = isFollowing,
-                    isButtonVisible = !isFollowing
-                )
-                EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
-            }
-        }
-    }
 
     private fun handleFollowButtonClick() {
         post?.let { currentPost ->
