@@ -493,6 +493,51 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
+
+    private fun toggleFollow() {
+        isFollowing = !isFollowing
+        updateFollowButtonUI()
+
+        originalPost?.let { post ->
+            if (post.originalPostReposter.isNotEmpty()) {
+                val reposterId = post.originalPostReposter[0]._id ?: return@let
+                val reposterName = post.originalPostReposter[0].username ?: "User"
+
+                if (isFollowing) {
+                    // Add to following cache
+                    FeedAdapter.addToFollowingCache(reposterId)
+
+                    showToast("Now following $reposterName")
+                } else {
+                    // Remove from following cache
+                    FeedAdapter.removeFromFollowingCache(reposterId)
+
+                    // Check if they follow you to show correct button text
+                    val theyFollowMe = FeedAdapter.isUserInMyFollowersList(reposterId)
+
+                    // Update button text based on whether they follow you
+                    if (theyFollowMe) {
+                        // They still follow you, so show "Follow Back"
+                        followButton?.text = "Follow Back"
+                    } else {
+                        // They don't follow you, show "Follow"
+                        followButton?.text = "Follow"
+                    }
+
+                    showToast("Unfollowed $reposterName")
+                }
+
+                // Post EventBus event to sync across app
+                val followEntity = FollowUnFollowEntity(
+                    userId = reposterId,
+                    isFollowing = isFollowing,
+                    isButtonVisible = !isFollowing
+                )
+                EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
+            }
+        }
+    }
+
     // Update existing media click handlers to also handle file navigation
     private fun handleRepostMediaClick() {
         post?.let { currentPost ->
@@ -2799,15 +2844,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             // Add frame layout to card view
             cardView.addView(frameLayout)
 
-            // Set click listener for the card view
-//            cardView.setOnClickListener {
-//                onMultipleFilesClickListener?.multipleFileClickListener(
-//                    position,
-//                    originalPost.files,
-//                    originalPost.fileIds as List<String>
-//                )
-//            }
-
             // Add card view to container
             containerLayout?.addView(cardView)
         }
@@ -2896,49 +2932,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
-    private fun toggleFollow() {
-        isFollowing = !isFollowing
-        updateFollowButtonUI()
-
-        originalPost?.let { post ->
-            if (post.originalPostReposter.isNotEmpty()) {
-                val reposterId = post.originalPostReposter[0]._id ?: return@let
-                val reposterName = post.originalPostReposter[0].username ?: "User"
-
-                if (isFollowing) {
-                    // Add to following cache
-                    FeedAdapter.addToFollowingCache(reposterId)
-
-                    showToast("Now following $reposterName")
-                } else {
-                    // Remove from following cache
-                    FeedAdapter.removeFromFollowingCache(reposterId)
-
-                    // Check if they follow you to show correct button text
-                    val theyFollowMe = FeedAdapter.isUserInMyFollowersList(reposterId)
-
-                    // Update button text based on whether they follow you
-                    if (theyFollowMe) {
-                        // They still follow you, so show "Follow Back"
-                        followButton?.text = "Follow Back"
-                    } else {
-                        // They don't follow you, show "Follow"
-                        followButton?.text = "Follow"
-                    }
-
-                    showToast("Unfollowed $reposterName")
-                }
-
-                // Post EventBus event to sync across app
-                val followEntity = FollowUnFollowEntity(
-                    userId = reposterId,
-                    isFollowing = isFollowing,
-                    isButtonVisible = !isFollowing
-                )
-                EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
-            }
-        }
-    }
 
     private fun showRetweetOptions() {
         originalPost?.let { post ->
