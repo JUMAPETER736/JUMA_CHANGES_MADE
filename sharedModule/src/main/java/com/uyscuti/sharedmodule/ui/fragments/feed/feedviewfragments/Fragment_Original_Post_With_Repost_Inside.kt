@@ -2856,12 +2856,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(imageView)
     }
-
-    private fun hideAllMediaViews() {
-        mixedFilesCardView.visibility = View.GONE
-        multipleAudiosContainer.visibility = View.GONE
-        recyclerView.visibility = View.GONE
-    }
+    
 
     private fun hideAllRepostMediaViews() {
         mixedFilesCardViews.visibility = View.GONE
