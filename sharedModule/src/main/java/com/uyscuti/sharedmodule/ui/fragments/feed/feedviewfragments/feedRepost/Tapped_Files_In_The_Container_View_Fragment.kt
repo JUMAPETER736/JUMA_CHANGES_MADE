@@ -643,16 +643,14 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 // ========== REPLACE checkIfUserFollowsBack() WITH SMART MATCHING ==========
 
     private fun checkIfUserFollowsBack(feedOwnerId: String, feedOwnerUsername: String? = null): Boolean {
-        Log.d(TAG, "╔═══════════════════════════════════════════════════════════╗")
-        Log.d(TAG, "║          CHECKING IF USER FOLLOWS ME BACK                 ║")
-        Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
-        Log.d(TAG, "║ Target User ID: $feedOwnerId")
-        Log.d(TAG, "║ Target Username: @${feedOwnerUsername ?: "unknown"}")
-        Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
+
+        Log.d(TAG, "Target User ID: $feedOwnerId")
+        Log.d(TAG, "Target Username: @${feedOwnerUsername ?: "unknown"}")
+
 
         // METHOD 1: Exact ID match
         val exactIdMatch = myFollowersList.contains(feedOwnerId)
-        Log.d(TAG, "║ Method 1 - Exact ID Match: $exactIdMatch")
+        Log.d(TAG, " Method 1 - Exact ID Match: $exactIdMatch")
 
         // METHOD 2: Exact username match (100% required)
         var usernameMatch = false
@@ -660,14 +658,14 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             usernameMatch = myFollowersUsernames.any {
                 it.trim().lowercase() == feedOwnerUsername.trim().lowercase()
             }
-            Log.d(TAG, "║ Method 2 - Exact Username Match: $usernameMatch")
+            Log.d(TAG, "Method 2 - Exact Username Match: $usernameMatch")
         } else {
-            Log.d(TAG, "║ Method 2 - Username Match: SKIPPED (no username)")
+            Log.d(TAG, "Method 2 - Username Match: SKIPPED (no username)")
         }
 
         // METHOD 3: FeedAdapter cache check
         val adapterMatch = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
-        Log.d(TAG, "║ Method 3 - FeedAdapter Cache: $adapterMatch")
+        Log.d(TAG, "║Method 3 - FeedAdapter Cache: $adapterMatch")
 
         // METHOD 4: Fuzzy ID match (90% similarity)
         var fuzzyIdMatch = false
@@ -686,12 +684,12 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             // Consider 90% match as valid
             fuzzyIdMatch = bestMatchScore >= 0.90
 
-            Log.d(TAG, "║ Method 4 - Fuzzy ID Match (90% threshold):")
-            Log.d(TAG, "║   Best Match: $bestMatchId")
-            Log.d(TAG, "║   Similarity: ${(bestMatchScore * 100).toInt()}%")
-            Log.d(TAG, "║   Result: $fuzzyIdMatch")
+            Log.d(TAG, "Method 4 - Fuzzy ID Match (90% threshold):")
+            Log.d(TAG, "Best Match: $bestMatchId")
+            Log.d(TAG, "Similarity: ${(bestMatchScore * 100).toInt()}%")
+            Log.d(TAG, "Result: $fuzzyIdMatch")
         } else {
-            Log.d(TAG, "║ Method 4 - Fuzzy ID Match: SKIPPED")
+            Log.d(TAG, "Method 4 - Fuzzy ID Match: SKIPPED")
         }
 
         // FINAL DECISION LOGIC
