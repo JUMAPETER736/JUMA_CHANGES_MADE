@@ -599,13 +599,188 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         followButton?.visibility = View.GONE
     }
 
-    private fun checkIfUserFollowsBack(feedOwnerId: String): Boolean {
-        val myFollowersList = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
-        return FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+    private fun loadMyFollowersList() {
+        try {
+            // Get from FeedAdapter cache
+            val cachedFollowers = FeedAdapter.getCachedFollowingList()
+            val cachedFollowersUsernames = FeedAdapter.getCachedFollowingUsernames()
+
+            myFollowersList.clear()
+            myFollowersList.addAll(cachedFollowers)
+
+            myFollowersUsernames.clear()
+            myFollowersUsernames.addAll(cachedFollowersUsernames)
+
+    
+            Log.d(TAG, "║ Total followers: ${myFollowersList.size} users")
+            Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
+
+            if (myFollowersList.isEmpty()) {
+                Log.d(TAG, "║ ⚠️  NO FOLLOWERS LOADED - List is empty!")
+                Log.d(TAG, "║ This means either:")
+                Log.d(TAG, "║   1. You have no followers")
+                Log.d(TAG, "║   2. Followers not loaded into FeedAdapter cache yet")
+            } else {
+                Log.d(TAG, "║ FOLLOWER IDs:")
+                myFollowersList.forEachIndexed { index, id ->
+                    val username = myFollowersUsernames.elementAtOrNull(index) ?: "unknown"
+                    Log.d(TAG, "║   ${index + 1}. ID: $id")
+                    Log.d(TAG, "║      Username: @$username")
+                    Log.d(TAG, "║      ID Length: ${id.length} chars")
+                }
+            }
+
+            Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
+            Log.d(TAG, "║ FOLLOWER USERNAMES:")
+            myFollowersUsernames.forEachIndexed { index, username ->
+                Log.d(TAG, "║   ${index + 1}. @$username")
+            }
+            Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error loading followers list: ${e.message}")
+            e.printStackTrace()
+        }
     }
 
+// ========== REPLACE checkIfUserFollowsBack() WITH SMART MATCHING ==========
+
+    private fun checkIfUserFollowsBack(feedOwnerId: String, feedOwnerUsername: String? = null): Boolean {
+        Log.d(TAG, "╔═══════════════════════════════════════════════════════════╗")
+        Log.d(TAG, "║          CHECKING IF USER FOLLOWS ME BACK                 ║")
+        Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
+        Log.d(TAG, "║ Target User ID: $feedOwnerId")
+        Log.d(TAG, "║ Target Username: @${feedOwnerUsername ?: "unknown"}")
+        Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
+
+        // METHOD 1: Exact ID match
+        val exactIdMatch = myFollowersList.contains(feedOwnerId)
+        Log.d(TAG, "║ Method 1 - Exact ID Match: $exactIdMatch")
+
+        // METHOD 2: Exact username match (100% required)
+        var usernameMatch = false
+        if (!feedOwnerUsername.isNullOrEmpty()) {
+            usernameMatch = myFollowersUsernames.any {
+                it.trim().lowercase() == feedOwnerUsername.trim().lowercase()
+            }
+            Log.d(TAG, "║ Method 2 - Exact Username Match: $usernameMatch")
+        } else {
+            Log.d(TAG, "║ Method 2 - Username Match: SKIPPED (no username)")
+        }
+
+        // METHOD 3: FeedAdapter cache check
+        val adapterMatch = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+        Log.d(TAG, "║ Method 3 - FeedAdapter Cache: $adapterMatch")
+
+        // METHOD 4: Fuzzy ID match (90% similarity)
+        var fuzzyIdMatch = false
+        var bestMatchId = ""
+        var bestMatchScore = 0.0
+
+        if (!exactIdMatch && feedOwnerId.length >= 20) {
+            myFollowersList.forEach { followerId ->
+                val similarity = calculateIdSimilarity(feedOwnerId, followerId)
+                if (similarity > bestMatchScore) {
+                    bestMatchScore = similarity
+                    bestMatchId = followerId
+                }
+            }
+
+            // Consider 90% match as valid
+            fuzzyIdMatch = bestMatchScore >= 0.90
+
+            Log.d(TAG, "║ Method 4 - Fuzzy ID Match (90% threshold):")
+            Log.d(TAG, "║   Best Match: $bestMatchId")
+            Log.d(TAG, "║   Similarity: ${(bestMatchScore * 100).toInt()}%")
+            Log.d(TAG, "║   Result: $fuzzyIdMatch")
+        } else {
+            Log.d(TAG, "║ Method 4 - Fuzzy ID Match: SKIPPED")
+        }
+
+        // FINAL DECISION LOGIC
+        val finalResult = when {
+            // Perfect match: Both ID and username match
+            exactIdMatch && usernameMatch -> {
+                Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
+                Log.d(TAG, "║ ✅ RESULT: TRUE - Perfect match (ID + Username)")
+                true
+            }
+            // Exact ID match (most reliable)
+            exactIdMatch -> {
+                Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
+                Log.d(TAG, "║ ✅ RESULT: TRUE - Exact ID match")
+                true
+            }
+            // Username match only (reliable if ID not available)
+            usernameMatch && feedOwnerUsername != null -> {
+                Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
+                Log.d(TAG, "║ ✅ RESULT: TRUE - Username match (@$feedOwnerUsername)")
+                true
+            }
+            // Adapter cache match
+            adapterMatch -> {
+                Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
+                Log.d(TAG, "║ ✅ RESULT: TRUE - FeedAdapter cache match")
+                true
+            }
+            // Fuzzy ID match + username match (safest fallback)
+            fuzzyIdMatch && usernameMatch -> {
+                Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
+                Log.d(TAG, "║ ✅ RESULT: TRUE - Fuzzy ID (${(bestMatchScore * 100).toInt()}%) + Username match")
+                true
+            }
+            // No match
+            else -> {
+                Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
+                Log.d(TAG, "║ ❌ RESULT: FALSE - No match found")
+                false
+            }
+        }
+
+        Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝")
+
+        return finalResult
+    }
+
+// ========== ADD SIMILARITY CALCULATION METHODS ==========
+
+    private fun calculateIdSimilarity(id1: String, id2: String): Double {
+        if (id1 == id2) return 1.0
+        if (id1.isEmpty() || id2.isEmpty()) return 0.0
+
+        val maxLength = maxOf(id1.length, id2.length)
+        val distance = levenshteinDistance(id1, id2)
+
+        return 1.0 - (distance.toDouble() / maxLength.toDouble())
+    }
+
+    private fun levenshteinDistance(s1: String, s2: String): Int {
+        val len1 = s1.length
+        val len2 = s2.length
+
+        val matrix = Array(len1 + 1) { IntArray(len2 + 1) }
+
+        for (i in 0..len1) matrix[i][0] = i
+        for (j in 0..len2) matrix[0][j] = j
+
+        for (i in 1..len1) {
+            for (j in 1..len2) {
+                val cost = if (s1[i - 1] == s2[j - 1]) 0 else 1
+                matrix[i][j] = minOf(
+                    matrix[i - 1][j] + 1,      // deletion
+                    matrix[i][j - 1] + 1,      // insertion
+                    matrix[i - 1][j - 1] + cost // substitution
+                )
+            }
+        }
+
+        return matrix[len1][len2]
+    }
+
+// ========== UPDATE handleFollowButtonClick() ==========
+
     private fun handleFollowButtonClick(followButton: Button, feedOwnerId: String, feedOwnerUsername: String) {
-        // Add pulse animation (same as ViewHolder)
+        // Add pulse animation
         try {
             YoYo.with(Techniques.Pulse)
                 .duration(300)
@@ -614,13 +789,11 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             Log.w(TAG, "Animation library not available: ${e.message}")
         }
 
-
         Log.d(TAG, "FOLLOW BUTTON CLICKED")
         Log.d(TAG, "User ID: $feedOwnerId")
         Log.d(TAG, "Username: @$feedOwnerUsername")
 
-
-        // Toggle follow state (same logic as ViewHolder)
+        // Toggle follow state
         val isFollowed = followingUserIds.contains(feedOwnerId)
         val newFollowStatus = !isFollowed
 
@@ -634,7 +807,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             // Add to following list
             followingUserIds.add(feedOwnerId)
 
-            // Update FeedAdapter static cache (SAME AS VIEWHOLDER)
+            // Update FeedAdapter static cache
             try {
                 FeedAdapter.addToFollowingCache(feedOwnerId)
                 FeedAdapter.setCachedFollowingList(followingUserIds)
@@ -655,8 +828,8 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             Log.d(TAG, "Now following user $feedOwnerId")
 
         } else {
-            // Unfollowed - check if they follow you to show correct button text
-            val theyFollowMe = checkIfUserFollowsBack(feedOwnerId)
+            // Unfollowed - check if they follow you with SMART MATCHING
+            val theyFollowMe = checkIfUserFollowsBack(feedOwnerId, feedOwnerUsername)
 
             // Show button with appropriate text
             followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
@@ -665,7 +838,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             // Remove from following list
             followingUserIds.remove(feedOwnerId)
 
-            // Update FeedAdapter static cache (SAME AS VIEWHOLDER)
+            // Update FeedAdapter static cache
             try {
                 FeedAdapter.removeFromFollowingCache(feedOwnerId)
                 FeedAdapter.setCachedFollowingList(followingUserIds)
@@ -685,7 +858,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             Log.d(TAG, "Unfollowed user $feedOwnerId")
         }
 
-        // Post EventBus event (SAME AS VIEWHOLDER)
+        // Post EventBus event
         try {
             EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
             Log.d(TAG, "Posted EventBus event: ShortsFollowButtonClicked")
@@ -693,7 +866,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             Log.e(TAG, "EventBus post failed: ${e.message}")
         }
 
-        // Make API call via ViewModel (SAME AS VIEWHOLDER)
+        // Make API call via ViewModel
         try {
             followUnfollowViewModel.followUnFollow(feedOwnerId)
             Log.d(TAG, "API call initiated for userId: $feedOwnerId")
@@ -702,44 +875,51 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
+// ========== UPDATE updateFollowButtonVisibility() ==========
+
     private fun updateFollowButtonVisibility() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
         val post = postList?.getOrNull(viewPager.currentItem)
         val feedOwnerId = post?.userId
+        val feedOwnerUsername = post?.username
 
         // Get current user credentials
         val localStorage = LocalStorage.getInstance(requireContext())
         val currentUserId = localStorage.getUserId()
         val currentUsername = localStorage.getUsername()?.trim()?.lowercase()
-        val feedOwnerUsername = post?.username?.trim()?.lowercase()
+        val feedOwnerUsernameLower = feedOwnerUsername?.trim()?.lowercase()
 
-        Log.d(TAG, "FOLLOW BUTTON CHECK")
-        Log.d(TAG, "Current User ID: $currentUserId")
-        Log.d(TAG, "Current Username: $currentUsername")
-        Log.d(TAG, "Feed Owner ID: $feedOwnerId")
-        Log.d(TAG, "Feed Owner Username: $feedOwnerUsername")
-        Log.d(TAG, "Following List: $followingUserIds")
+        Log.d(TAG, "╔═══════════════════════════════════════════════════════════╗")
+        Log.d(TAG, "║          FOLLOW BUTTON VISIBILITY CHECK                   ║")
+        Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
+        Log.d(TAG, "║ Current User ID: $currentUserId")
+        Log.d(TAG, "║ Current Username: @$currentUsername")
+        Log.d(TAG, "║ Feed Owner ID: $feedOwnerId")
+        Log.d(TAG, "║ Feed Owner Username: @$feedOwnerUsername")
+        Log.d(TAG, "║ Following List Size: ${followingUserIds.size}")
+        Log.d(TAG, "║ My Followers List Size: ${myFollowersList.size}")
+        Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝")
 
         // PRIORITY 1: Check username match
         if (!currentUsername.isNullOrEmpty() &&
-            !feedOwnerUsername.isNullOrEmpty() &&
-            currentUsername == feedOwnerUsername) {
+            !feedOwnerUsernameLower.isNullOrEmpty() &&
+            currentUsername == feedOwnerUsernameLower) {
             followButton.visibility = View.GONE
-            Log.d(TAG, "Follow button GONE - Own post (username match: @$currentUsername)")
+            Log.d(TAG, "👤 Follow button GONE - Own post (username match: @$currentUsername)")
             return
         }
 
         // PRIORITY 2: Check ID match
         if (feedOwnerId != null && feedOwnerId == currentUserId) {
             followButton.visibility = View.GONE
-            Log.d(TAG, "Follow button GONE - Own post (ID match: $currentUserId)")
+            Log.d(TAG, "🆔 Follow button GONE - Own post (ID match: $currentUserId)")
             return
         }
 
         // PRIORITY 3: Check if no feed owner
         if (feedOwnerId == null) {
             followButton.visibility = View.GONE
-            Log.d(TAG, "Follow button GONE - No feed owner")
+            Log.d(TAG, "❓ Follow button GONE - No feed owner")
             return
         }
 
@@ -748,23 +928,29 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
         if (isFollowing) {
             followButton.visibility = View.GONE
-            Log.d(TAG, "Follow button GONE - Already following $feedOwnerId")
+            Log.d(TAG, "✅ Follow button GONE - Already following $feedOwnerId")
         } else {
-            // Check if they follow YOU to show correct button text
-            val theyFollowMe = checkIfUserFollowsBack(feedOwnerId)
+            // Check if they follow YOU with SMART MATCHING
+            val theyFollowMe = checkIfUserFollowsBack(feedOwnerId, feedOwnerUsername)
 
             followButton.visibility = View.VISIBLE
 
             if (theyFollowMe) {
                 followButton.text = "Follow Back"
-                Log.d(TAG, "Follow button VISIBLE - 'Follow Back' (they follow you) - $feedOwnerId")
+                Log.d(TAG, "🔄 Follow button VISIBLE - 'Follow Back' (they follow you) - $feedOwnerId")
             } else {
                 followButton.text = "Follow"
-                Log.d(TAG, "Follow button VISIBLE - 'Follow' (they don't follow you) - $feedOwnerId")
+                Log.d(TAG, "➕ Follow button VISIBLE - 'Follow' (they don't follow you) - $feedOwnerId")
             }
         }
 
-        Log.d(TAG, "Follow button visibility: ${followButton.visibility} (0=VISIBLE, 4=INVISIBLE, 8=GONE)")
+        Log.d(TAG, "📍 Follow button visibility: ${followButton.visibility} (0=VISIBLE, 4=INVISIBLE, 8=GONE)")
+    }
+
+
+    private fun checkIfUserFollowsBack(feedOwnerId: String): Boolean {
+        val myFollowersList = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+        return FeedAdapter.isUserInMyFollowersList(feedOwnerId)
     }
 
     private fun setupFollowButton() {
