@@ -129,12 +129,11 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
+
     private var followingUserIds: MutableSet<String> = mutableSetOf()
-    private val followingManager by lazy {
-        FollowingManager(requireContext())
-    }
-
-
+    private val myFollowersList = mutableSetOf<String>()
+    private val myFollowersUsernames = mutableSetOf<String>()
+    private val followingManager by lazy { FollowingManager(requireContext()) }
     private val followUnfollowViewModel: FollowUnfollowViewModel by activityViewModels()
 
 
@@ -219,12 +218,14 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 // ========== LIFECYCLE METHODS ==========
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
 
         extractArguments()
         setupBackPressHandler()
         hideSystemBars()
         initializeApiService()
+        loadMyFollowersList()
         loadFollowingListFromCache()
 
     }
