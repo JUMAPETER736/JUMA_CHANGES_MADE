@@ -611,34 +611,31 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             myFollowersUsernames.clear()
             myFollowersUsernames.addAll(cachedFollowersUsernames)
 
-    
+
             Log.d(TAG, "║ Total followers: ${myFollowersList.size} users")
-            Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
 
             if (myFollowersList.isEmpty()) {
-                Log.d(TAG, "║ ⚠️  NO FOLLOWERS LOADED - List is empty!")
-                Log.d(TAG, "║ This means either:")
-                Log.d(TAG, "║   1. You have no followers")
-                Log.d(TAG, "║   2. Followers not loaded into FeedAdapter cache yet")
+                Log.d(TAG, "NO FOLLOWERS LOADED - List is empty!")
+
             } else {
-                Log.d(TAG, "║ FOLLOWER IDs:")
+
                 myFollowersList.forEachIndexed { index, id ->
                     val username = myFollowersUsernames.elementAtOrNull(index) ?: "unknown"
-                    Log.d(TAG, "║   ${index + 1}. ID: $id")
-                    Log.d(TAG, "║      Username: @$username")
-                    Log.d(TAG, "║      ID Length: ${id.length} chars")
+                    Log.d(TAG, " ${index + 1}. ID: $id")
+                    Log.d(TAG, "Username: @$username")
+                    Log.d(TAG, "ID Length: ${id.length} chars")
                 }
             }
 
-            Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
-            Log.d(TAG, "║ FOLLOWER USERNAMES:")
+
+            Log.d(TAG, "FOLLOWER USERNAMES:")
             myFollowersUsernames.forEachIndexed { index, username ->
-                Log.d(TAG, "║   ${index + 1}. @$username")
+                Log.d(TAG, "${index + 1}. @$username")
             }
-            Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝")
+
 
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error loading followers list: ${e.message}")
+            Log.e(TAG, "Error loading followers list: ${e.message}")
             e.printStackTrace()
         }
     }
