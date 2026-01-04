@@ -599,32 +599,11 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         followButton?.visibility = View.GONE
     }
 
-
-    // ========== PROPERTIES ==========
-    private var followingUserIds: MutableSet<String> = mutableSetOf()
-    private val myFollowersList = mutableSetOf<String>()
-    private val myFollowersUsernames = mutableSetOf<String>()
-
-    private val followingManager by lazy {
-        FollowingManager(requireContext())
-    }
-
-    // ========== IN onCreate() ==========
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        extractArguments()
-        setupBackPressHandler()
-        hideSystemBars()
-        initializeApiService()
-        loadFollowingListFromCache()
-        loadMyFollowersList()  // Load followers
-    }
-
     // ========== LOAD FOLLOWERS FROM CACHE ==========
     private fun loadMyFollowersList() {
         try {
-            val cachedFollowers = FeedAdapter.getCachedFollowersList()
-            val cachedFollowersUsernames = FeedAdapter.getCachedFollowersUsernames()
+            val cachedFollowers = FeedAdapter.getCachedFollowingList()
+            val cachedFollowersUsernames = FeedAdapter.getCachedFollowingUsernames()
 
             myFollowersList.clear()
             myFollowersList.addAll(cachedFollowers)
@@ -902,8 +881,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         if (!userId.matches(Regex("^[a-fA-F0-9]{24}$"))) return false
         return true
     }
-
-
 
 
     private fun loadPostContent(postId: String) {
