@@ -735,7 +735,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         return finalResult
     }
 
-// ========== ADD SIMILARITY CALCULATION METHODS ==========
+    // ========== ADD SIMILARITY CALCULATION METHODS ==========
 
     private fun calculateIdSimilarity(id1: String, id2: String): Double {
         if (id1 == id2) return 1.0
@@ -760,9 +760,9 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             for (j in 1..len2) {
                 val cost = if (s1[i - 1] == s2[j - 1]) 0 else 1
                 matrix[i][j] = minOf(
-                    matrix[i - 1][j] + 1,      // deletion
-                    matrix[i][j - 1] + 1,      // insertion
-                    matrix[i - 1][j - 1] + cost // substitution
+                    matrix[i - 1][j] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j - 1] + cost
                 )
             }
         }
@@ -770,7 +770,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         return matrix[len1][len2]
     }
 
-// ========== UPDATE handleFollowButtonClick() ==========
+    // ========== UPDATE handleFollowButtonClick() ==========
 
     private fun handleFollowButtonClick(followButton: Button, feedOwnerId: String, feedOwnerUsername: String) {
         // Add pulse animation
@@ -868,7 +868,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-// ========== UPDATE updateFollowButtonVisibility() ==========
+    // ========== UPDATE updateFollowButtonVisibility() ==========
 
     private fun updateFollowButtonVisibility() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
@@ -882,37 +882,35 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         val currentUsername = localStorage.getUsername()?.trim()?.lowercase()
         val feedOwnerUsernameLower = feedOwnerUsername?.trim()?.lowercase()
 
-        Log.d(TAG, "╔═══════════════════════════════════════════════════════════╗")
-        Log.d(TAG, "║          FOLLOW BUTTON VISIBILITY CHECK                   ║")
-        Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
-        Log.d(TAG, "║ Current User ID: $currentUserId")
-        Log.d(TAG, "║ Current Username: @$currentUsername")
-        Log.d(TAG, "║ Feed Owner ID: $feedOwnerId")
-        Log.d(TAG, "║ Feed Owner Username: @$feedOwnerUsername")
-        Log.d(TAG, "║ Following List Size: ${followingUserIds.size}")
-        Log.d(TAG, "║ My Followers List Size: ${myFollowersList.size}")
-        Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝")
+
+        Log.d(TAG, "Current User ID: $currentUserId")
+        Log.d(TAG, "Current Username: @$currentUsername")
+        Log.d(TAG, "Feed Owner ID: $feedOwnerId")
+        Log.d(TAG, "Feed Owner Username: @$feedOwnerUsername")
+        Log.d(TAG, "Following List Size: ${followingUserIds.size}")
+        Log.d(TAG, "My Followers List Size: ${myFollowersList.size}")
+
 
         // PRIORITY 1: Check username match
         if (!currentUsername.isNullOrEmpty() &&
             !feedOwnerUsernameLower.isNullOrEmpty() &&
             currentUsername == feedOwnerUsernameLower) {
             followButton.visibility = View.GONE
-            Log.d(TAG, "👤 Follow button GONE - Own post (username match: @$currentUsername)")
+            Log.d(TAG, "Follow button GONE - Own post (username match: @$currentUsername)")
             return
         }
 
         // PRIORITY 2: Check ID match
         if (feedOwnerId != null && feedOwnerId == currentUserId) {
             followButton.visibility = View.GONE
-            Log.d(TAG, "🆔 Follow button GONE - Own post (ID match: $currentUserId)")
+            Log.d(TAG, "Follow button GONE - Own post (ID match: $currentUserId)")
             return
         }
 
         // PRIORITY 3: Check if no feed owner
         if (feedOwnerId == null) {
             followButton.visibility = View.GONE
-            Log.d(TAG, "❓ Follow button GONE - No feed owner")
+            Log.d(TAG, "Follow button GONE - No feed owner")
             return
         }
 
@@ -921,7 +919,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
         if (isFollowing) {
             followButton.visibility = View.GONE
-            Log.d(TAG, "✅ Follow button GONE - Already following $feedOwnerId")
+            Log.d(TAG, "Follow button GONE - Already following $feedOwnerId")
         } else {
             // Check if they follow YOU with SMART MATCHING
             val theyFollowMe = checkIfUserFollowsBack(feedOwnerId, feedOwnerUsername)
@@ -930,14 +928,14 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
             if (theyFollowMe) {
                 followButton.text = "Follow Back"
-                Log.d(TAG, "🔄 Follow button VISIBLE - 'Follow Back' (they follow you) - $feedOwnerId")
+                Log.d(TAG, "Follow button VISIBLE - 'Follow Back' (they follow you) - $feedOwnerId")
             } else {
                 followButton.text = "Follow"
-                Log.d(TAG, "➕ Follow button VISIBLE - 'Follow' (they don't follow you) - $feedOwnerId")
+                Log.d(TAG, "Follow button VISIBLE - 'Follow' (they don't follow you) - $feedOwnerId")
             }
         }
 
-        Log.d(TAG, "📍 Follow button visibility: ${followButton.visibility} (0=VISIBLE, 4=INVISIBLE, 8=GONE)")
+        Log.d(TAG, "Follow button visibility: ${followButton.visibility} (0=VISIBLE, 4=INVISIBLE, 8=GONE)")
     }
 
 
@@ -978,11 +976,10 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             followingUserIds.clear()
             followingUserIds.addAll(cachedFollowingIds)
 
-            Log.d(TAG, "═══════════════════════════════════════")
             Log.d(TAG, "LOADED FOLLOWING LIST FROM CACHE")
             Log.d(TAG, "Total following: ${followingUserIds.size} users")
             Log.d(TAG, "Following IDs: $followingUserIds")
-            Log.d(TAG, "═══════════════════════════════════════")
+
 
         } catch (e: Exception) {
             Log.e(TAG, "Error loading following list from cache: ${e.message}")
@@ -1014,7 +1011,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             val feedOwnerId = post.userId ?: return@observe
             val feedOwnerUsername = post.username ?: "unknown"
 
-            Log.d(TAG, "✅ Follow API SUCCESS - userId: $feedOwnerId, isFollowing: $isFollowing")
+            Log.d(TAG, "Follow API SUCCESS - userId: $feedOwnerId, isFollowing: $isFollowing")
 
             // Show success toast
             if (context != null) {
