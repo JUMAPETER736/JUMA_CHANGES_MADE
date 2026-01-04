@@ -98,7 +98,7 @@ import kotlinx.coroutines.withContext
 
 
 
-// ========== CONSTANTS ==========
+//  CONSTANTS
 private const val ARG_POST_ID = "post_id"
 private const val ARG_POST_DATA = "post_data"
 private const val ARG_POST_LIST = "post_list"
@@ -106,11 +106,11 @@ private const val ARG_CURRENT_POSITION = "current_position"
 private const val TAG = "Tapped Files"
 
 
-// ========== MAIN FRAGMENT CLASS ==========
+//  MAIN FRAGMENT CLASS
 class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
 
-    // ========== COMPANION OBJECT ==========
+    //  COMPANION OBJECT
 
     companion object {
         @JvmStatic
@@ -215,7 +215,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     private var isNavigatingBack = false
 
 
-// ========== LIFECYCLE METHODS ==========
+//  LIFECYCLE METHODS
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -599,7 +599,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         followButton?.visibility = View.GONE
     }
 
-    // ========== LOAD FOLLOWERS FROM CACHE ==========
+    //  LOAD FOLLOWERS FROM CACHE
     private fun loadMyFollowersList() {
         try {
             val cachedFollowers = FeedAdapter.getCachedFollowingList()
@@ -617,7 +617,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    // ========== SMART FOLLOWER CHECK ==========
+    //  SMART FOLLOWER CHECK
     private fun checkIfUserFollowsBack(feedOwnerId: String, feedOwnerUsername: String? = null): Boolean {
         // Check 1: Exact ID match
         if (myFollowersList.contains(feedOwnerId)) {
@@ -664,7 +664,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         return false
     }
 
-    // ========== SIMILARITY CALCULATION ==========
+    //  SIMILARITY CALCULATION
     private fun calculateIdSimilarity(id1: String, id2: String): Double {
         if (id1 == id2) return 1.0
         if (id1.isEmpty() || id2.isEmpty()) return 0.0
@@ -697,7 +697,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         return matrix[len1][len2]
     }
 
-    // ========== FOLLOW BUTTON CLICK ==========
+    //  FOLLOW BUTTON CLICK
     private fun handleFollowButtonClick(followButton: Button, feedOwnerId: String, feedOwnerUsername: String) {
         try {
             YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
@@ -738,7 +738,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         followUnfollowViewModel.followUnFollow(feedOwnerId)
     }
 
-    // ========== UPDATE FOLLOW BUTTON VISIBILITY ==========
+    //  UPDATE FOLLOW BUTTON VISIBILITY
     private fun updateFollowButtonVisibility() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
         val post = postList?.getOrNull(viewPager.currentItem)
@@ -794,7 +794,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    // ========== SETUP FOLLOW BUTTON ==========
+    //  SETUP FOLLOW BUTTON
     private fun setupFollowButton() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
 
@@ -813,7 +813,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    // ========== LOAD FOLLOWING LIST ==========
+    //  LOAD FOLLOWING LIST
     private fun loadFollowingListFromCache() {
         try {
             val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
@@ -838,7 +838,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    // ========== FOLLOW OBSERVER ==========
+    //  FOLLOW OBSERVER
     private fun setupFollowObserver() {
         followUnfollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) { isFollowing ->
             if (!isAdded || view == null) return@observe
@@ -857,7 +857,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    // ========== PAGE CHANGE LISTENER ==========
+    //  PAGE CHANGE LISTENER
     private fun setupViewPagerPageChangeListener() {
         pageChangeCallback = object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
@@ -874,7 +874,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         viewPager.registerOnPageChangeCallback(pageChangeCallback)
     }
 
-    // ========== VALIDATION ==========
+    //  VALIDATION
     private fun isValidUserId(userId: String?): Boolean {
         if (userId.isNullOrEmpty()) return false
         if (userId.length != 24) return false
@@ -1007,7 +1007,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    // ========== VIEWPAGER SETUP ==========
+    //  VIEWPAGER SETUP
 
     private fun setupViewPager(view: View) {
         viewPager = view.findViewById(R.id.viewPager)
@@ -1052,7 +1052,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    // ========== HELPER METHODS ==========
+    //  HELPER METHODS
 
     private fun extractFieldValue(obj: Any, vararg fieldNames: String): String? {
         for (fieldName in fieldNames) {
@@ -1453,7 +1453,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
 
 
-    // ========== INITIALIZATION METHODS ==========
+    //  INITIALIZATION METHODS
 
     private fun setupBackPressHandler() {
 
@@ -1466,7 +1466,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    // ========== DATA LOADING METHODS ==========
+    //  DATA LOADING METHODS
 
     private fun loadPostMetrics(postId: String) {
         // Only load metrics if they are available/exist
@@ -1500,7 +1500,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
 
-    // ========== UI UPDATE METHODS ==========
+    //  UI UPDATE METHODS
 
     private fun updateUI() {
         updateCounters()
@@ -1547,7 +1547,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
 
 
-    // ========== UTILITY METHODS ==========
+    //  UTILITY METHODS
 
     private fun generateMetricValue(min: Int, max: Int, seed: Int = 0): Int {
         return if (seed != 0) {
@@ -1638,7 +1638,7 @@ data class PostItem(
     }
 }
 
-// ========== ADAPTER CLASSES ==========
+//  ADAPTER CLASSES
 
 private class PostPagerAdapter(
     fragmentActivity: FragmentActivity,
@@ -1655,7 +1655,7 @@ private class PostPagerAdapter(
 
 
 
-// ========== ENHANCED FRAGMENT CLASSES ==========
+//  ENHANCED FRAGMENT CLASSES
 class PostContentFragment : Fragment() {
 
     companion object {
