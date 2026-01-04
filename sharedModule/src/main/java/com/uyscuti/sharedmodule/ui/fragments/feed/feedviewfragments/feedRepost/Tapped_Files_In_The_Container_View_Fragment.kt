@@ -696,43 +696,41 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         val finalResult = when {
             // Perfect match: Both ID and username match
             exactIdMatch && usernameMatch -> {
-                Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
-                Log.d(TAG, "║ ✅ RESULT: TRUE - Perfect match (ID + Username)")
+
+                Log.d(TAG, "RESULT: TRUE - Perfect match (ID + Username)")
                 true
             }
             // Exact ID match (most reliable)
             exactIdMatch -> {
-                Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
-                Log.d(TAG, "║ ✅ RESULT: TRUE - Exact ID match")
+
+                Log.d(TAG, "RESULT: TRUE - Exact ID match")
                 true
             }
             // Username match only (reliable if ID not available)
             usernameMatch && feedOwnerUsername != null -> {
-                Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
-                Log.d(TAG, "║ ✅ RESULT: TRUE - Username match (@$feedOwnerUsername)")
+
+                Log.d(TAG, "RESULT: TRUE - Username match (@$feedOwnerUsername)")
                 true
             }
             // Adapter cache match
             adapterMatch -> {
-                Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
-                Log.d(TAG, "║ ✅ RESULT: TRUE - FeedAdapter cache match")
+
+                Log.d(TAG, "RESULT: TRUE - FeedAdapter cache match")
                 true
             }
             // Fuzzy ID match + username match (safest fallback)
             fuzzyIdMatch && usernameMatch -> {
-                Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
-                Log.d(TAG, "║ ✅ RESULT: TRUE - Fuzzy ID (${(bestMatchScore * 100).toInt()}%) + Username match")
+
+                Log.d(TAG, "RESULT: TRUE - Fuzzy ID (${(bestMatchScore * 100).toInt()}%) + Username match")
                 true
             }
             // No match
             else -> {
-                Log.d(TAG, "╠═══════════════════════════════════════════════════════════╣")
-                Log.d(TAG, "║ ❌ RESULT: FALSE - No match found")
+
+                Log.d(TAG, "RESULT: FALSE - No match found")
                 false
             }
         }
-
-        Log.d(TAG, "╚═══════════════════════════════════════════════════════════╝")
 
         return finalResult
     }
