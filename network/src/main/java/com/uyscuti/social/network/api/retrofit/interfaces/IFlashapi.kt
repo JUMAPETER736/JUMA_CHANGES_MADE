@@ -952,4 +952,20 @@ interface IFlashapi {
         @Query("limit") limit: String = "10"
     ): Response<SearchUserFeedResponse>
 
+
+    @GET("social-media/posts")
+    suspend fun getAllPostsForSearch(
+        @Query("page") page: String,
+        @Query("limit") limit: String
+    ): Response<SearchShortsResponse>
+
+
+    @GET("feed/post/test")
+    suspend fun getUserFeedForSearch(
+        @Query("username") username: String,
+        @Query("page") page: String,
+        @Query("limit") limit: String
+    ): Response<FeedResponse>
+
+
 }
