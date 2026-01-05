@@ -38,7 +38,6 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
-import com.uyscuti.sharedmodule.adapter.MediaPagerAdapter
 import com.uyscuti.social.business.R
 import com.uyscuti.social.business.room.database.BusinessDatabase
 import com.uyscuti.social.business.room.entity.BusinessCatalogueEntity
@@ -75,10 +74,7 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
-import com.uyscuti.sharedmodule.model.ShowBottomNav
-import com.uyscuti.sharedmodule.utils.LocationServiceUtil
-import com.uyscuti.sharedmodule.utils.NetworkUtil
-import com.uyscuti.social.business.util.LocationDialog
+import com.uyscuti.social.business.adapter.MediaPagerAdapter
 import com.uyscuti.social.network.api.response.business.response.background.BackgroundVideo
 import org.greenrobot.eventbus.EventBus
 
