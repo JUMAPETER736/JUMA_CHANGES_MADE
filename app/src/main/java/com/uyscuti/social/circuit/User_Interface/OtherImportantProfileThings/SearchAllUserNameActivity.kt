@@ -104,8 +104,8 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     private lateinit var searchAdapter: SearchUserNameAdapter
     private var searchJob: Job? = null
 
-    private var currentSearchContext = com.uyscuti.social.circuit.user_interface.SearchContext.GLOBAL
-    private var currentFilter = com.uyscuti.social.circuit.user_interface.ContentFilter.ALL
+    private var currentSearchContext = SearchContext.GLOBAL
+    private var currentFilter = ContentFilter.ALL
     private var selectedUserId: String? = null
     private var selectedUsername: String? = null
     private val recentUserViewModel: RecentUserViewModel by viewModels()
@@ -137,16 +137,16 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         loadRecentUsers()
     }
 
-    private fun applyFilter(filter: com.uyscuti.social.circuit.user_interface.ContentFilter) {
+    private fun applyFilter(filter: ContentFilter) {
         currentFilter = filter
 
         // Update chip selection
-        binding.chipAll.isChecked = (filter == com.uyscuti.social.circuit.user_interface.ContentFilter.ALL)
-        binding.chipPeople.isChecked = (filter == com.uyscuti.social.circuit.user_interface.ContentFilter.PEOPLE)
-        binding.chipFeed.isChecked = (filter == com.uyscuti.social.circuit.user_interface.ContentFilter.FEED)
-        binding.chipShorts.isChecked = (filter == com.uyscuti.social.circuit.user_interface.ContentFilter.SHORTS)
-        binding.chipChats.isChecked = (filter == com.uyscuti.social.circuit.user_interface.ContentFilter.CHATS)
-        binding.chipBusiness.isChecked = (filter == com.uyscuti.social.circuit.user_interface.ContentFilter.BUSINESS)
+        binding.chipAll.isChecked = (filter == ContentFilter.ALL)
+        binding.chipPeople.isChecked = (filter == ContentFilter.PEOPLE)
+        binding.chipFeed.isChecked = (filter == ContentFilter.FEED)
+        binding.chipShorts.isChecked = (filter == ContentFilter.SHORTS)
+        binding.chipChats.isChecked = (filter == ContentFilter.CHATS)
+        binding.chipBusiness.isChecked = (filter == ContentFilter.BUSINESS)
 
         // Refresh search with current query
         val query = binding.searchEditText.text.toString().trim()
@@ -156,7 +156,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     }
 
     private fun resetToGlobalSearch() {
-        currentSearchContext = com.uyscuti.social.circuit.user_interface.SearchContext.GLOBAL
+        currentSearchContext = SearchContext.GLOBAL
         selectedUserId = null
         selectedUsername = null
         binding.contextChip.visibility = View.GONE
@@ -203,15 +203,15 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         binding.filterChipsGroup.visibility = View.GONE
 
         // Set ALL as default
-        currentFilter = com.uyscuti.social.circuit.user_interface.ContentFilter.ALL
+        currentFilter = ContentFilter.ALL
         binding.chipAll.isChecked = true
 
-        binding.chipAll.setOnClickListener { applyFilter(com.uyscuti.social.circuit.user_interface.ContentFilter.ALL) }
-        binding.chipPeople.setOnClickListener { applyFilter(com.uyscuti.social.circuit.user_interface.ContentFilter.PEOPLE) }
-        binding.chipFeed.setOnClickListener { applyFilter(com.uyscuti.social.circuit.user_interface.ContentFilter.FEED) }
-        binding.chipShorts.setOnClickListener { applyFilter(com.uyscuti.social.circuit.user_interface.ContentFilter.SHORTS) }
-        binding.chipChats.setOnClickListener { applyFilter(com.uyscuti.social.circuit.user_interface.ContentFilter.CHATS) }
-        binding.chipBusiness.setOnClickListener { applyFilter(com.uyscuti.social.circuit.user_interface.ContentFilter.BUSINESS) }
+        binding.chipAll.setOnClickListener { applyFilter(ContentFilter.ALL) }
+        binding.chipPeople.setOnClickListener { applyFilter(ContentFilter.PEOPLE) }
+        binding.chipFeed.setOnClickListener { applyFilter(ContentFilter.FEED) }
+        binding.chipShorts.setOnClickListener { applyFilter(ContentFilter.SHORTS) }
+        binding.chipChats.setOnClickListener { applyFilter(ContentFilter.CHATS) }
+        binding.chipBusiness.setOnClickListener { applyFilter(ContentFilter.BUSINESS) }
     }
 
     private fun performSearch(query: String) {
@@ -226,17 +226,17 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
             try {
                 when (currentSearchContext) {
-                    com.uyscuti.social.circuit.user_interface.SearchContext.GLOBAL -> {
+                    SearchContext.GLOBAL -> {
                         val results = searchGlobalContent(query)
                         displaySearchResults(results)
                     }
-                    com.uyscuti.social.circuit.user_interface.SearchContext.USER_POSTS -> {
+                    SearchContext.USER_POSTS -> {
                         selectedUserId?.let { userId ->
                             val results = searchUserContent(query, userId)
                             displayUserContentResults(results)
                         }
                     }
-                    com.uyscuti.social.circuit.user_interface.SearchContext.USER_PROFILE -> {
+                    SearchContext.USER_PROFILE -> {
                         // Handle user profile view
                     }
                 }
@@ -443,7 +443,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         val items = mutableListOf<Any>()
 
         when (currentFilter) {
-            com.uyscuti.social.circuit.user_interface.ContentFilter.ALL -> {
+            ContentFilter.ALL -> {
                 // PEOPLE
                 if (results.people.isNotEmpty()) {
                     items.add("PEOPLE_HEADER")
@@ -475,35 +475,35 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                 }
             }
 
-            com.uyscuti.social.circuit.user_interface.ContentFilter.SHORTS -> {
+            ContentFilter.SHORTS -> {
                 if (results.shorts.isNotEmpty()) {
                     items.add("SHORTS_HEADER")
                     items.addAll(results.shorts)
                 }
             }
 
-            com.uyscuti.social.circuit.user_interface.ContentFilter.FEED -> {
+            ContentFilter.FEED -> {
                 if (results.feedPosts.isNotEmpty()) {
                     items.add("FEED_HEADER")
                     items.addAll(results.feedPosts)
                 }
             }
 
-            com.uyscuti.social.circuit.user_interface.ContentFilter.PEOPLE -> {
+            ContentFilter.PEOPLE -> {
                 if (results.people.isNotEmpty()) {
                     items.add("PEOPLE_HEADER")
                     items.addAll(results.people)
                 }
             }
 
-            com.uyscuti.social.circuit.user_interface.ContentFilter.CHATS -> {
+            ContentFilter.CHATS -> {
                 if (results.chats.isNotEmpty()) {
                     items.add("CHATS_HEADER")
                     items.addAll(results.chats)
                 }
             }
 
-            com.uyscuti.social.circuit.user_interface.ContentFilter.BUSINESS -> {
+            ContentFilter.BUSINESS -> {
                 if (results.business.isNotEmpty()) {
                     items.add("BUSINESS_HEADER")
                     items.addAll(results.business)
@@ -531,7 +531,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         }
 
         // Use GridLayoutManager if we're in SHORTS filter or ALL with shorts
-        if (currentFilter == com.uyscuti.social.circuit.user_interface.ContentFilter.SHORTS || (currentFilter == com.uyscuti.social.circuit.user_interface.ContentFilter.ALL && hasShorts)) {
+        if (currentFilter == ContentFilter.SHORTS || (currentFilter == ContentFilter.ALL && hasShorts)) {
             val gridLayoutManager = GridLayoutManager(this, 3) // 3 columns like Facebook
             gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
@@ -650,7 +650,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if (currentSearchContext != com.uyscuti.social.circuit.user_interface.SearchContext.GLOBAL) {
+        if (currentSearchContext != SearchContext.GLOBAL) {
             resetToGlobalSearch()
         } else {
             super.onBackPressed()
