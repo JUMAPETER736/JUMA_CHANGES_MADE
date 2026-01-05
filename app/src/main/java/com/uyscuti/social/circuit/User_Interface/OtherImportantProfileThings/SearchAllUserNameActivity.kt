@@ -41,6 +41,7 @@ import com.uyscuti.social.business.room.repository.BusinessRepository
 
 import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.R
+import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.circuit.databinding.ActivitySearchAllUserNameBinding
 import com.uyscuti.social.circuit.model.ShortsViewModel
 import com.uyscuti.social.circuit.presentation.RecentUserViewModel
