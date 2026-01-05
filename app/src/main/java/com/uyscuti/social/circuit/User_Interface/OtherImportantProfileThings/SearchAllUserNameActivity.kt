@@ -1231,7 +1231,7 @@ class SearchUserNameAdapter(
                 ChatViewHolder(view, localStorage)
             }
             TYPE_BUSINESS -> {
-                val view = inflater.inflate(com.uyscuti.social.business.R.layout.profile_fragment, parent, false)
+                val view = inflater.inflate(profile_fragment, parent, false)
                 BusinessViewHolder(view)
             }
             TYPE_NO_BUSINESS -> {
