@@ -217,5 +217,38 @@
         <item name="cornerSize">50%</item>
     </style>
 
+    <style name="RoundedCorners8dp"></style>
+
+    <!-- Rounded corners for video thumbnails -->
+    <style name="RoundedCorners12dp">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <!-- Rounded bottom corners for gradient overlay -->
+    <style name="RoundedBottomCorners12dp">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">0dp</item>
+        <item name="cornerSizeTopRight">0dp</item>
+        <item name="cornerSizeBottomLeft">12dp</item>
+        <item name="cornerSizeBottomRight">12dp</item>
+    </style>
+
+    <!-- Circle for profile avatars -->
+    <style name="CircleImageView">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- Rounded top corners for gradient overlay -->
+    <style name="RoundedTopCorners12dp">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">12dp</item>
+        <item name="cornerSizeTopRight">12dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+
 
 </resources>
