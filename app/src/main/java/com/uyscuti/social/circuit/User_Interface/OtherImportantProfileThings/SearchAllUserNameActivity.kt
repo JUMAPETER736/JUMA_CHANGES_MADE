@@ -1,9 +1,7 @@
-package com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings
-
+package com.uyscuti.social.circuit.user_interface
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.media.MediaMetadataRetriever
@@ -38,32 +36,25 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
+import com.uyscuti.sharedmodule.MessagesActivity
+import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
+import com.uyscuti.sharedmodule.presentation.RecentUserViewModel
 import com.uyscuti.social.business.adapter.MediaPagerAdapter
-import com.uyscuti.social.business.room.repository.BusinessRepository
-
-import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.circuit.databinding.ActivitySearchAllUserNameBinding
-import com.uyscuti.social.circuit.model.ShortsViewModel
-import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
-import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import com.uyscuti.social.core.common.data.room.entity.UserEntity
 import com.uyscuti.social.network.api.models.User
-import com.uyscuti.social.network.api.request.business.users.GetBusinessProfileById
 import com.uyscuti.social.network.api.response.posts.Account
 import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.response.posts.Avatar
 import com.uyscuti.social.network.api.response.posts.CoverImage
-import com.uyscuti.social.network.api.response.posts.Duration
 import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.FileType
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.response.posts.RepostedUser
-import com.uyscuti.social.network.api.response.getallshorts.Author as ShortsAuthor
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
@@ -74,12 +65,19 @@ import retrofit2.HttpException
 import java.io.IOException
 import java.util.Date
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Locale
+import com.uyscuti.social.core.common.data.room.entity.MessageEntity
+import com.uyscuti.social.network.api.request.business.users.GetBusinessProfileById
+import com.uyscuti.social.business.room.repository.BusinessRepository
+import com.uyscuti.social.network.api.models.Chat
+import com.uyscuti.social.network.api.response.posts.Duration
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import java.util.TimeZone
+
+
 
 // Updated ContentFilter enum with your specific categories
 enum class ContentFilter {
@@ -109,13 +107,11 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     private var selectedUserId: String? = null
     private var selectedUsername: String? = null
     private val recentUserViewModel: RecentUserViewModel by viewModels()
-    private lateinit var businessRepository: BusinessRepository
-    private lateinit var sharedPreferences: SharedPreferences
+
 
     private val apiService: IFlashapi by lazy {
         RetrofitInstance(LocalStorage(this), this).apiService
     }
-
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -137,35 +133,40 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         loadRecentUsers()
     }
 
-    private fun applyFilter(filter: ContentFilter) {
-        currentFilter = filter
+    private fun initSearchResults() {
 
-        // Update chip selection
-        binding.chipAll.isChecked = (filter == ContentFilter.ALL)
-        binding.chipPeople.isChecked = (filter == ContentFilter.PEOPLE)
-        binding.chipFeed.isChecked = (filter == ContentFilter.FEED)
-        binding.chipShorts.isChecked = (filter == ContentFilter.SHORTS)
-        binding.chipChats.isChecked = (filter == ContentFilter.CHATS)
-        binding.chipBusiness.isChecked = (filter == ContentFilter.BUSINESS)
+        // Create real LocalStorage instance
+        val localStorage = LocalStorage(this@SearchAllUserNameActivity)
 
-        // Refresh search with current query
-        val query = binding.searchEditText.text.toString().trim()
-        if (query.isNotEmpty()) {
-            performSearch(query)
+        searchAdapter = SearchUserNameAdapter(
+            localStorage = localStorage,
+            onUserClicked = { author ->
+                Log.d("SearchResults", "User clicked: @${author.account.username}")
+                addUserToRecent(author.toRecentUser())
+
+                // Open user profile instead of switching to user context
+                openUserProfile(author)
+            },
+            onPostClicked = { post ->
+                Log.d("SearchResults", "Post clicked: ${post._id}")
+
+            }
+        )
+
+        binding.searchResultsRecyclerView.apply {
+            layoutManager = LinearLayoutManager(this@SearchAllUserNameActivity)
+            adapter = searchAdapter
+            setHasFixedSize(false)
         }
     }
 
-    private fun resetToGlobalSearch() {
-        currentSearchContext = SearchContext.GLOBAL
-        selectedUserId = null
-        selectedUsername = null
-        binding.contextChip.visibility = View.GONE
+    private fun setupToolbar() {
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
 
-        val query = binding.searchEditText.text.toString().trim()
-        if (query.isNotEmpty()) {
-            performSearch(query)
-        } else {
-            loadRecentUsers()
+        // Handle back button click
+        binding.backButton.setOnClickListener {
+            onBackPressed()
         }
     }
 
@@ -214,11 +215,61 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         binding.chipBusiness.setOnClickListener { applyFilter(ContentFilter.BUSINESS) }
     }
 
+    private fun hideKeyboard() {
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
+    }
+
+    override fun onBackPressed() {
+        if (currentSearchContext != SearchContext.GLOBAL) {
+            resetToGlobalSearch()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    private fun loadRecentUsers() {
+        lifecycleScope.launch {
+            try {
+                val recentUsers = withContext(Dispatchers.IO) {
+                    recentUserViewModel.getRecentUsers()
+                }
+
+                if (recentUsers.isNotEmpty()) {
+                    searchAdapter.showRecentUsers(recentUsers.map { it.toAuthor() })
+                    binding.noResultsText.visibility = View.GONE
+                } else {
+                    searchAdapter.submitList(emptyList())
+                }
+            } catch (e: Exception) {
+                Log.e("SearchUsers", "Error loading recent users: ${e.message}")
+                searchAdapter.submitList(emptyList())
+            }
+        }
+    }
+
+    private fun resetToGlobalSearch() {
+        currentSearchContext = SearchContext.GLOBAL
+        selectedUserId = null
+        selectedUsername = null
+        binding.contextChip.visibility = View.GONE
+
+        val query = binding.searchEditText.text.toString().trim()
+        if (query.isNotEmpty()) {
+            performSearch(query)
+        } else {
+            loadRecentUsers()
+        }
+    }
+
     private fun performSearch(query: String) {
         if (query.isEmpty()) return
 
         lifecycleScope.launch {
-            Log.d("SearchUsers", "Search: '$query', Context: $currentSearchContext, Filter: $currentFilter")
+            Log.d(
+                "SearchUsers",
+                "Search: '$query', Context: $currentSearchContext, Filter: $currentFilter"
+            )
 
             // Show progress - Removed progressBar references since we removed it from layout
             binding.noResultsText.visibility = View.GONE
@@ -230,12 +281,14 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                         val results = searchGlobalContent(query)
                         displaySearchResults(results)
                     }
+
                     SearchContext.USER_POSTS -> {
                         selectedUserId?.let { userId ->
                             val results = searchUserContent(query, userId)
                             displayUserContentResults(results)
                         }
                     }
+
                     SearchContext.USER_PROFILE -> {
                         // Handle user profile view
                     }
@@ -247,6 +300,479 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             }
         }
     }
+
+    @OptIn(UnstableApi::class)
+    private fun openUserProfile(author: Author) {
+        val intent = Intent(this, OtherUserProfileAccount::class.java).apply {
+            putExtra("extra_user_id", author.owner)  // Account ID
+            putExtra("extra_user_name", "${author.firstName} ${author.lastName}".trim())
+            putExtra("extra_username", author.account.username)
+            putExtra("extra_avatar_url", author.account.avatar.url)
+            putExtra("user_full_name", "${author.firstName} ${author.lastName}".trim())
+        }
+        startActivity(intent)
+    }
+
+    private fun addUserToRecent(user: RecentUser) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                recentUserViewModel.addRecentUser(user)
+            } catch (e: Exception) {
+                Log.e("SearchUsers", "Error adding recent user: ${e.message}")
+            }
+        }
+    }
+
+    private fun applyFilter(filter: ContentFilter) {
+        currentFilter = filter
+
+        // Update chip selection
+        binding.chipAll.isChecked = (filter == ContentFilter.ALL)
+        binding.chipPeople.isChecked = (filter == ContentFilter.PEOPLE)
+        binding.chipFeed.isChecked = (filter == ContentFilter.FEED)
+        binding.chipShorts.isChecked = (filter == ContentFilter.SHORTS)
+        binding.chipChats.isChecked = (filter == ContentFilter.CHATS)
+        binding.chipBusiness.isChecked = (filter == ContentFilter.BUSINESS)
+
+        // Refresh search with current query
+        val query = binding.searchEditText.text.toString().trim()
+        if (query.isNotEmpty()) {
+            performSearch(query)
+        }
+    }
+
+    private fun updateLayoutManager(items: List<Any>) {
+        // Check if we have shorts content
+        val hasShorts = items.any {
+            it is Post &&
+                    it.contentType.equals("mixed_files", ignoreCase = true) &&
+                    it.fileTypes.any { fileType ->
+                        fileType.fileType.equals(
+                            "video",
+                            ignoreCase = true
+                        )
+                    }
+        }
+
+        // Use GridLayoutManager if we're in SHORTS filter or ALL with shorts
+        if (currentFilter == ContentFilter.SHORTS || (currentFilter == ContentFilter.ALL && hasShorts)) {
+            val gridLayoutManager = GridLayoutManager(this, 3) // 3 columns like Facebook
+            gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                override fun getSpanSize(position: Int): Int {
+                    return when (searchAdapter.getItemViewType(position)) {
+                        SearchUserNameAdapter.TYPE_SHORTS_GRID -> 1 // Shorts take 1 column
+                        else -> 3 // Headers and other items span all columns
+                    }
+                }
+            }
+            binding.searchResultsRecyclerView.layoutManager = gridLayoutManager
+        } else {
+            // Use LinearLayoutManager for other content
+            binding.searchResultsRecyclerView.layoutManager = LinearLayoutManager(this)
+        }
+    }
+
+    private fun displaySearchResults(results: SearchResults) {
+        val items = mutableListOf<Any>()
+
+        when (currentFilter) {
+            ContentFilter.ALL -> {
+                // PEOPLE
+                if (results.people.isNotEmpty()) {
+                    items.add("PEOPLE_HEADER")
+                    items.addAll(results.people)
+                }
+
+                // CHATS
+                if (results.chats.isNotEmpty()) {
+                    items.add("CHATS_HEADER")
+                    items.addAll(results.chats)
+                }
+
+                // SHORTS - Grid display
+                if (results.shorts.isNotEmpty()) {
+                    items.add("SHORTS_HEADER")
+                    items.addAll(results.shorts)
+                }
+
+                // FEED
+                if (results.feedPosts.isNotEmpty()) {
+                    items.add("FEED_HEADER")
+                    items.addAll(results.feedPosts)
+                }
+
+                // BUSINESS
+                if (results.business.isNotEmpty()) {
+                    items.add("BUSINESS_HEADER")
+                    items.addAll(results.business)
+                }
+            }
+
+            ContentFilter.SHORTS -> {
+                if (results.shorts.isNotEmpty()) {
+                    items.add("SHORTS_HEADER")
+                    items.addAll(results.shorts)
+                }
+            }
+
+            ContentFilter.FEED -> {
+                if (results.feedPosts.isNotEmpty()) {
+                    items.add("FEED_HEADER")
+                    items.addAll(results.feedPosts)
+                }
+            }
+
+            ContentFilter.PEOPLE -> {
+                if (results.people.isNotEmpty()) {
+                    items.add("PEOPLE_HEADER")
+                    items.addAll(results.people)
+                }
+            }
+
+            ContentFilter.CHATS -> {
+                if (results.chats.isNotEmpty()) {
+                    items.add("CHATS_HEADER")
+                    items.addAll(results.chats)
+                }
+            }
+
+            ContentFilter.BUSINESS -> {
+                if (results.business.isNotEmpty()) {
+                    items.add("BUSINESS_HEADER")
+                    items.addAll(results.business)
+                }
+            }
+        }
+
+        if (items.isEmpty()) {
+            binding.noResultsText.visibility = View.VISIBLE
+            searchAdapter.showNoResults()
+        } else {
+            binding.noResultsText.visibility = View.GONE
+            searchAdapter.submitList(items)
+
+            // Update layout manager based on content
+            updateLayoutManager(items)
+        }
+    }
+
+    private suspend fun searchUsers(query: String): List<User> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getUsers()
+                val users = response.body()?.data ?: emptyList()
+
+                if (query.isBlank()) return@withContext users
+
+                users.filter { user ->
+                    (user.username?.contains(query, true) == true) ||
+                            (user.email?.contains(query, true) == true)
+                }
+
+            } catch (e: Exception) {
+                emptyList()
+            }
+        }
+
+    private fun displayUserContentResults(results: SearchResults) {
+        val items = mutableListOf<Any>()
+
+        if (results.allPosts.isNotEmpty()) {
+            items.add("USER_CONTENT_HEADER")
+            items.addAll(results.allPosts)
+        }
+
+        if (items.isEmpty()) {
+            binding.noResultsText.visibility = View.VISIBLE
+            searchAdapter.showNoResults()
+        } else {
+            binding.noResultsText.visibility = View.GONE
+            searchAdapter.submitList(items)
+        }
+    }
+
+    private suspend fun searchChats(query: String): List<Chat> = withContext(Dispatchers.IO) {
+
+        try {
+            val response = apiService.getChats(limit = 100, offset = 0)
+            val chats = response.body()?.data ?: emptyList()
+
+            if (query.isBlank()) return@withContext emptyList()
+
+            // Filter chats by participants, chat name, or last message
+            chats.filter { chat ->
+                chat.participants.any { participant ->
+                    participant.username?.contains(query, true) == true
+                } ||
+                        chat.name?.contains(query, true) == true ||
+                        chat.lastMessage?.content?.contains(query, true) == true
+            }
+
+        } catch (e: Exception) {
+            Log.e("SearchChats", "Error searching chats: ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    private suspend fun searchGlobalContent(query: String): SearchResults =
+        withContext(Dispatchers.IO) {
+            try {
+                // -------- USERS/PEOPLE --------
+                val allUsers = searchUsers(query)
+
+                // Convert Users to Authors with proper name mapping using correct API
+                val peopleAuthors = allUsers.mapNotNull { user ->
+                    try {
+                        // Fetch user profile using the correct endpoint
+                        val profileResponse = apiService.getOtherUsersProfileByUsername(user.username ?: "")
+                        val profileData = profileResponse.body()?.data
+
+                        val currentDate = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()).format(Date())
+
+                        Author(
+                            __v = profileData?.__v ?: 0,
+                            _id = profileData?._id ?: user._id,
+                            account = Account(
+                                _id = profileData?.account?._id ?: user._id,
+                                avatar = Avatar(
+                                    _id = user.avatar?._id ?: "",
+                                    localPath = user.avatar?.localPath ?: "",
+                                    url = user.avatar?.url ?: ""
+                                ),
+                                createdAt = currentDate,
+                                email = profileData?.account?.email ?: user.email ?: "",
+                                updatedAt = currentDate,
+                                username = profileData?.account?.username ?: user.username ?: ""
+                            ),
+                            bio = profileData?.bio ?: "",
+                            countryCode = profileData?.countryCode ?: "",
+                            coverImage = CoverImage(
+                                _id = profileData?.coverImage?._id ?: "",
+                                localPath = profileData?.coverImage?.localPath ?: "",
+                                url = profileData?.coverImage?.url ?: "https://via.placeholder.com/800x450.png"
+                            ),
+                            createdAt = profileData?.createdAt ?: currentDate,
+                            dob = profileData?.dob ?: "",
+                            firstName = profileData?.firstName ?: "",
+                            lastName = profileData?.lastName ?: "",
+                            location = profileData?.location ?: "",
+                            owner = profileData?.owner ?: user._id,
+                            phoneNumber = profileData?.phoneNumber ?: "",
+                            updatedAt = profileData?.updatedAt ?: currentDate
+                        )
+                    } catch (e: Exception) {
+                        Log.e("SearchGlobal", "Error fetching profile for ${user.username}", e)
+                        null
+                    }
+                }
+
+                // -------- SHORTS --------
+                val shortsResponse = apiService.getShorts("1")
+                val shortsRaw = shortsResponse.body()?.data?.posts?.posts ?: emptyList()
+                val convertedShorts: List<Post> = shortsRaw.map { it.toPostsPost() }
+
+                val filteredShorts = if (query.isBlank()) {
+                    convertedShorts
+                } else {
+                    convertedShorts.filter { post ->
+                        (post.content?.contains(query, ignoreCase = true) == true) ||
+                                (post.author.account.username?.contains(query, ignoreCase = true) == true) ||
+                                (post.author.firstName?.contains(query, ignoreCase = true) == true) ||
+                                (post.author.lastName?.contains(query, ignoreCase = true) == true) ||
+                                post.tags.any { it?.toString()?.contains(query, ignoreCase = true) == true }
+                    }
+                }
+
+                val shortsOnly = filteredShorts.filter { post ->
+                    post.fileTypes.any { it.fileType.equals("video", ignoreCase = true) }
+                }
+
+                // -------- FEED POSTS --------
+                val feedResponse = apiService.getUserFeedForSearch("", "1", "100")
+                val feedPosts: List<Post> = feedResponse.body()?.data?.data?.posts ?: emptyList()
+
+                val filteredFeed = if (query.isBlank()) {
+                    feedPosts
+                } else {
+                    feedPosts.filter { post ->
+                        (post.content?.contains(query, ignoreCase = true) == true) ||
+                                post.tags.any { it?.toString()?.contains(query, ignoreCase = true) == true } ||
+                                (post.author.account.username?.contains(query, ignoreCase = true) == true) ||
+                                (post.author.firstName?.contains(query, ignoreCase = true) == true) ||
+                                (post.author.lastName?.contains(query, ignoreCase = true) == true)
+                    }
+                }
+
+                val feedOnly = filteredFeed.filter { post ->
+                    post.contentType.equals("text", ignoreCase = true) ||
+                            (post.contentType.equals("mixed_files", ignoreCase = true) &&
+                                    post.fileTypes.all { !it.fileType.equals("video", ignoreCase = true) })
+                }
+
+
+                // -------- CHATS --------
+                val filteredChats = if (query.isBlank()) {
+                    emptyList()
+                } else {
+                    val apiChats = searchChats(query)
+
+                    apiChats.map { chat ->
+                        // Enrich participants with full profile data (like PEOPLE does)
+                        val enrichedUsers = chat.participants.mapNotNull { participant ->
+                            try {
+                                // Fetch user profile using the correct endpoint
+                                val profileResponse = apiService.getOtherUsersProfileByUsername(participant.username ?: "")
+                                val profileData = profileResponse.body()?.data
+
+                                val firstName = profileData?.firstName ?: ""
+                                val lastName = profileData?.lastName ?: ""
+                                val username = profileData?.account?.username ?: participant.username ?: ""
+
+                                // Store as: "FirstName LastName|username"
+                                val fullName = "${firstName} ${lastName}".trim()
+                                val combinedName = if (fullName.isNotEmpty()) {
+                                    "$fullName|$username"
+                                } else {
+                                    username
+                                }
+
+                                UserEntity(
+                                    id = profileData?._id ?: participant._id,
+                                    name = combinedName,
+                                    avatar = participant.avatar?.url ?: "",
+                                    lastSeen = participant.lastseen ?: Date(),
+                                    online = false
+                                )
+                            } catch (e: Exception) {
+                                Log.e("SearchChats", "Error fetching profile for ${participant.username}", e)
+                                // Fallback to basic user info
+                                UserEntity(
+                                    id = participant._id,
+                                    name = participant.username ?: "Unknown",
+                                    avatar = participant.avatar?.url ?: "",
+                                    lastSeen = participant.lastseen ?: Date(),
+                                    online = false
+                                )
+                            }
+                        }
+
+                        val firstParticipant = enrichedUsers.firstOrNull()
+
+                        DialogEntity(
+                            id = chat._id,
+                            dialogPhoto = firstParticipant?.avatar ?: chat.participants.firstOrNull()?.avatar?.url ?: "",
+                            dialogName = firstParticipant?.name?.split("|")?.firstOrNull() ?: chat.name ?: "Chat",
+                            users = enrichedUsers,
+                            lastMessage = null,
+                            unreadCount = 0
+                        )
+                    }
+                }
+
+                // -------- BUSINESS POSTS --------
+                val businessPostsResponse = apiService.getBusinessPost("1")
+                val allBusinessPosts = businessPostsResponse.body()?.data?.posts ?: emptyList()
+
+                val filteredBusinessPosts = if (query.isBlank()) {
+                    allBusinessPosts
+                } else {
+                    allBusinessPosts.filter { businessPost ->
+                        val username = businessPost.userDetails.username.orEmpty()
+
+                        (businessPost.itemName?.contains(query, ignoreCase = true) == true) ||
+                                (businessPost.description?.contains(query, ignoreCase = true) == true) ||
+                                username.contains(query, ignoreCase = true)
+                        // We can't access businessProfile because it's not in the data class
+                        // So we rely on username, item name, and description only — which is still very effective
+                    }
+                }.map { businessPost ->
+                    // Convert to your unified Post model for display
+                    // Keep using userDetails for username and avatar (already available!)
+
+                    Post(
+                        __v = businessPost.__v ?: 0,
+                        _id = businessPost._id,
+                        author = Author(
+                            __v = 0, // or fetch if needed, but for now use defaults
+                            _id = businessPost.owner,
+                            account = Account(
+                                _id = businessPost.owner,
+                                avatar = Avatar(
+                                    _id = "",
+                                    localPath = "",
+                                    url = businessPost.userDetails.avatar ?: ""
+                                ),
+                                createdAt = businessPost.createdAt ?: "",
+                                email = "",
+                                updatedAt = businessPost.updatedAt ?: "",
+                                username = businessPost.userDetails.username ?: ""
+                            ),
+                            bio = "",
+                            countryCode = "",
+                            coverImage = CoverImage("", "", "https://via.placeholder.com/800x450.png"),
+                            createdAt = businessPost.createdAt ?: "",
+                            dob = "",
+                            firstName = "",  // Not available without extra API call
+                            lastName = "",   // Not available without extra API call
+                            location = "",
+                            owner = businessPost.owner,
+                            phoneNumber = "",
+                            updatedAt = businessPost.updatedAt ?: ""
+                        ),
+                        bookmarkCount = businessPost.bookmarkCount ?: 0,
+                        comments = businessPost.comments ?: 0,
+                        content = businessPost.description ?: "",
+                        contentType = "business",
+                        createdAt = businessPost.createdAt ?: "",
+                        duration = emptyList(),
+                        feedShortsBusinessId = businessPost._id,
+                        fileIds = emptyList(),
+                        fileNames = emptyList(),
+                        fileSizes = emptyList(),
+                        fileTypes = emptyList(),
+                        files = ArrayList(businessPost.images?.map { imageUrl ->
+                            File("", "", "", imageUrl, "image")
+                        } ?: emptyList()),
+                        isBookmarked = businessPost.isBookmarked ?: false,
+                        isExpanded = false,
+                        isFollowing = businessPost.isFollowing ?: false,
+                        isLiked = businessPost.isLiked ?: false,
+                        isLocal = false,
+                        isReposted = false,
+                        likes = businessPost.likes ?: 0,
+                        numberOfPages = emptyList(),
+                        originalPost = emptyList(),
+                        repostedByUserId = "",
+                        repostedUser = RepostedUser("", Avatar("", "", ""), "", CoverImage("", "", ""), "", "", "", "", "", "", ""),
+                        repostedUsers = emptyList(),
+                        tags = emptyList(),
+                        thumbnail = emptyList(),
+                        updatedAt = businessPost.updatedAt ?: "",
+                        shareCount = 0,
+                        repostCount = 0,
+                        isBusinessPost = true,
+                        category = "business",
+                        businessDetails = null,
+                        isFavorited = null,
+                        favorites = null
+                    )
+                }
+                Log.d("SearchGlobal", "Results - People: ${peopleAuthors.size}, Shorts: ${shortsOnly.size}, Feed: ${feedOnly.size}, Chats: ${filteredChats.size}, Business: ${filteredBusinessPosts.size}")
+
+                SearchResults(
+                    allPosts = filteredShorts + filteredFeed,
+                    shorts = shortsOnly,
+                    feedPosts = feedOnly,
+                    people = peopleAuthors,
+                    chats = filteredChats,
+                    business = filteredBusinessPosts
+                )
+
+            } catch (e: Exception) {
+                Log.e("SearchGlobal", "Error", e)
+                SearchResults()
+            }
+        }
 
     private suspend fun searchUserContent(query: String, userId: String): SearchResults = withContext(Dispatchers.IO) {
         try {
@@ -439,594 +965,6 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         return@withContext SearchResults()
     }
 
-    private fun displaySearchResults(results: SearchResults) {
-        val items = mutableListOf<Any>()
-
-        when (currentFilter) {
-            ContentFilter.ALL -> {
-                // PEOPLE
-                if (results.people.isNotEmpty()) {
-                    items.add("PEOPLE_HEADER")
-                    items.addAll(results.people)
-                }
-
-                // CHATS
-                if (results.chats.isNotEmpty()) {
-                    items.add("CHATS_HEADER")
-                    items.addAll(results.chats)
-                }
-
-                // SHORTS - Grid display
-                if (results.shorts.isNotEmpty()) {
-                    items.add("SHORTS_HEADER")
-                    items.addAll(results.shorts)
-                }
-
-                // FEED
-                if (results.feedPosts.isNotEmpty()) {
-                    items.add("FEED_HEADER")
-                    items.addAll(results.feedPosts)
-                }
-
-                // BUSINESS
-                if (results.business.isNotEmpty()) {
-                    items.add("BUSINESS_HEADER")
-                    items.addAll(results.business)
-                }
-            }
-
-            ContentFilter.SHORTS -> {
-                if (results.shorts.isNotEmpty()) {
-                    items.add("SHORTS_HEADER")
-                    items.addAll(results.shorts)
-                }
-            }
-
-            ContentFilter.FEED -> {
-                if (results.feedPosts.isNotEmpty()) {
-                    items.add("FEED_HEADER")
-                    items.addAll(results.feedPosts)
-                }
-            }
-
-            ContentFilter.PEOPLE -> {
-                if (results.people.isNotEmpty()) {
-                    items.add("PEOPLE_HEADER")
-                    items.addAll(results.people)
-                }
-            }
-
-            ContentFilter.CHATS -> {
-                if (results.chats.isNotEmpty()) {
-                    items.add("CHATS_HEADER")
-                    items.addAll(results.chats)
-                }
-            }
-
-            ContentFilter.BUSINESS -> {
-                if (results.business.isNotEmpty()) {
-                    items.add("BUSINESS_HEADER")
-                    items.addAll(results.business)
-                }
-            }
-        }
-
-        if (items.isEmpty()) {
-            binding.noResultsText.visibility = View.VISIBLE
-            searchAdapter.showNoResults()
-        } else {
-            binding.noResultsText.visibility = View.GONE
-            searchAdapter.submitList(items)
-
-            // Update layout manager based on content
-            updateLayoutManager(items)
-        }
-    }
-
-    private fun updateLayoutManager(items: List<Any>) {
-        // Check if we have shorts content
-        val hasShorts = items.any { it is Post &&
-                it.contentType.equals("mixed_files", ignoreCase = true) &&
-                it.fileTypes.any { fileType -> fileType.fileType.equals("video", ignoreCase = true) }
-        }
-
-        // Use GridLayoutManager if we're in SHORTS filter or ALL with shorts
-        if (currentFilter == ContentFilter.SHORTS || (currentFilter == ContentFilter.ALL && hasShorts)) {
-            val gridLayoutManager = GridLayoutManager(this, 3) // 3 columns like Facebook
-            gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                override fun getSpanSize(position: Int): Int {
-                    return when (searchAdapter.getItemViewType(position)) {
-                        SearchUserNameAdapter.TYPE_SHORTS_GRID -> 1 // Shorts take 1 column
-                        else -> 3 // Headers and other items span all columns
-                    }
-                }
-            }
-            binding.searchResultsRecyclerView.layoutManager = gridLayoutManager
-        } else {
-            // Use LinearLayoutManager for other content
-            binding.searchResultsRecyclerView.layoutManager = LinearLayoutManager(this)
-        }
-    }
-
-    private fun displayUserContentResults(results: SearchResults) {
-        val items = mutableListOf<Any>()
-
-        if (results.allPosts.isNotEmpty()) {
-            items.add("USER_CONTENT_HEADER")
-            items.addAll(results.allPosts)
-        }
-
-        if (items.isEmpty()) {
-            binding.noResultsText.visibility = View.VISIBLE
-            searchAdapter.showNoResults()
-        } else {
-            binding.noResultsText.visibility = View.GONE
-            searchAdapter.submitList(items)
-        }
-    }
-
-    private fun initSearchResults() {
-
-        // Create real LocalStorage instance
-        val localStorage = LocalStorage(this@SearchAllUserNameActivity)
-
-        searchAdapter = SearchUserNameAdapter(
-            localStorage = localStorage,
-            onUserClicked = { author ->
-                Log.d("SearchResults", "User clicked: @${author.account.username}")
-                addUserToRecent(author.toRecentUser())
-
-                // Open user profile instead of switching to user context
-                openUserProfile(author)
-            },
-            onPostClicked = { post ->
-                Log.d("SearchResults", "Post clicked: ${post._id}")
-
-            }
-        )
-
-        binding.searchResultsRecyclerView.apply {
-            layoutManager = LinearLayoutManager(this@SearchAllUserNameActivity)
-            adapter = searchAdapter
-            setHasFixedSize(false)
-        }
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun openUserProfile(author: Author) {
-        val intent = Intent(this, OtherUserProfileAccount::class.java).apply {
-            putExtra("extra_user_id", author.owner)  // Account ID
-            putExtra("extra_user_name", "${author.firstName} ${author.lastName}".trim())
-            putExtra("extra_username", author.account.username)
-            putExtra("extra_avatar_url", author.account.avatar.url)
-            putExtra("user_full_name", "${author.firstName} ${author.lastName}".trim())
-        }
-        startActivity(intent)
-    }
-
-    private fun setupToolbar() {
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.setDisplayShowTitleEnabled(false)
-
-        // Handle back button click
-        binding.backButton.setOnClickListener {
-            onBackPressed()
-        }
-    }
-
-    private fun loadRecentUsers() {
-        lifecycleScope.launch {
-            try {
-                val recentUsers = withContext(Dispatchers.IO) {
-                    recentUserViewModel.getRecentUsers()
-                }
-
-                if (recentUsers.isNotEmpty()) {
-                    searchAdapter.showRecentUsers(recentUsers.map { it.toAuthor() })
-                    binding.noResultsText.visibility = View.GONE
-                } else {
-                    searchAdapter.submitList(emptyList())
-                }
-            } catch (e: Exception) {
-                Log.e("SearchUsers", "Error loading recent users: ${e.message}")
-                searchAdapter.submitList(emptyList())
-            }
-        }
-    }
-
-    private fun addUserToRecent(user: RecentUser) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                recentUserViewModel.addRecentUser(user)
-            } catch (e: Exception) {
-                Log.e("SearchUsers", "Error adding recent user: ${e.message}")
-            }
-        }
-    }
-
-    private fun hideKeyboard() {
-        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
-    }
-
-    override fun onBackPressed() {
-        if (currentSearchContext != SearchContext.GLOBAL) {
-            resetToGlobalSearch()
-        } else {
-            super.onBackPressed()
-        }
-    }
-
-    private suspend fun searchGlobalContent(query: String): SearchResults =
-        withContext(Dispatchers.IO) {
-            try {
-                // Execute ALL API calls in parallel using async
-                val usersDeferred = async { searchUsers(query) }
-                val shortsDeferred = async {
-                    try {
-                        apiService.getShorts("1")
-                    } catch (e: Exception) {
-                        Log.e("SearchGlobal", "Error fetching shorts", e)
-                        null
-                    }
-                }
-                val feedDeferred = async {
-                    try {
-                        apiService.getUserFeedForSearch("", "1", "100")
-                    } catch (e: Exception) {
-                        Log.e("SearchGlobal", "Error fetching feed", e)
-                        null
-                    }
-                }
-                val businessDeferred = async {
-                    try {
-                        apiService.getBusinessPost("1")
-                    } catch (e: Exception) {
-                        Log.e("SearchGlobal", "Error fetching business", e)
-                        null
-                    }
-                }
-                val chatsDeferred = async {
-                    if (query.isNotBlank()) searchChats(query) else emptyList()
-                }
-
-                // Wait for all results
-                val allUsers = usersDeferred.await()
-                val shortsResponse = shortsDeferred.await()
-                val feedResponse = feedDeferred.await()
-                val businessPostsResponse = businessDeferred.await()
-                val filteredChats = chatsDeferred.await()
-
-                // -------- PROCESS USERS/PEOPLE --------
-                val peopleAuthors = if (query.isBlank()) {
-                    // Don't fetch profiles for empty query
-                    allUsers.map { user ->
-                        Author(
-                            __v = 0,
-                            _id = user._id,
-                            account = Account(
-                                _id = user._id,
-                                avatar = Avatar(
-                                    _id = user.avatar?._id ?: "",
-                                    localPath = user.avatar?.localPath ?: "",
-                                    url = user.avatar?.url ?: ""
-                                ),
-                                createdAt = "",
-                                email = user.email ?: "",
-                                updatedAt = "",
-                                username = user.username ?: ""
-                            ),
-                            bio = "",
-                            countryCode = "",
-                            coverImage = CoverImage("", "", "https://via.placeholder.com/800x450.png"),
-                            createdAt = "",
-                            dob = "",
-                            firstName = "",
-                            lastName = "",
-                            location = "",
-                            owner = user._id,
-                            phoneNumber = "",
-                            updatedAt = ""
-                        )
-                    }
-                } else {
-                    // Fetch profiles in parallel for matched users
-                    allUsers.map { user ->
-                        async {
-                            try {
-                                val profileResponse = apiService.getOtherUsersProfileByUsername(user.username ?: "")
-                                val profileData = profileResponse.body()?.data
-                                val currentDate = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()).format(Date())
-
-                                Author(
-                                    __v = profileData?.__v ?: 0,
-                                    _id = profileData?._id ?: user._id,
-                                    account = Account(
-                                        _id = profileData?.account?._id ?: user._id,
-                                        avatar = Avatar(
-                                            _id = user.avatar?._id ?: "",
-                                            localPath = user.avatar?.localPath ?: "",
-                                            url = user.avatar?.url ?: ""
-                                        ),
-                                        createdAt = currentDate,
-                                        email = profileData?.account?.email ?: user.email ?: "",
-                                        updatedAt = currentDate,
-                                        username = profileData?.account?.username ?: user.username ?: ""
-                                    ),
-                                    bio = profileData?.bio ?: "",
-                                    countryCode = profileData?.countryCode ?: "",
-                                    coverImage = CoverImage(
-                                        _id = profileData?.coverImage?._id ?: "",
-                                        localPath = profileData?.coverImage?.localPath ?: "",
-                                        url = profileData?.coverImage?.url ?: "https://via.placeholder.com/800x450.png"
-                                    ),
-                                    createdAt = profileData?.createdAt ?: currentDate,
-                                    dob = profileData?.dob ?: "",
-                                    firstName = profileData?.firstName ?: "",
-                                    lastName = profileData?.lastName ?: "",
-                                    location = profileData?.location ?: "",
-                                    owner = profileData?.owner ?: user._id,
-                                    phoneNumber = profileData?.phoneNumber ?: "",
-                                    updatedAt = profileData?.updatedAt ?: currentDate
-                                )
-                            } catch (e: Exception) {
-                                Log.e("SearchGlobal", "Error fetching profile for ${user.username}", e)
-                                null
-                            }
-                        }
-                    }.awaitAll().filterNotNull()
-                }
-
-                // -------- PROCESS SHORTS --------
-                val shortsRaw = shortsResponse?.body()?.data?.posts?.posts ?: emptyList()
-                val convertedShorts: List<Post> = shortsRaw.map { it.toPostsPost() }
-
-                val filteredShorts = if (query.isBlank()) {
-                    convertedShorts.take(20)  // Limit initial results
-                } else {
-                    convertedShorts.filter { post ->
-                        (post.content?.contains(query, ignoreCase = true) == true) ||
-                                (post.author.account.username?.contains(query, ignoreCase = true) == true) ||
-                                (post.author.firstName?.contains(query, ignoreCase = true) == true) ||
-                                (post.author.lastName?.contains(query, ignoreCase = true) == true) ||
-                                post.tags.any { it?.toString()?.contains(query, ignoreCase = true) == true }
-                    }
-                }
-
-                val shortsOnly = filteredShorts.filter { post ->
-                    post.fileTypes.any { it.fileType.equals("video", ignoreCase = true) }
-                }
-
-                // -------- PROCESS FEED POSTS --------
-                val feedPosts: List<Post> = feedResponse?.body()?.data?.data?.posts ?: emptyList()
-
-                val filteredFeed = if (query.isBlank()) {
-                    feedPosts.take(20)  // Limit initial results
-                } else {
-                    feedPosts.filter { post ->
-                        (post.content?.contains(query, ignoreCase = true) == true) ||
-                                post.tags.any { it?.toString()?.contains(query, ignoreCase = true) == true } ||
-                                (post.author.account.username?.contains(query, ignoreCase = true) == true) ||
-                                (post.author.firstName?.contains(query, ignoreCase = true) == true) ||
-                                (post.author.lastName?.contains(query, ignoreCase = true) == true)
-                    }
-                }
-
-                val feedOnly = filteredFeed.filter { post ->
-                    post.contentType.equals("text", ignoreCase = true) ||
-                            (post.contentType.equals("mixed_files", ignoreCase = true) &&
-                                    post.fileTypes.all { !it.fileType.equals("video", ignoreCase = true) })
-                }
-
-                // -------- PROCESS BUSINESS POSTS --------
-                val allBusinessPosts = businessPostsResponse?.body()?.data?.posts ?: emptyList()
-
-                val filteredBusinessPosts = if (query.isBlank()) {
-                    allBusinessPosts.take(20)  // Limit initial results
-                } else {
-                    allBusinessPosts.filter { businessPost ->
-                        val username = businessPost.userDetails.username.orEmpty()
-                        (businessPost.itemName?.contains(query, ignoreCase = true) == true) ||
-                                (businessPost.description?.contains(query, ignoreCase = true) == true) ||
-                                username.contains(query, ignoreCase = true)
-                    }
-                }.map { businessPost ->
-                    Post(
-                        __v = businessPost.__v ?: 0,
-                        _id = businessPost._id,
-                        author = Author(
-                            __v = 0,
-                            _id = businessPost.owner,
-                            account = Account(
-                                _id = businessPost.owner,
-                                avatar = Avatar(
-                                    _id = "",
-                                    localPath = "",
-                                    url = businessPost.userDetails.avatar ?: ""
-                                ),
-                                createdAt = businessPost.createdAt ?: "",
-                                email = "",
-                                updatedAt = businessPost.updatedAt ?: "",
-                                username = businessPost.userDetails.username ?: ""
-                            ),
-                            bio = "",
-                            countryCode = "",
-                            coverImage = CoverImage("", "", "https://via.placeholder.com/800x450.png"),
-                            createdAt = businessPost.createdAt ?: "",
-                            dob = "",
-                            firstName = "",
-                            lastName = "",
-                            location = "",
-                            owner = businessPost.owner,
-                            phoneNumber = "",
-                            updatedAt = businessPost.updatedAt ?: ""
-                        ),
-                        bookmarkCount = businessPost.bookmarkCount ?: 0,
-                        comments = businessPost.comments ?: 0,
-                        content = businessPost.description ?: "",
-                        contentType = "business",
-                        createdAt = businessPost.createdAt ?: "",
-                        duration = emptyList(),
-                        feedShortsBusinessId = businessPost._id,
-                        fileIds = emptyList(),
-                        fileNames = emptyList(),
-                        fileSizes = emptyList(),
-                        fileTypes = emptyList(),
-                        files = ArrayList(businessPost.images?.map { imageUrl ->
-                            File("", "", "", imageUrl, "image")
-                        } ?: emptyList()),
-                        isBookmarked = businessPost.isBookmarked ?: false,
-                        isExpanded = false,
-                        isFollowing = businessPost.isFollowing ?: false,
-                        isLiked = businessPost.isLiked ?: false,
-                        isLocal = false,
-                        isReposted = false,
-                        likes = businessPost.likes ?: 0,
-                        numberOfPages = emptyList(),
-                        originalPost = emptyList(),
-                        repostedByUserId = "",
-                        repostedUser = RepostedUser("", Avatar("", "", ""), "", CoverImage("", "", ""), "", "", "", "", "", "", ""),
-                        repostedUsers = emptyList(),
-                        tags = emptyList(),
-                        thumbnail = emptyList(),
-                        updatedAt = businessPost.updatedAt ?: "",
-                        shareCount = 0,
-                        repostCount = 0,
-                        isBusinessPost = true,
-                        category = "business",
-                        businessDetails = null,
-                        isFavorited = null,
-                        favorites = null
-                    )
-                }
-
-                Log.d("SearchGlobal", "Results - People: ${peopleAuthors.size}, Shorts: ${shortsOnly.size}, Feed: ${feedOnly.size}, Chats: ${filteredChats.size}, Business: ${filteredBusinessPosts.size}")
-
-                SearchResults(
-                    allPosts = filteredShorts + filteredFeed,
-                    shorts = shortsOnly,
-                    feedPosts = feedOnly,
-                    people = peopleAuthors,
-                    chats = filteredChats,
-                    business = filteredBusinessPosts
-                )
-
-            } catch (e: Exception) {
-                Log.e("SearchGlobal", "Error", e)
-                SearchResults()
-            }
-        }
-
-    private suspend fun searchUsers(query: String): List<User> =
-        withContext(Dispatchers.IO) {
-            try {
-                val response = apiService.getUsers()
-                val users = response.body()?.data ?: emptyList()
-
-                if (query.isBlank()) return@withContext users
-
-                users.filter { user ->
-                    (user.username?.contains(query, true) == true) ||
-                            (user.email?.contains(query, true) == true)
-                }
-
-            } catch (e: Exception) {
-                emptyList()
-            }
-        }
-
-    private suspend fun searchChats(query: String): List<DialogEntity> =
-        withContext(Dispatchers.IO) {
-            try {
-                val response = apiService.getChats(limit = 100, offset = 0)
-                val chats = response.body()?.data ?: emptyList()
-
-                if (query.isBlank()) return@withContext emptyList()
-
-                // Filter chats by participants, chat name, or last message
-                val filteredChats = chats.filter { chat ->
-                    chat.participants.any { participant ->
-                        participant.username?.contains(query, true) == true
-                    } ||
-                            chat.name?.contains(query, true) == true ||
-                            chat.lastMessage?.content?.contains(query, true) == true
-                }
-
-                // Convert to DialogEntity WITHOUT fetching profiles (much faster)
-                filteredChats.map { chat ->
-                    val enrichedUsers = chat.participants.map { participant ->
-                        UserEntity(
-                            id = participant._id,
-                            name = participant.username ?: "Unknown",
-                            avatar = participant.avatar?.url ?: "",
-                            lastSeen = participant.lastseen ?: Date(),
-                            online = false
-                        )
-                    }
-
-                    val firstParticipant = enrichedUsers.firstOrNull()
-
-                    DialogEntity(
-                        id = chat._id,
-                        dialogPhoto = firstParticipant?.avatar ?: chat.participants.firstOrNull()?.avatar?.url ?: "",
-                        dialogName = firstParticipant?.name ?: chat.name ?: "Chat",
-                        users = enrichedUsers,
-                        lastMessage = null,
-                        unreadCount = 0
-                    )
-                }
-
-            } catch (e: Exception) {
-                Log.e("SearchChats", "Error searching chats: ${e.message}", e)
-                emptyList()
-            }
-        }
-
-    fun com.uyscuti.social.network.api.response.getallshorts.Avatar.toPostsAvatar(): Avatar {
-        return com.uyscuti.social.network.api.response.posts.Avatar(
-            _id = this._id,
-            url = this.url,
-            localPath = this.localPath
-        )
-    }
-
-    fun com.uyscuti.social.network.api.response.getallshorts.CoverImage.toPostsCoverImage(): CoverImage {
-        return com.uyscuti.social.network.api.response.posts.CoverImage(
-            _id = this._id,
-            url = this.url,
-            localPath = this.localPath
-        )
-    }
-
-    fun com.uyscuti.social.network.api.response.getallshorts.Account.toPostsAccount(): Account {
-        return Account(
-            _id = this._id,
-            avatar = this.avatar.toPostsAvatar(),
-            createdAt = "",
-            email = this.email,
-            updatedAt = "",
-            username = this.username
-        )
-    }
-
-    fun com.uyscuti.social.network.api.response.getallshorts.Author.toPostsAuthor(): Author {
-        return Author(
-            _id = this._id,
-            account = this.account.toPostsAccount(),
-            bio = this.bio,
-            countryCode = this.countryCode,
-            coverImage = this.coverImage.toPostsCoverImage(),
-            createdAt = this.createdAt,
-            dob = this.dob,
-            firstName = this.firstName,
-            lastName = this.lastName,
-            location = this.location,
-            owner = this.owner,
-            phoneNumber = this.phoneNumber,
-            updatedAt = this.updatedAt,
-            __v = this.__v
-        )
-    }
 
     // Convert get all shorts Post to posts.Post
     fun com.uyscuti.social.network.api.response.getallshorts.Post.toPostsPost(): Post {
@@ -1115,6 +1053,52 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         )
     }
 
+    fun com.uyscuti.social.network.api.response.getallshorts.Author.toPostsAuthor(): Author {
+        return Author(
+            _id = this._id,
+            account = this.account.toPostsAccount(),
+            bio = this.bio,
+            countryCode = this.countryCode,
+            coverImage = this.coverImage.toPostsCoverImage(),
+            createdAt = this.createdAt,
+            dob = this.dob,
+            firstName = this.firstName,
+            lastName = this.lastName,
+            location = this.location,
+            owner = this.owner,
+            phoneNumber = this.phoneNumber,
+            updatedAt = this.updatedAt,
+            __v = this.__v
+        )
+    }
+
+    fun com.uyscuti.social.network.api.response.getallshorts.Avatar.toPostsAvatar(): Avatar {
+        return com.uyscuti.social.network.api.response.posts.Avatar(
+            _id = this._id,
+            url = this.url,
+            localPath = this.localPath
+        )
+    }
+
+    fun com.uyscuti.social.network.api.response.getallshorts.Account.toPostsAccount(): Account {
+        return Account(
+            _id = this._id,
+            avatar = this.avatar.toPostsAvatar(),
+            createdAt = "",
+            email = this.email,
+            updatedAt = "",
+            username = this.username
+        )
+    }
+
+    fun com.uyscuti.social.network.api.response.getallshorts.CoverImage.toPostsCoverImage(): CoverImage {
+        return com.uyscuti.social.network.api.response.posts.CoverImage(
+            _id = this._id,
+            url = this.url,
+            localPath = this.localPath
+        )
+    }
+
 
 }
 
@@ -1180,7 +1164,7 @@ class SearchUserNameAdapter(
     private val localStorage: LocalStorage,
     private val onUserClicked: (Author) -> Unit,
     private val onPostClicked: (Post) -> Unit = {},
-    private val onChatClicked: (DialogEntity) -> Unit = {}
+    private val onChatClicked: (DialogEntity) -> Unit = {},
 ) : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback())
 {
 
@@ -1316,6 +1300,45 @@ class SearchUserNameAdapter(
         }
     }
 
+    // SeeAllViewHolder
+    private class SeeAllViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val seeAllText: TextView = itemView.findViewById(R.id.seeAllText)
+
+        fun bind(type: String) {
+            seeAllText.text = when (type) {
+                "SEE_ALL_PEOPLE" -> "See all people"
+                "SEE_ALL_SHORTS" -> "See all shorts"
+                "SEE_ALL_POSTS" -> "See all posts"
+                else -> "See all"
+            }
+        }
+    }
+
+    // LoadingViewHolder
+    private class LoadingViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val shimmer1: View? = itemView.findViewById(R.id.shimmer_view)
+        private val shimmer2: View? = itemView.findViewById(R.id.shimmer_view2)
+
+        fun showLoading() {
+            shimmer1?.visibility = View.VISIBLE
+            shimmer2?.visibility = View.VISIBLE
+        }
+    }
+
+    // DiffCallback
+    private class SearchDiffCallback : DiffUtil.ItemCallback<Any>() {
+        override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
+            return when {
+                oldItem is Author && newItem is Author -> oldItem._id == newItem._id
+                oldItem is Post && newItem is Post -> oldItem._id == newItem._id
+                else -> oldItem::class == newItem::class && oldItem == newItem
+            }
+        }
+
+        @SuppressLint("DiffUtilEquals")
+        override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean = oldItem == newItem
+    }
+
     // HeaderViewHolder
     private class HeaderViewHolder(private val view: View) : RecyclerView.ViewHolder(view) {
         private val headerText: TextView = view.findViewById(R.id.headerText)
@@ -1337,6 +1360,7 @@ class SearchUserNameAdapter(
 
     // ShortsGridViewHolder for grid display
     private class ShortsGridViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+
         private val videoThumbnail: ImageView = itemView.findViewById(R.id.videoThumbnail)
         private val playIcon: ImageView = itemView.findViewById(R.id.playIcon)
         private val viewsCount: TextView = itemView.findViewById(R.id.viewsCount)
@@ -1567,7 +1591,6 @@ class SearchUserNameAdapter(
         }
     }
 
-
     private class ChatViewHolder(
         private val itemView: View,
         private val localStorage: LocalStorage
@@ -1575,8 +1598,8 @@ class SearchUserNameAdapter(
     {
 
         private val chatAvatar: ImageView = itemView.findViewById(R.id.chatAvatar)
-        private val fullNameText: TextView = itemView.findViewById(R.id.chatName)
-        private val usernameText: TextView = itemView.findViewById(R.id.lastMessage)
+        private val fullNameText: TextView = itemView.findViewById(R.id.fullName)
+        private val usernameText: TextView = itemView.findViewById(R.id.userName)
 
         // Original bind method for chat items
         fun bind(dialogEntity: DialogEntity, onChatClicked: (DialogEntity) -> Unit) {
@@ -1788,42 +1811,9 @@ class SearchUserNameAdapter(
         }
     }
 
-    // SeeAllViewHolder
-    private class SeeAllViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val seeAllText: TextView = itemView.findViewById(R.id.seeAllText)
 
-        fun bind(type: String) {
-            seeAllText.text = when (type) {
-                "SEE_ALL_PEOPLE" -> "See all people"
-                "SEE_ALL_SHORTS" -> "See all shorts"
-                "SEE_ALL_POSTS" -> "See all posts"
-                else -> "See all"
-            }
-        }
-    }
-
-    // LoadingViewHolder
-    private class LoadingViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val shimmer1: View? = itemView.findViewById(R.id.shimmer_view)
-        private val shimmer2: View? = itemView.findViewById(R.id.shimmer_view2)
-
-        fun showLoading() {
-            shimmer1?.visibility = View.VISIBLE
-            shimmer2?.visibility = View.VISIBLE
-        }
-    }
-
-    // DiffCallback
-    private class SearchDiffCallback : DiffUtil.ItemCallback<Any>() {
-        override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
-            return when {
-                oldItem is Author && newItem is Author -> oldItem._id == newItem._id
-                oldItem is Post && newItem is Post -> oldItem._id == newItem._id
-                else -> oldItem::class == newItem::class && oldItem == newItem
-            }
-        }
-
-        @SuppressLint("DiffUtilEquals")
-        override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean = oldItem == newItem
-    }
 }
+
+
+
+
