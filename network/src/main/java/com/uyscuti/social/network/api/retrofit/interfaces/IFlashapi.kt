@@ -32,6 +32,7 @@ import com.uyscuti.social.network.api.response.MainResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.AllFeedRepostsPost
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostRequest
 import com.uyscuti.social.network.api.response.business.response.background.BackgroundImageResponse
+import com.uyscuti.social.network.api.response.business.response.post.BusinessPost
 import com.uyscuti.social.network.api.response.chats.ChatsResponse
 import com.uyscuti.social.network.api.response.chats.FetchChatResponse
 import com.uyscuti.social.network.api.response.comment.ShortCommentResponse
@@ -84,6 +85,7 @@ import com.uyscuti.social.network.api.response.updateavatar.UpdateAvatarResponse
 import com.uyscuti.social.network.api.response.userstatus.UserStatusResponse
 import com.uyscuti.social.network.api.response.getallshorts.ApiResponse
 import com.uyscuti.social.network.api.response.posts.FeedResponse
+import com.uyscuti.social.network.api.response.posts.SearchShortsResponse
 import com.uyscuti.social.network.api.response.profile.followersList.UserOtherFollowersResponse
 import com.uyscuti.social.network.api.response.profile.followingList.OtherUserFollowingResponse
 import okhttp3.RequestBody
@@ -967,5 +969,8 @@ interface IFlashapi {
         @Query("limit") limit: String
     ): Response<FeedResponse>
 
+
+    @GET("business/product-posts/post")
+    suspend fun getBusinessPost(@Query("page") page: String): Response<BusinessPost>
 
 }
