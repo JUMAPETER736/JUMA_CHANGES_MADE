@@ -15,6 +15,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -22,9 +23,11 @@ import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.DiffUtil
@@ -83,6 +86,7 @@ import com.uyscuti.social.network.api.models.Message
 import com.uyscuti.social.network.api.response.business.response.profile.BackgroundPhoto
 import com.uyscuti.social.network.api.response.business.response.profile.BackgroundVideo
 import com.uyscuti.social.network.api.response.posts.Duration
+import kotlinx.coroutines.CoroutineScope
 import java.util.TimeZone
 import com.uyscuti.social.network.api.request.business.create.Contact as CreateContact
 import com.uyscuti.social.network.api.response.business.response.profile.Contact as ProfileContact

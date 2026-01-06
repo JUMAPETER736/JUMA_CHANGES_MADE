@@ -207,6 +207,7 @@
     <string name="no_bookmarks">No Bookmarks</string>
     <string name="no_bookmarks_title">No saved posts yet</string>
     <string name="no_bookmarks_message">Bookmark posts you want to revisit later.\nThey\'ll appear here.</string>
+    <string name="media" />
 
 
 </resources>
