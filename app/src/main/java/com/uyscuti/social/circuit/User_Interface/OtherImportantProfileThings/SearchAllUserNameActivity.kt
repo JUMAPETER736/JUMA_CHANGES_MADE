@@ -2,7 +2,9 @@ package com.uyscuti.social.circuit.user_interface
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Intent
 import android.content.SharedPreferences
+import android.media.MediaMetadataRetriever
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,6 +17,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.SwitchCompat
@@ -22,7 +25,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -31,8 +36,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
-import com.uyscuti.sharedmodule.MessagesActivity
-import com.uyscuti.sharedmodule.presentation.RecentUserViewModel
+
 import com.uyscuti.social.business.adapter.MediaPagerAdapter
 import com.uyscuti.social.business.room.entity.BusinessEntity
 import com.uyscuti.social.circuit.R
@@ -67,10 +71,17 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.network.api.request.business.users.GetBusinessProfileById
-import com.uyscuti.sharedmodule.utils.NetworkUtil
+
 import com.uyscuti.social.business.room.repository.BusinessRepository
+import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.MessagesActivity
+import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
+import com.uyscuti.social.circuit.data.model.Dialog
+import com.uyscuti.social.circuit.presentation.RecentUserViewModel
+import com.uyscuti.social.network.api.models.Message
 import com.uyscuti.social.network.api.response.business.response.profile.BackgroundPhoto
 import com.uyscuti.social.network.api.response.business.response.profile.BackgroundVideo
+import com.uyscuti.social.network.api.response.posts.Duration
+import java.util.TimeZone
 import com.uyscuti.social.network.api.request.business.create.Contact as CreateContact
 import com.uyscuti.social.network.api.response.business.response.profile.Contact as ProfileContact
 
@@ -1778,18 +1789,18 @@ class SearchUserNameAdapter(
 
         private fun DialogEntity.toDialog(
             localStorage: LocalStorage
-        ): com.uyscuti.sharedmodule.data.model.Dialog {
+        ): Dialog {
 
             val myUserId = localStorage.getUserId()
             val otherUser = users.firstOrNull { it.id != myUserId }
 
-            val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
+            val usersList = ArrayList<User>()
             otherUser?.let { usersList.add(it.toUser()) }
 
             val message = lastMessage?.toMessage()
             val dialogName = usersList.firstOrNull()?.name ?: this.dialogName
 
-            return com.uyscuti.sharedmodule.data.model.Dialog(
+            return Dialog(
                 this.id,
                 dialogName,
                 this.dialogPhoto,
@@ -1799,9 +1810,9 @@ class SearchUserNameAdapter(
             )
         }
 
-        private fun UserEntity.toUser(): com.uyscuti.sharedmodule.data.model.User {
+        private fun UserEntity.toUser(): User {
             val username = if (name.contains("|")) name.split("|")[1].trim() else name
-            return com.uyscuti.sharedmodule.data.model.User(
+            return User(
                 id,
                 username,
                 avatar,
@@ -1810,16 +1821,16 @@ class SearchUserNameAdapter(
             )
         }
 
-        private fun MessageEntity.toMessage(): com.uyscuti.sharedmodule.data.model.Message {
+        private fun MessageEntity.toMessage(): Message {
             val username = if (user.name.contains("|")) user.name.split("|")[1].trim() else user.name
-            val msgUser = com.uyscuti.sharedmodule.data.model.User(
+            val msgUser = User(
                 user.id,
                 username,
                 user.avatar,
                 user.online,
                 user.lastSeen
             )
-            return com.uyscuti.sharedmodule.data.model.Message(
+            return Message(
                 id,
                 msgUser,
                 text,
