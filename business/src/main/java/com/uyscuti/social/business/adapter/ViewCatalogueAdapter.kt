@@ -3,7 +3,7 @@ package com.uyscuti.social.business.adapter
 import android.app.Activity
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.uyscuti.social.business.model.Catalogue
+import com.uyscuti.sharedmodule.model.Catalogue
 
 class ViewCatalogueAdapter(private var context: Activity, private val catalogue: Catalogue) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>()  {

@@ -11,7 +11,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.uyscuti.social.business.FullScreenImageActivity
+import com.uyscuti.sharedmodule.FullScreenImageActivity
 import com.uyscuti.social.business.R
 
 

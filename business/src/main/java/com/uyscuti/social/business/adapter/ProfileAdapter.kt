@@ -1,6 +1,7 @@
 package com.uyscuti.social.business.adapter
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
 import android.content.pm.PackageManager
@@ -14,26 +15,25 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresPermission
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.app.ActivityCompat
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 
 import com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
-import com.uyscuti.social.business.model.Catalogue
 import com.uyscuti.social.network.api.request.business.create.BackgroundPhoto
 import com.uyscuti.social.network.api.request.business.create.BusinessCatalogue
 import com.uyscuti.social.network.api.request.business.create.BusinessLocation
 import com.uyscuti.social.network.api.request.business.create.CreateBusinessProfile
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.uyscuti.sharedmodule.adapter.MediaPagerAdapter
 import com.uyscuti.social.network.api.request.business.create.LocationInformation
 import com.uyscuti.social.business.room.entity.BusinessEntity
 import com.uyscuti.social.business.util.ImagePicker
@@ -87,18 +87,15 @@ class ProfileAdapter(
     private val SAVEPROFILE_SECTION = 5
     private val REQUEST_LOCATION_PERMISSION = 1
 
-    //    private val CATALOGUE_SECTION = 6
+  //  private val CATALOGUE_SECTION = 6
     private val CONTACT_SECTION = 7
-    private val NEWCATALOGUE = 8
 
     private var imageUri: Uri? = null
     private var videoUri: Uri? = null
     private val describeProduct: EditText? = null
     private val price: EditText? = null
     private val catalogueImages: ArrayList<Uri> = arrayListOf()
-    private val catalogueItems: ArrayList<Catalogue> = arrayListOf()
 
-    private var catalogueAdapter: CatalogueAdapter? = null
 
     private var businessName: String? = null
     private var businessType: String? = null
@@ -119,6 +116,7 @@ class ProfileAdapter(
     private var emailError: Boolean = false
     private var phoneNumberError: Boolean = false
     private var backgroundImageError: Boolean = false
+    private var addressError: Boolean = false
 
     // Edit Texts
     private var businessNameEditText: EditText? = null
@@ -140,11 +138,9 @@ class ProfileAdapter(
         sections.add("Description")
         sections.add("business contact")
         sections.add("Location")
-//        sections.add("upload catalogue")
-        sections.add("New Catalogue")
+     //   sections.add("upload catalogue")
+       // sections.add("New Catalogue")
         sections.add("Save Profile")
-
-        catalogueItems.add(Catalogue(0.toString(), "add", "", "0.0", listOf()))
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
@@ -239,15 +235,6 @@ class ProfileAdapter(
                     false
                 )
             )
-
-            NEWCATALOGUE -> CatalogueViewHolder(
-                inflater.inflate(
-                    R.layout.new_cat,
-                    parent,
-                    false
-                )
-            )
-
             else -> throw IllegalArgumentException("Invalid view type")
         }
     }
@@ -288,27 +275,6 @@ class ProfileAdapter(
         notifyItemChanged(6)
     }
 
-    fun addCatalogueItem(catalogueItem: Catalogue) {
-        try {
-            if (catalogueItems.contains(catalogueItem)) {
-                return
-            }
-            catalogueItems.add(catalogueItem)
-            notifyItemChanged(6)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    fun deleteSelectedItems() {
-        catalogueAdapter!!.deleteSelectedItems()
-    }
-
-    fun getSelectedProductsIds(): List<String> {
-        return catalogueAdapter!!.getSelectedProductsIds()
-
-    }
-
     fun releasePlayer() {
         fullScreenPagerAdapter.releasePlayer()
     }
@@ -325,6 +291,7 @@ class ProfileAdapter(
     }
 
 
+    @SuppressLint("MissingPermission")
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is BusinessViewHolder -> {
@@ -579,7 +546,9 @@ class ProfileAdapter(
 //                                dialog.setContentView(R.layout.bill_board_popup)
 
                             }
-                            acknowledgeButton.setOnClickListener {
+                            acknowledgeButton.setOnClickListener @androidx.annotation.RequiresPermission(
+                                allOf = [android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION]
+                            ) {
 
 
                                 if (!checkBox!!.isChecked || !checkBox2!!.isChecked) {
@@ -656,9 +625,8 @@ class ProfileAdapter(
                 saveProfileViewHolder.saveProfileButton.setOnClickListener {
 
                     // Save profile
-                    Toast.makeText(context, "Profile saved", Toast.LENGTH_SHORT).show()
                     validateData()
-                    createProfile()
+
 
 
 //                    val dialog = Dialog(saveProfileViewHolder.itemView.context)
@@ -699,9 +667,9 @@ class ProfileAdapter(
                 val mediaUrls = arrayListOf<String>()
                 var videoThumbnail: String? = null
 
-                if (profile != null && profile!!.backgroundVideo != null && videoUri == null) {
-                    mediaUrls.add(0, profile!!.backgroundVideo!!)
-                    videoThumbnail = profile!!.videoThumbnail
+                if (profile != null && videoUri == null) { // && profile!!.backgroundVideo != null && videoUri == null
+                    mediaUrls.add(0, profile?.backgroundVideo.toString())
+                    videoThumbnail = profile?.videoThumbnail.toString()
                 }
 
                 if (videoUri != null) {
@@ -726,7 +694,7 @@ class ProfileAdapter(
 
 
                 if (profile != null && imageUri == null) {
-                    mediaUrls.add(profile!!.backgroundPhoto)
+                    mediaUrls.add(profile?.backgroundPhoto.toString())
                 }
 
                 if (imageUri != null) {
@@ -738,7 +706,7 @@ class ProfileAdapter(
                     }
                 }
 
-                fullScreenPagerAdapter = MediaPagerAdapter(mediaUrls, context, videoThumbnail)
+                fullScreenPagerAdapter = MediaPagerAdapter(mediaUrls, context)
 
                 backgroundImageViewHolder.viewPager.adapter = fullScreenPagerAdapter
                 backgroundImageViewHolder.viewPager.offscreenPageLimit = 10
@@ -757,7 +725,7 @@ class ProfileAdapter(
                     }
                 })
 
-
+                //line 765 to line 809 was comment, removed comments
 //                if (backgroundImageError){
 //                    backgroundImageViewHolder.uploadButton.error = "Please upload a profile photo"
 //                }
@@ -805,27 +773,12 @@ class ProfileAdapter(
 //                }
             }
 
-            is CatalogueViewHolder -> {
-                val catalogueViewHolder = holder as CatalogueViewHolder
-                val catalogueRecyclerView = catalogueViewHolder.catalogueRecyclerView
-                catalogueRecyclerView.setHasFixedSize(true)
-                catalogueRecyclerView.isNestedScrollingEnabled = false
-                catalogueRecyclerView.isFocusable = false
-                catalogueRecyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-
-                catalogueAdapter = CatalogueAdapter(context, catalogueItems)
-
-                catalogueAdapter?.onItemSelectedListener = {
-                    onItemSelectedListener?.invoke(it)
-                }
-                catalogueRecyclerView.adapter = catalogueAdapter
-                catalogueViewHolder.itemView.findViewById<ImageView>(R.id.add_item7)
-            }
-
         }
 
     }
 
+    @SuppressLint("SupportAnnotationUsage")
+    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     fun getLocation(): Boolean {
 
         if (ActivityCompat.checkSelfPermission(
@@ -862,6 +815,7 @@ class ProfileAdapter(
         return true
     }
 
+    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     fun getBillBoardLocation(): Boolean {
 
         if (ActivityCompat.checkSelfPermission(
@@ -898,9 +852,9 @@ class ProfileAdapter(
     }
 
     private fun createProfile() {
-        if (contactBooleanArray.any() || nameError || typeError || locationError || descriptionError || emailError || phoneNumberError) {
-            notifyDataSetChanged()
-        }
+//        if (contactBooleanArray.any() || nameError || typeError || locationError || descriptionError || emailError || phoneNumberError) {
+//            notifyDataSetChanged()
+//        }
         try {
 //            val imagePath = getRealPathFromUri(imageUri!!)
             val backgroundPhoto =
@@ -961,8 +915,18 @@ class ProfileAdapter(
         locationError = location == null
         descriptionError = description.isNullOrEmpty()
         emailError = email.isNullOrEmpty()
+        phoneNumberError = phoneNumber.isNullOrEmpty()
+        addressError = address.isNullOrEmpty()
 
         backgroundImageError = imageUri == null
+
+        if(nameError || typeError || emailError || descriptionError || addressError || phoneNumberError ) {
+            notifyDataSetChanged()
+            Toast.makeText(context, "Fill all the require fields", Toast.LENGTH_SHORT).show()
+        } else {
+            createProfile()
+            Toast.makeText(context, "Profile saved", Toast.LENGTH_SHORT).show()
+        }
     }
 
 
@@ -973,10 +937,9 @@ class ProfileAdapter(
             "Location" -> LOCATION_SECTION
             "Description" -> DESCRIPTION_SECTION
             "Background Image" -> BACKGROUNDIMAGE_SAECTION
-//            "upload catalogue" -> CATALOGUE_SECTION
+        //    "upload catalogue" -> CATALOGUE_SECTION
             "Save Profile" -> SAVEPROFILE_SECTION
             "business contact" -> CONTACT_SECTION
-            "New Catalogue" -> NEWCATALOGUE
             else -> throw IllegalArgumentException("Invalid section type")
         }
     }
@@ -1000,7 +963,7 @@ class ProfileAdapter(
 
     class BackgroundImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val uploadButton: AppCompatButton = itemView.findViewById(R.id.upload_button)
-//        val backgroundImageView: ImageView = itemView.findViewById(R.id.photo_preview)
+      //  val backgroundImageView: ImageView = itemView.findViewById(R.id.photo_preview)
 
         // Initialize views for ImagesHolder if needed
         val viewPager: ViewPager2 = itemView.findViewById(R.id.viewPager)
@@ -1015,10 +978,6 @@ class ProfileAdapter(
         val businessNameEditText: EditText = itemView.findViewById(R.id.business_name)
     }
 
-    class CatalogueViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val catalogueRecyclerView: RecyclerView = itemView.findViewById(R.id.recyclerViewer)
-    }
-
     class BusinessContactDetailsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val emailTextView: EditText = itemView.findViewById(R.id.email)
         val businessPhoneNumberTextView: EditText =
@@ -1030,6 +989,8 @@ class ProfileAdapter(
     class TypeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val businessTypeTextView: EditText = itemView.findViewById(R.id.business_type)
     }
+
+
 }
 
 //

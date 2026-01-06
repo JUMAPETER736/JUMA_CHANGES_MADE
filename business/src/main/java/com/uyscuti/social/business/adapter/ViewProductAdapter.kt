@@ -12,7 +12,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.uyscuti.social.business.EditCatalogueActivity
 import com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
-import com.uyscuti.social.business.model.Catalogue
+import com.uyscuti.sharedmodule.adapter.MediaPagerAdapter
+import com.uyscuti.sharedmodule.model.Catalogue
 import com.uyscuti.social.business.R
 
 
@@ -75,7 +76,7 @@ class ViewProductAdapter(private val context: Activity, private var catalogue: C
             }
 
 
-            fullScreenPagerAdapter = MediaPagerAdapter(imageList, context, thumbnail)
+            fullScreenPagerAdapter = MediaPagerAdapter(imageList, context)
 
             imagesHolder.viewPager.adapter = fullScreenPagerAdapter
             imagesHolder.viewPager.offscreenPageLimit = 10

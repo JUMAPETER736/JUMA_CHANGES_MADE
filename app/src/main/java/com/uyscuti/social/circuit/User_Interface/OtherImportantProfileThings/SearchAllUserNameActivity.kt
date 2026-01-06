@@ -110,22 +110,6 @@ enum class SearchContext {
 
 
 
-// Updated ContentFilter enum with your specific categories
-enum class ContentFilter {
-    ALL,
-    SHORTS,
-    FEED,
-    PEOPLE,
-    CHATS,
-    BUSINESS
-}
-
-enum class SearchContext {
-    GLOBAL,
-    USER_POSTS,
-    USER_PROFILE
-}
-
 @AndroidEntryPoint
 class SearchAllUserNameActivity : AppCompatActivity() {
 
