@@ -32,7 +32,11 @@ import com.uyscuti.social.network.api.response.MainResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.AllFeedRepostsPost
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostRequest
 import com.uyscuti.social.network.api.response.business.response.background.BackgroundImageResponse
+import com.uyscuti.social.network.api.response.business.response.businesslocation.AdvertisementResponse
+import com.uyscuti.social.network.api.response.business.response.businesslocation.BusinessLocationResponse
 import com.uyscuti.social.network.api.response.business.response.post.BusinessPost
+import com.uyscuti.social.network.api.response.business.response.post.ProductPost
+import com.uyscuti.social.network.api.response.business.response.post.likes.LikeResponse
 import com.uyscuti.social.network.api.response.chats.ChatsResponse
 import com.uyscuti.social.network.api.response.chats.FetchChatResponse
 import com.uyscuti.social.network.api.response.comment.ShortCommentResponse
@@ -972,5 +976,113 @@ interface IFlashapi {
 
     @GET("business/product-posts/post")
     suspend fun getBusinessPost(@Query("page") page: String): Response<BusinessPost>
+
+
+
+    @GET("business/profile")
+    suspend fun getBusinessProfile(): Response<ProfileResponse>
+
+    @POST("business/profile")
+    suspend fun createBusinessProfile(
+        @Body profile: CreateBusinessProfile
+    ): Response<CreateProfileResponse>
+
+    @GET("business/catalogue")
+    suspend fun getCatalogue(): Response<GetMyCatalogueResponse>
+
+    @Multipart
+    @PATCH("business/profile/background")
+    suspend fun updateBackground(@Part avatar: MultipartBody.Part): Response<BackgroundImageResponse>
+
+    @Multipart
+    @PATCH("business/profile/livelocation")
+    suspend fun updateLiveLocation(
+        @Part("enabled") enabled: RequestBody,
+        @Part("latitude") latitude: RequestBody,
+        @Part("longitude") longitude: RequestBody,
+        @Part("accuracy") accuracy: RequestBody,
+        @Part("range") range: RequestBody,
+    ): Response<LiveLocationResponse>
+
+    @Multipart
+    @PATCH("business/profile/businesslocation")
+    suspend fun updateBusinessLocation(
+        @Part("enabled") enabled: RequestBody,
+        @Part("latitude") latitude: RequestBody,
+        @Part("longitude") longitude: RequestBody,
+        @Part("accuracy") accuracy: RequestBody,
+        @Part("range") range: RequestBody,
+    ): Response<BusinessLocationResponse>
+
+    @Multipart
+    @PATCH("business/profile/v")
+    suspend fun updateBackgroundVideo(@Part video: MultipartBody.Part, @Part thumbnail: MultipartBody.Part): Response<BackgroundVideoResponse>
+
+
+    @Multipart
+    @POST("userlocation/businesslocationadvertisement")
+    suspend fun processUserLocationAndBusinessLocation(
+        @Part("latitude") latitude: RequestBody,
+        @Part("longitude") longitude: RequestBody,
+        @Part("accuracy")  accuracy: RequestBody
+    ): Response<AdvertisementResponse>
+
+    @Multipart
+    @POST("userlocation/walkingbillboardadvertisement")
+    suspend fun processUserLocationAndWalkingBillboardLocation(
+        @Part("latitude") latitude: RequestBody,
+        @Part("longitude") longitude: RequestBody,
+        @Part("accuracy")  accuracy: RequestBody
+    ): Response<AdvertisementResponse>
+
+    @Multipart
+    @POST("business/catalogue/product")
+    suspend fun addProduct(
+        @Part("itemName") itemName: RequestBody,
+        @Part("description") description: RequestBody,
+        @Part("features") features: RequestBody,
+        @Part("price") price: RequestBody,
+        @Part images: List<MultipartBody.Part>
+    ): Response<AddProductResponse>
+
+    @GET("business/catalogue/m/products")
+    suspend fun getProducts(): Response<GetProductsResponse>
+
+    @GET("business/catalogue/m/products")
+    suspend fun getPagedProducts(@Query("page") page: String): Response<GetProductsResponse>
+
+    @DELETE("business/catalogue/products/{productId}")
+    suspend fun deleteProduct(@Path("productId") productId: String): Response<DeleteProductResponse>
+
+    @GET("business/product-posts/post")
+    suspend fun getBusinessPost(@Query("page") page: String): Response<BusinessPost>
+
+    @GET("business/product-posts/product/{productId}")
+    suspend fun getSingleAggregatedProduct(@Path("productId") productId: String): Response<ProductPost>
+
+    @POST("business/product-posts/likes/{businessPostId}")
+    suspend fun likeAndUnlikeBusinessPost(@Path("businessPostId") businessPostId: String): Response<LikeResponse>
+
+    @POST("business/products-posts/bookmarks/{businessPostId}")
+    suspend fun bookmarkBusinessPost(
+        @Path("businessPostId") businessPostId: String
+    ): Response<ShortsFavoriteResponse>
+
+    @POST("business/product-posts/follow/{userToBeFollowed}")
+    suspend fun followUnFollowBusinessOwner(@Path("userToBeFollowed") userToBeFollowed: String): Response<FollowUnFollowResponse>
+
+
+    @POST("business/product-posts/likes/comment/{commentId}")
+    suspend fun likeAndUnlikeBusinessComment(@Path("commentId") commentId: String): Response<LikeUnLikeCommentResponse>
+
+    @POST("business/product-posts/likes/comment/reply/{commentReplyId}")
+    suspend fun likeAndUnlikeBusinessCommentReply(@Path("commentReplyId") commentReplyId: String): Response<LikeUnLikeCommentResponse>
+
+    @GET("business/profile/{userId}")
+    suspend fun getUserBusinessProfile(@Path("userId") userId: String): Response<GetBusinessProfileById>
+
+    @GET ("business/catalogue/{userId}")
+    suspend fun getUserBusinessCatalogue(@Path("userId") userId: String): Response<GetCatalogueByUserId>
+
 
 }
