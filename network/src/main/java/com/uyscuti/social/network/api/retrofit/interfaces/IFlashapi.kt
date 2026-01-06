@@ -979,20 +979,7 @@ interface IFlashapi {
 
 
 
-    @GET("business/profile")
-    suspend fun getBusinessProfile(): Response<ProfileResponse>
-
-    @POST("business/profile")
-    suspend fun createBusinessProfile(
-        @Body profile: CreateBusinessProfile
-    ): Response<CreateProfileResponse>
-
-    @GET("business/catalogue")
-    suspend fun getCatalogue(): Response<GetMyCatalogueResponse>
-
-    @Multipart
-    @PATCH("business/profile/background")
-    suspend fun updateBackground(@Part avatar: MultipartBody.Part): Response<BackgroundImageResponse>
+  
 
     @Multipart
     @PATCH("business/profile/livelocation")
@@ -1014,9 +1001,6 @@ interface IFlashapi {
         @Part("range") range: RequestBody,
     ): Response<BusinessLocationResponse>
 
-    @Multipart
-    @PATCH("business/profile/v")
-    suspend fun updateBackgroundVideo(@Part video: MultipartBody.Part, @Part thumbnail: MultipartBody.Part): Response<BackgroundVideoResponse>
 
 
     @Multipart
@@ -1035,27 +1019,11 @@ interface IFlashapi {
         @Part("accuracy")  accuracy: RequestBody
     ): Response<AdvertisementResponse>
 
-    @Multipart
-    @POST("business/catalogue/product")
-    suspend fun addProduct(
-        @Part("itemName") itemName: RequestBody,
-        @Part("description") description: RequestBody,
-        @Part("features") features: RequestBody,
-        @Part("price") price: RequestBody,
-        @Part images: List<MultipartBody.Part>
-    ): Response<AddProductResponse>
 
-    @GET("business/catalogue/m/products")
-    suspend fun getProducts(): Response<GetProductsResponse>
 
     @GET("business/catalogue/m/products")
     suspend fun getPagedProducts(@Query("page") page: String): Response<GetProductsResponse>
 
-    @DELETE("business/catalogue/products/{productId}")
-    suspend fun deleteProduct(@Path("productId") productId: String): Response<DeleteProductResponse>
-
-    @GET("business/product-posts/post")
-    suspend fun getBusinessPost(@Query("page") page: String): Response<BusinessPost>
 
     @GET("business/product-posts/product/{productId}")
     suspend fun getSingleAggregatedProduct(@Path("productId") productId: String): Response<ProductPost>
@@ -1078,11 +1046,6 @@ interface IFlashapi {
     @POST("business/product-posts/likes/comment/reply/{commentReplyId}")
     suspend fun likeAndUnlikeBusinessCommentReply(@Path("commentReplyId") commentReplyId: String): Response<LikeUnLikeCommentResponse>
 
-    @GET("business/profile/{userId}")
-    suspend fun getUserBusinessProfile(@Path("userId") userId: String): Response<GetBusinessProfileById>
-
-    @GET ("business/catalogue/{userId}")
-    suspend fun getUserBusinessCatalogue(@Path("userId") userId: String): Response<GetCatalogueByUserId>
 
 
 }
