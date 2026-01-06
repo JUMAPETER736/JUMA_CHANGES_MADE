@@ -42,9 +42,7 @@ import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
 import com.uyscuti.social.business.CatalogueDetailsActivity
-
-import com.uyscuti.social.business.adapter.MediaPagerAdapter
-import com.uyscuti.social.business.room.entity.BusinessEntity
+import com.uyscuti.social.business.databinding.BusinessPostLayoutBinding
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.ActivitySearchAllUserNameBinding
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
@@ -1878,7 +1876,7 @@ class SearchUserNameAdapter(
 
         private fun MessageEntity.toMessage(): Message {
             val username = if (user.name.contains("|")) user.name.split("|")[1].trim() else user.name
-            val msgUser = User(
+            val msgUser = com.uyscuti.social.circuit.data.model.User(
                 user.id,
                 username,
                 user.avatar,
