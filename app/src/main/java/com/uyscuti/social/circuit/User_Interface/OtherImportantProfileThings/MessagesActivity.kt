@@ -201,7 +201,7 @@ class MessagesActivity : MainMessagesActivity(),
         const val READ = 3
 
 
-        fun open(context: Context, dialogName: String, dialog: Dialog?, temporally: Boolean) {
+        fun open(context: Context, dialogName: String, dialog: Dialog?, temporally: Boolean, productReference: String) {
             val intent = Intent(context, MessagesActivity::class.java)
 
             if (dialog != null) {

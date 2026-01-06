@@ -83,6 +83,7 @@ import com.uyscuti.social.network.api.models.User
 import com.uyscuti.social.network.api.response.posts.Account
 import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.response.posts.Avatar
+import com.uyscuti.social.network.api.response.posts.BackgroundPhoto
 import com.uyscuti.social.network.api.response.posts.CoverImage
 import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.FileType
@@ -1742,6 +1743,7 @@ class SearchUserNameAdapter(
         private val usernameText: TextView = itemView.findViewById(R.id.userName)
 
         // Original bind method for chat items
+        @OptIn(UnstableApi::class)
         fun bind(dialogEntity: DialogEntity, onChatClicked: (DialogEntity) -> Unit) {
 
             val myUserId = localStorage.getUserId()
