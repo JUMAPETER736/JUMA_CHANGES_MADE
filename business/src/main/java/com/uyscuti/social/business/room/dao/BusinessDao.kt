@@ -26,5 +26,12 @@ interface BusinessDao {
     suspend fun deleteMyProduct(productId: String)
 
 
+    @Query("DELETE FROM business")
+    suspend fun deleteAll()
+
+    @Query("DELETE FROM `my-products`")
+    suspend fun deleteAllProducts()
+
+
 
 }

@@ -38,6 +38,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
+import com.uyscuti.sharedmodule.adapter.MediaPagerAdapter
 import com.uyscuti.social.business.R
 import com.uyscuti.social.business.room.database.BusinessDatabase
 import com.uyscuti.social.business.room.entity.BusinessCatalogueEntity
@@ -74,7 +75,10 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
-import com.uyscuti.social.business.adapter.MediaPagerAdapter
+import com.uyscuti.sharedmodule.model.ShowBottomNav
+import com.uyscuti.sharedmodule.utils.LocationServiceUtil
+import com.uyscuti.sharedmodule.utils.NetworkUtil
+import com.uyscuti.social.business.util.LocationDialog
 import com.uyscuti.social.network.api.response.business.response.background.BackgroundVideo
 import org.greenrobot.eventbus.EventBus
 
@@ -736,7 +740,7 @@ class ProfileFragment1 : Fragment() {
 
                         if(billboardLocationRange == null || billboardLocationRange == 0)
                             billboardLocationRange = 100 // default bill board range
-                        else
+                         else
                             billboardLocationRange = billboardLocationRange
 
                         if (!checkBox!!.isChecked || !checkBox2!!.isChecked) {
@@ -963,26 +967,26 @@ class ProfileFragment1 : Fragment() {
                 }
             }
 
-            val locationInformation = LocationInformation(
-                latitude = latitude.toString(),
-                longitude = longitude.toString(),
-                accuracy = accuracy.toString(),
-                range = locationRange.toString()
-            )
+                val locationInformation = LocationInformation(
+                    latitude = latitude.toString(),
+                    longitude = longitude.toString(),
+                    accuracy = accuracy.toString(),
+                    range = locationRange.toString()
+                )
 
-            val liveLocationInformation = LocationInformation (
-                latitude = billboardLatitude.toString(),
-                longitude = billboardLongitude.toString(),
-                accuracy = billboardAccuracy.toString(),
-                range = billboardLocationRange.toString()
-            )
+                val liveLocationInformation = LocationInformation (
+                    latitude = billboardLatitude.toString(),
+                    longitude = billboardLongitude.toString(),
+                    accuracy = billboardAccuracy.toString(),
+                    range = billboardLocationRange.toString()
+                )
 
-            businessLocation = BusinessLocation(locationEnabled, locationInformation)
-            val walkingBillboard = WalkingBillboard(isBillBoardLiveLocationChecked, liveLocationInformation)
-            val location = Location(businessLocation!!, walkingBillboard)
+                businessLocation = BusinessLocation(locationEnabled, locationInformation)
+                val walkingBillboard = WalkingBillboard(isBillBoardLiveLocationChecked, liveLocationInformation)
+                val location = Location(businessLocation!!, walkingBillboard)
 
-            val contact = Contact(address!!, email!!, phoneNumber!!, "www.business.com")
-            val catalogue = listOf<BusinessCatalogue>()
+                val contact = Contact(address!!, email!!, phoneNumber!!, "www.business.com")
+                val catalogue = listOf<BusinessCatalogue>()
 
             if(backgroundPhoto == null) {
                 withContext(Dispatchers.Main) {
@@ -1014,117 +1018,117 @@ class ProfileFragment1 : Fragment() {
 
         Log.d(API_TAG,"InsertBusinessProfile: called")
 
-        try {
-            val response = retrofitInterface.apiService.createBusinessProfile(profile)
+            try {
+                val response = retrofitInterface.apiService.createBusinessProfile(profile)
 
-            Log.d(API_TAG,"CallingCreateBusinessProfile: called")
+                Log.d(API_TAG,"CallingCreateBusinessProfile: called")
 
-            if (response.isSuccessful) {
-                val createdProfile = response.body()!!.business
-                Log.d(API_TAG, "Profile created successfully")
-                Log.d(API_TAG, "Response: ${response.body()}")
+                if (response.isSuccessful) {
+                    val createdProfile = response.body()!!.business
+                    Log.d(API_TAG, "Profile created successfully")
+                    Log.d(API_TAG, "Response: ${response.body()}")
 
-                val video: com.uyscuti.social.network.api.response.business.response.get.BackgroundVideo? = createdProfile.backgroundVideo
+                    val video: com.uyscuti.social.network.api.response.business.response.get.BackgroundVideo? = createdProfile.backgroundVideo
 
-                val _id = createdProfile._id
-                val businessName = createdProfile.businessName
-                val businessDescription = createdProfile.businessDescription
-                val businessType = createdProfile.businessType
-                val owner = createdProfile.owner
-                val contact = createdProfile.contact
-                val __v = createdProfile.__v
-                val backgroundPhoto = createdProfile.backgroundPhoto.url
-                val backgroundVideo = video?.url
-                val videoThumbnail = video?.thumbnail
-                val createdAt = createdProfile.createdAt
-                val updatedAt = createdProfile.updatedAt
-                val location = createdProfile.location
+                    val _id = createdProfile._id
+                    val businessName = createdProfile.businessName
+                    val businessDescription = createdProfile.businessDescription
+                    val businessType = createdProfile.businessType
+                    val owner = createdProfile.owner
+                    val contact = createdProfile.contact
+                    val __v = createdProfile.__v
+                    val backgroundPhoto = createdProfile.backgroundPhoto.url
+                    val backgroundVideo = video?.url
+                    val videoThumbnail = video?.thumbnail
+                    val createdAt = createdProfile.createdAt
+                    val updatedAt = createdProfile.updatedAt
+                    val location = createdProfile.location
 
-                val editor = sharedPreferences.edit()
-                editor.putString("businessId", createdProfile._id)
-                editor.putString("businessName", createdProfile.businessName)
-                editor.putString("businessDescription", createdProfile.businessDescription)
-                editor.putString("businessType", createdProfile.businessType)
-                editor.putString("businessOwner", createdProfile.owner)
-                editor.putString("backgroundPhoto", createdProfile.backgroundPhoto.url)
-                editor.putString("businessEmail", createdProfile.contact.email)
-                editor.putString("businessPhone", createdProfile.contact.phoneNumber)
-                editor.putString("businessAddress", createdProfile.contact.address)
+                    val editor = sharedPreferences.edit()
+                    editor.putString("businessId", createdProfile._id)
+                    editor.putString("businessName", createdProfile.businessName)
+                    editor.putString("businessDescription", createdProfile.businessDescription)
+                    editor.putString("businessType", createdProfile.businessType)
+                    editor.putString("businessOwner", createdProfile.owner)
+                    editor.putString("backgroundPhoto", createdProfile.backgroundPhoto.url)
+                    editor.putString("businessEmail", createdProfile.contact.email)
+                    editor.putString("businessPhone", createdProfile.contact.phoneNumber)
+                    editor.putString("businessAddress", createdProfile.contact.address)
 
-                editor.apply()
+                    editor.apply()
 
 
-                val business = BusinessEntity(
-                    _id,
-                    __v,
-                    backgroundPhoto,
-                    backgroundVideo,
-                    videoThumbnail,
-                    listOf<BusinessCatalogueEntity>(),
-                    businessDescription,
-                    businessName,
-                    businessType,
-                    Contact(
-                        contact.address,
-                        contact.email,
-                        contact.phoneNumber,
-                        contact.website
-                    ),
-                    createdAt,
-                    com.uyscuti.social.network.api.response.business.response.profile.Location(
-                        com.uyscuti.social.network.api.request.business.create.BusinessLocation(
-                            location.businessLocation.enabled,
-                            location.businessLocation.locationInfo
+                    val business = BusinessEntity(
+                        _id,
+                        __v,
+                        backgroundPhoto,
+                        backgroundVideo,
+                        videoThumbnail,
+                        listOf<BusinessCatalogueEntity>(),
+                        businessDescription,
+                        businessName,
+                        businessType,
+                        Contact(
+                            contact.address,
+                            contact.email,
+                            contact.phoneNumber,
+                            contact.website
                         ),
-                        com.uyscuti.social.network.api.request.business.create.WalkingBillboard(
-                            location.walkingBillboard.enabled,
-                            location.walkingBillboard.liveLocationInfo
-                        )
+                        createdAt,
+                        com.uyscuti.social.network.api.response.business.response.profile.Location(
+                            com.uyscuti.social.network.api.request.business.create.BusinessLocation(
+                                location.businessLocation.enabled,
+                                location.businessLocation.locationInfo
+                            ),
+                            com.uyscuti.social.network.api.request.business.create.WalkingBillboard(
+                                location.walkingBillboard.enabled,
+                                location.walkingBillboard.liveLocationInfo
+                            )
 
-                    ),
-                    owner,
-                    updatedAt
-                )
+                        ),
+                        owner,
+                        updatedAt
+                    )
 
-                insertBusiness(business)
-                Log.d(API_TAG, "background imageUri: ${this@ProfileFragment1.imageUri}")
-                Log.d(API_TAG, "background videoUri: ${this@ProfileFragment1.videoUri}")
-
-
-
-                if (this@ProfileFragment1.imageUri != null) {
-                    val imagePath = getRealPathFromUri(this@ProfileFragment1.imageUri!!)
-                    Log.d(API_TAG, "imagePath: $imagePath")
+                    insertBusiness(business)
                     Log.d(API_TAG, "background imageUri: ${this@ProfileFragment1.imageUri}")
+                    Log.d(API_TAG, "background videoUri: ${this@ProfileFragment1.videoUri}")
 
-                    updateBusinessProfileImage(imagePath!!)
+
+
+                    if (this@ProfileFragment1.imageUri != null) {
+                        val imagePath = getRealPathFromUri(this@ProfileFragment1.imageUri!!)
+                        Log.d(API_TAG, "imagePath: $imagePath")
+                        Log.d(API_TAG, "background imageUri: ${this@ProfileFragment1.imageUri}")
+
+                        updateBusinessProfileImage(imagePath!!)
+                    }
+
+                    if (this@ProfileFragment1.videoUri != null) {
+                        val videoPath = this@ProfileFragment1.videoUri!!.path
+
+                        val videoFile = File(videoPath!!)
+                        val thumbnailFile = File(extractThumbnail(this@ProfileFragment1.videoUri!!))
+
+                        Log.d(API_TAG, "videoPath: $videoPath")
+                        Log.d(API_TAG, "videoFile: $videoFile")
+                        Log.d(API_TAG, "thumbnailFile: $thumbnailFile")
+
+                        updateBusinessProfileVideo(videoFile, thumbnailFile)
+                    }
+
+                } else {
+                    Log.d(API_TAG,"Failed to create business Profile: called")
+                    Log.d(API_TAG,"response ${response}")
+                    Log.d(API_TAG,"Background Photo $backgroundPhoto")
                 }
 
-                if (this@ProfileFragment1.videoUri != null) {
-                    val videoPath = this@ProfileFragment1.videoUri!!.path
-
-                    val videoFile = File(videoPath!!)
-                    val thumbnailFile = File(extractThumbnail(this@ProfileFragment1.videoUri!!))
-
-                    Log.d(API_TAG, "videoPath: $videoPath")
-                    Log.d(API_TAG, "videoFile: $videoFile")
-                    Log.d(API_TAG, "thumbnailFile: $thumbnailFile")
-
-                    updateBusinessProfileVideo(videoFile, thumbnailFile)
-                }
-
-            } else {
-                Log.d(API_TAG,"Failed to create business Profile: called")
-                Log.d(API_TAG,"response ${response}")
-                Log.d(API_TAG,"Background Photo $backgroundPhoto")
+            }catch (e:HttpException){
+                Log.d(API_TAG, "Error: $e")
+                Log.d(API_TAG, "Error: ${e.response()?.errorBody()?.string()}")
+            }catch (e:IOException){
+                Log.d(API_TAG, "Error: $e")
             }
-
-        }catch (e:HttpException){
-            Log.d(API_TAG, "Error: $e")
-            Log.d(API_TAG, "Error: ${e.response()?.errorBody()?.string()}")
-        }catch (e:IOException){
-            Log.d(API_TAG, "Error: $e")
-        }
 
 
     }
@@ -1153,12 +1157,12 @@ class ProfileFragment1 : Fragment() {
         if(LocationServiceUtil.isLocationEnabled(requireActivity())) {
 
             if(!hasBusinessProfile) {
-                locationDialog.dismiss()
-                showProgressDialog(
-                    "Business Profile",
-                    "To enable this feature you need to have a business profile."
-                )
-                businessLocationSwitcher.isChecked = false
+                    locationDialog.dismiss()
+                    showProgressDialog(
+                        "Business Profile",
+                        "To enable this feature you need to have a business profile."
+                    )
+                    businessLocationSwitcher.isChecked = false
 
             } else {
 
@@ -1181,63 +1185,63 @@ class ProfileFragment1 : Fragment() {
 
                                 // Use the location
                                 CoroutineScope(Dispatchers.IO).launch {
-                                    // creating request body for the end point
-                                    val locationEnabled = RequestBody.create(
-                                        "text/plain".toMediaTypeOrNull(),
-                                        locationEnabled.toString()
-                                    )
-                                    val businessLatitude = RequestBody.create(
-                                        "text/plain".toMediaTypeOrNull(),
-                                        latitude.toString()
-                                    )
-                                    val businessLongitude = RequestBody.create(
-                                        "text/plain".toMediaTypeOrNull(),
-                                        longitude.toString()
-                                    )
-                                    val businessAccuracy = RequestBody.create(
-                                        "text/plain".toMediaTypeOrNull(),
-                                        accuracy.toString()
-                                    )
-                                    val businessRange = RequestBody.create(
-                                        "text/plain".toMediaTypeOrNull(),
-                                        locationRange.toString()
-                                    )
-
-
-                                    // update business location
-                                    val businessLocation =
-                                        retrofitInterface.apiService.updateBusinessLocation(
-                                            locationEnabled,
-                                            businessLatitude,
-                                            businessLongitude,
-                                            businessAccuracy,
-                                            businessRange
+                                        // creating request body for the end point
+                                        val locationEnabled = RequestBody.create(
+                                            "text/plain".toMediaTypeOrNull(),
+                                            locationEnabled.toString()
+                                        )
+                                        val businessLatitude = RequestBody.create(
+                                            "text/plain".toMediaTypeOrNull(),
+                                            latitude.toString()
+                                        )
+                                        val businessLongitude = RequestBody.create(
+                                            "text/plain".toMediaTypeOrNull(),
+                                            longitude.toString()
+                                        )
+                                        val businessAccuracy = RequestBody.create(
+                                            "text/plain".toMediaTypeOrNull(),
+                                            accuracy.toString()
+                                        )
+                                        val businessRange = RequestBody.create(
+                                            "text/plain".toMediaTypeOrNull(),
+                                            locationRange.toString()
                                         )
 
-                                    if (businessLocation.isSuccessful) {
-                                        // update the switch and progress bar visibility
-                                        withContext(Dispatchers.Main) {
-                                            locationDialog.dismiss()
-                                            showProgressDialog(
-                                                "Location service",
-                                                "Business location captured\nNOTE: Please disable location service."
-                                            )
-                                            locationDialog.updateMessageStatus(
-                                                resources.getString(R.string.getting_your_current_location_nplease_wait)
-                                            )
-                                        }
-                                    } else {
-                                        withContext(Dispatchers.Main) {
-                                            locationDialog.dismiss()
-                                            businessLocationSwitcher.isChecked = false
 
-                                            Toast.makeText(
-                                                requireActivity(),
-                                                "Something went wrong. Try again",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
+                                        // update business location
+                                        val businessLocation =
+                                            retrofitInterface.apiService.updateBusinessLocation(
+                                                locationEnabled,
+                                                businessLatitude,
+                                                businessLongitude,
+                                                businessAccuracy,
+                                                businessRange
+                                            )
+
+                                        if (businessLocation.isSuccessful) {
+                                            // update the switch and progress bar visibility
+                                            withContext(Dispatchers.Main) {
+                                                locationDialog.dismiss()
+                                                showProgressDialog(
+                                                    "Location service",
+                                                    "Business location captured\nNOTE: Please disable location service."
+                                                )
+                                                locationDialog.updateMessageStatus(
+                                                    resources.getString(R.string.getting_your_current_location_nplease_wait)
+                                                )
+                                            }
+                                        } else {
+                                            withContext(Dispatchers.Main) {
+                                                locationDialog.dismiss()
+                                                businessLocationSwitcher.isChecked = false
+
+                                                Toast.makeText(
+                                                    requireActivity(),
+                                                    "Something went wrong. Try again",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
                                         }
-                                    }
                                 }
                             }
                         }
@@ -1279,7 +1283,7 @@ class ProfileFragment1 : Fragment() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
-    @RequiresPermission(anyOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
+        @RequiresPermission(anyOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     fun getBillBoardLocation(): Boolean {
 
         if (ActivityCompat.checkSelfPermission(

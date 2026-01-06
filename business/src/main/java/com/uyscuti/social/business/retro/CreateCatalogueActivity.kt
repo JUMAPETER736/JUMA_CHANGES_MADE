@@ -27,7 +27,7 @@ import com.uyscuti.social.business.R
 
 import com.uyscuti.social.business.adapter.CreateProductAdapter
 import com.uyscuti.social.business.adapter.ImageAdapter
-import com.uyscuti.social.business.model.Catalogue
+import com.uyscuti.sharedmodule.model.Catalogue
 
 import java.io.File
 import java.io.FileInputStream
@@ -68,8 +68,9 @@ class CreateCatalogueActivity : AppCompatActivity() {
         toolbar.setNavigationIcon(R.drawable.baseline_chevron_left_24)
 
         toolbar.setNavigationOnClickListener {
-            val intent = Intent(this, ProfileActivity::class.java)
-            startActivity(intent)
+//            val intent = Intent(this, ProfileActivity::class.java)
+//            startActivity(intent)
+            finish()
         }
 
         createProductAdapter = CreateProductAdapter(this)
@@ -98,7 +99,7 @@ class CreateCatalogueActivity : AppCompatActivity() {
                 catalogue.name,
                 catalogue.description,
                 catalogue.price,
-                images
+                images,
             )
 
             resultIntent.putExtra("resultKey", product)

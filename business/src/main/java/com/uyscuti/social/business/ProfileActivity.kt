@@ -1,5 +1,6 @@
 package com.uyscuti.social.business
 
+import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -16,15 +17,15 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresExtension
+import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.social.business.adapter.ProfileAdapter
 import com.uyscuti.social.business.fragment.CategoryFragment
 import com.uyscuti.social.business.fragment.ProfileFragment
-import com.uyscuti.social.business.model.Catalogue
+import com.uyscuti.sharedmodule.model.Catalogue
 //import com.example.mylibrary.retro.RetrofitClient
 import com.uyscuti.social.business.room.database.BusinessDatabase
 import com.uyscuti.social.business.room.repository.BusinessRepository
@@ -41,7 +42,6 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class ProfileActivity : AppCompatActivity() {
-    private lateinit var recyclerView: RecyclerView
 //    private lateinit var toolbar: Toolbar
     private lateinit var profileAdapter: ProfileAdapter
     private lateinit var profileTabFrame: FrameLayout
@@ -96,16 +96,7 @@ class ProfileActivity : AppCompatActivity() {
 //        toolbar.title = "Business Profile"
 //        toolbar.setNavigationIcon(R.drawable.baseline_chevron_left_24)
 
-        fragmentContainerView = findViewById(R.id.fragment_container)
 
-        profileTabFrame = findViewById(R.id.profileTab)
-        profileTabFrame.isSelected = true
-
-        interestTabFrame = findViewById(R.id.interestsTab)
-        interestTabFrame.isSelected = false
-
-        profileTextView = findViewById(R.id.profileText)
-        interestTextView = findViewById(R.id.interestsText)
 
 
 //        recyclerView = findViewById(R.id.recyclerView)
@@ -127,6 +118,7 @@ class ProfileActivity : AppCompatActivity() {
 
     }
 
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -246,7 +238,7 @@ class ProfileActivity : AppCompatActivity() {
             supportFragmentManager.findFragmentByTag("ProfileFragment") as? ProfileFragment
 
 
-        val selectedIds = profileFragment?.getSelectedProductsIds()
+        val selectedIds = emptyList<String>()
 
         if (selectedIds != null) {
 
@@ -255,14 +247,13 @@ class ProfileActivity : AppCompatActivity() {
 
                 for (id in selectedIds) {
 
-                    profileFragment.deleteMyProduct(id)
+                    profileFragment?.deleteMyProduct(id)
 
                 }
 
             }
         }
 
-        profileFragment?.deleteSelectedItems()
 
 //        toolbar.menu.findItem(R.id.action_delete).isVisible = false
     }
@@ -327,7 +318,7 @@ class ProfileActivity : AppCompatActivity() {
                 }
 
                 val transaction = supportFragmentManager.beginTransaction()
-                transaction.replace(R.id.fragment_container, profileFragment, "ProfileFragment")
+              //  transaction.replace(R.id.fragment_container, profileFragment, "ProfileFragment")
                 transaction.commit()
 
             } else {
@@ -344,7 +335,7 @@ class ProfileActivity : AppCompatActivity() {
                     )
                 )
                 supportFragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, CategoryFragment()).commit()
+                 //   .replace(R.id.fragment_container, CategoryFragment()).commit()
             }
         }
     }
