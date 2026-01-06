@@ -30,4 +30,9 @@
     <string name="pick_images">Pick Images</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="offer_price" />
+    <string name="message" />
+    <string name="show_more" />
+    <string name="test_message" />
+    <string name="user_image" />
 </resources>
