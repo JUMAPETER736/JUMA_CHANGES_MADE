@@ -43,3 +43,54 @@ data class Post(
     val favorites: List<String>? = null
 
 ): Serializable
+
+
+
+
+data class BusinessPost(
+    val _id: String,
+    val owner: String,
+    val catalogue: String,
+    val itemName: String,
+    val description: String,
+    val features: List<String>,
+    val images: List<String>,
+    val price: String,
+    val createdAt: String,
+    val updatedAt: String,
+    val __v: Int,
+    val author: AuthorB,
+    val businessProfile: BusinessProfile
+): Serializable
+
+data class AuthorB(
+    val _id: String,
+    val firstName: String,
+    val lastName: String,
+    val account: AccountB
+): Serializable
+
+data class AccountB(
+    val _id: String,
+    val avatar: AvatarB,
+    val username: String
+): Serializable
+
+data class AvatarB(
+    val url: String,
+    val localPath: String,
+    val _id: String
+): Serializable
+
+
+data class BusinessProfile(
+    val _id: String,
+    val businessName: String,
+    val businessType: String,
+    val businessDescription: String,
+    val backgroundPhoto: BackgroundPhoto
+): Serializable
+
+data class BackgroundPhoto(
+    val url: String
+): Serializable

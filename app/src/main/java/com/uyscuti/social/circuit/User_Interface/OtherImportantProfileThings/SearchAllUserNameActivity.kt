@@ -78,6 +78,7 @@ import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.network.api.request.business.users.GetBusinessProfileById
 
 import com.uyscuti.social.business.room.repository.BusinessRepository
+import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
 import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.MessagesActivity
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.circuit.data.model.Dialog
