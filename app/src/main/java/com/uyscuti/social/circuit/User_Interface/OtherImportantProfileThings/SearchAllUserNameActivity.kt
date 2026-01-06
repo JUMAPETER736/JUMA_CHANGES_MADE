@@ -1811,6 +1811,7 @@ class SearchUserNameAdapter(
         }
 
         // NEW: Bind method for chat/group where the person appears
+        @OptIn(UnstableApi::class)
         fun bindChatWithPerson(dialogEntity: DialogEntity, searchedPersonName: String) {
             val myUserId = localStorage.getUserId()
 

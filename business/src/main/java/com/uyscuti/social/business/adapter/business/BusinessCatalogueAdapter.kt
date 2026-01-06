@@ -7,9 +7,9 @@ import android.view.ViewGroup
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import com.uyscuti.sharedmodule.data.model.User
 import com.uyscuti.social.business.R
 import com.uyscuti.social.business.adapter.business.postViewHolder.BusinessPostViewHolder
+import com.uyscuti.social.network.api.models.User
 import com.uyscuti.social.network.api.response.business.response.post.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
