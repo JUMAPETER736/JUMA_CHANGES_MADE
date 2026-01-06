@@ -2,6 +2,7 @@ package com.uyscuti.social.circuit.user_interface
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.media.MediaMetadataRetriever
@@ -31,6 +32,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
@@ -103,22 +105,6 @@ enum class SearchContext {
 }
 
 
-
-// Updated ContentFilter enum with your specific categories
-enum class ContentFilter {
-    ALL,
-    SHORTS,
-    FEED,
-    PEOPLE,
-    CHATS,
-    BUSINESS
-}
-
-enum class SearchContext {
-    GLOBAL,
-    USER_POSTS,
-    USER_PROFILE
-}
 
 @AndroidEntryPoint
 class SearchAllUserNameActivity : AppCompatActivity() {
@@ -1226,6 +1212,7 @@ fun Author.toRecentUser(): RecentUser {
 
 
 class SearchUserNameAdapter(
+
     private val localStorage: LocalStorage,
     private val onUserClicked: (Author) -> Unit,
     private val onPostClicked: (Post) -> Unit = {},
@@ -1265,22 +1252,32 @@ class SearchUserNameAdapter(
 
 
     override fun getItemViewType(position: Int): Int = when (val item = getItem(position)) {
+
         "RECENT_HEADER", "SEARCH_HEADER", "PEOPLE_HEADER",
+
         "SHORTS_HEADER", "FEED_HEADER", "BUSINESS_HEADER",
+
         "CHATS_HEADER", "USER_CONTENT_HEADER" -> TYPE_HEADER
+
         is Author -> TYPE_USER
+
         "LOADING" -> TYPE_LOADING
+
         "NO_RESULTS" -> TYPE_NO_RESULTS
+
         "SEE_ALL_PEOPLE", "SEE_ALL_SHORTS", "SEE_ALL_POSTS" -> TYPE_SEE_ALL
+
         is Post -> {
             // Check if it's a business post
             if (item.isBusinessPost == true) {
+
                 // Use GRID layout only when in BUSINESS filter
                 if (currentFilter == ContentFilter.BUSINESS) {
                     TYPE_BUSINESS_GRID
                 } else {
                     // Use full profile layout in ALL tab
-                    TYPE_SEE_ALL
+                    TYPE_BUSINESS
+
                 }
             }
             // Check if it's a short video (for grid display)
@@ -1291,9 +1288,13 @@ class SearchUserNameAdapter(
                 TYPE_FEED
             }
         }
+
         is GetBusinessProfileById -> TYPE_BUSINESS
+
         is DialogEntity -> TYPE_CHAT
+
         "NO_BUSINESS" -> TYPE_NO_BUSINESS
+
         else -> -1
     }
 
@@ -1329,7 +1330,7 @@ class SearchUserNameAdapter(
                 ChatViewHolder(view, localStorage)
             }
             TYPE_BUSINESS -> {
-                val view = inflater.inflate(com.uyscuti.social.business.R.layout.profile_fragment, parent, false)
+                val view = inflater.inflate(R.layout.feed_business_post, parent, false)
                 BusinessViewHolder(view)
             }
             TYPE_BUSINESS_GRID -> {
@@ -1375,8 +1376,8 @@ class SearchUserNameAdapter(
                 holder.bind(dialogEntity, onChatClicked)
             }
             is BusinessViewHolder -> {
-                val business = getItem(position) as GetBusinessProfileById
-                holder.bind(business)
+                val post = getItem(position) as Post
+                holder.bind(post)
             }
             is BusinessGridViewHolder -> {
                 val post = getItem(position) as Post
@@ -1789,18 +1790,18 @@ class SearchUserNameAdapter(
 
         private fun DialogEntity.toDialog(
             localStorage: LocalStorage
-        ): Dialog {
+        ): com.uyscuti.sharedmodule.data.model.Dialog {
 
             val myUserId = localStorage.getUserId()
             val otherUser = users.firstOrNull { it.id != myUserId }
 
-            val usersList = ArrayList<User>()
+            val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
             otherUser?.let { usersList.add(it.toUser()) }
 
             val message = lastMessage?.toMessage()
             val dialogName = usersList.firstOrNull()?.name ?: this.dialogName
 
-            return Dialog(
+            return com.uyscuti.sharedmodule.data.model.Dialog(
                 this.id,
                 dialogName,
                 this.dialogPhoto,
@@ -1810,9 +1811,9 @@ class SearchUserNameAdapter(
             )
         }
 
-        private fun UserEntity.toUser(): User {
+        private fun UserEntity.toUser(): com.uyscuti.sharedmodule.data.model.User {
             val username = if (name.contains("|")) name.split("|")[1].trim() else name
-            return User(
+            return com.uyscuti.sharedmodule.data.model.User(
                 id,
                 username,
                 avatar,
@@ -1821,16 +1822,16 @@ class SearchUserNameAdapter(
             )
         }
 
-        private fun MessageEntity.toMessage(): Message {
+        private fun MessageEntity.toMessage(): com.uyscuti.sharedmodule.data.model.Message {
             val username = if (user.name.contains("|")) user.name.split("|")[1].trim() else user.name
-            val msgUser = User(
+            val msgUser = com.uyscuti.sharedmodule.data.model.User(
                 user.id,
                 username,
                 user.avatar,
                 user.online,
                 user.lastSeen
             )
-            return Message(
+            return com.uyscuti.sharedmodule.data.model.Message(
                 id,
                 msgUser,
                 text,
@@ -1840,56 +1841,140 @@ class SearchUserNameAdapter(
     }
 
     inner class BusinessViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        // Using exact IDs from profile_fragment.xml
-        private val viewPager: ViewPager2 = itemView.findViewById(R.id.viewPager)
-        private val dotsIndicator: WormDotsIndicator = itemView.findViewById(R.id.worm_dots_indicator)
-        private val businessName: EditText = itemView.findViewById(com.uyscuti.social.business.R.id.business_name)
-        private val businessType: EditText = itemView.findViewById(com.uyscuti.social.business.R.id.business_type)
-        private val descriptionEdit: EditText = itemView.findViewById(com.uyscuti.social.business.R.id.description_edit)
-        private val email: EditText = itemView.findViewById(com.uyscuti.social.business.R.id.email)
-        private val phoneNumber: EditText = itemView.findViewById(com.uyscuti.social.business.R.id.phonenumber_edit_text)
-        private val address: EditText = itemView.findViewById(com.uyscuti.social.business.R.id.address)
-        private val businessLocationToggle: SwitchCompat = itemView.findViewById(com.uyscuti.social.business.R.id.business_location_toggle)
-        private val currentLocationToggle: SwitchCompat = itemView.findViewById(com.uyscuti.social.business.R.id.current_location_toggle)
-        private val uploadButton: AppCompatButton = itemView.findViewById(com.uyscuti.social.business.R.id.upload_button)
-        private val saveBtn: AppCompatButton = itemView.findViewById(com.uyscuti.social.business.R.id.save_btn)
 
-        fun bind(business: GetBusinessProfileById) {
-            // Populate with business data
-            businessName.setText(business.businessName)
-            businessType.setText(business.businessType)
-            descriptionEdit.setText(business.businessDescription)
-            email.setText(business.contact.email)
-            phoneNumber.setText(business.contact.phoneNumber)
-            address.setText(business.contact.address)
+        private val binding = FeedBusinessPostBinding.bind(itemView)
 
-            businessLocationToggle.isChecked = business.location.businessLocation.enabled
-            currentLocationToggle.isChecked = business.location.walkingBillboard.enabled
+        @OptIn(UnstableApi::class)
+        fun bind(post: Post) {
 
-            // Setup ViewPager
-            val mediaUrls = arrayListOf<String>()
-            mediaUrls.add(business.backgroundPhoto.url)
-            business.backgroundVideo?.url?.let { mediaUrls.add(it) }
+            /* ---------- PROFILE ---------- */
 
-            val adapter = MediaPagerAdapter(mediaUrls, itemView.context as Activity)
-            viewPager.adapter = adapter
-            dotsIndicator.attachTo(viewPager)
+            Glide.with(itemView.context)
+                .load(post.author.account.avatar.url)
+                .circleCrop()
+                .placeholder(R.drawable.ic_person)
+                .error(R.drawable.ic_person)
+                .into(binding.businessProfileAvatar)
 
-            // Make read-only
-            businessName.isEnabled = false
-            businessType.isEnabled = false
-            descriptionEdit.isEnabled = false
-            email.isEnabled = false
-            phoneNumber.isEnabled = false
-            address.isEnabled = false
-            businessLocationToggle.isEnabled = false
-            currentLocationToggle.isEnabled = false
+            binding.businessProfileName.text = post.author.account.username
 
-            // Hide buttons
-            uploadButton.visibility = View.GONE
-            saveBtn.visibility = View.GONE
+            binding.businessProfileDescription.text =
+                listOf(post.author.firstName, post.author.lastName)
+                    .joinToString(" ")
+                    .trim()
+
+            /* ---------- PRODUCT ---------- */
+
+            post.businessDetails?.let { business ->
+                binding.tvItemTitle.text = business.itemName
+                binding.tvDescription.text = business.description
+                binding.tvItemPrice.text = "MWK ${business.price}"
+                setupProductMedia(post)
+            } ?: run {
+                binding.tvItemTitle.text = post.content.take(50)
+                binding.tvDescription.text = post.content
+                binding.tvItemPrice.text = "MWK 0"
+                setupFallbackMedia(post)
+            }
+
+            /* ---------- ACTIONS ---------- */
+
+            binding.messageUser.text = "Message ${post.author.account.username}"
+
+            binding.sendOffer.setOnClickListener {
+                post.businessDetails?.let { business ->
+                    val bottomSheet = SendOfferBottomSheet.newInstance(
+                        productName = business.itemName,
+                        listingPrice = business.price.toDoubleOrNull() ?: 0.0,
+                        itemImage = business.images.firstOrNull().orEmpty()
+                    )
+                    bottomSheet.onOfferSubmitted = { amount, message ->
+                        Log.d("Offer", "Amount: MWK $amount, Message: $message")
+                    }
+                }
+            }
+
+            binding.messageSeller.setOnClickListener {
+                // FIXED: Use the correct User class from sharedmodule
+//                val user = com.uyscuti.sharedmodule.data.model.User(
+//                    id = post.author._id,
+//                    name = post.author.account.username,
+//                    avatar = post.author.account.avatar.url,
+//                    online = false,
+//                    lastSeen = Date()
+//                )
+//
+//                dialogManager.openChat(user)
+            }
+
+            /* ---------- OPEN DETAILS ---------- */
+
+            itemView.setOnClickListener {
+                val intent = Intent(itemView.context, CatalogueDetailsActivity::class.java)
+                intent.putExtra("catalogue", post)
+                itemView.context.startActivity(intent)
+            }
+        }
+
+        /* ---------- MEDIA ---------- */
+
+        private fun setupProductMedia(post: Post) {
+            val images = post.businessDetails?.images ?: return
+            if (images.isEmpty()) return
+
+            binding.productMediaRecycler.layoutManager =
+                if (images.size <= 2)
+                    GridLayoutManager(itemView.context, images.size)
+                else
+                    StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+
+            binding.productMediaRecycler.adapter =
+                BusinessMediaAdapter(images, itemView.context)
+
+            binding.productMediaCounter.visibility =
+                if (images.size > 4) View.VISIBLE else View.GONE
+        }
+
+        private fun setupFallbackMedia(post: Post) {
+            val mediaUrls = post.files.mapNotNull { it.url.takeIf(String::isNotBlank) }
+            if (mediaUrls.isEmpty()) return
+
+            binding.productMediaRecycler.layoutManager =
+                GridLayoutManager(itemView.context, if (mediaUrls.size == 1) 1 else 2)
+
+            binding.productMediaRecycler.adapter =
+                BusinessMediaAdapter(mediaUrls, itemView.context)
         }
     }
+
+
+    inner class BusinessMediaAdapter(
+        private val mediaUrls: List<String>,
+        private val context: Context
+    ) : RecyclerView.Adapter<BusinessMediaAdapter.MediaViewHolder>() {
+
+        inner class MediaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val imageView: ImageView = view.findViewById(R.id.mediaImageView)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_business_media_simple, parent, false)
+            return MediaViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
+            Glide.with(context)
+                .load(mediaUrls[position])
+                .centerCrop()
+                .placeholder(R.drawable.flash21)
+                .error(R.drawable.flash21)
+                .into(holder.imageView)
+        }
+
+        override fun getItemCount(): Int = mediaUrls.size
+    }
+
 
     inner class BusinessGridViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
 
@@ -1972,6 +2057,7 @@ class SearchUserNameAdapter(
 
 
 }
+
 
 
 
