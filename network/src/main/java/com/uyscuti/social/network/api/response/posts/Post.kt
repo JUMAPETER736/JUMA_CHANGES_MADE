@@ -7,7 +7,7 @@ data class Post(
     val author: Author,
     var bookmarkCount: Int,
     var comments: Int,
-    val content: String,
+    var content: String,
     var contentType: String,
     val createdAt: String,
     val duration: List<Duration>,
@@ -37,6 +37,7 @@ data class Post(
     // Business/Shop related fields
     val isBusinessPost: Boolean? = null,
     val category: String? = null,
+    val businessDetails: BusinessPost? = null,
 
     // Favorites related fields
     var isFavorited: Boolean? = null,

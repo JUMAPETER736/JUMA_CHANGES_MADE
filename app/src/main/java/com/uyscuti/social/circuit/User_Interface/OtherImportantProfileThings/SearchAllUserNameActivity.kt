@@ -65,16 +65,17 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
 import com.uyscuti.social.network.api.request.business.users.GetBusinessProfileById
-
-import com.uyscuti.social.business.room.repository.BusinessRepository
+import com.uyscuti.social.network.api.response.posts.AccountB
+import com.uyscuti.social.network.api.response.posts.AuthorB
+import com.uyscuti.social.network.api.response.posts.AvatarB
+import com.uyscuti.social.network.api.response.posts.BusinessPost
+import com.uyscuti.social.network.api.response.posts.BusinessProfile
 import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
 import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.MessagesActivity
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.circuit.data.model.Dialog
 import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.network.api.models.Message
-import com.uyscuti.social.network.api.response.business.response.profile.BackgroundPhoto
-import com.uyscuti.social.network.api.response.business.response.profile.BackgroundVideo
 import com.uyscuti.social.network.api.response.posts.Duration
 import kotlinx.coroutines.CoroutineScope
 import java.util.TimeZone
