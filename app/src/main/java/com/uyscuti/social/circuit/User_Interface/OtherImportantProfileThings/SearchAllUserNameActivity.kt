@@ -128,7 +128,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySearchAllUserNameBinding
     private lateinit var searchAdapter: SearchUserNameAdapter
     private var searchJob: Job? = null
-
+    private lateinit var businessViewModel: BusinessPostsViewModel
     private var currentSearchContext = SearchContext.GLOBAL
     private var currentFilter = ContentFilter.ALL
     private var selectedUserId: String? = null
@@ -153,6 +153,8 @@ class SearchAllUserNameActivity : AppCompatActivity() {
             insets
         }
 
+        businessViewModel = ViewModelProvider(this)[BusinessPostsViewModel::class.java]
+
         setupToolbar()
         initSearchResults()
         setupSearch()
@@ -166,6 +168,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         val localStorage = LocalStorage(this@SearchAllUserNameActivity)
 
         searchAdapter = SearchUserNameAdapter(
+            viewModel = businessViewModel,
             localStorage = localStorage,
             onUserClicked = { author ->
                 Log.d("SearchResults", "User clicked: @${author.account.username}")
@@ -1273,7 +1276,7 @@ fun Author.toRecentUser(): RecentUser {
 
 
 class SearchUserNameAdapter(
-
+    private val viewModel: BusinessPostsViewModel,
     private val localStorage: LocalStorage,
     private val onUserClicked: (Author) -> Unit,
     private val onPostClicked: (Post) -> Unit = {},
@@ -1391,10 +1394,12 @@ class SearchUserNameAdapter(
                 ChatViewHolder(view, localStorage)
             }
             TYPE_BUSINESS -> {
-                val view = inflater.inflate(com.uyscuti.social.business.R.layout.business_post_layout, parent, false)
+                val view = inflater.inflate(
+                    com.uyscuti.social.business.R.layout.business_post_layout, parent, false)
 
-                BusinessViewHolder(view)
+                BusinessViewHolder(view, viewModel)
             }
+
             TYPE_BUSINESS_GRID -> {
                 // Grid layout for BUSINESS tab
                 val view = inflater.inflate(R.layout.search_business_grid_item, parent, false)
@@ -1743,11 +1748,7 @@ class SearchUserNameAdapter(
         }
     }
 
-    private class ChatViewHolder(
-        private val itemView: View,
-        private val localStorage: LocalStorage
-    ) : RecyclerView.ViewHolder(itemView)
-    {
+    private class ChatViewHolder(private val itemView: View, private val localStorage: LocalStorage) : RecyclerView.ViewHolder(itemView) {
 
         private val chatAvatar: ImageView = itemView.findViewById(R.id.chatAvatar)
         private val fullNameText: TextView = itemView.findViewById(R.id.fullName)
@@ -1902,45 +1903,112 @@ class SearchUserNameAdapter(
         }
     }
 
-    inner class BusinessViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class BusinessViewHolder(itemView: View, private val viewModel: BusinessPostsViewModel) : RecyclerView.ViewHolder(itemView) {
+
         private val binding = BusinessPostLayoutBinding.bind(itemView)
 
+        @OptIn(UnstableApi::class)
         fun bind(post: Post) {
+            val author = post.author
+            val account = author.account
+
+            // Load avatar
             Glide.with(itemView.context)
-                .load(post.author.account.avatar.url)
+                .load(account.avatar.url)
                 .circleCrop()
                 .placeholder(R.drawable.ic_person)
+                .error(R.drawable.ic_person)
                 .into(binding.ivUserAvatar)
 
-            binding.tvUsername.text = "${post.author.firstName} ${post.author.lastName}".trim()
+            // Full name
+            val fullName = "${author.firstName} ${author.lastName}".trim()
+            binding.tvUsername.text = fullName.ifEmpty { "@${account.username}" }
+
+            // Username handle below full name
+            if (binding.root.findViewById<TextView>(R.id.tv_user_handle) == null) {
+                // Dynamically add if not in XML
+                val tvHandle = TextView(itemView.context).apply {
+                    id = R.id.tv_user_handle
+                    text = "@${account.username}"
+                    setTextColor(ContextCompat.getColor(itemView.context, R.color.gray_second))
+                    textSize = 12f
+                }
+                (binding.tvUsername.parent as LinearLayout).addView(tvHandle, 1)
+            } else {
+                binding.root.findViewById<TextView>(R.id.tv_user_handle).text = "@${account.username}"
+            }
+
+            // Post time
             binding.tvPostTime.text = getTimeAgo(post.createdAt)
-            binding.tvItemTitle.text = post.businessDetails?.itemName ?: post.content
+
+            // Catalogue info
+            binding.tvItemTitle.text = post.businessDetails?.itemName ?: post.content.take(50)
             binding.tvDescription.text = post.businessDetails?.description ?: post.content
             binding.tvItemPrice.text = "MWK ${post.businessDetails?.price ?: "0"}"
 
+            // Media section
             val images = post.businessDetails?.images ?: post.files.mapNotNull { it.url }
             binding.businessRecycler.layoutManager =
                 if (images.size <= 2) GridLayoutManager(itemView.context, images.size)
                 else StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
 
             binding.businessRecycler.adapter = BusinessMediaAdapter(images, itemView.context) { position ->
-                // handle click
+                // Media click handler
             }
 
             binding.tvMediaCounter.visibility = if (images.size > 4) View.VISIBLE else View.GONE
+
+            // ------------------ BUTTON CLICKS ------------------
+
+            // Follow
+            binding.btnFollow.setOnClickListener {
+                CoroutineScope(Dispatchers.Main).launch {
+                    viewModel.followUnfollowBusinessPostOwner(author._id)
+                }
+            }
+
+            // Like
+            binding.llLike.setOnClickListener {
+                CoroutineScope(Dispatchers.Main).launch {
+                    viewModel.likeUnlikeBusinessPost(post._id)
+                }
+            }
+
+            // Comment
+            binding.llComment.setOnClickListener {
+                // Open comment UI / activity
+            }
+
+            // Bookmark
+            binding.llBookmark.setOnClickListener {
+                viewModel.bookmarkUnBookmarkBusinessPost(post._id)
+            }
+
+            // Repost / Offer
+            binding.sendOffer.setOnClickListener {
+                // Handle send offer logic
+            }
+
+            // Share
+            binding.llRepost.setOnClickListener {
+                // Handle share intent
+            }
+
+            // Whole item click
+            itemView.setOnClickListener {
+                val intent = Intent(itemView.context, CatalogueDetailsActivity::class.java)
+                intent.putExtra("catalogue", post)
+                itemView.context.startActivity(intent)
+            }
         }
 
         private fun getTimeAgo(createdAt: String): String {
+            // Implement your time formatting here
             return ""
         }
     }
 
-
-    inner class BusinessMediaAdapter(
-        private val mediaUrls: List<String>,
-        private val context: Context,
-        private val onMediaClick: (position: Int) -> Unit
-    ) : RecyclerView.Adapter<BusinessMediaAdapter.MediaViewHolder>() {
+    inner class BusinessMediaAdapter(private val mediaUrls: List<String>, private val context: Context, private val onMediaClick: (position: Int) -> Unit) : RecyclerView.Adapter<BusinessMediaAdapter.MediaViewHolder>() {
 
         inner class MediaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val imageView: ImageView = view.findViewById(R.id.mediaImageView)
