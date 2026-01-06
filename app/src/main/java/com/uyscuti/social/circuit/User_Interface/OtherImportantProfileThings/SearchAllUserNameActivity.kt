@@ -1862,7 +1862,7 @@ class SearchUserNameAdapter(
             val myUserId = localStorage.getUserId()
             val otherUser = users.firstOrNull { it.id != myUserId }
 
-            val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
+            val usersList = ArrayList<.User>()
             otherUser?.let { usersList.add(it.toUser()) }
 
             val message = lastMessage?.toMessage()
@@ -1878,9 +1878,9 @@ class SearchUserNameAdapter(
             )
         }
 
-        private fun UserEntity.toUser(): com.uyscuti.sharedmodule.data.model.User {
+        private fun UserEntity.toUser(): .User {
             val username = if (name.contains("|")) name.split("|")[1].trim() else name
-            return com.uyscuti.sharedmodule.data.model.User(
+            return .User(
                 id,
                 username,
                 avatar,
@@ -1891,7 +1891,7 @@ class SearchUserNameAdapter(
 
         private fun MessageEntity.toMessage(): Message {
             val username = if (user.name.contains("|")) user.name.split("|")[1].trim() else user.name
-            val msgUser = com.uyscuti.sharedmodule.data.model.User(
+            val msgUser = .User(
                 user.id,
                 username,
                 user.avatar,
