@@ -106,6 +106,22 @@ enum class SearchContext {
 
 
 
+// Updated ContentFilter enum with your specific categories
+enum class ContentFilter {
+    ALL,
+    SHORTS,
+    FEED,
+    PEOPLE,
+    CHATS,
+    BUSINESS
+}
+
+enum class SearchContext {
+    GLOBAL,
+    USER_POSTS,
+    USER_PROFILE
+}
+
 @AndroidEntryPoint
 class SearchAllUserNameActivity : AppCompatActivity() {
 
@@ -732,81 +748,126 @@ class SearchAllUserNameActivity : AppCompatActivity() {
                         (businessPost.itemName?.contains(query, ignoreCase = true) == true) ||
                                 (businessPost.description?.contains(query, ignoreCase = true) == true) ||
                                 username.contains(query, ignoreCase = true)
-                        // We can't access businessProfile because it's not in the data class
-                        // So we rely on username, item name, and description only — which is still very effective
                     }
-                }.map { businessPost ->
-                    // Convert to your unified Post model for display
-                    // Keep using userDetails for username and avatar (already available!)
+                }.mapNotNull { businessPost ->
+                    try {
+                        // Fetch user profile using the correct endpoint - SAME AS PEOPLE & CHATS
+                        val profileResponse = apiService.getOtherUsersProfileByUsername(businessPost.userDetails.username ?: "")
+                        val profileData = profileResponse.body()?.data
 
-                    Post(
-                        __v = businessPost.__v ?: 0,
-                        _id = businessPost._id,
-                        author = Author(
-                            __v = 0, // or fetch if needed, but for now use defaults
-                            _id = businessPost.owner,
-                            account = Account(
+                        // Get the real first name and last name from profile
+                        val firstName = profileData?.firstName ?: ""
+                        val lastName = profileData?.lastName ?: ""
+                        val username = profileData?.account?.username ?: businessPost.userDetails.username ?: ""
+
+                        // Convert to your unified Post model with proper BusinessPost structure
+                        Post(
+                            __v = businessPost.__v ?: 0,
+                            _id = businessPost._id,
+                            author = Author(
+                                __v = 0,
                                 _id = businessPost.owner,
-                                avatar = Avatar(
-                                    _id = "",
-                                    localPath = "",
-                                    url = businessPost.userDetails.avatar ?: ""
+                                account = Account(
+                                    _id = businessPost.owner,
+                                    avatar = Avatar(
+                                        _id = "",
+                                        localPath = "",
+                                        url = businessPost.userDetails.avatar ?: ""
+                                    ),
+                                    createdAt = businessPost.createdAt ?: "",
+                                    email = "",
+                                    updatedAt = businessPost.updatedAt ?: "",
+                                    username = username
                                 ),
+                                bio = "",
+                                countryCode = "",
+                                coverImage = CoverImage("", "", "https://via.placeholder.com/800x450.png"),
                                 createdAt = businessPost.createdAt ?: "",
-                                email = "",
-                                updatedAt = businessPost.updatedAt ?: "",
-                                username = businessPost.userDetails.username ?: ""
+                                dob = "",
+                                firstName = firstName, // Real first name from profile
+                                lastName = lastName,   // Real last name from profile
+                                location = "",
+                                owner = businessPost.owner,
+                                phoneNumber = "",
+                                updatedAt = businessPost.updatedAt ?: ""
                             ),
-                            bio = "",
-                            countryCode = "",
-                            coverImage = CoverImage("", "", "https://via.placeholder.com/800x450.png"),
+                            bookmarkCount = businessPost.bookmarkCount ?: 0,
+                            comments = businessPost.comments ?: 0,
+                            content = businessPost.description ?: "",
+                            contentType = "business",
                             createdAt = businessPost.createdAt ?: "",
-                            dob = "",
-                            firstName = "",  // Not available without extra API call
-                            lastName = "",   // Not available without extra API call
-                            location = "",
-                            owner = businessPost.owner,
-                            phoneNumber = "",
-                            updatedAt = businessPost.updatedAt ?: ""
-                        ),
-                        bookmarkCount = businessPost.bookmarkCount ?: 0,
-                        comments = businessPost.comments ?: 0,
-                        content = businessPost.description ?: "",
-                        contentType = "business",
-                        createdAt = businessPost.createdAt ?: "",
-                        duration = emptyList(),
-                        feedShortsBusinessId = businessPost._id,
-                        fileIds = emptyList(),
-                        fileNames = emptyList(),
-                        fileSizes = emptyList(),
-                        fileTypes = emptyList(),
-                        files = ArrayList(businessPost.images?.map { imageUrl ->
-                            File("", "", "", imageUrl, "image")
-                        } ?: emptyList()),
-                        isBookmarked = businessPost.isBookmarked ?: false,
-                        isExpanded = false,
-                        isFollowing = businessPost.isFollowing ?: false,
-                        isLiked = businessPost.isLiked ?: false,
-                        isLocal = false,
-                        isReposted = false,
-                        likes = businessPost.likes ?: 0,
-                        numberOfPages = emptyList(),
-                        originalPost = emptyList(),
-                        repostedByUserId = "",
-                        repostedUser = RepostedUser("", Avatar("", "", ""), "", CoverImage("", "", ""), "", "", "", "", "", "", ""),
-                        repostedUsers = emptyList(),
-                        tags = emptyList(),
-                        thumbnail = emptyList(),
-                        updatedAt = businessPost.updatedAt ?: "",
-                        shareCount = 0,
-                        repostCount = 0,
-                        isBusinessPost = true,
-                        category = "business",
-                        businessDetails = null,
-                        isFavorited = null,
-                        favorites = null
-                    )
+                            duration = emptyList(),
+                            feedShortsBusinessId = businessPost._id,
+                            fileIds = emptyList(),
+                            fileNames = emptyList(),
+                            fileSizes = emptyList(),
+                            fileTypes = emptyList(),
+                            files = ArrayList(businessPost.images?.map { imageUrl ->
+                                File("", "", "", imageUrl, "image")
+                            } ?: emptyList()),
+                            isBookmarked = businessPost.isBookmarked ?: false,
+                            isExpanded = false,
+                            isFollowing = businessPost.isFollowing ?: false,
+                            isLiked = businessPost.isLiked ?: false,
+                            isLocal = false,
+                            isReposted = false,
+                            likes = businessPost.likes ?: 0,
+                            numberOfPages = emptyList(),
+                            originalPost = emptyList(),
+                            repostedByUserId = "",
+                            repostedUser = RepostedUser("", Avatar("", "", ""), "", CoverImage("", "", ""), "", "", "", "", "", "", ""),
+                            repostedUsers = emptyList(),
+                            tags = emptyList(),
+                            thumbnail = emptyList(),
+                            updatedAt = businessPost.updatedAt ?: "",
+                            shareCount = 0,
+                            repostCount = 0,
+                            isBusinessPost = true,
+                            category = "business",
+                            businessDetails = BusinessPost(
+                                _id = businessPost._id,
+                                owner = businessPost.owner,
+                                catalogue = businessPost.catalogue ?: "",
+                                itemName = businessPost.itemName ?: "",
+                                description = businessPost.description ?: "",
+                                features = businessPost.features ?: emptyList(),
+                                images = businessPost.images ?: emptyList(),
+                                price = businessPost.price?.toString() ?: "0",
+                                createdAt = businessPost.createdAt ?: "",
+                                updatedAt = businessPost.updatedAt ?: "",
+                                __v = businessPost.__v ?: 0,
+                                author = AuthorB(
+                                    _id = businessPost.owner,
+                                    firstName = firstName, // Real first name from profile
+                                    lastName = lastName,   // Real last name from profile
+                                    account = AccountB(
+                                        _id = businessPost.owner,
+                                        avatar = AvatarB(
+                                            url = businessPost.userDetails.avatar ?: "",
+                                            localPath = "",
+                                            _id = ""
+                                        ),
+                                        username = username
+                                    )
+                                ),
+                                businessProfile = BusinessProfile(
+                                    _id = "",
+                                    businessName = businessPost.userDetails.username ?: "",
+                                    businessType = "",
+                                    businessDescription = "",
+                                    backgroundPhoto = BackgroundPhoto(url = "")
+                                )
+                            ),
+                            isFavorited = null,
+                            favorites = null
+                        )
+                    } catch (e: Exception) {
+                        Log.e("SearchGlobal", "Error fetching profile for business post owner: ${businessPost.userDetails.username}", e)
+                        // Return null if profile fetch fails, will be filtered out by mapNotNull
+                        null
+                    }
                 }
+
                 Log.d("SearchGlobal", "Results - People: ${peopleAuthors.size}, Shorts: ${shortsOnly.size}, Feed: ${feedOnly.size}, Chats: ${filteredChats.size}, Business: ${filteredBusinessPosts.size}")
 
                 SearchResults(
@@ -1123,7 +1184,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     }
 
     fun com.uyscuti.social.network.api.response.getallshorts.Avatar.toPostsAvatar(): Avatar {
-        return com.uyscuti.social.network.api.response.posts.Avatar(
+        return Avatar(
             _id = this._id,
             url = this.url,
             localPath = this.localPath
@@ -1142,7 +1203,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     }
 
     fun com.uyscuti.social.network.api.response.getallshorts.CoverImage.toPostsCoverImage(): CoverImage {
-        return com.uyscuti.social.network.api.response.posts.CoverImage(
+        return CoverImage(
             _id = this._id,
             url = this.url,
             localPath = this.localPath
@@ -1330,7 +1391,8 @@ class SearchUserNameAdapter(
                 ChatViewHolder(view, localStorage)
             }
             TYPE_BUSINESS -> {
-                val view = inflater.inflate(R.layout.feed_business_post, parent, false)
+                val view = inflater.inflate(com.uyscuti.social.business.R.layout.business_post_layout, parent, false)
+
                 BusinessViewHolder(view)
             }
             TYPE_BUSINESS_GRID -> {
@@ -1790,7 +1852,7 @@ class SearchUserNameAdapter(
 
         private fun DialogEntity.toDialog(
             localStorage: LocalStorage
-        ): com.uyscuti.sharedmodule.data.model.Dialog {
+        ): Dialog {
 
             val myUserId = localStorage.getUserId()
             val otherUser = users.firstOrNull { it.id != myUserId }
@@ -1801,7 +1863,7 @@ class SearchUserNameAdapter(
             val message = lastMessage?.toMessage()
             val dialogName = usersList.firstOrNull()?.name ?: this.dialogName
 
-            return com.uyscuti.sharedmodule.data.model.Dialog(
+            return Dialog(
                 this.id,
                 dialogName,
                 this.dialogPhoto,
@@ -1822,7 +1884,7 @@ class SearchUserNameAdapter(
             )
         }
 
-        private fun MessageEntity.toMessage(): com.uyscuti.sharedmodule.data.model.Message {
+        private fun MessageEntity.toMessage(): Message {
             val username = if (user.name.contains("|")) user.name.split("|")[1].trim() else user.name
             val msgUser = com.uyscuti.sharedmodule.data.model.User(
                 user.id,
@@ -1831,7 +1893,7 @@ class SearchUserNameAdapter(
                 user.online,
                 user.lastSeen
             )
-            return com.uyscuti.sharedmodule.data.model.Message(
+            return Message(
                 id,
                 msgUser,
                 text,
@@ -1841,120 +1903,56 @@ class SearchUserNameAdapter(
     }
 
     inner class BusinessViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val binding = BusinessPostLayoutBinding.bind(itemView)
 
-        private val binding = FeedBusinessPostBinding.bind(itemView)
-
-        @OptIn(UnstableApi::class)
         fun bind(post: Post) {
-
-            /* ---------- PROFILE ---------- */
-
             Glide.with(itemView.context)
                 .load(post.author.account.avatar.url)
                 .circleCrop()
                 .placeholder(R.drawable.ic_person)
-                .error(R.drawable.ic_person)
-                .into(binding.businessProfileAvatar)
+                .into(binding.ivUserAvatar)
 
-            binding.businessProfileName.text = post.author.account.username
+            binding.tvUsername.text = "${post.author.firstName} ${post.author.lastName}".trim()
+            binding.tvPostTime.text = getTimeAgo(post.createdAt)
+            binding.tvItemTitle.text = post.businessDetails?.itemName ?: post.content
+            binding.tvDescription.text = post.businessDetails?.description ?: post.content
+            binding.tvItemPrice.text = "MWK ${post.businessDetails?.price ?: "0"}"
 
-            binding.businessProfileDescription.text =
-                listOf(post.author.firstName, post.author.lastName)
-                    .joinToString(" ")
-                    .trim()
+            val images = post.businessDetails?.images ?: post.files.mapNotNull { it.url }
+            binding.businessRecycler.layoutManager =
+                if (images.size <= 2) GridLayoutManager(itemView.context, images.size)
+                else StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
 
-            /* ---------- PRODUCT ---------- */
-
-            post.businessDetails?.let { business ->
-                binding.tvItemTitle.text = business.itemName
-                binding.tvDescription.text = business.description
-                binding.tvItemPrice.text = "MWK ${business.price}"
-                setupProductMedia(post)
-            } ?: run {
-                binding.tvItemTitle.text = post.content.take(50)
-                binding.tvDescription.text = post.content
-                binding.tvItemPrice.text = "MWK 0"
-                setupFallbackMedia(post)
+            binding.businessRecycler.adapter = BusinessMediaAdapter(images, itemView.context) { position ->
+                // handle click
             }
 
-            /* ---------- ACTIONS ---------- */
-
-            binding.messageUser.text = "Message ${post.author.account.username}"
-
-            binding.sendOffer.setOnClickListener {
-                post.businessDetails?.let { business ->
-                    val bottomSheet = SendOfferBottomSheet.newInstance(
-                        productName = business.itemName,
-                        listingPrice = business.price.toDoubleOrNull() ?: 0.0,
-                        itemImage = business.images.firstOrNull().orEmpty()
-                    )
-                    bottomSheet.onOfferSubmitted = { amount, message ->
-                        Log.d("Offer", "Amount: MWK $amount, Message: $message")
-                    }
-                }
-            }
-
-            binding.messageSeller.setOnClickListener {
-                // FIXED: Use the correct User class from sharedmodule
-//                val user = com.uyscuti.sharedmodule.data.model.User(
-//                    id = post.author._id,
-//                    name = post.author.account.username,
-//                    avatar = post.author.account.avatar.url,
-//                    online = false,
-//                    lastSeen = Date()
-//                )
-//
-//                dialogManager.openChat(user)
-            }
-
-            /* ---------- OPEN DETAILS ---------- */
-
-            itemView.setOnClickListener {
-                val intent = Intent(itemView.context, CatalogueDetailsActivity::class.java)
-                intent.putExtra("catalogue", post)
-                itemView.context.startActivity(intent)
-            }
+            binding.tvMediaCounter.visibility = if (images.size > 4) View.VISIBLE else View.GONE
         }
 
-        /* ---------- MEDIA ---------- */
-
-        private fun setupProductMedia(post: Post) {
-            val images = post.businessDetails?.images ?: return
-            if (images.isEmpty()) return
-
-            binding.productMediaRecycler.layoutManager =
-                if (images.size <= 2)
-                    GridLayoutManager(itemView.context, images.size)
-                else
-                    StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
-
-            binding.productMediaRecycler.adapter =
-                BusinessMediaAdapter(images, itemView.context)
-
-            binding.productMediaCounter.visibility =
-                if (images.size > 4) View.VISIBLE else View.GONE
-        }
-
-        private fun setupFallbackMedia(post: Post) {
-            val mediaUrls = post.files.mapNotNull { it.url.takeIf(String::isNotBlank) }
-            if (mediaUrls.isEmpty()) return
-
-            binding.productMediaRecycler.layoutManager =
-                GridLayoutManager(itemView.context, if (mediaUrls.size == 1) 1 else 2)
-
-            binding.productMediaRecycler.adapter =
-                BusinessMediaAdapter(mediaUrls, itemView.context)
+        private fun getTimeAgo(createdAt: String): String {
+            return ""
         }
     }
 
 
     inner class BusinessMediaAdapter(
         private val mediaUrls: List<String>,
-        private val context: Context
+        private val context: Context,
+        private val onMediaClick: (position: Int) -> Unit
     ) : RecyclerView.Adapter<BusinessMediaAdapter.MediaViewHolder>() {
 
         inner class MediaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val imageView: ImageView = view.findViewById(R.id.mediaImageView)
+
+            init {
+                view.setOnClickListener {
+                    val pos = bindingAdapterPosition
+                    if (pos != RecyclerView.NO_POSITION) {
+                        onMediaClick(pos)
+                    }
+                }
+            }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder {
@@ -1974,6 +1972,8 @@ class SearchUserNameAdapter(
 
         override fun getItemCount(): Int = mediaUrls.size
     }
+
+
 
 
     inner class BusinessGridViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
