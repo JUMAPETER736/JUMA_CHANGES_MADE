@@ -51,17 +51,6 @@ import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import com.uyscuti.social.core.common.data.room.entity.UserEntity
 import com.uyscuti.social.network.api.models.Chat
-import com.uyscuti.social.network.api.models.User
-import com.uyscuti.social.network.api.response.business.response.profile.ProfileResponse
-import com.uyscuti.social.network.api.response.posts.Account
-import com.uyscuti.social.network.api.response.posts.Author
-import com.uyscuti.social.network.api.response.posts.Avatar
-import com.uyscuti.social.network.api.response.posts.CoverImage
-import com.uyscuti.social.network.api.response.posts.File
-import com.uyscuti.social.network.api.response.posts.FileType
-import com.uyscuti.social.network.api.response.posts.Post
-import com.uyscuti.social.network.api.response.posts.RepostedUser
-import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -89,8 +78,16 @@ import com.uyscuti.social.network.api.response.business.response.profile.Backgro
 import com.uyscuti.social.network.api.response.posts.Duration
 import kotlinx.coroutines.CoroutineScope
 import java.util.TimeZone
-import com.uyscuti.social.network.api.request.business.create.Contact as CreateContact
-import com.uyscuti.social.network.api.response.business.response.profile.Contact as ProfileContact
+import com.uyscuti.social.network.api.models.User
+import com.uyscuti.social.network.api.response.posts.Account
+import com.uyscuti.social.network.api.response.posts.Author
+import com.uyscuti.social.network.api.response.posts.Avatar
+import com.uyscuti.social.network.api.response.posts.CoverImage
+import com.uyscuti.social.network.api.response.posts.File
+import com.uyscuti.social.network.api.response.posts.FileType
+import com.uyscuti.social.network.api.response.posts.Post
+import com.uyscuti.social.network.api.response.posts.RepostedUser
+import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 
 
 // Updated ContentFilter enum with your specific categories
