@@ -15,7 +15,7 @@ import java.io.Serializable
 
 
 
-data class Post(
+data class Post2(
     val __v: Int,
     var _id: String,
     val author: Author,
@@ -154,34 +154,34 @@ data class RepostRequestMultiPart(
 //)
 
 
-interface BookmarkService {
-    @POST("posts/{postId}/bookmark")
-    fun toggleBookmark(
-        @Path("postId") postId: String,
-        @Body bookmarkRequest: BookmarkRequest
-    ): Call<BookmarkResponse>
-}
+//interface BookmarkService {
+//    @POST("posts/{postId}/bookmark")
+//    fun toggleBookmark(
+//        @Path("postId") postId: String,
+//        @Body bookmarkRequest: BookmarkRequest
+//    ): Call<BookmarkResponse>
+//}
 
-interface ShareService {
-    @POST("posts/{postId}/share")
-    fun incrementShare(@Path("postId") postId: String): Call<ShareResponse>
-}
-
-// Updated RepostService interface
-interface RepostService {
-    @POST("posts/{postId}/repost")
-    fun incrementRepost(@Path("postId") postId: String): Call<RepostResponse>
-
-    @DELETE("posts/{postId}/repost")
-    fun decrementRepost(@Path("postId") postId: String): Call<RepostResponse>
-
-    // Alternative: If your API uses a toggle endpoint instead
-    @POST("posts/{postId}/repost/toggle")
-    fun toggleRepost(
-        @Path("postId") postId: String,
-        @Body repostRequest: RepostRequest
-    ): Call<RepostResponse>
-}
+//interface ShareService {
+//    @POST("posts/{postId}/share")
+//    fun incrementShare(@Path("postId") postId: String): Call<ShareResponse>
+//}
+//
+//// Updated RepostService interface
+//interface RepostService {
+//    @POST("posts/{postId}/repost")
+//    fun incrementRepost(@Path("postId") postId: String): Call<RepostResponse>
+//
+//    @DELETE("posts/{postId}/repost")
+//    fun decrementRepost(@Path("postId") postId: String): Call<RepostResponse>
+//
+//    // Alternative: If your API uses a toggle endpoint instead
+//    @POST("posts/{postId}/repost/toggle")
+//    fun toggleRepost(
+//        @Path("postId") postId: String,
+//        @Body repostRequest: RepostRequest
+//    ): Call<RepostResponse>
+//}
 
 
 //interface LikeService {
@@ -193,49 +193,49 @@ interface RepostService {
 //}
 
 
-interface CommentService {
-
-    // NEW: Shorts Comments (social-media/comments/post/{postId})
-    @GET("social-media/comments/post/{postId}")
-    fun getShortsComments(
-        @Path("postId") postId: String,
-        @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 20
-    ): Call<CommentsResponse>
-
-    // NEW: Feed Comments (feed/comments/{postId})
-    @GET("feed/comments/{postId}")
-    fun getFeedComments(
-        @Path("postId") postId: String,
-        @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 20
-    ): Call<CommentsResponse>
-
-    @GET("posts/{postId}/comments")
-    fun getCommentsForPost(
-        @Path("postId") postId: String,
-        @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 20
-    ): Call<CommentsResponse>
-
-    @POST("posts/{postId}/comments")
-    fun addComment(
-        @Path("postId") postId: String,
-        @Body commentRequest: AddCommentRequest
-    ): Call<Comment>
-
-    @DELETE("comments/{commentId}")
-    fun deleteComment(@Path("commentId") commentId: String): Call<DeleteResponse>
-
-    @GET("posts/{postId}/comments/count")
-    fun getCommentCount(@Path("postId") postId: String): Call<CommentCountResponse>
-
-    @PUT("comments/{commentId}/like")
-    fun toggleCommentLike(
-        @Path("commentId") commentId: String,
-        @Body likeRequest: LikeRequest
-    ): Call<LikeResponse>
-}
+//interface CommentService {
+//
+//    // NEW: Shorts Comments (social-media/comments/post/{postId})
+//    @GET("social-media/comments/post/{postId}")
+//    fun getShortsComments(
+//        @Path("postId") postId: String,
+//        @Query("page") page: Int = 1,
+//        @Query("limit") limit: Int = 20
+//    ): Call<CommentsResponse>
+//
+//    // NEW: Feed Comments (feed/comments/{postId})
+//    @GET("feed/comments/{postId}")
+//    fun getFeedComments(
+//        @Path("postId") postId: String,
+//        @Query("page") page: Int = 1,
+//        @Query("limit") limit: Int = 20
+//    ): Call<CommentsResponse>
+//
+//    @GET("posts/{postId}/comments")
+//    fun getCommentsForPost(
+//        @Path("postId") postId: String,
+//        @Query("page") page: Int = 1,
+//        @Query("limit") limit: Int = 20
+//    ): Call<CommentsResponse>
+//
+//    @POST("posts/{postId}/comments")
+//    fun addComment(
+//        @Path("postId") postId: String,
+//        @Body commentRequest: AddCommentRequest
+//    ): Call<Comment>
+//
+//    @DELETE("comments/{commentId}")
+//    fun deleteComment(@Path("commentId") commentId: String): Call<DeleteResponse>
+//
+//    @GET("posts/{postId}/comments/count")
+//    fun getCommentCount(@Path("postId") postId: String): Call<CommentCountResponse>
+//
+//    @PUT("comments/{commentId}/like")
+//    fun toggleCommentLike(
+//        @Path("commentId") commentId: String,
+//        @Body likeRequest: LikeRequest
+//    ): Call<LikeResponse>
+//}
 
 
 
