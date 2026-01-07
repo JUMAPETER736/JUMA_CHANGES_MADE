@@ -66,4 +66,6 @@
     <string name="mwk">MWK</string>
     <string name="offer_price">Offer price</string>
     <string name="be_the_first_to_comment">Be the first to comment</string>
+    <string name="test_message">This is a test Message</string>
+    <string name="show_more">show more</string>
 </resources>
