@@ -1,6 +1,7 @@
 package com.uyscuti.social.network.api.response.post
 
-import com.uyscuti.social.network.api.response.post.Data
+
+import com.uyscuti.social.network.api.response.posts.Data
 
 data class GetPostById(
     val data: Data,
