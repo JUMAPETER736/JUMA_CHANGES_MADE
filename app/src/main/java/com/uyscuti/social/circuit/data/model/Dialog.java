@@ -8,7 +8,6 @@ import android.os.Parcelable;
 import com.uyscuti.social.chatsuit.commons.models.IDialog;
 
 
-
 public class Dialog implements IDialog<Message>, Parcelable {
 
     private String id;
@@ -16,11 +15,13 @@ public class Dialog implements IDialog<Message>, Parcelable {
     private String dialogName;
     private ArrayList<User> users;
     private Message lastMessage;
+
     private Boolean isSelected = false;
     private int unreadCount;
 
     public Dialog(String id, String name, String photo,
                   ArrayList<User> users, Message lastMessage, int unreadCount) {
+
         this.id = id;
         this.dialogName = name;
         this.dialogPhoto = photo;
@@ -90,7 +91,6 @@ public class Dialog implements IDialog<Message>, Parcelable {
         users = in.createTypedArrayList(User.CREATOR);
         lastMessage = in.readParcelable(Message.class.getClassLoader());
         unreadCount = in.readInt();
-        // Fixed: Read as byte since writeToParcel writes as byte
         isSelected = in.readByte() != 0;
     }
 
@@ -119,7 +119,6 @@ public class Dialog implements IDialog<Message>, Parcelable {
         dest.writeTypedList(users);
         dest.writeParcelable(lastMessage, flags);
         dest.writeInt(unreadCount);
-        // Fixed: Write as byte to match the read operation
-        dest.writeByte((byte) (isSelected ? 1 : 0));
+        dest.writeInt(isSelected ? 1 : 0);
     }
 }
