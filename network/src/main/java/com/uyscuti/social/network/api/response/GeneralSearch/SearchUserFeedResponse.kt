@@ -13,27 +13,27 @@ data class SearchUserFeedWrapper(
     val data: SearchUserFeedData?
 )
 
-data class SearchUserFeedData(
-    val posts: List<Post>?,
-    val totalPosts: Int?,
-    val limit: Int?,
-    val page: Int?,
-    val totalPages: Int?,
-    val hasNextPage: Boolean?,
-    val hasPrevPage: Boolean?,
-    val matchingUsers: List<MatchingUser>?,
-    val searchedUsername: String?,
-    val debug: DebugInfo?
-)
+//data class SearchUserFeedData(
+//    val posts: List<Post>?,
+//    val totalPosts: Int?,
+//    val limit: Int?,
+//    val page: Int?,
+//    val totalPages: Int?,
+//    val hasNextPage: Boolean?,
+//    val hasPrevPage: Boolean?,
+//    val matchingUsers: List<MatchingUser>?,
+//    val searchedUsername: String?,
+//    val debug: DebugInfo?
+//)
 
-data class DebugInfo(
-    val userIdsSearched: Int?,
-    val socialProfileIdsSearched: Int?,
-    val rawPostCount: Int?,
-    val postsReturnedAfterAggregation: Int?,
-    val currentPage: Int?,
-    val totalPages: Int?
-)
+//data class DebugInfo(
+//    val userIdsSearched: Int?,
+//    val socialProfileIdsSearched: Int?,
+//    val rawPostCount: Int?,
+//    val postsReturnedAfterAggregation: Int?,
+//    val currentPage: Int?,
+//    val totalPages: Int?
+//)
 
 
 data class GeneralSearchResponse(
@@ -64,8 +64,8 @@ data class GeneralSearchData(
     val nextPage: Int?
 )
 
-data class MatchingUser(
-    val _id: String,
-    val username: String,
-    val email: String
-)
+//data class MatchingUser(
+//    val _id: String,
+//    val username: String,
+//    val email: String
+//)
