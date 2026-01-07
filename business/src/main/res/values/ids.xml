@@ -4,4 +4,8 @@
     <item name="reply" type="id" />
     <item name="likeCountContainer" type="id" />
     <item name="likesCount" type="id" />
+    <item name="repliesRecyclerView" type="id" />
+    <item name="viewRepliesContainer" type="id" />
+    <item name="commentReplies" type="id" />
+    <item name="hideCommentReplies" type="id" />
 </resources>
