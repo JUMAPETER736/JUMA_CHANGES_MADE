@@ -61,24 +61,27 @@ dependencies {
     implementation("org.greenrobot:eventbus:3.3.1")
     implementation(project(":network"))
 
+
+    implementation(project(":chatsuit"))
+    implementation(project(":core"))
+
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.0")
 
     implementation("com.github.bumptech.glide:glide:4.15.1")
-    kapt("com.github.bumptech.glide:compiler:4.15.1")
+    kapt("com.github.bumptech.glide:glide:4.15.1")
 
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("com.tbuonomo:dotsindicator:5.0")
-
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
     implementation("androidx.media3:media3-extractor:1.3.1")
     implementation("androidx.media3:media3-exoplayer-dash:1.3.1")
-
+    implementation("com.facebook.shimmer:shimmer:0.5.0")
     implementation("com.google.android.gms:play-services-location:21.2.0")
-
+    implementation("com.github.alxrm:audiowave-progressbar:0.9.2")
     implementation("com.google.dagger:hilt-android:2.51.1")
     kapt("com.google.dagger:hilt-compiler:2.51.1")
-
 }
