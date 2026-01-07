@@ -45,35 +45,35 @@ import java.io.Serializable
 //
 //): Serializable
 
+//
+//data class BusinessPost(
+//    val _id: String,
+//    val owner: String,
+//    val catalogue: String,
+//    val itemName: String,
+//    val description: String,
+//    val features: List<String>,
+//    val images: List<String>,
+//    val price: String,
+//    val createdAt: String,
+//    val updatedAt: String,
+//    val __v: Int,
+//    val author: AuthorB,
+//    val businessProfile: BusinessProfile
+//): Serializable
 
-data class BusinessPost(
-    val _id: String,
-    val owner: String,
-    val catalogue: String,
-    val itemName: String,
-    val description: String,
-    val features: List<String>,
-    val images: List<String>,
-    val price: String,
-    val createdAt: String,
-    val updatedAt: String,
-    val __v: Int,
-    val author: AuthorB,
-    val businessProfile: BusinessProfile
-): Serializable
+//data class AuthorB(
+//    val _id: String,
+//    val firstName: String,
+//    val lastName: String,
+//    val account: AccountB
+//): Serializable
 
-data class AuthorB(
-    val _id: String,
-    val firstName: String,
-    val lastName: String,
-    val account: AccountB
-): Serializable
-
-data class AccountB(
-    val _id: String,
-    val avatar: AvatarB,
-    val username: String
-): Serializable
+//data class AccountB(
+//    val _id: String,
+//    val avatar: AvatarB,
+//    val username: String
+//): Serializable
 
 data class AvatarB(
     val url: String,
