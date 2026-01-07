@@ -36,7 +36,6 @@ import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 
-import com.uyscuti.social.network.api.response.posts.FileType
 import com.uyscuti.social.network.api.response.posts.ThumbnailX
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target

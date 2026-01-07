@@ -78,7 +78,6 @@ import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.response.posts.Avatar
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.response.posts.FileName
-import com.uyscuti.social.network.api.response.posts.FileType
 import com.uyscuti.social.network.api.response.posts.NumberOfPageX
 import com.uyscuti.social.network.api.response.posts.RepostedUser
 import com.uyscuti.social.network.api.response.posts.ThumbnailX

@@ -74,7 +74,6 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeRequest
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 //import com.uyscuti.social.network.api.response.getrepostsPostsoriginal.FileType
-import com.uyscuti.social.network.api.response.posts.FileType
 import com.uyscuti.social.network.utils.LocalStorage
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.*
 import retrofit2.Call
