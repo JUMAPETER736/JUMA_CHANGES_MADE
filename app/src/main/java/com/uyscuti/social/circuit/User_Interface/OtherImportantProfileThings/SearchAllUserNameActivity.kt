@@ -1,10 +1,8 @@
 package com.uyscuti.social.circuit.user_interface
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.media.MediaMetadataRetriever
 import android.os.Bundle
 import android.util.Log
@@ -13,7 +11,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -21,8 +18,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatButton
-import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -36,11 +31,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
-import com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
 import com.uyscuti.social.business.CatalogueDetailsActivity
 import com.uyscuti.social.business.databinding.BusinessPostLayoutBinding
 import com.uyscuti.social.circuit.R
@@ -74,7 +67,6 @@ import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.Mes
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.circuit.data.model.Dialog
 import com.uyscuti.social.circuit.presentation.RecentUserViewModel
-import com.uyscuti.social.network.api.models.Message
 import com.uyscuti.social.network.api.response.posts.Duration
 import kotlinx.coroutines.CoroutineScope
 import java.util.TimeZone
@@ -1863,9 +1855,9 @@ class SearchUserNameAdapter(
             )
         }
 
-        private fun UserEntity.toUser(): User {
+        private fun UserEntity.toUser(): com.uyscuti.social.circuit.data.model.User {
             val username = if (name.contains("|")) name.split("|")[1].trim() else name
-            return User(
+            return com.uyscuti.social.circuit.data.model.User(
                 id,
                 username,
                 avatar,
@@ -1874,7 +1866,7 @@ class SearchUserNameAdapter(
             )
         }
 
-        private fun MessageEntity.toMessage(): Message {
+        private fun MessageEntity.toMessage(): com.uyscuti.social.circuit.data.model.Message {
             val username = if (user.name.contains("|")) user.name.split("|")[1].trim() else user.name
             val msgUser = com.uyscuti.social.circuit.data.model.User(
                 user.id,
@@ -1883,7 +1875,7 @@ class SearchUserNameAdapter(
                 user.online,
                 user.lastSeen
             )
-            return Message(
+            return com.uyscuti.social.circuit.data.model.Message(
                 id,
                 msgUser,
                 text,
