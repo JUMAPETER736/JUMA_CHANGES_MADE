@@ -1,4 +1,8 @@
-package com.uyscuti.social.network.api.response.posts
+package com.uyscuti.social.network.api.response.GeneralSearch
+
+import com.uyscuti.social.network.api.response.posts.Author
+import com.uyscuti.social.network.api.response.posts.Avatar
+import com.uyscuti.social.network.api.response.posts.Post
 
 
 
@@ -174,3 +178,4 @@ data class BusinessDetails(
     val price: String?,
     val images: List<String>?,
     val features: List<String>?
+)

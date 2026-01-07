@@ -1,6 +1,6 @@
-package com.uyscuti.social.network.api.response.business.response.login
+package com.uyscuti.social.network.api.response.response.login
 
-import com.uyscuti.social.network.api.response.business.response.login.IData
+import com.uyscuti.social.network.api.response.login.IData
 
 data class LoginResponse(
     val `data`: IData,

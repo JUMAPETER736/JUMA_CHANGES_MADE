@@ -1,14 +1,17 @@
-package com.uyscuti.social.network.api.response.business.response.post
+package com.uyscuti.social.network.api.response.response.post
 
 data class Data(
-    val hasNextPage: Boolean,
-    val hasPrevPage: Boolean,
-    val limit: Int,
-    val nextPage: Int,
-    val page: Int,
-    val posts: List<Post>,
-    val prevPage: Any,
-    val serialNumberStartFrom: Int,
-    val totalPages: Int,
-    val totalPosts: Int
+    val __v: Int,
+    val _id: String,
+    val author: Author,
+    val comments: Int,
+    val content: String,
+    val createdAt: String,
+    val images: List<Image>,
+    var isBookmarked: Boolean,
+    var isLiked: Boolean,
+    var likes: Int,
+    val tags: List<String>,
+    val thumbnail: List<Thumbnail>,
+    val updatedAt: String
 )

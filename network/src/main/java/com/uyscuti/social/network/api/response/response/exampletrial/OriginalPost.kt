@@ -1,0 +1,31 @@
+package com.uyscuti.social.network.api.response.exampletrial
+
+data class OriginalPost(
+    val __v: Int,
+    val _id: String,
+    val author: List<Any?>,
+    val bookmarkCount: Int,
+    val bookmarks: List<Any?>,
+    val commentCount: Int,
+    val content: String,
+    val contentType: String,
+    val createdAt: String,
+    val duration: List<DurationX>,
+    val feedShortsBusinessId: String,
+    val fileIds: List<String>,
+    val fileNames: List<FileNameX>,
+    val fileSizes: List<FileSize>,
+    val fileTypes: List<FileType>,
+    val files: List<File>,
+    val isReposted: Boolean,
+    val likeCount: Int,
+    val numberOfPages: List<NumberOfPage>,
+    val originalPostId: String,
+    val originalPostReposter: List<OriginalPostReposter>,
+    val repostCount: Int,
+    val repostedByUserId: String,
+    val repostedUsers: List<String>,
+    val tags: List<Any?>,
+    val thumbnail: List<Any?>,
+    val updatedAt: String
+)
