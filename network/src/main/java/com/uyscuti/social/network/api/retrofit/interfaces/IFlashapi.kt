@@ -27,6 +27,7 @@ import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
 import com.uyscuti.social.network.api.request.register.RegisterRequest
 import com.uyscuti.social.network.api.request.search.SearchUsersRequest
 import com.uyscuti.social.network.api.response.GeneralSearch.GeneralSearchResponse
+import com.uyscuti.social.network.api.response.GeneralSearch.SearchShortsResponse
 import com.uyscuti.social.network.api.response.GeneralSearch.SearchUserFeedResponse
 import com.uyscuti.social.network.api.response.MainResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.AllFeedRepostsPost
@@ -89,7 +90,6 @@ import com.uyscuti.social.network.api.response.updateavatar.UpdateAvatarResponse
 import com.uyscuti.social.network.api.response.userstatus.UserStatusResponse
 import com.uyscuti.social.network.api.response.getallshorts.ApiResponse
 import com.uyscuti.social.network.api.response.posts.FeedResponse
-import com.uyscuti.social.network.api.response.posts.SearchShortsResponse
 import com.uyscuti.social.network.api.response.profile.followersList.UserOtherFollowersResponse
 import com.uyscuti.social.network.api.response.profile.followingList.OtherUserFollowingResponse
 import okhttp3.RequestBody

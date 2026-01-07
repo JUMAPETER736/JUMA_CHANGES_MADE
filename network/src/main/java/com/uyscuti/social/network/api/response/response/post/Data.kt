@@ -1,5 +1,9 @@
 package com.uyscuti.social.network.api.response.response.post
 
+import com.uyscuti.social.network.api.response.post.Image
+import com.uyscuti.social.network.api.response.post.Thumbnail
+import com.uyscuti.social.network.api.response.posts.Author
+
 data class Data(
     val __v: Int,
     val _id: String,
