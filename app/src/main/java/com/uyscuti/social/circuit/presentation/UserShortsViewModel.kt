@@ -5,7 +5,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.uyscuti.social.circuit.User_Interface.fragments.SHORTS
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
-import com.uyscuti.social.network.api.response.getallshorts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers

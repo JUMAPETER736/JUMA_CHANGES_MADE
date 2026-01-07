@@ -5,7 +5,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.uyscuti.social.circuit.User_Interface.fragments.forshorts.FollowersFollowingCount
-import com.uyscuti.social.network.api.response.getallshorts.Post
 import com.uyscuti.social.network.api.response.otherusersprofileshorts.Data
 //import com.uyscut.network.api.response.otherusersprofileshorts.Post
 import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity

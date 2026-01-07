@@ -123,8 +123,6 @@ import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
 import com.uyscuti.social.core.common.data.room.repository.ProfileRepository
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
-import com.uyscuti.social.network.api.response.getallshorts.FollowListItem
-import com.uyscuti.social.network.api.response.getallshorts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint

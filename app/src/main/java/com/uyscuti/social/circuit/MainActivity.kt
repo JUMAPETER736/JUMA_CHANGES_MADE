@@ -250,7 +250,6 @@ import com.uyscuti.social.network.api.response.comment.allcomments.Author
 import com.uyscuti.social.network.api.response.comment.allcomments.Avatar
 import com.uyscuti.social.network.api.response.comment.allcomments.CommentFiles
 import com.uyscuti.social.network.api.response.commentreply.allreplies.AllCommentReplies
-import com.uyscuti.social.network.api.response.getallshorts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.interfaces.DirectReplyListener
 import com.uyscuti.social.network.utils.LocalStorage

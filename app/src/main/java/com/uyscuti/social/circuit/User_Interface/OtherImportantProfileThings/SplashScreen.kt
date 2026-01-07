@@ -28,8 +28,6 @@ import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
 import com.uyscuti.social.core.common.data.room.repository.DialogRepository
 import com.uyscuti.social.core.common.data.room.repository.GroupDialogRepository
 import com.uyscuti.social.core.common.data.room.repository.MessageRepository
-import com.uyscuti.social.network.api.response.getallshorts.FollowListItem
-import com.uyscuti.social.network.api.response.getallshorts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint

@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.uyscuti.social.network.api.response.getallshorts.Post
 
 //// Define your data class
 //data class MyData(val id: Int, val name: String)

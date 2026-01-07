@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
-import com.uyscuti.social.network.api.response.getallshorts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 
 class UserProfileShortsPagingSource(private val retrofitInstance: RetrofitInstance): PagingSource<Int, UserShortsEntity>() {

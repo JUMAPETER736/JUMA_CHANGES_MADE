@@ -24,7 +24,6 @@ import com.uyscuti.social.circuit.utils.Constants
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.adapter.PaginatedAdapter
 import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
-import com.uyscuti.social.network.api.response.getallshorts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.DelicateCoroutinesApi

@@ -87,7 +87,6 @@ import com.uyscuti.social.circuit.databinding.ActivityUserProfileShortsPlayerBin
 import com.uyscuti.social.network.api.response.comment.allcomments.Account
 import com.uyscuti.social.network.api.response.comment.allcomments.Author
 import com.uyscuti.social.network.api.response.comment.allcomments.Avatar
-import com.uyscuti.social.network.api.response.getallshorts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import com.vanniktech.emoji.EmojiPopup

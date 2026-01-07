@@ -63,7 +63,6 @@ import com.uyscuti.social.circuit.databinding.FragmentUserProfileShortsPlayerBin
 import com.uyscuti.social.circuit.utils.AndroidUtil
 import com.uyscuti.social.core.common.data.room.entity.UserShortsEntity
 import com.uyscuti.social.core.models.BookmarkedShortsEntity
-import com.uyscuti.social.network.api.response.getallshorts.Post
 import com.uyscuti.social.network.api.response.getfavoriteshorts.BookmarkedPost
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
