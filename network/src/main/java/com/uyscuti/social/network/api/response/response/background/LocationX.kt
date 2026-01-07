@@ -1,6 +1,6 @@
 package com.uyscuti.social.network.api.response.business.response.background
 
-data class LocationX(
-    val businessLocation: BusinessLocationX,
-    val walkingBillboard: WalkingBillboardX
-)
+//data class LocationX(
+//    val businessLocation: BusinessLocationX,
+//    val walkingBillboard: WalkingBillboardX
+//)
