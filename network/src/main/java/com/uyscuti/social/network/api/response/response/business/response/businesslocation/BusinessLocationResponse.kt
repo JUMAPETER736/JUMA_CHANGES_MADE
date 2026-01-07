@@ -2,7 +2,7 @@ package com.uyscuti.social.network.api.response.business.response.businesslocati
 
 import com.uyscuti.social.network.api.response.business.response.background.UpdatedBusinessProfile
 
-data class BusinessLocationResponse(
-    val message: String,
-    val updatedBusinessProfile: UpdatedBusinessProfile
-)
+//data class BusinessLocationResponse(
+//    val message: String,
+//    val updatedBusinessProfile: UpdatedBusinessProfile
+//)

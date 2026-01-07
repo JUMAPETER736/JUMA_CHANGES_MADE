@@ -6,18 +6,18 @@ import com.uyscuti.social.network.api.response.business.response.background.Cont
 import com.uyscuti.social.network.api.response.business.response.background.LocationX
 
 
-data class UpdatedBusinessProfileX(
-    val __v: Int,
-    val _id: String,
-    val backgroundPhoto: BackgroundPhotoX,
-    val backgroundVideo: BackgroundVideo,
-    val businessCatalogue: List<Any>,
-    val businessDescription: String,
-    val businessName: String,
-    val businessType: String,
-    val contact: ContactX,
-    val createdAt: String,
-    val location: LocationX,
-    val owner: String,
-    val updatedAt: String
-)
+//data class UpdatedBusinessProfileX(
+//    val __v: Int,
+//    val _id: String,
+//    val backgroundPhoto: BackgroundPhotoX,
+//    val backgroundVideo: BackgroundVideo,
+//    val businessCatalogue: List<Any>,
+//    val businessDescription: String,
+//    val businessName: String,
+//    val businessType: String,
+//    val contact: ContactX,
+//    val createdAt: String,
+//    val location: LocationX,
+//    val owner: String,
+//    val updatedAt: String
+//)
