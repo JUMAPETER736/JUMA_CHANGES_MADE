@@ -70,7 +70,6 @@ import com.google.gson.stream.MalformedJsonException
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.response.posts.ThumbnailX
-import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.FileType
 import java.text.SimpleDateFormat
 import java.util.*

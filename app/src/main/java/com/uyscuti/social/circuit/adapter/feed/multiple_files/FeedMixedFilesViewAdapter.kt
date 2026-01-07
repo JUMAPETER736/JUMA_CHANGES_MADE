@@ -48,7 +48,6 @@ import com.bumptech.glide.request.target.Target
 import com.google.android.material.imageview.ShapeableImageView
 import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
-import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.AuthorX
 import com.uyscuti.social.network.api.response.posts.FileType
 import com.uyscuti.social.network.api.response.posts.OriginalPost

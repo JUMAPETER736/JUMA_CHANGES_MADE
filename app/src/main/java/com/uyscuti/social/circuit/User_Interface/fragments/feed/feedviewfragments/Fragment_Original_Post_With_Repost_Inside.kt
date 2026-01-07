@@ -52,7 +52,6 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.uyscuti.social.network.api.response.posts.File
 import kotlin.collections.isNotEmpty
 import com.uyscuti.social.network.api.response.getfeedandresposts.Thumbnail
 import com.google.android.material.card.MaterialCardView

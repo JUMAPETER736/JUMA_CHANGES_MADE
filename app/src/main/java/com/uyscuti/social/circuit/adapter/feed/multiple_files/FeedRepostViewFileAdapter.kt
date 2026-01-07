@@ -35,7 +35,6 @@ import com.google.android.material.imageview.ShapeableImageView
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
 import com.uyscuti.social.network.api.response.posts.OriginalPost
-import com.uyscuti.social.network.api.response.posts.File
 
 import com.uyscuti.social.network.api.response.posts.FileType
 import com.uyscuti.social.network.api.response.posts.ThumbnailX
