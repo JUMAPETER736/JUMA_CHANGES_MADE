@@ -69,7 +69,6 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.gson.stream.MalformedJsonException
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
-import com.uyscuti.social.network.api.response.posts.Duration
 import com.uyscuti.social.network.api.response.posts.ThumbnailX
 import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.FileType

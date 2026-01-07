@@ -67,7 +67,6 @@ import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.Mes
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.circuit.data.model.Dialog
 import com.uyscuti.social.circuit.presentation.RecentUserViewModel
-import com.uyscuti.social.network.api.response.posts.Duration
 import kotlinx.coroutines.CoroutineScope
 import java.util.TimeZone
 import com.uyscuti.social.network.api.models.User
@@ -76,6 +75,7 @@ import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.response.posts.Avatar
 import com.uyscuti.social.network.api.response.posts.BackgroundPhoto
 import com.uyscuti.social.network.api.response.posts.CoverImage
+import com.uyscuti.social.network.api.response.posts.Duration
 import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.FileType
 import com.uyscuti.social.network.api.response.posts.Post
