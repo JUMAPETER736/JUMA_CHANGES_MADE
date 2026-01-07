@@ -71,6 +71,9 @@ import com.uyscuti.social.network.api.response.follow_unfollow.FollowUnFollowRes
 import com.uyscuti.social.network.api.response.getCommentNotification.GetCommentNotification
 import com.uyscuti.social.network.api.response.getPageComment.GetPageCommentId
 import com.uyscuti.social.network.api.response.getUnifiedNotification.GetUnifiedNotifications
+import com.uyscuti.social.network.api.response.getallshorts.ApiResponse
+import com.uyscuti.social.network.api.response.getallshorts.GetAllShortsResponse
+import com.uyscuti.social.network.api.response.getallshorts.ResponseData
 import com.uyscuti.social.network.api.response.getfavoriteshorts.GetFavoriteShortsResponse
 import com.uyscuti.social.network.api.response.getmyprofile.GetMyProfile
 import com.uyscuti.social.network.api.response.gif.GifResponse
