@@ -1,0 +1,10 @@
+<!-- res/drawable/horizontal_line.xml -->
+
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:top="-1dp" android:bottom="-1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/bluejeans" /> <!-- Adjust the color as needed -->
+            <size android:height="2dp" /> <!-- Adjust the height as needed -->
+        </shape>
+    </item>
+</layer-list>
