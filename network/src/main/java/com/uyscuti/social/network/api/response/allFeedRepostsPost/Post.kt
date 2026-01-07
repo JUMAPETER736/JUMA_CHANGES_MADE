@@ -99,42 +99,22 @@ data class Post(
 
 
 
-data class CommentsResponse(
-    val success: Boolean,
-    val comments: List<Comment>,
-    val totalCount: Int,
-    val page: Int,
-    val hasMore: Boolean,
-    val message: String? = null
-)
 
-data class AddCommentRequest(
-    val content: String,
-    val contentType: String = "text",
-    val parentCommentId: String? = null // For replies
-)
-
-data class DeleteResponse(
-    val success: Boolean,
-    val message: String
-)
-
-
-data class BookmarkResponse(
-    val success: Boolean,
-    val message: String,
-    val isBookmarked: Boolean,
-    val bookmarkCount: Int
-)
+//data class BookmarkResponse(
+//    val success: Boolean,
+//    val message: String,
+//    val isBookmarked: Boolean,
+//    val bookmarkCount: Int
+//)
 
 
 
-data class RepostRequest(
-    val isReposted: Boolean,
-    val comment: String,
-    val files: List<File>? = null,
-    val tags: List<String>? = null
-)
+//data class RepostRequest(
+//    val isReposted: Boolean,
+//    val comment: String,
+//    val files: List<File>? = null,
+//    val tags: List<String>? = null
+//)
 
 data class RepostRequestMultiPart(
     val comment: String,
@@ -142,36 +122,36 @@ data class RepostRequestMultiPart(
     val hasNewFiles: Boolean = false
 )
 
-data class RepostResponse(
-    val success: Boolean,
-    val message: String,
-    val repostCount: Int,
-    val isReposted: Boolean = false
-)
-
-data class LikeResponse(
-    val success: Boolean,
-    val message: String,
-    val likesCount: Int,
-    val isLiked: Boolean
-)
-
-
-data class CommentCountResponse(
-    val success: Boolean,
-    val count: Int,
-    val message: String? = null
-)
-
-
-data class BookmarkRequest(
-    val isBookmarked: Boolean
-)
-
-
-data class LikeRequest(
-    val isLiked: Boolean
-)
+//data class RepostResponse(
+//    val success: Boolean,
+//    val message: String,
+//    val repostCount: Int,
+//    val isReposted: Boolean = false
+//)
+//
+//data class LikeResponse(
+//    val success: Boolean,
+//    val message: String,
+//    val likesCount: Int,
+//    val isLiked: Boolean
+//)
+//
+//
+//data class CommentCountResponse(
+//    val success: Boolean,
+//    val count: Int,
+//    val message: String? = null
+//)
+//
+//
+//data class BookmarkRequest(
+//    val isBookmarked: Boolean
+//)
+//
+//
+//data class LikeRequest(
+//    val isLiked: Boolean
+//)
 
 
 interface BookmarkService {
@@ -204,13 +184,13 @@ interface RepostService {
 }
 
 
-interface LikeService {
-    @POST("posts/{postId}/like")
-    fun toggleLike(
-        @Path("postId") postId: String,
-        @Body likeRequest: LikeRequest
-    ): Call<LikeResponse>
-}
+//interface LikeService {
+//    @POST("posts/{postId}/like")
+//    fun toggleLike(
+//        @Path("postId") postId: String,
+//        @Body likeRequest: LikeRequest
+//    ): Call<LikeResponse>
+//}
 
 
 interface CommentService {
@@ -259,11 +239,11 @@ interface CommentService {
 
 
 
-data class ShareResponse(
-    val success: Boolean,
-    val shareCount: Int,
-    val message: String? = null
-)
+//data class ShareResponse(
+//    val success: Boolean,
+//    val shareCount: Int,
+//    val message: String? = null
+//)
 
 
 object RetrofitClient {
