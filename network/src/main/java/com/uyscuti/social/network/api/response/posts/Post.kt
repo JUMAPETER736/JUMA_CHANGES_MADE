@@ -75,21 +75,21 @@ import java.io.Serializable
 //    val username: String
 //): Serializable
 
-data class AvatarB(
-    val url: String,
-    val localPath: String,
-    val _id: String
-): Serializable
+//data class AvatarB(
+//    val url: String,
+//    val localPath: String,
+//    val _id: String
+//): Serializable
 
 
-data class BusinessProfile(
-    val _id: String,
-    val businessName: String,
-    val businessType: String,
-    val businessDescription: String,
-    val backgroundPhoto: BackgroundPhoto
-): Serializable
+//data class BusinessProfile(
+//    val _id: String,
+//    val businessName: String,
+//    val businessType: String,
+//    val businessDescription: String,
+//    val backgroundPhoto: BackgroundPhoto
+//): Serializable
 
-data class BackgroundPhoto(
-    val url: String
-): Serializable
+//data class BackgroundPhoto(
+//    val url: String
+//): Serializable
