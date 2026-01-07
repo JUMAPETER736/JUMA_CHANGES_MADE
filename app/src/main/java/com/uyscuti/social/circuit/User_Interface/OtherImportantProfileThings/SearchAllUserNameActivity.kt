@@ -77,6 +77,7 @@ import com.uyscuti.social.network.api.response.posts.BackgroundPhoto
 import com.uyscuti.social.network.api.response.posts.CoverImage
 import com.uyscuti.social.network.api.response.posts.Duration
 import com.uyscuti.social.network.api.response.posts.File
+import com.uyscuti.social.network.api.response.posts.FileType
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.response.posts.RepostedUser
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
