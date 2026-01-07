@@ -1,9 +1,9 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-
-    id("kotlin-kapt")
+    alias(libs.plugins.ksp) // Add this line
     id("dagger.hilt.android.plugin")
+    // Remove: id("kotlin-kapt")
 }
 
 android {
@@ -12,7 +12,6 @@ android {
 
     defaultConfig {
         minSdk = 24
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -40,7 +39,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -56,12 +54,10 @@ dependencies {
     implementation("androidx.room:room-rxjava3:$room_version")
     implementation("androidx.room:room-guava:$room_version")
     implementation("androidx.room:room-paging:$room_version")
-    kapt("androidx.room:room-compiler:$room_version")
+    ksp("androidx.room:room-compiler:$room_version") // Changed from kapt
 
     implementation("org.greenrobot:eventbus:3.3.1")
     implementation(project(":network"))
-
-
     implementation(project(":chatsuit"))
     implementation(project(":core"))
 
@@ -69,8 +65,8 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.0")
 
-    implementation("com.github.bumptech.glide:glide:4.15.1")
-    kapt("com.github.bumptech.glide:glide:4.15.1")
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    ksp("com.github.bumptech.glide:ksp:4.16.0") // Changed from kapt
 
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("com.tbuonomo:dotsindicator:5.0")
@@ -82,6 +78,7 @@ dependencies {
     implementation("com.facebook.shimmer:shimmer:0.5.0")
     implementation("com.google.android.gms:play-services-location:21.2.0")
     implementation("com.github.alxrm:audiowave-progressbar:0.9.2")
+
     implementation("com.google.dagger:hilt-android:2.51.1")
-    kapt("com.google.dagger:hilt-compiler:2.51.1")
+    ksp("com.google.dagger:hilt-compiler:2.51.1") // Changed from kapt
 }
