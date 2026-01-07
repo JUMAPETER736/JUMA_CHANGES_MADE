@@ -170,5 +170,6 @@
 
     <!-- System Colors -->
     <color name="transparent">#00000000</color>
+    <color name="primary_color">#1DA1F2</color>
 
 </resources>

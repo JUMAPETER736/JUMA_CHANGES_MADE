@@ -47,7 +47,7 @@
     <color name="repost_color">#10B981</color>
     <color name="favorite_color">#F59E0B</color>
     <color name="share_color">#8B5CF6</color>
-
+    <color name="primary_color">#1DA1F2</color>
     <color name="gray_second">#666666</color>
     <color name="divider">#e0e0e0</color>
 </resources>
