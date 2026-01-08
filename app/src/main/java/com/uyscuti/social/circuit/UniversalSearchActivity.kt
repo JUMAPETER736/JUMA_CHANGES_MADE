@@ -642,7 +642,7 @@ class UniversalSearchActivity : AppCompatActivity() {
         )
     }
 
-    // Keep rest of the methods unchanged...
+
     private fun initSearchResults() {
         val localStorage = LocalStorage(this@UniversalSearchActivity)
         searchAdapter = SearchUserNameAdapter(
