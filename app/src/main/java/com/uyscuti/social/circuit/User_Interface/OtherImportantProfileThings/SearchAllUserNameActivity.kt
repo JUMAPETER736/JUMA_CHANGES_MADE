@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.media.MediaMetadataRetriever
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -17,6 +18,7 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -67,6 +69,7 @@ import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.Mes
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.circuit.data.model.Dialog
 import com.uyscuti.social.circuit.presentation.RecentUserViewModel
+import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import kotlinx.coroutines.CoroutineScope
 import java.util.TimeZone
 import com.uyscuti.social.network.api.models.User
@@ -78,6 +81,7 @@ import com.uyscuti.social.network.api.response.posts.CoverImage
 import com.uyscuti.social.network.api.response.posts.Duration
 import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.FileType
+import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.response.posts.RepostedUser
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -115,6 +119,85 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     private val recentUserViewModel: RecentUserViewModel by viewModels()
 
 
+    private val feedClickListener = object : OnFeedClickListener {
+
+        override fun likeUnLikeFeed(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        ) {
+
+        }
+
+        override fun feedCommentClicked(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        ) {
+
+        }
+
+        override fun feedFavoriteClick(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        ) {
+
+        }
+
+        override fun moreOptionsClick(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        ) {
+
+        }
+
+        override fun feedFileClicked(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        ) {
+
+        }
+
+        override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
+
+        }
+
+        override fun feedShareClicked(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        ) {
+
+        }
+
+        override fun followButtonClicked(
+            followUnFollowEntity: FollowUnFollowEntity,
+            followButton: AppCompatButton
+        ) {
+
+        }
+
+        override fun feedRepostPost(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        ) {
+
+        }
+
+        override fun feedRepostPostClicked(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        ) {
+
+        }
+
+        override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
+
+
+        }
+
+        override fun onImageClick() {
+
+        }
+    }
+
     private val apiService: IFlashapi by lazy {
         RetrofitInstance(LocalStorage(this), this).apiService
     }
@@ -147,6 +230,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         val localStorage = LocalStorage(this@SearchAllUserNameActivity)
 
         searchAdapter = SearchUserNameAdapter(
+            feedClickListener = feedClickListener,
             viewModel = businessViewModel,
             localStorage = localStorage,
             onUserClicked = { author ->
@@ -224,6 +308,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         binding.chipBusiness.setOnClickListener { applyFilter(ContentFilter.BUSINESS) }
     }
 
+    @RequiresApi(Build.VERSION_CODES.CUPCAKE)
     private fun hideKeyboard() {
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
@@ -1552,6 +1637,7 @@ class SearchUserNameAdapter(
             itemView.setOnClickListener { listener(post) }
         }
 
+        @RequiresApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
         private fun loadVideoDuration(post: Post) {
             val videoFile = post.files?.firstOrNull {
                 it.url.endsWith(".mp4", ignoreCase = true)
