@@ -2,11 +2,15 @@ package com.uyscuti.social.circuit.user_interface
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
+import android.graphics.PorterDuff
 import android.media.MediaMetadataRetriever
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.util.TypedValue
+import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,16 +20,20 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ListAdapter
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
@@ -35,8 +43,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
+import com.colormoon.readmoretextview.ReadMoreTextView
+import com.daimajia.androidanimations.library.Techniques
+import com.daimajia.androidanimations.library.YoYo
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.gson.Gson
+import com.google.gson.stream.MalformedJsonException
 import com.uyscuti.social.business.CatalogueDetailsActivity
 import com.uyscuti.social.business.databinding.BusinessPostLayoutBinding
 import com.uyscuti.social.circuit.R
@@ -75,6 +90,14 @@ import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import kotlinx.coroutines.CoroutineScope
 import java.util.TimeZone
 import com.uyscuti.social.network.api.models.User
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeRequest
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeResponse
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostResponse
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.posts.Account
 import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.response.posts.Avatar
@@ -87,6 +110,11 @@ import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.response.posts.RepostedUser
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+import org.greenrobot.eventbus.EventBus
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import kotlin.math.abs
 
 
 // Updated ContentFilter enum with your specific categories
@@ -2266,6 +2294,1297 @@ class SearchUserNameAdapter(
         fun bind(username: String) {
             messageText.text = "@$username does not have a Business Profile"
         }
+    }
+
+    inner class FeedTextOnyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+
+
+        private val TAG = "FeedTextOnlyViewHolder"
+
+        // UI Components
+        // Header Section Views
+        private val profileImageView: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.profileImageView)
+        private val textView: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.textView)
+        private val handerText: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.handerText)
+        private val dateTime: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.date_time)
+        private val followButton: AppCompatButton = itemView.findViewById(com.uyscuti.sharedmodule.R.id.followButton)
+        private val moreOptionsButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.moreOptions)
+
+        // Content Section Views
+        private val caption: ReadMoreTextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.caption)
+        private val tags: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.tags)
+
+        // Media Section Views
+        private val recyclerView: RecyclerView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.recyclerView)
+
+        // Interaction Buttons
+        private val likeButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.likeButtonIcon)
+        private val commentButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.commentButtonIcon)
+        private val favoriteButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.favoriteSection)
+        private val repostedPost: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostPost)
+        private val feedShare: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.shareButtonIcon)
+
+        // Interaction Counters
+        private val likesCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.likesCount)
+        private val commentCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.commentCount)
+        private val favoriteCounts: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.favoriteCounts)
+        private val repostCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostCount)
+        private val shareCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.shareCount)
+
+        // Container Views
+        private val feedTextLayoutContainer: ConstraintLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.feedMixedFilesContainer)
+
+        // State variables
+        private var isFollowed = false
+        private var totalTextComments = 0
+        private var currentPost: com.uyscuti.social.network.api.response.posts.Post? = null
+        private var totalTextLikesCounts = 0
+        private var totalTextBookMarkCounts = 0
+        private var totalTextShareCounts = 0
+        private var totalTextRePostCounts = 0
+        private var postClicked = false
+        private var isFollowingUser = false
+
+        private val com.uyscuti.social.network.api.response.posts.Post.safeCommentCount: Int
+            get() = 0
+
+        private val com.uyscuti.social.network.api.response.posts.Post.safeLikes: Int
+            get() = likes
+
+        private val com.uyscuti.social.network.api.response.posts.Post.safeBookmarkCount: Int
+            get() = bookmarkCount
+
+        private var com.uyscuti.social.network.api.response.posts.Post.safeRepostCount: Int
+            get() = repostCount
+            set(value) {
+                repostCount = value
+            }
+
+        private var com.uyscuti.social.network.api.response.posts.Post.safeShareCount: Int
+            get() = shareCount
+            set(value) {
+                shareCount = value
+            }
+
+        @OptIn(UnstableApi::class)
+        @SuppressLint("SetTextI18n", "SimpleDateFormat", "SuspiciousIndentation")
+        fun render(data: com.uyscuti.social.network.api.response.posts.Post) {
+
+            data.isBusinessPost?.let {
+                if(!it) {
+
+                    // Store current post reference
+                    currentPost = data
+
+                    // Add null safety checks for author and account
+                    val author = data.author
+                    if (author == null) {
+                        Log.e(TAG, "render: Author is null for post, skipping render")
+                        return
+                    }
+
+                    val account = author.account
+                    if (account == null) {
+                        Log.e(TAG, "render: Account is null for author, skipping render")
+                        return
+                    }
+
+
+                    val feedOwnerId = account._id
+
+                    isFollowingUser = followingUserIds.contains(feedOwnerId)
+                    Log.d(TAG, "render: User $feedOwnerId following status: $isFollowingUser")
+
+
+                    val feedOwnerName = listOfNotNull(
+                        author.firstName?.takeIf { it.isNotBlank() },
+                        author.lastName?.takeIf { it.isNotBlank() }
+                    ).joinToString(" ").trim()
+                    val profilePicUrl = account.avatar?.url ?: ""
+                    val feedOwnerUsername = account.username ?: ""
+
+                    // Log all count values for debugging
+                    logCountDebuggingInfo(data)
+
+                    // Get all metric counts - Initialize properly
+                    totalTextLikesCounts = getLikesCount(data)
+                    totalTextComments = getCommentCount(data)
+                    totalTextBookMarkCounts = getBookmarkCount(data)
+                    totalTextShareCounts = getShareCount(data)
+                    totalTextRePostCounts = getRepostCount(data)
+
+                    Log.d(
+                        TAG,
+                        "render: Final counts - " +
+                                "Comments: $totalTextComments," +
+                                " Likes: $totalTextLikesCounts, " +
+                                "Bookmarks: $totalTextBookMarkCounts," +
+                                " Reposts: $totalTextRePostCounts, " +
+                                "Shares: $totalTextShareCounts"
+                    )
+
+                    // Update all displays
+                    updateAllMetricDisplays(
+                        data,
+                        totalTextComments,
+                        totalTextLikesCounts,
+                        totalTextBookMarkCounts,
+                        totalTextRePostCounts,
+                        totalTextShareCounts
+                    )
+
+                    // Update button states to reflect current data
+                    updateLikeButtonUI(data.isLiked ?: false)
+                    updateBookmarkButtonUI(data.isBookmarked ?: false)
+                    updateRepostButtonAppearance(data.isReposted ?: false)
+
+                    // Set username and profile image
+                    setupUserProfile(data)
+
+                    // Setup all UI components
+                    setupProfileClickHandlers(feedOwnerId, feedOwnerName, feedOwnerUsername, profilePicUrl)
+                    setupContentAndCaption(data)
+                    setupInteractionButtons(data)
+                    ensurePostClickability(data)
+                    setupChildClickBubbling(data)
+                    setupPostClickListeners(data)
+
+                }
+            }
+
+
+        }
+
+        private fun setupFollowButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+            val feedOwnerId = data.author?.account?._id ?: return
+            val feedOwnerUsername = data.author?.account?.username ?: return
+            val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
+
+            // Check multiple sources for following status (by ID and username)
+            val cachedFollowingList = getCachedFollowingList()
+            val cachedFollowingUsernames = getCachedFollowingUsernames()
+
+            val isUserFollowing = followingUserIds.contains(feedOwnerId) ||
+                    cachedFollowingList.contains(feedOwnerId) ||
+                    cachedFollowingUsernames.contains(feedOwnerUsername)
+
+            Log.d(TAG, "setupFollowButton: Checking user $feedOwnerId (@$feedOwnerUsername)")
+            Log.d(TAG, "  - Match by ID: ${followingUserIds.contains(feedOwnerId) || cachedFollowingList.contains(feedOwnerId)}")
+            Log.d(TAG, "  - Match by username: ${cachedFollowingUsernames.contains(feedOwnerUsername)}")
+
+            // Hide follow button if viewing own post OR already following
+            if (feedOwnerId == currentUserId || isFollowingUser || isUserFollowing) {
+                followButton.visibility = View.GONE
+                Log.d(TAG, "setupFollowButton: Hidden for user $feedOwnerId (@$feedOwnerUsername) - Following: true")
+                return
+            }
+
+            // Show follow button only for users we're NOT following
+            followButton.visibility = View.VISIBLE
+            followButton.text = "Follow"
+            followButton.backgroundTintList = ContextCompat.getColorStateList(
+                itemView.context,
+                com.uyscuti.sharedmodule.R.color.blueJeans
+            )
+
+            Log.d(TAG, "setupFollowButton: Showing follow button for $feedOwnerId (@$feedOwnerUsername)")
+
+            followButton.setOnClickListener {
+                handleFollowButtonClick(feedOwnerId, feedOwnerUsername)
+            }
+        }
+
+        @SuppressLint("SetTextI18n")
+        private fun handleFollowButtonClick(feedOwnerId: String, username: String) {
+            YoYo.with(Techniques.Pulse)
+                .duration(300)
+                .playOn(followButton)
+
+            Log.d(TAG, "Follow button clicked for user: $feedOwnerId")
+
+            isFollowed = !isFollowed
+            val followEntity = FollowUnFollowEntity(feedOwnerId, isFollowed)
+
+            if (isFollowed) {
+                // Hide button immediately
+                followButton.visibility = View.GONE
+
+                // Add to adapter's following list AND persistent storage
+                (bindingAdapter as? FeedAdapter)?.addToFollowing(feedOwnerId, username)
+
+                // Also update via manager for consistency
+                FollowingManager(itemView.context).addToFollowing(feedOwnerId)
+
+                Log.d(TAG, "Now following user $feedOwnerId")
+            } else {
+                // Show button
+                followButton.text = "Follow"
+                followButton.visibility = View.VISIBLE
+
+                // Remove from adapter's following list AND persistent storage
+                (bindingAdapter as? FeedAdapter)?.removeFromFollowing(feedOwnerId, username)
+
+                // Also update via manager for consistency
+                FollowingManager(itemView.context).removeFromFollowing(feedOwnerId)
+
+                Log.d(TAG, "Unfollowed user $feedOwnerId")
+            }
+
+            // Notify listener
+            feedClickListener.followButtonClicked(followEntity, followButton)
+            EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
+        }
+
+        private fun setupPostClickListeners(data: com.uyscuti.social.network.api.response.posts.Post) {
+            // Clear existing click listeners to avoid conflicts
+            feedTextLayoutContainer.setOnClickListener(null)
+            caption.setOnClickListener(null)
+            tags.setOnClickListener(null)
+            dateTime.setOnClickListener(null)
+
+            // Set up main post container click
+            feedTextLayoutContainer.setOnClickListener { view ->
+                if (postClicked) return@setOnClickListener
+                postClicked = true
+                Log.d(TAG, "Main post container clicked")
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                navigateToOriginalPostWithoutRepostInside(data)
+                view.postDelayed({ postClicked = false }, 1000)
+            }
+
+            // Set up child elements to bubble clicks to main container
+            preventChildClickInterference(data)
+        }
+
+        private fun preventChildClickInterference(data: com.uyscuti.social.network.api.response.posts.Post) {
+            val childViews = listOfNotNull(
+                caption,
+                tags,
+                dateTime,
+                textView
+            )
+
+            childViews.forEach { childView ->
+                childView.setOnClickListener { view ->
+                    Log.d(TAG, "Child element clicked, bubbling to main container")
+                    feedTextLayoutContainer.performClick()
+                }
+            }
+        }
+
+        private fun setupChildClickBubbling(data: com.uyscuti.social.network.api.response.posts.Post) {
+            val childViews = listOfNotNull(
+                caption,
+                tags,
+                dateTime,
+                textView
+            )
+
+            childViews.forEach { childView ->
+                childView.setOnClickListener { view ->
+                    Log.d(TAG, "Child element clicked, bubbling to main container")
+                    feedTextLayoutContainer.performClick()
+                }
+            }
+        }
+
+        private fun ensurePostClickability(data: com.uyscuti.social.network.api.response.posts.Post) {
+            feedTextLayoutContainer.isClickable = true
+            feedTextLayoutContainer.isFocusable = true
+            try {
+                val typedValue = TypedValue()
+                val context = itemView.context
+                if (context.theme.resolveAttribute(
+                        android.R.attr.selectableItemBackground,
+                        typedValue, true
+                    )) {
+                    feedTextLayoutContainer.foreground = ContextCompat.getDrawable(context, typedValue.resourceId)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not set ripple background for main container: ${e.message}")
+            }
+            feedTextLayoutContainer.contentDescription = "Post, tap to view full post"
+            feedTextLayoutContainer.elevation = 4f
+            Log.d(TAG, "Post clickability ensured for post: ${data._id}")
+        }
+
+        private fun getCommentCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
+            return when {
+                data.comments != null -> {
+                    Log.d(TAG, "getCommentCount: Using commentCount: ${data.comments}")
+                    data.comments!!
+                }
+                data.safeCommentCount >= 0 -> {
+                    Log.d(TAG, "getCommentCount: Using safeCommentCount: ${data.safeCommentCount}")
+                    data.safeCommentCount
+                }
+                else -> {
+                    Log.d(TAG, "getCommentCount: No valid comment count found, defaulting to 0")
+                    0
+                }
+            }
+        }
+
+        private fun getLikesCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
+            return when {
+                data.likes >= 0 -> data.likes
+                data.safeLikes >= 0 -> data.safeLikes
+                else -> 0
+            }
+        }
+
+        private fun getBookmarkCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
+            return when {
+                data.bookmarkCount >= 0 -> data.bookmarkCount
+                data.safeBookmarkCount >= 0 -> data.safeBookmarkCount
+                else -> 0
+            }
+        }
+
+        private fun getRepostCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
+            return when {
+                data.safeRepostCount != null -> data.safeRepostCount!!
+                data.safeRepostCount >= 0 -> data.safeRepostCount
+                else -> 0
+            }
+        }
+
+        private fun getShareCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
+            return when {
+                data.safeShareCount >= 0 -> data.safeShareCount
+                data.safeShareCount >= 0 -> data.safeShareCount
+                else -> 0
+            }
+        }
+
+        private fun setupInteractionButtons(data: com.uyscuti.social.network.api.response.posts.Post) {
+            setupLikeButton(data)
+            setupBookmarkButton(data)
+            setupCommentButton(data)
+            setupRepostButton(data)
+            setupShareButton(data)
+            setupMoreOptionsButton(data)
+            setupFollowButton(data)
+        }
+
+        private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+            Log.d(TAG, "Setting up like button - Initial state: isLiked=${data.isLiked}, likes=${data.likes}")
+            updateLikeButtonUI(data.isLiked ?: false)
+            updateMetricDisplay(likesCount, data.likes, "like")
+
+            likeButton.setOnClickListener {
+                if (!likeButton.isEnabled) return@setOnClickListener
+
+                Log.d(TAG, "Like clicked for post: ${data._id}")
+                Log.d(TAG, "Current state before toggle: isLiked=${data.isLiked}, likes=${data.likes}")
+
+                val newLikeStatus = !(data.isLiked ?: false)
+                val previousLikeStatus = data.isLiked ?: false
+                val previousLikesCount = data.likes
+
+                // Update data immediately for optimistic UI update
+                data.isLiked = newLikeStatus
+                data.likes = if (newLikeStatus) data.likes + 1 else maxOf(0, data.likes - 1)
+                totalTextLikesCounts = data.likes
+
+                Log.d(TAG, "New state after toggle: isLiked=${data.isLiked}, likes=${data.likes}")
+
+                // Update UI immediately for better UX
+                updateLikeButtonUI(newLikeStatus)
+                updateMetricDisplay(likesCount, data.likes, "like")
+
+                // Animation for like/unlike
+                YoYo.with(if (newLikeStatus) Techniques.Tada else Techniques.Pulse)
+                    .duration(300)
+                    .repeat(1)
+                    .playOn(likeButton)
+
+                // Disable button during network call
+                likeButton.isEnabled = false
+                likeButton.alpha = 0.8f
+
+                // Call likeUnLikeFeed safely
+                try {
+                    feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error calling likeUnLikeFeed: ${e.message}")
+                }
+
+                // Make network call to sync like status
+                val likeRequest = LikeRequest(newLikeStatus)
+                RetrofitClient.likeService.toggleLike(data._id, likeRequest)
+                    .enqueue(object : Callback<LikeResponse> {
+                        override fun onResponse(call: Call<LikeResponse>, response: Response<LikeResponse>) {
+                            likeButton.alpha = 1f
+                            likeButton.isEnabled = true
+
+                            if (response.isSuccessful) {
+                                response.body()?.let { likeResponse ->
+                                    Log.d(TAG, "Like API success - Server count: ${likeResponse.likesCount}")
+                                    // Update likes count if significantly different
+                                    if (likeResponse.likesCount != null &&
+                                        abs(likeResponse.likesCount - data.likes) > 1
+                                    ) {
+                                        data.likes = likeResponse.likesCount
+                                        totalTextLikesCounts = data.likes
+                                        updateMetricDisplay(likesCount, data.likes, "like")
+                                        Log.d(TAG, "Updated likes count from server: ${data.likes}")
+                                    }
+                                }
+                            } else {
+                                Log.e(TAG, "Like sync failed: ${response.code()}")
+                                // Revert on actual API errors
+                                if (response.code() != 200) {
+                                    data.isLiked = previousLikeStatus
+                                    data.likes = previousLikesCount
+                                    totalTextLikesCounts = data.likes
+                                    updateLikeButtonUI(previousLikeStatus)
+                                    updateMetricDisplay(likesCount, data.likes, "like")
+                                    Log.d(TAG, "Reverted to previous state: isLiked=${data.isLiked}, likes=${data.likes}")
+                                }
+                            }
+                        }
+
+                        override fun onFailure(call: Call<LikeResponse>, t: Throwable) {
+                            likeButton.alpha = 1f
+                            likeButton.isEnabled = true
+
+                            // Handle JSON parsing errors separately
+                            if (t is MalformedJsonException ||
+                                t.message?.contains("MalformedJsonException") == true) {
+                                Log.w(TAG, "Like API returned malformed JSON but operation likely succeeded - keeping UI state")
+                                return
+                            }
+
+                            Log.e(TAG, "Like network error - reverting changes", t)
+                            // Revert for network failures
+                            data.isLiked = previousLikeStatus
+                            data.likes = previousLikesCount
+                            totalTextLikesCounts = data.likes
+                            updateLikeButtonUI(previousLikeStatus)
+                            updateMetricDisplay(likesCount, data.likes, "like")
+                            Log.d(TAG, "Reverted to previous state after network error: isLiked=${data.isLiked}, likes=${data.likes}")
+                        }
+                    })
+            }
+        }
+
+        private fun setupCommentButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+
+            commentButton.setOnClickListener {
+                if (!commentButton.isEnabled) return@setOnClickListener
+                Log.d(TAG, "Comment button clicked for post ${data._id}")
+
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(commentButton)
+
+                feedClickListener.feedCommentClicked(absoluteAdapterPosition, data)
+                commentButton.isEnabled = true
+            }
+
+            commentCount.setOnClickListener {
+                if (!commentCount.isEnabled) return@setOnClickListener
+                YoYo.with(Techniques.Tada)
+                    .duration(700)
+                    .repeat(1)
+                    .playOn(commentCount)
+                feedClickListener.feedCommentClicked(absoluteAdapterPosition, data)
+            }
+        }
+
+        private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+
+            Log.d(TAG, "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
+            updateBookmarkButtonUI(data.isBookmarked ?: false)
+            updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+
+            favoriteButton.setOnClickListener {
+                if (!favoriteButton.isEnabled) return@setOnClickListener
+
+                Log.d(TAG, "Bookmark clicked for post: ${data._id}")
+                Log.d(TAG, "Current state before toggle: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
+
+                val newBookmarkStatus = !(data.isBookmarked ?: false)
+                val previousBookmarkStatus = data.isBookmarked ?: false
+                val previousBookmarkCount = data.bookmarkCount
+
+                // Update data immediately
+                data.isBookmarked = newBookmarkStatus
+                data.bookmarkCount = if (newBookmarkStatus) data.bookmarkCount + 1 else maxOf(0, data.bookmarkCount - 1)
+                totalTextBookMarkCounts = data.bookmarkCount
+
+                Log.d(TAG, "New state after toggle: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
+
+                // Update UI immediately for better UX
+                updateBookmarkButtonUI(data.isBookmarked ?: false)
+                updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+
+                // Animation
+                YoYo.with(if (newBookmarkStatus) Techniques.Tada else Techniques.Pulse)
+                    .duration(500)
+                    .repeat(1)
+                    .playOn(favoriteButton)
+
+                // Disable button during network call
+                favoriteButton.isEnabled = false
+                favoriteButton.alpha = 0.8f
+
+                val bookmarkRequest = BookmarkRequest(newBookmarkStatus)
+                RetrofitClient.bookmarkService.toggleBookmark(data._id, bookmarkRequest)
+                    .enqueue(object : Callback<BookmarkResponse> {
+                        override fun onResponse(call: Call<BookmarkResponse>, response: Response<BookmarkResponse>) {
+                            favoriteButton.alpha = 1f
+                            favoriteButton.isEnabled = true
+
+                            if (response.isSuccessful) {
+                                response.body()?.let { bookmarkResponse ->
+                                    Log.d(TAG, "Bookmark API success - Server count: ${bookmarkResponse.bookmarkCount}")
+                                    if (abs(bookmarkResponse.bookmarkCount - data.bookmarkCount) > 1) {
+                                        data.bookmarkCount = bookmarkResponse.bookmarkCount
+                                        totalTextBookMarkCounts = data.bookmarkCount
+                                        updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+                                        Log.d(TAG, "Updated bookmark count from server: ${data.bookmarkCount}")
+                                    }
+                                }
+                            } else {
+                                Log.e(TAG, "Bookmark sync failed: ${response.code()}")
+                                // Only revert on actual HTTP errors (not 2xx status codes)
+                                if (response.code() >= 400) {
+                                    data.isBookmarked = previousBookmarkStatus
+                                    data.bookmarkCount = previousBookmarkCount
+                                    totalTextBookMarkCounts = data.bookmarkCount
+                                    updateBookmarkButtonUI(data.isBookmarked ?: false)
+                                    updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+                                    Log.d(TAG, "Reverted to previous state due to HTTP error: ${response.code()}")
+                                }
+                            }
+                        }
+
+                        override fun onFailure(call: Call<BookmarkResponse>, t: Throwable) {
+                            favoriteButton.alpha = 1f
+                            favoriteButton.isEnabled = true
+
+                            // Handle JSON parsing errors separately - don't revert UI
+                            if (t is MalformedJsonException ||
+                                t.message?.contains("MalformedJsonException") == true ||
+                                t.message?.contains("JsonReader.setStrictness") == true) {
+                                Log.w(TAG, "Bookmark API returned malformed JSON but operation likely succeeded - keeping UI state")
+                                // Don't revert the UI changes as the operation likely succeeded on the server
+                                return
+                            }
+
+                            // Only revert for actual network failures
+                            Log.e(TAG, "Bookmark network error - reverting changes", t)
+                            data.isBookmarked = previousBookmarkStatus
+                            data.bookmarkCount = previousBookmarkCount
+                            totalTextBookMarkCounts = data.bookmarkCount
+                            updateBookmarkButtonUI(data.isBookmarked ?: false)
+                            updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+                            Log.d(TAG, "Reverted to previous state after network error: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
+                        }
+                    })
+
+                // Always notify the listener regardless of API status
+                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
+            }
+        }
+
+        private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+
+            totalTextRePostCounts = data.safeRepostCount
+            updateMetricDisplay(repostCount, totalTextRePostCounts, "repost")
+            updateRepostButtonAppearance(data.isReposted)
+
+            repostedPost.setOnClickListener { view ->
+
+                if (!repostedPost.isEnabled) return@setOnClickListener
+                repostedPost.isEnabled = false
+
+                try {
+
+                    val wasReposted = data.isReposted
+                    data.isReposted = !wasReposted
+                    totalTextRePostCounts = if (data.isReposted) totalTextRePostCounts + 1 else maxOf(0, totalTextRePostCounts - 1)
+
+                    data.repostCount = totalTextRePostCounts
+                    updateMetricDisplay(repostCount, totalTextRePostCounts, "repost")
+                    updateRepostButtonAppearance(data.isReposted)
+
+                    YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
+                        .duration(700)
+                        .playOn(repostedPost)
+                    repostedPost.alpha = 0.8f
+
+                    val apiCall = if (data.isReposted) {
+                        RetrofitClient.repostService.incrementRepost(data._id)
+                    } else {
+                        RetrofitClient.repostService.decrementRepost(data._id)
+                    }
+
+                    apiCall.enqueue(object : Callback<RepostResponse> {
+
+                        override fun onResponse(call: Call<RepostResponse>, response: Response<RepostResponse>) {
+                            repostedPost.isEnabled = true
+                            repostedPost.alpha = 1f
+
+                            if (response.isSuccessful) {
+                                response.body()?.let { repostResponse ->
+                                    if (abs(repostResponse.repostCount - totalTextRePostCounts) > 1) {
+                                        data.safeRepostCount = repostResponse.repostCount
+                                        totalTextRePostCounts = repostResponse.repostCount
+                                        updateMetricDisplay(repostCount, totalTextRePostCounts, "repost")
+                                    }
+                                }
+                            } else {
+                                Log.e(TAG, "Repost API failed: ${response.code()}")
+                            }
+                        }
+
+                        override fun onFailure(call: Call<RepostResponse>, t: Throwable) {
+                            repostedPost.isEnabled = true
+                            repostedPost.alpha = 1f
+                            Log.e(TAG, "Repost network error - will sync later", t)
+                        }
+                    })
+
+
+                    feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
+
+                } catch (e: Exception) {
+                    repostedPost.isEnabled = true
+                    repostedPost.alpha = 1f
+                    Log.e(TAG, "Exception in repost click listener", e)
+
+                }
+            }
+        }
+
+        private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+            updateMetricDisplay(shareCount, data.safeShareCount, "share")
+
+            feedShare.setOnClickListener {
+                if (!feedShare.isEnabled) return@setOnClickListener
+
+                Log.d(TAG, "Share clicked for post: ${data._id}")
+
+                // Show share bottom sheet
+                showShareBottomSheet(data)
+            }
+        }
+
+        private fun showShareBottomSheet(data: com.uyscuti.social.network.api.response.posts.Post) {
+            val context = feedShare.context
+            val bottomSheetDialog = BottomSheetDialog(context)
+            val binding = BottomDialogForShareBinding.inflate(LayoutInflater.from(context))
+            bottomSheetDialog.setContentView(binding.root)
+
+            // Prepare share content
+            val shareText = "Check out this post on Flash!\n" +
+                    "By: ${data.author?.account?.username ?: "Unknown"}\n" +
+                    "${data.content ?: ""}"
+            val postUrl = data.files?.firstOrNull()?.url ?: data.files?.size
+            val fullShareText = if (postUrl != null) "$shareText\n$postUrl" else shareText
+
+            // Setup share buttons
+            binding.btnWhatsApp.setOnClickListener {
+                shareToWhatsApp(context, fullShareText)
+                incrementShareCount(data)
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnSMS.setOnClickListener {
+                shareViaSMS(context, fullShareText)
+                incrementShareCount(data)
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnInstagram.setOnClickListener {
+                shareToInstagram(context, fullShareText)
+                incrementShareCount(data)
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnMessenger.setOnClickListener {
+                shareToMessenger(context, fullShareText)
+                incrementShareCount(data)
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnFacebook.setOnClickListener {
+                shareToFacebook(context, fullShareText)
+                incrementShareCount(data)
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnTelegram.setOnClickListener {
+                shareToTelegram(context, fullShareText)
+                incrementShareCount(data)
+                bottomSheetDialog.dismiss()
+            }
+
+            // Setup action buttons
+            binding.btnReport.setOnClickListener {
+                Toast.makeText(context, "Report functionality", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnNotInterested.setOnClickListener {
+                Toast.makeText(context, "Not interested", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnSaveVideo.setOnClickListener {
+                Toast.makeText(context, "Save post functionality", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnDuet.setOnClickListener {
+                Toast.makeText(context, "Duet functionality", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnReact.setOnClickListener {
+                Toast.makeText(context, "React functionality", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnAddToFavorites.setOnClickListener {
+                Toast.makeText(context, "Add to favorites", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            // Setup cancel button
+            binding.btnCancel.setOnClickListener {
+                bottomSheetDialog.dismiss()
+            }
+
+            bottomSheetDialog.show()
+        }
+
+        private fun incrementShareCount(data: com.uyscuti.social.network.api.response.posts.Post) {
+            val previousShareCount = data.safeShareCount
+
+            // Update immediately for better UX
+            data.shareCount += 1
+            totalTextShareCounts = data.safeShareCount
+            updateMetricDisplay(shareCount, data.safeShareCount, "share")
+
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(feedShare)
+
+            feedShare.isEnabled = false
+            feedShare.alpha = 0.8f
+
+            // Make API call to sync with server
+            RetrofitClient.shareService.incrementShare(data._id)
+                .enqueue(object : Callback<ShareResponse> {
+                    override fun onResponse(call: Call<ShareResponse>, response: Response<ShareResponse>) {
+                        feedShare.alpha = 1f
+                        feedShare.isEnabled = true
+
+                        if (response.isSuccessful) {
+                            response.body()?.let { shareResponse ->
+                                if (abs(shareResponse.shareCount - data.safeShareCount) > 1) {
+                                    data.safeShareCount = shareResponse.shareCount
+                                    totalTextShareCounts = data.safeShareCount
+                                    updateMetricDisplay(shareCount, data.safeShareCount, "share")
+                                    Log.d(TAG, "Updated share count from server: ${data.safeShareCount}")
+                                }
+                            }
+                        } else {
+                            Log.e(TAG, "Share sync failed: ${response.code()}")
+                            // Revert on failure
+                            data.safeShareCount = previousShareCount
+                            totalTextShareCounts = data.safeShareCount
+                            updateMetricDisplay(shareCount, data.safeShareCount, "share")
+                        }
+                    }
+
+                    override fun onFailure(call: Call<ShareResponse>, t: Throwable) {
+                        feedShare.alpha = 1f
+                        feedShare.isEnabled = true
+                        Log.e(TAG, "Share network error - will sync later", t)
+                        // Revert on network failure
+                        data.safeShareCount = previousShareCount
+                        totalTextShareCounts = data.safeShareCount
+                        updateMetricDisplay(shareCount, data.safeShareCount, "share")
+                    }
+                })
+
+            feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+        }
+
+        // Share helper functions with multiple package name variants
+        private fun shareToWhatsApp(context: Context, text: String) {
+            val packages = listOf(
+                "com.whatsapp",
+                "com.whatsapp.w4b"
+            )
+            shareToApp(context, text, packages, "WhatsApp")
+        }
+
+        private fun shareViaSMS(context: Context, text: String) {
+            try {
+                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                    data = "smsto:".toUri()
+                    putExtra("sms_body", text)
+                }
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, "SMS app not available", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        private fun shareToInstagram(context: Context, text: String) {
+            val packages = listOf(
+                "com.instagram.android"
+            )
+            shareToApp(context, text, packages, "Instagram")
+        }
+
+        private fun shareToMessenger(context: Context, text: String) {
+            val packages = listOf(
+                "com.facebook.orca",
+                "com.facebook.mlite"
+            )
+            shareToApp(context, text, packages, "Messenger")
+        }
+
+        private fun shareToFacebook(context: Context, text: String) {
+            val packages = listOf(
+                "com.facebook.katana",
+                "com.facebook.lite"
+            )
+            shareToApp(context, text, packages, "Facebook")
+        }
+
+        private fun shareToTelegram(context: Context, text: String) {
+            val packages = listOf(
+                "org.telegram.messenger",
+                "org.telegram.messenger.web",
+                "org.thunderdog.challegram"
+            )
+            shareToApp(context, text, packages, "Telegram")
+        }
+
+        // Generic function to try multiple package names
+        private fun shareToApp(context: Context, text: String, packages: List<String>, appName: String) {
+            try {
+                for (packageName in packages) {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        setPackage(packageName)
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+
+                    if (intent.resolveActivity(context.packageManager) != null) {
+                        context.startActivity(intent)
+                        return
+                    }
+                }
+
+                Toast.makeText(context, "$appName not installed", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "$appName not available", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        private fun setupMoreOptionsButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+            moreOptionsButton.setOnClickListener {
+                feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
+            }
+        }
+
+
+
+        private fun updateLikeButtonUI(isLiked: Boolean) {
+            Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
+            try {
+                if (isLiked) {
+                    likeButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.filled_favorite_like)
+                    // Add blue color tint for liked state
+                    likeButton.setColorFilter(ContextCompat.getColor(itemView.context, com.uyscuti.sharedmodule.R.color.bluejeans), PorterDuff.Mode.SRC_IN)
+                } else {
+                    likeButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.heart_svgrepo_com)
+                    // Remove color filter for unfilled state
+                    likeButton.clearColorFilter()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating like button UI", e)
+            }
+        }
+
+        private fun updateBookmarkButtonUI(isBookmarked: Boolean) {
+            Log.d(TAG, "Updating bookmark button UI: isBookmarked=$isBookmarked")
+            try {
+                if (isBookmarked) {
+                    favoriteButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.filled_favorite)
+                } else {
+                    favoriteButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.favorite_svgrepo_com__1_)
+                    // Remove color filter for unfilled state
+                    favoriteButton.clearColorFilter()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating bookmark button UI", e)
+            }
+        }
+
+        private fun updateRepostButtonAppearance(isReposted: Boolean) {
+            if (isReposted) {
+                repostedPost.setImageResource(com.uyscuti.sharedmodule.R.drawable.repeat_svgrepo_com)
+                repostedPost.scaleX = 1.1f
+                repostedPost.scaleY = 1.1f
+            } else {
+                repostedPost.setImageResource(com.uyscuti.sharedmodule.R.drawable.repeat_svgrepo_com)
+                repostedPost.scaleX = 1.0f
+                repostedPost.scaleY = 1.0f
+            }
+        }
+
+        fun updateCommentCount(newCount: Int) {
+            Log.d(TAG, "updateCommentCount: Updating comment count from $totalTextComments to $newCount")
+            totalTextComments = if (newCount < 0) {
+                Log.w(TAG, "updateCommentCount: Negative count received, setting to 0")
+                0
+            } else {
+                newCount
+            }
+
+            currentPost?.let { post ->
+                post.comments= totalTextComments
+                try {
+                    val field = post::class.java.getDeclaredField("safeCommentCount")
+                    field.isAccessible = true
+                    field.set(post, totalTextComments)
+                } catch (e: NoSuchFieldException) {
+                    Log.w(TAG, "safeCommentCount field not found in post object.")
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            updateMetricDisplay(commentCount, totalTextComments, "comment")
+            YoYo.with(Techniques.Pulse)
+                .duration(500)
+                .playOn(commentCount)
+        }
+
+        fun decrementCommentCount() {
+            val newCount = maxOf(0, totalTextComments - 1)
+            Log.d(TAG, "decrementCommentCount: Decrementing from $totalTextComments to $newCount")
+            updateCommentCount(newCount)
+        }
+
+        fun incrementCommentCount() {
+            val newCount = totalTextComments + 1
+            Log.d(TAG, "incrementCommentCount: Incrementing from $totalTextComments to $newCount")
+            updateCommentCount(newCount)
+        }
+
+
+
+        private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
+            Log.d(TAG, "updateMetricDisplay: Updating $metricType with count: $count")
+            textView.text = formatCount(count)
+            textView.visibility = View.VISIBLE
+            textView.contentDescription = when (metricType) {
+                "like" -> "$count ${if (count == 1) "like" else "likes"}"
+                "comment" -> "$count ${if (count == 1) "comment" else "comments"}"
+                "bookmark" -> "$count ${if (count == 1) "bookmark" else "bookmarks"}"
+                "repost" -> "$count ${if (count == 1) "repost" else "reposts"}"
+                "share" -> "$count ${if (count == 1) "share" else "shares"}"
+                else -> "$count $metricType"
+            }
+        }
+
+        private fun updateAllMetricDisplays(
+            data: com.uyscuti.social.network.api.response.posts.Post,
+            commentsCount: Int,
+            likesCount: Int,
+            bookmarksCount: Int,
+            repostsCount: Int,
+            sharesCount: Int
+        ) {
+            updateMetricDisplay(commentCount, commentsCount, "comment")
+            updateMetricDisplay(this.likesCount, likesCount, "like")
+            updateMetricDisplay(favoriteCounts, bookmarksCount, "bookmark")
+            updateMetricDisplay(repostCount, repostsCount, "repost")
+            updateMetricDisplay(shareCount, sharesCount, "share")
+        }
+
+        @SuppressLint("DefaultLocale")
+        private fun formatCount(count: Int): String {
+            return when {
+                count >= 1_000_000 -> {
+                    val millions = count / 1_000_000.0
+                    if (millions == millions.toInt().toDouble()) {
+                        "${millions.toInt()}M"
+                    } else {
+                        String.format("%.1fM", millions)
+                    }
+                }
+                count >= 1_000 -> {
+                    val thousands = count / 1_000.0
+                    if (thousands == thousands.toInt().toDouble()) {
+                        "${thousands.toInt()}K"
+                    } else {
+                        String.format("%.1fK", thousands)
+                    }
+                }
+                else -> count.toString()
+            }
+        }
+
+        private fun setupUserProfile(data: com.uyscuti.social.network.api.response.posts.Post) {
+
+            dateTime.text = formattedMongoDateTime(data.createdAt)
+
+            val fullName = listOfNotNull(
+                data.author?.firstName?.takeIf { it.isNotBlank() },
+                data.author?.lastName?.takeIf { it.isNotBlank() }
+            ).joinToString(" ").trim()
+            textView.text = if (fullName.isNotEmpty()) fullName else data.author?.account?.username ?: "Unknown User"
+            loadImageWithGlide(data.author?.account?.avatar?.url, profileImageView, itemView.context)
+        }
+
+        private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
+            try {
+                Log.d(TAG, "Navigating to original post for post ID: ${data._id}")
+                val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
+                    arguments = Bundle().apply {
+                        // Changed from putSerializable to putString with JSON
+                        putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(data))
+                        putString("post_id", data._id)
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "feed_text")
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+                    }
+                }
+                navigateToFragment(fragment, "original_post_without_repost")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to original post fragment: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
+        private fun getActivityFromContext(context: Context): AppCompatActivity? {
+            return when (context) {
+                is AppCompatActivity -> context
+                is ContextWrapper -> getActivityFromContext(context.baseContext)
+                else -> null
+            }
+        }
+
+        private fun navigateToFragment(fragment: Fragment, tag: String) {
+            try {
+                val activity = getActivityFromContext(itemView.context)
+                if (activity != null) {
+                    val currentFragment = activity.supportFragmentManager.fragments.lastOrNull {
+                        it.isVisible && it.view != null
+                    }
+                    val fragmentManager = if (currentFragment != null &&
+                        currentFragment.childFragmentManager.fragments.isNotEmpty()) {
+                        currentFragment.childFragmentManager
+                    } else {
+                        activity.supportFragmentManager
+                    }
+                    fragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            com.uyscuti.sharedmodule.R.anim.slide_in_right,
+                            com.uyscuti.sharedmodule.R.anim.slide_out_left,
+                            com.uyscuti.sharedmodule.R.anim.slide_in_left,
+                            com.uyscuti.sharedmodule.R.anim.slide_out_right
+                        )
+                        .replace(com.uyscuti.sharedmodule.R.id.frame_layout, fragment)
+                        .addToBackStack(tag)
+                        .commit()
+                    Log.d(TAG, "Successfully navigated to fragment: $tag")
+                } else {
+                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to fragment: $tag", e)
+            }
+        }
+
+
+
+        @OptIn(UnstableApi::class)
+        private fun setupProfileClickHandlers(
+            feedOwnerId: String,
+            feedOwnerName: String,
+            feedOwnerUsername: String,
+            profilePicUrl: String
+        ) {
+            val profileClickListener = View.OnClickListener {
+                if (feedOwnerId == LocalStorage.getInstance(itemView.context).getUserId()) {
+                    EventBus.getDefault().post(GoToUserProfileFragment())
+                } else {
+                    Log.d(TAG, "setupProfileClickHandlers: Clicked on another user's profile")
+                    val otherUsersProfile = OtherUsersProfile(
+                        feedOwnerName, feedOwnerUsername, profilePicUrl, feedOwnerId,
+                        isVerified = false,
+                        bio = "",
+                        linkInBio = "",
+                        isCreator = false,
+                        isTrending = false,
+                        isFollowing = false,
+                        isPrivate = false,
+                        followersCount = 0L,
+                        followingCount = 0L,
+                        postsCount = 0L,
+                        shortsCount = 0L,
+                        videosCount = 0L,
+                        isOnline = false,
+                        lastSeen = null,
+                        joinedDate = Date(),
+                        location = "",
+                        website = "",
+                        email = "",
+                        phoneNumber = "",
+                        dateOfBirth = null,
+                        gender = "",
+                        accountType = "user",
+                        isBlocked = false,
+                        isMuted = false,
+                        badgeType = null,
+                        level = 1,
+                        reputation = 0L,
+                        coverPhoto = null,
+                        theme = null,
+                        language = null,
+                        timezone = null,
+                        notificationsEnabled = true,
+                        privacySettings = emptyMap(),
+                        socialLinks = emptyMap(),
+                        achievements = emptyList(),
+                        interests = emptyList(),
+                        categories = emptyList()
+                    )
+                    // Open the OtherUserProfileAccount activity
+                    OtherUserProfileAccount.open(
+                        context = itemView.context,
+                        user = otherUsersProfile,
+                        dialogPhoto = profilePicUrl,
+                        dialogId = feedOwnerId
+                    )
+                }
+            }
+            profileImageView.setOnClickListener(profileClickListener)
+            textView.setOnClickListener(profileClickListener)
+        }
+
+        private fun setupContentAndCaption(data: com.uyscuti.social.network.api.response.posts.Post) {
+            if (!data.content.isNullOrEmpty()) {
+                Log.d(TAG, "setupContentAndCaption: Setting content: ${data.content}")
+                caption.text = data.content
+                caption.visibility = View.VISIBLE
+            } else {
+                caption.text = ""
+                caption.visibility = View.GONE
+            }
+        }
+
+        fun refreshCommentCountFromDatabase(postId: String) {
+            Log.d(TAG, "refreshCommentCountFromDatabase: Refreshing count for post: $postId")
+            RetrofitClient.commentService.getCommentCount(postId)
+                .enqueue(object : Callback<CommentCountResponse> {
+                    override fun onResponse(call: Call<CommentCountResponse>, response: Response<CommentCountResponse>) {
+                        if (response.isSuccessful) {
+                            response.body()?.let { countResponse ->
+                                val newCount = countResponse.count
+                                Log.d(TAG, "refreshCommentCountFromDatabase: Got count: $newCount")
+                                updateCommentCount(newCount)
+                                currentPost?.let { post ->
+                                    post.comments = newCount
+                                    try {
+                                        val field = post::class.java.getDeclaredField("safeCommentCount")
+                                        field.isAccessible = true
+                                        field.set(post, newCount)
+                                    } catch (e: Exception) {
+                                        Log.w(TAG, "Could not update safeCommentCount: ${e.message}")
+                                    }
+                                }
+                            }
+                        } else {
+                            Log.e(TAG, "refreshCommentCountFromDatabase: Failed with code: ${response.code()}")
+                        }
+                    }
+                    override fun onFailure(call: Call<CommentCountResponse>, t: Throwable) {
+                        Log.e(TAG, "refreshCommentCountFromDatabase: Network error", t)
+                    }
+                })
+        }
+
+        private fun logCountDebuggingInfo(data: com.uyscuti.social.network.api.response.posts.Post) {
+            Log.d(TAG, "=== COUNT DEBUG INFO FOR POST ${data._id} ===")
+            Log.d(TAG, "Raw comment count from API: ${data.comments}")
+            Log.d(TAG, "Safe comment count: ${data.safeCommentCount}")
+            Log.d(TAG, "Raw likes: ${data.likes}")
+            Log.d(TAG, "Safe likes: ${data.safeLikes}")
+            Log.d(TAG, "Raw bookmark count: ${data.bookmarkCount}")
+            Log.d(TAG, "Safe bookmark count: ${data.safeBookmarkCount}")
+            Log.d(TAG, "Raw repost count: ${data.safeRepostCount}")
+            Log.d(TAG, "Safe repost count: ${data.safeRepostCount}")
+            Log.d(TAG, "Raw share count: ${data.safeShareCount}")
+            Log.d(TAG, "Safe share count: ${data.safeShareCount}")
+            Log.d(TAG, "=== END COUNT DEBUG INFO ===")
+        }
+
+        private fun loadImageWithGlide(imageUrl: String?, imageView: ImageView, context: Context) {
+            if (!imageUrl.isNullOrBlank()) {
+                Glide.with(context)
+                    .load(imageUrl)
+                    .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .placeholder(com.uyscuti.sharedmodule.R.drawable.flash21)
+                    .error(com.uyscuti.sharedmodule.R.drawable.flash21)
+                    .into(imageView)
+            } else {
+                imageView.setImageResource(com.uyscuti.sharedmodule.R.drawable.flash21)
+            }
+        }
+
+        private fun formattedMongoDateTime(dateTimeString: String?): String {
+            if (dateTimeString.isNullOrBlank()) return "Unknown Time"
+            return try {
+                val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+                inputFormat.timeZone = TimeZone.getTimeZone("UTC")
+                val date = inputFormat.parse(dateTimeString)
+                val now = Date()
+                val diffInMillis = now.time - (date?.time ?: 0)
+                val diffInSeconds = diffInMillis / 1000
+                val diffInMinutes = diffInSeconds / 60
+                val diffInHours = diffInMinutes / 60
+                val diffInDays = diffInHours / 24
+                val diffInWeeks = diffInDays / 7
+                val diffInMonths = diffInDays / 30
+                val diffInYears = diffInDays / 365
+
+                when {
+                    diffInSeconds < 60 -> "now"
+                    diffInMinutes < 60 -> "${diffInMinutes}m"
+                    diffInHours < 24 -> "${diffInHours}h"
+                    diffInDays == 1L -> "1d"
+                    diffInDays < 7 -> "${diffInDays}d"
+                    diffInWeeks < 4 -> "${diffInWeeks}w"
+                    diffInMonths == 0L -> "1mo"
+                    diffInMonths == 1L -> "1mo"
+                    diffInMonths < 12 -> "${diffInMonths}mo"
+                    diffInYears == 1L -> "1y"
+                    else -> "${diffInYears}y"
+                }
+            } catch (e: Exception) {
+                Log.w("DateFormat", "Failed to format date: $dateTimeString", e)
+                "now"
+            }
+        }
+
     }
 
 }
