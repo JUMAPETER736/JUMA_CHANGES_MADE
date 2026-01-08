@@ -860,7 +860,142 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         }
     }
 
-    
+
+    fun com.uyscuti.social.network.api.response.getallshorts.Post.toPostsPost(): Post {
+
+        val fileTypes = images.map {
+            FileType(
+                fileId = it._id,
+                fileType = if (it.url.endsWith(".mp4", true)) "video" else "image"
+            )
+        }
+
+        val files = ArrayList(
+            images.map {
+                File(
+                    _id = it._id,
+                    fileId = it._id,
+                    localPath = it.localPath,
+                    url = it.url,
+                    mimeType = if (it.url.endsWith(".mp4", true)) "video/mp4" else "image/jpeg"
+                )
+            }
+        )
+
+        // Extract duration from video files - will be populated later when video is loaded
+        val extractedDuration = images.mapNotNull { image ->
+            if (image.url.endsWith(".mp4", true)) {
+                Duration(
+                    duration = "0", // Will be updated when video loads
+                    fileId = image._id
+                )
+            } else null
+        }
+
+        Log.d("PostConversion", "Extracted duration for short ${this._id}: $extractedDuration")
+
+        return Post(
+            __v = __v,
+            _id = _id,
+            author = author.toPostsAuthor(),
+            content = content,
+            contentType = if (fileTypes.any { it.fileType == "video" }) "mixed_files" else "text",
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            fileIds = images.map { it._id },
+            fileNames = emptyList(),
+            fileSizes = emptyList(),
+            fileTypes = fileTypes,
+            files = files,
+            thumbnail = emptyList(),
+            duration = extractedDuration,
+            bookmarkCount = 0,
+            comments = comments,
+            isBookmarked = isBookmarked,
+            isExpanded = false,
+            isFollowing = false,
+            isLiked = isLiked,
+            isLocal = false,
+            isReposted = false,
+            likes = likes,
+            numberOfPages = emptyList(),
+            originalPost = emptyList(),
+            repostedByUserId = "",
+            repostedUser = RepostedUser(
+                _id = "",
+                avatar = Avatar(_id = "", localPath = "", url = ""),
+                bio = "",
+                coverImage = CoverImage(_id = "", localPath = "", url = ""),
+                createdAt = "",
+                email = "",
+                firstName = "",
+                lastName = "",
+                owner = "",
+                updatedAt = "",
+                username = ""
+            ),
+            repostedUsers = emptyList(),
+            tags = tags,
+            shareCount = 0,
+            repostCount = 0,
+            feedShortsBusinessId = "",
+            isBusinessPost = false,
+            category = null,
+            businessDetails = null,
+            isFavorited = null,
+            favorites = null
+        )
+    }
+
+    fun com.uyscuti.social.network.api.response.getallshorts.Author.toPostsAuthor(): Author {
+        return Author(
+            _id = this._id,
+            account = this.account.toPostsAccount(),
+            bio = this.bio,
+            countryCode = this.countryCode,
+            coverImage = this.coverImage.toPostsCoverImage(),
+            createdAt = this.createdAt,
+            dob = this.dob,
+            firstName = this.firstName,
+            lastName = this.lastName,
+            location = this.location,
+            owner = this.owner,
+            phoneNumber = this.phoneNumber,
+            updatedAt = this.updatedAt,
+            __v = this.__v
+        )
+    }
+
+    fun com.uyscuti.social.network.api.response.getallshorts.Avatar.toPostsAvatar(): Avatar {
+        return Avatar(
+            _id = this._id,
+            url = this.url,
+            localPath = this.localPath
+        )
+    }
+
+    fun com.uyscuti.social.network.api.response.getallshorts.Account.toPostsAccount(): Account {
+        return Account(
+            _id = this._id,
+            avatar = this.avatar.toPostsAvatar(),
+            createdAt = "",
+            email = this.email,
+            updatedAt = "",
+            username = this.username
+        )
+    }
+
+    fun com.uyscuti.social.network.api.response.getallshorts.CoverImage.toPostsCoverImage(): CoverImage {
+        return CoverImage(
+            _id = this._id,
+            url = this.url,
+            localPath = this.localPath
+        )
+    }
+
+
+}
+
 
     data class SearchResults(
     val allPosts: List<Post> = emptyList(),
