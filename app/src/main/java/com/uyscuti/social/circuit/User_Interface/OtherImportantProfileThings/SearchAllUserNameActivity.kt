@@ -1,4 +1,4 @@
-package com.uyscuti.social.circuit.user_interface
+package com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
@@ -82,7 +82,6 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Locale
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
-import com.uyscuti.social.network.api.request.business.users.GetBusinessProfileById
 import com.uyscuti.social.network.api.response.posts.AccountB
 import com.uyscuti.social.network.api.response.posts.AuthorB
 import com.uyscuti.social.network.api.response.posts.AvatarB
@@ -90,7 +89,6 @@ import com.uyscuti.social.network.api.response.posts.BusinessPost
 import com.uyscuti.social.network.api.response.posts.BusinessProfile
 import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
 import com.uyscuti.social.circuit.FollowingManager
-import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.MessagesActivity
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
 import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside
@@ -110,6 +108,7 @@ import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import kotlinx.coroutines.CoroutineScope
 import java.util.TimeZone
+import com.uyscuti.social.circuit.adapter.feed.multiple_files.FeedRepostViewFileAdapter
 import com.uyscuti.social.network.api.models.User
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
@@ -175,35 +174,35 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
         override fun likeUnLikeFeed(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         ) {
 
         }
 
         override fun feedCommentClicked(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         ) {
 
         }
 
         override fun feedFavoriteClick(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         ) {
 
         }
 
         override fun moreOptionsClick(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         ) {
 
         }
 
         override fun feedFileClicked(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         ) {
 
         }
@@ -214,7 +213,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
         override fun feedShareClicked(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         ) {
 
         }
@@ -228,14 +227,14 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
         override fun feedRepostPost(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         ) {
 
         }
 
         override fun feedRepostPostClicked(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         ) {
 
         }
@@ -1393,7 +1392,7 @@ fun Author.toRecentUser(): RecentUser {
 
 class SearchUserNameAdapter(
 
-    private val feedClickListener: OnFeedClickListener,
+    private val feedClickListener: com.uyscuti.social.circuit.adapter.feed.OnFeedClickListener,
     private val viewModel: BusinessPostsViewModel,
     private val localStorage: LocalStorage,
     private val onUserClicked: (Author) -> Unit,
@@ -1428,29 +1427,29 @@ class SearchUserNameAdapter(
 
         fun likeUnLikeFeed(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         )
 
 
         fun feedCommentClicked(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         )
 
         fun feedFavoriteClick(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         )
 
 
         fun moreOptionsClick(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         )
 
         fun feedFileClicked(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         )
 
         fun feedRepostFileClicked(
@@ -1458,7 +1457,7 @@ class SearchUserNameAdapter(
         )
 
         fun feedShareClicked(
-            position: Int, data: com.uyscuti.social.network.api.response.posts.Post
+            position: Int, data: Post
         )
 
 
@@ -1469,10 +1468,10 @@ class SearchUserNameAdapter(
 
         fun feedRepostPost(
             position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
+            data: Post
         )
 
-        fun feedRepostPostClicked(position: Int, data: com.uyscuti.social.network.api.response.posts.Post)
+        fun feedRepostPostClicked(position: Int, data: Post)
 
         fun feedClickedToOriginalPost(position: Int, originalPostId: String)
         fun onImageClick()
@@ -1587,21 +1586,21 @@ class SearchUserNameAdapter(
 
             TYPE_MIXED_FEED_FILES -> {
                 val itemView = inflater.inflate(
-                    com.uyscuti.social.circuit.R.layout.feed_mixed_files_original_post_adapter, parent, false
+                    R.layout.feed_mixed_files_original_post_adapter, parent, false
                 )
                 FeedPostViewHolder(itemView)
             }
 
             TYPE_REPOST_POST -> {
                 val itemView = inflater.inflate(
-                    com.uyscuti.social.circuit.R.layout.feed_mixed_files_original_post_with_repost_adapter, parent, false
+                    R.layout.feed_mixed_files_original_post_with_repost_adapter, parent, false
                 )
                 FeedRepostViewHolder(itemView)
             }
 
             TYPE_REPOST_WITH_NEW_FILES -> {
                 val itemView = inflater.inflate(
-                    com.uyscuti.social.circuit.R.layout.feed_mixed_files_new_post_with_reposted_files_inside_adapter,
+                    R.layout.feed_mixed_files_new_post_with_reposted_files_inside_adapter,
                     parent, false
                 )
                 FeedNewPostWithRepostInsideFilesPostViewHolder(itemView)
@@ -2327,41 +2326,41 @@ class SearchUserNameAdapter(
 
         // UI Components
         // Header Section Views
-        private val profileImageView: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.profileImageView)
-        private val textView: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.textView)
-        private val handerText: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.handerText)
-        private val dateTime: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.date_time)
-        private val followButton: AppCompatButton = itemView.findViewById(com.uyscuti.social.circuit.R.id.followButton)
-        private val moreOptionsButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.moreOptions)
+        private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
+        private val textView: TextView = itemView.findViewById(R.id.textView)
+        private val handerText: TextView = itemView.findViewById(R.id.handerText)
+        private val dateTime: TextView = itemView.findViewById(R.id.date_time)
+        private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
+        private val moreOptionsButton: ImageView = itemView.findViewById(R.id.moreOptions)
 
         // Content Section Views
-        private val caption: ReadMoreTextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.caption)
-        private val tags: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tags)
+        private val caption: ReadMoreTextView = itemView.findViewById(R.id.caption)
+        private val tags: TextView = itemView.findViewById(R.id.tags)
 
         // Media Section Views
-        private val recyclerView: RecyclerView = itemView.findViewById(com.uyscuti.social.circuit.R.id.recyclerView)
+        private val recyclerView: RecyclerView = itemView.findViewById(R.id.recyclerView)
 
         // Interaction Buttons
-        private val likeButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likeButtonIcon)
-        private val commentButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentButtonIcon)
-        private val favoriteButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteSection)
-        private val repostedPost: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostPost)
-        private val feedShare: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareButtonIcon)
+        private val likeButton: ImageView = itemView.findViewById(R.id.likeButtonIcon)
+        private val commentButton: ImageView = itemView.findViewById(R.id.commentButtonIcon)
+        private val favoriteButton: ImageView = itemView.findViewById(R.id.favoriteSection)
+        private val repostedPost: ImageView = itemView.findViewById(R.id.repostPost)
+        private val feedShare: ImageView = itemView.findViewById(R.id.shareButtonIcon)
 
         // Interaction Counters
-        private val likesCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likesCount)
-        private val commentCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentCount)
-        private val favoriteCounts: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteCounts)
-        private val repostCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostCount)
-        private val shareCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareCount)
+        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
+        private val commentCount: TextView = itemView.findViewById(R.id.commentCount)
+        private val favoriteCounts: TextView = itemView.findViewById(R.id.favoriteCounts)
+        private val repostCount: TextView = itemView.findViewById(R.id.repostCount)
+        private val shareCount: TextView = itemView.findViewById(R.id.shareCount)
 
         // Container Views
-        private val feedTextLayoutContainer: ConstraintLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.feedMixedFilesContainer)
+        private val feedTextLayoutContainer: ConstraintLayout = itemView.findViewById(R.id.feedMixedFilesContainer)
 
         // State variables
         private var isFollowed = false
         private var totalTextComments = 0
-        private var currentPost: com.uyscuti.social.network.api.response.posts.Post? = null
+        private var currentPost: Post? = null
         private var totalTextLikesCounts = 0
         private var totalTextBookMarkCounts = 0
         private var totalTextShareCounts = 0
@@ -2369,22 +2368,22 @@ class SearchUserNameAdapter(
         private var postClicked = false
         private var isFollowingUser = false
 
-        private val com.uyscuti.social.network.api.response.posts.Post.safeCommentCount: Int
+        private val Post.safeCommentCount: Int
             get() = 0
 
-        private val com.uyscuti.social.network.api.response.posts.Post.safeLikes: Int
+        private val Post.safeLikes: Int
             get() = likes
 
-        private val com.uyscuti.social.network.api.response.posts.Post.safeBookmarkCount: Int
+        private val Post.safeBookmarkCount: Int
             get() = bookmarkCount
 
-        private var com.uyscuti.social.network.api.response.posts.Post.safeRepostCount: Int
+        private var Post.safeRepostCount: Int
             get() = repostCount
             set(value) {
                 repostCount = value
             }
 
-        private var com.uyscuti.social.network.api.response.posts.Post.safeShareCount: Int
+        private var Post.safeShareCount: Int
             get() = shareCount
             set(value) {
                 shareCount = value
@@ -2392,7 +2391,7 @@ class SearchUserNameAdapter(
 
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "SimpleDateFormat", "SuspiciousIndentation")
-        fun render(data: com.uyscuti.social.network.api.response.posts.Post) {
+        fun render(data: Post) {
 
             data.isBusinessPost?.let {
                 if(!it) {
@@ -2479,7 +2478,7 @@ class SearchUserNameAdapter(
 
         }
 
-        private fun setupFollowButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupFollowButton(data: Post) {
             val feedOwnerId = data.author?.account?._id ?: return
             val feedOwnerUsername = data.author?.account?.username ?: return
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
@@ -2508,7 +2507,7 @@ class SearchUserNameAdapter(
             followButton.text = "Follow"
             followButton.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
-                com.uyscuti.social.circuit.R.color.blueJeans
+                R.color.blueJeans
             )
 
             Log.d(TAG, "setupFollowButton: Showing follow button for $feedOwnerId (@$feedOwnerUsername)")
@@ -2559,7 +2558,7 @@ class SearchUserNameAdapter(
             EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
         }
 
-        private fun setupPostClickListeners(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupPostClickListeners(data: Post) {
             // Clear existing click listeners to avoid conflicts
             feedTextLayoutContainer.setOnClickListener(null)
             caption.setOnClickListener(null)
@@ -2580,7 +2579,7 @@ class SearchUserNameAdapter(
             preventChildClickInterference(data)
         }
 
-        private fun preventChildClickInterference(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun preventChildClickInterference(data: Post) {
             val childViews = listOfNotNull(
                 caption,
                 tags,
@@ -2596,7 +2595,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupChildClickBubbling(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupChildClickBubbling(data: Post) {
             val childViews = listOfNotNull(
                 caption,
                 tags,
@@ -2612,7 +2611,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun ensurePostClickability(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun ensurePostClickability(data: Post) {
             feedTextLayoutContainer.isClickable = true
             feedTextLayoutContainer.isFocusable = true
             try {
@@ -2632,7 +2631,7 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Post clickability ensured for post: ${data._id}")
         }
 
-        private fun getCommentCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
+        private fun getCommentCount(data: Post): Int {
             return when {
                 data.comments != null -> {
                     Log.d(TAG, "getCommentCount: Using commentCount: ${data.comments}")
@@ -2649,7 +2648,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun getLikesCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
+        private fun getLikesCount(data: Post): Int {
             return when {
                 data.likes >= 0 -> data.likes
                 data.safeLikes >= 0 -> data.safeLikes
@@ -2657,7 +2656,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun getBookmarkCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
+        private fun getBookmarkCount(data: Post): Int {
             return when {
                 data.bookmarkCount >= 0 -> data.bookmarkCount
                 data.safeBookmarkCount >= 0 -> data.safeBookmarkCount
@@ -2665,7 +2664,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun getRepostCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
+        private fun getRepostCount(data: Post): Int {
             return when {
                 data.safeRepostCount != null -> data.safeRepostCount!!
                 data.safeRepostCount >= 0 -> data.safeRepostCount
@@ -2673,7 +2672,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun getShareCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
+        private fun getShareCount(data: Post): Int {
             return when {
                 data.safeShareCount >= 0 -> data.safeShareCount
                 data.safeShareCount >= 0 -> data.safeShareCount
@@ -2681,7 +2680,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupInteractionButtons(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupInteractionButtons(data: Post) {
             setupLikeButton(data)
             setupBookmarkButton(data)
             setupCommentButton(data)
@@ -2691,7 +2690,7 @@ class SearchUserNameAdapter(
             setupFollowButton(data)
         }
 
-        private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupLikeButton(data: Post) {
             Log.d(TAG, "Setting up like button - Initial state: isLiked=${data.isLiked}, likes=${data.likes}")
             updateLikeButtonUI(data.isLiked ?: false)
             updateMetricDisplay(likesCount, data.likes, "like")
@@ -2793,7 +2792,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupCommentButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupCommentButton(data: Post) {
 
             commentButton.setOnClickListener {
                 if (!commentButton.isEnabled) return@setOnClickListener
@@ -2818,7 +2817,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupBookmarkButton(data: Post) {
 
             Log.d(TAG, "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
             updateBookmarkButtonUI(data.isBookmarked ?: false)
@@ -2915,7 +2914,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupRepostButton(data: Post) {
 
             totalTextRePostCounts = data.safeRepostCount
             updateMetricDisplay(repostCount, totalTextRePostCounts, "repost")
@@ -2985,7 +2984,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupShareButton(data: Post) {
             updateMetricDisplay(shareCount, data.safeShareCount, "share")
 
             feedShare.setOnClickListener {
@@ -2998,7 +2997,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun showShareBottomSheet(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun showShareBottomSheet(data: Post) {
             val context = feedShare.context
             val bottomSheetDialog = BottomSheetDialog(context)
             val binding = BottomDialogForShareBinding.inflate(LayoutInflater.from(context))
@@ -3087,7 +3086,7 @@ class SearchUserNameAdapter(
             bottomSheetDialog.show()
         }
 
-        private fun incrementShareCount(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun incrementShareCount(data: Post) {
             val previousShareCount = data.safeShareCount
 
             // Update immediately for better UX
@@ -3154,7 +3153,7 @@ class SearchUserNameAdapter(
         private fun shareViaSMS(context: Context, text: String) {
             try {
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = "smsto:".toUri()
+                    Intent.setData = "smsto:".toUri()
                     putExtra("sms_body", text)
                 }
                 context.startActivity(intent)
@@ -3200,7 +3199,7 @@ class SearchUserNameAdapter(
             try {
                 for (packageName in packages) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
+                        Intent.setType = "text/plain"
                         setPackage(packageName)
                         putExtra(Intent.EXTRA_TEXT, text)
                     }
@@ -3217,7 +3216,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupMoreOptionsButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupMoreOptionsButton(data: Post) {
             moreOptionsButton.setOnClickListener {
                 feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
             }
@@ -3229,11 +3228,11 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
             try {
                 if (isLiked) {
-                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite_like)
+                    likeButton.setImageResource(R.drawable.filled_favorite_like)
                     // Add blue color tint for liked state
-                    likeButton.setColorFilter(ContextCompat.getColor(itemView.context, com.uyscuti.social.circuit.R.color.bluejeans), PorterDuff.Mode.SRC_IN)
+                    likeButton.setColorFilter(ContextCompat.getColor(itemView.context, R.color.bluejeans), PorterDuff.Mode.SRC_IN)
                 } else {
-                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.heart_svgrepo_com)
+                    likeButton.setImageResource(R.drawable.heart_svgrepo_com)
                     // Remove color filter for unfilled state
                     likeButton.clearColorFilter()
                 }
@@ -3246,9 +3245,9 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updating bookmark button UI: isBookmarked=$isBookmarked")
             try {
                 if (isBookmarked) {
-                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite)
+                    favoriteButton.setImageResource(R.drawable.filled_favorite)
                 } else {
-                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.favorite_svgrepo_com__1_)
+                    favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
                     // Remove color filter for unfilled state
                     favoriteButton.clearColorFilter()
                 }
@@ -3259,11 +3258,11 @@ class SearchUserNameAdapter(
 
         private fun updateRepostButtonAppearance(isReposted: Boolean) {
             if (isReposted) {
-                repostedPost.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
+                repostedPost.setImageResource(R.drawable.repeat_svgrepo_com)
                 repostedPost.scaleX = 1.1f
                 repostedPost.scaleY = 1.1f
             } else {
-                repostedPost.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
+                repostedPost.setImageResource(R.drawable.repeat_svgrepo_com)
                 repostedPost.scaleX = 1.0f
                 repostedPost.scaleY = 1.0f
             }
@@ -3326,7 +3325,7 @@ class SearchUserNameAdapter(
         }
 
         private fun updateAllMetricDisplays(
-            data: com.uyscuti.social.network.api.response.posts.Post,
+            data: Post,
             commentsCount: Int,
             likesCount: Int,
             bookmarksCount: Int,
@@ -3363,7 +3362,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupUserProfile(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupUserProfile(data: Post) {
 
             dateTime.text = formattedMongoDateTime(data.createdAt)
 
@@ -3375,7 +3374,7 @@ class SearchUserNameAdapter(
             loadImageWithGlide(data.author?.account?.avatar?.url, profileImageView, itemView.context)
         }
 
-        private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun navigateToOriginalPostWithoutRepostInside(data: Post) {
             try {
                 Log.d(TAG, "Navigating to original post for post ID: ${data._id}")
                 val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
@@ -3418,12 +3417,12 @@ class SearchUserNameAdapter(
                     }
                     fragmentManager.beginTransaction()
                         .setCustomAnimations(
-                            com.uyscuti.social.circuit.R.anim.slide_in_right,
-                            com.uyscuti.social.circuit.R.anim.slide_out_left,
-                            com.uyscuti.social.circuit.R.anim.slide_in_left,
-                            com.uyscuti.social.circuit.R.anim.slide_out_right
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
                         )
-                        .replace(com.uyscuti.social.circuit.R.id.frame_layout, fragment)
+                        .replace(R.id.frame_layout, fragment)
                         .addToBackStack(tag)
                         .commit()
                     Log.d(TAG, "Successfully navigated to fragment: $tag")
@@ -3502,7 +3501,7 @@ class SearchUserNameAdapter(
             textView.setOnClickListener(profileClickListener)
         }
 
-        private fun setupContentAndCaption(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupContentAndCaption(data: Post) {
             if (!data.content.isNullOrEmpty()) {
                 Log.d(TAG, "setupContentAndCaption: Setting content: ${data.content}")
                 caption.text = data.content
@@ -3544,7 +3543,7 @@ class SearchUserNameAdapter(
                 })
         }
 
-        private fun logCountDebuggingInfo(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun logCountDebuggingInfo(data: Post) {
             Log.d(TAG, "=== COUNT DEBUG INFO FOR POST ${data._id} ===")
             Log.d(TAG, "Raw comment count from API: ${data.comments}")
             Log.d(TAG, "Safe comment count: ${data.safeCommentCount}")
@@ -3565,11 +3564,11 @@ class SearchUserNameAdapter(
                     .load(imageUrl)
                     .apply(RequestOptions.bitmapTransform(CircleCrop()))
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
-                    .error(com.uyscuti.social.circuit.R.drawable.flash21)
+                    .placeholder(R.drawable.flash21)
+                    .error(R.drawable.flash21)
                     .into(imageView)
             } else {
-                imageView.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
+                imageView.setImageResource(R.drawable.flash21)
             }
         }
 
@@ -3614,42 +3613,42 @@ class SearchUserNameAdapter(
 
         val TAG = "FeedPostViewHolder"
         // Profile and Header Elements
-        private val profileImageView: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.profileImageView)
-        private val textView: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.textView)
-        private val handerText: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.handerText)
-        private val dateTime: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.date_time)
-        private val followButton: AppCompatButton = itemView.findViewById(com.uyscuti.social.circuit.R.id.followButton)
-        private val moreOptionsButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.moreOptions)
+        private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
+        private val textView: TextView = itemView.findViewById(R.id.textView)
+        private val handerText: TextView = itemView.findViewById(R.id.handerText)
+        private val dateTime: TextView = itemView.findViewById(R.id.date_time)
+        private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
+        private val moreOptionsButton: ImageView = itemView.findViewById(R.id.moreOptions)
 
         // Content Elements
-        private val caption: ReadMoreTextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.caption)
-        private val tags: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tags)
+        private val caption: ReadMoreTextView = itemView.findViewById(R.id.caption)
+        private val tags: TextView = itemView.findViewById(R.id.tags)
 
         // Media Elements
-        private val mixedFilesCardView: CardView = itemView.findViewById(com.uyscuti.social.circuit.R.id.mixedFilesCardView)
-        val recyclerView: RecyclerView = itemView.findViewById(com.uyscuti.social.circuit.R.id.recyclerView)
+        private val mixedFilesCardView: CardView = itemView.findViewById(R.id.mixedFilesCardView)
+        val recyclerView: RecyclerView = itemView.findViewById(R.id.recyclerView)
 
         // Interaction Elements
-        private val likeButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likeButtonIcon)
-        private val likesCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likesCount)
-        private val commentButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentButtonIcon)
-        private val commentCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentCount)
-        private val favoriteButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteSection)
-        private val favoriteCounts: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteCounts)
-        private val repostPost: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostPost)
-        private val repostCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostCount)
-        private val feedShare: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareButtonIcon)
-        private val shareCountText: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareCount)
+        private val likeButton: ImageView = itemView.findViewById(R.id.likeButtonIcon)
+        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
+        private val commentButton: ImageView = itemView.findViewById(R.id.commentButtonIcon)
+        private val commentCount: TextView = itemView.findViewById(R.id.commentCount)
+        private val favoriteButton: ImageView = itemView.findViewById(R.id.favoriteSection)
+        private val favoriteCounts: TextView = itemView.findViewById(R.id.favoriteCounts)
+        private val repostPost: ImageView = itemView.findViewById(R.id.repostPost)
+        private val repostCount: TextView = itemView.findViewById(R.id.repostCount)
+        private val feedShare: ImageView = itemView.findViewById(R.id.shareButtonIcon)
+        private val shareCountText: TextView = itemView.findViewById(R.id.shareCount)
 
         // Container Elements
-        private val feedMixedFilesContainer: ConstraintLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.feedMixedFilesContainer)
+        private val feedMixedFilesContainer: ConstraintLayout = itemView.findViewById(R.id.feedMixedFilesContainer)
 
         // State variables
         private var isFollowed = false
         private var totalMixedComments = 0
         private var serverCommentCount = 0
         private var loadedCommentCount = 0
-        private var currentPost: com.uyscuti.social.network.api.response.posts.Post? = null
+        private var currentPost: Post? = null
         private var totalMixedLikesCounts = 0
         private var totalMixedBookMarkCounts = 0
         private var totalMixedShareCounts = 0
@@ -3660,7 +3659,7 @@ class SearchUserNameAdapter(
 
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "SuspiciousIndentation")
-        fun render(data: com.uyscuti.social.network.api.response.posts.Post) {
+        fun render(data: Post) {
 
             data.isBusinessPost?.let {
                 if (!it) {
@@ -3748,7 +3747,7 @@ class SearchUserNameAdapter(
             followButton.text = "Follow"
             followButton.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
-                com.uyscuti.social.circuit.R.color.blueJeans
+                R.color.blueJeans
             )
 
             Log.d(TAG, "setupFollowButton: Showing follow button for $feedOwnerId (@$feedOwnerUsername)")
@@ -3799,7 +3798,7 @@ class SearchUserNameAdapter(
             EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
         }
 
-        private fun setupPostClickListeners(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupPostClickListeners(data: Post) {
             // Clear existing click listeners to avoid conflicts
             feedMixedFilesContainer.setOnClickListener(null)
             mixedFilesCardView.setOnClickListener(null)
@@ -3832,7 +3831,7 @@ class SearchUserNameAdapter(
             preventChildClickInterference(data)
         }
 
-        private fun preventChildClickInterference(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun preventChildClickInterference(data: Post) {
             val childViews = listOfNotNull(
                 caption,
                 tags,
@@ -3854,7 +3853,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun ensurePostClickability(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun ensurePostClickability(data: Post) {
             // Ensure main container is clickable
             feedMixedFilesContainer.isClickable = true
             feedMixedFilesContainer.isFocusable = true
@@ -3894,7 +3893,7 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Post clickability ensured for post: ${data._id}")
         }
 
-        private fun setupContentAndTags(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupContentAndTags(data: Post) {
             // Caption setup
             if (data.content.isNotEmpty()) {
                 caption.text = data.content
@@ -3916,7 +3915,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun navigateToOriginalPostWithoutRepostInside(data: Post) {
             try {
                 Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
 
@@ -3974,11 +3973,11 @@ class SearchUserNameAdapter(
 
                     fragmentManager.beginTransaction()
                         .setCustomAnimations(
-                            com.uyscuti.social.circuit.R.anim.slide_in_right,
-                            com.uyscuti.social.circuit.R.anim.slide_out_left,
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
 
                             )
-                        .replace(com.uyscuti.social.circuit.R.id.frame_layout, fragment)
+                        .replace(R.id.frame_layout, fragment)
                         .addToBackStack(tag)
                         .commit()
                     Log.d(TAG, "Successfully navigated to fragment: $tag")
@@ -3991,7 +3990,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupPostInfo(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupPostInfo(data: Post) {
             // Date and time
             dateTime.text = formattedMongoDateTime(data.createdAt)
 
@@ -4003,7 +4002,7 @@ class SearchUserNameAdapter(
             updateEngagementCounts(data)
         }
 
-        private fun initializeCommentCounts(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun initializeCommentCounts(data: Post) {
             serverCommentCount = data.comments
             totalMixedComments = serverCommentCount
             loadedCommentCount = 0
@@ -4016,7 +4015,7 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updated comment count display: ${commentCount.text}")
         }
 
-        private fun setupUserInfo(data: com.uyscuti.social.network.api.response.posts.Post, feedOwnerId: String) {
+        private fun setupUserInfo(data: Post, feedOwnerId: String) {
             // Profile image
             val avatarUrl = data.author?.account?.avatar?.url
             loadImageWithGlide(avatarUrl, profileImageView, itemView.context)
@@ -4030,7 +4029,7 @@ class SearchUserNameAdapter(
             handerText.text = "@${data.author?.account?.username ?: "unknown"}"
         }
 
-        private fun setupEngagementButtons(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupEngagementButtons(data: Post) {
             setupLikeButton(data)
             setupCommentButton(data)
             setupShareButton(data)
@@ -4039,7 +4038,7 @@ class SearchUserNameAdapter(
             setupMoreOptionsButton(data)
         }
 
-        private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupLikeButton(data: Post) {
             Log.d(TAG, "Setting up like button - Initial state: isLiked=${data.isLiked}, likes=${totalMixedLikesCounts}")
             updateLikeButtonUI(data.isLiked ?: false)
             updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
@@ -4143,7 +4142,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupBookmarkButton(data: Post) {
             Log.d(TAG, "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}, bookmarkCount=${totalMixedBookMarkCounts}")
             updateBookmarkButtonUI(data.isBookmarked ?: false)
             updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
@@ -4245,11 +4244,11 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
             try {
                 if (isLiked) {
-                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite_like)
+                    likeButton.setImageResource(R.drawable.filled_favorite_like)
                     // Add blue color tint for liked state
-                    likeButton.setColorFilter(ContextCompat.getColor(itemView.context, com.uyscuti.social.circuit.R.color.bluejeans), PorterDuff.Mode.SRC_IN)
+                    likeButton.setColorFilter(ContextCompat.getColor(itemView.context, R.color.bluejeans), PorterDuff.Mode.SRC_IN)
                 } else {
-                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.heart_svgrepo_com)
+                    likeButton.setImageResource(R.drawable.heart_svgrepo_com)
                     likeButton.clearColorFilter()
                 }
             } catch (e: Exception) {
@@ -4261,9 +4260,9 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updating bookmark button UI: isBookmarked=$isBookmarked")
             try {
                 if (isBookmarked) {
-                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite)
+                    favoriteButton.setImageResource(R.drawable.filled_favorite)
                 } else {
-                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.favorite_svgrepo_com__1_)
+                    favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
                     favoriteButton.clearColorFilter()
                 }
             } catch (e: Exception) {
@@ -4285,7 +4284,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupCommentButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupCommentButton(data: Post) {
             commentButton.setOnClickListener {
                 if (!commentButton.isEnabled) return@setOnClickListener
                 Log.d(TAG, "Comment button clicked for post ${data._id}")
@@ -4309,7 +4308,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupShareButton(data: Post) {
             val originalPost = data.originalPost?.firstOrNull()
             val targetPostId = originalPost?._id ?: data._id  // Use original post ID for API calls
 
@@ -4325,7 +4324,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun showShareBottomSheet(data: com.uyscuti.social.network.api.response.posts.Post, targetPostId: String) {
+        private fun showShareBottomSheet(data: Post, targetPostId: String) {
             val context = feedShare.context
             val bottomSheetDialog = BottomSheetDialog(context)
             val binding = BottomDialogForShareBinding.inflate(LayoutInflater.from(context))
@@ -4414,7 +4413,7 @@ class SearchUserNameAdapter(
             bottomSheetDialog.show()
         }
 
-        private fun incrementShareCount(data: com.uyscuti.social.network.api.response.posts.Post, targetPostId: String) {
+        private fun incrementShareCount(data: Post, targetPostId: String) {
             YoYo.with(Techniques.Tada)
                 .duration(700)
                 .repeat(1)
@@ -4453,7 +4452,7 @@ class SearchUserNameAdapter(
         private fun shareViaSMS(context: Context, text: String) {
             try {
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = "smsto:".toUri()
+                    Intent.setData = "smsto:".toUri()
                     putExtra("sms_body", text)
                 }
                 context.startActivity(intent)
@@ -4499,7 +4498,7 @@ class SearchUserNameAdapter(
             try {
                 for (packageName in packages) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
+                        Intent.setType = "text/plain"
                         setPackage(packageName)
                         putExtra(Intent.EXTRA_TEXT, text)
                     }
@@ -4516,7 +4515,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupRepostButton(data: Post) {
             val originalPost = data.originalPost?.firstOrNull()
             val targetPostId = originalPost?._id ?: data._id  // Use original post ID for API calls
 
@@ -4583,11 +4582,11 @@ class SearchUserNameAdapter(
 
         private fun updateRepostButtonAppearance(isReposted: Boolean) {
             if (isReposted) {
-                repostPost.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
+                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
                 repostPost.scaleX = 1.1f
                 repostPost.scaleY = 1.1f
             } else {
-                repostPost.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
+                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
                 repostPost.scaleX = 1.0f
                 repostPost.scaleY = 1.0f
             }
@@ -4678,7 +4677,7 @@ class SearchUserNameAdapter(
         }
 
 
-        private fun setupMoreOptionsButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupMoreOptionsButton(data: Post) {
             moreOptionsButton.setOnClickListener {
                 feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
             }
@@ -4686,7 +4685,7 @@ class SearchUserNameAdapter(
 
 
 
-        private fun setupProfileClickListeners(data: com.uyscuti.social.network.api.response.posts.Post, feedOwnerId: String) {
+        private fun setupProfileClickListeners(data: Post, feedOwnerId: String) {
             val feedOwnerName = "${data.author?.firstName} ${data.author?.lastName}"
             val profilePicUrl = data.author?.account?.avatar?.url
             val feedOwnerUsername = data.author?.account?.username
@@ -4766,7 +4765,7 @@ class SearchUserNameAdapter(
         }
 
 
-        private fun updateEngagementCounts(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun updateEngagementCounts(data: Post) {
             likesCount.text = formatCount(totalMixedLikesCounts)
             updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
             updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
@@ -4774,7 +4773,7 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updated all engagement counts")
         }
 
-        private fun setupMediaFiles(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupMediaFiles(data: Post) {
             val fileList: MutableList<String> = mutableListOf()
             if (data.files.isNotEmpty()) {
                 data.files.forEach { file ->
@@ -4820,17 +4819,17 @@ class SearchUserNameAdapter(
             adapter.setOnMultipleFilesClickListener(object : OnMultipleFilesClickListener {
                 override fun multipleFileClickListener(
                     currentIndex: Int,
-                    files: List<com.uyscuti.social.network.api.response.posts.File>,
+                    files: List<File>,
                     fileIds: List<String>
                 ) {
                     navigateToTappedFilesInTheContainerView(
-                        files as ArrayList<com.uyscuti.social.network.api.response.posts.File>, "mixed_files", currentIndex)
+                        files as ArrayList<File>, "mixed_files", currentIndex)
                 }
             })
         }
 
         private fun navigateToTappedFilesInTheContainerView(
-            files: ArrayList<com.uyscuti.social.network.api.response.posts.File>,
+            files: ArrayList<File>,
             mediaType: String,
             selectedPosition: Int
         ) {
@@ -4872,7 +4871,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private val com.uyscuti.social.network.api.response.posts.Post.safeRepostCount: Int
+        private val Post.safeRepostCount: Int
             get() =  0
 
 
@@ -4918,11 +4917,11 @@ class SearchUserNameAdapter(
                     .load(imageUrl)
                     .apply(RequestOptions.bitmapTransform(CircleCrop()))
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
-                    .error(com.uyscuti.social.circuit.R.drawable.flash21)
+                    .placeholder(R.drawable.flash21)
+                    .error(R.drawable.flash21)
                     .into(imageView)
             } else {
-                imageView.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
+                imageView.setImageResource(R.drawable.flash21)
             }
         }
 
@@ -4934,7 +4933,7 @@ class SearchUserNameAdapter(
         private val tag = "FeedRepostViewHolder"
 
         private var isFollowed = false
-        private var currentPost: com.uyscuti.social.network.api.response.posts.Post? = null
+        private var currentPost: Post? = null
         private var totalMixedLikesCounts = 0
         private var totalMixedBookMarkCounts = 0
         private var totalMixedShareCounts = 0
@@ -4945,68 +4944,68 @@ class SearchUserNameAdapter(
 
 
         // UI Components - User Info Section
-        private val userProfileImage: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.userReposterProfileImage)
-        private val repostedUserName: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostedUserName)
-        private val tvUserHandle: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvUserHandle)
-        private val dateTimeCreate: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.date_time_create)
-        private val followButton: AppCompatButton = itemView.findViewById(com.uyscuti.social.circuit.R.id.followButton)
-        private val moreOptionsButton: ImageButton = itemView.findViewById(com.uyscuti.social.circuit.R.id.moreOptions)
+        private val userProfileImage: ImageView = itemView.findViewById(R.id.userReposterProfileImage)
+        private val repostedUserName: TextView = itemView.findViewById(R.id.repostedUserName)
+        private val tvUserHandle: TextView = itemView.findViewById(R.id.tvUserHandle)
+        private val dateTimeCreate: TextView = itemView.findViewById(R.id.date_time_create)
+        private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
+        private val moreOptionsButton: ImageButton = itemView.findViewById(R.id.moreOptions)
 
         // Main clickable containers
-        private val repostContainer: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostContainer)
-        private val originalPostContainer: LinearLayout? = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPostContainer)
-        private val quotedPostCard: CardView = itemView.findViewById(com.uyscuti.social.circuit.R.id.quotedPostCard)
+        private val repostContainer: LinearLayout = itemView.findViewById(R.id.repostContainer)
+        private val originalPostContainer: LinearLayout? = itemView.findViewById(R.id.originalPostContainer)
+        private val quotedPostCard: CardView = itemView.findViewById(R.id.quotedPostCard)
 
         // Post Content Section
-        private val tvPostTag: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvPostTag)
-        private val userComment: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.userComment)
-        private val tvHashtags: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvHashtags)
+        private val tvPostTag: TextView = itemView.findViewById(R.id.tvPostTag)
+        private val userComment: TextView = itemView.findViewById(R.id.userComment)
+        private val tvHashtags: TextView = itemView.findViewById(R.id.tvHashtags)
 
         // Original Mixed Files Section
-        private val mixedFilesCardViews: CardView = itemView.findViewById(com.uyscuti.social.circuit.R.id.mixedFilesCardViews)
-        private val originalFeedImages: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalFeedImages)
-        private val multipleAudiosContainers: ConstraintLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.multipleAudiosContainers)
-        private val recyclerViews: RecyclerView = itemView.findViewById(com.uyscuti.social.circuit.R.id.recyclerViews)
+        private val mixedFilesCardViews: CardView = itemView.findViewById(R.id.mixedFilesCardViews)
+        private val originalFeedImages: ImageView = itemView.findViewById(R.id.originalFeedImages)
+        private val multipleAudiosContainers: ConstraintLayout = itemView.findViewById(R.id.multipleAudiosContainers)
+        private val recyclerViews: RecyclerView = itemView.findViewById(R.id.recyclerViews)
 
         // Quoted/Original Post Section
-        private val originalPosterProfileImage: ImageView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPosterProfileImage)
-        private val originalPosterName: TextView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPosterName)
-        private val tvQuotedUserHandle: TextView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvQuotedUserHandle)
-        private val originalPostText: TextView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPostText)
-        private val tvQuotedHashtags: TextView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvQuotedHashtags)
+        private val originalPosterProfileImage: ImageView? = itemView.findViewById(R.id.originalPosterProfileImage)
+        private val originalPosterName: TextView? = itemView.findViewById(R.id.originalPosterName)
+        private val tvQuotedUserHandle: TextView? = itemView.findViewById(R.id.tvQuotedUserHandle)
+        private val originalPostText: TextView? = itemView.findViewById(R.id.originalPostText)
+        private val tvQuotedHashtags: TextView? = itemView.findViewById(R.id.tvQuotedHashtags)
 
         // Quoted Post Media
-        private val mixedFilesCardView: CardView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.mixedFilesCardView)
-        private val originalFeedImage: ImageView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalFeedImage)
-        private val multipleAudiosContainer: ConstraintLayout? = itemView.findViewById(com.uyscuti.social.circuit.R.id.multipleAudiosContainer)
-        private val recyclerView: RecyclerView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.recyclerView)
-        private val ivQuotedPostImage: ImageView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.ivQuotedPostImage)
+        private val mixedFilesCardView: CardView? = itemView.findViewById(R.id.mixedFilesCardView)
+        private val originalFeedImage: ImageView? = itemView.findViewById(R.id.originalFeedImage)
+        private val multipleAudiosContainer: ConstraintLayout? = itemView.findViewById(R.id.multipleAudiosContainer)
+        private val recyclerView: RecyclerView? = itemView.findViewById(R.id.recyclerView)
+        private val ivQuotedPostImage: ImageView? = itemView.findViewById(R.id.ivQuotedPostImage)
 
         // Interaction Buttons
-        private val likeSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.likeLayout)
-        private val likeButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likeButtonIcon)
-        private val likesCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likesCount)
+        private val likeSection: LinearLayout = itemView.findViewById(R.id.likeLayout)
+        private val likeButton: ImageView = itemView.findViewById(R.id.likeButtonIcon)
+        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
 
-        private val commentSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentLayout)
-        private val commentButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentButtonIcon)
-        private val commentCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentCount)
+        private val commentSection: LinearLayout = itemView.findViewById(R.id.commentLayout)
+        private val commentButton: ImageView = itemView.findViewById(R.id.commentButtonIcon)
+        private val commentCount: TextView = itemView.findViewById(R.id.commentCount)
 
-        private val favoriteSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteSection)
-        private val favoriteButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoritesButton)
-        private val favoriteCounts: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteCounts)
+        private val favoriteSection: LinearLayout = itemView.findViewById(R.id.favoriteSection)
+        private val favoriteButton: ImageView = itemView.findViewById(R.id.favoritesButton)
+        private val favoriteCounts: TextView = itemView.findViewById(R.id.favoriteCounts)
 
-        private val repostSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostLayout)
-        private val repostButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostPost)
-        private val repostCounts: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostCount)
+        private val repostSection: LinearLayout = itemView.findViewById(R.id.repostLayout)
+        private val repostButton: ImageView = itemView.findViewById(R.id.repostPost)
+        private val repostCounts: TextView = itemView.findViewById(R.id.repostCount)
 
-        private val shareSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.share_layout)
-        private val shareButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareButtonIcon)
-        private val shareCounts: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareCount)
+        private val shareSection: LinearLayout = itemView.findViewById(R.id.share_layout)
+        private val shareButton: ImageView = itemView.findViewById(R.id.shareButtonIcon)
+        private val shareCounts: TextView = itemView.findViewById(R.id.shareCount)
 
 
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "CheckResult", "SuspiciousIndentation")
-        fun render(data: com.uyscuti.social.network.api.response.posts.Post) {
+        fun render(data: Post) {
 
             data.isBusinessPost?.let {
                 if (!it) {
@@ -5148,7 +5147,7 @@ class SearchUserNameAdapter(
             followButton.text = "Follow"
             followButton.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
-                com.uyscuti.social.circuit.R.color.blueJeans
+                R.color.blueJeans
             )
 
             Log.d(TAG, "SHOWING follow button for account: $accountId (@$username)")
@@ -5203,7 +5202,7 @@ class SearchUserNameAdapter(
             (bindingAdapter as? FeedAdapter)?.notifyDataSetChanged()
         }
 
-        private fun setupRepostedUser(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupRepostedUser(data: Post) {
             var feedOwnerId = ""
             var profilePicUrl: String? = null
             var feedOwnerUsername = ""
@@ -5259,11 +5258,11 @@ class SearchUserNameAdapter(
                     .load(profilePicUrl)
                     .apply(RequestOptions.bitmapTransform(CircleCrop()))
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
-                    .error(com.uyscuti.social.circuit.R.drawable.flash21)
+                    .placeholder(R.drawable.flash21)
+                    .error(R.drawable.flash21)
                     .into(userProfileImage)
             } else {
-                userProfileImage.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
+                userProfileImage.setImageResource(R.drawable.flash21)
             }
 
             tvPostTag.text = if (repostedUser != null) "Had to Repost This!" else "Shared a Post!"
@@ -5273,7 +5272,7 @@ class SearchUserNameAdapter(
         }
 
         @SuppressLint("ClickableViewAccessibility")
-        private fun setupRepostedUserProfileClicks(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupRepostedUserProfileClicks(data: Post) {
             // Extract ACCOUNT ID (owner field) for profile navigation
             var feedOwnerId = ""
             var feedOwnerName = ""
@@ -5330,7 +5329,7 @@ class SearchUserNameAdapter(
 
 
         @SuppressLint("ClickableViewAccessibility")
-        private fun setupOriginalPostAuthorClicks(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupOriginalPostAuthorClicks(data: Post) {
             //  Check if originalPost exists and has items
             if (!data.originalPost.isNullOrEmpty()) {
                 val originalPostData = data.originalPost[0]
@@ -5584,7 +5583,7 @@ class SearchUserNameAdapter(
         }
 
 
-        private fun setupNavigationClickListenersForAllContainers(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupNavigationClickListenersForAllContainers(data: Post) {
             // Clear any existing click listeners to avoid conflicts
             repostContainer.setOnClickListener(null)
             originalPostContainer?.setOnClickListener(null)
@@ -5754,7 +5753,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun finalizeClickSetup(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun finalizeClickSetup(data: Post) {
 
             setupNavigationClickListenersForAllContainers(data)
             setupReposterTextClickDelegation()
@@ -5768,7 +5767,7 @@ class SearchUserNameAdapter(
             Log.d(tag, "- quotedPostCard: clickable=${quotedPostCard.isClickable}, focusable=${quotedPostCard.isFocusable}")
         }
 
-        private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupLikeButton(data: Post) {
             Log.d(TAG, "Setting up like button - Initial state: isLiked=${data.isLiked}, likes=${totalMixedLikesCounts}")
             updateLikeButtonUI(data.isLiked ?: false)
             updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")  // Use totalMixedLikesCounts
@@ -5854,7 +5853,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupBookmarkButton(data: Post) {
 
             Log.d(
                 TAG,
@@ -5939,7 +5938,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupCommentButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupCommentButton(data: Post) {
             commentButton.setOnClickListener {
                 if (!commentButton.isEnabled) return@setOnClickListener
                 Log.d(TAG, "Comment button clicked for post ${data._id}")
@@ -5963,7 +5962,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupRepostButton(data: Post) {
             totalMixedRePostCounts = 0
             updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
             updateRepostButtonAppearance(data.isReposted)
@@ -6026,7 +6025,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupShareButton(data: Post) {
             totalMixedShareCounts = data.shareCount ?: 0
             updateMetricDisplay(shareCounts, totalMixedShareCounts, "share")
 
@@ -6040,7 +6039,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun showShareBottomSheet(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun showShareBottomSheet(data: Post) {
             val context = shareButton.context
             val bottomSheetDialog = BottomSheetDialog(context)
             val binding = BottomDialogForShareBinding.inflate(LayoutInflater.from(context))
@@ -6129,7 +6128,7 @@ class SearchUserNameAdapter(
             bottomSheetDialog.show()
         }
 
-        private fun incrementShareCount(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun incrementShareCount(data: Post) {
             val previousShareCount = totalMixedShareCounts
 
             // Update immediately for better UX
@@ -6193,7 +6192,7 @@ class SearchUserNameAdapter(
         private fun shareViaSMS(context: Context, text: String) {
             try {
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = "smsto:".toUri()
+                    Intent.setData = "smsto:".toUri()
                     putExtra("sms_body", text)
                 }
                 context.startActivity(intent)
@@ -6239,7 +6238,7 @@ class SearchUserNameAdapter(
             try {
                 for (packageName in packages) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
+                        Intent.setType = "text/plain"
                         setPackage(packageName)
                         putExtra(Intent.EXTRA_TEXT, text)
                     }
@@ -6291,9 +6290,9 @@ class SearchUserNameAdapter(
             Log.d(tag, "Updating like button UI: isLiked=$isLiked")
             try {
                 if (isLiked) {
-                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite_like)
+                    likeButton.setImageResource(R.drawable.filled_favorite_like)
                 } else {
-                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.heart_svgrepo_com)
+                    likeButton.setImageResource(R.drawable.heart_svgrepo_com)
                     likeButton.clearColorFilter()
                 }
             } catch (e: Exception) {
@@ -6305,9 +6304,9 @@ class SearchUserNameAdapter(
             Log.d(tag, "Updating bookmark button UI: isBookmarked=$isBookmarked")
             try {
                 if (isBookmarked) {
-                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite)
+                    favoriteButton.setImageResource(R.drawable.filled_favorite)
                 } else {
-                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.favorite_svgrepo_com__1_)
+                    favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
                     favoriteButton.clearColorFilter()
                 }
             } catch (e: Exception) {
@@ -6317,11 +6316,11 @@ class SearchUserNameAdapter(
 
         private fun updateRepostButtonAppearance(isReposted: Boolean) {
             if (isReposted) {
-                repostButton.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
+                repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
                 repostButton.scaleX = 1.1f
                 repostButton.scaleY = 1.1f
             } else {
-                repostButton.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
+                repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
                 repostButton.scaleX = 1.0f
                 repostButton.scaleY = 1.0f
             }
@@ -6341,7 +6340,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun navigateToOriginalPostWithRepostInside(originalPostData: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun navigateToOriginalPostWithRepostInside(originalPostData: Post) {
             try {
                 val fragment = Fragment_Original_Post_With_Repost_Inside.newInstance(originalPostData)
                 navigateToFragment(fragment, "repost_with_context")
@@ -6351,7 +6350,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun navigateToOriginalPostWithoutRepostInside(originalPostData: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun navigateToOriginalPostWithoutRepostInside(originalPostData: Post) {
 
             try {
 
@@ -6428,7 +6427,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun navigateToEditPostToRepost(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun navigateToEditPostToRepost(data: Post) {
             try {
                 val fragment = Fragment_Edit_Post_To_Repost(data).apply {
                     arguments = Bundle().apply {
@@ -6506,10 +6505,10 @@ class SearchUserNameAdapter(
                 }
                 fragmentManager.beginTransaction()
                     .setCustomAnimations(
-                        com.uyscuti.social.circuit.R.anim.slide_in_right,
-                        com.uyscuti.social.circuit.R.anim.slide_out_left
+                        R.anim.slide_in_right,
+                        R.anim.slide_out_left
                     )
-                    .replace(com.uyscuti.social.circuit.R.id.frame_layout, fragment)
+                    .replace(R.id.frame_layout, fragment)
                     .addToBackStack(backStackName)
                     .commit()
                 Log.d(tag, "Successfully navigated to $backStackName")
@@ -6518,7 +6517,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupFileTapNavigation(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupFileTapNavigation(data: Post) {
             setupMediaFileTapListener(originalFeedImages, data.files, "reposter_single_image")
             setupMediaFileTapListener(mixedFilesCardViews, data.files, "reposter_mixed_files")
             setupRecyclerViewFileTapListener(recyclerViews, data.files, "reposter_multiple_files")
@@ -6608,7 +6607,7 @@ class SearchUserNameAdapter(
                             originalFeedImage?.let { imageView ->
                                 Glide.with(itemView.context)
                                     .load(originalPostData.files[0].url)
-                                    .placeholder(com.uyscuti.social.circuit.R.drawable.imageplaceholder)
+                                    .placeholder(R.drawable.imageplaceholder)
                                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                                     .into(imageView)
                                 imageView.setOnClickListener {
@@ -6685,7 +6684,7 @@ class SearchUserNameAdapter(
             })
         }
 
-        private fun setupMoreOptionsButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupMoreOptionsButton(data: Post) {
             moreOptionsButton.setOnClickListener {
                 feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
             }
@@ -6732,12 +6731,12 @@ class SearchUserNameAdapter(
                             .load(avatarUrl)
                             .apply(RequestOptions.bitmapTransform(CircleCrop()))
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
-                            .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
-                            .error(com.uyscuti.social.circuit.R.drawable.flash21)
+                            .placeholder(R.drawable.flash21)
+                            .error(R.drawable.flash21)
                             .into(imageView)
                         Log.d(tag, "Loading avatar: $avatarUrl")
                     } else {
-                        imageView.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
+                        imageView.setImageResource(R.drawable.flash21)
                         Log.d(tag, "No avatar URL available, using default image")
                     }
                 }
@@ -6751,13 +6750,13 @@ class SearchUserNameAdapter(
             } catch (e: Exception) {
                 Log.e(tag, "Error setting up original poster info", e)
                 // Set safe fallback values
-                originalPosterProfileImage?.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
+                originalPosterProfileImage?.setImageResource(R.drawable.flash21)
                 originalPosterName?.text = "Unknown User"
                 tvQuotedUserHandle?.text = "@unknown_user"
             }
         }
 
-        private fun setupQuotedUserFromMainAuthor(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupQuotedUserFromMainAuthor(data: Post) {
             try {
                 val author = data.author
                 Log.d("QuotedUser", "Using main author for quoted section: $author")
@@ -6771,11 +6770,11 @@ class SearchUserNameAdapter(
                             .load(avatarUrl)
                             .apply(RequestOptions.bitmapTransform(CircleCrop()))
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
-                            .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
-                            .error(com.uyscuti.social.circuit.R.drawable.flash21)
+                            .placeholder(R.drawable.flash21)
+                            .error(R.drawable.flash21)
                             .into(imageView)
                     } else {
-                        imageView.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
+                        imageView.setImageResource(R.drawable.flash21)
                     }
                 }
 
@@ -6841,7 +6840,7 @@ class SearchUserNameAdapter(
             } catch (e: Exception) {
                 Log.e("QuotedUser", "Error setting up quoted user from main author", e)
                 // Set fallback values
-                originalPosterProfileImage?.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
+                originalPosterProfileImage?.setImageResource(R.drawable.flash21)
                 originalPosterName?.text = "Unknown User"
                 tvQuotedUserHandle?.text = "@unknown"
                 originalPostText?.visibility = View.GONE
@@ -6850,13 +6849,13 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupRepostHashtags(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupRepostHashtags(data: Post) {
             val hashtagText = "#Repost #GreatContent #MustSee"
             tvHashtags.text = hashtagText
             tvHashtags.visibility = View.VISIBLE
         }
 
-        private fun setupOriginalPostContent(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupOriginalPostContent(data: Post) {
             Log.d("RepostData", "Original Post: ${data.originalPost}")
             if (data.originalPost != null && data.originalPost.isNotEmpty()) {
                 val originalPostData = data.originalPost[0]
@@ -6963,76 +6962,76 @@ class SearchUserNameAdapter(
         val TAG = "FeedRepostedWithNewFilesPostViewHolder"
 
         // UI Elements - New Post Section (Top)
-        private val userProfileImage: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.userProfileImage)
-        private val repostedUserName: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostedUserName)
-        private val tvUserHandle: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvUserHandle)
-        private val dateTimeCreate: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.date_time_create)
-        private val followButton: AppCompatButton = itemView.findViewById(com.uyscuti.social.circuit.R.id.followButton)
-        private val moreOptionsButton: ImageButton = itemView.findViewById(com.uyscuti.social.circuit.R.id.moreOptions)
+        private val userProfileImage: ImageView = itemView.findViewById(R.id.userProfileImage)
+        private val repostedUserName: TextView = itemView.findViewById(R.id.repostedUserName)
+        private val tvUserHandle: TextView = itemView.findViewById(R.id.tvUserHandle)
+        private val dateTimeCreate: TextView = itemView.findViewById(R.id.date_time_create)
+        private val followButton: AppCompatButton = itemView.findViewById(R.id.followButton)
+        private val moreOptionsButton: ImageButton = itemView.findViewById(R.id.moreOptions)
 
         // Main clickable containers
-        private val repostContainer: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostContainer)
-        private val originalPostContainer: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPostContainer)
-        private val quotedPostCard: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.quotedPostCard)
+        private val repostContainer: LinearLayout = itemView.findViewById(R.id.repostContainer)
+        private val originalPostContainer: LinearLayout = itemView.findViewById(R.id.originalPostContainer)
+        private val quotedPostCard: LinearLayout = itemView.findViewById(R.id.quotedPostCard)
 
         // New Post Content Section (Top)
-        private val tvPostTag: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvPostTag)
-        private val userComment: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.userComment)
-        private val tvHashtags: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvHashtags)
+        private val tvPostTag: TextView = itemView.findViewById(R.id.tvPostTag)
+        private val userComment: TextView = itemView.findViewById(R.id.userComment)
+        private val tvHashtags: TextView = itemView.findViewById(R.id.tvHashtags)
 
         // New Post Media Section (Top)
-        private val newPostMediaCard: CardView = itemView.findViewById(com.uyscuti.social.circuit.R.id.newPostMediaCard)
-        private val newPostImage: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.newPostImage)
-        private val newPostMultipleMediaContainer: ConstraintLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.newPostMultipleMediaContainer)
-        private val newPostMediaRecyclerView: RecyclerView = itemView.findViewById(com.uyscuti.social.circuit.R.id.newPostMediaRecyclerView)
+        private val newPostMediaCard: CardView = itemView.findViewById(R.id.newPostMediaCard)
+        private val newPostImage: ImageView = itemView.findViewById(R.id.newPostImage)
+        private val newPostMultipleMediaContainer: ConstraintLayout = itemView.findViewById(R.id.newPostMultipleMediaContainer)
+        private val newPostMediaRecyclerView: RecyclerView = itemView.findViewById(R.id.newPostMediaRecyclerView)
 
         // Original Post Media (for backward compatibility)
-        private val mixedFilesCardViews: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.mixedFilesCardViews)
-        private val originalFeedImages: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalFeedImages)
-        private val multipleAudiosContainers: ConstraintLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.multipleAudiosContainers)
-        private val recyclerViews: RecyclerView = itemView.findViewById(com.uyscuti.social.circuit.R.id.recyclerViews)
+        private val mixedFilesCardViews: LinearLayout = itemView.findViewById(R.id.mixedFilesCardViews)
+        private val originalFeedImages: ImageView = itemView.findViewById(R.id.originalFeedImages)
+        private val multipleAudiosContainers: ConstraintLayout = itemView.findViewById(R.id.multipleAudiosContainers)
+        private val recyclerViews: RecyclerView = itemView.findViewById(R.id.recyclerViews)
 
         // Quoted/Original Post Section (Bottom)
-        private val originalPosterProfileImage: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPosterProfileImage)
-        private val originalPosterName: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPosterName)
-        private val tvQuotedUserHandle: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvQuotedUserHandle)
-        private val originalPostText: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPostText)
-        private val tvQuotedHashtags: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvQuotedHashtags)
+        private val originalPosterProfileImage: ImageView = itemView.findViewById(R.id.originalPosterProfileImage)
+        private val originalPosterName: TextView = itemView.findViewById(R.id.originalPosterName)
+        private val tvQuotedUserHandle: TextView = itemView.findViewById(R.id.tvQuotedUserHandle)
+        private val originalPostText: TextView = itemView.findViewById(R.id.originalPostText)
+        private val tvQuotedHashtags: TextView = itemView.findViewById(R.id.tvQuotedHashtags)
 
         // Quoted Post Media
-        private val mixedFilesCardView: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.mixedFilesCardView)
-        private val originalFeedImage: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalFeedImage)
-        private val multipleAudiosContainer: ConstraintLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.multipleAudiosContainer)
-        private val recyclerView: RecyclerView = itemView.findViewById(com.uyscuti.social.circuit.R.id.recyclerView)
-        private val ivQuotedPostImage: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.ivQuotedPostImage)
+        private val mixedFilesCardView: LinearLayout = itemView.findViewById(R.id.mixedFilesCardView)
+        private val originalFeedImage: ImageView = itemView.findViewById(R.id.originalFeedImage)
+        private val multipleAudiosContainer: ConstraintLayout = itemView.findViewById(R.id.multipleAudiosContainer)
+        private val recyclerView: RecyclerView = itemView.findViewById(R.id.recyclerView)
+        private val ivQuotedPostImage: ImageView = itemView.findViewById(R.id.ivQuotedPostImage)
 
         // Interaction Buttons
-        private val likeSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.likeLayout)
-        private val likeButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likeButtonIcon)
-        private val likesCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likesCount)
+        private val likeSection: LinearLayout = itemView.findViewById(R.id.likeLayout)
+        private val likeButton: ImageView = itemView.findViewById(R.id.likeButtonIcon)
+        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
 
-        private val commentSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentLayout)
-        private val commentButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentButtonIcon)
-        private val feedCommentsCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentCount)
+        private val commentSection: LinearLayout = itemView.findViewById(R.id.commentLayout)
+        private val commentButton: ImageView = itemView.findViewById(R.id.commentButtonIcon)
+        private val feedCommentsCount: TextView = itemView.findViewById(R.id.commentCount)
 
-        private val favoriteSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteSection)
-        private val favoriteButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoritesButton)
-        private val favoritesCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteCounts)
+        private val favoriteSection: LinearLayout = itemView.findViewById(R.id.favoriteSection)
+        private val favoriteButton: ImageView = itemView.findViewById(R.id.favoritesButton)
+        private val favoritesCount: TextView = itemView.findViewById(R.id.favoriteCounts)
 
-        private val repostSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostPost)
-        private val repostPost: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostPost)
-        private val repostCountTextView: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostCount)
+        private val repostSection: LinearLayout = itemView.findViewById(R.id.repostPost)
+        private val repostPost: ImageView = itemView.findViewById(R.id.repostPost)
+        private val repostCountTextView: TextView = itemView.findViewById(R.id.repostCount)
 
-        private val shareSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareLayout)
-        private val shareCountTextView: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareCount)
-        private val shareImageView: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareImageView)
+        private val shareSection: LinearLayout = itemView.findViewById(R.id.shareLayout)
+        private val shareCountTextView: TextView = itemView.findViewById(R.id.shareCount)
+        private val shareImageView: TextView = itemView.findViewById(R.id.shareImageView)
 
         // State variables
         private var isFollowed = false
         private var totalMixedComments = 0
         private var serverCommentCount = 0
         private var loadedCommentCount = 0
-        private var currentPost: com.uyscuti.social.network.api.response.posts.Post? = null
+        private var currentPost: Post? = null
         private var totalMixedLikesCounts = 0
         private var totalMixedBookMarkCounts = 0
         private var totalMixedShareCounts = 0
@@ -7044,7 +7043,7 @@ class SearchUserNameAdapter(
 
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "SuspiciousIndentation")
-        fun render(data: com.uyscuti.social.network.api.response.posts.Post) {
+        fun render(data: Post) {
 
             data.isBusinessPost?.let {
                 if (!it) {
@@ -7132,7 +7131,7 @@ class SearchUserNameAdapter(
 
         }
 
-        private fun setupPostClickListeners(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupPostClickListeners(data: Post) {
             // Clear existing click listeners to avoid conflicts
             repostContainer.setOnClickListener(null)
             originalPostContainer.setOnClickListener(null)
@@ -7172,7 +7171,7 @@ class SearchUserNameAdapter(
             preventChildClickInterference(data)
         }
 
-        private fun preventChildClickInterference(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun preventChildClickInterference(data: Post) {
             val childViews = listOfNotNull(
                 userComment,
                 tvHashtags,
@@ -7268,7 +7267,7 @@ class SearchUserNameAdapter(
 
 
 
-        private fun ensurePostClickability(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun ensurePostClickability(data: Post) {
 
             // Ensure main container is clickable
             repostContainer.isClickable = true
@@ -7309,7 +7308,7 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Post clickability ensured for post: ${data._id}")
         }
 
-        private fun setupContentAndTags(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupContentAndTags(data: Post) {
 
             // Caption setup - this is the reposter's comment
             if (data.content.isNotEmpty()) {
@@ -7348,7 +7347,7 @@ class SearchUserNameAdapter(
             tvPostTag.visibility = View.VISIBLE
         }
 
-        private fun setupNewPostMediaFiles(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupNewPostMediaFiles(data: Post) {
 
             val fileList: MutableList<String> = mutableListOf()
 
@@ -7388,8 +7387,8 @@ class SearchUserNameAdapter(
                     Glide.with(itemView.context)
                         .load(fileList[0])
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .placeholder(com.uyscuti.social.circuit.R.drawable.imageplaceholder)
-                        .error(com.uyscuti.social.circuit.R.drawable.imageplaceholder)
+                        .placeholder(R.drawable.imageplaceholder)
+                        .error(R.drawable.imageplaceholder)
                         .into(newPostImage)
 
                     newPostImage.setOnClickListener {
@@ -7417,7 +7416,7 @@ class SearchUserNameAdapter(
                         OnMultipleFilesClickListener {
                         override fun multipleFileClickListener(
                             position: Int, // Changed from currentIndex to position
-                            files: List<com.uyscuti.social.network.api.response.posts.File>,
+                            files: List<File>,
                             fileIds: List<String>
                         ) {
                             navigateToTappedFilesInTheContainerView(files, "new_post_multiple_files", position)
@@ -7427,7 +7426,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupOriginalPostContent(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupOriginalPostContent(data: Post) {
 
             Log.d(TAG, "Original Post: ${data.originalPost}")
 
@@ -7489,12 +7488,12 @@ class SearchUserNameAdapter(
                             .load(avatarUrl)
                             .apply(RequestOptions.bitmapTransform(CircleCrop()))
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
-                            .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
-                            .error(com.uyscuti.social.circuit.R.drawable.flash21)
+                            .placeholder(R.drawable.flash21)
+                            .error(R.drawable.flash21)
                             .into(imageView)
                         Log.d(TAG, "Loading avatar: $avatarUrl")
                     } else {
-                        imageView.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
+                        imageView.setImageResource(R.drawable.flash21)
                         Log.d(TAG, "No avatar URL available, using default image")
                     }
                 }
@@ -7508,7 +7507,7 @@ class SearchUserNameAdapter(
             } catch (e: Exception) {
                 Log.e(TAG, "Error setting up original poster info", e)
                 // Set safe fallback values
-                originalPosterProfileImage?.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
+                originalPosterProfileImage?.setImageResource(R.drawable.flash21)
                 originalPosterName?.text = "Unknown User"
                 tvQuotedUserHandle?.text = "@unknown_user"
             }
@@ -7571,7 +7570,7 @@ class SearchUserNameAdapter(
                             originalFeedImage.let { imageView ->
                                 Glide.with(itemView.context)
                                     .load(originalPostData.files[0].url)
-                                    .placeholder(com.uyscuti.social.circuit.R.drawable.imageplaceholder)
+                                    .placeholder(R.drawable.imageplaceholder)
                                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                                     .into(imageView)
                                 imageView.setOnClickListener {
@@ -7668,12 +7667,12 @@ class SearchUserNameAdapter(
 
                     fragmentManager.beginTransaction()
                         .setCustomAnimations(
-                            com.uyscuti.social.circuit.R.anim.slide_in_right,
-                            com.uyscuti.social.circuit.R.anim.slide_out_left,
-                            com.uyscuti.social.circuit.R.anim.slide_in_left,
-                            com.uyscuti.social.circuit.R.anim.slide_out_right
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
                         )
-                        .replace(com.uyscuti.social.circuit.R.id.frame_layout, fragment)
+                        .replace(R.id.frame_layout, fragment)
                         .addToBackStack(tag)
                         .commit()
                     Log.d(TAG, "Successfully navigated to fragment: $tag")
@@ -7687,7 +7686,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupPostInfo(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupPostInfo(data: Post) {
             // Date and time
             dateTimeCreate.text = formattedMongoDateTime(data.createdAt)
 
@@ -7699,7 +7698,7 @@ class SearchUserNameAdapter(
             updateEngagementCounts(data)
         }
 
-        private fun initializeCommentCounts(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun initializeCommentCounts(data: Post) {
             serverCommentCount = data.comments
             totalMixedComments = serverCommentCount
             loadedCommentCount = 0
@@ -7712,7 +7711,7 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updated comment count display: ${feedCommentsCount.text}")
         }
 
-        private fun setupUserInfo(data: com.uyscuti.social.network.api.response.posts.Post, feedOwnerId: String) {
+        private fun setupUserInfo(data: Post, feedOwnerId: String) {
             // Profile image and user info from reposter
             val repostedUser = data.repostedUser
 
@@ -7736,7 +7735,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupEngagementButtons(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupEngagementButtons(data: Post) {
             setupLikeButton(data)
             setupCommentButton(data)
             setupShareButton(data)
@@ -7745,7 +7744,7 @@ class SearchUserNameAdapter(
             setupMoreOptionsButton(data)
         }
 
-        private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupLikeButton(data: Post) {
 
             Log.d(TAG, "Setting up like button - Initial state: isLiked=${data.isLiked}, likes=${totalMixedLikesCounts}")
             updateLikeButtonUI(data.isLiked ?: false)
@@ -7830,7 +7829,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupCommentButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupCommentButton(data: Post) {
             commentButton.setOnClickListener {
                 if (!commentButton.isEnabled) return@setOnClickListener
                 Log.d(TAG, "Comment button clicked for post ${data._id}")
@@ -7886,7 +7885,7 @@ class SearchUserNameAdapter(
             updateCommentCount(newCount)
         }
 
-        private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupBookmarkButton(data: Post) {
 
             Log.d(TAG,
                 "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}," +
@@ -7971,7 +7970,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupRepostButton(data: Post) {
 
             totalMixedRePostCounts = 0
             updateMetricDisplay(repostCountTextView, totalMixedRePostCounts, "repost")
@@ -8036,18 +8035,18 @@ class SearchUserNameAdapter(
 
             if (isReposted) {
 
-                repostPost.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
+                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
                 repostPost.scaleX = 1.1f
                 repostPost.scaleY = 1.1f
 
             } else {
-                repostPost.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
+                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
                 repostPost.scaleX = 1.0f
                 repostPost.scaleY = 1.0f
             }
         }
 
-        private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupShareButton(data: Post) {
 
             totalMixedShareCounts = data.shareCount ?: data.shareCount ?: 0
             updateMetricDisplay(shareCountTextView, totalMixedShareCounts, "share")
@@ -8106,7 +8105,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupMoreOptionsButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupMoreOptionsButton(data: Post) {
             moreOptionsButton.setOnClickListener {
                 Log.d(TAG, "More options clicked for post: ${data._id}")
                 showMoreOptionsDialog(data)
@@ -8118,9 +8117,9 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
             try {
                 if (isLiked) {
-                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite_like)
+                    likeButton.setImageResource(R.drawable.filled_favorite_like)
                 } else {
-                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.heart_svgrepo_com)
+                    likeButton.setImageResource(R.drawable.heart_svgrepo_com)
                     likeButton.clearColorFilter()
                 }
             } catch (e: Exception) {
@@ -8133,9 +8132,9 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updating bookmark button UI: isBookmarked=$isBookmarked")
             try {
                 if (isBookmarked) {
-                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite)
+                    favoriteButton.setImageResource(R.drawable.filled_favorite)
                 } else {
-                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.favorite_svgrepo_com__1_)
+                    favoriteButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
                     favoriteButton.clearColorFilter()
                 }
             } catch (e: Exception) {
@@ -8143,7 +8142,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun navigateToEditPostToRepost(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun navigateToEditPostToRepost(data: Post) {
 
             try {
 
@@ -8203,7 +8202,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun updateEngagementCounts(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun updateEngagementCounts(data: Post) {
             updateMetricDisplay(likesCount, data.likes, "like")
             updateMetricDisplay(feedCommentsCount, data.comments, "comment")
             updateMetricDisplay(favoritesCount, data.bookmarkCount, "bookmark")
@@ -8224,7 +8223,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun setupProfileClickListeners(data: com.uyscuti.social.network.api.response.posts.Post, feedOwnerId: String) {
+        private fun setupProfileClickListeners(data: Post, feedOwnerId: String) {
             val profileClickListener = View.OnClickListener {
                 Log.d(TAG, "Profile clicked for user: $feedOwnerId")
 
@@ -8300,7 +8299,7 @@ class SearchUserNameAdapter(
             followButton.text = "Follow"
             followButton.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
-                com.uyscuti.social.circuit.R.color.blueJeans
+                R.color.blueJeans
             )
 
             Log.d(TAG, "✓✓✓ SHOWING follow button for account: $accountId (@$username)")
@@ -8356,7 +8355,7 @@ class SearchUserNameAdapter(
         }
 
 
-        private fun navigateToOriginalPostWithRepostInside(originalPostData: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun navigateToOriginalPostWithRepostInside(originalPostData: Post) {
             try {
                 val fragment = Fragment_Original_Post_With_Repost_Inside.newInstance(originalPostData)
                 navigateToFragment(fragment, "repost_with_context")
@@ -8366,7 +8365,7 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun navigateToOriginalPostWithoutRepostInside(originalPostData: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun navigateToOriginalPostWithoutRepostInside(originalPostData: Post) {
             try {
 
             } catch (e: Exception) {
@@ -8427,7 +8426,7 @@ class SearchUserNameAdapter(
 
 
 
-        private fun showMoreOptionsDialog(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun showMoreOptionsDialog(data: Post) {
             val options = arrayOf("Report Post", "Hide Post", "Copy Link", "Save Post")
             val context = itemView.context
 
@@ -8444,7 +8443,7 @@ class SearchUserNameAdapter(
                 .show()
         }
 
-        private fun showRepostDialog(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun showRepostDialog(data: Post) {
             val options = arrayOf("Repost", "Quote Repost")
             val context = itemView.context
 
@@ -8459,9 +8458,9 @@ class SearchUserNameAdapter(
                 .show()
         }
 
-        private fun sharePost(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun sharePost(data: Post) {
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
+                Intent.setType = "text/plain"
                 putExtra(Intent.EXTRA_TEXT, "Check out this post: ${data.content}")
                 putExtra(Intent.EXTRA_SUBJECT, "Shared from Social Circuit")
             }
@@ -8510,8 +8509,8 @@ class SearchUserNameAdapter(
                 .load(url)
                 .apply(RequestOptions.bitmapTransform(CircleCrop()))
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
-                .error(com.uyscuti.social.circuit.R.drawable.flash21)
+                .placeholder(R.drawable.flash21)
+                .error(R.drawable.flash21)
                 .into(imageView)
         }
 
@@ -8525,35 +8524,35 @@ class SearchUserNameAdapter(
 
 
 
-        private fun reportPost(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun reportPost(data: Post) {
             // Implement report functionality
             Log.d(TAG, "Reporting post: ${data._id}")
         }
 
-        private fun hidePost(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun hidePost(data: Post) {
             // Implement hide post functionality
             Log.d(TAG, "Hiding post: ${data._id}")
         }
 
         @SuppressLint("ServiceCast")
-        private fun copyPostLink(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun copyPostLink(data: Post) {
             val clipboard = itemView.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("Post Link", "https://app.com/post/${data._id}")
             clipboard.setPrimaryClip(clip)
             Toast.makeText(itemView.context, "Link copied to clipboard", Toast.LENGTH_SHORT).show()
         }
 
-        private fun savePost(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun savePost(data: Post) {
             // Implement save post functionality
             Log.d(TAG, "Saving post: ${data._id}")
         }
 
-        private fun repost(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun repost(data: Post) {
             // Implement repost functionality
             Log.d(TAG, "Reposting: ${data._id}")
         }
 
-        private fun quoteRepost(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun quoteRepost(data: Post) {
             // Implement quote repost functionality
             Log.d(TAG, "Quote reposting: ${data._id}")
         }
