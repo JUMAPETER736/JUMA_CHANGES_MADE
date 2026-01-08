@@ -157,15 +157,16 @@ enum class SearchContext {
 
 private const val TAG = "SearchAllUserNameActivity"
 
+
 @AndroidEntryPoint
 class SearchAllUserNameActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySearchAllUserNameBinding
-    private lateinit var searchAdapter: SearchUserNameAdapter
+    private lateinit var searchAdapter: com.uyscuti.social.circuit.user_interface.SearchUserNameAdapter
     private var searchJob: Job? = null
     private lateinit var businessViewModel: BusinessPostsViewModel
-    private var currentSearchContext = SearchContext.GLOBAL
-    private var currentFilter = ContentFilter.ALL
+    private var currentSearchContext = com.uyscuti.social.circuit.user_interface.SearchContext.GLOBAL
+    private var currentFilter = com.uyscuti.social.circuit.user_interface.ContentFilter.ALL
     private var selectedUserId: String? = null
     private var selectedUsername: String? = null
     private val recentUserViewModel: RecentUserViewModel by viewModels()
@@ -222,6 +223,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         loadAllDataOnce()
     }
 
+    
     // ===== NEW: LOAD ALL DATA ONCE =====
     private fun loadAllDataOnce() {
         if (isDataLoaded || isLoadingData) return
@@ -2532,7 +2534,7 @@ class SearchUserNameAdapter(
             messageText.text = "@$username does not have a Business Profile"
         }
     }
-    
+
 
 
 }
