@@ -1574,21 +1574,21 @@ class SearchUserNameAdapter(
 
             TYPE_MIXED_FEED_FILES -> {
                 val itemView = inflater.inflate(
-                    com.uyscuti.sharedmodule.R.layout.feed_mixed_files_original_post_adapter_view, parent, false
+                    com.uyscuti.social.circuit.R.layout.feed_mixed_files_original_post_adapter_view, parent, false
                 )
                 FeedPostViewHolder(itemView)
             }
 
             TYPE_REPOST_POST -> {
                 val itemView = inflater.inflate(
-                    com.uyscuti.sharedmodule.R.layout.feed_mixed_files_original_post_with_repost_view, parent, false
+                    com.uyscuti.social.circuit.R.layout.feed_mixed_files_original_post_with_repost_view, parent, false
                 )
                 FeedRepostViewHolder(itemView)
             }
 
             TYPE_REPOST_WITH_NEW_FILES -> {
                 val itemView = inflater.inflate(
-                    com.uyscuti.sharedmodule.R.layout.feed_mixed_files_new_post_with_reposted_files_inside_adapter,
+                    com.uyscuti.social.circuit.R.layout.feed_mixed_files_new_post_with_reposted_files_inside_adapter,
                     parent, false
                 )
                 FeedNewPostWithRepostInsideFilesPostViewHolder(itemView)
@@ -2043,7 +2043,7 @@ class SearchUserNameAdapter(
             val myUserId = localStorage.getUserId()
             val otherUser = users.firstOrNull { it.id != myUserId }
 
-            val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
+            val usersList = ArrayList<com.uyscuti.social.circuit.data.model.User>()
             otherUser?.let { usersList.add(it.toUser()) }
 
             val message = lastMessage?.toMessage()
@@ -2059,9 +2059,9 @@ class SearchUserNameAdapter(
             )
         }
 
-        private fun UserEntity.toUser(): com.uyscuti.sharedmodule.data.model.User {
+        private fun UserEntity.toUser(): com.uyscuti.social.circuit.data.model.User {
             val username = if (name.contains("|")) name.split("|")[1].trim() else name
-            return com.uyscuti.sharedmodule.data.model.User(
+            return com.uyscuti.social.circuit.data.model.User(
                 id,
                 username,
                 avatar,
@@ -2072,7 +2072,7 @@ class SearchUserNameAdapter(
 
         private fun MessageEntity.toMessage(): Message {
             val username = if (user.name.contains("|")) user.name.split("|")[1].trim() else user.name
-            val msgUser = com.uyscuti.sharedmodule.data.model.User(
+            val msgUser = com.uyscuti.social.circuit.data.model.User(
                 user.id,
                 username,
                 user.avatar,
@@ -2313,36 +2313,36 @@ class SearchUserNameAdapter(
 
         // UI Components
         // Header Section Views
-        private val profileImageView: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.profileImageView)
-        private val textView: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.textView)
-        private val handerText: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.handerText)
-        private val dateTime: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.date_time)
-        private val followButton: AppCompatButton = itemView.findViewById(com.uyscuti.sharedmodule.R.id.followButton)
-        private val moreOptionsButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.moreOptions)
+        private val profileImageView: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.profileImageView)
+        private val textView: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.textView)
+        private val handerText: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.handerText)
+        private val dateTime: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.date_time)
+        private val followButton: AppCompatButton = itemView.findViewById(com.uyscuti.social.circuit.R.id.followButton)
+        private val moreOptionsButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.moreOptions)
 
         // Content Section Views
-        private val caption: ReadMoreTextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.caption)
-        private val tags: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.tags)
+        private val caption: ReadMoreTextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.caption)
+        private val tags: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tags)
 
         // Media Section Views
-        private val recyclerView: RecyclerView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.recyclerView)
+        private val recyclerView: RecyclerView = itemView.findViewById(com.uyscuti.social.circuit.R.id.recyclerView)
 
         // Interaction Buttons
-        private val likeButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.likeButtonIcon)
-        private val commentButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.commentButtonIcon)
-        private val favoriteButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.favoriteSection)
-        private val repostedPost: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostPost)
-        private val feedShare: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.shareButtonIcon)
+        private val likeButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likeButtonIcon)
+        private val commentButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentButtonIcon)
+        private val favoriteButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteSection)
+        private val repostedPost: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostPost)
+        private val feedShare: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareButtonIcon)
 
         // Interaction Counters
-        private val likesCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.likesCount)
-        private val commentCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.commentCount)
-        private val favoriteCounts: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.favoriteCounts)
-        private val repostCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostCount)
-        private val shareCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.shareCount)
+        private val likesCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likesCount)
+        private val commentCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentCount)
+        private val favoriteCounts: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteCounts)
+        private val repostCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostCount)
+        private val shareCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareCount)
 
         // Container Views
-        private val feedTextLayoutContainer: ConstraintLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.feedMixedFilesContainer)
+        private val feedTextLayoutContainer: ConstraintLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.feedMixedFilesContainer)
 
         // State variables
         private var isFollowed = false
@@ -2494,7 +2494,7 @@ class SearchUserNameAdapter(
             followButton.text = "Follow"
             followButton.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
-                com.uyscuti.sharedmodule.R.color.blueJeans
+                com.uyscuti.social.circuit.R.color.blueJeans
             )
 
             Log.d(TAG, "setupFollowButton: Showing follow button for $feedOwnerId (@$feedOwnerUsername)")
@@ -3215,11 +3215,11 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
             try {
                 if (isLiked) {
-                    likeButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.filled_favorite_like)
+                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite_like)
                     // Add blue color tint for liked state
-                    likeButton.setColorFilter(ContextCompat.getColor(itemView.context, com.uyscuti.sharedmodule.R.color.bluejeans), PorterDuff.Mode.SRC_IN)
+                    likeButton.setColorFilter(ContextCompat.getColor(itemView.context, com.uyscuti.social.circuit.R.color.bluejeans), PorterDuff.Mode.SRC_IN)
                 } else {
-                    likeButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.heart_svgrepo_com)
+                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.heart_svgrepo_com)
                     // Remove color filter for unfilled state
                     likeButton.clearColorFilter()
                 }
@@ -3232,9 +3232,9 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updating bookmark button UI: isBookmarked=$isBookmarked")
             try {
                 if (isBookmarked) {
-                    favoriteButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.filled_favorite)
+                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite)
                 } else {
-                    favoriteButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.favorite_svgrepo_com__1_)
+                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.favorite_svgrepo_com__1_)
                     // Remove color filter for unfilled state
                     favoriteButton.clearColorFilter()
                 }
@@ -3245,11 +3245,11 @@ class SearchUserNameAdapter(
 
         private fun updateRepostButtonAppearance(isReposted: Boolean) {
             if (isReposted) {
-                repostedPost.setImageResource(com.uyscuti.sharedmodule.R.drawable.repeat_svgrepo_com)
+                repostedPost.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
                 repostedPost.scaleX = 1.1f
                 repostedPost.scaleY = 1.1f
             } else {
-                repostedPost.setImageResource(com.uyscuti.sharedmodule.R.drawable.repeat_svgrepo_com)
+                repostedPost.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
                 repostedPost.scaleX = 1.0f
                 repostedPost.scaleY = 1.0f
             }
@@ -3404,12 +3404,12 @@ class SearchUserNameAdapter(
                     }
                     fragmentManager.beginTransaction()
                         .setCustomAnimations(
-                            com.uyscuti.sharedmodule.R.anim.slide_in_right,
-                            com.uyscuti.sharedmodule.R.anim.slide_out_left,
-                            com.uyscuti.sharedmodule.R.anim.slide_in_left,
-                            com.uyscuti.sharedmodule.R.anim.slide_out_right
+                            com.uyscuti.social.circuit.R.anim.slide_in_right,
+                            com.uyscuti.social.circuit.R.anim.slide_out_left,
+                            com.uyscuti.social.circuit.R.anim.slide_in_left,
+                            com.uyscuti.social.circuit.R.anim.slide_out_right
                         )
-                        .replace(com.uyscuti.sharedmodule.R.id.frame_layout, fragment)
+                        .replace(com.uyscuti.social.circuit.R.id.frame_layout, fragment)
                         .addToBackStack(tag)
                         .commit()
                     Log.d(TAG, "Successfully navigated to fragment: $tag")
@@ -3551,11 +3551,11 @@ class SearchUserNameAdapter(
                     .load(imageUrl)
                     .apply(RequestOptions.bitmapTransform(CircleCrop()))
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(com.uyscuti.sharedmodule.R.drawable.flash21)
-                    .error(com.uyscuti.sharedmodule.R.drawable.flash21)
+                    .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
+                    .error(com.uyscuti.social.circuit.R.drawable.flash21)
                     .into(imageView)
             } else {
-                imageView.setImageResource(com.uyscuti.sharedmodule.R.drawable.flash21)
+                imageView.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
             }
         }
 
@@ -3600,35 +3600,35 @@ class SearchUserNameAdapter(
 
         val TAG = "FeedPostViewHolder"
         // Profile and Header Elements
-        private val profileImageView: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.profileImageView)
-        private val textView: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.textView)
-        private val handerText: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.handerText)
-        private val dateTime: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.date_time)
-        private val followButton: AppCompatButton = itemView.findViewById(com.uyscuti.sharedmodule.R.id.followButton)
-        private val moreOptionsButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.moreOptions)
+        private val profileImageView: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.profileImageView)
+        private val textView: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.textView)
+        private val handerText: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.handerText)
+        private val dateTime: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.date_time)
+        private val followButton: AppCompatButton = itemView.findViewById(com.uyscuti.social.circuit.R.id.followButton)
+        private val moreOptionsButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.moreOptions)
 
         // Content Elements
-        private val caption: ReadMoreTextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.caption)
-        private val tags: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.tags)
+        private val caption: ReadMoreTextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.caption)
+        private val tags: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tags)
 
         // Media Elements
-        private val mixedFilesCardView: CardView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.mixedFilesCardView)
-        val recyclerView: RecyclerView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.recyclerView)
+        private val mixedFilesCardView: CardView = itemView.findViewById(com.uyscuti.social.circuit.R.id.mixedFilesCardView)
+        val recyclerView: RecyclerView = itemView.findViewById(com.uyscuti.social.circuit.R.id.recyclerView)
 
         // Interaction Elements
-        private val likeButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.likeButtonIcon)
-        private val likesCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.likesCount)
-        private val commentButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.commentButtonIcon)
-        private val commentCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.commentCount)
-        private val favoriteButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.favoriteSection)
-        private val favoriteCounts: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.favoriteCounts)
-        private val repostPost: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostPost)
-        private val repostCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostCount)
-        private val feedShare: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.shareButtonIcon)
-        private val shareCountText: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.shareCount)
+        private val likeButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likeButtonIcon)
+        private val likesCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likesCount)
+        private val commentButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentButtonIcon)
+        private val commentCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentCount)
+        private val favoriteButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteSection)
+        private val favoriteCounts: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteCounts)
+        private val repostPost: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostPost)
+        private val repostCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostCount)
+        private val feedShare: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareButtonIcon)
+        private val shareCountText: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareCount)
 
         // Container Elements
-        private val feedMixedFilesContainer: ConstraintLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.feedMixedFilesContainer)
+        private val feedMixedFilesContainer: ConstraintLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.feedMixedFilesContainer)
 
         // State variables
         private var isFollowed = false
@@ -3734,7 +3734,7 @@ class SearchUserNameAdapter(
             followButton.text = "Follow"
             followButton.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
-                com.uyscuti.sharedmodule.R.color.blueJeans
+                com.uyscuti.social.circuit.R.color.blueJeans
             )
 
             Log.d(TAG, "setupFollowButton: Showing follow button for $feedOwnerId (@$feedOwnerUsername)")
@@ -3960,11 +3960,11 @@ class SearchUserNameAdapter(
 
                     fragmentManager.beginTransaction()
                         .setCustomAnimations(
-                            com.uyscuti.sharedmodule.R.anim.slide_in_right,
-                            com.uyscuti.sharedmodule.R.anim.slide_out_left,
+                            com.uyscuti.social.circuit.R.anim.slide_in_right,
+                            com.uyscuti.social.circuit.R.anim.slide_out_left,
 
                             )
-                        .replace(com.uyscuti.sharedmodule.R.id.frame_layout, fragment)
+                        .replace(com.uyscuti.social.circuit.R.id.frame_layout, fragment)
                         .addToBackStack(tag)
                         .commit()
                     Log.d(TAG, "Successfully navigated to fragment: $tag")
@@ -4231,11 +4231,11 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
             try {
                 if (isLiked) {
-                    likeButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.filled_favorite_like)
+                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite_like)
                     // Add blue color tint for liked state
-                    likeButton.setColorFilter(ContextCompat.getColor(itemView.context, com.uyscuti.sharedmodule.R.color.bluejeans), PorterDuff.Mode.SRC_IN)
+                    likeButton.setColorFilter(ContextCompat.getColor(itemView.context, com.uyscuti.social.circuit.R.color.bluejeans), PorterDuff.Mode.SRC_IN)
                 } else {
-                    likeButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.heart_svgrepo_com)
+                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.heart_svgrepo_com)
                     likeButton.clearColorFilter()
                 }
             } catch (e: Exception) {
@@ -4247,9 +4247,9 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updating bookmark button UI: isBookmarked=$isBookmarked")
             try {
                 if (isBookmarked) {
-                    favoriteButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.filled_favorite)
+                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite)
                 } else {
-                    favoriteButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.favorite_svgrepo_com__1_)
+                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.favorite_svgrepo_com__1_)
                     favoriteButton.clearColorFilter()
                 }
             } catch (e: Exception) {
@@ -4569,11 +4569,11 @@ class SearchUserNameAdapter(
 
         private fun updateRepostButtonAppearance(isReposted: Boolean) {
             if (isReposted) {
-                repostPost.setImageResource(com.uyscuti.sharedmodule.R.drawable.repeat_svgrepo_com)
+                repostPost.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
                 repostPost.scaleX = 1.1f
                 repostPost.scaleY = 1.1f
             } else {
-                repostPost.setImageResource(com.uyscuti.sharedmodule.R.drawable.repeat_svgrepo_com)
+                repostPost.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
                 repostPost.scaleX = 1.0f
                 repostPost.scaleY = 1.0f
             }
@@ -4904,11 +4904,11 @@ class SearchUserNameAdapter(
                     .load(imageUrl)
                     .apply(RequestOptions.bitmapTransform(CircleCrop()))
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(com.uyscuti.sharedmodule.R.drawable.flash21)
-                    .error(com.uyscuti.sharedmodule.R.drawable.flash21)
+                    .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
+                    .error(com.uyscuti.social.circuit.R.drawable.flash21)
                     .into(imageView)
             } else {
-                imageView.setImageResource(com.uyscuti.sharedmodule.R.drawable.flash21)
+                imageView.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
             }
         }
 
@@ -4931,63 +4931,63 @@ class SearchUserNameAdapter(
 
 
         // UI Components - User Info Section
-        private val userProfileImage: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.userReposterProfileImage)
-        private val repostedUserName: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostedUserName)
-        private val tvUserHandle: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.tvUserHandle)
-        private val dateTimeCreate: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.date_time_create)
-        private val followButton: AppCompatButton = itemView.findViewById(com.uyscuti.sharedmodule.R.id.followButton)
-        private val moreOptionsButton: ImageButton = itemView.findViewById(com.uyscuti.sharedmodule.R.id.moreOptions)
+        private val userProfileImage: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.userReposterProfileImage)
+        private val repostedUserName: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostedUserName)
+        private val tvUserHandle: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvUserHandle)
+        private val dateTimeCreate: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.date_time_create)
+        private val followButton: AppCompatButton = itemView.findViewById(com.uyscuti.social.circuit.R.id.followButton)
+        private val moreOptionsButton: ImageButton = itemView.findViewById(com.uyscuti.social.circuit.R.id.moreOptions)
 
         // Main clickable containers
-        private val repostContainer: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostContainer)
-        private val originalPostContainer: LinearLayout? = itemView.findViewById(com.uyscuti.sharedmodule.R.id.originalPostContainer)
-        private val quotedPostCard: CardView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.quotedPostCard)
+        private val repostContainer: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostContainer)
+        private val originalPostContainer: LinearLayout? = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPostContainer)
+        private val quotedPostCard: CardView = itemView.findViewById(com.uyscuti.social.circuit.R.id.quotedPostCard)
 
         // Post Content Section
-        private val tvPostTag: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.tvPostTag)
-        private val userComment: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.userComment)
-        private val tvHashtags: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.tvHashtags)
+        private val tvPostTag: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvPostTag)
+        private val userComment: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.userComment)
+        private val tvHashtags: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvHashtags)
 
         // Original Mixed Files Section
-        private val mixedFilesCardViews: CardView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.mixedFilesCardViews)
-        private val originalFeedImages: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.originalFeedImages)
-        private val multipleAudiosContainers: ConstraintLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.multipleAudiosContainers)
-        private val recyclerViews: RecyclerView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.recyclerViews)
+        private val mixedFilesCardViews: CardView = itemView.findViewById(com.uyscuti.social.circuit.R.id.mixedFilesCardViews)
+        private val originalFeedImages: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalFeedImages)
+        private val multipleAudiosContainers: ConstraintLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.multipleAudiosContainers)
+        private val recyclerViews: RecyclerView = itemView.findViewById(com.uyscuti.social.circuit.R.id.recyclerViews)
 
         // Quoted/Original Post Section
-        private val originalPosterProfileImage: ImageView? = itemView.findViewById(com.uyscuti.sharedmodule.R.id.originalPosterProfileImage)
-        private val originalPosterName: TextView? = itemView.findViewById(com.uyscuti.sharedmodule.R.id.originalPosterName)
-        private val tvQuotedUserHandle: TextView? = itemView.findViewById(com.uyscuti.sharedmodule.R.id.tvQuotedUserHandle)
-        private val originalPostText: TextView? = itemView.findViewById(com.uyscuti.sharedmodule.R.id.originalPostText)
-        private val tvQuotedHashtags: TextView? = itemView.findViewById(com.uyscuti.sharedmodule.R.id.tvQuotedHashtags)
+        private val originalPosterProfileImage: ImageView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPosterProfileImage)
+        private val originalPosterName: TextView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPosterName)
+        private val tvQuotedUserHandle: TextView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvQuotedUserHandle)
+        private val originalPostText: TextView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPostText)
+        private val tvQuotedHashtags: TextView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvQuotedHashtags)
 
         // Quoted Post Media
-        private val mixedFilesCardView: CardView? = itemView.findViewById(com.uyscuti.sharedmodule.R.id.mixedFilesCardView)
-        private val originalFeedImage: ImageView? = itemView.findViewById(com.uyscuti.sharedmodule.R.id.originalFeedImage)
-        private val multipleAudiosContainer: ConstraintLayout? = itemView.findViewById(com.uyscuti.sharedmodule.R.id.multipleAudiosContainer)
-        private val recyclerView: RecyclerView? = itemView.findViewById(com.uyscuti.sharedmodule.R.id.recyclerView)
-        private val ivQuotedPostImage: ImageView? = itemView.findViewById(com.uyscuti.sharedmodule.R.id.ivQuotedPostImage)
+        private val mixedFilesCardView: CardView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.mixedFilesCardView)
+        private val originalFeedImage: ImageView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalFeedImage)
+        private val multipleAudiosContainer: ConstraintLayout? = itemView.findViewById(com.uyscuti.social.circuit.R.id.multipleAudiosContainer)
+        private val recyclerView: RecyclerView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.recyclerView)
+        private val ivQuotedPostImage: ImageView? = itemView.findViewById(com.uyscuti.social.circuit.R.id.ivQuotedPostImage)
 
         // Interaction Buttons
-        private val likeSection: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.likeLayout)
-        private val likeButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.likeButtonIcon)
-        private val likesCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.likesCount)
+        private val likeSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.likeLayout)
+        private val likeButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likeButtonIcon)
+        private val likesCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likesCount)
 
-        private val commentSection: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.commentLayout)
-        private val commentButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.commentButtonIcon)
-        private val commentCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.commentCount)
+        private val commentSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentLayout)
+        private val commentButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentButtonIcon)
+        private val commentCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentCount)
 
-        private val favoriteSection: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.favoriteSection)
-        private val favoriteButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.favoritesButton)
-        private val favoriteCounts: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.favoriteCounts)
+        private val favoriteSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteSection)
+        private val favoriteButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoritesButton)
+        private val favoriteCounts: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteCounts)
 
-        private val repostSection: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostLayout)
-        private val repostButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostPost)
-        private val repostCounts: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostCount)
+        private val repostSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostLayout)
+        private val repostButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostPost)
+        private val repostCounts: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostCount)
 
-        private val shareSection: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.share_layout)
-        private val shareButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.shareButtonIcon)
-        private val shareCounts: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.shareCount)
+        private val shareSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.share_layout)
+        private val shareButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareButtonIcon)
+        private val shareCounts: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareCount)
 
 
         @OptIn(UnstableApi::class)
@@ -5134,7 +5134,7 @@ class SearchUserNameAdapter(
             followButton.text = "Follow"
             followButton.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
-                com.uyscuti.sharedmodule.R.color.blueJeans
+                com.uyscuti.social.circuit.R.color.blueJeans
             )
 
             Log.d(TAG, "SHOWING follow button for account: $accountId (@$username)")
@@ -5245,11 +5245,11 @@ class SearchUserNameAdapter(
                     .load(profilePicUrl)
                     .apply(RequestOptions.bitmapTransform(CircleCrop()))
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(com.uyscuti.sharedmodule.R.drawable.flash21)
-                    .error(com.uyscuti.sharedmodule.R.drawable.flash21)
+                    .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
+                    .error(com.uyscuti.social.circuit.R.drawable.flash21)
                     .into(userProfileImage)
             } else {
-                userProfileImage.setImageResource(com.uyscuti.sharedmodule.R.drawable.flash21)
+                userProfileImage.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
             }
 
             tvPostTag.text = if (repostedUser != null) "Had to Repost This!" else "Shared a Post!"
@@ -6277,9 +6277,9 @@ class SearchUserNameAdapter(
             Log.d(tag, "Updating like button UI: isLiked=$isLiked")
             try {
                 if (isLiked) {
-                    likeButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.filled_favorite_like)
+                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite_like)
                 } else {
-                    likeButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.heart_svgrepo_com)
+                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.heart_svgrepo_com)
                     likeButton.clearColorFilter()
                 }
             } catch (e: Exception) {
@@ -6291,9 +6291,9 @@ class SearchUserNameAdapter(
             Log.d(tag, "Updating bookmark button UI: isBookmarked=$isBookmarked")
             try {
                 if (isBookmarked) {
-                    favoriteButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.filled_favorite)
+                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite)
                 } else {
-                    favoriteButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.favorite_svgrepo_com__1_)
+                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.favorite_svgrepo_com__1_)
                     favoriteButton.clearColorFilter()
                 }
             } catch (e: Exception) {
@@ -6303,11 +6303,11 @@ class SearchUserNameAdapter(
 
         private fun updateRepostButtonAppearance(isReposted: Boolean) {
             if (isReposted) {
-                repostButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.repeat_svgrepo_com)
+                repostButton.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
                 repostButton.scaleX = 1.1f
                 repostButton.scaleY = 1.1f
             } else {
-                repostButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.repeat_svgrepo_com)
+                repostButton.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
                 repostButton.scaleX = 1.0f
                 repostButton.scaleY = 1.0f
             }
@@ -6442,7 +6442,7 @@ class SearchUserNameAdapter(
                                 putInt("original_files_count", originalPost.files.size)
                             }
                         }
-                        val currentUser = LocalStorage.getInstance(itemView.context).getUser() as? com.uyscuti.sharedmodule.model.business.User
+                        val currentUser = LocalStorage.getInstance(itemView.context).getUser() as? com.uyscuti.social.circuit.model.business.User
                         currentUser?.let { user ->
                             putString("current_user_id", user._id)
                             putString("current_user_username", user.account?.username)
@@ -6492,10 +6492,10 @@ class SearchUserNameAdapter(
                 }
                 fragmentManager.beginTransaction()
                     .setCustomAnimations(
-                        com.uyscuti.sharedmodule.R.anim.slide_in_right,
-                        com.uyscuti.sharedmodule.R.anim.slide_out_left
+                        com.uyscuti.social.circuit.R.anim.slide_in_right,
+                        com.uyscuti.social.circuit.R.anim.slide_out_left
                     )
-                    .replace(com.uyscuti.sharedmodule.R.id.frame_layout, fragment)
+                    .replace(com.uyscuti.social.circuit.R.id.frame_layout, fragment)
                     .addToBackStack(backStackName)
                     .commit()
                 Log.d(tag, "Successfully navigated to $backStackName")
@@ -6594,7 +6594,7 @@ class SearchUserNameAdapter(
                             originalFeedImage?.let { imageView ->
                                 Glide.with(itemView.context)
                                     .load(originalPostData.files[0].url)
-                                    .placeholder(com.uyscuti.sharedmodule.R.drawable.imageplaceholder)
+                                    .placeholder(com.uyscuti.social.circuit.R.drawable.imageplaceholder)
                                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                                     .into(imageView)
                                 imageView.setOnClickListener {
@@ -6718,12 +6718,12 @@ class SearchUserNameAdapter(
                             .load(avatarUrl)
                             .apply(RequestOptions.bitmapTransform(CircleCrop()))
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
-                            .placeholder(com.uyscuti.sharedmodule.R.drawable.flash21)
-                            .error(com.uyscuti.sharedmodule.R.drawable.flash21)
+                            .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
+                            .error(com.uyscuti.social.circuit.R.drawable.flash21)
                             .into(imageView)
                         Log.d(tag, "Loading avatar: $avatarUrl")
                     } else {
-                        imageView.setImageResource(com.uyscuti.sharedmodule.R.drawable.flash21)
+                        imageView.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
                         Log.d(tag, "No avatar URL available, using default image")
                     }
                 }
@@ -6737,7 +6737,7 @@ class SearchUserNameAdapter(
             } catch (e: Exception) {
                 Log.e(tag, "Error setting up original poster info", e)
                 // Set safe fallback values
-                originalPosterProfileImage?.setImageResource(com.uyscuti.sharedmodule.R.drawable.flash21)
+                originalPosterProfileImage?.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
                 originalPosterName?.text = "Unknown User"
                 tvQuotedUserHandle?.text = "@unknown_user"
             }
@@ -6757,11 +6757,11 @@ class SearchUserNameAdapter(
                             .load(avatarUrl)
                             .apply(RequestOptions.bitmapTransform(CircleCrop()))
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
-                            .placeholder(com.uyscuti.sharedmodule.R.drawable.flash21)
-                            .error(com.uyscuti.sharedmodule.R.drawable.flash21)
+                            .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
+                            .error(com.uyscuti.social.circuit.R.drawable.flash21)
                             .into(imageView)
                     } else {
-                        imageView.setImageResource(com.uyscuti.sharedmodule.R.drawable.flash21)
+                        imageView.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
                     }
                 }
 
@@ -6827,7 +6827,7 @@ class SearchUserNameAdapter(
             } catch (e: Exception) {
                 Log.e("QuotedUser", "Error setting up quoted user from main author", e)
                 // Set fallback values
-                originalPosterProfileImage?.setImageResource(com.uyscuti.sharedmodule.R.drawable.flash21)
+                originalPosterProfileImage?.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
                 originalPosterName?.text = "Unknown User"
                 tvQuotedUserHandle?.text = "@unknown"
                 originalPostText?.visibility = View.GONE
@@ -6949,69 +6949,69 @@ class SearchUserNameAdapter(
         val TAG = "FeedRepostedWithNewFilesPostViewHolder"
 
         // UI Elements - New Post Section (Top)
-        private val userProfileImage: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.userProfileImage)
-        private val repostedUserName: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostedUserName)
-        private val tvUserHandle: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.tvUserHandle)
-        private val dateTimeCreate: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.date_time_create)
-        private val followButton: AppCompatButton = itemView.findViewById(com.uyscuti.sharedmodule.R.id.followButton)
-        private val moreOptionsButton: ImageButton = itemView.findViewById(com.uyscuti.sharedmodule.R.id.moreOptions)
+        private val userProfileImage: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.userProfileImage)
+        private val repostedUserName: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostedUserName)
+        private val tvUserHandle: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvUserHandle)
+        private val dateTimeCreate: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.date_time_create)
+        private val followButton: AppCompatButton = itemView.findViewById(com.uyscuti.social.circuit.R.id.followButton)
+        private val moreOptionsButton: ImageButton = itemView.findViewById(com.uyscuti.social.circuit.R.id.moreOptions)
 
         // Main clickable containers
-        private val repostContainer: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostContainer)
-        private val originalPostContainer: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.originalPostContainer)
-        private val quotedPostCard: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.quotedPostCard)
+        private val repostContainer: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostContainer)
+        private val originalPostContainer: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPostContainer)
+        private val quotedPostCard: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.quotedPostCard)
 
         // New Post Content Section (Top)
-        private val tvPostTag: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.tvPostTag)
-        private val userComment: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.userComment)
-        private val tvHashtags: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.tvHashtags)
+        private val tvPostTag: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvPostTag)
+        private val userComment: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.userComment)
+        private val tvHashtags: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvHashtags)
 
         // New Post Media Section (Top)
-        private val newPostMediaCard: CardView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.newPostMediaCard)
-        private val newPostImage: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.newPostImage)
-        private val newPostMultipleMediaContainer: ConstraintLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.newPostMultipleMediaContainer)
-        private val newPostMediaRecyclerView: RecyclerView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.newPostMediaRecyclerView)
+        private val newPostMediaCard: CardView = itemView.findViewById(com.uyscuti.social.circuit.R.id.newPostMediaCard)
+        private val newPostImage: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.newPostImage)
+        private val newPostMultipleMediaContainer: ConstraintLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.newPostMultipleMediaContainer)
+        private val newPostMediaRecyclerView: RecyclerView = itemView.findViewById(com.uyscuti.social.circuit.R.id.newPostMediaRecyclerView)
 
         // Original Post Media (for backward compatibility)
-        private val mixedFilesCardViews: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.mixedFilesCardViews)
-        private val originalFeedImages: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.originalFeedImages)
-        private val multipleAudiosContainers: ConstraintLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.multipleAudiosContainers)
-        private val recyclerViews: RecyclerView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.recyclerViews)
+        private val mixedFilesCardViews: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.mixedFilesCardViews)
+        private val originalFeedImages: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalFeedImages)
+        private val multipleAudiosContainers: ConstraintLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.multipleAudiosContainers)
+        private val recyclerViews: RecyclerView = itemView.findViewById(com.uyscuti.social.circuit.R.id.recyclerViews)
 
         // Quoted/Original Post Section (Bottom)
-        private val originalPosterProfileImage: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.originalPosterProfileImage)
-        private val originalPosterName: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.originalPosterName)
-        private val tvQuotedUserHandle: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.tvQuotedUserHandle)
-        private val originalPostText: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.originalPostText)
-        private val tvQuotedHashtags: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.tvQuotedHashtags)
+        private val originalPosterProfileImage: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPosterProfileImage)
+        private val originalPosterName: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPosterName)
+        private val tvQuotedUserHandle: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvQuotedUserHandle)
+        private val originalPostText: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalPostText)
+        private val tvQuotedHashtags: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.tvQuotedHashtags)
 
         // Quoted Post Media
-        private val mixedFilesCardView: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.mixedFilesCardView)
-        private val originalFeedImage: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.originalFeedImage)
-        private val multipleAudiosContainer: ConstraintLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.multipleAudiosContainer)
-        private val recyclerView: RecyclerView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.recyclerView)
-        private val ivQuotedPostImage: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.ivQuotedPostImage)
+        private val mixedFilesCardView: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.mixedFilesCardView)
+        private val originalFeedImage: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.originalFeedImage)
+        private val multipleAudiosContainer: ConstraintLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.multipleAudiosContainer)
+        private val recyclerView: RecyclerView = itemView.findViewById(com.uyscuti.social.circuit.R.id.recyclerView)
+        private val ivQuotedPostImage: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.ivQuotedPostImage)
 
         // Interaction Buttons
-        private val likeSection: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.likeLayout)
-        private val likeButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.likeButtonIcon)
-        private val likesCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.likesCount)
+        private val likeSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.likeLayout)
+        private val likeButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likeButtonIcon)
+        private val likesCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.likesCount)
 
-        private val commentSection: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.commentLayout)
-        private val commentButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.commentButtonIcon)
-        private val feedCommentsCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.commentCount)
+        private val commentSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentLayout)
+        private val commentButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentButtonIcon)
+        private val feedCommentsCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.commentCount)
 
-        private val favoriteSection: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.favoriteSection)
-        private val favoriteButton: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.favoritesButton)
-        private val favoritesCount: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.favoriteCounts)
+        private val favoriteSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteSection)
+        private val favoriteButton: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoritesButton)
+        private val favoritesCount: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.favoriteCounts)
 
-        private val repostSection: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostPost)
-        private val repostPost: ImageView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostPost)
-        private val repostCountTextView: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.repostCount)
+        private val repostSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostPost)
+        private val repostPost: ImageView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostPost)
+        private val repostCountTextView: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.repostCount)
 
-        private val shareSection: LinearLayout = itemView.findViewById(com.uyscuti.sharedmodule.R.id.shareLayout)
-        private val shareCountTextView: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.shareCount)
-        private val shareImageView: TextView = itemView.findViewById(com.uyscuti.sharedmodule.R.id.shareImageView)
+        private val shareSection: LinearLayout = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareLayout)
+        private val shareCountTextView: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareCount)
+        private val shareImageView: TextView = itemView.findViewById(com.uyscuti.social.circuit.R.id.shareImageView)
 
         // State variables
         private var isFollowed = false
@@ -7374,8 +7374,8 @@ class SearchUserNameAdapter(
                     Glide.with(itemView.context)
                         .load(fileList[0])
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .placeholder(com.uyscuti.sharedmodule.R.drawable.imageplaceholder)
-                        .error(com.uyscuti.sharedmodule.R.drawable.imageplaceholder)
+                        .placeholder(com.uyscuti.social.circuit.R.drawable.imageplaceholder)
+                        .error(com.uyscuti.social.circuit.R.drawable.imageplaceholder)
                         .into(newPostImage)
 
                     newPostImage.setOnClickListener {
@@ -7475,12 +7475,12 @@ class SearchUserNameAdapter(
                             .load(avatarUrl)
                             .apply(RequestOptions.bitmapTransform(CircleCrop()))
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
-                            .placeholder(com.uyscuti.sharedmodule.R.drawable.flash21)
-                            .error(com.uyscuti.sharedmodule.R.drawable.flash21)
+                            .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
+                            .error(com.uyscuti.social.circuit.R.drawable.flash21)
                             .into(imageView)
                         Log.d(TAG, "Loading avatar: $avatarUrl")
                     } else {
-                        imageView.setImageResource(com.uyscuti.sharedmodule.R.drawable.flash21)
+                        imageView.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
                         Log.d(TAG, "No avatar URL available, using default image")
                     }
                 }
@@ -7494,7 +7494,7 @@ class SearchUserNameAdapter(
             } catch (e: Exception) {
                 Log.e(TAG, "Error setting up original poster info", e)
                 // Set safe fallback values
-                originalPosterProfileImage?.setImageResource(com.uyscuti.sharedmodule.R.drawable.flash21)
+                originalPosterProfileImage?.setImageResource(com.uyscuti.social.circuit.R.drawable.flash21)
                 originalPosterName?.text = "Unknown User"
                 tvQuotedUserHandle?.text = "@unknown_user"
             }
@@ -7557,7 +7557,7 @@ class SearchUserNameAdapter(
                             originalFeedImage.let { imageView ->
                                 Glide.with(itemView.context)
                                     .load(originalPostData.files[0].url)
-                                    .placeholder(com.uyscuti.sharedmodule.R.drawable.imageplaceholder)
+                                    .placeholder(com.uyscuti.social.circuit.R.drawable.imageplaceholder)
                                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                                     .into(imageView)
                                 imageView.setOnClickListener {
@@ -7654,12 +7654,12 @@ class SearchUserNameAdapter(
 
                     fragmentManager.beginTransaction()
                         .setCustomAnimations(
-                            com.uyscuti.sharedmodule.R.anim.slide_in_right,
-                            com.uyscuti.sharedmodule.R.anim.slide_out_left,
-                            com.uyscuti.sharedmodule.R.anim.slide_in_left,
-                            com.uyscuti.sharedmodule.R.anim.slide_out_right
+                            com.uyscuti.social.circuit.R.anim.slide_in_right,
+                            com.uyscuti.social.circuit.R.anim.slide_out_left,
+                            com.uyscuti.social.circuit.R.anim.slide_in_left,
+                            com.uyscuti.social.circuit.R.anim.slide_out_right
                         )
-                        .replace(com.uyscuti.sharedmodule.R.id.frame_layout, fragment)
+                        .replace(com.uyscuti.social.circuit.R.id.frame_layout, fragment)
                         .addToBackStack(tag)
                         .commit()
                     Log.d(TAG, "Successfully navigated to fragment: $tag")
@@ -8022,12 +8022,12 @@ class SearchUserNameAdapter(
 
             if (isReposted) {
 
-                repostPost.setImageResource(com.uyscuti.sharedmodule.R.drawable.repeat_svgrepo_com)
+                repostPost.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
                 repostPost.scaleX = 1.1f
                 repostPost.scaleY = 1.1f
 
             } else {
-                repostPost.setImageResource(com.uyscuti.sharedmodule.R.drawable.repeat_svgrepo_com)
+                repostPost.setImageResource(com.uyscuti.social.circuit.R.drawable.repeat_svgrepo_com)
                 repostPost.scaleX = 1.0f
                 repostPost.scaleY = 1.0f
             }
@@ -8104,9 +8104,9 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
             try {
                 if (isLiked) {
-                    likeButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.filled_favorite_like)
+                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite_like)
                 } else {
-                    likeButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.heart_svgrepo_com)
+                    likeButton.setImageResource(com.uyscuti.social.circuit.R.drawable.heart_svgrepo_com)
                     likeButton.clearColorFilter()
                 }
             } catch (e: Exception) {
@@ -8119,9 +8119,9 @@ class SearchUserNameAdapter(
             Log.d(TAG, "Updating bookmark button UI: isBookmarked=$isBookmarked")
             try {
                 if (isBookmarked) {
-                    favoriteButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.filled_favorite)
+                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.filled_favorite)
                 } else {
-                    favoriteButton.setImageResource(com.uyscuti.sharedmodule.R.drawable.favorite_svgrepo_com__1_)
+                    favoriteButton.setImageResource(com.uyscuti.social.circuit.R.drawable.favorite_svgrepo_com__1_)
                     favoriteButton.clearColorFilter()
                 }
             } catch (e: Exception) {
@@ -8161,7 +8161,7 @@ class SearchUserNameAdapter(
                             }
                         }
 
-                        val currentUser = LocalStorage.getInstance(itemView.context).getUser() as? com.uyscuti.sharedmodule.model.business.User
+                        val currentUser = LocalStorage.getInstance(itemView.context).getUser() as? com.uyscuti.social.circuit.model.business.User
                         currentUser?.let { user ->
                             putString("current_user_id", user._id)
                             putString("current_user_username", user.account?.username)
@@ -8286,7 +8286,7 @@ class SearchUserNameAdapter(
             followButton.text = "Follow"
             followButton.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
-                com.uyscuti.sharedmodule.R.color.blueJeans
+                com.uyscuti.social.circuit.R.color.blueJeans
             )
 
             Log.d(TAG, "✓✓✓ SHOWING follow button for account: $accountId (@$username)")
@@ -8496,8 +8496,8 @@ class SearchUserNameAdapter(
                 .load(url)
                 .apply(RequestOptions.bitmapTransform(CircleCrop()))
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .placeholder(com.uyscuti.sharedmodule.R.drawable.flash21)
-                .error(com.uyscuti.sharedmodule.R.drawable.flash21)
+                .placeholder(com.uyscuti.social.circuit.R.drawable.flash21)
+                .error(com.uyscuti.social.circuit.R.drawable.flash21)
                 .into(imageView)
         }
 
