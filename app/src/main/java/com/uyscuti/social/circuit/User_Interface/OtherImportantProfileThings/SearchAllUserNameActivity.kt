@@ -20,6 +20,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -27,7 +28,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.uyscuti.social.business.CatalogueDetailsActivity
 import com.uyscuti.social.business.databinding.BusinessPostLayoutBinding
@@ -79,6 +82,7 @@ import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.response.posts.RepostedUser
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+import dagger.hilt.android.UnstableApi
 
 
 // Updated ContentFilter enum with your specific categories
@@ -1365,6 +1369,63 @@ class SearchUserNameAdapter(
 
     }
 
+    interface OnFeedClickListener {
+
+
+        fun likeUnLikeFeed(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+
+        fun feedCommentClicked(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+        fun feedFavoriteClick(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+
+        fun moreOptionsClick(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+        fun feedFileClicked(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+        fun feedRepostFileClicked(
+            position: Int, data: OriginalPost
+        )
+
+        fun feedShareClicked(
+            position: Int, data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+
+        fun followButtonClicked(
+            followUnFollowEntity: FollowUnFollowEntity,
+            followButton: AppCompatButton
+        )
+
+        fun feedRepostPost(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+        fun feedRepostPostClicked(position: Int, data: com.uyscuti.social.network.api.response.posts.Post)
+
+        fun feedClickedToOriginalPost(position: Int, originalPostId: String)
+        fun onImageClick()
+
+
+    }
+
     fun showRecentUsers(authors: List<Author>) {
         submitList(listOf("RECENT_HEADER") + authors)
     }
@@ -1381,55 +1442,73 @@ class SearchUserNameAdapter(
     var currentFilter: ContentFilter = ContentFilter.ALL
 
 
+    // Add these properties to handle following list
+    private val followingUserIds = mutableSetOf<String>()
+
+    fun updateFollowingList(followingIds: Set<String>) {
+        followingUserIds.clear()
+        followingUserIds.addAll(followingIds)
+        notifyDataSetChanged()
+    }
+
+
     override fun getItemViewType(position: Int): Int = when (val item = getItem(position)) {
-
         "RECENT_HEADER", "SEARCH_HEADER", "PEOPLE_HEADER",
-
         "SHORTS_HEADER", "FEED_HEADER", "BUSINESS_HEADER",
-
         "CHATS_HEADER", "USER_CONTENT_HEADER" -> TYPE_HEADER
 
         is Author -> TYPE_USER
-
         "LOADING" -> TYPE_LOADING
-
         "NO_RESULTS" -> TYPE_NO_RESULTS
-
         "SEE_ALL_PEOPLE", "SEE_ALL_SHORTS", "SEE_ALL_POSTS" -> TYPE_SEE_ALL
 
         is Post -> {
-            // Check if it's a business post
+            // Business posts
             if (item.isBusinessPost == true) {
-
-                // Use GRID layout only when in BUSINESS filter
                 if (currentFilter == ContentFilter.BUSINESS) {
                     TYPE_BUSINESS_GRID
                 } else {
-                    // Use full profile layout in ALL tab
                     TYPE_BUSINESS
-
                 }
             }
-            // Check if it's a short video (for grid display)
+            // Shorts (video grid)
             else if (item.contentType.equals("mixed_files", ignoreCase = true) &&
                 item.fileTypes.any { it.fileType.equals("video", ignoreCase = true) }) {
                 TYPE_SHORTS_GRID
-            } else {
-                TYPE_FEED
+            }
+            // FEED POSTS - Use FeedAdapter logic
+            else {
+                // Determine which feed view type based on post content
+                when {
+                    // Text-only post
+                    item.contentType.equals("text", ignoreCase = true) &&
+                            item.files.isEmpty() -> TYPE_TEXT_FEED
+
+                    // Repost with new files added
+                    item.originalPost?.isNotEmpty() == true &&
+                            item.files.isNotEmpty() -> TYPE_REPOST_WITH_NEW_FILES
+
+                    // Regular repost
+                    item.originalPost?.isNotEmpty() == true -> TYPE_REPOST_POST
+
+                    // Mixed files (images/videos/audio)
+                    item.contentType.equals("mixed_files", ignoreCase = true) ||
+                            item.files.isNotEmpty() -> TYPE_MIXED_FEED_FILES
+
+                    // Default to text feed
+                    else -> TYPE_TEXT_FEED
+                }
             }
         }
 
-        is GetBusinessProfileById -> TYPE_BUSINESS
-
         is DialogEntity -> TYPE_CHAT
-
         "NO_BUSINESS" -> TYPE_NO_BUSINESS
-
         else -> -1
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
+
         return when (viewType) {
             TYPE_HEADER -> {
                 val view = inflater.inflate(R.layout.search_section_header, parent, false)
@@ -1443,10 +1522,39 @@ class SearchUserNameAdapter(
                 val view = inflater.inflate(R.layout.shimmer_search_user, parent, false)
                 LoadingViewHolder(view)
             }
-            TYPE_FEED -> {
-                val view = inflater.inflate(R.layout.search_post_item, parent, false)
-                FeedViewHolder(view)
+
+            // ============ REUSE FEEDADAPTER LAYOUTS ============
+
+            TYPE_TEXT_FEED -> {
+                // Reuse FeedAdapter's text-only layout
+                val view = inflater.inflate(R.layout.feed_original_text_post_adapter, parent, false)
+                FeedTextOnyViewHolder(view)
             }
+
+            TYPE_MIXED_FEED_FILES -> {
+                val itemView = inflater.inflate(
+                    com.uyscuti.sharedmodule.R.layout.feed_mixed_files_original_post_adapter_view, parent, false
+                )
+                FeedPostViewHolder(itemView)
+            }
+
+            TYPE_REPOST_POST -> {
+                val itemView = inflater.inflate(
+                    com.uyscuti.sharedmodule.R.layout.feed_mixed_files_original_post_with_repost_view, parent, false
+                )
+                FeedRepostViewHolder(itemView)
+            }
+
+            TYPE_REPOST_WITH_NEW_FILES -> {
+                val itemView = inflater.inflate(
+                    com.uyscuti.sharedmodule.R.layout.feed_mixed_files_new_post_with_reposted_files_inside_adapter,
+                    parent, false
+                )
+                FeedNewPostWithRepostInsideFilesPostViewHolder(itemView)
+            }
+
+            // ============ END FEEDADAPTER LAYOUTS ============
+
             TYPE_SHORTS_GRID -> {
                 val view = inflater.inflate(R.layout.search_shorts_grid_item, parent, false)
                 ShortsGridViewHolder(view)
@@ -1462,12 +1570,9 @@ class SearchUserNameAdapter(
             TYPE_BUSINESS -> {
                 val view = inflater.inflate(
                     com.uyscuti.social.business.R.layout.business_post_layout, parent, false)
-
                 BusinessViewHolder(view, viewModel)
             }
-
             TYPE_BUSINESS_GRID -> {
-                // Grid layout for BUSINESS tab
                 val view = inflater.inflate(R.layout.search_business_grid_item, parent, false)
                 BusinessGridViewHolder(view)
             }
@@ -1492,10 +1597,31 @@ class SearchUserNameAdapter(
             is LoadingViewHolder -> {
                 holder.showLoading()
             }
-            is FeedViewHolder -> {
+
+            // ============ BIND FEEDADAPTER VIEWHOLDERS ============
+
+            is FeedTextOnyViewHolder -> {
                 val post = getItem(position) as Post
-                holder.bind(post, onPostClicked)
+                holder.render(post)
             }
+
+            is FeedPostViewHolder -> {
+                val post = getItem(position) as Post
+                holder.render(post)
+            }
+
+            is FeedRepostViewHolder -> {
+                val post = getItem(position) as Post
+                holder.render(post)
+            }
+
+            is FeedNewPostWithRepostInsideFilesPostViewHolder -> {
+                val post = getItem(position) as Post
+                holder.render(post)
+            }
+
+            // ============ END FEEDADAPTER BINDINGS ============
+
             is ShortsGridViewHolder -> {
                 val post = getItem(position) as Post
                 holder.bind(post, onPostClicked)
@@ -1522,6 +1648,8 @@ class SearchUserNameAdapter(
             }
         }
     }
+
+
 
     // SeeAllViewHolder
     private class SeeAllViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
