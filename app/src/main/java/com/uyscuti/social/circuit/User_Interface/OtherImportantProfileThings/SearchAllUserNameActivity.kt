@@ -508,8 +508,359 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         }
     }
 
+    // ===== INSTANT FILTER FROM CACHE =====
+    private fun performSearch(query: String) {
+        if (!isDataLoaded) {
+            Log.d("SearchOptimized", "Data not loaded yet, showing loading...")
+            return
+        }
+
+        searchJob?.cancel()
+        searchJob = lifecycleScope.launch {
+            delay(50) // Minimal delay for smooth typing
+
+            Log.d("SearchOptimized", "Filtering cached data for: '$query'")
+
+            val filteredResults = withContext(Dispatchers.Default) {
+                filterCachedData(query)
+            }
+
+            displaySearchResults(filteredResults)
+        }
+    }
+
+    // ===== FILTER CACHED DATA (INSTANT) =====
+    private fun filterCachedData(query: String): com.uyscuti.social.circuit.user_interface.SearchResults {
+        if (query.isEmpty()) {
+            return SearchResults(
+                allPosts = cachedShorts + cachedFeedPosts,
+                shorts = cachedShorts,
+                feedPosts = cachedFeedPosts,
+                people = cachedPeople,
+                chats = cachedChats,
+                business = cachedBusinessPosts
+            )
+        }
+
+        val queryLower = query.lowercase()
+
+        val filteredPeople = cachedPeople.filter { author ->
+            author.account.username.lowercase().contains(queryLower) ||
+                    author.firstName.lowercase().contains(queryLower) ||
+                    author.lastName.lowercase().contains(queryLower) ||
+                    author.account.email.lowercase().contains(queryLower)
+        }
+
+        val filteredShorts = cachedShorts.filter { post ->
+            (post.content?.lowercase()?.contains(queryLower) == true) ||
+                    post.author.account.username.lowercase().contains(queryLower) ||
+                    post.author.firstName.lowercase().contains(queryLower) ||
+                    post.author.lastName.lowercase().contains(queryLower) ||
+                    post.tags.any { it?.toString()?.lowercase()?.contains(queryLower) == true }
+        }
+
+        val filteredFeed = cachedFeedPosts.filter { post ->
+            (post.content?.lowercase()?.contains(queryLower) == true) ||
+                    post.author.account.username.lowercase().contains(queryLower) ||
+                    post.author.firstName.lowercase().contains(queryLower) ||
+                    post.author.lastName.lowercase().contains(queryLower) ||
+                    post.tags.any { it?.toString()?.lowercase()?.contains(queryLower) == true }
+        }
+
+        val filteredChats = cachedChats.filter { chat ->
+            chat.dialogName.lowercase().contains(queryLower) ||
+                    chat.users.any { it.name.lowercase().contains(queryLower) }
+        }
+
+        val filteredBusiness = cachedBusinessPosts.filter { post ->
+            (post.businessDetails?.itemName?.lowercase()?.contains(queryLower) == true) ||
+                    (post.businessDetails?.description?.lowercase()?.contains(queryLower) == true) ||
+                    post.author.account.username.lowercase().contains(queryLower)
+        }
+
+        return SearchResults(
+            allPosts = filteredShorts + filteredFeed + filteredBusiness,
+            shorts = filteredShorts,
+            feedPosts = filteredFeed,
+            people = filteredPeople,
+            chats = filteredChats,
+            business = filteredBusiness
+        )
+    }
+
+    // Keep rest of the methods unchanged...
+    private fun initSearchResults() {
+        val localStorage = LocalStorage(thiscom.uyscuti.social.circuit.user_interface.SearchAllUserNameActivity)
+        searchAdapter = SearchUserNameAdapter(
+            feedClickListener = feedClickListener,
+            viewModel = businessViewModel,
+            localStorage = localStorage,
+            onUserClicked = { author ->
+                addUserToRecent(author.toRecentUser())
+                openUserProfile(author)
+            },
+            onPostClicked = { post ->
+                Log.d("SearchResults", "Post clicked: ${post._id}")
+            }
+        )
+
+        binding.searchResultsRecyclerView.apply {
+            layoutManager = LinearLayoutManager(thiscom.uyscuti.social.circuit.user_interface.SearchAllUserNameActivity)
+            adapter = searchAdapter
+            setHasFixedSize(false)
+        }
+    }
+
+    private fun setupToolbar() {
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+        binding.backButton.setOnClickListener { onBackPressed() }
+    }
+
+    private fun setupSearch() {
+        binding.searchEditText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                performSearch(binding.searchEditText.text.toString().trim())
+                hideKeyboard()
+                binding.searchEditText.clearFocus()
+                true
+            } else false
+        }
+
+        binding.searchEditText.addTextChangedListener(afterTextChanged = { editable ->
+            val query = editable.toString().trim()
+            searchJob?.cancel()
+
+            if (query.isEmpty()) {
+                binding.filterChipsGroup.visibility = View.GONE
+                binding.noResultsText.visibility = View.GONE
+                loadRecentUsers()
+            } else {
+                binding.filterChipsGroup.visibility = View.VISIBLE
+                searchJob = lifecycleScope.launch {
+                    delay(50)
+                    performSearch(query)
+                }
+            }
+        })
+    }
+
+    private fun setupFilters() {
+        binding.filterChipsGroup.visibility = View.GONE
+        currentFilter = com.uyscuti.social.circuit.user_interface.ContentFilter.ALL
+        binding.chipAll.isChecked = true
+
+        binding.chipAll.setOnClickListener { applyFilter(com.uyscuti.social.circuit.user_interface.ContentFilter.ALL) }
+        binding.chipPeople.setOnClickListener { applyFilter(com.uyscuti.social.circuit.user_interface.ContentFilter.PEOPLE) }
+        binding.chipFeed.setOnClickListener { applyFilter(com.uyscuti.social.circuit.user_interface.ContentFilter.FEED) }
+        binding.chipShorts.setOnClickListener { applyFilter(com.uyscuti.social.circuit.user_interface.ContentFilter.SHORTS) }
+        binding.chipChats.setOnClickListener { applyFilter(com.uyscuti.social.circuit.user_interface.ContentFilter.CHATS) }
+        binding.chipBusiness.setOnClickListener { applyFilter(com.uyscuti.social.circuit.user_interface.ContentFilter.BUSINESS) }
+    }
+
+    private fun applyFilter(filter: com.uyscuti.social.circuit.user_interface.ContentFilter) {
+        currentFilter = filter
+        searchAdapter.currentFilter = filter
+
+        binding.chipAll.isChecked = (filter == com.uyscuti.social.circuit.user_interface.ContentFilter.ALL)
+        binding.chipPeople.isChecked = (filter == com.uyscuti.social.circuit.user_interface.ContentFilter.PEOPLE)
+        binding.chipFeed.isChecked = (filter == com.uyscuti.social.circuit.user_interface.ContentFilter.FEED)
+        binding.chipShorts.isChecked = (filter == com.uyscuti.social.circuit.user_interface.ContentFilter.SHORTS)
+        binding.chipChats.isChecked = (filter == com.uyscuti.social.circuit.user_interface.ContentFilter.CHATS)
+        binding.chipBusiness.isChecked = (filter == com.uyscuti.social.circuit.user_interface.ContentFilter.BUSINESS)
+
+        val query = binding.searchEditText.text.toString().trim()
+        if (query.isNotEmpty()) {
+            performSearch(query)
+        }
+    }
+
+    private fun displaySearchResults(results: com.uyscuti.social.circuit.user_interface.SearchResults) {
+        val items = mutableListOf<Any>()
+
+        when (currentFilter) {
+            com.uyscuti.social.circuit.user_interface.ContentFilter.ALL -> {
+                if (results.people.isNotEmpty()) {
+                    items.add("PEOPLE_HEADER")
+                    items.addAll(results.people)
+                }
+                if (results.chats.isNotEmpty()) {
+                    items.add("CHATS_HEADER")
+                    items.addAll(results.chats)
+                }
+                if (results.shorts.isNotEmpty()) {
+                    items.add("SHORTS_HEADER")
+                    items.addAll(results.shorts)
+                }
+                if (results.feedPosts.isNotEmpty()) {
+                    items.add("FEED_HEADER")
+                    items.addAll(results.feedPosts)
+                }
+                if (results.business.isNotEmpty()) {
+                    items.add("BUSINESS_HEADER")
+                    items.addAll(results.business)
+                }
+            }
+            com.uyscuti.social.circuit.user_interface.ContentFilter.SHORTS -> {
+                if (results.shorts.isNotEmpty()) {
+                    items.add("SHORTS_HEADER")
+                    items.addAll(results.shorts)
+                }
+            }
+            com.uyscuti.social.circuit.user_interface.ContentFilter.FEED -> {
+                if (results.feedPosts.isNotEmpty()) {
+                    items.add("FEED_HEADER")
+                    items.addAll(results.feedPosts)
+                }
+            }
+            com.uyscuti.social.circuit.user_interface.ContentFilter.PEOPLE -> {
+                if (results.people.isNotEmpty()) {
+                    items.add("PEOPLE_HEADER")
+                    items.addAll(results.people)
+                }
+            }
+            com.uyscuti.social.circuit.user_interface.ContentFilter.CHATS -> {
+                if (results.chats.isNotEmpty()) {
+                    items.add("CHATS_HEADER")
+                    items.addAll(results.chats)
+                }
+            }
+            com.uyscuti.social.circuit.user_interface.ContentFilter.BUSINESS -> {
+                if (results.business.isNotEmpty()) {
+                    items.add("BUSINESS_HEADER")
+                    items.addAll(results.business)
+                }
+            }
+        }
+
+        if (items.isEmpty()) {
+            binding.noResultsText.visibility = View.VISIBLE
+            searchAdapter.showNoResults()
+        } else {
+            binding.noResultsText.visibility = View.GONE
+            searchAdapter.submitList(items)
+            updateLayoutManager(items)
+        }
+    }
+
+    private fun updateLayoutManager(items: List<Any>) {
+        val hasShorts = items.any {
+            it is Post && it.contentType.equals("mixed_files", ignoreCase = true) &&
+                    it.fileTypes.any { fileType -> fileType.fileType.equals("video", ignoreCase = true) }
+        }
+
+        when {
+            currentFilter == com.uyscuti.social.circuit.user_interface.ContentFilter.SHORTS -> {
+                val gridLayoutManager = GridLayoutManager(this, 3)
+                gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int {
+                        return when (searchAdapter.getItemViewType(position)) {
+                            com.uyscuti.social.circuit.user_interface.SearchUserNameAdapter.TYPE_SHORTS_GRID -> 1
+                            else -> 3
+                        }
+                    }
+                }
+                binding.searchResultsRecyclerView.layoutManager = gridLayoutManager
+            }
+            currentFilter == com.uyscuti.social.circuit.user_interface.ContentFilter.BUSINESS -> {
+                val gridLayoutManager = GridLayoutManager(this, 2)
+                gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int {
+                        return when (searchAdapter.getItemViewType(position)) {
+                            com.uyscuti.social.circuit.user_interface.SearchUserNameAdapter.TYPE_BUSINESS_GRID -> 1
+                            else -> 2
+                        }
+                    }
+                }
+                binding.searchResultsRecyclerView.layoutManager = gridLayoutManager
+            }
+            currentFilter == com.uyscuti.social.circuit.user_interface.ContentFilter.ALL && hasShorts -> {
+                val gridLayoutManager = GridLayoutManager(this, 3)
+                gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int {
+                        return when (searchAdapter.getItemViewType(position)) {
+                            com.uyscuti.social.circuit.user_interface.SearchUserNameAdapter.TYPE_SHORTS_GRID -> 1
+                            com.uyscuti.social.circuit.user_interface.SearchUserNameAdapter.TYPE_BUSINESS -> 3
+                            else -> 3
+                        }
+                    }
+                }
+                binding.searchResultsRecyclerView.layoutManager = gridLayoutManager
+            }
+            else -> {
+                binding.searchResultsRecyclerView.layoutManager = LinearLayoutManager(this)
+            }
+        }
+    }
+
+    private fun hideKeyboard() {
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
+    }
+
+    private fun loadRecentUsers() {
+        lifecycleScope.launch {
+            try {
+                val recentUsers = withContext(Dispatchers.IO) {
+                    recentUserViewModel.getRecentUsers()
+                }
+                if (recentUsers.isNotEmpty()) {
+                    searchAdapter.showRecentUsers(recentUsers.map { it.toAuthor() })
+                    binding.noResultsText.visibility = View.GONE
+                } else {
+                    searchAdapter.submitList(emptyList())
+                }
+            } catch (e: Exception) {
+                searchAdapter.submitList(emptyList())
+            }
+        }
+    }
 
 
+    @OptIn(UnstableApi::class)
+    private fun openUserProfile(author: Author) {
+        val intent = Intent(this, OtherUserProfileAccount::class.java).apply {
+            putExtra("extra_user_id", author.owner)
+            putExtra("extra_user_name", "${author.firstName} ${author.lastName}".trim())
+            putExtra("extra_username", author.account.username)
+            putExtra("extra_avatar_url", author.account.avatar.url)
+            putExtra("user_full_name", "${author.firstName} ${author.lastName}".trim())
+        }
+        startActivity(intent)
+    }
+
+    private fun addUserToRecent(user: RecentUser) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                recentUserViewModel.addRecentUser(user)
+            } catch (e: Exception) {
+                Log.e("SearchUsers", "Error adding recent user: ${e.message}")
+            }
+        }
+    }
+
+    override fun onBackPressed() {
+        if (currentSearchContext != com.uyscuti.social.circuit.user_interface.SearchContext.GLOBAL) {
+            resetToGlobalSearch()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    private fun resetToGlobalSearch() {
+        currentSearchContext = com.uyscuti.social.circuit.user_interface.SearchContext.GLOBAL
+        selectedUserId = null
+        selectedUsername = null
+        binding.contextChip.visibility = View.GONE
+        val query = binding.searchEditText.text.toString().trim()
+        if (query.isNotEmpty()) {
+            performSearch(query)
+        } else {
+            loadRecentUsers()
+        }
+    }
+
+    
 
     data class SearchResults(
     val allPosts: List<Post> = emptyList(),
