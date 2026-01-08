@@ -2897,7 +2897,7 @@ class SearchUserNameAdapter(
         private fun shareViaSMS(context: Context, text: String) {
             try {
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    Intent.setData = "smsto:".toUri()
+                    data = "smsto:".toUri()
                     putExtra("sms_body", text)
                 }
                 context.startActivity(intent)
@@ -2905,6 +2905,7 @@ class SearchUserNameAdapter(
                 Toast.makeText(context, "SMS app not available", Toast.LENGTH_SHORT).show()
             }
         }
+
 
         private fun shareToInstagram(context: Context, text: String) {
             val packages = listOf(
@@ -2943,7 +2944,7 @@ class SearchUserNameAdapter(
             try {
                 for (packageName in packages) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
-                        Intent.setType = "text/plain"
+                        type = "text/plain"
                         setPackage(packageName)
                         putExtra(Intent.EXTRA_TEXT, text)
                     }
@@ -4196,7 +4197,7 @@ class SearchUserNameAdapter(
         private fun shareViaSMS(context: Context, text: String) {
             try {
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    Intent.setData = "smsto:".toUri()
+                    data = "smsto:".toUri()
                     putExtra("sms_body", text)
                 }
                 context.startActivity(intent)
@@ -4242,7 +4243,7 @@ class SearchUserNameAdapter(
             try {
                 for (packageName in packages) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
-                        Intent.setType = "text/plain"
+                        type = "text/plain"
                         setPackage(packageName)
                         putExtra(Intent.EXTRA_TEXT, text)
                     }
@@ -5936,7 +5937,7 @@ class SearchUserNameAdapter(
         private fun shareViaSMS(context: Context, text: String) {
             try {
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    Intent.setData = "smsto:".toUri()
+                    data = "smsto:".toUri()
                     putExtra("sms_body", text)
                 }
                 context.startActivity(intent)
@@ -5982,7 +5983,7 @@ class SearchUserNameAdapter(
             try {
                 for (packageName in packages) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
-                        Intent.setType = "text/plain"
+                        type = "text/plain"
                         setPackage(packageName)
                         putExtra(Intent.EXTRA_TEXT, text)
                     }
