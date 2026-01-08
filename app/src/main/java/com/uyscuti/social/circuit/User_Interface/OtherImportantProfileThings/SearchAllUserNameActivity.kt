@@ -14,6 +14,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ListAdapter
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -1340,26 +1341,34 @@ fun Author.toRecentUser(): RecentUser {
 
 
 class SearchUserNameAdapter(
+
+    private val feedClickListener: OnFeedClickListener,
     private val viewModel: BusinessPostsViewModel,
     private val localStorage: LocalStorage,
     private val onUserClicked: (Author) -> Unit,
     private val onPostClicked: (Post) -> Unit = {},
     private val onChatClicked: (DialogEntity) -> Unit = {},
-) : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback())
+
+    ) : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback())
 {
 
     companion object {
-        private const val TYPE_HEADER = 0
-        private const val TYPE_USER = 1
-        private const val TYPE_LOADING = 2
-        private const val TYPE_NO_RESULTS = 3
-        private const val TYPE_FEED = 4
-        private const val TYPE_SEE_ALL = 8
-        private const val TYPE_CHAT = 9
-        internal const val TYPE_BUSINESS = 10
-        internal const val TYPE_BUSINESS_GRID = 11
-        private const val TYPE_NO_BUSINESS = 12
-        internal const val TYPE_SHORTS_GRID = 13
+
+        private const val TYPE_CHAT = 1
+        private const val TYPE_FEED = 2
+        private const val TYPE_USER = 3
+        private const val TYPE_HEADER = 4
+        private const val TYPE_LOADING = 5
+        private const val TYPE_SEE_ALL = 6
+        private const val TYPE_TEXT_FEED = 7
+        internal const val TYPE_BUSINESS = 8
+        private const val TYPE_NO_RESULTS = 9
+        private const val TYPE_NO_BUSINESS = 10
+        private const val TYPE_REPOST_POST = 11
+        internal const val TYPE_SHORTS_GRID = 12
+        internal const val TYPE_BUSINESS_GRID = 13
+        private const val TYPE_MIXED_FEED_FILES = 14
+        private const val TYPE_REPOST_WITH_NEW_FILES = 15
 
     }
 
