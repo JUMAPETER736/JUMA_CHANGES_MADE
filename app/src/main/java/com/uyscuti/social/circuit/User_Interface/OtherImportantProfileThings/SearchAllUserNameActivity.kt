@@ -28,6 +28,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -1650,7 +1651,6 @@ class SearchUserNameAdapter(
 
 
 
-
     // SeeAllViewHolder
     private class SeeAllViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val seeAllText: TextView = itemView.findViewById(R.id.seeAllText)
@@ -1700,7 +1700,7 @@ class SearchUserNameAdapter(
                 "SEARCH_HEADER" -> "Search Results"
                 "PEOPLE_HEADER" -> "People"
                 "SHORTS_HEADER" -> "Shorts"
-                "FEED_HEADER" -> "Posts"
+                "FEED_HEADER" -> "Feed"
                 "BUSINESS_HEADER" -> "Business"
                 "CHATS_HEADER" -> "Chats"
                 "USER_CONTENT_HEADER" -> "Content"
@@ -2237,8 +2237,6 @@ class SearchUserNameAdapter(
 
         override fun getItemCount(): Int = mediaUrls.size
     }
-
-
 
 
     inner class BusinessGridViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
