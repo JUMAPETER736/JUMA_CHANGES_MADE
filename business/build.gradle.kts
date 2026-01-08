@@ -1,17 +1,18 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.ksp) // Add this line
+
+    id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
-    // Remove: id("kotlin-kapt")
 }
 
 android {
     namespace = "com.uyscuti.social.business"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 26
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -39,9 +40,11 @@ android {
 }
 
 dependencies {
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.androidx.swiperefreshlayout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -54,31 +57,54 @@ dependencies {
     implementation("androidx.room:room-rxjava3:$room_version")
     implementation("androidx.room:room-guava:$room_version")
     implementation("androidx.room:room-paging:$room_version")
-    ksp("androidx.room:room-compiler:$room_version") // Changed from kapt
+    kapt("androidx.room:room-compiler:$room_version")
 
     implementation("org.greenrobot:eventbus:3.3.1")
-    implementation(project(":network"))
-    implementation(project(":chatsuit"))
-    implementation(project(":core"))
-
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.0")
 
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    ksp("com.github.bumptech.glide:ksp:4.16.0") // Changed from kapt
+    implementation("com.github.bumptech.glide:glide:4.15.1")
+    kapt("com.github.bumptech.glide:compiler:4.15.1")
 
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("com.tbuonomo:dotsindicator:5.0")
-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    implementation ("io.getstream:photoview:1.0.2")
+
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
     implementation("androidx.media3:media3-extractor:1.3.1")
     implementation("androidx.media3:media3-exoplayer-dash:1.3.1")
-    implementation("com.facebook.shimmer:shimmer:0.5.0")
+
     implementation("com.google.android.gms:play-services-location:21.2.0")
-    implementation("com.github.alxrm:audiowave-progressbar:0.9.2")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
+    implementation("androidx.fragment:fragment-ktx:1.6.2")
 
     implementation("com.google.dagger:hilt-android:2.51.1")
-    ksp("com.google.dagger:hilt-compiler:2.51.1") // Changed from kapt
+    kapt("com.google.dagger:hilt-compiler:2.51.1")
+
+    implementation("com.daimajia.easing:library:2.4@aar")
+    implementation("com.daimajia.androidanimations:library:2.4@aar")
+
+    implementation("com.facebook.shimmer:shimmer:0.1.0@aar")
+    // Emoji
+    implementation("com.vanniktech:emoji-google-compat:0.21.0")
+    implementation("com.vanniktech:emoji-twitter:0.21.0")
+    implementation("com.vanniktech:emoji-facebook:0.21.0")
+    implementation("com.vanniktech:emoji-google:0.21.0")
+    implementation("com.vanniktech:emoji-ios:0.21.0")
+
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+    implementation("org.apache.poi:poi:5.2.4")
+    implementation("org.apache.poi:poi-ooxml:5.2.4")
+    implementation("org.apache.poi:poi-scratchpad:5.2.4")
+
+    implementation("id.zelory:compressor:3.0.1")
+
+    implementation(project(":sharedModule"))
+    implementation(project(":chatsuit"))
+    implementation(project(":network"))
+    implementation(project(":core"))
+
 }
