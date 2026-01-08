@@ -28,11 +28,15 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.CircleCrop
+import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.social.business.CatalogueDetailsActivity
 import com.uyscuti.social.business.databinding.BusinessPostLayoutBinding
 import com.uyscuti.social.circuit.R
@@ -1767,7 +1771,6 @@ class SearchUserNameAdapter(
             itemView.setOnClickListener { listener(post) }
         }
 
-        @RequiresApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
         private fun loadVideoDuration(post: Post) {
             val videoFile = post.files?.firstOrNull {
                 it.url.endsWith(".mp4", ignoreCase = true)
@@ -1893,56 +1896,6 @@ class SearchUserNameAdapter(
         }
     }
 
-    // Updated FeedViewHolder to show author's full name
-    private class FeedViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val avatar: ImageView = itemView.findViewById(R.id.authorAvatar)
-        private val nameText: TextView = itemView.findViewById(R.id.authorName) // bold full name
-        private val usernameText: TextView = itemView.findViewById(R.id.authorUsername) // lighter text
-        private val contentText: TextView = itemView.findViewById(R.id.postContent)
-        private val postImage: ImageView? = itemView.findViewById(R.id.postImage)
-
-        fun bind(post: Post, listener: (Post) -> Unit) {
-            Glide.with(itemView.context)
-                .load(post.author.account.avatar.url)
-                .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                .placeholder(R.drawable.flash21)
-                .error(R.drawable.flash21)
-                .into(avatar)
-
-            // Full name
-            val fullName = buildString {
-                if (post.author.firstName.isNotEmpty()) append(post.author.firstName)
-                if (post.author.lastName.isNotEmpty()) {
-                    if (isNotEmpty()) append(" ")
-                    append(post.author.lastName)
-                }
-            }.trim()
-
-            nameText.text = if (fullName.isNotEmpty()) fullName else post.author.account.username
-            usernameText.text = "@${post.author.account.username}"
-
-            // Content
-            contentText.text = if (post.isBusinessPost == true) {
-                "${post.content}\n\nPrice: MWK ${post.businessDetails?.price ?: "N/A"}"
-            } else post.content
-
-            // First image if available
-            val firstFile = post.files?.firstOrNull()
-            if (firstFile != null && firstFile.url.isNotEmpty()) {
-                postImage?.visibility = View.VISIBLE
-                Glide.with(itemView.context)
-                    .load(firstFile.url)
-                    .centerCrop()
-                    .placeholder(R.drawable.flash21)
-                    .into(postImage!!)
-            } else {
-                postImage?.visibility = View.GONE
-            }
-
-            itemView.setOnClickListener { listener(post) }
-        }
-    }
-
     private class ChatViewHolder(private val itemView: View, private val localStorage: LocalStorage) : RecyclerView.ViewHolder(itemView) {
 
         private val chatAvatar: ImageView = itemView.findViewById(R.id.chatAvatar)
@@ -1950,7 +1903,6 @@ class SearchUserNameAdapter(
         private val usernameText: TextView = itemView.findViewById(R.id.userName)
 
         // Original bind method for chat items
-        @OptIn(UnstableApi::class)
         fun bind(dialogEntity: DialogEntity, onChatClicked: (DialogEntity) -> Unit) {
 
             val myUserId = localStorage.getUserId()
@@ -2018,7 +1970,6 @@ class SearchUserNameAdapter(
         }
 
         // NEW: Bind method for chat/group where the person appears
-        @OptIn(UnstableApi::class)
         fun bindChatWithPerson(dialogEntity: DialogEntity, searchedPersonName: String) {
             val myUserId = localStorage.getUserId()
 
@@ -2055,7 +2006,7 @@ class SearchUserNameAdapter(
             val myUserId = localStorage.getUserId()
             val otherUser = users.firstOrNull { it.id != myUserId }
 
-            val usersList = ArrayList<com.uyscuti.social.circuit.data.model.User>()
+            val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
             otherUser?.let { usersList.add(it.toUser()) }
 
             val message = lastMessage?.toMessage()
@@ -2071,9 +2022,9 @@ class SearchUserNameAdapter(
             )
         }
 
-        private fun UserEntity.toUser(): com.uyscuti.social.circuit.data.model.User {
+        private fun UserEntity.toUser(): com.uyscuti.sharedmodule.data.model.User {
             val username = if (name.contains("|")) name.split("|")[1].trim() else name
-            return com.uyscuti.social.circuit.data.model.User(
+            return com.uyscuti.sharedmodule.data.model.User(
                 id,
                 username,
                 avatar,
@@ -2082,16 +2033,16 @@ class SearchUserNameAdapter(
             )
         }
 
-        private fun MessageEntity.toMessage(): com.uyscuti.social.circuit.data.model.Message {
+        private fun MessageEntity.toMessage(): Message {
             val username = if (user.name.contains("|")) user.name.split("|")[1].trim() else user.name
-            val msgUser = com.uyscuti.social.circuit.data.model.User(
+            val msgUser = com.uyscuti.sharedmodule.data.model.User(
                 user.id,
                 username,
                 user.avatar,
                 user.online,
                 user.lastSeen
             )
-            return com.uyscuti.social.circuit.data.model.Message(
+            return Message(
                 id,
                 msgUser,
                 text,
@@ -2202,119 +2153,6 @@ class SearchUserNameAdapter(
         private fun getTimeAgo(createdAt: String): String {
             // Implement your time formatting here
             return ""
-        }
-    }
-
-    inner class BusinessMediaAdapter(private val mediaUrls: List<String>, private val context: Context, private val onMediaClick: (position: Int) -> Unit) : RecyclerView.Adapter<BusinessMediaAdapter.MediaViewHolder>() {
-
-        inner class MediaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val imageView: ImageView = view.findViewById(R.id.mediaImageView)
-
-            init {
-                view.setOnClickListener {
-                    val pos = bindingAdapterPosition
-                    if (pos != RecyclerView.NO_POSITION) {
-                        onMediaClick(pos)
-                    }
-                }
-            }
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder {
-            val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_business_media_simple, parent, false)
-            return MediaViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
-            Glide.with(context)
-                .load(mediaUrls[position])
-                .centerCrop()
-                .placeholder(R.drawable.flash21)
-                .error(R.drawable.flash21)
-                .into(holder.imageView)
-        }
-
-        override fun getItemCount(): Int = mediaUrls.size
-    }
-
-
-    inner class BusinessGridViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
-
-        private val businessImage: ImageView = itemView.findViewById(R.id.businessItemImage)
-        private val businessPrice: TextView = itemView.findViewById(R.id.businessItemPrice)
-        private val businessName: TextView = itemView.findViewById(R.id.businessItemName)
-        private val businessLocation: TextView = itemView.findViewById(R.id.businessItemLocation)
-        private val justListedBadge: TextView = itemView.findViewById(R.id.justListedBadge)
-
-        fun bind(post: Post, listener: (Post) -> Unit) {
-            // Load image
-            val firstImage = post.files?.firstOrNull()?.url
-            Glide.with(itemView.context)
-                .load(firstImage)
-                .centerCrop()
-                .placeholder(R.drawable.flash21)
-                .error(R.drawable.flash21)
-                .into(businessImage)
-
-            // Price
-            businessPrice.text = extractPrice(post)
-
-            // Name
-            businessName.text = post.content?.trim()?.take(60) ?: "Business Item"
-
-            // Location
-            businessLocation.text = if (post.author.location.isNotBlank()) post.author.location else "Lilongwe, Malawi"
-
-            // Just listed badge
-            justListedBadge.visibility = if (isRecentlyListed(post.createdAt)) View.VISIBLE else View.GONE
-
-            itemView.setOnClickListener { listener(post) }
-        }
-
-        private fun extractPrice(post: Post): String {
-            post.businessDetails?.price?.let { return formatPrice(it) }
-            val content = post.content ?: return "MWK0"
-            val patterns = listOf(
-                """MWK\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
-                """K\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
-                """\$\s*(\d{1,3}(?:,\d{3})*)""".toRegex()
-            )
-            for (pattern in patterns) {
-                pattern.find(content)?.groupValues?.get(1)?.let {
-                    return formatPrice(it.replace(",", ""))
-                }
-            }
-            return "Contact for price"
-        }
-
-        private fun formatPrice(price: String): String {
-            val numericPrice = price.toDoubleOrNull() ?: return "MWK$price"
-            return when {
-                numericPrice >= 1_000_000 -> "MWK${String.format("%.1fM", numericPrice / 1_000_000).replace(".0M", "M")}"
-                numericPrice >= 1_000 -> "MWK${String.format("%,.0f", numericPrice)}"
-                else -> "MWK${numericPrice.toInt()}"
-            }
-        }
-
-        private fun isRecentlyListed(createdAt: String): Boolean {
-            return try {
-                val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-                sdf.timeZone = TimeZone.getTimeZone("UTC")
-                val date = sdf.parse(createdAt) ?: return false
-                System.currentTimeMillis() - date.time < 24 * 60 * 60 * 1000
-            } catch (e: Exception) {
-                false
-            }
-        }
-    }
-
-    inner class NoBusinessViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val messageText: TextView = itemView.findViewById(R.id.no_business_message)
-
-        @SuppressLint("SetTextI18n")
-        fun bind(username: String) {
-            messageText.text = "@$username does not have a Business Profile"
         }
     }
 
