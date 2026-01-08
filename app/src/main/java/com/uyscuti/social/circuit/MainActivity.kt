@@ -113,7 +113,6 @@ import com.uyscuti.social.chatsuit.messages.CommentsInput
 import com.uyscuti.social.circuit.User_Interface.Log_In_And_Register.LoginActivity
 import com.uyscuti.social.circuit.User_Interface.MyUserProfile.MyUserProfileAccount
 import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.GifActivity
-import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SearchAllUserNameActivity
 import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.SettingsActivity
 import com.uyscuti.social.circuit.User_Interface.fragments.ChatFragment
 import com.uyscuti.social.circuit.User_Interface.fragments.FeedFragment
@@ -140,8 +139,6 @@ import com.uyscuti.social.circuit.calls.viewmodel.CallViewModel
 import com.uyscuti.social.circuit.colorimagebottomnav.BottomNavigationView
 import com.uyscuti.social.circuit.colorimagebottomnav.NavigationItem
 import com.uyscuti.social.circuit.data.model.Dialog
-import com.uyscuti.social.circuit.data.model.Message
-import com.uyscuti.social.circuit.data.model.User
 import com.uyscuti.social.circuit.data.model.shortsmodels.Comment
 import com.uyscuti.social.circuit.data.model.shortsmodels.CommentReplyResults
 import com.uyscuti.social.circuit.databinding.ActivityMainBinding

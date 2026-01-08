@@ -3486,6 +3486,7 @@ class FeedMixedFilesViewAdapter(
         return feedPost.files.size
     }
 
+    
 
 }
 
