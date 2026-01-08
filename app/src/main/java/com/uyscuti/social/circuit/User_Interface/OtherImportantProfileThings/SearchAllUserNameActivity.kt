@@ -89,10 +89,23 @@ import com.uyscuti.social.network.api.response.posts.AvatarB
 import com.uyscuti.social.network.api.response.posts.BusinessPost
 import com.uyscuti.social.network.api.response.posts.BusinessProfile
 import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
+import com.uyscuti.social.circuit.FollowingManager
 import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.MessagesActivity
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
+import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
+import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside
+import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
+import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
+import com.uyscuti.social.circuit.adapter.feed.FeedAdapter
+import com.uyscuti.social.circuit.adapter.feed.FeedAdapter.Companion.getCachedFollowingList
+import com.uyscuti.social.circuit.adapter.feed.FeedAdapter.Companion.getCachedFollowingUsernames
 import com.uyscuti.social.circuit.adapter.feed.OnFeedClickListener
 import com.uyscuti.social.circuit.data.model.Dialog
+import com.uyscuti.social.circuit.data.model.Message
+import com.uyscuti.social.circuit.data.model.shortsmodels.OtherUsersProfile
+import com.uyscuti.social.circuit.databinding.BottomDialogForShareBinding
+import com.uyscuti.social.circuit.model.GoToUserProfileFragment
+import com.uyscuti.social.circuit.model.ShortsFollowButtonClicked
 import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import kotlinx.coroutines.CoroutineScope
@@ -142,7 +155,7 @@ enum class SearchContext {
     USER_PROFILE
 }
 
-
+private const val TAG = "SearchAllUserNameActivity"
 
 @AndroidEntryPoint
 class SearchAllUserNameActivity : AppCompatActivity() {
@@ -1574,14 +1587,14 @@ class SearchUserNameAdapter(
 
             TYPE_MIXED_FEED_FILES -> {
                 val itemView = inflater.inflate(
-                    com.uyscuti.social.circuit.R.layout.feed_mixed_files_original_post_adapter_view, parent, false
+                    com.uyscuti.social.circuit.R.layout.feed_mixed_files_original_post_adapter, parent, false
                 )
                 FeedPostViewHolder(itemView)
             }
 
             TYPE_REPOST_POST -> {
                 val itemView = inflater.inflate(
-                    com.uyscuti.social.circuit.R.layout.feed_mixed_files_original_post_with_repost_view, parent, false
+                    com.uyscuti.social.circuit.R.layout.feed_mixed_files_original_post_with_repost_adapter, parent, false
                 )
                 FeedRepostViewHolder(itemView)
             }
@@ -1940,6 +1953,7 @@ class SearchUserNameAdapter(
         private val usernameText: TextView = itemView.findViewById(R.id.userName)
 
         // Original bind method for chat items
+        @OptIn(UnstableApi::class)
         fun bind(dialogEntity: DialogEntity, onChatClicked: (DialogEntity) -> Unit) {
 
             val myUserId = localStorage.getUserId()
