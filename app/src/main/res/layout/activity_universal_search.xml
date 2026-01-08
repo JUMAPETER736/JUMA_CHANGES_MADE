@@ -192,25 +192,32 @@
         android:layout_height="1dp"
         android:background="#E0E0E0" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/searchResultsRecyclerView"
+    <!-- FrameLayout to overlay RecyclerView and noResultsText -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"
-        android:paddingTop="4dp"
-        tools:listitem="@layout/people_search_list" />
+        android:layout_weight="1">
 
-    <TextView
-        android:id="@+id/noResultsText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:padding="24dp"
-        android:text="@string/no_results_found"
-        android:textSize="16sp"
-        android:textColor="@color/challenge_primary_color"
-        android:visibility="gone"
-        tools:visibility="visible" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/searchResultsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingTop="4dp"
+            tools:listitem="@layout/people_search_list" />
+
+        <TextView
+            android:id="@+id/noResultsText"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:padding="24dp"
+            android:text="@string/no_results_found"
+            android:textSize="16sp"
+            android:textColor="@color/challenge_primary_color"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+    </FrameLayout>
 
 </LinearLayout>

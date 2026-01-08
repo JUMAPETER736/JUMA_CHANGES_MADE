@@ -72,7 +72,6 @@ import com.uyscuti.social.circuit.model.ShortsFollowButtonClicked
 import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.business.CatalogueDetailsActivity
 import com.uyscuti.social.business.databinding.BusinessPostLayoutBinding
-import com.uyscuti.social.circuit.databinding.ActivitySearchAllUserNameBinding
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
@@ -136,6 +135,7 @@ import java.util.TimeZone
 import kotlin.math.abs
 import com.uyscuti.social.circuit.adapter.feed.multiple_files.OnMultipleFilesClickListener
 import com.uyscuti.social.circuit.data.model.User
+import com.uyscuti.social.circuit.databinding.ActivityUniversalSearchBinding
 import kotlin.text.contains
 
 
@@ -213,9 +213,9 @@ fun Author.toRecentUser(): RecentUser {
 
 
 @AndroidEntryPoint
-class SearchAllUserNameActivity : AppCompatActivity() {
+class UniversalSearchActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivitySearchAllUserNameBinding
+    private lateinit var binding: ActivityUniversalSearchBinding
     private lateinit var searchAdapter: SearchUserNameAdapter
     private var searchJob: Job? = null
     private lateinit var businessViewModel: BusinessPostsViewModel
@@ -256,7 +256,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        binding = ActivitySearchAllUserNameBinding.inflate(layoutInflater)
+        binding = ActivityUniversalSearchBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
@@ -644,7 +644,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
     // Keep rest of the methods unchanged...
     private fun initSearchResults() {
-        val localStorage = LocalStorage(this@SearchAllUserNameActivity)
+        val localStorage = LocalStorage(this@UniversalSearchActivity)
         searchAdapter = SearchUserNameAdapter(
             feedClickListener = feedClickListener,
             viewModel = businessViewModel,
@@ -659,7 +659,7 @@ class SearchAllUserNameActivity : AppCompatActivity() {
         )
 
         binding.searchResultsRecyclerView.apply {
-            layoutManager = LinearLayoutManager(this@SearchAllUserNameActivity)
+            layoutManager = LinearLayoutManager(this@UniversalSearchActivity)
             adapter = searchAdapter
             setHasFixedSize(false)
         }
