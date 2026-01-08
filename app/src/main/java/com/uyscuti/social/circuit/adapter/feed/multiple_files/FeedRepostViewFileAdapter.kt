@@ -1,13 +1,12 @@
 package com.uyscuti.social.circuit.adapter.feed.multiple_files
 
+
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.content.Context
 import android.content.ContextWrapper
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Outline
-import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
@@ -31,19 +30,13 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.imageview.ShapeableImageView
-
-import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
 import com.uyscuti.social.network.api.response.posts.OriginalPost
-
-import com.uyscuti.social.network.api.response.posts.ThumbnailX
-import com.bumptech.glide.request.RequestListener
-import com.bumptech.glide.request.target.Target
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.GlideException
+import com.uyscuti.social.network.api.response.posts.File
 import androidx.core.graphics.toColorInt
+import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
+import com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
 
 
 private const val VIEW_TYPE_IMAGE_FEED = 0
