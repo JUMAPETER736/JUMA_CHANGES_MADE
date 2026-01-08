@@ -1,5 +1,6 @@
 package com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings
 
+
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.ClipData
@@ -10,7 +11,6 @@ import android.content.Intent
 import android.graphics.PorterDuff
 import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
@@ -25,13 +25,11 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ListAdapter
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.cardview.widget.CardView
@@ -48,6 +46,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.bumptech.glide.Glide
@@ -60,6 +59,28 @@ import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.gson.Gson
 import com.google.gson.stream.MalformedJsonException
+import com.uyscuti.sharedmodule.MessagesActivity
+import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.Companion.getCachedFollowingList
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.Companion.getCachedFollowingUsernames
+import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
+import com.uyscuti.sharedmodule.adapter.feed.TAG
+import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.FeedMixedFilesViewAdapter
+import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.FeedRepostViewFileAdapter
+import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.OnMultipleFilesClickListener
+import com.uyscuti.sharedmodule.data.model.Dialog
+import com.uyscuti.sharedmodule.data.model.Message
+import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
+import com.uyscuti.sharedmodule.databinding.BottomDialogForShareBinding
+import com.uyscuti.sharedmodule.model.GoToUserProfileFragment
+import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
+import com.uyscuti.sharedmodule.presentation.RecentUserViewModel
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
+import com.uyscuti.sharedmodule.utils.FollowingManager
 import com.uyscuti.social.business.CatalogueDetailsActivity
 import com.uyscuti.social.business.databinding.BusinessPostLayoutBinding
 import com.uyscuti.social.circuit.R
@@ -68,7 +89,16 @@ import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.core.common.data.room.entity.RecentUser
 import com.uyscuti.social.core.common.data.room.entity.UserEntity
-import com.uyscuti.social.network.api.models.Chat
+import com.uyscuti.social.network.api.models.User
+import com.uyscuti.social.network.api.response.posts.Account
+import com.uyscuti.social.network.api.response.posts.Author
+import com.uyscuti.social.network.api.response.posts.Avatar
+import com.uyscuti.social.network.api.response.posts.CoverImage
+import com.uyscuti.social.network.api.response.posts.File
+import com.uyscuti.social.network.api.response.posts.FileType
+import com.uyscuti.social.network.api.response.posts.Post
+import com.uyscuti.social.network.api.response.posts.RepostedUser
+import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -82,34 +112,9 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Locale
 import com.uyscuti.social.core.common.data.room.entity.MessageEntity
-import com.uyscuti.social.network.api.response.posts.AccountB
-import com.uyscuti.social.network.api.response.posts.AuthorB
-import com.uyscuti.social.network.api.response.posts.AvatarB
-import com.uyscuti.social.network.api.response.posts.BusinessPost
-import com.uyscuti.social.network.api.response.posts.BusinessProfile
 import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
-import com.uyscuti.social.circuit.FollowingManager
-import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
-import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
-import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside
-import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
-import com.uyscuti.social.circuit.User_Interface.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
-import com.uyscuti.social.circuit.adapter.feed.FeedAdapter
-import com.uyscuti.social.circuit.adapter.feed.FeedAdapter.Companion.getCachedFollowingList
-import com.uyscuti.social.circuit.adapter.feed.FeedAdapter.Companion.getCachedFollowingUsernames
-import com.uyscuti.social.circuit.adapter.feed.OnFeedClickListener
-import com.uyscuti.social.circuit.data.model.Dialog
-import com.uyscuti.social.circuit.data.model.Message
-import com.uyscuti.social.circuit.data.model.shortsmodels.OtherUsersProfile
-import com.uyscuti.social.circuit.databinding.BottomDialogForShareBinding
-import com.uyscuti.social.circuit.model.GoToUserProfileFragment
-import com.uyscuti.social.circuit.model.ShortsFollowButtonClicked
-import com.uyscuti.social.circuit.presentation.RecentUserViewModel
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
-import kotlinx.coroutines.CoroutineScope
-import java.util.TimeZone
-import com.uyscuti.social.circuit.adapter.feed.multiple_files.FeedRepostViewFileAdapter
-import com.uyscuti.social.network.api.models.User
+import com.uyscuti.social.network.api.models.Chat
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
@@ -118,25 +123,24 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
-import com.uyscuti.social.network.api.response.posts.Account
-import com.uyscuti.social.network.api.response.posts.Author
+import com.uyscuti.social.network.api.response.posts.AccountB
+import com.uyscuti.social.network.api.response.posts.AuthorB
 import com.uyscuti.social.network.api.response.posts.AuthorX
-import com.uyscuti.social.network.api.response.posts.Avatar
+import com.uyscuti.social.network.api.response.posts.AvatarB
 import com.uyscuti.social.network.api.response.posts.BackgroundPhoto
-import com.uyscuti.social.network.api.response.posts.CoverImage
+import com.uyscuti.social.network.api.response.posts.BusinessPost
+import com.uyscuti.social.network.api.response.posts.BusinessProfile
 import com.uyscuti.social.network.api.response.posts.Duration
-import com.uyscuti.social.network.api.response.posts.File
-import com.uyscuti.social.network.api.response.posts.FileType
 import com.uyscuti.social.network.api.response.posts.OriginalPost
-import com.uyscuti.social.network.api.response.posts.Post
-import com.uyscuti.social.network.api.response.posts.RepostedUser
-import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import org.greenrobot.eventbus.EventBus
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.util.TimeZone
 import kotlin.math.abs
+
 
 
 // Updated ContentFilter enum with your specific categories
@@ -151,8 +155,7 @@ enum class ContentFilter {
 
 enum class SearchContext {
     GLOBAL,
-    USER_POSTS,
-    USER_PROFILE
+
 }
 
 
@@ -1056,14 +1059,14 @@ class SearchAllUserNameActivity : AppCompatActivity() {
 
 class SearchUserNameAdapter(
 
-    private val feedClickListener: com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener,
+    private val feedClickListener: com.uyscuti.social.circuit.adapter.feed.OnFeedClickListener,
     private val viewModel: BusinessPostsViewModel,
     private val localStorage: LocalStorage,
     private val onUserClicked: (Author) -> Unit,
     private val onPostClicked: (Post) -> Unit = {},
     private val onChatClicked: (DialogEntity) -> Unit = {},
 
-    ) : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback())
+    ) : androidx.recyclerview.widget.ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback())
 {
 
     companion object {
@@ -1156,7 +1159,7 @@ class SearchUserNameAdapter(
         submitList(emptyList())
     }
 
-    var currentFilter: ContentFilter = ContentFilter.ALL
+    var currentFilter: com.uyscuti.social.circuit.user_interface.ContentFilter = com.uyscuti.social.circuit.user_interface.ContentFilter.ALL
 
 
     // Add these properties to handle following list
@@ -1176,7 +1179,7 @@ class SearchUserNameAdapter(
         is Post -> {
             // Business posts
             if (item.isBusinessPost == true) {
-                if (currentFilter == ContentFilter.BUSINESS) {
+                if (currentFilter == com.uyscuti.social.circuit.user_interface.ContentFilter.BUSINESS) {
                     TYPE_BUSINESS_GRID
                 } else {
                     TYPE_BUSINESS
