@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:expandableTextView="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+
+    >
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="2dp"
+        android:layout_margin="8dp"
+        android:id="@+id/feedMixedFilesContainer">
+
+        <ImageView
+            android:id="@+id/profileImageView"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginHorizontal="50dp"
+            android:layout_marginVertical="10dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="@string/content_description"
+            android:src="@drawable/document"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:textSize="18sp"
+            android:id="@+id/textView"
+            android:textColor="@color/black"
+            app:layout_constraintLeft_toRightOf="@id/profileImageView"
+            android:layout_marginHorizontal="10dp"
+            android:text="Username"
+            app:layout_constraintTop_toTopOf="@id/profileImageView"
+            app:layout_constraintBottom_toBottomOf="@id/profileImageView"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:textSize="14sp"
+            android:layout_marginStart="10dp"
+            android:id="@+id/handerText"
+            app:layout_constraintLeft_toRightOf="@id/profileImageView"
+            android:layout_marginHorizontal="4dp"
+            android:text="ContentCreator"
+            android:layout_marginTop="35dp"
+            android:textColor="@color/gray_darkest"
+            app:layout_constraintTop_toTopOf="@id/textView"
+            app:layout_constraintBottom_toBottomOf="@id/textView"
+            />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/followButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Following"
+            android:textColor="@color/white"
+            android:background="@drawable/fill_button_color"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/textView"
+            app:layout_constraintBottom_toBottomOf="@id/textView"
+            android:textAllCaps="false" />
+
+
+        <com.colormoon.readmoretextview.ReadMoreTextView
+            android:id="@+id/caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="This is Expandable text this is a simple text, this is a testing text"
+            android:textSize="16sp"
+            app:trimExpandedText=""
+            app:trimCollapsedText="@string/read_more"
+            app:layout_constraintTop_toBottomOf="@id/profileImageView"
+            app:trimMode="trimModeLength"
+            app:trimLength="50"
+            android:layout_marginTop="10dp"
+            app:colorClickableText="#039BE5"
+            android:layout_marginEnd="50dp"
+            android:layout_marginStart="50dp"
+            android:justificationMode="inter_word"
+            />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/mixedFilesCardView"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:layout_marginTop="10dp"
+            app:cardCornerRadius="16dp"
+            android:clickable="true"
+            app:cardElevation="10dp"
+            app:layout_constraintTop_toBottomOf="@+id/tags">
+
+
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/multipleAudiosContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="10dp"
+                app:cardCornerRadius="0dp"
+                android:clickable="true"
+                app:layout_constraintTop_toBottomOf="@+id/tags">
+
+            <androidx.recyclerview.widget.RecyclerView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:nestedScrollingEnabled="false"
+                    android:clickable="false"
+                    android:id="@+id/recyclerView"
+                    android:adjustViewBounds="true"
+                    app:spanCount="3"
+                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                    />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    expandableTextView:layout_editor_absoluteX="8dp"
+                    expandableTextView:layout_editor_absoluteY="-131dp">
+                    <!-- This is just an empty container that gives the background rounded corners -->
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/caption"
+            android:id="@+id/tags"
+            android:text=""
+            android:textColor="@color/blueJeans"
+            android:layout_marginStart="50dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginTop="10dp"
+
+            android:visibility="visible"
+            app:layout_constraintLeft_toLeftOf="@+id/caption"
+            app:layout_constraintRight_toRightOf="@+id/caption"
+            />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/date_time"
+            app:layout_constraintTop_toBottomOf="@id/mixedFilesCardView"
+            android:layout_marginStart="50dp"
+            android:text="Date - Time"
+            android:padding="5dp"
+            />
+
+
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            app:layout_constraintTop_toBottomOf="@id/date_time"
+            app:layout_constraintLeft_toLeftOf="parent"
+            android:layout_marginStart="50dp"
+            android:src="@drawable/favorite_svgrepo_com"
+            android:id="@+id/like"
+            app:tint="@color/blueJeans" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/like"
+            app:layout_constraintLeft_toLeftOf="@+id/like"
+            app:layout_constraintRight_toRightOf="@+id/like"
+            android:text="0"
+            android:id="@+id/likesCount"
+            />
+
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            app:layout_constraintTop_toTopOf="@+id/like"
+            app:layout_constraintLeft_toRightOf="@id/like"
+            android:layout_marginStart="20dp"
+            android:src="@drawable/chat_round_svgrepo_com_shorts"
+            app:tint="@color/blueJeans"
+            android:id="@+id/comment"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/comment"
+            app:layout_constraintLeft_toLeftOf="@+id/comment"
+            app:layout_constraintRight_toRightOf="@+id/comment"
+            android:text="0"
+            android:id="@+id/feedCommentsCount"
+            />
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            app:layout_constraintTop_toTopOf="@+id/like"
+            app:layout_constraintLeft_toRightOf="@id/comment"
+            android:layout_marginStart="20dp"
+            android:src="@drawable/favorite_svgrepo_com__1_"
+            android:id="@+id/favorite"
+            app:tint="@color/blueJeans"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/favorite"
+            app:layout_constraintLeft_toLeftOf="@+id/favorite"
+            app:layout_constraintRight_toRightOf="@+id/favorite"
+            android:text="0"
+            android:id="@+id/favoriteCounts"
+            />
+
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            app:layout_constraintTop_toTopOf="@+id/like"
+            app:layout_constraintLeft_toRightOf="@id/favorite"
+            android:layout_marginStart="20dp"
+            android:src="@drawable/retweet_svgrepo_com"
+            android:id="@+id/reFeed"
+            app:tint="@color/blueJeans"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/reFeed"
+            app:layout_constraintLeft_toLeftOf="@+id/reFeed"
+            app:layout_constraintRight_toRightOf="@+id/reFeed"
+            android:text="0"
+            android:id="@+id/repostCount"
+            />
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            app:layout_constraintTop_toTopOf="@+id/like"
+            app:layout_constraintLeft_toRightOf="@id/reFeed"
+            android:layout_marginStart="20dp"
+            android:src="@drawable/baseline_share_24"
+            android:id="@+id/share"
+            app:tint="@color/blueJeans"
+            />
+
+        <ImageView
+            android:id="@+id/moreOptions"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:src="@drawable/options_vertical_svgrepo_com"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/followButton"
+            app:layout_constraintBottom_toBottomOf="@id/followButton"
+            app:tint="@color/blueJeans" />
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/likesCount"
+            android:background="@color/black"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

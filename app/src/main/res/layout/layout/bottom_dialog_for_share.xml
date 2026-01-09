@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:background="@android:color/white"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!-- Top label, centered -->
+    <TextView
+        android:text="Share to"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Icons grid -->
+    <GridLayout
+        android:rowCount="3"
+        android:columnCount="6"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Row 0: Share icons (cols 0–5) -->
+        <!-- WhatsApp (col 0) -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_row="0"
+            android:layout_column="0"
+            android:layout_columnWeight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnWhatsApp"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_whatsapp"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+            <TextView
+                android:text="WhatsApp"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- SMS (col 1) -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_row="0"
+            android:layout_column="1"
+            android:layout_columnWeight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnSMS"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_sms"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+            <TextView
+                android:text="SMS"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- Instagram (col 2) -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_row="0"
+            android:layout_column="2"
+            android:layout_columnWeight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnInstagram"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_instagram"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+            <TextView
+                android:text="Instagram"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- Messenger (col 3) -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_row="0"
+            android:layout_column="3"
+            android:layout_columnWeight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnMessenger"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_messenger"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+            <TextView
+                android:text="Messenger"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- Facebook (col 4) -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_row="0"
+            android:layout_column="4"
+            android:layout_columnWeight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnFacebook"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_facebook"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+            <TextView
+                android:text="Facebook"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- Telegram (col 5) -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_row="0"
+            android:layout_column="5"
+            android:layout_columnWeight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnTelegram"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_telegram"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+            <TextView
+                android:text="Telegram"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- Row 1: Divider spans all 6 columns -->
+        <View
+            android:layout_row="1"
+            android:layout_column="0"
+            android:layout_columnSpan="6"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#D3D3D3"
+            android:layout_marginVertical="16dp"/>
+
+        <!-- Row 2: Action icons (cols 0–5) -->
+        <!-- Report (col 0) -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_row="2"
+            android:layout_column="0"
+            android:layout_columnWeight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnReport"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_report"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+            <TextView
+                android:text="Report"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- Not Interested (col 1) -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_row="2"
+            android:layout_column="1"
+            android:layout_columnWeight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnNotInterested"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_not_interested"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+            <TextView
+                android:text="Not Interested"
+                android:textSize="12sp"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:layout_marginTop="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- Save Video (col 2) -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_row="2"
+            android:layout_column="2"
+            android:layout_columnWeight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnSaveVideo"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_save_video"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+            <TextView
+                android:text="Save Video"
+                android:textSize="12sp"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:layout_marginTop="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- Duet (col 3) -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_row="2"
+            android:layout_column="3"
+            android:layout_columnWeight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnDuet"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_duet"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+            <TextView
+                android:text="Duet"
+                android:textSize="12sp"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:layout_marginTop="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- React (col 4) -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_row="2"
+            android:layout_column="4"
+            android:layout_columnWeight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnReact"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_react"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+            <TextView
+                android:text="React"
+                android:textSize="12sp"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:layout_marginTop="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- Add to favorites (col 5) -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_row="2"
+            android:layout_column="5"
+            android:layout_columnWeight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnAddToFavorites"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_add_to_favorites"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+            <TextView
+                android:text="Add to favorites"
+                android:textSize="12sp"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:layout_marginTop="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+    </GridLayout>
+
+    <!-- Bottom label, centered -->
+    <TextView
+        android:id="@+id/btnCancel"
+        android:text="Cancel"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"/>
+
+</LinearLayout>

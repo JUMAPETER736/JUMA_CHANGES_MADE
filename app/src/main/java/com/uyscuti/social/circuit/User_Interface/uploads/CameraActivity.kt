@@ -22,6 +22,7 @@ import com.journeyapps.barcodescanner.camera.CameraManager
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.ActivityCamera2Binding
 import com.uyscuti.social.circuit.databinding.ActivityCameraBinding
+import com.uyscuti.social.circuit.media.createPermissionLauncher
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date

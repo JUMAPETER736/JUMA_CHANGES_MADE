@@ -1,0 +1,75 @@
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/documentContainer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/white"
+    app:cardElevation="1dp"
+    app:cardCornerRadius="@dimen/dimen_12">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:padding="0dp">
+
+        <!-- PDF Cover Image -->
+        <ImageView
+            android:id="@+id/pdfImageView"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:adjustViewBounds="true"
+            android:scaleType="fitXY"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@drawable/documents" />
+
+
+        <!-- Overlay for +N (default hidden) -->
+        <ImageView
+            android:id="@+id/imageView2"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="#80000000"
+            android:scaleType="center"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/pdfImageView"
+            app:layout_constraintEnd_toEndOf="@id/pdfImageView"
+            app:layout_constraintStart_toStartOf="@id/pdfImageView"
+            app:layout_constraintTop_toTopOf="@id/pdfImageView" />
+
+        <TextView
+            android:id="@+id/countTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="+99"
+            android:textColor="@android:color/white"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/pdfImageView"
+            app:layout_constraintEnd_toEndOf="@id/pdfImageView"
+            app:layout_constraintStart_toStartOf="@id/pdfImageView"
+            app:layout_constraintTop_toTopOf="@id/pdfImageView" />
+
+        <!-- File Type Icon (Moved to Top-Left Corner) -->
+        <ImageView
+            android:id="@+id/fileTypeIcon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginTop="3dp"
+            android:layout_marginStart="5dp"
+            android:visibility="visible"
+            android:contentDescription="@string/content_description"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@drawable/pdf_icon" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

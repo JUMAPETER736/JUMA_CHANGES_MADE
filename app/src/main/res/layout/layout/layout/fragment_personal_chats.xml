@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".tabs.PersonalChats">
+
+    <com.uyscut.chatsuit.dialogs.DialogsList
+        android:id="@+id/dialogsList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:dialogDividerLeftPadding="0dp"
+        app:dialogMessageTextSize="17sp"
+        app:dialogTitleTextStyle="bold"
+        app:dialogUnreadBubbleBackgroundColor="@color/bluejeans"
+        app:dialogUnreadItemBackground="@color/gray_transparent"
+        app:dialogUnreadTitleTextStyle="bold" />
+
+<!--    &lt;!&ndash; Floating Action Button for making a new call &ndash;&gt;-->
+<!--    <com.google.android.material.floatingactionbutton.FloatingActionButton-->
+<!--        android:id="@+id/fabNewChat"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_gravity="bottom|end"-->
+<!--        android:layout_margin="16dp"-->
+<!--        app:srcCompat="@drawable/baseline_add_24"-->
+<!--        android:tint="@color/white"-->
+<!--        app:backgroundTint="@color/flash" />-->
+
+</FrameLayout>

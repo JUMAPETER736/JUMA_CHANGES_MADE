@@ -73,6 +73,7 @@ import com.uyscuti.social.circuit.User_Interface.uploads.VideosActivity
 import com.uyscuti.social.circuit.adapter.CommentsRecyclerViewAdapter
 import com.uyscuti.social.circuit.adapter.OnViewRepliesClickListener
 import com.uyscuti.social.circuit.adapter.notifications.AdPaginatedAdapter
+import com.uyscuti.social.circuit.bottomSheet.SendOfferBottomSheet
 import com.uyscuti.social.circuit.data.model.Comment
 import com.uyscuti.social.circuit.data.model.User
 import com.uyscuti.social.circuit.data.model.shortsmodels.OtherUsersProfile
@@ -96,6 +97,7 @@ import com.uyscuti.social.circuit.utils.deleteFiles
 import com.uyscuti.social.circuit.utils.fileType
 import com.uyscuti.social.circuit.utils.formatCount
 import com.uyscuti.social.circuit.utils.formatFileSize
+import com.uyscuti.social.circuit.utils.formattedMongoDateTime
 import com.uyscuti.social.circuit.utils.generateRandomId
 import com.uyscuti.social.circuit.utils.getFileNameFromLocalPath
 import com.uyscuti.social.circuit.utils.getOutputFilePath
@@ -105,6 +107,9 @@ import com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepository
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepositoryImpl
 import com.uyscuti.social.network.api.response.business.response.post.Post
+import com.uyscuti.social.network.api.response.commentreply.allreplies.Account
+import com.uyscuti.social.network.api.response.commentreply.allreplies.Author
+import com.uyscuti.social.network.api.response.commentreply.allreplies.Avatar
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import com.vanniktech.emoji.EmojiPopup
@@ -565,19 +570,19 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         commentAdapter?.updateItem(commentPosition, commentToAddReplies)
     }
 
-    private fun getReliesAuthor(): com.uyscuti.social.network.api.response.commentreply.allreplies.Author {
+    private fun getReliesAuthor(): Author {
         val localSettings = getSharedPreferences("LocalSettings", MODE_PRIVATE)
         val profilePic = localSettings.getString("profile_pic", "").toString()
 
-        val avatar = com.uyscuti.social.network.api.response.commentreply.allreplies.Avatar(
+        val avatar = Avatar(
             "", "", url = profilePic
         )
 
-        val account = com.uyscuti.social.network.api.response.commentreply.allreplies.Account(
+        val account = Account(
             _id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername()
         )
         val author =
-            com.uyscuti.social.network.api.response.commentreply.allreplies.Author(
+            Author(
                 _id = "21", account = account, firstName = "", lastName = ""
             )
 
@@ -682,7 +687,44 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         binding.profileDetails.setOnClickListener {
             val otherUsersProfile = OtherUsersProfile(
                 data.userDetails.username, data.userDetails.username,
-                data.userDetails.avatar, data.owner
+                data.userDetails.avatar, data.owner,
+                isVerified = TODO(),
+                bio = TODO(),
+                linkInBio = TODO(),
+                isCreator = TODO(),
+                isTrending = TODO(),
+                isFollowing = TODO(),
+                isPrivate = TODO(),
+                followersCount = TODO(),
+                followingCount = TODO(),
+                postsCount = TODO(),
+                shortsCount = TODO(),
+                videosCount = TODO(),
+                isOnline = TODO(),
+                lastSeen = TODO(),
+                joinedDate = TODO(),
+                location = TODO(),
+                website = TODO(),
+                email = TODO(),
+                phoneNumber = TODO(),
+                dateOfBirth = TODO(),
+                gender = TODO(),
+                accountType = TODO(),
+                isBlocked = TODO(),
+                isMuted = TODO(),
+                badgeType = TODO(),
+                level = TODO(),
+                reputation = TODO(),
+                coverPhoto = TODO(),
+                theme = TODO(),
+                language = TODO(),
+                timezone = TODO(),
+                notificationsEnabled = TODO(),
+                privacySettings = TODO(),
+                socialLinks = TODO(),
+                achievements = TODO(),
+                interests = TODO(),
+                categories = TODO()
             )
 
             OtherUserProfileAccount.open(

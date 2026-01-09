@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.SettingsActivity"
-    android:background="@color/blue_fade"
+    android:background="@color/bluejeans"
     tools:ignore="MissingDefaultResource">
 
     <androidx.appcompat.widget.Toolbar

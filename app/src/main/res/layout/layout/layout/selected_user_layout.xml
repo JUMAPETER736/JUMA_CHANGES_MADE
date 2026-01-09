@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:orientation="vertical"
+    android:layout_margin="5dp"
+    android:gravity="center"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <ImageView
+            android:id="@+id/selected_user_avatar"
+            android:layout_width="50dp"
+            android:layout_height="50dp"/>
+
+        <ImageView
+            android:id="@+id/deselect_icon"
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:src="@drawable/deselect"
+            android:layout_gravity="top|end"
+            />
+
+    </FrameLayout>
+    <TextView
+        android:id="@+id/selected_user_name"
+        android:layout_width="55dp"
+        android:maxLines="1"
+        android:gravity="center"
+        android:ellipsize="none"
+        android:textStyle="bold"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>

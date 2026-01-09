@@ -28,7 +28,7 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
                 android:contentDescription="@string/content_description"
-                android:src="@drawable/document"
+                android:src="@drawable/documents"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -73,7 +73,7 @@
                 android:layout_marginEnd="12dp"
                 android:background="@drawable/fill_button_color"
                 android:paddingHorizontal="12dp"
-                android:text="Following"
+                android:text="Follow"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
                 android:textSize="13sp"
@@ -291,6 +291,7 @@
                 android:contentDescription="@string/content_description"
                 android:src="@drawable/share_svgrepo_com"
                 app:tint="@color/blueJeans" />
+
         </LinearLayout>
     </LinearLayout>
 

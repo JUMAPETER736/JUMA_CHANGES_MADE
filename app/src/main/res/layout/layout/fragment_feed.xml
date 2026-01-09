@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.fragments.FeedFragment">
+    tools:context="com.uyscuti.social.circuit.ui.fragments.chat.FeedFragment">
 
 <!--    app:tabIndicator="@null"
   app:tabIndicatorColor="@color/bluejeans"
@@ -14,8 +14,8 @@
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:contentDescription="@string/content_description"
-        android:layout_width="0dp"
-        android:layout_height="50dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
@@ -201,7 +201,7 @@
         android:layout_height="wrap_content"
         android:clickable="true"
         android:layout_marginBottom="40dp"
-        android:src="@drawable/ic_edit"
+        android:src="@drawable/edit"
         android:tint="@color/white"
         android:visibility="invisible"
         app:backgroundTint="@color/bluejeans"

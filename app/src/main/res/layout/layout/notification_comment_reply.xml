@@ -40,7 +40,7 @@
                 android:layout_height="match_parent"
                 android:scaleType="fitCenter"
                 android:visibility="visible"
-                android:src="@drawable/profile_photo" />
+                android:src="@drawable/profilepic2" />
 
             <!--            <ImageView-->
             <!--                android:layout_width="16dp"-->

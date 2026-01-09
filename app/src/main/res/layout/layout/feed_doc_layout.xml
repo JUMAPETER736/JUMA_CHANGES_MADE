@@ -15,7 +15,7 @@
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginHorizontal="50dp"
         android:layout_marginVertical="10dp"
-        android:src="@drawable/document"
+        android:src="@drawable/documents"
         android:id="@+id/profileImageView"
         />
     <TextView
@@ -121,7 +121,7 @@
                 <ImageView
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:src="@drawable/document"
+                    android:src="@drawable/documents"
                     />
                 <TextView
                     android:layout_width="wrap_content"
@@ -165,7 +165,7 @@
                 <ImageView
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:src="@drawable/document"
+                    android:src="@drawable/documents"
                     android:visibility="gone"
                     android:id="@+id/documentIcon"
                     />
@@ -228,7 +228,7 @@ android:layout_marginStart="5dp"
         app:layout_constraintTop_toBottomOf="@+id/caption"
         android:id="@+id/tags"
         android:text=""
-        android:textColor="@color/blueJeans"
+        android:textColor="@color/bluejeans"
         android:layout_marginStart="50dp"
         android:layout_marginEnd="20dp"
         android:layout_marginTop="5dp"
@@ -255,7 +255,7 @@ android:layout_marginStart="5dp"
         android:layout_marginStart="50dp"
         android:src="@drawable/favorite_svgrepo_com"
         android:id="@+id/like"
-        app:tint="@color/blueJeans" />
+        app:tint="@color/bluejeans" />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -273,7 +273,7 @@ android:layout_marginStart="5dp"
         app:layout_constraintLeft_toRightOf="@id/like"
         android:layout_marginStart="20dp"
         android:src="@drawable/chat_round_svgrepo_com_shorts"
-        app:tint="@color/blueJeans"
+        app:tint="@color/bluejeans"
         android:id="@+id/comment"
         />
 
@@ -296,7 +296,7 @@ android:layout_marginStart="5dp"
         android:layout_marginStart="20dp"
         android:src="@drawable/favorite_svgrepo_com__1_"
         android:id="@+id/favorite"
-        app:tint="@color/blueJeans"
+        app:tint="@color/bluejeans"
         />
     <ImageView
         android:layout_width="50dp"
@@ -307,7 +307,7 @@ android:layout_marginStart="5dp"
         android:layout_marginStart="20dp"
         android:src="@drawable/options_vertical_svgrepo_com"
         android:id="@+id/moreOptions"
-        app:tint="@color/blueJeans"
+        app:tint="@color/bluejeans"
         />
     <ImageView
         android:layout_width="50dp"
@@ -318,7 +318,7 @@ android:layout_marginStart="5dp"
         android:layout_marginStart="20dp"
         android:src="@drawable/retweet_svgrepo_com"
         android:id="@+id/reFeed"
-        app:tint="@color/blueJeans"
+        app:tint="@color/bluejeans"
         />
     <ImageView
         android:layout_width="50dp"
@@ -329,13 +329,13 @@ android:layout_marginStart="5dp"
         android:layout_marginStart="20dp"
         android:src="@drawable/baseline_share_24"
         android:id="@+id/share"
-        app:tint="@color/blueJeans"
+        app:tint="@color/bluejeans"
         />
 
     <!--    <View-->
     <!--        android:layout_width="match_parent"-->
     <!--        android:layout_height="1dp"-->
-    <!--        app:layout_constraintTop_toBottomOf="@id/repostPost"-->
+    <!--        app:layout_constraintTop_toBottomOf="@id/reFeed"-->
     <!--        android:background="@android:color/black"/>-->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

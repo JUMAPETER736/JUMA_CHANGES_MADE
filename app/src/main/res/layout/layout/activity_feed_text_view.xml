@@ -44,7 +44,7 @@
         android:src="@drawable/like_svgrepo_com_white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:tint="@color/blueJeans" />
+        app:tint="@color/bluejeans" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -67,7 +67,7 @@
         android:src="@drawable/chat_round_svgrepo_com_shorts"
         app:layout_constraintBottom_toBottomOf="@id/like"
         app:layout_constraintLeft_toRightOf="@id/like"
-        app:tint="@color/blueJeans" />
+        app:tint="@color/bluejeans" />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -89,7 +89,7 @@
         android:src="@drawable/favorite_svgrepo_com__1_"
         app:layout_constraintBottom_toBottomOf="@id/like"
         app:layout_constraintLeft_toRightOf="@id/comment"
-        app:tint="@color/blueJeans" />
+        app:tint="@color/bluejeans" />
 
     <ImageView
         android:id="@+id/re"
@@ -101,7 +101,7 @@
         app:layout_constraintBottom_toBottomOf="@id/fav"
         app:layout_constraintLeft_toRightOf="@id/fav"
 
-        app:tint="@color/blueJeans" />
+        app:tint="@color/bluejeans" />
 
     <ImageView
         android:id="@+id/share"
@@ -113,7 +113,7 @@
         android:src="@drawable/baseline_share_24"
         app:layout_constraintBottom_toBottomOf="@id/re"
         app:layout_constraintLeft_toRightOf="@id/re"
-        app:tint="@color/blueJeans" />
+        app:tint="@color/bluejeans" />
 
     <ImageView
         android:id="@+id/mo"
@@ -125,5 +125,5 @@
         android:src="@drawable/options_vertical_svgrepo_com"
         app:layout_constraintBottom_toBottomOf="@id/share"
         app:layout_constraintLeft_toRightOf="@id/share"
-        app:tint="@color/blueJeans" />
+        app:tint="@color/bluejeans" />
 </androidx.constraintlayout.widget.ConstraintLayout>

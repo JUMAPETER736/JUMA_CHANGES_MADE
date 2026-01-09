@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.MakeCallActivity">
+    tools:context="com.uyscuti.social.circuit.MakeCallActivity">
 
     <RelativeLayout
         android:id="@+id/container"

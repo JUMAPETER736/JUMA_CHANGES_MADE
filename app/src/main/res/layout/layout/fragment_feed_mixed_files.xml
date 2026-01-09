@@ -203,7 +203,7 @@
             android:layout_width="match_parent"
             android:layout_height="500dp"
             android:contentDescription="@string/content_description"
-            android:src="@drawable/document"
+            android:src="@drawable/documents"
             app:layout_constraintDimensionRatio="16:9"
             app:layout_constraintTop_toTopOf="parent"
             tools:layout_editor_absoluteX="0dp" />

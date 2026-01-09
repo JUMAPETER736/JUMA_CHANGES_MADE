@@ -364,7 +364,7 @@
                     android:id="@+id/recyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    tools:listitem="@layout/bottom_sheet_1_item" />
+                    tools:listitem="@layout/comment_text_item" />
 
                 <ProgressBar
                     android:layout_width="50dp"
@@ -422,7 +422,7 @@
                     android:layout_marginRight="16dp"
                     android:background="@color/bluejeans" />
 
-                <com.uyscut.chatsuit.messages.CommentsInput
+                <com.uyscuti.social.chatsuit.messages.CommentsInput
                     android:id="@+id/input"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -434,6 +434,7 @@
                     app:inputCursorDrawable="@drawable/shape_custom_cursor"
                     app:inputHint="Comment..."
                     app:showAttachmentButton="true" />
+
             </LinearLayout>
 
             <LinearLayout
@@ -473,7 +474,7 @@
                 <!--                        app:touchable="true"-->
                 <!--                        app:waveColor="@color/bluejeans"-->
                 <!--                        />-->
-                <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
+                <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
                     android:id="@+id/wave"
                     android:layout_width="0dp"
                     android:layout_height="32dp"
@@ -574,7 +575,7 @@
 
                     </LinearLayout>
 
-                    <com.uyscut.flashdesign.views.WaveFormView
+                    <com.uyscuti.sharedmodule.views.WaveFormView
                         android:id="@+id/waveForm"
                         android:layout_width="match_parent"
                         android:layout_height="90dp"

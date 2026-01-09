@@ -1,285 +1,348 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/feedMixedFilesContainer"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:id="@+id/feedTextLayoutContainer"
-    xmlns:expandableTextView="http://schemas.android.com/tools">
+    android:background="@color/white"
+    android:layout_marginTop="4dp">
 
+    <!-- Main Card Container - Using percentage for margins -->
     <androidx.cardview.widget.CardView
-        android:id="@+id/feedCardView"
-        android:layout_width="match_parent"
+        android:id="@+id/mainPostCard"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:cardElevation="4dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="1dp"
+        android:layout_marginEnd="1dp"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="2dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="16dp">
+            android:paddingBottom="4dp">
 
-            <!-- Header Section: Profile Image, Username, Handler, Follow Button, Options -->
+            <!-- Header section - using dimension resources for better scaling -->
             <ImageView
                 android:id="@+id/profileImageView"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
+                android:layout_width="@dimen/profile_image_size"
+                android:layout_height="@dimen/profile_image_size"
+                android:layout_marginStart="@dimen/margin_medium"
+                android:layout_marginTop="@dimen/margin_medium"
                 android:contentDescription="@string/content_description"
-                android:src="@drawable/document"
+                android:src="@drawable/documents"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
                 android:id="@+id/textView"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
+                android:layout_marginStart="@dimen/margin_small"
+                android:layout_marginEnd="@dimen/margin_medium"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:text="Username"
                 android:textColor="@color/black"
-                android:textSize="18sp"
+                android:textSize="@dimen/text_medium"
                 android:textStyle="bold"
+                app:layout_constraintEnd_toStartOf="@id/date_time"
                 app:layout_constraintStart_toEndOf="@id/profileImageView"
                 app:layout_constraintTop_toTopOf="@id/profileImageView" />
 
             <TextView
                 android:id="@+id/handerText"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/margin_xsmall"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:text="@string/contentCreator"
                 android:textColor="@color/gray_darkest"
-                android:textSize="14sp"
+                android:textSize="@dimen/text_small"
                 app:layout_constraintStart_toStartOf="@id/textView"
+                app:layout_constraintEnd_toEndOf="@id/textView"
                 app:layout_constraintTop_toBottomOf="@id/textView" />
 
             <TextView
                 android:id="@+id/date_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:text="Date - Time"
-                android:textSize="12sp"
-                app:layout_constraintBottom_toBottomOf="@id/textView"
-                app:layout_constraintEnd_toStartOf="@+id/followButton"
-                app:layout_constraintHorizontal_bias="0.828"
-                app:layout_constraintStart_toEndOf="@id/textView" />
+                android:layout_marginEnd="@dimen/margin_xsmall"
+                android:text="date_time"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/gray_darkest"
+                app:layout_constraintBottom_toBottomOf="@id/followButton"
+                app:layout_constraintEnd_toStartOf="@id/followButton"
+                app:layout_constraintTop_toTopOf="@id/followButton" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/followButton"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/feed_follow_button_border"
-                android:backgroundTintMode="@color/blueJeans"
+                android:layout_width="64dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="@dimen/margin_small"
+                android:background="@drawable/fill_button_color"
+                android:paddingHorizontal="10dp"
                 android:text="Follow"
+                android:visibility="visible"
                 android:textAllCaps="false"
-                android:textColor="@color/black"
+                android:textColor="@color/white"
+                android:textSize="@dimen/text_small"
                 app:layout_constraintBottom_toBottomOf="@id/profileImageView"
                 app:layout_constraintEnd_toStartOf="@id/moreOptions"
                 app:layout_constraintTop_toTopOf="@id/profileImageView" />
 
             <ImageView
                 android:id="@+id/moreOptions"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:padding="8dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="@dimen/margin_xsmall"
+                android:padding="6dp"
                 android:src="@drawable/options_vertical_svgrepo_com"
                 app:layout_constraintBottom_toBottomOf="@id/followButton"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@+id/followButton"
-                android:layout_marginEnd="8dp"
+                app:layout_constraintTop_toTopOf="@id/followButton"
                 app:tint="@color/blueJeans" />
 
-            <!-- Content Section: Caption and Tags -->
+            <!-- Caption section -->
             <com.colormoon.readmoretextview.ReadMoreTextView
                 android:id="@+id/caption"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:layout_marginHorizontal="16dp"
+                android:layout_marginStart="@dimen/margin_medium"
+                android:layout_marginTop="@dimen/margin_small"
+                android:layout_marginEnd="@dimen/margin_medium"
                 android:justificationMode="inter_word"
                 android:text="This is Expandable text this is a simple text, this is a testing text"
-                android:textSize="16sp"
+                android:textSize="@dimen/text_medium"
+                android:visibility="gone"
                 app:colorClickableText="#039BE5"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/profileImageView"
                 app:trimCollapsedText="@string/read_more"
-                app:trimExpandedText=""
-                android:maxLines="5"
+                app:trimExpandedText="@string/read_less"
+                app:trimLength="100"
                 app:trimMode="trimModeLength" />
 
             <TextView
                 android:id="@+id/tags"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginHorizontal="16dp"
-                android:text="#SocialApp#Developerws#MalawiFire"
+                android:layout_marginStart="@dimen/margin_medium"
+                android:layout_marginTop="@dimen/margin_xsmall"
+                android:layout_marginEnd="@dimen/margin_medium"
+                android:layout_marginBottom="@dimen/margin_small"
+                android:text="#SocialApp #Developers #MalawiFire"
                 android:textColor="@color/blueJeans"
+                android:visibility="gone"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/caption" />
 
-            <!-- Divider -->
-            <View
-                android:id="@+id/divider"
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginHorizontal="16dp"
-                android:background="#E1E8ED"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tags" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
 
-            <!-- Action Section: Like, Comment, Favorite, Repost, Share -->
-            <LinearLayout
-                android:id="@+id/actionsLayout"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/divider">
+    <!-- Media card - responsive width -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/mixedFilesCardView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="1dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="1dp"
+        android:clickable="true"
+        app:cardCornerRadius="10dp"
+        android:background="@color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/mainPostCard">
 
-                <!-- Like Section -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="horizontal">
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/multipleAudiosContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:clickable="false">
 
-                    <ImageView
-                        android:id="@+id/like"
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        android:contentDescription="@string/content_description"
-                        android:src="@drawable/heart_svgrepo_com"
-                        app:tint="@color/blueJeans" />
-
-                    <TextView
-                        android:id="@+id/likesCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:text="0"
-                        android:textColor="#657786"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <!-- Comment Section -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/comment"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@string/content_description"
-                        android:src="@drawable/comments"
-                        app:tint="@color/blueJeans" />
-
-                    <TextView
-                        android:id="@+id/feedCommentsCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:text="0"
-                        android:textColor="#657786"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <!-- Favorite Section -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/favorite"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@string/content_description"
-                        android:src="@drawable/favorite_svgrepo_com__1_"
-                        app:tint="@color/blueJeans" />
-
-                    <TextView
-                        android:id="@+id/favoriteCounts"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:text="0"
-                        android:textColor="#657786"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <!-- Repost Section -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/reFeed"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@string/content_description"
-                        android:src="@drawable/repeat_svgrepo_com"
-                        app:tint="@color/blueJeans" />
-
-                    <TextView
-                        android:id="@+id/repostCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:text="0"
-                        android:textColor="#657786"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <!-- Share Section -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/share"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@string/content_description"
-                        android:src="@drawable/share_svgrepo_com"
-                        app:tint="@color/blueJeans" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Divider -->
-            <View
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginHorizontal="16dp"
-                android:background="#E1E8ED"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/actionsLayout" />
+                android:layout_height="wrap_content"
+                android:clickable="false"
+                android:background="@color/white"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.StaggeredGridLayoutManager"
+                app:spanCount="3"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
+
+    <!-- Interaction buttons - responsive height -->
+    <LinearLayout
+        android:id="@+id/interactionButtonsLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@android:color/white"
+        android:paddingVertical="@dimen/margin_small"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/mixedFilesCardView">
+
+        <!-- Like Section -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="4dp">
+
+            <ImageView
+                android:id="@+id/like"
+                android:layout_width="@dimen/icon_size"
+                android:layout_height="@dimen/icon_size"
+                android:contentDescription="@string/content_description"
+                android:src="@drawable/heart_svgrepo_com"
+                app:tint="@color/blueJeans" />
+
+            <TextView
+                android:id="@+id/likesCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="0"
+                android:textColor="#657786"
+                android:textSize="@dimen/text_medium" />
+        </LinearLayout>
+
+        <!-- Comment Section -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="4dp">
+
+            <ImageView
+                android:id="@+id/comment"
+                android:layout_width="@dimen/icon_size"
+                android:layout_height="@dimen/icon_size"
+                android:contentDescription="@string/content_description"
+                android:src="@drawable/comments"
+                app:tint="@color/blueJeans" />
+
+            <TextView
+                android:id="@+id/feedCommentsCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="0"
+                android:textColor="#657786"
+                android:textSize="@dimen/text_medium" />
+        </LinearLayout>
+
+        <!-- Favorite Section -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="4dp">
+
+            <ImageView
+                android:id="@+id/favorite"
+                android:layout_width="@dimen/icon_size"
+                android:layout_height="@dimen/icon_size"
+                android:contentDescription="@string/content_description"
+                android:src="@drawable/favorite_svgrepo_com__1_"
+                app:tint="@color/blueJeans" />
+
+            <TextView
+                android:id="@+id/favoriteCounts"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="0"
+                android:textColor="#657786"
+                android:textSize="@dimen/text_medium" />
+        </LinearLayout>
+
+        <!-- Retweet Section -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="4dp">
+
+            <ImageView
+                android:id="@+id/reFeed"
+                android:layout_width="@dimen/icon_size"
+                android:layout_height="@dimen/icon_size"
+                android:contentDescription="@string/content_description"
+                android:src="@drawable/repeat_svgrepo_com"
+                app:tint="@color/blueJeans" />
+
+            <TextView
+                android:id="@+id/repostCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="0"
+                android:textColor="#657786"
+                android:textSize="@dimen/text_medium" />
+        </LinearLayout>
+
+        <!-- Share Section -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="4dp">
+
+            <ImageView
+                android:id="@+id/share"
+                android:layout_width="@dimen/icon_size"
+                android:layout_height="@dimen/icon_size"
+                android:contentDescription="@string/content_description"
+                android:src="@drawable/share_svgrepo_com"
+                app:tint="@color/blueJeans" />
+
+            <TextView
+                android:id="@+id/shareCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="0"
+                android:textColor="#657786"
+                android:textSize="@dimen/text_medium" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Divider line -->
+    <View
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginTop="4dp"
+        android:background="@color/gray_transparent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/interactionButtonsLayout" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

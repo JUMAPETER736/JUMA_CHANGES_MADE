@@ -11,7 +11,7 @@
 
     <ImageView
         android:layout_width="30dp"
-        app:tint="@color/blueJeans"
+        app:tint="@color/bluejeans"
         android:layout_height="match_parent"
         android:src="@drawable/chat_round_svgrepo_com"
         android:id="@+id/settingsImageView"

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/dialog_background"
+    android:gravity="center_horizontal">
+
+    <!-- Header Section -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Profile QR Code"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="?android:textColorPrimary"
+        android:layout_marginBottom="16dp"
+        android:fontFamily="sans-serif-medium" />
+
+    <!-- Profile Section -->
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp">
+
+        <!-- Profile Image -->
+        <ImageView
+            android:id="@+id/profileImageView"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_centerHorizontal="true"
+            android:scaleType="centerCrop"
+            android:contentDescription="Profile picture"
+            tools:src="@drawable/flash21" />
+
+        <!-- Verification Badge -->
+        <ImageView
+            android:id="@+id/verificationBadge"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignEnd="@id/profileImageView"
+            android:layout_alignBottom="@id/profileImageView"
+            android:layout_marginEnd="4dp"
+            android:layout_marginBottom="4dp"
+            android:src="@drawable/ic_verified"
+            android:background="@drawable/badge_background"
+            android:padding="2dp"
+            android:visibility="gone"
+            android:contentDescription="Verified user"
+            android:elevation="2dp" />
+
+    </RelativeLayout>
+
+    <!-- Username -->
+    <TextView
+        android:id="@+id/usernameText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="?android:textColorPrimary"
+        android:layout_marginBottom="24dp"
+        android:fontFamily="sans-serif-medium"
+        tools:text="\@username" />
+
+    <!-- QR Code Container -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@android:color/white">
+
+        <ImageView
+            android:id="@+id/qrImageView"
+            android:layout_width="300dp"
+            android:layout_height="300dp"
+            android:padding="2dp"
+            android:scaleType="centerInside"
+            android:contentDescription="QR Code for profile"
+            tools:src="@drawable/ic_qr_placeholder" />
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Instruction Text -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Scan this code to connect"
+        android:textSize="14sp"
+        android:textColor="?android:textColorSecondary"
+        android:gravity="center"
+        android:fontFamily="sans-serif"
+        android:alpha="0.8" />
+
+</LinearLayout>

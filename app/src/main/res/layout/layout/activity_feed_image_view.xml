@@ -30,7 +30,7 @@
         android:padding="20dp"
         app:layout_constraintLeft_toLeftOf="parent"
         android:id="@+id/like"
-        app:tint="@color/blueJeans"
+        app:tint="@color/bluejeans"
         android:contentDescription="@string/content_description"
         />
     <ImageView
@@ -42,7 +42,7 @@
         android:layout_marginStart="5dp"
         app:layout_constraintLeft_toRightOf="@id/like"
         android:id="@+id/comment"
-        app:tint="@color/blueJeans"
+        app:tint="@color/bluejeans"
         android:contentDescription="@string/content_description"
         />
     <ImageView
@@ -54,7 +54,7 @@
         android:layout_marginStart="5dp"
         app:layout_constraintLeft_toRightOf="@id/comment"
         android:id="@+id/fav"
-        app:tint="@color/blueJeans"
+        app:tint="@color/bluejeans"
         android:contentDescription="@string/content_description"
         />
     <ImageView
@@ -67,7 +67,7 @@
         app:layout_constraintLeft_toRightOf="@id/fav"
         android:id="@+id/re"
 
-        app:tint="@color/blueJeans" />
+        app:tint="@color/bluejeans" />
     <ImageView
         android:layout_width="80dp"
         android:layout_height="80dp"
@@ -77,7 +77,7 @@
         android:layout_marginStart="5dp"
         app:layout_constraintLeft_toRightOf="@id/re"
         android:id="@+id/share"
-        app:tint="@color/blueJeans"
+        app:tint="@color/bluejeans"
         android:contentDescription="@string/content_description"
         />
     <ImageView
@@ -90,5 +90,5 @@
         android:contentDescription="@string/content_description"
         app:layout_constraintLeft_toRightOf="@id/share"
         android:id="@+id/mo"
-        app:tint="@color/blueJeans" />
+        app:tint="@color/bluejeans" />
 </androidx.constraintlayout.widget.ConstraintLayout>

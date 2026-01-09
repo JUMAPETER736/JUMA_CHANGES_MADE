@@ -1,0 +1,28 @@
+<!-- res/layout/shimmer_item.xml -->
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="10dp">
+
+    <View
+        android:id="@+id/shimmer_view"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_margin="4dp"
+        android:background="@drawable/shimmer_rounded"/>
+
+    <View
+        android:id="@+id/shimmer_view2"
+        android:layout_weight="1"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:layout_marginEnd="26dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/shimmer_background"/>
+
+</LinearLayout>

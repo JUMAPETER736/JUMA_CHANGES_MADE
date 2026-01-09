@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/black"
+
+    android:layout_height="?android:actionBarSize">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/baseline_arrow_back_ios_24"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:id="@+id/backIcon"
+        android:padding="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="5dp"
+        />
+    <ImageView
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:id="@+id/feedProfilePic"
+        android:src="@drawable/profilepic2"
+        android:padding="10dp"
+        android:layout_marginStart="10dp"
+        app:layout_constraintLeft_toRightOf="@+id/backIcon"
+        app:layout_constraintTop_toTopOf="@+id/backIcon"
+        app:layout_constraintBottom_toBottomOf="@id/backIcon"
+        />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="user_name"
+        app:layout_constraintLeft_toRightOf="@+id/feedProfilePic"
+        app:layout_constraintTop_toTopOf="@+id/feedProfilePic"
+        app:layout_constraintBottom_toBottomOf="@id/feedProfilePic"
+        android:layout_marginStart="10dp"
+        android:textColor="@color/white"
+        android:id="@+id/username"
+        android:textSize="16sp"
+        />
+<!--        <ImageView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            app:layout_constraintRight_toRightOf="parent"-->
+<!--            app:layout_constraintTop_toTopOf="parent"-->
+<!--            android:src="@drawable/like_svgrepo_com_white"-->
+<!--            android:visibility="visible"-->
+<!--            android:layout_marginTop="20dp"-->
+<!--            android:layout_marginEnd="10dp"-->
+<!--            android:id="@+id/likeIcon"-->
+<!--            />-->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/followButton"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:textAllCaps="false"
+        android:layout_marginEnd="10dp"
+        android:layout_marginTop="10dp"
+        android:visibility="invisible"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:background="@drawable/shorts_follow_button_border"
+        android:text="Follow"
+        android:textColor="#FFF"
+        />
+    <!--    <ImageView-->
+    <!--        android:layout_width="wrap_content"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        app:layout_constraintRight_toLeftOf="@id/likeIcon"-->
+    <!--        app:layout_constraintTop_toTopOf="parent"-->
+    <!--        android:src="@drawable/reply_svgrepo_com"-->
+    <!--        android:visibility="visible"-->
+    <!--        android:layout_marginTop="20dp"-->
+    <!--        android:layout_marginEnd="10dp"-->
+    <!--        android:id="@+id/replyIcon"-->
+    <!--        />-->
+
+</androidx.constraintlayout.widget.ConstraintLayout>

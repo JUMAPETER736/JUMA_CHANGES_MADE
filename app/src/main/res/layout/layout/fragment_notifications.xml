@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.fragments.NotificationsFragment">
+    tools:context="com.uyscuti.social.circuit.ui.fragments.chat.NotificationsFragment">
 
     <!-- App Bar / Toolbar -->
 <!--    <androidx.appcompat.widget.Toolbar-->

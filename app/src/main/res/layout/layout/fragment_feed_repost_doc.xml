@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     app:layoutDescription="@xml/fragment_feed_video_view_scene"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".ui.fragments.feed.feedviewfragments.FeedDocViewFragment">
+    tools:context=".ui.fragments.feed.feedviewfragments.FeedDocumentViewFragment">
 
 
     <include
@@ -63,7 +63,7 @@
                 <ImageView
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:src="@drawable/document"
+                    android:src="@drawable/documents"
                     />
                 <TextView
                     android:layout_width="wrap_content"
@@ -105,7 +105,7 @@
                 <ImageView
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:src="@drawable/document"
+                    android:src="@drawable/documents"
                     android:visibility="gone"
                     android:id="@+id/documentIcon"
                     />

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.OtherUserProfile">
+    tools:context="com.uyscuti.sharedmodule.OtherUserProfile">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:id="@+id/coordinatorLayout"
@@ -333,7 +333,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="200dp"
                     android:scaleType="centerCrop"
-                    android:background="@drawable/blue_button_bg"
+                    android:background="@drawable/ic_info_blue"
                     app:layout_collapseMode="parallax" />
 
                 <!-- Profile Container -->
@@ -440,6 +440,7 @@
                                     android:layout_gravity="center"
                                     android:src="@drawable/ic_call"
                                     app:tint="@color/white" />
+
                             </com.google.android.material.card.MaterialCardView>
 
                             <!-- Message Button -->
@@ -453,11 +454,12 @@
                                 app:cardElevation="4dp">
 
                                 <ImageView
-                                    android:layout_width="24dp"
+                                    android:layout_width="wrap_content"
                                     android:layout_height="24dp"
                                     android:layout_gravity="center"
                                     android:src="@drawable/comment_1_svgrepo_com"
                                     app:tint="@color/white" />
+
                             </com.google.android.material.card.MaterialCardView>
 
                             <!-- Follow Button -->
@@ -465,10 +467,13 @@
                                 android:id="@+id/followIcon"
                                 android:layout_width="100dp"
                                 android:layout_height="50dp"
-                                android:text="Follow"
+                                android:text="@string/follow"
                                 android:textColor="@color/white"
-                                app:backgroundTint="@color/blueJeans"
-                                app:cornerRadius="20dp" />
+                                android:textAlignment="center"
+                                app:cornerRadius="20dp"
+                                app:elevation="4dp"
+                                android:backgroundTint="@color/blueJeans"
+                                 />
 
                         </LinearLayout>
 
@@ -733,7 +738,7 @@
                 android:layout_marginRight="16dp"
                 android:background="@color/bluejeans" />
 
-            <com.uyscut.chatsuit.messages.CommentsInput
+            <com.uyscuti.social.chatsuit.messages.CommentsInput
                 android:id="@+id/input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -930,7 +935,7 @@
                     </LinearLayout>
 
                     <!-- Waveform visualization -->
-                    <com.uyscut.flashdesign.views.WaveFormView
+                    <com.uyscuti.sharedmodule.views.WaveFormView
                         android:id="@+id/waveForm"
                         android:layout_width="match_parent"
                         android:layout_height="60dp"
@@ -951,10 +956,10 @@
                             android:layout_height="36dp"
                             android:background="@drawable/circle_background"
                             android:padding="8dp"
-                            android:src="@drawable/play"
+                            android:src="@drawable/play_button_filled"
                             app:tint="@android:color/white" />
 
-                        <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
+                        <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
                             android:id="@+id/wave"
                             android:layout_width="0dp"
                             android:layout_height="32dp"

@@ -28,7 +28,7 @@
                 android:layout_marginHorizontal="16dp"
                 android:layout_marginVertical="10dp"
                 android:contentDescription="@string/content_description"
-                android:src="@drawable/document"
+                android:src="@drawable/documents"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -70,7 +70,7 @@
                 android:layout_marginEnd="40dp"
                 android:layout_marginBottom="2dp"
                 android:background="@drawable/feed_follow_button_border"
-                android:backgroundTintMode="@color/blueJeans"
+                android:backgroundTintMode="@color/bluejeans"
                 android:text="Follow"
                 android:textAllCaps="false"
                 android:textColor="@color/black"
@@ -88,7 +88,7 @@
                 app:layout_constraintBottom_toBottomOf="@id/followButton"
                 app:layout_constraintRight_toRightOf="parent"
                 app:layout_constraintTop_toTopOf="@+id/followButton"
-                app:tint="@color/blueJeans" />
+                app:tint="@color/bluejeans" />
 
             <com.colormoon.readmoretextview.ReadMoreTextView
                 android:id="@+id/caption"
@@ -116,7 +116,7 @@
                 android:layout_marginTop="5dp"
                 android:layout_marginEnd="16dp"
                 android:text="#SocialApp#Developerws#MalawiFire"
-                android:textColor="@color/blueJeans"
+                android:textColor="@color/bluejeans"
                 android:visibility="visible"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
@@ -169,7 +169,7 @@
                         android:layout_height="34dp"
                         android:contentDescription="@string/content_description"
                         android:src="@drawable/heart_svgrepo_com"
-                        app:tint="@color/blueJeans" />
+                        app:tint="@color/bluejeans" />
 
                     <TextView
                         android:id="@+id/likesCount"
@@ -195,7 +195,7 @@
                         android:layout_height="30dp"
                         android:contentDescription="@string/content_description"
                         android:src="@drawable/comments"
-                        app:tint="@color/blueJeans" />
+                        app:tint="@color/bluejeans" />
 
                     <TextView
                         android:id="@+id/feedCommentsCount"
@@ -221,7 +221,7 @@
                         android:layout_height="30dp"
                         android:contentDescription="@string/content_description"
                         android:src="@drawable/favorite_svgrepo_com__1_"
-                        app:tint="@color/blueJeans" />
+                        app:tint="@color/bluejeans" />
 
                     <TextView
                         android:id="@+id/favoriteCounts"
@@ -246,7 +246,7 @@
                         android:layout_height="30dp"
                         android:contentDescription="@string/content_description"
                         android:src="@drawable/repeat_svgrepo_com"
-                        app:tint="@color/blueJeans" />
+                        app:tint="@color/bluejeans" />
 
                     <TextView
                         android:id="@+id/repostCount"
@@ -272,7 +272,7 @@
                         android:layout_height="30dp"
                         android:contentDescription="@string/content_description"
                         android:src="@drawable/share_svgrepo_com"
-                        app:tint="@color/blueJeans" />
+                        app:tint="@color/bluejeans" />
                 </LinearLayout>
 
                 <!-- More Options Section -->
@@ -289,7 +289,7 @@
                         android:contentDescription="@string/content_description"
                         android:src="@drawable/options_vertical_svgrepo_com"
                         android:visibility="gone"
-                        app:tint="@color/blueJeans" />
+                        app:tint="@color/bluejeans" />
                 </LinearLayout>
 
             </LinearLayout>
