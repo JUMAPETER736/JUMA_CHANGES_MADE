@@ -62,6 +62,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
+
 fun generateRandomId(): String {
     return UUID.randomUUID().toString()
 }
@@ -71,6 +72,43 @@ fun generateMongoDBTimestamp(): String {
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
 
     return timestamp.format(formatter)
+}
+
+fun formattedMongoDateTime(dateTimeString: String?): String {
+    if (dateTimeString.isNullOrBlank()) return "Unknown time"
+
+    return try {
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+        inputFormat.timeZone = TimeZone.getTimeZone("UTC")
+        val date = inputFormat.parse(dateTimeString) ?: return "now"
+
+        val now = System.currentTimeMillis()
+        val diffInMillis = now - date.time
+        val diffInSeconds = diffInMillis / 1000
+        val diffInMinutes = diffInSeconds / 60
+        val diffInHours = diffInMinutes / 60
+        val diffInDays = diffInHours / 24
+        val diffInWeeks = diffInDays / 7
+        val diffInMonths = diffInDays / 30
+        val diffInYears = diffInDays / 365
+
+        when {
+            diffInSeconds < 60 -> "now"
+            diffInMinutes < 60 -> "${diffInMinutes}m"
+            diffInHours < 24 -> "${diffInHours}h"
+            diffInDays == 1L -> "1d"
+            diffInDays < 7 -> "${diffInDays}d"
+            diffInWeeks < 4 -> "${diffInWeeks}w"  // 1w, 2w, 3w only
+            diffInMonths == 0L -> "1mo"  // 4 weeks shows as 1mo
+            diffInMonths == 1L -> "1mo"
+            diffInMonths < 12 -> "${diffInMonths}mo"
+            diffInYears == 1L -> "1y"
+            else -> "${diffInYears}y"
+        }
+    } catch (e: Exception) {
+        Log.w("DateFormat", "Failed to format date: $dateTimeString", e)
+        "Unknown time"
+    }
 }
 
 //fun deleteFile(filePath: String): Boolean {
@@ -175,30 +213,20 @@ fun createMultipartBody(
 
 @Throws(FileNotFoundException::class)
 fun getFileFromUri(context: Context, uri: Uri, fileType: String, extension: String = "doc"): File? {
-    return try {
-        // Check if we have permission to access this URI
-        val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+    val inputStream = context.contentResolver.openInputStream(uri) ?: return null
 
-        val file = if (fileType == "gif") {
-            File(context.cacheDir, "temp_file_${System.currentTimeMillis()}.gif")
-        } else {
-            File(context.cacheDir, "temp_file_${System.currentTimeMillis()}.$extension")
-        }
 
-        inputStream.use { input ->
-            file.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        }
-        file
-    } catch (securityException: SecurityException) {
-        Log.e("FileUtils", "Permission denied accessing URI: $uri", securityException)
-        // Handle the security exception - inform user they need to select file differently
-        null
-    } catch (e: Exception) {
-        Log.e("FileUtils", "Error reading file from URI: $uri", e)
-        null
+    val file = if (fileType == "gif") {
+        File(context.cacheDir, "temp_file.gif")
+    } else {
+        File(context.cacheDir, "temp_file.$extension")
     }
+    inputStream.use { input ->
+        file.outputStream().use { output ->
+            input.copyTo(output)
+        }
+    }
+    return file
 }
 
 object PathUtil {
@@ -260,31 +288,36 @@ object AudioDurationHelper {
         return -1L
     }
 
-    fun getLocalAudioDuration(filePath: String): Long {
+    fun getLocalAudioDuration(filePath: String): Long? {
+        val TAG = "getLocalAudioDuration"
         val file = File(filePath)
-        if (!file.exists() || !file.canRead()) {
-            Log.e("AudioDurationHelper", "File doesn't exist or can't be read: $filePath")
-            return 0L
+        if (!file.exists()) {
+            // File does not exist
+            Log.e(TAG, "Local file path does not exist for audio duration extract")
+            return null
         }
 
+        Log.i(TAG, "Local file path exist for audio duration extract")
+
+
+        Log.d(TAG, "getLocalAudioDuration: file executable ${file.canExecute()}")
         val retriever = MediaMetadataRetriever()
-        return try {
-            retriever.setDataSource(filePath)
-            val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-            duration?.toLongOrNull() ?: 0L
-        } catch (e: Exception) {
-            Log.e("AudioDurationHelper", "Error getting audio duration: ${e.message}")
-            0L
-        } finally {
-            try {
-                retriever.release()
-            } catch (e: Exception) {
-                Log.e("AudioDurationHelper", "Error releasing MediaMetadataRetriever: ${e.message}")
-            }
-        }
+        retriever.setDataSource(filePath)
+
+        val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+        retriever.release()
+
+        return durationStr?.toLong()
     }
-
-
+//   fun reverseFormattedDuration(durationString: String): Long {
+//        val parts = durationString.split(":")
+//        if (parts.size != 2) {
+//            throw IllegalArgumentException("Invalid duration format: $durationString")
+//        }
+//        val minutes = parts[0].toIntOrNull() ?: throw IllegalArgumentException("Invalid minutes: ${parts[0]}")
+//        val seconds = parts[1].toIntOrNull() ?: throw IllegalArgumentException("Invalid seconds: ${parts[1]}")
+//        return (minutes * 60 + seconds).toLong() * 1000
+//    }
 
     fun reverseFormattedDuration(durationString: String): Long {
         try {
@@ -361,82 +394,145 @@ object TimeUtilsLiveData {
         _formattedTimestampLiveData.value = formattedTimestamp
     }
 
-    private fun formatMongoTimestamp(dateTimeString: String?): String {
-        if (dateTimeString.isNullOrBlank()) return "now"
-        return try {
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-            inputFormat.timeZone = TimeZone.getTimeZone("UTC")
-            val date = inputFormat.parse(dateTimeString)
-            val now = Date()
-            val diffInMillis = now.time - (date?.time ?: 0)
-            val diffInSeconds = diffInMillis / 1000
-            val diffInMinutes = diffInSeconds / 60
-            val diffInHours = diffInMinutes / 60
-            val diffInDays = diffInHours / 24
-            val diffInWeeks = diffInDays / 7
-            val diffInMonths = diffInDays / 30 // Approximate
-            val diffInYears = diffInDays / 365 // Approximate
+    private fun formatMongoTimestamp(timestamp: String): String {
+        try {
+            val sdf = SimpleDateFormat(ISO_FORMAT, Locale.getDefault())
+            val date = sdf.parse(timestamp)
+            val currentTime = System.currentTimeMillis()
 
-            when {
-                diffInSeconds < 60 -> "now"
-                diffInMinutes < 60 -> "${diffInMinutes}m"
-                diffInHours < 24 -> "${diffInHours}h"
-                diffInDays == 1L -> "1d"
-                diffInDays < 7 -> "${diffInDays}d"
-                diffInWeeks == 1L -> "1w"
-                diffInWeeks < 4 -> "${diffInWeeks}w"
-                diffInMonths == 1L -> "a month ago"
-                diffInMonths < 12 -> "${diffInMonths}m"
-                diffInYears == 1L -> "1y"
-                else -> "${diffInYears}y"
+            // Calculate the difference in milliseconds
+            val diff = currentTime - date.time
+
+            // Use DateUtils to format the relative time
+            return when {
+                diff < DateUtils.MINUTE_IN_MILLIS -> "just now"
+                diff < DateUtils.HOUR_IN_MILLIS -> DateUtils.getRelativeTimeSpanString(
+                    date.time,
+                    currentTime,
+                    DateUtils.MINUTE_IN_MILLIS
+                ).toString()
+
+                diff < DateUtils.DAY_IN_MILLIS -> DateUtils.getRelativeTimeSpanString(
+                    date.time,
+                    currentTime,
+                    DateUtils.HOUR_IN_MILLIS
+                ).toString()
+
+                diff < 2 * DateUtils.DAY_IN_MILLIS -> "yesterday"
+                else -> SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
             }
-        } catch (e: Exception) {
-            Log.w("CommentViewHolder", "Failed to format timestamp: $dateTimeString", e)
-            "now"
+        } catch (e: ParseException) {
+            e.printStackTrace()
+            return timestamp // return original timestamp if parsing fails
         }
     }
-
-
 }
 
 object TimeUtils {
-    fun formatMongoTimestamp(dateTimeString: String?): String {
-        if (dateTimeString.isNullOrBlank()) return "now"
-        return try {
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-            inputFormat.timeZone = TimeZone.getTimeZone("UTC")
-            val date = inputFormat.parse(dateTimeString)
-            val now = Date()
-            val diffInMillis = now.time - (date?.time ?: 0)
-            val diffInSeconds = diffInMillis / 1000
-            val diffInMinutes = diffInSeconds / 60
-            val diffInHours = diffInMinutes / 60
-            val diffInDays = diffInHours / 24
-            val diffInWeeks = diffInDays / 7
-            val diffInMonths = diffInDays / 30 // Approximate
-            val diffInYears = diffInDays / 365 // Approximate
+    const val ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
 
-            when {
-                diffInSeconds < 60 -> "now"
-                diffInMinutes < 60 -> "${diffInMinutes}m"
-                diffInHours < 24 -> "${diffInHours}h"
-                diffInDays == 1L -> "1d"
-                diffInDays < 7 -> "${diffInDays}d"
-                diffInWeeks == 1L -> "1w"
-                diffInWeeks < 4 -> "${diffInWeeks}w"
-                diffInMonths == 1L -> "a month ago"
-                diffInMonths < 12 -> "${diffInMonths}m"
-                diffInYears == 1L -> "1y"
-                else -> "${diffInYears}y"
+    fun formatMongoTimestamp(timestamp: String): String {
+        try {
+            val sdf = SimpleDateFormat(ISO_FORMAT, Locale.getDefault())
+            val date = sdf.parse(timestamp)
+            val currentTime = System.currentTimeMillis()
+
+            // Calculate the difference in milliseconds
+            val diff = currentTime - date.time
+
+            // Use DateUtils to format the relative time
+            return when {
+                diff < DateUtils.MINUTE_IN_MILLIS -> "just now"
+                diff < DateUtils.HOUR_IN_MILLIS -> DateUtils.getRelativeTimeSpanString(
+                    date.time,
+                    currentTime,
+                    DateUtils.MINUTE_IN_MILLIS
+                ).toString()
+
+                diff < DateUtils.DAY_IN_MILLIS -> DateUtils.getRelativeTimeSpanString(
+                    date.time,
+                    currentTime,
+                    DateUtils.HOUR_IN_MILLIS
+                ).toString()
+
+                diff < 2 * DateUtils.DAY_IN_MILLIS -> "yesterday"
+                else -> SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
             }
-        } catch (e: Exception) {
-            Log.w("TimeUtils", "Failed to format timestamp: $dateTimeString", e)
-            "now"
+        } catch (e: ParseException) {
+            e.printStackTrace()
+            return timestamp // return original timestamp if parsing fails
         }
     }
 }
 
-
+//object TimeUtils {
+//    const val ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
+//
+//    fun formatMongoTimestamp(timestamp: String): String {
+//        try {
+//            val sdf = SimpleDateFormat(ISO_FORMAT, Locale.getDefault())
+//            val date = sdf.parse(timestamp)
+//            val currentTime = System.currentTimeMillis()
+//
+//            // Calculate the difference in milliseconds
+//            val diff = currentTime - date.time
+//
+//            // Use custom logic to format the relative time
+//            return when {
+//                diff < DateUtils.MINUTE_IN_MILLIS -> "just now"
+//                diff < DateUtils.HOUR_IN_MILLIS -> DateUtils.getRelativeTimeSpanString(
+//                    date.time,
+//                    currentTime,
+//                    DateUtils.MINUTE_IN_MILLIS
+//                ).toString()
+//                diff < DateUtils.DAY_IN_MILLIS -> {
+//                    val hoursAgo = TimeUnit.MILLISECONDS.toHours(diff)
+//                    if (hoursAgo < 24) {
+//                        "$hoursAgo" + "h"
+//                    } else {
+//                        val daysAgo = TimeUnit.MILLISECONDS.toDays(diff)
+//                        if (daysAgo == 1L) {
+//                            "1d"
+//                        } else {
+//                            "$daysAgo" + "d"
+//                        }
+//                    }
+//                }
+//                diff < DateUtils.DAY_IN_MILLIS * 30 -> {
+//                    val weeksAgo = TimeUnit.MILLISECONDS.toDays(diff) / 7
+//                    val daysRemainder = TimeUnit.MILLISECONDS.toDays(diff) % 7
+//                    if (weeksAgo == 1L && daysRemainder == 0L) {
+//                        "1w"
+//                    } else {
+//                        "$weeksAgo" + "w"
+//                    }
+//                }
+//                diff < DateUtils.DAY_IN_MILLIS * 365 -> {
+//                    val monthsAgo = TimeUnit.MILLISECONDS.toDays(diff) / 30
+//                    val daysRemainder = TimeUnit.MILLISECONDS.toDays(diff) % 30
+//                    if (monthsAgo == 1L && daysRemainder == 0L) {
+//                        "1m"
+//                    } else {
+//                        "$monthsAgo" + "m"
+//                    }
+//                }
+//                diff < DateUtils.DAY_IN_MILLIS * 365 * 2 -> {
+//                    val yearsAgo = TimeUnit.MILLISECONDS.toDays(diff) / 365
+//                    val daysRemainder = TimeUnit.MILLISECONDS.toDays(diff) % 365
+//                    if (yearsAgo == 1L && daysRemainder == 0L) {
+//                        "1y"
+//                    } else {
+//                        "$yearsAgo" + "y"
+//                    }
+//                }
+//                else -> SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
+//            }
+//        } catch (e: ParseException) {
+//            e.printStackTrace()
+//            return timestamp // return original timestamp if parsing fails
+//        }
+//    }
+//}
 fun isInternetAvailable(context: Context): Boolean {
     val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -557,7 +653,42 @@ fun getFileDuration(filePath: String): Long? {
     return null
 }
 
+//fun extractThumbnailFromVideo(filePath: String): Bitmap? {
+//    val retriever = MediaMetadataRetriever()
+//    try {
+//        retriever.setDataSource(filePath)
+//        // Extracting the thumbnail at the first frame
+//        val bitmap = retriever.getFrameAtTime(0)
+//        return bitmap
+//    } catch (e: Exception) {
+//        // Handle any exceptions, such as invalid file path or unsupported format
+//        e.printStackTrace()
+//    } finally {
+//        retriever.release()
+//    }
+//    return null
+//}
 
+//fun extractThumbnailAsMultipart(filePath: String): Pair<Boolean, RequestBody?> {
+//    val retriever = MediaMetadataRetriever()
+//    try {
+//        retriever.setDataSource(filePath)
+//        // Extracting the thumbnail at the first frame
+//        val bitmap = retriever.getFrameAtTime(0)
+//        val outputStream = ByteArrayOutputStream()
+//        // Compress the bitmap to a byte array
+//        bitmap?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+//        // Convert the byte array to a RequestBody
+//        val requestBody = RequestBody.create("image/*".toMediaTypeOrNull(), outputStream.toByteArray())
+//        return Pair(true, requestBody)
+//    } catch (e: Exception) {
+//        // Handle any exceptions, such as invalid file path or unsupported format
+//        e.printStackTrace()
+//    } finally {
+//        retriever.release()
+//    }
+//    return Pair(false, null)
+//}
 fun extractThumbnailFromVideo(filePath: String): Pair<Boolean, Bitmap?> {
     val retriever = MediaMetadataRetriever()
     try {
@@ -812,4 +943,29 @@ fun getFileSizeFromUri(context: Context, uri: Uri): Long? {
     }
 
     return fileSize
+}
+
+@SuppressLint("DefaultLocale")
+fun formatCount(count: Int): String {
+    return when {
+        count >= 1_000_000 -> {
+            val millions = count / 1_000_000.0
+            if (millions == millions.toInt().toDouble()) {
+                "${millions.toInt()}M"
+            } else {
+                String.format("%.1fM", millions)
+            }
+        }
+
+        count >= 1_000 -> {
+            val thousands = count / 1_000.0
+            if (thousands == thousands.toInt().toDouble()) {
+                "${thousands.toInt()}K"
+            } else {
+                String.format("%.1fK", thousands)
+            }
+        }
+
+        else -> count.toString()
+    }
 }

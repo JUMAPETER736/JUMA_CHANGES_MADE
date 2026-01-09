@@ -1,5 +1,6 @@
 package com.uyscuti.social.network.api.response.business.response.post
 
+
 import java.io.Serializable
 
 data class Post(

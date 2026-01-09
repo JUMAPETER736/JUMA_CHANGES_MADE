@@ -11,13 +11,16 @@ import android.os.Bundle
 import android.os.Environment
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.journeyapps.barcodescanner.camera.CameraManager
 import com.uyscuti.social.circuit.R
+import com.uyscuti.social.circuit.databinding.ActivityCamera2Binding
 import com.uyscuti.social.circuit.databinding.ActivityCameraBinding
 import java.io.File
 import java.text.SimpleDateFormat
@@ -26,144 +29,233 @@ import java.util.Locale
 
 class CameraActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityCameraBinding
+    private lateinit var binding: ActivityCamera2Binding
+    private lateinit var cameraManager: CameraManager
 
-    private val cameraPermission = Manifest.permission.CAMERA
-    private val cameraPermissionRequestCode = 101
+    private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
+    private var isFlashEnabled = false
 
-    private var takenPicturePath = ""
-
-    private lateinit var currentPhotoPath: String
-
-    private val takePictureLauncher =
-        registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { result: Bitmap? ->
-            // Handle the result (captured image)
-            if (result != null) {
-                // Do something with the captured image (e.g., display in an ImageView)
-//                imageView.setImageBitmap(result)
-                binding.image.setImageBitmap(result)
-            }
-        }
-
-    private val takePictureLauncherM: ActivityResultLauncher<Uri> =
-        registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-            if (success) {
-                // Do something with the taken picture path
-                binding.image.setImageURI(Uri.parse(currentPhotoPath))
-            } else {
-                // Handle the case where the picture was not taken successfully
-            }
-        }
+    companion object {
+        const val EXTRA_MEDIA_TYPE = "media_type"
+        const val EXTRA_MEDIA_URI = "media_uri"
+        const val EXTRA_MEDIA_PATH = "media_path"
+        const val MEDIA_TYPE_PHOTO = "photo"
+        const val MEDIA_TYPE_VIDEO = "video"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityCameraBinding.inflate(layoutInflater)
+        binding = ActivityCamera2Binding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setSupportActionBar(binding.toolbar)
 
+        // Initialize camera manager
+        cameraManager = CameraManager(this, this, binding.previewView)
 
-        binding.toolbar.setNavigationIcon(R.drawable.baseline_arrow_back_ios_24)
+        // Setup permission launcher
+        permissionLauncher = createPermissionLauncher(
+            onGranted = { startCameraPreview() },
+            onDenied = {
+                Toast.makeText(
+                    this,
+                    "Camera permissions are required",
+                    Toast.LENGTH_LONG
+                ).show()
+                finish()
+            }
+        )
 
-
-
-        binding.toolbar.setNavigationOnClickListener {
-            onBackPressed()
-        }
-
-
-
-        // Check camera permission
-        if (checkCameraPermission()) {
-            // Permission is already granted, enable the button
-            setupCameraButton()
+        // Request permissions or start camera
+        if (cameraManager.hasPermissions()) {
+            startCameraPreview()
         } else {
-            // Request camera permission
-            requestCameraPermission()
+            permissionLauncher.launch(CameraManager.REQUIRED_PERMISSIONS)
+        }
+
+        setupClickListeners()
+    }
+
+    private fun startCameraPreview() {
+        cameraManager.startCamera(object : CameraManager.CameraCallback {
+            override fun onPhotoCapture(uri: Uri, file: File?) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this@CameraActivity,
+                        "Photo saved successfully",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    // Return photo result to MainActivity
+                    returnPhotoResult(uri, file)
+                }
+            }
+
+            override fun onPhotoCaptureError(exception: Exception) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this@CameraActivity,
+                        "Error: ${exception.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            override fun onVideoRecordingStart() {
+                runOnUiThread {
+                    binding.videoButton.text = "Stop Recording"
+                    binding.videoButton.setBackgroundColor(getColor(android.R.color.holo_red_dark))
+                    binding.captureButton.isEnabled = false
+                }
+            }
+
+            override fun onVideoRecordingStop(uri: Uri, file: File?) {
+                runOnUiThread {
+                    binding.videoButton.text = "Start Recording"
+                    binding.videoButton.setBackgroundColor(getColor(android.R.color.holo_blue_dark))
+                    binding.captureButton.isEnabled = true
+
+                    Toast.makeText(
+                        this@CameraActivity,
+                        "Video saved successfully",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    // Return video result to MainActivity
+                    returnVideoResult(uri, file)
+                }
+            }
+
+            override fun onVideoRecordingError(exception: Exception) {
+                runOnUiThread {
+                    binding.videoButton.text = "Start Recording"
+                    binding.videoButton.setBackgroundColor(getColor(android.R.color.holo_blue_dark))
+                    binding.captureButton.isEnabled = true
+
+                    Toast.makeText(
+                        this@CameraActivity,
+                        "Recording error: ${exception.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        })
+    }
+
+    private fun setupClickListeners() {
+        // Capture photo
+        binding.captureButton.setOnClickListener {
+            cameraManager.capturePhoto(object : CameraManager.CameraCallback {
+                override fun onPhotoCapture(uri: Uri, file: File?) {
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@CameraActivity,
+                            "Photo captured!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        returnPhotoResult(uri, file)
+                    }
+                }
+
+                override fun onPhotoCaptureError(exception: Exception) {
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@CameraActivity,
+                            "Capture failed: ${exception.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+
+                override fun onVideoRecordingStart() {}
+                override fun onVideoRecordingStop(uri: Uri, file: File?) {}
+                override fun onVideoRecordingError(exception: Exception) {}
+            })
+        }
+
+        // Record video
+        binding.videoButton.setOnClickListener {
+            if (cameraManager.isRecording()) {
+                cameraManager.stopRecording()
+            } else {
+                cameraManager.startRecording(object : CameraManager.CameraCallback {
+                    override fun onPhotoCapture(uri: Uri, file: File?) {}
+                    override fun onPhotoCaptureError(exception: Exception) {}
+
+                    override fun onVideoRecordingStart() {
+                        runOnUiThread {
+                            binding.videoButton.text = "Stop Recording"
+                            binding.captureButton.isEnabled = false
+                        }
+                    }
+
+                    override fun onVideoRecordingStop(uri: Uri, file: File?) {
+                        runOnUiThread {
+                            binding.videoButton.text = "Start Recording"
+                            binding.captureButton.isEnabled = true
+                            returnVideoResult(uri, file)
+                        }
+                    }
+
+                    override fun onVideoRecordingError(exception: Exception) {
+                        runOnUiThread {
+                            binding.videoButton.text = "Start Recording"
+                            binding.captureButton.isEnabled = true
+                            Toast.makeText(
+                                this@CameraActivity,
+                                "Error: ${exception.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                })
+            }
+        }
+
+        // Switch camera
+        binding.switchCameraButton.setOnClickListener {
+            cameraManager.switchCamera()
+        }
+
+        // Toggle flash
+        binding.flashButton.setOnClickListener {
+            if (cameraManager.hasFlash()) {
+                isFlashEnabled = !isFlashEnabled
+                cameraManager.setFlashMode(isFlashEnabled)
+                binding.flashButton.text = if (isFlashEnabled) "Flash: ON" else "Flash: OFF"
+            } else {
+                Toast.makeText(this, "Flash not available", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    private fun checkCameraPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            this,
-            cameraPermission
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.confirm, menu)
-        return true
-    }
-
-
-    private fun createImageFile(): Uri {
-        // Create an image file name
-        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        val imageFile = File.createTempFile(
-            "FLASH_${timeStamp}_", /* prefix */
-            ".jpg", /* suffix */
-            storageDir /* directory */
-        )
-        currentPhotoPath = imageFile.absolutePath
-        return FileProvider.getUriForFile(
-            this,
-            "com.uyscut.provider",
-            imageFile
-        )
-    }
-
-
-    private fun confirmImage() {
-        // Return the image path to the calling activity
-        val resultIntent = Intent()
-        resultIntent.putExtra("image_url", currentPhotoPath)
+    /**
+     * Return photo result to Activity or Fragment
+     */
+    private fun returnPhotoResult(uri: Uri, file: File?) {
+        val resultIntent = Intent().apply {
+            putExtra(EXTRA_MEDIA_TYPE, MEDIA_TYPE_PHOTO)
+            putExtra(EXTRA_MEDIA_URI, uri.toString())
+            file?.let { putExtra(EXTRA_MEDIA_PATH, it.absolutePath) }
+        }
         setResult(RESULT_OK, resultIntent)
         finish()
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-
-            R.id.menu_confirm -> {
-
-                confirmImage()
-//                return true
-            }
-            else -> {
-
-            }
+    /**
+     * Return video result to MainActivity
+     */
+    private fun returnVideoResult(uri: Uri, file: File?) {
+        val resultIntent = Intent().apply {
+            putExtra(EXTRA_MEDIA_TYPE, MEDIA_TYPE_VIDEO)
+            putExtra(EXTRA_MEDIA_URI, uri.toString())
+            file?.let { putExtra(EXTRA_MEDIA_PATH, it.absolutePath) }
         }
-        return true
+        setResult(RESULT_OK, resultIntent)
+        finish()
     }
 
-    private fun setupCameraButton() {
-        takePictureLauncherM.launch(createImageFile())
-    }
-
-    private fun requestCameraPermission() {
-        ActivityCompat.requestPermissions(
-            this,
-            arrayOf(cameraPermission),
-            cameraPermissionRequestCode
-        )
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == cameraPermissionRequestCode) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission granted, enable the button
-                setupCameraButton()
-            } else {
-                // Permission denied, handle accordingly (e.g., show a message)
-                // You may want to inform the user why the permission is required
-            }
-        }
+    override fun onDestroy() {
+        super.onDestroy()
+        cameraManager.shutdown()
     }
 }
