@@ -2912,7 +2912,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
     }
 
-    override fun likeUnlikeCommentReply(
+    fun likeUnlikeCommentReply(
         replyPosition: Int,
         replyData: com.uyscuti.social.network.api.response.commentreply.allreplies.Comment,
         mainCommentPosition: Int,

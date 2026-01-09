@@ -1,4 +1,4 @@
-package com.uyscuti.sharedmodule.popupDialog
+package com.uyscuti.social.business.popupDialog
 
 import android.app.Dialog
 import android.content.Context
@@ -10,7 +10,7 @@ import android.widget.Button
 import android.widget.CheckBox
 import androidx.annotation.MainThread
 import com.google.android.material.button.MaterialButton
-import com.uyscuti.sharedmodule.R
+import com.uyscuti.social.circuit.R
 import java.lang.ref.WeakReference
 
 
