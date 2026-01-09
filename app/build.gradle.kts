@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.androidx.core.animation)
     implementation(libs.appcompat)
     implementation(libs.ui.graphics)
+    implementation(libs.androidx.camera.view)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
