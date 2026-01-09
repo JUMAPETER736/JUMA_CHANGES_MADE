@@ -59,14 +59,51 @@ import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.uyscuti.sharedmodule.popupDialog.DialogManager
 import com.uyscuti.social.business.adapter.MediaPagerAdapter
 import com.uyscuti.social.business.databinding.ActivityCatalogueDetailsBinding
 import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
 import com.uyscuti.social.chatsuit.messages.CommentsInput
+import com.uyscuti.social.circuit.FlashApplication
+import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.GifActivity
+import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
+import com.uyscuti.social.circuit.User_Interface.uploads.AudioActivity
+import com.uyscuti.social.circuit.User_Interface.uploads.CameraActivity
+import com.uyscuti.social.circuit.User_Interface.uploads.VideosActivity
+import com.uyscuti.social.circuit.adapter.CommentsRecyclerViewAdapter
+import com.uyscuti.social.circuit.adapter.OnViewRepliesClickListener
+import com.uyscuti.social.circuit.adapter.notifications.AdPaginatedAdapter
+import com.uyscuti.social.circuit.data.model.Comment
+import com.uyscuti.social.circuit.data.model.User
+import com.uyscuti.social.circuit.data.model.shortsmodels.OtherUsersProfile
+import com.uyscuti.social.circuit.databinding.BottomDialogForShareBinding
+import com.uyscuti.social.circuit.model.AudioPlayerHandler
+import com.uyscuti.social.circuit.model.CommentAudioPlayerHandler
+import com.uyscuti.social.circuit.model.PauseShort
+import com.uyscuti.social.circuit.presentation.DialogViewModel
+import com.uyscuti.social.circuit.presentation.MessageViewModel
+import com.uyscuti.social.circuit.utils.AndroidUtil.showToast
+import com.uyscuti.social.circuit.utils.AudioDurationHelper
+import com.uyscuti.social.circuit.utils.AudioDurationHelper.getFormattedDuration
+import com.uyscuti.social.circuit.utils.NetworkUtil
+import com.uyscuti.social.circuit.utils.PathUtil
+import com.uyscuti.social.circuit.utils.Timer
+import com.uyscuti.social.circuit.utils.TrimVideoUtils
+import com.uyscuti.social.circuit.utils.WaveFormExtractor
+import com.uyscuti.social.circuit.utils.audiomixer.AudioMixer
+import com.uyscuti.social.circuit.utils.audiomixer.input.GeneralAudioInput
+import com.uyscuti.social.circuit.utils.deleteFiles
+import com.uyscuti.social.circuit.utils.fileType
+import com.uyscuti.social.circuit.utils.formatFileSize
+import com.uyscuti.social.circuit.utils.generateRandomId
+import com.uyscuti.social.circuit.utils.getFileNameFromLocalPath
+import com.uyscuti.social.circuit.utils.getOutputFilePath
+import com.uyscuti.social.circuit.utils.isFileSizeGreaterThan2MB
+import com.uyscuti.social.circuit.utils.waveformseekbar.SeekBarOnProgressChanged
+import com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepository
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepositoryImpl
 import com.uyscuti.social.network.api.response.business.response.post.Post
-import com.uyscuti.social.network.api.response.comment.allcomments.Comment
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import com.vanniktech.emoji.EmojiPopup
@@ -78,7 +115,6 @@ import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.apache.logging.log4j.util.Timer
 import org.apache.poi.hwpf.HWPFDocument
 import org.apache.poi.hwpf.usermodel.Range
 import org.apache.poi.xwpf.usermodel.XWPFDocument
@@ -95,6 +131,7 @@ import java.util.TimeZone
 import javax.inject.Inject
 import kotlin.getValue
 import kotlin.properties.Delegates
+
 
 @UnstableApi
 @AndroidEntryPoint

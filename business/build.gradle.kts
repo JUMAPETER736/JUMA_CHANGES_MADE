@@ -107,6 +107,7 @@ dependencies {
     implementation("id.zelory:compressor:3.0.1")
 
     // Project modules
+    implementation(project(":app"))
     implementation(project(":chatsuit"))
     implementation(project(":network"))
     implementation(project(":core"))
