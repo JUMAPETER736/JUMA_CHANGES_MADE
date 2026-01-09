@@ -249,6 +249,11 @@
         <item name="cornerSizeBottomRight">0dp</item>
     </style>
 
+    <style name="SendOfferBottomSheetDialogTheme">
+        <![CDATA[    <!-- Bottom Sheet Dialog Theme -->     <style name="SendOfferBottomSheetDialogTheme" parent="Theme.Design.Light.BottomSheetDialog">         <item name="bottomSheetStyle">@style/BottomSheetStyle</item>     </style>]]></style>
+
+    <style name="RoundedImageView">
+        <![CDATA[    <!-- Style for rounded corner images (product image) -->     <style name="RoundedImageView">         <item name="cornerFamily">rounded</item>         <item name="cornerSize">12dp</item>     </style>]]></style>
 
 
 </resources>
