@@ -117,6 +117,8 @@ import com.uyscuti.social.circuit.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.social.circuit.feed_demo.AnyFileFullScreenActivity
 import com.uyscuti.social.circuit.model.FeedCommentClicked
 import com.uyscuti.social.circuit.model.GoToUserProfileFragment
+import com.uyscuti.social.circuit.model.ShowAppBar
+import com.uyscuti.social.circuit.model.ShowBottomNav
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
@@ -129,6 +131,7 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.response.posts.AuthorX
 import com.uyscuti.social.network.api.response.posts.Avatar
+import com.uyscuti.social.network.api.response.posts.CoverImage
 import com.uyscuti.social.network.api.response.posts.FileSize
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.RepostedUser
@@ -394,7 +397,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         render(data)
         setupClickListeners()
         setupTextWatcher()
-        setupBackNavigation()
         initializeMediaHandling()
         setupLikeButton(data)
         setupBookmarkButton(data)
@@ -464,13 +466,13 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     }
 
     private fun setupClickListeners() {
-        // Cancel button - immediate navigation back without delays
-        cancelButton.setOnClickListener {
-            Log.d(TAG, "Cancel button clicked - immediate navigation")
-            it.isEnabled = false // Prevent double-clicks
-            immediateNavigateBack()
-        }
 
+
+        cancelButton.setOnClickListener {
+            Log.d(TAG, "Cancel button clicked")
+            it.isEnabled = false
+            cleanupAndGoBack()
+        }
         // Repost button - handle repost action
         repostButton.setOnClickListener {
             Log.d(TAG, "Repost button clicked...")
@@ -644,6 +646,40 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
             }
         }
 
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun cleanupAndGoBack() {
+        // IMMEDIATE: Go back first - this is the priority
+        try {
+            if (isAdded && !parentFragmentManager.isStateSaved) {
+                parentFragmentManager.popBackStackImmediate()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error popping back stack", e)
+            // If immediate fails, try regular popBackStack
+            parentFragmentManager.popBackStack()
+        }
+
+        // Everything else happens AFTER we're already going back
+        view?.post {
+            // Clear focus
+            _binding?.replyInput?.clearFocus()
+
+            // Hide keyboard
+            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.hideSoftInputFromWindow(view?.windowToken, 0)
+
+            // Restore system bars
+            activity?.let { act ->
+                WindowCompat.setDecorFitsSystemWindows(act.window, true)
+                WindowInsetsControllerCompat(act.window, act.window.decorView)
+                    .show(WindowInsetsCompat.Type.systemBars())
+
+                EventBus.getDefault().post(ShowAppBar(true))
+                EventBus.getDefault().post(ShowBottomNav(true))
+            }
+        }
     }
 
     private fun getAvatarUrl(context: Context): String {
@@ -962,7 +998,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
                                 // Navigate back immediately - no delay needed
                                 if (isAdded && !isNavigatingBack) {
-                                    safeNavigateBack()
+
                                 }
                             }
 
@@ -1059,71 +1095,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         }
     }
 
-    @OptIn(androidx.media3.common.util.UnstableApi::class)
-    private fun safeNavigateBack() {
-        if (isNavigatingBack) {
-            Log.d(TAG, "Navigation already in progress")
-            return
-        }
-
-        isNavigatingBack = true
-
-        try {
-            Log.d(TAG, "Starting safe navigation back")
-
-            // Immediately restore MainActivity UI
-            (activity as? MainActivity)?.let { mainActivity ->
-                mainActivity.showAppBar()
-                mainActivity.showBottomNavigation()
-                Log.d(TAG, "MainActivity UI restored")
-            }
-
-            // Post with delay to ensure all transactions complete
-            Handler(Looper.getMainLooper()).postDelayed({
-                try {
-                    if (isAdded && activity != null) {
-                        // Use simple popBackStack (non-immediate) - queues the transaction
-                        parentFragmentManager.popBackStack()
-                        Log.d(TAG, "Navigation queued successfully")
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error during popBackStack, trying onBackPressed", e)
-                    try {
-                        activity?.onBackPressedDispatcher?.onBackPressed()
-                    } catch (e2: Exception) {
-                        Log.e(TAG, "onBackPressed also failed", e2)
-                    }
-                } finally {
-                    // Reset flag after longer delay
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        isNavigatingBack = false
-                    }, 500)
-                }
-            }, 300) // 300ms delay to let ViewPager2 finish
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in safeNavigateBack", e)
-            isNavigatingBack = false
-        }
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun immediateNavigateBack() {
-        // Just call safeNavigateBack - no difference needed
-        safeNavigateBack()
-    }
-
-    private fun setupBackNavigation() {
-        val callback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                Log.d(TAG, "Back pressed - safe navigation")
-                // Disable callback immediately to prevent multiple triggers
-                isEnabled = false
-                safeNavigateBack()
-            }
-        }
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
-    }
 
     @OptIn(UnstableApi::class)
     override fun onDestroyView() {
