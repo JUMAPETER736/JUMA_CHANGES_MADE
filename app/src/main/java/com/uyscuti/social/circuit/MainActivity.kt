@@ -1058,10 +1058,10 @@ class MainActivity : AppCompatActivity(), NavigationController, DirectReplyListe
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     private fun stopRecordingVoiceNote() {
+
         val TAG = "StopRecording"
+
         try {
-
-
 
             // Stop media recorder
             if (mediaRecorder != null) {
