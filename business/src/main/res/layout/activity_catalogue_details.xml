@@ -730,7 +730,7 @@ tools:context="com.uyscuti.social.business.CatalogueDetailsActivity">
 
                 </LinearLayout>
 
-                <com.uyscuti.sharedmodule.views.WaveFormView
+                <com.uyscuti.social.circuit.views.WaveFormView
                     android:layout_width="match_parent"
                     android:layout_height="90dp"
                     android:layout_marginTop="5dp"
@@ -766,7 +766,7 @@ tools:context="com.uyscuti.social.business.CatalogueDetailsActivity">
                         />
 
 
-                    <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
+                    <com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
                         android:id="@+id/wave"
                         android:layout_width="0dp"
                         android:layout_height="32dp"

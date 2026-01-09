@@ -13,7 +13,7 @@ data class Comment(
     var likes: Int,
     val postId: String,
     val updatedAt: String,
-    val replyCount: Int,
+    var replyCount: Int,
     val replies: MutableList<com.uyscuti.social.network.api.response.commentreply.allreplies.Comment> = mutableListOf(),
     var isRepliesVisible: Boolean = false,
     var hasNextPage: Boolean = true,
