@@ -7,6 +7,9 @@ import com.google.gson.reflect.TypeToken
 
 import com.uyscuti.social.network.api.response.getmyprofile.Account
 import com.uyscuti.social.network.api.response.getmyprofile.CoverImage
+import com.uyscuti.social.network.api.response.post.Image
+import com.uyscuti.social.network.api.response.post.Thumbnail
+import com.uyscuti.social.network.api.response.posts.Author
 
 class ShortsConverter {
     private val gson = Gson()

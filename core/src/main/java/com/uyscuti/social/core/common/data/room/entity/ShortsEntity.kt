@@ -4,6 +4,9 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.uyscuti.social.core.common.data.room.converters.ShortsConverter
+import com.uyscuti.social.network.api.response.post.Image
+import com.uyscuti.social.network.api.response.post.Thumbnail
+import com.uyscuti.social.network.api.response.posts.Author
 
 import java.io.Serializable
 

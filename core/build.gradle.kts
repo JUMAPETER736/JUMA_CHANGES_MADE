@@ -1,9 +1,9 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-
+    alias(libs.plugins.ksp)  // Changed from kapt
+    alias(libs.plugins.hilt.android)
     id("kotlin-parcelize")
-    kotlin("kapt")
 }
 
 android {
@@ -46,9 +46,19 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
+    // Hilt - Changed from kapt to ksp
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 
+    // Room - Changed from kapt to ksp
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     // Networking
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp)
     implementation("org.greenrobot:eventbus:3.3.1")
 
     // Socket.IO
