@@ -51,7 +51,7 @@ class CommentVideoPlayerActivity : AppCompatActivity() {
     var videoUrl = ""
     var owner = ""
     private var position by Delegates.notNull<Int>()
-    private var data: Comment? = null
+    private var data: com.uyscuti.social.network.api.response.comment.allcomments.Comment? = null
     private var currentReplyComment: com.uyscuti.social.network.api.response.commentreply.allreplies.Comment? =
         null
     private var updateReplyLikes:Boolean = false
@@ -231,7 +231,7 @@ class CommentVideoPlayerActivity : AppCompatActivity() {
         Log.d("onReturn", "data is liked ${data?.isLiked}")
         Log.d("onReturn", "data is liked ${currentReplyComment?.isLiked}")
         val resultIntent = Intent()
-        resultIntent.putExtra("data", data)
+        resultIntent.putExtra("isLiked", data?.isLiked ?: false)
         resultIntent.putExtra("reply", reply)
         resultIntent.putExtra("updateReplyLikes", updateReplyLikes)
         resultIntent.putExtra("updateLike", updateLike)
