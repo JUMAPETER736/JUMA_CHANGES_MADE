@@ -562,10 +562,102 @@ class UniversalSearchActivity : AppCompatActivity() {
         }
     }
 
-    // ===== INSTANT FILTER FROM CACHE =====
+    // ===== IMPROVED FILTER CACHED DATA (STRICTER MATCHING) =====
+    private fun filterCachedData(query: String): SearchResults {
+        // If query is empty, return empty results (don't show all data)
+        if (query.isEmpty() || query.isBlank()) {
+            return SearchResults(
+                allPosts = emptyList(),
+                shorts = emptyList(),
+                feedPosts = emptyList(),
+                people = emptyList(),
+                chats = emptyList(),
+                business = emptyList()
+            )
+        }
+
+        val queryLower = query.trim().lowercase()
+
+        // Helper function to check if text contains the query
+        fun String?.containsQuery(): Boolean {
+            return this?.lowercase()?.contains(queryLower) == true
+        }
+
+        // Filter people - check username, first name, last name, and email
+        val filteredPeople = cachedPeople.filter { author ->
+            author.account.username.containsQuery() ||
+                    author.firstName.containsQuery() ||
+                    author.lastName.containsQuery() ||
+                    "${author.firstName} ${author.lastName}".trim().containsQuery() ||
+                    author.account.email.containsQuery()
+        }
+
+        // Filter shorts - check content, author details, and tags
+        val filteredShorts = cachedShorts.filter { post ->
+            post.content.containsQuery() ||
+                    post.author.account.username.containsQuery() ||
+                    post.author.firstName.containsQuery() ||
+                    post.author.lastName.containsQuery() ||
+                    "${post.author.firstName} ${post.author.lastName}".trim().containsQuery() ||
+                    post.tags.any { it?.toString()?.containsQuery() == true }
+        }
+
+        // Filter feed posts - check content, author details, and tags
+        val filteredFeed = cachedFeedPosts.filter { post ->
+            post.content.containsQuery() ||
+                    post.author.account.username.containsQuery() ||
+                    post.author.firstName.containsQuery() ||
+                    post.author.lastName.containsQuery() ||
+                    "${post.author.firstName} ${post.author.lastName}".trim().containsQuery() ||
+                    post.tags.any { it?.toString()?.containsQuery() == true }
+        }
+
+        // Filter chats - check dialog name and all participant names
+        val filteredChats = cachedChats.filter { chat ->
+            chat.dialogName.containsQuery() ||
+                    chat.users.any { user ->
+                        user.name.containsQuery() ||
+                                user.name.split("|").any { it.trim().containsQuery() }
+                    }
+        }
+
+        // Filter business posts - check item name, description, and author
+        val filteredBusiness = cachedBusinessPosts.filter { post ->
+            post.businessDetails?.itemName.containsQuery() ||
+                    post.businessDetails?.description.containsQuery() ||
+                    post.businessDetails?.catalogue.containsQuery() ||
+                    post.author.account.username.containsQuery() ||
+                    post.author.firstName.containsQuery() ||
+                    post.author.lastName.containsQuery() ||
+                    "${post.author.firstName} ${post.author.lastName}".trim().containsQuery() ||
+                    post.businessDetails?.features?.any { it.containsQuery() } == true
+        }
+
+        Log.d("SearchFilter", "Query: '$query' - People: ${filteredPeople.size}, Shorts: ${filteredShorts.size}, Feed: ${filteredFeed.size}, Chats: ${filteredChats.size}, Business: ${filteredBusiness.size}")
+
+        return SearchResults(
+            allPosts = filteredShorts + filteredFeed + filteredBusiness,
+            shorts = filteredShorts,
+            feedPosts = filteredFeed,
+            people = filteredPeople,
+            chats = filteredChats,
+            business = filteredBusiness
+        )
+    }
+
+    // ===== ALSO UPDATE THE PERFORM SEARCH TO HANDLE EMPTY QUERIES BETTER =====
     private fun performSearch(query: String) {
         if (!isDataLoaded) {
             Log.d("SearchOptimized", "Data not loaded yet, showing loading...")
+            binding.noResultsText.text = "Loading data..."
+            binding.noResultsText.visibility = View.VISIBLE
+            return
+        }
+
+        // If query is empty, show recent users instead
+        if (query.isEmpty() || query.isBlank()) {
+            binding.filterChipsGroup.visibility = View.GONE
+            loadRecentUsers()
             return
         }
 
@@ -581,65 +673,6 @@ class UniversalSearchActivity : AppCompatActivity() {
 
             displaySearchResults(filteredResults)
         }
-    }
-
-    // ===== FILTER CACHED DATA (INSTANT) =====
-    private fun filterCachedData(query: String): SearchResults {
-        if (query.isEmpty()) {
-            return SearchResults(
-                allPosts = cachedShorts + cachedFeedPosts,
-                shorts = cachedShorts,
-                feedPosts = cachedFeedPosts,
-                people = cachedPeople,
-                chats = cachedChats,
-                business = cachedBusinessPosts
-            )
-        }
-
-        val queryLower = query.lowercase()
-
-        val filteredPeople = cachedPeople.filter { author ->
-            author.account.username.lowercase().contains(queryLower) ||
-                    author.firstName.lowercase().contains(queryLower) ||
-                    author.lastName.lowercase().contains(queryLower) ||
-                    author.account.email.lowercase().contains(queryLower)
-        }
-
-        val filteredShorts = cachedShorts.filter { post ->
-            (post.content?.lowercase()?.contains(queryLower) == true) ||
-                    post.author.account.username.lowercase().contains(queryLower) ||
-                    post.author.firstName.lowercase().contains(queryLower) ||
-                    post.author.lastName.lowercase().contains(queryLower) ||
-                    post.tags.any { it?.toString()?.lowercase()?.contains(queryLower) == true }
-        }
-
-        val filteredFeed = cachedFeedPosts.filter { post ->
-            (post.content?.lowercase()?.contains(queryLower) == true) ||
-                    post.author.account.username.lowercase().contains(queryLower) ||
-                    post.author.firstName.lowercase().contains(queryLower) ||
-                    post.author.lastName.lowercase().contains(queryLower) ||
-                    post.tags.any { it?.toString()?.lowercase()?.contains(queryLower) == true }
-        }
-
-        val filteredChats = cachedChats.filter { chat ->
-            chat.dialogName.lowercase().contains(queryLower) ||
-                    chat.users.any { it.name.lowercase().contains(queryLower) }
-        }
-
-        val filteredBusiness = cachedBusinessPosts.filter { post ->
-            (post.businessDetails?.itemName?.lowercase()?.contains(queryLower) == true) ||
-                    (post.businessDetails?.description?.lowercase()?.contains(queryLower) == true) ||
-                    post.author.account.username.lowercase().contains(queryLower)
-        }
-
-        return SearchResults(
-            allPosts = filteredShorts + filteredFeed + filteredBusiness,
-            shorts = filteredShorts,
-            feedPosts = filteredFeed,
-            people = filteredPeople,
-            chats = filteredChats,
-            business = filteredBusiness
-        )
     }
 
 
@@ -1049,8 +1082,6 @@ class UniversalSearchActivity : AppCompatActivity() {
 
 
 }
-
-
 
 
 class SearchUserNameAdapter(
