@@ -138,6 +138,14 @@ class FeedAdapter(
         private val cachedFollowingList = mutableSetOf<String>()
         private val cachedFollowingUsernames = mutableSetOf<String>()
 
+        private val cachedFollowersUsernames = mutableSetOf<String>()
+
+        fun getCachedFollowersUsernames(): Set<String> = cachedFollowersUsernames.toSet()
+
+        fun setCachedFollowersUsernames(usernames: Set<String>) {
+            cachedFollowersUsernames.clear()
+            cachedFollowersUsernames.addAll(usernames)
+        }
 
         fun getCachedFollowingUsernames(): Set<String> = cachedFollowingUsernames.toSet()
 
