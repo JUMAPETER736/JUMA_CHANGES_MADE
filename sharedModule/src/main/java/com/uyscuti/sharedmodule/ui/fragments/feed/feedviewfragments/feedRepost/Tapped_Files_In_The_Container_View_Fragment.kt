@@ -88,6 +88,7 @@ import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment.Companion.cachedFollowersList
 import com.uyscuti.sharedmodule.utils.FollowingManager
 import com.uyscuti.sharedmodule.viewmodels.FollowUnfollowViewModel
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
@@ -599,13 +600,10 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         followButton?.visibility = View.GONE
     }
 
-
-
-    //  LOAD FOLLOWERS FROM CACHE
     private fun loadMyFollowersList() {
         try {
-            val cachedFollowers = FeedAdapter.getCachedFollowingList()
-            val cachedFollowersUsernames = FeedAdapter.getCachedFollowingUsernames()
+            val cachedFollowers = FeedAdapter.getCachedFollowiList()
+            val cachedFollowersUsernames = FeedAdapter.getCachedFollowersUsernames()
 
             myFollowersList.clear()
             myFollowersList.addAll(cachedFollowers)
@@ -619,7 +617,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  SMART FOLLOWER CHECK
+    // ========== SMART FOLLOWER CHECK ==========
     private fun checkIfUserFollowsBack(feedOwnerId: String, feedOwnerUsername: String? = null): Boolean {
         // Clean username - remove @ symbol and trim
         val cleanUsername = feedOwnerUsername?.replace("@", "")?.trim()?.lowercase()
@@ -680,7 +678,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         return false
     }
 
-    //  SIMILARITY CALCULATION
+    // ========== SIMILARITY CALCULATION ==========
     private fun calculateIdSimilarity(id1: String, id2: String): Double {
         if (id1 == id2) return 1.0
         if (id1.isEmpty() || id2.isEmpty()) return 0.0
@@ -713,7 +711,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         return matrix[len1][len2]
     }
 
-    //  FOLLOW BUTTON CLICK
+    // ========== FOLLOW BUTTON CLICK ==========
     private fun handleFollowButtonClick(followButton: Button, feedOwnerId: String, feedOwnerUsername: String) {
         try {
             YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
@@ -754,7 +752,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         followUnfollowViewModel.followUnFollow(feedOwnerId)
     }
 
-    //  UPDATE FOLLOW BUTTON VISIBILITY
+    // ========== UPDATE FOLLOW BUTTON VISIBILITY ==========
     private fun updateFollowButtonVisibility() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
         val post = postList?.getOrNull(viewPager.currentItem)
@@ -810,7 +808,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  SETUP FOLLOW BUTTON
+    // ========== SETUP FOLLOW BUTTON ==========
     private fun setupFollowButton() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
 
@@ -829,7 +827,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  LOAD FOLLOWING LIST
+    // ========== LOAD FOLLOWING LIST ==========
     private fun loadFollowingListFromCache() {
         try {
             val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
@@ -854,7 +852,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  FOLLOW OBSERVER
+    // ========== FOLLOW OBSERVER ==========
     private fun setupFollowObserver() {
         followUnfollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) { isFollowing ->
             if (!isAdded || view == null) return@observe
@@ -873,7 +871,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  PAGE CHANGE LISTENER
+    // ========== PAGE CHANGE LISTENER ==========
     private fun setupViewPagerPageChangeListener() {
         pageChangeCallback = object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
@@ -890,7 +888,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         viewPager.registerOnPageChangeCallback(pageChangeCallback)
     }
 
-    //  VALIDATION
+    // ========== VALIDATION ==========
     private fun isValidUserId(userId: String?): Boolean {
         if (userId.isNullOrEmpty()) return false
         if (userId.length != 24) return false
