@@ -628,7 +628,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
         // Check 1: Use FeedAdapter's isUserInMyFollowersList (checks ID)
         if (FeedAdapter.isUserInMyFollowersList(feedOwnerId)) {
-            Log.d(TAG, "✅ Match - FeedAdapter ID cache")
+            Log.d(TAG, "Match - FeedAdapter ID cache")
             return true
         }
 
@@ -639,12 +639,12 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                 cleanFollowerUsername == cleanUsername
             }
             if (usernameMatch) {
-                Log.d(TAG, "✅ Match - Username: $cleanUsername")
+                Log.d(TAG, "Match - Username: $cleanUsername")
                 return true
             }
         }
 
-        Log.d(TAG, "❌ No match")
+        Log.d(TAG, "No match")
         return false
     }
 
@@ -832,28 +832,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         if (!userId.matches(Regex("^[a-fA-F0-9]{24}$"))) return false
         return true
     }
-
-    private fun levenshteinDistance(s1: String, s2: String): Int {
-        val len1 = s1.length
-        val len2 = s2.length
-        val matrix = Array(len1 + 1) { IntArray(len2 + 1) }
-
-        for (i in 0..len1) matrix[i][0] = i
-        for (j in 0..len2) matrix[0][j] = j
-
-        for (i in 1..len1) {
-            for (j in 1..len2) {
-                val cost = if (s1[i - 1] == s2[j - 1]) 0 else 1
-                matrix[i][j] = minOf(
-                    matrix[i - 1][j] + 1,
-                    matrix[i][j - 1] + 1,
-                    matrix[i - 1][j - 1] + cost
-                )
-            }
-        }
-
-        return matrix[len1][len2]
-    }
+    
 
 
     private fun loadPostContent(postId: String) {
