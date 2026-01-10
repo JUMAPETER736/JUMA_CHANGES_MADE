@@ -599,11 +599,31 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         followButton?.visibility = View.GONE
     }
 
-    //  LOAD FOLLOWERS FROM CACHE
+    // ========== PROPERTIES ==========
+    private var followingUserIds: MutableSet<String> = mutableSetOf()
+    private val myFollowersList = mutableSetOf<String>()
+    private val myFollowersUsernames = mutableSetOf<String>()
+
+    private val followingManager by lazy {
+        FollowingManager(requireContext())
+    }
+
+    // ========== IN onCreate() ==========
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        extractArguments()
+        setupBackPressHandler()
+        hideSystemBars()
+        initializeApiService()
+        loadFollowingListFromCache()
+        loadMyFollowersList()  // Load followers
+    }
+
+    // ========== LOAD FOLLOWERS FROM CACHE ==========
     private fun loadMyFollowersList() {
         try {
-            val cachedFollowers = FeedAdapter.getCachedFollowingList()
-            val cachedFollowersUsernames = FeedAdapter.getCachedFollowingUsernames()
+            val cachedFollowers = FeedAdapter.getCachedFollowersList()
+            val cachedFollowersUsernames = FeedAdapter.getCachedFollowersUsernames()
 
             myFollowersList.clear()
             myFollowersList.addAll(cachedFollowers)
@@ -617,30 +637,41 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  SMART FOLLOWER CHECK
+    // ========== SMART FOLLOWER CHECK ==========
     private fun checkIfUserFollowsBack(feedOwnerId: String, feedOwnerUsername: String? = null): Boolean {
+        // Clean username - remove @ symbol and trim
+        val cleanUsername = feedOwnerUsername?.replace("@", "")?.trim()?.lowercase()
+
+        Log.d(TAG, "Checking if follows back - ID: $feedOwnerId, Username: $cleanUsername")
+        Log.d(TAG, "My followers IDs: $myFollowersList")
+        Log.d(TAG, "My followers usernames: $myFollowersUsernames")
+
         // Check 1: Exact ID match
         if (myFollowersList.contains(feedOwnerId)) {
+            Log.d(TAG, "✅ Match found - Exact ID match")
             return true
         }
 
-        // Check 2: Exact username match (100%)
-        if (!feedOwnerUsername.isNullOrEmpty()) {
-            val usernameMatch = myFollowersUsernames.any {
-                it.trim().lowercase() == feedOwnerUsername.trim().lowercase()
+        // Check 2: Exact username match (100%) - PRIORITY CHECK
+        if (!cleanUsername.isNullOrEmpty()) {
+            val usernameMatch = myFollowersUsernames.any { followerUsername ->
+                val cleanFollowerUsername = followerUsername.replace("@", "").trim().lowercase()
+                cleanFollowerUsername == cleanUsername
             }
             if (usernameMatch) {
+                Log.d(TAG, "✅ Match found - Username match: $cleanUsername")
                 return true
             }
         }
 
         // Check 3: FeedAdapter cache
         if (FeedAdapter.isUserInMyFollowersList(feedOwnerId)) {
+            Log.d(TAG, "✅ Match found - FeedAdapter cache")
             return true
         }
 
         // Check 4: Fuzzy ID match (90%) + Username match (100%)
-        if (!feedOwnerUsername.isNullOrEmpty() && feedOwnerId.length >= 20) {
+        if (!cleanUsername.isNullOrEmpty() && feedOwnerId.length >= 20) {
             var bestMatchScore = 0.0
 
             myFollowersList.forEach { followerId ->
@@ -652,19 +683,22 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
             // If 90%+ ID match AND username matches exactly
             if (bestMatchScore >= 0.90) {
-                val usernameMatch = myFollowersUsernames.any {
-                    it.trim().lowercase() == feedOwnerUsername.trim().lowercase()
+                val usernameMatch = myFollowersUsernames.any { followerUsername ->
+                    val cleanFollowerUsername = followerUsername.replace("@", "").trim().lowercase()
+                    cleanFollowerUsername == cleanUsername
                 }
                 if (usernameMatch) {
+                    Log.d(TAG, "✅ Match found - Fuzzy ID (${(bestMatchScore * 100).toInt()}%) + Username")
                     return true
                 }
             }
         }
 
+        Log.d(TAG, "❌ No match found")
         return false
     }
 
-    //  SIMILARITY CALCULATION
+    // ========== SIMILARITY CALCULATION ==========
     private fun calculateIdSimilarity(id1: String, id2: String): Double {
         if (id1 == id2) return 1.0
         if (id1.isEmpty() || id2.isEmpty()) return 0.0
@@ -697,7 +731,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         return matrix[len1][len2]
     }
 
-    //  FOLLOW BUTTON CLICK
+    // ========== FOLLOW BUTTON CLICK ==========
     private fun handleFollowButtonClick(followButton: Button, feedOwnerId: String, feedOwnerUsername: String) {
         try {
             YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
@@ -738,7 +772,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         followUnfollowViewModel.followUnFollow(feedOwnerId)
     }
 
-    //  UPDATE FOLLOW BUTTON VISIBILITY
+    // ========== UPDATE FOLLOW BUTTON VISIBILITY ==========
     private fun updateFollowButtonVisibility() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
         val post = postList?.getOrNull(viewPager.currentItem)
@@ -794,7 +828,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  SETUP FOLLOW BUTTON
+    // ========== SETUP FOLLOW BUTTON ==========
     private fun setupFollowButton() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
 
@@ -813,7 +847,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  LOAD FOLLOWING LIST
+    // ========== LOAD FOLLOWING LIST ==========
     private fun loadFollowingListFromCache() {
         try {
             val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
@@ -838,7 +872,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  FOLLOW OBSERVER
+    // ========== FOLLOW OBSERVER ==========
     private fun setupFollowObserver() {
         followUnfollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) { isFollowing ->
             if (!isAdded || view == null) return@observe
@@ -857,7 +891,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  PAGE CHANGE LISTENER
+    // ========== PAGE CHANGE LISTENER ==========
     private fun setupViewPagerPageChangeListener() {
         pageChangeCallback = object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
@@ -874,12 +908,35 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         viewPager.registerOnPageChangeCallback(pageChangeCallback)
     }
 
-    //  VALIDATION
+    // ========== VALIDATION ==========
     private fun isValidUserId(userId: String?): Boolean {
         if (userId.isNullOrEmpty()) return false
         if (userId.length != 24) return false
         if (!userId.matches(Regex("^[a-fA-F0-9]{24}$"))) return false
         return true
+    }
+
+    // ========== ADD TO FeedAdapter COMPANION OBJECT ==========
+    companion object {
+        private val cachedFollowersList = mutableSetOf<String>()
+        private val cachedFollowersUsernames = mutableSetOf<String>()
+
+        fun getCachedFollowersList(): Set<String> = cachedFollowersList.toSet()
+        fun getCachedFollowersUsernames(): Set<String> = cachedFollowersUsernames.toSet()
+
+        fun setCachedFollowersList(followers: Set<String>) {
+            cachedFollowersList.clear()
+            cachedFollowersList.addAll(followers)
+        }
+
+        fun setCachedFollowersUsernames(usernames: Set<String>) {
+            cachedFollowersUsernames.clear()
+            cachedFollowersUsernames.addAll(usernames)
+        }
+
+        fun isUserInMyFollowersList(userId: String): Boolean {
+            return cachedFollowersList.contains(userId)
+        }
     }
 
 
