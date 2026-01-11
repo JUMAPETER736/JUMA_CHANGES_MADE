@@ -131,7 +131,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
 
     private var followingUserIds: MutableSet<String> = mutableSetOf()
-    private val myFollowersList = mutableSetOf<String>()
     private val myFollowersUsernames = mutableSetOf<String>()
     private val followingManager by lazy { FollowingManager(requireContext()) }
     private val followUnfollowViewModel: FollowUnfollowViewModel by activityViewModels()
@@ -854,7 +853,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         return true
     }
 
-    
+
 
     private fun loadPostContent(postId: String) {
         // Fetch post data by ID from your post list
