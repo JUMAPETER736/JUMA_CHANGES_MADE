@@ -630,18 +630,18 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         // Check 1: Use FeedAdapter's isUserInMyFollowersList (checks ID)
         if (FeedAdapter.isUserInMyFollowersList(feedOwnerId)) {
             Log.d(TAG, "║ ✅ YES - They follow me (ID cache)")
-            Log.d(TAG, "╚═══════════════════════════════════════")
+          
             return true
         }
-        Log.d(TAG, "║ ❌ No ID match in my followers cache")
+        Log.d(TAG, "No ID match in my followers cache")
 
         // Check 2: Exact username match
         if (!cleanUsername.isNullOrEmpty()) {
-            Log.d(TAG, "║ Checking username: $cleanUsername")
+            Log.d(TAG, "Checking username: $cleanUsername")
 
             myFollowersUsernames.forEachIndexed { index, followerUsername ->
                 val cleanFollowerUsername = followerUsername.replace("@", "").trim().lowercase()
-                Log.d(TAG, "║   ${index + 1}. Comparing '$cleanFollowerUsername' vs '$cleanUsername' = ${cleanFollowerUsername == cleanUsername}")
+                Log.d(TAG, "${index + 1}. Comparing '$cleanFollowerUsername' vs '$cleanUsername' = ${cleanFollowerUsername == cleanUsername}")
             }
 
             val usernameMatch = myFollowersUsernames.any { followerUsername ->
@@ -650,17 +650,17 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             }
 
             if (usernameMatch) {
-                Log.d(TAG, "║ ✅ YES - They follow me (Username match)")
-                Log.d(TAG, "╚═══════════════════════════════════════")
+                Log.d(TAG, "YES - They follow me (Username match)")
+
                 return true
             }
-            Log.d(TAG, "║ ❌ No username match")
+            Log.d(TAG, "No username match")
         } else {
-            Log.d(TAG, "║ ⚠️  Username is null or empty")
+            Log.d(TAG, " Username is null or empty")
         }
 
-        Log.d(TAG, "║ ❌ NO - They don't follow me")
-        Log.d(TAG, "╚═══════════════════════════════════════")
+        Log.d(TAG, "NO - They don't follow me")
+
         return false
     }
 
@@ -862,7 +862,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         if (!userId.matches(Regex("^[a-fA-F0-9]{24}$"))) return false
         return true
     }
-    
+
     private fun loadPostContent(postId: String) {
         // Fetch post data by ID from your post list
         val post = postList?.find { it.postId == postId } ?: return
