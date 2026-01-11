@@ -600,8 +600,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
 
-
-    //  LOAD FOLLOWERS FROM CACHE
     private fun loadMyFollowersList() {
         try {
             // FeedAdapter.setMyFollowersList() is called in FollowingFragment
@@ -613,42 +611,65 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             myFollowersUsernames.clear()
             myFollowersUsernames.addAll(cachedFollowersUsernames)
 
-            Log.d(TAG, "Loaded ${myFollowersUsernames.size} follower usernames")
+            Log.d(TAG, "╔═══════════════════════════════════════")
+            Log.d(TAG, "║ LOADED FOLLOWER USERNAMES")
+            Log.d(TAG, "║ Count: ${myFollowersUsernames.size}")
+            Log.d(TAG, "║ Usernames: $myFollowersUsernames")
+            Log.d(TAG, "╚═══════════════════════════════════════")
         } catch (e: Exception) {
             Log.e(TAG, "Error loading followers: ${e.message}")
         }
     }
 
-    //  SMART FOLLOWER CHECK
+    // ========== SMART FOLLOWER CHECK ==========
     private fun checkIfUserFollowsBack(feedOwnerId: String, feedOwnerUsername: String? = null): Boolean {
         // Clean username - remove @ symbol and trim
         val cleanUsername = feedOwnerUsername?.replace("@", "")?.trim()?.lowercase()
 
-        Log.d(TAG, "Checking - ID: $feedOwnerId, Username: $cleanUsername")
+        Log.d(TAG, "╔═══════════════════════════════════════")
+        Log.d(TAG, "║ Checking - ID: $feedOwnerId")
+        Log.d(TAG, "║ Username: $cleanUsername")
+        Log.d(TAG, "║ My followers usernames: $myFollowersUsernames")
+        Log.d(TAG, "╠═══════════════════════════════════════")
 
         // Check 1: Use FeedAdapter's isUserInMyFollowersList (checks ID)
         if (FeedAdapter.isUserInMyFollowersList(feedOwnerId)) {
-            Log.d(TAG, "Match - FeedAdapter ID cache")
+            Log.d(TAG, "║ ✅ Match - FeedAdapter ID cache")
+            Log.d(TAG, "╚═══════════════════════════════════════")
             return true
         }
+        Log.d(TAG, "║ ❌ No ID match in FeedAdapter cache")
 
         // Check 2: Exact username match (100%) - using cached usernames
         if (!cleanUsername.isNullOrEmpty()) {
+            Log.d(TAG, "║ Checking username: $cleanUsername")
+
+            myFollowersUsernames.forEachIndexed { index, followerUsername ->
+                val cleanFollowerUsername = followerUsername.replace("@", "").trim().lowercase()
+                Log.d(TAG, "║   ${index + 1}. Comparing '$cleanFollowerUsername' vs '$cleanUsername' = ${cleanFollowerUsername == cleanUsername}")
+            }
+
             val usernameMatch = myFollowersUsernames.any { followerUsername ->
                 val cleanFollowerUsername = followerUsername.replace("@", "").trim().lowercase()
                 cleanFollowerUsername == cleanUsername
             }
+
             if (usernameMatch) {
-                Log.d(TAG, "Match - Username: $cleanUsername")
+                Log.d(TAG, "║ ✅ Match - Username: $cleanUsername")
+                Log.d(TAG, "╚═══════════════════════════════════════")
                 return true
             }
+            Log.d(TAG, "║ ❌ No username match")
+        } else {
+            Log.d(TAG, "║ ⚠️  Username is null or empty")
         }
 
-        Log.d(TAG, "No match")
+        Log.d(TAG, "║ ❌ No match found")
+        Log.d(TAG, "╚═══════════════════════════════════════")
         return false
     }
 
-    //  FOLLOW BUTTON CLICK
+    // ========== FOLLOW BUTTON CLICK ==========
     private fun handleFollowButtonClick(followButton: Button, feedOwnerId: String, feedOwnerUsername: String) {
         try {
             YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
@@ -689,7 +710,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         followUnfollowViewModel.followUnFollow(feedOwnerId)
     }
 
-    //  UPDATE FOLLOW BUTTON VISIBILITY
+    // ========== UPDATE FOLLOW BUTTON VISIBILITY ==========
     private fun updateFollowButtonVisibility() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
         val post = postList?.getOrNull(viewPager.currentItem)
@@ -745,7 +766,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  SETUP FOLLOW BUTTON
+    // ========== SETUP FOLLOW BUTTON ==========
     private fun setupFollowButton() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
 
@@ -764,7 +785,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  LOAD FOLLOWING LIST
+    // ========== LOAD FOLLOWING LIST ==========
     private fun loadFollowingListFromCache() {
         try {
             val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
@@ -789,7 +810,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  FOLLOW OBSERVER
+    // ========== FOLLOW OBSERVER ==========
     private fun setupFollowObserver() {
         followUnfollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) { isFollowing ->
             if (!isAdded || view == null) return@observe
@@ -808,7 +829,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  PAGE CHANGE LISTENER
+    // ========== PAGE CHANGE LISTENER ==========
     private fun setupViewPagerPageChangeListener() {
         pageChangeCallback = object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
@@ -825,15 +846,15 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         viewPager.registerOnPageChangeCallback(pageChangeCallback)
     }
 
-    //  VALIDATION
+    // ========== VALIDATION ==========
     private fun isValidUserId(userId: String?): Boolean {
         if (userId.isNullOrEmpty()) return false
         if (userId.length != 24) return false
         if (!userId.matches(Regex("^[a-fA-F0-9]{24}$"))) return false
         return true
     }
-    
 
+    
 
     private fun loadPostContent(postId: String) {
         // Fetch post data by ID from your post list
@@ -856,6 +877,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
     private fun setupHeaderProfileClick() {
+
         val headerProfileIcon = view?.findViewById<ImageView>(R.id.userProfileIcon)
         val headerFullName = view?.findViewById<TextView>(R.id.fullNameTextView)
         val headerUsername = view?.findViewById<TextView>(R.id.usernameTextView)
@@ -867,6 +889,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
     @OptIn(UnstableApi::class)
     private fun navigateToAuthorProfile() {
+
         val post = postList?.getOrNull(viewPager.currentItem) ?: return
 
         val userId = post.userId
@@ -889,6 +912,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
     private fun extractArguments() {
+
         arguments?.let { bundle ->
             postId = bundle.getString(ARG_POST_ID) ?: bundle.getString("post_id")
             postData = bundle.getString(ARG_POST_DATA)
@@ -901,9 +925,11 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             val followingIds = bundle.getStringArrayList("following_ids")
 
             if (!followingIds.isNullOrEmpty()) {
+
                 followingUserIds = followingIds.toMutableSet()
                 Log.d(TAG, "Following IDs loaded from arguments: ${followingUserIds.size}")
                 Log.d(TAG, "Following IDs: $followingUserIds")
+
             } else {
                 // Fallback to FeedAdapter cache
                 followingUserIds = FeedAdapter.getCachedFollowingList().toMutableSet()
