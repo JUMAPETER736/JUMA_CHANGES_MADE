@@ -541,21 +541,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
-    private fun setupSystemBarVisibilityListener() {
-        val window = requireActivity().window
-        ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, insets ->
-            val systemBarsVisible = insets.isVisible(WindowInsetsCompat.Type.systemBars())
 
-            // If system bars become visible, hide them again after a delay
-            if (systemBarsVisible) {
-                Handler(Looper.getMainLooper()).postDelayed({
-                    hideSystemBars()
-                }, 10) // Hiding after  seconds
-            }
-
-            insets
-        }
-    }
 
     private fun cleanupResources() {
         try {
@@ -764,18 +750,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     @SuppressLint("UseKtx", "ObsoleteSdkInt")
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 
-    private fun loadPdfFirstPage(uri: Uri): Bitmap? {
-        val fileDescriptor = requireContext().contentResolver.openFileDescriptor(uri, "r") ?: return null
-        val renderer = PdfRenderer(fileDescriptor)
-        val page = renderer.openPage(0)
-
-        val bitmap = createBitmap(page.width, page.height)
-        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-
-        page.close()
-        renderer.close()
-        return bitmap
-    }
 
 
     // ========== INITIALIZATION METHODS ==========
@@ -882,30 +856,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         return false // Default to false, so metrics remain zero
     }
 
-    private fun shouldShowComments(postId: String): Boolean {
-        // Your logic here
-        return false
-    }
 
-    private fun shouldShowReposts(postId: String): Boolean {
-        // Your logic here
-        return false
-    }
-
-    private fun shouldShowLikes(postId: String): Boolean {
-        // Your logic here
-        return false
-    }
-
-    private fun shouldShowViews(postId: String): Boolean {
-        // Your logic here
-        return false
-    }
-
-    private fun shouldShowShares(postId: String): Boolean {
-        // Your logic here
-        return false
-    }
 
     private fun loadUserInteractionState(postId: String) {
         // TODO: Load from user preferences or API
@@ -959,20 +910,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         reFeedIcon.setColorFilter(color)
     }
 
-    // ========== NAVIGATION METHODS ==========
 
-    private fun navigateBack() {
-        try {
-            if (parentFragmentManager.backStackEntryCount > 0) {
-                parentFragmentManager.popBackStack()
-            } else {
-                requireActivity().finish()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error navigating back", e)
-            requireActivity().finish()
-        }
-    }
 
     // ========== UTILITY METHODS ==========
 
@@ -1011,9 +949,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
-    private fun showPostMenuOptions() {
-        showFeedback("Post options menu")
-    }
+
 
 }
 
@@ -3414,8 +3350,7 @@ class PostContentFragment : Fragment() {
         documentThumbnail?.apply {
             visibility = View.VISIBLE
             setImageResource(getFileTypeIcon(fileName))
-//            scaleType = ImageView.ScaleType.FIT_CENTER
-//            adjustViewBounds = true
+
         }
     }
 
