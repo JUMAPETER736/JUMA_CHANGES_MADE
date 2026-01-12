@@ -282,7 +282,7 @@ class UniversalSearchActivity : AppCompatActivity() {
 
     private fun setupSearch() {
         // Add search icon click listener
-        binding.searchIcon.setOnClickListener {
+        binding.searchEditText.setOnClickListener {
             val query = binding.searchEditText.text.toString().trim()
 
             if (query.isEmpty()) {
@@ -936,33 +936,33 @@ class UniversalSearchActivity : AppCompatActivity() {
         binding.backButton.setOnClickListener { onBackPressed() }
     }
 
-    private fun setupSearch() {
-        binding.searchEditText.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                performSearch(binding.searchEditText.text.toString().trim())
-                hideKeyboard()
-                binding.searchEditText.clearFocus()
-                true
-            } else false
-        }
-
-        binding.searchEditText.addTextChangedListener(afterTextChanged = { editable ->
-            val query = editable.toString().trim()
-            searchJob?.cancel()
-
-            if (query.isEmpty()) {
-                binding.filterChipsGroup.visibility = View.GONE
-                binding.noResultsText.visibility = View.GONE
-                loadRecentUsers()
-            } else {
-                binding.filterChipsGroup.visibility = View.VISIBLE
-                searchJob = lifecycleScope.launch {
-                    delay(50)
-                    performSearch(query)
-                }
-            }
-        })
-    }
+//    private fun setupSearch() {
+//        binding.searchEditText.setOnEditorActionListener { _, actionId, _ ->
+//            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+//                performSearch(binding.searchEditText.text.toString().trim())
+//                hideKeyboard()
+//                binding.searchEditText.clearFocus()
+//                true
+//            } else false
+//        }
+//
+//        binding.searchEditText.addTextChangedListener(afterTextChanged = { editable ->
+//            val query = editable.toString().trim()
+//            searchJob?.cancel()
+//
+//            if (query.isEmpty()) {
+//                binding.filterChipsGroup.visibility = View.GONE
+//                binding.noResultsText.visibility = View.GONE
+//                loadRecentUsers()
+//            } else {
+//                binding.filterChipsGroup.visibility = View.VISIBLE
+//                searchJob = lifecycleScope.launch {
+//                    delay(50)
+//                    performSearch(query)
+//                }
+//            }
+//        })
+//    }
 
     private fun setupFilters() {
         binding.filterChipsGroup.visibility = View.GONE
