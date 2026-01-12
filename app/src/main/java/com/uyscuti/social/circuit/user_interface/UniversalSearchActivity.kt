@@ -164,7 +164,7 @@ data class SearchResults(
 fun Author.toRecentUser(): RecentUser {
     return RecentUser(
         id = this._id,
-        name = this.account.username,  // Store username (not full name) ✅
+        name = this.account.username,
         avatar = this.account.avatar.url,
         lastSeen = Date(),
         online = false,
@@ -186,7 +186,7 @@ fun RecentUser.toAuthor(): Author {
             createdAt = "",
             email = "",
             updatedAt = "",
-            username = this.name  // Use the stored username ✅
+            username = this.name
         ),
         bio = "",
         countryCode = "",
@@ -197,8 +197,8 @@ fun RecentUser.toAuthor(): Author {
         ),
         createdAt = "",
         dob = "",
-        firstName = "",  // Will be empty until profile is fetched
-        lastName = "",   // Will be empty until profile is fetched
+        firstName = "",
+        lastName = "",
         location = "",
         owner = this.id,
         phoneNumber = "",
@@ -385,14 +385,14 @@ class UniversalSearchActivity : AppCompatActivity() {
     private fun loadRecentUsers() {
         lifecycleScope.launch {
             try {
-                // STEP 1: Show cached recent users immediately (instant display)
+                //  Show cached recent users immediately (instant display)
                 if (isRecentUsersCacheValid && cachedRecentUsers.isNotEmpty()) {
                     searchAdapter.showRecentUsers(cachedRecentUsers)
                     binding.noResultsText.visibility = View.GONE
                     Log.d("RecentUsers", "Showing ${cachedRecentUsers.size} cached recent users instantly")
                 }
 
-                // STEP 2: Load from database
+                // Load from database
                 val recentUsers = withContext(Dispatchers.IO) {
                     recentUserViewModel.getRecentUsers()
                 }
@@ -404,17 +404,17 @@ class UniversalSearchActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                // STEP 3: Convert to basic Authors with username only
+                //  Convert to basic Authors with username only
                 val basicAuthors = recentUsers.map { it.toAuthor() }
 
-                // STEP 4: Show basic authors immediately (usernames only)
+                // Show basic authors immediately (usernames only)
                 if (!isRecentUsersCacheValid) {
                     searchAdapter.showRecentUsers(basicAuthors)
                     binding.noResultsText.visibility = View.GONE
                     Log.d("RecentUsers", "Showing ${basicAuthors.size} basic recent users")
                 }
 
-                // STEP 5: Enrich with full profile data in background
+                //  Enrich with full profile data in background
                 val enrichedAuthors = withContext(Dispatchers.IO) {
                     basicAuthors.mapIndexedNotNull { index, author ->
                         async {
@@ -463,7 +463,7 @@ class UniversalSearchActivity : AppCompatActivity() {
                     }.awaitAll().filterNotNull()
                 }
 
-                // STEP 6: Update cache and display final enriched list
+                // Update cache and display final enriched list
                 if (enrichedAuthors.isNotEmpty()) {
                     cachedRecentUsers = enrichedAuthors
                     isRecentUsersCacheValid = true
