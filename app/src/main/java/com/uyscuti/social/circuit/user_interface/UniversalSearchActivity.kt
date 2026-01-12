@@ -270,6 +270,69 @@ class UniversalSearchActivity : AppCompatActivity() {
         loadAllDataOnce()
     }
 
+
+    // ===== ALSO UPDATE THE PERFORM SEARCH TO HANDLE EMPTY QUERIES BETTER =====
+    private fun performSearch(query: String) {
+        if (!isDataLoaded) {
+            Log.d("SearchOptimized", "Data not loaded yet, showing loading...")
+            binding.noResultsText.text = "No Posts yet..."
+            binding.noResultsText.visibility = View.GONE
+            return
+        }
+
+        // If query is empty, show recent users instead
+        if (query.isEmpty() || query.isBlank()) {
+            binding.filterChipsGroup.visibility = View.GONE
+            loadRecentUsers()
+            return
+        }
+
+        searchJob?.cancel()
+        searchJob = lifecycleScope.launch {
+            delay(50) // Minimal delay for smooth typing
+
+            Log.d("SearchOptimized", "Filtering cached data for: '$query'")
+
+            val filteredResults = withContext(Dispatchers.Default) {
+                filterCachedData(query)
+            }
+
+            displaySearchResults(filteredResults)
+        }
+    }
+
+    private fun initSearchResults() {
+        val localStorage = LocalStorage(this@UniversalSearchActivity)
+        searchAdapter = SearchUserNameAdapter(
+            feedClickListener = feedClickListener,
+            viewModel = businessViewModel,
+            localStorage = localStorage,
+            onUserClicked = { author ->
+                // Check if we're showing recent users
+                if (searchAdapter.isShowingRecentUsers()) {
+                    // Populate search field and trigger search
+                    val searchQuery = author.account.username
+                    binding.searchEditText.setText(searchQuery)
+                    binding.searchEditText.setSelection(searchQuery.length)
+                    performSearch(searchQuery)
+                } else {
+                    // Open profile when clicking from search results
+                    openUserProfile(author)
+                }
+                addUserToRecent(author.toRecentUser())
+            },
+            onPostClicked = { post ->
+                Log.d("SearchResults", "Post clicked: ${post._id}")
+            }
+        )
+
+        binding.searchResultsRecyclerView.apply {
+            layoutManager = LinearLayoutManager(this@UniversalSearchActivity)
+            adapter = searchAdapter
+            setHasFixedSize(false)
+        }
+    }
+
     // =====  LOAD ALL DATA ONCE =====
     private fun loadAllDataOnce() {
         if (isDataLoaded || isLoadingData) return
@@ -315,6 +378,25 @@ class UniversalSearchActivity : AppCompatActivity() {
     }
 
     // ===== LOAD FUNCTIONS (CALLED ONCE) =====
+
+    private fun loadRecentUsers() {
+        lifecycleScope.launch {
+            try {
+                val recentUsers = withContext(Dispatchers.IO) {
+                    recentUserViewModel.getRecentUsers()
+                }
+                if (recentUsers.isNotEmpty()) {
+                    searchAdapter.showRecentUsers(recentUsers.map { it.toAuthor() })
+                    binding.noResultsText.visibility = View.GONE
+                } else {
+                    searchAdapter.submitList(emptyList())
+                }
+            } catch (e: Exception) {
+                searchAdapter.submitList(emptyList())
+            }
+        }
+    }
+
     private suspend fun loadAllPeople(): List<Author> {
         return try {
             val response = apiService.getUsers()
@@ -637,58 +719,6 @@ class UniversalSearchActivity : AppCompatActivity() {
         )
     }
 
-    // ===== ALSO UPDATE THE PERFORM SEARCH TO HANDLE EMPTY QUERIES BETTER =====
-    private fun performSearch(query: String) {
-        if (!isDataLoaded) {
-            Log.d("SearchOptimized", "Data not loaded yet, showing loading...")
-            binding.noResultsText.text = "Loading data..."
-            binding.noResultsText.visibility = View.GONE
-            return
-        }
-
-        // If query is empty, show recent users instead
-        if (query.isEmpty() || query.isBlank()) {
-            binding.filterChipsGroup.visibility = View.GONE
-            loadRecentUsers()
-            return
-        }
-
-        searchJob?.cancel()
-        searchJob = lifecycleScope.launch {
-            delay(50) // Minimal delay for smooth typing
-
-            Log.d("SearchOptimized", "Filtering cached data for: '$query'")
-
-            val filteredResults = withContext(Dispatchers.Default) {
-                filterCachedData(query)
-            }
-
-            displaySearchResults(filteredResults)
-        }
-    }
-
-
-    private fun initSearchResults() {
-        val localStorage = LocalStorage(this@UniversalSearchActivity)
-        searchAdapter = SearchUserNameAdapter(
-            feedClickListener = feedClickListener,
-            viewModel = businessViewModel,
-            localStorage = localStorage,
-            onUserClicked = { author ->
-                addUserToRecent(author.toRecentUser())
-                openUserProfile(author)
-            },
-            onPostClicked = { post ->
-                Log.d("SearchResults", "Post clicked: ${post._id}")
-            }
-        )
-
-        binding.searchResultsRecyclerView.apply {
-            layoutManager = LinearLayoutManager(this@UniversalSearchActivity)
-            adapter = searchAdapter
-            setHasFixedSize(false)
-        }
-    }
 
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
@@ -877,23 +907,7 @@ class UniversalSearchActivity : AppCompatActivity() {
         imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
     }
 
-    private fun loadRecentUsers() {
-        lifecycleScope.launch {
-            try {
-                val recentUsers = withContext(Dispatchers.IO) {
-                    recentUserViewModel.getRecentUsers()
-                }
-                if (recentUsers.isNotEmpty()) {
-                    searchAdapter.showRecentUsers(recentUsers.map { it.toAuthor() })
-                    binding.noResultsText.visibility = View.GONE
-                } else {
-                    searchAdapter.submitList(emptyList())
-                }
-            } catch (e: Exception) {
-                searchAdapter.submitList(emptyList())
-            }
-        }
-    }
+
 
     @OptIn(UnstableApi::class)
     private fun openUserProfile(author: Author) {
@@ -1106,66 +1120,6 @@ class SearchUserNameAdapter(
 
     }
 
-    interface OnFeedClickListener {
-
-
-        fun likeUnLikeFeed(
-            position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
-        )
-
-
-        fun feedCommentClicked(
-            position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
-        )
-
-        fun feedFavoriteClick(
-            position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
-        )
-
-
-        fun moreOptionsClick(
-            position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
-        )
-
-        fun feedFileClicked(
-            position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
-        )
-
-        fun feedRepostFileClicked(
-            position: Int, data: OriginalPost
-        )
-
-        fun feedShareClicked(
-            position: Int, data: com.uyscuti.social.network.api.response.posts.Post
-        )
-
-
-        fun followButtonClicked(
-            followUnFollowEntity: FollowUnFollowEntity,
-            followButton: AppCompatButton
-        )
-
-        fun feedRepostPost(
-            position: Int,
-            data: com.uyscuti.social.network.api.response.posts.Post
-        )
-
-        fun feedRepostPostClicked(position: Int, data: com.uyscuti.social.network.api.response.posts.Post)
-
-        fun feedClickedToOriginalPost(position: Int, originalPostId: String)
-        fun onImageClick()
-
-
-    }
-
-    fun showRecentUsers(authors: List<Author>) {
-        submitList(listOf("RECENT_HEADER") + authors)
-    }
 
 
     fun showNoResults() {
@@ -1178,6 +1132,24 @@ class SearchUserNameAdapter(
     // Add these properties to handle following list
     private val followingUserIds = mutableSetOf<String>()
 
+    private var showingRecentUsers = false
+
+    fun isShowingRecentUsers(): Boolean {
+        return showingRecentUsers
+    }
+
+    fun showRecentUsers(authors: List<Author>) {
+        showingRecentUsers = true
+        submitList(listOf("RECENT_HEADER") + authors)
+    }
+
+    override fun submitList(list: List<Any>?) {
+        if (list != null && !list.any { it == "RECENT_HEADER" }) {
+            showingRecentUsers = false
+        }
+        super.submitList(list)
+    }
+
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
@@ -1187,7 +1159,9 @@ class SearchUserNameAdapter(
             }
             is PeopleViewHolder -> {
                 val author = getItem(position) as Author
-                holder.bind(author, onUserClicked)
+                // Pass true for isRecentUser if showing recent users section
+                val isRecent = showingRecentUsers && position > 0 // position > 0 to skip header
+                holder.bind(author, onUserClicked, isRecent)
             }
             is LoadingViewHolder -> {
                 holder.showLoading()
@@ -1376,6 +1350,64 @@ class SearchUserNameAdapter(
         }
     }
 
+
+
+    interface OnFeedClickListener {
+
+
+        fun likeUnLikeFeed(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+
+        fun feedCommentClicked(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+        fun feedFavoriteClick(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+
+        fun moreOptionsClick(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+        fun feedFileClicked(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+        fun feedRepostFileClicked(
+            position: Int, data: OriginalPost
+        )
+
+        fun feedShareClicked(
+            position: Int, data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+
+        fun followButtonClicked(
+            followUnFollowEntity: FollowUnFollowEntity,
+            followButton: AppCompatButton
+        )
+
+        fun feedRepostPost(
+            position: Int,
+            data: com.uyscuti.social.network.api.response.posts.Post
+        )
+
+        fun feedRepostPostClicked(position: Int, data: com.uyscuti.social.network.api.response.posts.Post)
+
+        fun feedClickedToOriginalPost(position: Int, originalPostId: String)
+        fun onImageClick()
+
+
+    }
 
     // DiffCallback
     private class SearchDiffCallback : DiffUtil.ItemCallback<Any>() {
@@ -6083,13 +6115,12 @@ class SearchUserNameAdapter(
         }
     }
 
-    // Updated PeopleViewHolder to display first and last name properly
     private class PeopleViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val avatar: ImageView = itemView.findViewById(R.id.avatar)
         private val fullNameText: TextView = itemView.findViewById(R.id.full_name) // bold - top
         private val usernameText: TextView = itemView.findViewById(R.id.name) // lighter - bottom
 
-        fun bind(author: Author, listener: (Author) -> Unit) {
+        fun bind(author: Author, listener: (Author) -> Unit, isRecentUser: Boolean = false) {
             Glide.with(itemView.context)
                 .load(author.account.avatar.url)
                 .apply(RequestOptions.bitmapTransform(CircleCrop()))
@@ -6097,6 +6128,7 @@ class SearchUserNameAdapter(
                 .error(R.drawable.flash21)
                 .into(avatar)
 
+            // Build full name from first and last name
             val fullName = buildString {
                 if (author.firstName.isNotEmpty()) append(author.firstName)
                 if (author.lastName.isNotEmpty()) {
@@ -6105,8 +6137,24 @@ class SearchUserNameAdapter(
                 }
             }.trim()
 
-            fullNameText.text = if (fullName.isNotEmpty()) fullName else author.account.username
-            usernameText.text = "@${author.account.username}"
+            // Display logic based on whether it's a recent user or search result
+            if (isRecentUser) {
+                // For recent users: show full name (or username if no full name) at top
+                fullNameText.text = if (fullName.isNotEmpty()) fullName else author.account.username
+                // Show username at bottom
+                usernameText.text = "@${author.account.username}"
+            } else {
+                // For search results: show full name at top, username at bottom
+                // If no full name, show username at top and hide bottom text
+                if (fullName.isNotEmpty()) {
+                    fullNameText.text = fullName
+                    usernameText.text = "@${author.account.username}"
+                    usernameText.visibility = View.VISIBLE
+                } else {
+                    fullNameText.text = author.account.username
+                    usernameText.visibility = View.GONE
+                }
+            }
 
             // Click opens profile
             itemView.setOnClickListener { listener(author) }
