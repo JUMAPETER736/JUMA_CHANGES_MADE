@@ -129,6 +129,7 @@ import com.uyscuti.social.network.api.response.posts.Duration
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import org.greenrobot.eventbus.EventBus
 import retrofit2.Call
 import retrofit2.Callback
@@ -160,6 +161,17 @@ data class SearchResults(
     val business: List<Post> = emptyList()
 )
 
+fun Author.toRecentUser(): RecentUser {
+    return RecentUser(
+        id = this._id,
+        name = this.account.username,  // Store username (not full name) ✅
+        avatar = this.account.avatar.url,
+        lastSeen = Date(),
+        online = false,
+        dateAdded = Date()
+    )
+}
+
 fun RecentUser.toAuthor(): Author {
     return Author(
         __v = 0,
@@ -174,7 +186,7 @@ fun RecentUser.toAuthor(): Author {
             createdAt = "",
             email = "",
             updatedAt = "",
-            username = this.name
+            username = this.name  // Use the stored username ✅
         ),
         bio = "",
         countryCode = "",
@@ -185,23 +197,12 @@ fun RecentUser.toAuthor(): Author {
         ),
         createdAt = "",
         dob = "",
-        firstName = this.name.split(" ").firstOrNull() ?: this.name,
-        lastName = this.name.split(" ").drop(1).joinToString(" "),
+        firstName = "",  // Will be empty until profile is fetched
+        lastName = "",   // Will be empty until profile is fetched
         location = "",
         owner = this.id,
         phoneNumber = "",
         updatedAt = ""
-    )
-}
-
-fun Author.toRecentUser(): RecentUser {
-    return RecentUser(
-        id = this._id,
-        name = "${this.firstName} ${this.lastName}".trim().ifEmpty { this.account.username },
-        avatar = this.account.avatar.url,
-        lastSeen = Date(),
-        online = false,
-        dateAdded = Date()
     )
 }
 
@@ -385,13 +386,56 @@ class UniversalSearchActivity : AppCompatActivity() {
                 val recentUsers = withContext(Dispatchers.IO) {
                     recentUserViewModel.getRecentUsers()
                 }
+
                 if (recentUsers.isNotEmpty()) {
-                    searchAdapter.showRecentUsers(recentUsers.map { it.toAuthor() })
+                    // Convert to basic Authors first
+                    val basicAuthors = recentUsers.map { it.toAuthor() }
+
+                    // Enrich with full profile data
+                    val enrichedAuthors = withContext(Dispatchers.IO) {
+                        basicAuthors.map { author ->
+                            async {
+                                try {
+                                    // Fetch full profile by username
+                                    val profileResponse = apiService.getOtherUsersProfileByUsername(author.account.username)
+                                    val profileData = profileResponse.body()?.data
+
+                                    if (profileData != null) {
+                                        // Return enriched Author with full data
+                                        author.copy(
+                                            firstName = profileData.firstName ?: "",
+                                            lastName = profileData.lastName ?: "",
+                                            bio = profileData.bio ?: "",
+                                            coverImage = CoverImage(
+                                                _id = profileData.coverImage?._id ?: "",
+                                                localPath = profileData.coverImage?.localPath ?: "",
+                                                url = profileData.coverImage?.url ?: "https://via.placeholder.com/800x450.png"
+                                            ),
+                                            location = profileData.location ?: "",
+                                            phoneNumber = profileData.phoneNumber ?: "",
+                                            dob = profileData.dob ?: "",
+                                            countryCode = profileData.countryCode ?: ""
+                                        )
+                                    } else {
+                                        // If profile fetch fails, return basic author
+                                        author
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("RecentUsers", "Error fetching profile for ${author.account.username}: ${e.message}")
+                                    // Return basic author on error
+                                    author
+                                }
+                            }
+                        }.awaitAll()
+                    }
+
+                    searchAdapter.showRecentUsers(enrichedAuthors)
                     binding.noResultsText.visibility = View.GONE
                 } else {
                     searchAdapter.submitList(emptyList())
                 }
             } catch (e: Exception) {
+                Log.e("RecentUsers", "Error loading recent users: ${e.message}")
                 searchAdapter.submitList(emptyList())
             }
         }
@@ -1349,8 +1393,6 @@ class SearchUserNameAdapter(
             else -> throw IllegalArgumentException("Unknown view type: $viewType")
         }
     }
-
-
 
     interface OnFeedClickListener {
 
@@ -6116,9 +6158,10 @@ class SearchUserNameAdapter(
     }
 
     private class PeopleViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+
         private val avatar: ImageView = itemView.findViewById(R.id.avatar)
-        private val fullNameText: TextView = itemView.findViewById(R.id.full_name) // bold - top
-        private val usernameText: TextView = itemView.findViewById(R.id.name) // lighter - bottom
+        private val fullNameText: TextView = itemView.findViewById(R.id.full_name)
+        private val usernameText: TextView = itemView.findViewById(R.id.name)
 
         fun bind(author: Author, listener: (Author) -> Unit, isRecentUser: Boolean = false) {
             Glide.with(itemView.context)
@@ -6137,33 +6180,20 @@ class SearchUserNameAdapter(
                 }
             }.trim()
 
-            // Display logic based on whether it's a recent user or search result
-            if (isRecentUser) {
-                // For recent users: show full name (or username if no full name) at top
-                fullNameText.text = if (fullName.isNotEmpty()) fullName else author.account.username
-                // Show username at bottom
+            // Display logic
+            if (fullName.isNotEmpty()) {
+                // Show full name and username
+                fullNameText.text = fullName
                 usernameText.text = "@${author.account.username}"
+                usernameText.visibility = View.VISIBLE
             } else {
-                // For search results: show full name at top, username at bottom
-                // If no full name, show username at top and hide bottom text
-                if (fullName.isNotEmpty()) {
-                    fullNameText.text = fullName
-                    usernameText.text = "@${author.account.username}"
-                    usernameText.visibility = View.VISIBLE
-                } else {
-                    fullNameText.text = author.account.username
-                    usernameText.visibility = View.GONE
-                }
+                // If no full name (profile not loaded yet), show username only
+                fullNameText.text = "@${author.account.username}"
+                usernameText.visibility = View.GONE
             }
 
-            // Click opens profile
             itemView.setOnClickListener { listener(author) }
-
-            // Long press for search context (optional)
-            itemView.setOnLongClickListener {
-                // Call switchToUserContext if you want to keep that feature
-                true
-            }
+            itemView.setOnLongClickListener { true }
         }
     }
 
