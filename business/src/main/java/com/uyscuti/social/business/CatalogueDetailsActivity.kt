@@ -59,57 +59,54 @@ import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.uyscuti.sharedmodule.FlashApplication
+import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
+import com.uyscuti.sharedmodule.adapter.CommentsRecyclerViewAdapter
+import com.uyscuti.sharedmodule.adapter.MediaPagerAdapter
+import com.uyscuti.sharedmodule.adapter.OnViewRepliesClickListener
+import com.uyscuti.sharedmodule.adapter.notifications.AdPaginatedAdapter
+import com.uyscuti.sharedmodule.bottomSheet.SendOfferBottomSheet
+import com.uyscuti.sharedmodule.data.model.Comment
+import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
+import com.uyscuti.sharedmodule.databinding.BottomDialogForShareBinding
+import com.uyscuti.sharedmodule.media.CameraActivity
+import com.uyscuti.sharedmodule.model.AudioPlayerHandler
+import com.uyscuti.sharedmodule.model.CommentAudioPlayerHandler
+import com.uyscuti.sharedmodule.model.PauseShort
 import com.uyscuti.sharedmodule.popupDialog.DialogManager
-import com.uyscuti.social.business.adapter.MediaPagerAdapter
+import com.uyscuti.sharedmodule.presentation.DialogViewModel
+import com.uyscuti.sharedmodule.presentation.MessageViewModel
+import com.uyscuti.sharedmodule.ui.GifActivity
+import com.uyscuti.sharedmodule.uploads.AudioActivity
+import com.uyscuti.sharedmodule.uploads.VideosActivity
+import com.uyscuti.sharedmodule.utils.AndroidUtil.showToast
+import com.uyscuti.sharedmodule.utils.AudioDurationHelper
+import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
+import com.uyscuti.sharedmodule.utils.NetworkUtil
+import com.uyscuti.sharedmodule.utils.PathUtil
+import com.uyscuti.sharedmodule.utils.Timer
+import com.uyscuti.sharedmodule.utils.TrimVideoUtils
+import com.uyscuti.sharedmodule.utils.WaveFormExtractor
+import com.uyscuti.sharedmodule.utils.audiomixer.AudioMixer
+import com.uyscuti.sharedmodule.utils.audiomixer.input.GeneralAudioInput
+import com.uyscuti.sharedmodule.utils.deleteFiles
+import com.uyscuti.sharedmodule.utils.fileType
+import com.uyscuti.sharedmodule.utils.formatCount
+import com.uyscuti.sharedmodule.utils.formatFileSize
+import com.uyscuti.sharedmodule.utils.formattedMongoDateTime
+import com.uyscuti.sharedmodule.utils.generateRandomId
+import com.uyscuti.sharedmodule.utils.getFileNameFromLocalPath
+import com.uyscuti.sharedmodule.utils.getOutputFilePath
+import com.uyscuti.sharedmodule.utils.isFileSizeGreaterThan2MB
+import com.uyscuti.sharedmodule.utils.waveformseekbar.SeekBarOnProgressChanged
+import com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
 import com.uyscuti.social.business.databinding.ActivityCatalogueDetailsBinding
 import com.uyscuti.social.business.viewmodel.business.BusinessPostsViewModel
 import com.uyscuti.social.chatsuit.messages.CommentsInput
-import com.uyscuti.social.circuit.FlashApplication
-import com.uyscuti.social.circuit.User_Interface.OtherImportantProfileThings.GifActivity
-import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.OtherUserProfileAccount
-import com.uyscuti.social.circuit.User_Interface.uploads.AudioActivity
-import com.uyscuti.social.circuit.User_Interface.uploads.CameraActivity
-import com.uyscuti.social.circuit.User_Interface.uploads.VideosActivity
-import com.uyscuti.social.circuit.adapter.CommentsRecyclerViewAdapter
-import com.uyscuti.social.circuit.adapter.OnViewRepliesClickListener
-import com.uyscuti.social.circuit.adapter.notifications.AdPaginatedAdapter
-import com.uyscuti.social.circuit.bottomSheet.SendOfferBottomSheet
-import com.uyscuti.social.circuit.data.model.Comment
-import com.uyscuti.social.circuit.data.model.User
-import com.uyscuti.social.circuit.data.model.shortsmodels.OtherUsersProfile
-import com.uyscuti.social.circuit.databinding.BottomDialogForShareBinding
-import com.uyscuti.social.circuit.model.AudioPlayerHandler
-import com.uyscuti.social.circuit.model.CommentAudioPlayerHandler
-import com.uyscuti.social.circuit.model.PauseShort
-import com.uyscuti.social.circuit.presentation.DialogViewModel
-import com.uyscuti.social.circuit.presentation.MessageViewModel
-import com.uyscuti.social.circuit.utils.AndroidUtil.showToast
-import com.uyscuti.social.circuit.utils.AudioDurationHelper
-import com.uyscuti.social.circuit.utils.AudioDurationHelper.getFormattedDuration
-import com.uyscuti.social.circuit.utils.NetworkUtil
-import com.uyscuti.social.circuit.utils.PathUtil
-import com.uyscuti.social.circuit.utils.Timer
-import com.uyscuti.social.circuit.utils.TrimVideoUtils
-import com.uyscuti.social.circuit.utils.WaveFormExtractor
-import com.uyscuti.social.circuit.utils.audiomixer.AudioMixer
-import com.uyscuti.social.circuit.utils.audiomixer.input.GeneralAudioInput
-import com.uyscuti.social.circuit.utils.deleteFiles
-import com.uyscuti.social.circuit.utils.fileType
-import com.uyscuti.social.circuit.utils.formatCount
-import com.uyscuti.social.circuit.utils.formatFileSize
-import com.uyscuti.social.circuit.utils.formattedMongoDateTime
-import com.uyscuti.social.circuit.utils.generateRandomId
-import com.uyscuti.social.circuit.utils.getFileNameFromLocalPath
-import com.uyscuti.social.circuit.utils.getOutputFilePath
-import com.uyscuti.social.circuit.utils.isFileSizeGreaterThan2MB
-import com.uyscuti.social.circuit.utils.waveformseekbar.SeekBarOnProgressChanged
-import com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepository
 import com.uyscuti.social.core.common.data.api.RemoteMessageRepositoryImpl
 import com.uyscuti.social.network.api.response.business.response.post.Post
-import com.uyscuti.social.network.api.response.commentreply.allreplies.Account
-import com.uyscuti.social.network.api.response.commentreply.allreplies.Author
-import com.uyscuti.social.network.api.response.commentreply.allreplies.Avatar
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import com.vanniktech.emoji.EmojiPopup
@@ -137,7 +134,6 @@ import java.util.TimeZone
 import javax.inject.Inject
 import kotlin.getValue
 import kotlin.properties.Delegates
-
 
 @UnstableApi
 @AndroidEntryPoint
@@ -570,19 +566,19 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         commentAdapter?.updateItem(commentPosition, commentToAddReplies)
     }
 
-    private fun getReliesAuthor(): Author {
+    private fun getReliesAuthor(): com.uyscuti.social.network.api.response.commentreply.allreplies.Author {
         val localSettings = getSharedPreferences("LocalSettings", MODE_PRIVATE)
         val profilePic = localSettings.getString("profile_pic", "").toString()
 
-        val avatar = Avatar(
+        val avatar = com.uyscuti.social.network.api.response.commentreply.allreplies.Avatar(
             "", "", url = profilePic
         )
 
-        val account = Account(
+        val account = com.uyscuti.social.network.api.response.commentreply.allreplies.Account(
             _id = "", avatar = avatar, "", LocalStorage.getInstance(this).getUsername()
         )
         val author =
-            Author(
+            com.uyscuti.social.network.api.response.commentreply.allreplies.Author(
                 _id = "21", account = account, firstName = "", lastName = ""
             )
 
@@ -687,44 +683,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         binding.profileDetails.setOnClickListener {
             val otherUsersProfile = OtherUsersProfile(
                 data.userDetails.username, data.userDetails.username,
-                data.userDetails.avatar, data.owner,
-                isVerified = TODO(),
-                bio = TODO(),
-                linkInBio = TODO(),
-                isCreator = TODO(),
-                isTrending = TODO(),
-                isFollowing = TODO(),
-                isPrivate = TODO(),
-                followersCount = TODO(),
-                followingCount = TODO(),
-                postsCount = TODO(),
-                shortsCount = TODO(),
-                videosCount = TODO(),
-                isOnline = TODO(),
-                lastSeen = TODO(),
-                joinedDate = TODO(),
-                location = TODO(),
-                website = TODO(),
-                email = TODO(),
-                phoneNumber = TODO(),
-                dateOfBirth = TODO(),
-                gender = TODO(),
-                accountType = TODO(),
-                isBlocked = TODO(),
-                isMuted = TODO(),
-                badgeType = TODO(),
-                level = TODO(),
-                reputation = TODO(),
-                coverPhoto = TODO(),
-                theme = TODO(),
-                language = TODO(),
-                timezone = TODO(),
-                notificationsEnabled = TODO(),
-                privacySettings = TODO(),
-                socialLinks = TODO(),
-                achievements = TODO(),
-                interests = TODO(),
-                categories = TODO()
+                data.userDetails.avatar, data.owner
             )
 
             OtherUserProfileAccount.open(
@@ -2912,7 +2871,7 @@ class CatalogueDetailsActivity : AppCompatActivity(),
         }
     }
 
-    fun likeUnlikeCommentReply(
+    override fun likeUnlikeCommentReply(
         replyPosition: Int,
         replyData: com.uyscuti.social.network.api.response.commentreply.allreplies.Comment,
         mainCommentPosition: Int,

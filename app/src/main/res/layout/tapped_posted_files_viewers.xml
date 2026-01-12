@@ -85,7 +85,7 @@
 
 
             <!-- Waveform Animation (Center) -->
-            <com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
+            <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
                 android:id="@+id/waveAnimation"
                 android:layout_width="match_parent"
                 android:layout_height="120dp"

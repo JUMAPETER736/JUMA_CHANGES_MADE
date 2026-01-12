@@ -1,17 +1,19 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.ksp)  // Changed from kapt
-    alias(libs.plugins.hilt.android)
+
+    id("com.google.dagger.hilt.android")
     id("kotlin-parcelize")
+    kotlin("kapt")
 }
 
 android {
     namespace = "com.uyscuti.social.core"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 26
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -39,32 +41,38 @@ android {
 }
 
 dependencies {
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Hilt - Changed from kapt to ksp
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    kapt("com.google.dagger:hilt-compiler:2.51.1")
 
-    // Room - Changed from kapt to ksp
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
+    implementation("androidx.room:room-runtime:2.6.0-alpha02")
+    implementation("androidx.room:room-ktx:2.6.0-alpha02")
+    kapt("androidx.room:room-compiler:2.6.0-alpha02")
 
-    // Networking
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.gson)
-    implementation(libs.okhttp)
+
+    // For Google Play Services Location
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+
+    // For Google Play Services Maps (includes LatLng)
+    implementation ("com.google.android.gms:play-services-maps:18.2.0")
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.9.1")
     implementation("org.greenrobot:eventbus:3.3.1")
 
-    // Socket.IO
     implementation("io.socket:socket.io-client:2.0.0")
 
-    // Project modules
+    implementation("com.google.code.gson:gson:2.10.1")
+
     implementation(project(":notifications"))
     implementation(project(":network"))
 }

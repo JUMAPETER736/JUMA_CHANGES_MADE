@@ -39,6 +39,7 @@
     <style name="App.Custom.Indicator" parent="ShapeAppearance.Material3.NavigationBarView.ActiveIndicator">
         <item name="android:color">@color/white</item>
     </style>
+
     <style name="ProfileTab.Custom.Indicator" parent="ShapeAppearance.Material3.NavigationBarView.ActiveIndicator">
         <item name="android:color">@color/bluejeans</item>
     </style>

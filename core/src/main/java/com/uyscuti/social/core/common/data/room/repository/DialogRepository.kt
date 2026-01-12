@@ -224,9 +224,6 @@ class DialogRepository(private val dialogDao: DialogDao, retrofitInstance: Retro
         }
     }
 
-
-
-
     private fun User.toUserEntity(): UserEntity {
         return UserEntity(
             id = _id,

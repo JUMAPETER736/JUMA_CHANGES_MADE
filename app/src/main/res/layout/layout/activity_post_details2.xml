@@ -1,0 +1,737 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+
+    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/shortsViewPager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent">
+
+
+
+        <!--    <VideoView-->
+        <!--        android:id="@+id/videoView"-->
+        <!--        android:layout_width="match_parent"-->
+        <!--        android:layout_height="match_parent"-->
+        <!--        android:layout_gravity="center" />-->
+
+        <!--    <com.google.android.exoplayer2.ui.PlayerView-->
+        <!--        android:id="@+id/exoPlayerView"-->
+        <!--        android:layout_width="match_parent"-->
+        <!--        android:layout_height="match_parent"-->
+        <!--        app:use_controller="true"-->
+        <!--        app:resize_mode="fill" />-->
+
+        <androidx.media3.ui.PlayerView
+            android:id="@+id/video_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/black"
+            android:backgroundTint="@color/black" />
+        <!-- Play/Pause Button -->
+        <ImageView
+            android:id="@+id/btnPlayPause"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_gravity="center"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@drawable/baseline_pause_black"
+            android:visibility="gone"
+            app:tint="@color/white" />
+
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="37dp"
+            android:layout_gravity="center_horizontal|center"
+            android:visibility="invisible" />
+
+        <!-- Like Icon -->
+        <ImageButton
+            android:id="@+id/btnLike"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="380dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@drawable/favorite_svgrepo_com" />
+
+        <TextView
+            android:id="@+id/likeCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="30dp"
+            android:layout_marginBottom="360dp"
+            android:text="0"
+            android:textColor="@color/white" />
+
+        <!-- Favorite Icon
+               android:id="@+id/comments"
+         -->
+        <LinearLayout
+            android:id="@+id/commentsParentLayout"
+            android:layout_width="60dp"
+            android:layout_height="50dp"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="5dp"
+            android:layout_marginBottom="310dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/comments"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="15dp"
+                android:src="@drawable/chat_round_svgrepo_com_shorts" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/commentsCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="30dp"
+            android:layout_marginBottom="290dp"
+            android:text="0"
+            android:textColor="@color/white" />
+        <!-- Favorite Icon -->
+        <ImageView
+            android:id="@+id/favorite"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="240dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@drawable/favorite_svgrepo_com__1_" />
+
+        <TextView
+            android:id="@+id/favoriteCounts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="30dp"
+            android:layout_marginBottom="220dp"
+            android:text="0"
+            android:textColor="@color/white"
+            android:visibility="invisible" />
+        <!-- Favorite Icon -->
+        <ImageButton
+            android:id="@+id/shareBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="188dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@drawable/baseline_share_24" />
+
+        <ImageButton
+            android:id="@+id/downloadBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="140dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@drawable/download_02_svgrepo_com" />
+
+        <!-- Profile and Caption Container -->
+        <LinearLayout
+            android:id="@+id/profileCaptionContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:layout_marginEnd="70dp"
+            android:layout_marginBottom="20dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/profileImageView"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_marginStart="5dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/baseline_person_outline_24" />
+
+                <TextView
+                    android:id="@+id/shortUsername"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Username"
+                    android:textColor="#FFF" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/followButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="10dp"
+                    android:background="@drawable/shorts_follow_button_border"
+                    android:text="Follow"
+                    android:textAllCaps="false"
+                    android:textColor="#FFF"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:orientation="horizontal">
+                <!--            <TextView-->
+                <!--                android:id="@+id/captionTextView"-->
+                <!--                android:layout_width="wrap_content"-->
+                <!--                android:layout_height="wrap_content"-->
+                <!--                android:layout_marginStart="8dp"-->
+                <!--                android:maxLines="1"-->
+                <!--                android:text=""-->
+                <!--                android:textColor="@android:color/white" />-->
+                <TextView
+                    android:id="@+id/tvReadMoreLess"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="8dp"
+                    android:text="Caption is added here"
+                    android:textColor="@android:color/white" />
+                <!--            <TextView-->
+                <!--                android:id="@+id/seeMoreButton"-->
+                <!--                android:layout_width="wrap_content"-->
+                <!--                android:layout_height="wrap_content"-->
+                <!--                android:text="SEE MORE"-->
+                <!--                android:layout_marginStart="8dp"-->
+                <!--                android:textColor="@color/bluejeans" />-->
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="30dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Artist name + Song title"
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="8dp"
+                        app:cardCornerRadius="8dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:adjustViewBounds="true"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/user" />
+
+                    </androidx.cardview.widget.CardView>
+
+                    <SeekBar
+                        android:id="@+id/shortsSeekBar"
+                        style="@style/SeekBarNoThumb"
+                        android:layout_width="match_parent"
+                        android:layout_height="30dp"
+                        android:layout_gravity="center"
+                        android:progressTint="@color/bluejeans" />
+                    <!--                    android:progress="20"-->
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+
+        <androidx.constraintlayout.motion.widget.MotionLayout
+            android:id="@+id/motionLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="visible"
+            app:layoutDescription="@xml/activity_main_xml_motionlayout_scene"
+            app:layout_constraintTop_toBottomOf="@id/toolbar">
+
+            <LinearLayout
+                android:id="@+id/linearLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_corners"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="2dp"
+                    android:layout_marginTop="2dp"
+                    android:src="@drawable/straight_line" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:padding="10dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:padding="1dp"
+                        android:text="Comments"
+                        android:textColor="@color/black"
+                        android:textSize="20sp" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/bluejeans" />
+            </LinearLayout>
+
+
+            <RelativeLayout
+                android:id="@+id/layout3"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:background="@color/white"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toTopOf="@+id/linearLayout2"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/linearLayout"
+                app:layout_constraintVertical_bias="0.44">
+
+                <com.facebook.shimmer.ShimmerFrameLayout
+                    android:id="@+id/shimmer_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="visible">
+
+                        <include layout="@layout/short_comments_shimmer_placeholder" />
+
+                        <include layout="@layout/short_comments_shimmer_placeholder" />
+
+                        <include layout="@layout/short_comments_shimmer_placeholder" />
+
+                        <include layout="@layout/short_comments_shimmer_placeholder" />
+
+                        <include layout="@layout/short_comments_shimmer_placeholder" />
+                    </LinearLayout>
+
+                </com.facebook.shimmer.ShimmerFrameLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    tools:listitem="@layout/bottom_sheet_1_item" />
+
+                <ProgressBar
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_centerHorizontal="true"
+                    android:visibility="gone" />
+            </RelativeLayout>
+
+            <LinearLayout
+                android:id="@+id/linearLayout2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/white"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent">
+
+                <LinearLayout
+                    android:id="@+id/replyToLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="1dp"
+                    android:background="#F4E8E8"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/replyToTextView"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:padding="5dp"
+                        android:paddingStart="10dp"
+                        android:text="Replying to ..."
+                        android:textSize="16dp"
+                        android:visibility="visible" />
+
+                    <ImageView
+                        android:id="@+id/exitReply"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="end|center"
+                        android:layout_marginEnd="9dp"
+                        android:src="@drawable/times_svgrepo_com__1_exit" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_above="@+id/input"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:background="@color/bluejeans" />
+
+                <com.uyscut.chatsuit.messages.CommentsInput
+                    android:id="@+id/input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="visible"
+                    app:attachmentButtonDefaultIconColor="@color/bluejeans"
+                    app:attachmentButtonDefaultIconPressedColor="@color/bluejeans"
+                    app:inputButtonDefaultBgColor="@color/bluejeans"
+                    app:inputButtonDefaultBgPressedColor="@color/bluejeans"
+                    app:inputCursorDrawable="@drawable/shape_custom_cursor"
+                    app:inputHint="Comment..."
+                    app:showAttachmentButton="true" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/playAudioLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/playVnAudioBtn"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="30dp"
+                    android:background="@drawable/ic_ripple"
+                    android:padding="10dp"
+                    android:src="@drawable/play_svgrepo_com"
+                    app:tint="@color/white"
+
+                    />
+
+                <!--                    <rm.com.audiowave.AudioWaveView-->
+                <!--                        android:id="@+id/wave"-->
+                <!--                        android:layout_width="0dp"-->
+                <!--                        android:layout_height="32dp"-->
+                <!--                        android:layout_weight="1"-->
+                <!--                        android:layout_gravity="center"-->
+                <!--                        android:layout_margin="16dp"-->
+                <!--                        app:animateExpansion="false"-->
+                <!--                        app:chunkWidth="3dp"-->
+                <!--                        app:chunkHeight="24dp"-->
+                <!--                        app:minChunkHeight="2dp"-->
+                <!--                        app:chunkSpacing="1dp"-->
+                <!--                        app:chunkRadius="1dp"-->
+                <!--                        app:touchable="true"-->
+                <!--                        app:waveColor="@color/bluejeans"-->
+                <!--                        />-->
+                <com.uyscut.flashdesign.utils.waveformseekbar.WaveformSeekBar
+                    android:id="@+id/wave"
+                    android:layout_width="0dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center"
+                    android:layout_margin="16dp"
+                    android:layout_weight="1"
+                    app:marker_color="@color/fade"
+                    app:marker_text_padding="2dp"
+                    app:marker_text_size="12dp"
+                    app:marker_width="1dp"
+                    app:wave_background_color="@color/gray_dark"
+                    app:wave_corner_radius="2dp"
+                    app:wave_gap="1.5dp"
+                    app:wave_gravity="center"
+                    app:wave_max_progress="100"
+                    app:wave_min_height="3dp"
+                    app:wave_progress="0"
+                    app:wave_progress_color="@color/bluejeans"
+                    app:wave_width="5dp" />
+
+            </LinearLayout>
+
+            <View
+                android:id="@+id/click"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:background="@color/transparent"
+                app:layout_constraintBottom_toTopOf="@+id/linearLayout"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.97" />
+        </androidx.constraintlayout.motion.widget.MotionLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/VNLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:elevation="18dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="1.0">
+
+                <LinearLayout
+                    android:id="@+id/VNLinearLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/rounded_corners_vn"
+                    android:orientation="vertical">
+
+
+                    <TextView
+                        android:id="@+id/timerTv"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:gravity="center"
+                        android:text="00:00:00"
+                        android:textSize="16sp"
+                        android:visibility="visible" />
+
+                    <LinearLayout
+                        android:id="@+id/playerTimerTv"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/secondTimerTv"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="20dp"
+                            android:layout_marginTop="3dp"
+                            android:gravity="start"
+                            android:text="00:00"
+                            android:textSize="16sp"
+                            android:visibility="visible" />
+
+                        <TextView
+                            android:id="@+id/thirdTimerTv"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:layout_marginEnd="20dp"
+                            android:gravity="end"
+                            android:text="00:00"
+                            android:textSize="16sp"
+                            android:visibility="visible" />
+
+                    </LinearLayout>
+
+                    <com.uyscut.flashdesign.views.WaveFormView
+                        android:id="@+id/waveForm"
+                        android:layout_width="match_parent"
+                        android:layout_height="90dp"
+                        android:layout_marginTop="5dp"
+                        android:visibility="visible"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintHorizontal_bias="0.5"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintVertical_bias="0.5" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/deleteVN"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_gravity="center"
+                            android:layout_marginStart="10dp"
+                            android:background="@drawable/ic_ripple"
+                            android:padding="5dp"
+                            android:src="@drawable/times_svgrepo_com__1_exit"
+                            app:tint="@color/white" />
+
+                        <ImageView
+                            android:id="@+id/recordVN"
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:layout_gravity="center"
+                            android:layout_marginHorizontal="80dp"
+                            android:background="@drawable/ic_ripple"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_mic_on"
+                            app:tint="@color/white" />
+
+                        <ImageView
+                            android:id="@+id/sendVN"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_gravity="center"
+                            android:layout_marginStart="10dp"
+                            android:background="@drawable/ic_ripple_disabled"
+                            android:padding="8dp"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/send_svgrepo_com__1_"
+                            app:tint="@color/white" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </FrameLayout>
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:padding="4dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:menu="@menu/main_menu"
+        tools:ignore="MissingConstraints">
+
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/baseline_arrow_back_24"
+            android:padding="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_gravity="start|center_vertical"
+            app:tint="@color/white" />
+        <LinearLayout
+            android:id="@+id/downloadProgressBarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/transparent"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="15dp"
+                android:layout_marginEnd="15dp"
+                android:backgroundTint="@color/black">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:adjustViewBounds="true"
+                    android:background="@drawable/shorts_upload_1"
+                    android:contentDescription="TODO"
+                    android:scaleType="centerCrop"
+                    app:tint="@color/white" />
+            </androidx.cardview.widget.CardView>
+            <ProgressBar
+                android:id="@+id/shortsDownloadProgressBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:layout_weight="1"
+                android:max="100"
+                android:progress="5"
+                android:progressTint="@color/white"
+                android:scaleY="0.5" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_gravity="center"
+                android:layout_marginStart="15dp"
+                android:layout_marginEnd="25dp"
+                android:backgroundTint="@color/black">
+
+                <ImageView
+                    android:id="@+id/cancelShortsDownload"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:src="@drawable/times_svgrepo_com"
+                    app:tint="@color/white" />
+
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
+        <androidx.cardview.widget.CardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="15dp"
+            android:layout_marginEnd="15dp"
+            android:layout_marginBottom="15dp"
+            android:backgroundTint="@color/black"
+            tools:ignore="MissingConstraints">
+            <ImageView
+                android:id="@+id/shortsDownloadImageView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:adjustViewBounds="true"
+                android:padding="4dp"
+                android:visibility="gone"
+                android:background="@drawable/shorts_upload_1"
+                android:scaleType="centerCrop"
+                app:tint="@color/white" />
+        </androidx.cardview.widget.CardView>
+    </androidx.appcompat.widget.Toolbar>
+</androidx.constraintlayout.widget.ConstraintLayout>

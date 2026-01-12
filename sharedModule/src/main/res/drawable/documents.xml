@@ -1,0 +1,37 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="20dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+
+    <!-- Document shape -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="2"
+        android:pathData="M12,4 h28 l12,12 v36 a4,4 0 0,1 -4,4 h-36 a4,4 0 0,1 -4,-4 v-44 a4,4 0 0,1 4,-4 z" />
+
+    <!-- Folded corner -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="2"
+        android:pathData="M40,4 v12 h12" />
+
+    <!-- Blue DOC label as a path -->
+    <path
+        android:fillColor="#1A237E"
+        android:pathData="M8,28 h48 v16 h-48 z" />
+
+    <!-- Simulated DOC text -->
+    <group
+        android:translateX="16"
+        android:translateY="40"
+        android:scaleX="1.2"
+        android:scaleY="1.2">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M0,0 h2 v-6 h-2 z M3,0 h2 v-6 h-2 z M6,0 h2 v-6 h-2 z" />
+    </group>
+
+</vector>

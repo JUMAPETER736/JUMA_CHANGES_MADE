@@ -146,10 +146,11 @@ class MessageRepository(
         var audioUrl: String? = null
         var videoUrl: String? = null
         var docUrl: String? = null
-        var voiceUrl: String? = null
-        var voiceDuration: Int = 0
 
         var text = ""
+
+//        text += content
+
 
         // Handle attachments and assign URLs
         if (attachments != null && attachments?.isNotEmpty() == true) {
@@ -160,46 +161,29 @@ class MessageRepository(
                     when (fileType) {
                         FileType.IMAGE -> {
                             imageUrl = attachment.url
+//                            Log.d(TAG, "Image, Path Of Image Received: $imageUrl")
                             text += "📷 Image"
                         }
 
                         FileType.AUDIO -> {
-
-                            val isVoiceNote = attachment.url.contains("/vn/") ||
-                                    attachment.url.contains("rec_")
-
-                            if (isVoiceNote) {
-                                voiceUrl = attachment.url
-
-
-                                try {
-                                    val retriever = MediaMetadataRetriever()
-                                    retriever.setDataSource(voiceUrl)
-                                    val durationStr = retriever.extractMetadata(
-                                        MediaMetadataRetriever.METADATA_KEY_DURATION
-                                    )
-                                    voiceDuration = durationStr?.toIntOrNull() ?: 0
-                                    retriever.release()
-                                } catch (e: Exception) {
-                                    Log.e("VoiceDuration", "Failed to extract: ${e.message}")
-                                    voiceDuration = 0
-                                }
-
-                                text += "Voice Message"
-                            } else {
-                                audioUrl = attachment.url
-                                text += "Audio"
-                            }
+                            audioUrl = attachment.url
+//                            Log.d(TAG, "Audio, Path Of Image Received: $audioUrl")
+//                            audioList.add(audioUrl)
+                            text += "🎵 Audio"
                         }
 
                         FileType.VIDEO -> {
                             videoUrl = attachment.url
-                            text += "Video"
+//                            Log.d(TAG, "Video, Path Of Image Received: $videoUrl")
+                            text += "🎬 Video"
+
                         }
 
                         FileType.DOCUMENT -> {
                             docUrl = attachment.url
-                            text += "Document"
+//                            Log.d(TAG, "Document, Path Of Image Received: $docUrl")
+                            text += "📄 Document"
+
                         }
 
                         FileType.OTHER -> {
@@ -220,12 +204,12 @@ class MessageRepository(
             user = sender.toUserEntity(),
             createdAt = createdAt,
             imageUrl = imageUrl,
-            voiceUrl = voiceUrl,      // ✅ Use the separate voiceUrl
-            voiceDuration = voiceDuration,  // ✅ Use extracted duration
+            voiceUrl = audioUrl,
+            voiceDuration = 0,
             userName = sender.username,
             status = "Received",
             videoUrl = videoUrl,
-            audioUrl = audioUrl,      // ✅ Use the separate audioUrl
+            audioUrl = audioUrl,
             docUrl = docUrl,
             fileSize = 0
         )

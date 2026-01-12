@@ -18,8 +18,8 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.uyscut.core.common.data.room.entity.ShortsEntity
 import com.uyscut.flashdesign.R
-import com.uyscuti.social.circuit.adapter.ShortsAdapter
-import com.uyscuti.social.circuit.adapter.ShortsUserProfileAdapter
+import com.uyscuti.sharedmodule.adapter.ShortsAdapter
+import com.uyscuti.sharedmodule.adapter.ShortsUserProfileAdapter
 import com.uyscuti.social.circuit.model.CancelShortsUpload
 import com.uyscuti.social.circuit.model.ProgressEvent
 import com.uyscuti.social.circuit.model.UserProfileShortsStartGet

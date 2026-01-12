@@ -1,0 +1,12 @@
+package com.uyscuti.sharedmodule.uploads
+
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
+import com.uyscuti.sharedmodule.R
+
+class LocationActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_location)
+    }
+}

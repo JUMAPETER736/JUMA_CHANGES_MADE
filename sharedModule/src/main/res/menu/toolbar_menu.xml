@@ -1,0 +1,15 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/menu_message"
+        android:icon="@drawable/chat_round_svgrepo_com"
+        android:title="Chat"
+        app:showAsAction="always" />
+    <item android:id="@+id/menu_setting"
+        android:icon="@drawable/chat_round_svgrepo_com"
+        android:title="Setting"
+        app:showAsAction="never" />
+    <item android:id="@+id/menu_edit"
+        android:icon="@drawable/chat_round_svgrepo_com"
+        android:title="Edit"
+        app:showAsAction="never" />
+</menu>

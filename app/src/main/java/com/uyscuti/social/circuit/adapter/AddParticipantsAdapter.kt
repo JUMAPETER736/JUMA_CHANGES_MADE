@@ -11,14 +11,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
-import com.uyscuti.social.circuit.data.model.User
 import com.uyscuti.social.circuit.R
 
-class AddParticipantsAdapter (
-    private val context: Context,
-    private val listener: (User) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class AddParticipantsAdapter (private val context: Context, private val listener: (com.uyscuti.sharedmodule.data.model.User?) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private var userList: MutableList<User> = mutableListOf()
+    private var userList: MutableList<com.uyscuti.sharedmodule.data.model.User?> = mutableListOf()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(context)
@@ -36,12 +33,12 @@ class AddParticipantsAdapter (
         }
     }
 
-    fun setUserList(userList: List<User>) {
+    fun setUserList(userList: ArrayList<com.uyscuti.sharedmodule.data.model.User>) {
         this.userList = userList.toMutableList()
         notifyDataSetChanged()
     }
 
-    fun addUser(user: User) {
+    fun addUser(user: com.uyscuti.sharedmodule.data.model.User?) {
         this.userList.add(user)
         // Notify adapter about the new item
         notifyItemInserted(userList.size - 1)
@@ -49,7 +46,7 @@ class AddParticipantsAdapter (
 
     }
 
-    fun removeUser(user: User) {
+    fun removeUser(user: com.uyscuti.sharedmodule.data.model.User?) {
         val position = userList.indexOf(user)
         if (position != -1) {
             userList.removeAt(position)
@@ -68,14 +65,15 @@ class AddParticipantsAdapter (
             itemView.setBackgroundResource(selectableItemBackground.resourceId)
         }
 
-        fun bind(user: User, listener: (User) -> Unit) {
-
+        fun bind(user: com.uyscuti.sharedmodule.data.model.User?, listener: (com.uyscuti.sharedmodule.data.model.User?) -> Unit) {
+            // Bind data to the views
+            // For example:
 
             Glide.with(itemView.context)
-                .load(user.avatar)
+                .load(user?.avatar)
                 .apply(RequestOptions.bitmapTransform(CircleCrop()))
                 .into(avatarImageView)
-            userNameTextView.text = user.name
+            userNameTextView.text = user?.name
 
             itemView.setOnClickListener {
                 listener.invoke(user)

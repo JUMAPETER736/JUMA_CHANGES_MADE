@@ -10,12 +10,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
+import com.uyscuti.sharedmodule.data.model.User
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.data.model.User
 
-class SelectedUsersAdapter(
-    private val context: Context,
-    private val listener: (User) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>()  {
+
+class SelectedUsersAdapter(private val context: Context, private val listener: (User) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>()  {
     private var selectedUserList: MutableList<User> = mutableListOf()
 
 

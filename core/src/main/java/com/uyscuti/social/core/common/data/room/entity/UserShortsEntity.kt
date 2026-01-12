@@ -12,7 +12,7 @@ import java.io.Serializable
 data class UserShortsEntity(
     val __v: Int,
     @PrimaryKey val _id: String,
-    val author:com.uyscuti.social.network.api.response.getallshorts.Author,
+    val author: com.uyscuti.social.network.api.response.getallshorts.Author,
     val comments: Int,
     val content: String,
     val createdAt: String,

@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="#fff"
-    tools:context=".User_Interface.feedactivities.ReportNotificationActivity2">
+    tools:context="com.uyscuti.sharedmodule.ReportNotificationActivity2">
 
     <!-- Header -->
 <LinearLayout

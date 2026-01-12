@@ -1,9 +1,9 @@
 package com.uyscuti.social.core.models
 
 import androidx.room.PrimaryKey
+import com.uyscuti.social.network.api.response.getallshorts.Author
+import com.uyscuti.social.network.api.response.getallshorts.Image
 import com.uyscuti.social.network.api.response.getallshorts.Thumbnail
-import com.uyscuti.social.network.api.response.post.Image
-import com.uyscuti.social.network.api.response.posts.Author
 
 import java.io.Serializable
 

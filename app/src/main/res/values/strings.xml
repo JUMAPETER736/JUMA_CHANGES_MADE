@@ -13,36 +13,16 @@
     <string name="register">Register</string>
     <string name="loginSuggestion">Already have an account?</string>
     <string name="registerSuggestion">Don\'t have an account?</string>
+    <string name="image_item">Image Item</string>
     <!-- TODO: Remove or change this placeholder text -->
-
-
-    <string name="google_icon">Google Icon</string>
-
-
-    <string name="upload_media">Upload Media</string>
-
-    <string name="total_comments">0 comments</string>
-    <string name="username_placeholder">Username</string>
-    <string name="comment_placeholder">This is a sample comment</string>
-    <string name="view_replies">View replies</string>
-    <string name="like_count_placeholder">8098</string>
-    <string name="comment_hint">Add comment...</string>
-
-
     <string name="calls">Hello from calls fragment</string>
     <string name="groups">Hello from group chats fragment</string>
     <string name="persinal">Hello from personal chats  fragment</string>
-
-
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="chat_fragment">Hello chat</string>
     <string name="feed_fragment">Hello from feeds</string>
     <string name="shots_fragment">Hello from shots</string>
-
-    <string name="facebook_app_id">YOUR_FACEBOOK_APP_ID</string>
-    <string name="facebook_client_token">YOUR_FACEBOOK_CLIENT_TOKEN</string>
-    <string name="fb_login_protocol_scheme">fbYOUR_FACEBOOK_APP_ID</string>
 
 
     <string name="default_repost_hashtags">#Repost #ProudMoment #Innovation</string>
@@ -68,7 +48,6 @@
     <string name="schedule_post_clicked">Schedule Post clicked</string>
     <string name="more_options_clicked">More Options clicked</string>
     <string name="original_post_clicked">Original Post clicked</string>
-
 
 
     <string name="view">View</string>
@@ -162,7 +141,6 @@
     <string name="no_results_found">No results found.</string>
     <string name="back_icon">back_icon</string>
     <string name="new_short">New Short</string>
-    <string name="new_feed">New Feed</string>
     <string name="content_description">content description</string>
 
     <string name="_0">0</string>
@@ -175,6 +153,33 @@
     <string name="string">"@"</string>
     <string name="Username">"@username"</string>
     <string name="contentCreator">"@contentCreator"</string>
+    <string name="error_loading_data">Error loading data</string>
+    <string name="search_icon">Search icon</string>
+    <string name="search_v2">Search...</string>
+    <string name="clear_search">Clear search</string>
+    <string name="contact">Contact</string>
+    <string name="favorite">Favorite</string>
+    <string name="price">Price</string>
+    <string name="comments">Comments</string>
+    <string name="load_more_comments">Load more comments</string>
+    <string name="description">Description</string>
+    <string name="catalog_image">Catalogue image</string>
+    <string name="send_comment">Send comment</string>
+    <string name="user_image">User image</string>
+    <string name="current_user_image">Current user image</string>
+    <string name="viewing_product">Viewing Product</string>
+    <string name="message">Message</string>
+    <string name="show_more">Show more</string>
+    <string name="seller">Sell</string>
+    <string name="category">Category</string>
+    <string name="access_seller_tools">Access seller tools</string>
+    <string name="to_start_selling_items_on_our_platform_you_ll_need_to_create_a_business_profile_this_helps_build_trust_with_buyers_and_ensures_a_secure_marketplace_experience">To start selling items on our platform, you\'ll need to create a business profile. This helps build trust with buyers and ensures a secure marketplace experience.</string>
+    <string name="create_business_profile">Create Business Profile</string>
+    <string name="start_selling_with_confidence">Start selling with confidence</string>
+    <string name="create_profile">Create Profile</string>
+    <string name="close_dialog">Close dialog</string>
+    <string name="notification">Notifications</string>
+    <string name="business_details">Business Details</string>
 
     <declare-styleable name="WaveformSeekBar">
         <attr name="wave_progress" format="float" />
@@ -201,84 +206,16 @@
         <attr name="marker_text_color" format="color" />
         <attr name="marker_text_padding" format="dimension" />
     </declare-styleable>
-
-
-    <!-- Bookmarks/Favorites -->
+    <string name="new_feed">New Feed</string>
+    <!--  Bookmarks/Favorites  -->
     <string name="no_bookmarks">No Bookmarks</string>
     <string name="no_bookmarks_title">No saved posts yet</string>
     <string name="no_bookmarks_message">Bookmark posts you want to revisit later.\nThey\'ll appear here.</string>
+
+    <string name="facebook_app_id">YOUR_FACEBOOK_APP_ID</string>
+    <string name="facebook_client_token">YOUR_FACEBOOK_CLIENT_TOKEN</string>
+    <string name="fb_login_protocol_scheme">fbYOUR_FACEBOOK_APP_ID</string>
     <string name="media" />
-    <string name="capture_photo"><![CDATA[" <string name=\"capture_photo\">Capture photo</string>"]]></string>
-    <string name="start_recording"><![CDATA["   <string name=\"start_recording\">Start Recording</string>"]]></string>
-    <string name="the_seller_will_be_notified_of_your_offer"><![CDATA["  <string name=\"the_seller_will_be_notified_of_your_offer\">The seller will be notified of your offer</string>\n"]]></string>
-    <string name="submit_offer"><![CDATA[<string name=\"submit_offer\">Submit Offer</string>]]></string>
-    <string name="cancel"><![CDATA["  <string name=\"cancel\">Cancel</string>"]]></string>
-    <string name="add_a_message"><![CDATA[<string name=\"add_a_message\">Add a message...</string>]]></string>
-    <string name="message_to_seller_optional"><![CDATA[" <string name=\"message_to_seller_optional\">Message to Seller (Optional)</string>"]]></string>
 
-    <string name="error_loading_data">Error loading data</string>
-    <string name="search_icon">Search icon</string>
-    <string name="search_v2">Search...</string>
-    <string name="clear_search">Clear search</string>
-    <string name="contact">Contact</string>
-    <string name="favorite">Favorite</string>
-    <string name="price">Price</string>
-    <string name="comments">Comments</string>
-    <string name="load_more_comments">Load more comments</string>
-    <string name="description">Description</string>
-    <string name="catalog_image">Catalogue image</string>
-    <string name="send_comment">Send comment</string>
-    <string name="user_image">User image</string>
-    <string name="current_user_image">Current user image</string>
-    <string name="viewing_product">Viewing Product</string>
-    <string name="message">Message</string>
-    <string name="show_more">show more</string>
-    <string name="seller">Sell</string>
-    <string name="category">Category</string>
-    <string name="access_seller_tools">Access seller tools</string>
-    <string name="to_start_selling_items_on_our_platform_you_ll_need_to_create_a_business_profile_this_helps_build_trust_with_buyers_and_ensures_a_secure_marketplace_experience">To start selling items on our platform, you\'ll need to create a business profile. This helps build trust with buyers and ensures a secure marketplace experience.</string>
-    <string name="create_business_profile">Create Business Profile</string>
-    <string name="start_selling_with_confidence">Start selling with confidence</string>
-    <string name="create_profile">Create Profile</string>
-    <string name="close_dialog">Close dialog</string>
-    <string name="follow">Follow</string>
-    <string name="add_caption">Post your reply</string>
-    <string name="tag_people">Tag people</string>
-    <string name="add_topics">Add topics</string>
-    <string name="add_location">Add location</string>
-    <string name="back">Back</string>
-    <string name="add_more">Add more</string>
-    <string name="image">Image</string>
-    <string name="video">Video</string>
-
-    <string name="advertising_service_icon">Advertising Service Icon</string>
-    <string name="advertising_service_agreement">Advertising Service Agreement</string>
-    <string name="welcome_to_our_advertising_platform">Welcome to our Advertising Section</string>
-    <string name="by_using_our_advertising_services_you_agree_to_promote_your_products_and_services_on_our_platform_s_feed_reaching_millions_of_engaged_users">By using our advertising services, you agree to promote your products and services on our platform\'s feed, reaching millions of engaged users.</string>
-    <string name="payment_requirements">Payment Requirements</string>
-    <string name="all_advertising_campaigns_require_payment_before_activation_n_minimum_campaign_budget_50_usd_n_payment_methods_credit_debit_card_paypal_bank_transfer_n_charges_are_non_refundable_once_campaign_is_live_n_billing_occurs_at_campaign_start_or_monthly_for_ongoing_campaigns">• All advertising campaigns require payment before activation\n• Minimum campaign budget: MWK 2000\n• Payment methods: Credit/Debit card, Mobile money transfer, Bank transfer\n• Charges are non-refundable once campaign is live\n• Billing occurs at campaign start and runs for the period of time, paid for</string>
-    <string name="service_terms">Service Terms</string>
-    <string name="your_ads_will_appear_in_users_feeds_based_on_targeting_criteria_n_we_reserve_the_right_to_reject_ads_that_violate_our_policies_n_ad_performance_is_not_guaranteed_n_you_retain_all_rights_to_your_ad_content_n_we_may_use_your_ads_for_platform_promotion_examples_n_campaign_can_be_paused_or_cancelled_with_24_hours_notice">• Your ads will appear in users\' feeds based on targeting criteria\n• We reserve the right to reject ads that violate our policies\n• Ad performance is not guaranteed\n• You retain all rights to your ad content\n• We may use your ads for platform promotion examples\n• Campaign can be paused or cancelled with 24 hours notice</string>
-    <string name="content_guidelines">Content Guidelines</string>
-    <string name="prohibited_content_includes_misleading_claims_adult_content_illegal_products_hate_speech_violent_imagery_or_content_that_infringes_intellectual_property_rights">Prohibited content includes: misleading claims, adult content, illegal products, hate speech, violent imagery, or content that infringes intellectual property rights.</string>
-    <string name="i_agree_to_the_terms_and_understand_that_payment_is_required">I agree to the terms and understand that payment is required</string>
-    <string name="decline">Decline</string>
-    <string name="accept_amp_continue"><![CDATA[Accept & Continue]]></string>
-    <string name="followers">Followers</string>
-    <string name="search_following">Search following...</string>
-    <string name="follow_back">Follow Back</string>
-    <string name="more_options">More options</string>
-    <string name="boost">Boost</string>
-    <string name="mwk">MWK</string>
-
-    <string name="select_cover">Select cover</string>
-    <string name="pause_video_or_audio">Pause video or audio</string>
-    <string name="play_video_or_audio">Play video or audio</string>
-    <string name="send_offer">Send offer</string>
-    <string name="send_your_offer">Send Your Offer</string>
-    <string name="make_an_offer_to_the_seller_they_ll_review_and_respond_soon">Make an offer to the seller. They\'ll review and respond soon.</string>
-    <string name="enter_amount">Enter amount</string>
-    <string name="your_offer_amount">Your Offer Amount</string>
-    <string name="quick_offers">Quick Offers</string>
 
 </resources>

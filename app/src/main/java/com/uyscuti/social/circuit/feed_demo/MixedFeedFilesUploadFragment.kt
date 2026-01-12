@@ -23,18 +23,15 @@ import android.widget.ImageView
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.github.chrisbanes.photoview.PhotoView
+import com.uyscuti.sharedmodule.AnyFileFullScreenActivity
+import com.uyscuti.sharedmodule.feed_demo.AnyFileMediaPagerAdapter
+import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
+import com.uyscuti.sharedmodule.model.feed.multiple_files.FeedMultipleVideos
+import com.uyscuti.sharedmodule.model.feed.multiple_files.MixedFeedUploadDataClass
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.feed.multiple_files.MultipleFeedFilesPagerAdapter
 import com.uyscuti.social.circuit.databinding.FragmentMixedFeedFilesUploadBinding
-import com.uyscuti.social.circuit.interfaces.feedinterfaces.FeedTextViewFragmentInterface
-import com.uyscuti.social.circuit.model.feed.FeedMultipleImages
-import com.uyscuti.social.circuit.model.feed.multiple_files.FeedMultipleVideos
-import com.uyscuti.social.circuit.model.feed.multiple_files.MixedFeedUploadDataClass
-import com.uyscuti.social.circuit.model.feed.multiple_files.FeedMultipleDocumentsDataClass
 import id.zelory.compressor.Compressor
 import kotlinx.coroutines.launch
 import java.io.File
@@ -304,6 +301,8 @@ class MixedFeedFilesUploadFragment : Fragment() {
                 "audio" -> {
                     Log.d(TAG, "handleDoubleTap: Audio double-tap - could toggle repeat mode")
                 }
+
+                else -> {}
             }
         }
     }
@@ -339,6 +338,8 @@ class MixedFeedFilesUploadFragment : Fragment() {
                         Log.d(TAG, "onScale: Scale factor: $scaleFactor (min: $minScaleFactor, max: $maxAllowedScale)")
                         return true
                     }
+
+                    else -> {}
                 }
             }
             return false

@@ -9,10 +9,10 @@ plugins {
 
 android {
     namespace = "com.uyscuti.social.call"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 26
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -52,7 +52,7 @@ dependencies {
     implementation("com.mesibo.api:webrtc:1.0.5")
     implementation("org.java-websocket:Java-WebSocket:1.5.3")
     implementation("com.google.code.gson:gson:2.10.1") // kept latest 2.10.1
-    implementation("com.guolindev.permissionx:permissionx:1.6.1")
+    implementation("com.guolindev.permissionx:permissionx:1.8.1")
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.3.1")

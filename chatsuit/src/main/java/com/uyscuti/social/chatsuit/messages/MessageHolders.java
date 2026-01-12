@@ -2,13 +2,9 @@ package com.uyscuti.social.chatsuit.messages;
 
 
 import android.content.Context;
-import android.graphics.Color;
 import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
 import android.media.MediaMetadataRetriever;
-import android.media.MediaPlayer;
 import android.os.Build;
-import android.os.Handler;
 import android.text.Spannable;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
@@ -44,14 +40,16 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-
+/*
+ * Created by troy379 on 31.03.17.
+ */
+@SuppressWarnings("WeakerAccess")
 public class MessageHolders {
 
     private static final short VIEW_TYPE_DATE_HEADER = 130;
@@ -81,172 +79,31 @@ public class MessageHolders {
     private HolderConfig<MessageContentType.Image> inComingAudioConfig;
     private HolderConfig<MessageContentType.Image> inComingDocConfig;
 
-
-
     private List<ContentTypeConfig> customContentTypes = new ArrayList<>();
     private ContentChecker contentChecker;
 
-
-
     public MessageHolders() {
-        // Date Header
         this.dateHeaderHolder = DefaultDateHeaderViewHolder.class;
         this.dateHeaderLayout = R.layout.item_new_date;
 
-        // Outgoing Messages
+        this.incomingTextConfig = new HolderConfig<>(DefaultIncomingTextMessageViewHolder.class, R.layout.item_incoming_text_message);
         this.outcomingTextConfig = new HolderConfig<>(DefaultOutcomingTextMessageViewHolder.class, R.layout.item_outcoming_text_message);
+        this.incomingImageConfig = new HolderConfig<>(DefaultIncomingImageMessageViewHolder.class, R.layout.item_incoming_image_message);
         this.outcomingImageConfig = new HolderConfig<>(DefaultOutcomingImageMessageViewHolder.class, R.layout.item_outcoming_image_message);
         this.outGoingVideoConfig = new HolderConfig<>(DefaultOutGoingVideoMessageViewHolder.class, R.layout.item_outgoing_video);
         this.outGoingAudioConfig = new HolderConfig<>(DefaultOutGoingAudioMessageViewHolder.class, R.layout.item_outgoing_audio);
-        this.outGoingDocConfig = new HolderConfig<>(DefaultOutGoingDocMessageViewHolder.class, R.layout.item_outgoing_doc);
-        this.outGoingVoiceConfig = new HolderConfig<>(DefaultOutGoingVoiceMessageViewHolder.class, R.layout.item_outgoing_voice_message);
-
-        // Incoming Messages
-        this.incomingTextConfig = new HolderConfig<>(DefaultIncomingTextMessageViewHolder.class, R.layout.item_incoming_text_message);
-        this.incomingImageConfig = new HolderConfig<>(DefaultIncomingImageMessageViewHolder.class, R.layout.item_incoming_image_message);
-        this.inComingVideoConfig = new HolderConfig<>(DefaultIncomingVideoMessageViewHolder.class, R.layout.item_incoming_video_message);
         this.inComingAudioConfig = new HolderConfig<>(DefaultInComingAudioMessageViewHolder.class, R.layout.item_incoming_audio_message);
+        this.outGoingDocConfig = new HolderConfig<>(DefaultOutGoingDocMessageViewHolder.class, R.layout.item_outgoing_doc);
         this.inComingDocConfig = new HolderConfig<>(DefaultInComingDocMessageViewHolder.class, R.layout.item_incoming_doc_message);
-        this.inComingVoiceConfig = new HolderConfig<>(DefaultInComingVoiceMessageViewHolder.class, R.layout.item_incoming_voice_message);
-
+        this.inComingVideoConfig = new HolderConfig<>(DefaultIncomingVideoMessageViewHolder.class, R.layout.item_incoming_video_message);
     }
 
-
-
-
     /**
-     * Configuration wrapper for a specific content type (e.g., image, video, audio).
-     * Holds both incoming and outgoing view holder configurations.
+     * Sets both of custom view holder class and layout resource for incoming text message.
      *
-     * @param <TYPE> The message content type this config represents
-     */
-    private static class ContentTypeConfig<TYPE extends MessageContentType> {
-        private byte type;
-        private HolderConfig<TYPE> incomingConfig;
-        private HolderConfig<TYPE> outcomingConfig;
-
-        private ContentTypeConfig(
-                byte type,
-                HolderConfig<TYPE> incomingConfig,
-                HolderConfig<TYPE> outcomingConfig) {
-            this.type = type;
-            this.incomingConfig = incomingConfig;
-            this.outcomingConfig = outcomingConfig;
-        }
-    }
-
-    /**
-     * Configuration for a single view holder, containing the holder class,
-     * layout resource, and optional payload data.
-     *
-     * @param <T> The message type this holder displays
-     */
-    private static class HolderConfig<T extends IMessage> {
-        protected Class<? extends BaseMessageViewHolder<? extends T>> holder;
-        protected int layout;
-        protected Object payload;
-
-        HolderConfig(Class<? extends BaseMessageViewHolder<? extends T>> holder, int layout) {
-            this.holder = holder;
-            this.layout = layout;
-        }
-
-        HolderConfig(Class<? extends BaseMessageViewHolder<? extends T>> holder, int layout, Object payload) {
-            this.holder = holder;
-            this.layout = layout;
-            this.payload = payload;
-        }
-    }
-
-// ============================================================================
-// CONTENT TYPE DETECTION
-// ============================================================================
-
-    /**
-     * Determines the appropriate view type for a given message.
-     * Checks for various content types in priority order:
-     * 1. Voice messages (highest priority)
-     * 2. Audio messages
-     * 3. Video messages
-     * 4. Documents
-     * 5. Images
-     * 6. Custom content types
-     * 7. Text (default fallback)
-     *
-     * @param message The message to analyze
-     * @return The view type constant for this message
-     */
-    @SuppressWarnings("unchecked")
-    private short getContentViewType(IMessage message) {
-
-        if (message instanceof MessageContentType.Image) {
-            MessageContentType.Image imageMessage = (MessageContentType.Image) message;
-
-            // PRIORITY 1: Check for voice message using dedicated voice fields
-            if (imageMessage.getVoiceUrl() != null || imageMessage.getVoiceDuration() > 0) {
-                Log.d("Holder Attachments", "Voice Found, Path: " + imageMessage.getVoiceUrl());
-                return VIEW_TYPE_VOICE_MESSAGE;
-            }
-
-            // PRIORITY 2: Check audio URL with voice note pattern detection
-            if (imageMessage.getAudioUrl() != null) {
-                String audioPath = imageMessage.getAudioUrl();
-                // Detect voice notes by path patterns (/vn/ directory or rec_ prefix)
-                if (audioPath.contains("/vn/") || audioPath.contains("rec_")) {
-                    Log.d("Holder Attachments", "Voice Found (from audioUrl pattern), Path: " + audioPath);
-                    return VIEW_TYPE_VOICE_MESSAGE;
-                }
-                Log.d("Holder Attachments", "Audio Found, Path: " + audioPath);
-                return VIEW_TYPE_AUDIO_MESSAGE;
-            }
-
-            // PRIORITY 3: Fallback check - MP3 files in imageUrl field are treated as voice
-            if (imageMessage.getImageUrl() != null && imageMessage.getImageUrl().endsWith(".mp3")) {
-                Log.d("Holder Attachments", "Voice Found (from imageUrl), Path: " + imageMessage.getImageUrl());
-                return VIEW_TYPE_VOICE_MESSAGE;
-            }
-
-            // PRIORITY 4: Check for video content
-            if (imageMessage.getVideoUrl() != null) {
-                Log.d("Holder Attachments", "Video Found, Path: " + imageMessage.getVideoUrl());
-                return VIEW_TYPE_VIDEO_MESSAGE;
-            }
-
-            // PRIORITY 5: Check for document attachments
-            if (imageMessage.getDocUrl() != null) {
-                Log.d("Holder Attachments", "Doc Found, Path: " + imageMessage.getDocUrl());
-                return VIEW_TYPE_DOCUMENT_MESSAGE;
-            }
-
-            // PRIORITY 6: Check for regular image content (excluding MP3s already handled)
-            if (imageMessage.getImageUrl() != null && !imageMessage.getImageUrl().endsWith(".mp3")) {
-                Log.d("Holder Attachments", "Image Found, Image Path: " + imageMessage.getImageUrl());
-                return VIEW_TYPE_IMAGE_MESSAGE;
-            }
-        }
-
-        // PRIORITY 7: Check for custom registered content types
-        if (message instanceof MessageContentType) {
-            for (int i = 0; i < customContentTypes.size(); i++) {
-                ContentTypeConfig config = customContentTypes.get(i);
-                if (contentChecker == null) {
-                    throw new IllegalArgumentException("ContentChecker cannot be null when using custom content types!");
-                }
-                boolean hasContent = contentChecker.hasContentFor(message, config.type);
-                if (hasContent) return config.type;
-            }
-        }
-
-        // DEFAULT: Fallback to text message if no content detected
-        return VIEW_TYPE_TEXT_MESSAGE;
-    }
-
-// ============================================================================
-// TEXT MESSAGE CONFIGURATION (INCOMING)
-// ============================================================================
-
-    /**
-     * Configure both holder and layout for incoming text messages
+     * @param holder holder class.
+     * @param layout layout resource.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setIncomingTextConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
@@ -257,7 +114,12 @@ public class MessageHolders {
     }
 
     /**
-     * Configure holder, layout, and payload for incoming text messages
+     * Sets both of custom view holder class and layout resource for incoming text message.
+     *
+     * @param holder  holder class.
+     * @param layout  layout resource.
+     * @param payload custom data.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setIncomingTextConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
@@ -270,7 +132,10 @@ public class MessageHolders {
     }
 
     /**
-     * Set only the view holder class for incoming text messages
+     * Sets custom view holder class for incoming text message.
+     *
+     * @param holder holder class.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setIncomingTextHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder) {
@@ -279,7 +144,11 @@ public class MessageHolders {
     }
 
     /**
-     * Set view holder class and payload for incoming text messages
+     * Sets custom view holder class for incoming text message.
+     *
+     * @param holder  holder class.
+     * @param payload custom data.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setIncomingTextHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
@@ -290,7 +159,10 @@ public class MessageHolders {
     }
 
     /**
-     * Set only the layout resource for incoming text messages
+     * Sets custom layout resource for incoming text message.
+     *
+     * @param layout layout resource.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setIncomingTextLayout(@LayoutRes int layout) {
         this.incomingTextConfig.layout = layout;
@@ -298,7 +170,11 @@ public class MessageHolders {
     }
 
     /**
-     * Set layout resource and payload for incoming text messages
+     * Sets custom layout resource for incoming text message.
+     *
+     * @param layout  layout resource.
+     * @param payload custom data.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setIncomingTextLayout(@LayoutRes int layout, Object payload) {
         this.incomingTextConfig.layout = layout;
@@ -306,12 +182,12 @@ public class MessageHolders {
         return this;
     }
 
-// ============================================================================
-// TEXT MESSAGE CONFIGURATION (OUTGOING)
-// ============================================================================
-
     /**
-     * Configure both holder and layout for outgoing text messages
+     * Sets both of custom view holder class and layout resource for outcoming text message.
+     *
+     * @param holder holder class.
+     * @param layout layout resource.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setOutcomingTextConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
@@ -322,7 +198,12 @@ public class MessageHolders {
     }
 
     /**
-     * Configure holder, layout, and payload for outgoing text messages
+     * Sets both of custom view holder class and layout resource for outcoming text message.
+     *
+     * @param holder  holder class.
+     * @param layout  layout resource.
+     * @param payload custom data.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setOutcomingTextConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
@@ -335,7 +216,10 @@ public class MessageHolders {
     }
 
     /**
-     * Set only the view holder class for outgoing text messages
+     * Sets custom view holder class for outcoming text message.
+     *
+     * @param holder holder class.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setOutcomingTextHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder) {
@@ -344,7 +228,11 @@ public class MessageHolders {
     }
 
     /**
-     * Set view holder class and payload for outgoing text messages
+     * Sets custom view holder class for outcoming text message.
+     *
+     * @param holder  holder class.
+     * @param payload custom data.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setOutcomingTextHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
@@ -355,7 +243,10 @@ public class MessageHolders {
     }
 
     /**
-     * Set only the layout resource for outgoing text messages
+     * Sets custom layout resource for outcoming text message.
+     *
+     * @param layout layout resource.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setOutcomingTextLayout(@LayoutRes int layout) {
         this.outcomingTextConfig.layout = layout;
@@ -363,7 +254,11 @@ public class MessageHolders {
     }
 
     /**
-     * Set layout resource and payload for outgoing text messages
+     * Sets custom layout resource for outcoming text message.
+     *
+     * @param layout  layout resource.
+     * @param payload custom data.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setOutcomingTextLayout(@LayoutRes int layout, Object payload) {
         this.outcomingTextConfig.layout = layout;
@@ -371,12 +266,12 @@ public class MessageHolders {
         return this;
     }
 
-// ============================================================================
-// IMAGE MESSAGE CONFIGURATION (INCOMING)
-// ============================================================================
-
     /**
-     * Configure both holder and layout for incoming image messages
+     * Sets both of custom view holder class and layout resource for incoming image message.
+     *
+     * @param holder holder class.
+     * @param layout layout resource.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setIncomingImageConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder,
@@ -387,7 +282,12 @@ public class MessageHolders {
     }
 
     /**
-     * Configure holder, layout, and payload for incoming image messages
+     * Sets both of custom view holder class and layout resource for incoming image message.
+     *
+     * @param holder  holder class.
+     * @param layout  layout resource.
+     * @param payload custom data.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setIncomingImageConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder,
@@ -400,7 +300,10 @@ public class MessageHolders {
     }
 
     /**
-     * Set only the view holder class for incoming image messages
+     * Sets custom view holder class for incoming image message.
+     *
+     * @param holder holder class.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setIncomingImageHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder) {
@@ -409,7 +312,11 @@ public class MessageHolders {
     }
 
     /**
-     * Set view holder class and payload for incoming image messages
+     * Sets custom view holder class for incoming image message.
+     *
+     * @param holder  holder class.
+     * @param payload custom data.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setIncomingImageHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder,
@@ -420,7 +327,10 @@ public class MessageHolders {
     }
 
     /**
-     * Set only the layout resource for incoming image messages
+     * Sets custom layout resource for incoming image message.
+     *
+     * @param layout layout resource.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setIncomingImageLayout(@LayoutRes int layout) {
         this.incomingImageConfig.layout = layout;
@@ -428,7 +338,11 @@ public class MessageHolders {
     }
 
     /**
-     * Set layout resource and payload for incoming image messages
+     * Sets custom layout resource for incoming image message.
+     *
+     * @param layout  layout resource.
+     * @param payload custom data.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setIncomingImageLayout(@LayoutRes int layout, Object payload) {
         this.incomingImageConfig.layout = layout;
@@ -436,12 +350,12 @@ public class MessageHolders {
         return this;
     }
 
-// ============================================================================
-// IMAGE MESSAGE CONFIGURATION (OUTGOING)
-// ============================================================================
-
     /**
-     * Configure both holder and layout for outgoing image messages
+     * Sets both of custom view holder class and layout resource for outcoming image message.
+     *
+     * @param holder holder class.
+     * @param layout layout resource.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setOutcomingImageConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder,
@@ -452,7 +366,12 @@ public class MessageHolders {
     }
 
     /**
-     * Configure holder, layout, and payload for outgoing image messages
+     * Sets both of custom view holder class and layout resource for outcoming image message.
+     *
+     * @param holder  holder class.
+     * @param layout  layout resource.
+     * @param payload custom data.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setOutcomingImageConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder,
@@ -465,7 +384,10 @@ public class MessageHolders {
     }
 
     /**
-     * Set only the view holder class for outgoing image messages
+     * Sets custom view holder class for outcoming image message.
+     *
+     * @param holder holder class.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setOutcomingImageHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder) {
@@ -474,7 +396,11 @@ public class MessageHolders {
     }
 
     /**
-     * Set view holder class and payload for outgoing image messages
+     * Sets custom view holder class for outcoming image message.
+     *
+     * @param holder  holder class.
+     * @param payload custom data.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setOutcomingImageHolder(
             @NonNull Class<? extends BaseMessageViewHolder<? extends MessageContentType.Image>> holder,
@@ -485,7 +411,10 @@ public class MessageHolders {
     }
 
     /**
-     * Set only the layout resource for outgoing image messages
+     * Sets custom layout resource for outcoming image message.
+     *
+     * @param layout layout resource.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setOutcomingImageLayout(@LayoutRes int layout) {
         this.outcomingImageConfig.layout = layout;
@@ -493,7 +422,11 @@ public class MessageHolders {
     }
 
     /**
-     * Set layout resource and payload for outgoing image messages
+     * Sets custom layout resource for outcoming image message.
+     *
+     * @param layout  layout resource.
+     * @param payload custom data.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setOutcomingImageLayout(@LayoutRes int layout, Object payload) {
         this.outcomingImageConfig.layout = layout;
@@ -501,12 +434,12 @@ public class MessageHolders {
         return this;
     }
 
-// ============================================================================
-// DATE HEADER CONFIGURATION
-// ============================================================================
-
     /**
-     * Configure both holder and layout for date headers
+     * Sets both of custom view holder class and layout resource for date header.
+     *
+     * @param holder holder class.
+     * @param layout layout resource.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setDateHeaderConfig(
             @NonNull Class<? extends ViewHolder<Date>> holder,
@@ -517,7 +450,10 @@ public class MessageHolders {
     }
 
     /**
-     * Set only the view holder class for date headers
+     * Sets custom view holder class for date header.
+     *
+     * @param holder holder class.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setDateHeaderHolder(@NonNull Class<? extends ViewHolder<Date>> holder) {
         this.dateHeaderHolder = holder;
@@ -525,30 +461,29 @@ public class MessageHolders {
     }
 
     /**
-     * Set only the layout resource for date headers
+     * Sets custom layout reource for date header.
+     *
+     * @param layout layout resource.
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public MessageHolders setDateHeaderLayout(@LayoutRes int layout) {
         this.dateHeaderLayout = layout;
         return this;
     }
 
-// ============================================================================
-// CUSTOM CONTENT TYPE REGISTRATION
-// ============================================================================
-
     /**
-     * Register a custom content type with the same holder for both incoming and outgoing messages
+     * Registers custom content type (e.g. multimedia, events etc.)
      *
-     * @param type Unique byte identifier for this content type (cannot be 0)
-     * @param holder View holder class to use
-     * @param incomingLayout Layout resource for incoming messages
-     * @param outcomingLayout Layout resource for outgoing messages
-     * @param contentChecker Checker to determine if a message has this content type
+     * @param type            unique id for content type
+     * @param holder          holder class for incoming and outcoming messages
+     * @param incomingLayout  layout resource for incoming message
+     * @param outcomingLayout layout resource for outcoming message
+     * @param contentChecker  {@link ContentChecker} for registered type
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public <TYPE extends MessageContentType>
     MessageHolders registerContentType(
-            byte type,
-            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> holder,
+            byte type, @NonNull Class<? extends BaseMessageViewHolder<TYPE>> holder,
             @LayoutRes int incomingLayout,
             @LayoutRes int outcomingLayout,
             @NonNull ContentChecker contentChecker) {
@@ -560,22 +495,21 @@ public class MessageHolders {
     }
 
     /**
-     * Register a custom content type with different holders for incoming and outgoing messages
+     * Registers custom content type (e.g. multimedia, events etc.)
      *
-     * @param type Unique byte identifier for this content type (cannot be 0)
-     * @param incomingHolder View holder class for incoming messages
-     * @param incomingLayout Layout resource for incoming messages
-     * @param outcomingHolder View holder class for outgoing messages
-     * @param outcomingLayout Layout resource for outgoing messages
-     * @param contentChecker Checker to determine if a message has this content type
+     * @param type            unique id for content type
+     * @param incomingHolder  holder class for incoming message
+     * @param outcomingHolder holder class for outcoming message
+     * @param incomingLayout  layout resource for incoming message
+     * @param outcomingLayout layout resource for outcoming message
+     * @param contentChecker  {@link ContentChecker} for registered type
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public <TYPE extends MessageContentType>
     MessageHolders registerContentType(
             byte type,
-            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> incomingHolder,
-            @LayoutRes int incomingLayout,
-            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> outcomingHolder,
-            @LayoutRes int outcomingLayout,
+            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> incomingHolder, @LayoutRes int incomingLayout,
+            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> outcomingHolder, @LayoutRes int outcomingLayout,
             @NonNull ContentChecker contentChecker) {
 
         if (type == 0)
@@ -590,27 +524,23 @@ public class MessageHolders {
     }
 
     /**
-     * Register a custom content type with different holders, layouts, and payloads
-     * for incoming and outgoing messages
+     * Registers custom content type (e.g. multimedia, events etc.)
      *
-     * @param type Unique byte identifier for this content type (cannot be 0)
-     * @param incomingHolder View holder class for incoming messages
-     * @param incomingPayload Custom payload data for incoming messages
-     * @param incomingLayout Layout resource for incoming messages
-     * @param outcomingHolder View holder class for outgoing messages
-     * @param outcomingPayload Custom payload data for outgoing messages
-     * @param outcomingLayout Layout resource for outgoing messages
-     * @param contentChecker Checker to determine if a message has this content type
+     * @param type             unique id for content type
+     * @param incomingHolder   holder class for incoming message
+     * @param outcomingHolder  holder class for outcoming message
+     * @param incomingPayload  payload for incoming message
+     * @param outcomingPayload payload for outcoming message
+     * @param incomingLayout   layout resource for incoming message
+     * @param outcomingLayout  layout resource for outcoming message
+     * @param contentChecker   {@link ContentChecker} for registered type
+     * @return {@link MessageHolders} for subsequent configuration.
      */
     public <TYPE extends MessageContentType>
     MessageHolders registerContentType(
             byte type,
-            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> incomingHolder,
-            Object incomingPayload,
-            @LayoutRes int incomingLayout,
-            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> outcomingHolder,
-            Object outcomingPayload,
-            @LayoutRes int outcomingLayout,
+            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> incomingHolder, Object incomingPayload, @LayoutRes int incomingLayout,
+            @NonNull Class<? extends BaseMessageViewHolder<TYPE>> outcomingHolder, Object outcomingPayload, @LayoutRes int outcomingLayout,
             @NonNull ContentChecker contentChecker) {
 
         if (type == 0)
@@ -624,64 +554,84 @@ public class MessageHolders {
         return this;
     }
 
+    /*
+     * INTERFACES
+     * */
+
     /**
-     * Interface for checking if a message contains a specific custom content type
+     * The interface, which contains logic for checking the availability of content.
      */
     public interface ContentChecker<MESSAGE extends IMessage> {
+
         /**
-         * Check if the given message has content of the specified type
+         * Checks the availability of content.
          *
-         * @param message The message to check
-         * @param type The content type identifier
-         * @return true if the message has this content type
+         * @param message current message in list.
+         * @param type    content type, for which content availability is determined.
+         * @return weather the message has content for the current message.
          */
         boolean hasContentFor(MESSAGE message, byte type);
     }
 
-// ============================================================================
-// VIEW BINDING AND TYPE DETERMINATION
-// ============================================================================
+    /*
+     * PRIVATE METHODS
+     * */
 
+    protected ViewHolder getHolder(ViewGroup parent, int viewType, MessagesListStyle messagesListStyle) {
+        switch (viewType) {
+            case VIEW_TYPE_DATE_HEADER:
+                return getHolder(parent, dateHeaderLayout, dateHeaderHolder, messagesListStyle, null);
+            case VIEW_TYPE_TEXT_MESSAGE:
+                return getHolder(parent, incomingTextConfig, messagesListStyle);
+            case -VIEW_TYPE_TEXT_MESSAGE:
+                return getHolder(parent, outcomingTextConfig, messagesListStyle);
+            case VIEW_TYPE_IMAGE_MESSAGE:
+                return getHolder(parent, incomingImageConfig, messagesListStyle);
+            case VIEW_TYPE_VIDEO_MESSAGE:
+                return getHolder(parent, inComingVideoConfig, messagesListStyle);
+            case VIEW_TYPE_AUDIO_MESSAGE:
+                return getHolder(parent, inComingAudioConfig, messagesListStyle);
+            case -VIEW_TYPE_IMAGE_MESSAGE:
+                return getHolder(parent, outcomingImageConfig, messagesListStyle);
+            case -VIEW_TYPE_VIDEO_MESSAGE:
+                return getHolder(parent, outGoingVideoConfig, messagesListStyle);
+            case -VIEW_TYPE_AUDIO_MESSAGE:
+                return getHolder(parent, outGoingAudioConfig, messagesListStyle);
+            case -VIEW_TYPE_DOCUMENT_MESSAGE:
+                return getHolder(parent, outGoingDocConfig, messagesListStyle);
+            case VIEW_TYPE_DOCUMENT_MESSAGE:
+                return getHolder(parent, inComingDocConfig, messagesListStyle);
+//            default:
+//                for (ContentTypeConfig typeConfig : customContentTypes) {
+//                    if (Math.abs(typeConfig.type) == Math.abs(viewType)) {
+//                        if (viewType > 0)
+//                            return getHolder(parent, typeConfig.incomingConfig, messagesListStyle);
+//                        else
+//                            return getHolder(parent, typeConfig.outcomingConfig, messagesListStyle);
+//                    }
+//                }
+        }
+        throw new IllegalStateException("Wrong message view type. Please, report this issue on GitHub with full stacktrace in description.");
+    }
+
+    // Add a counter variable to keep track of the selected items
     private int selectedItemsCount = 0;
 
-    /**
-     * Binds data and listeners to a view holder
-     *
-     * @param holder The view holder to bind
-     * @param item The data item (IMessage or Date)
-     * @param isSelected Whether this item is selected
-     * @param isGroup Whether this is a group chat message
-     * @param imageLoader Image loading utility
-     * @param onMessageClickListener Click listener for the message view
-     * @param onMessageLongClickListener Long click listener for the message view
-     * @param dateHeadersFormatter Formatter for date headers
-     * @param clickListenersArray Array of custom click listeners for specific views
-     * @param dateFormatterListener Listener for date formatting
-     * @param downloadListener Listener for download events
-     * @param mediaClickListener Listener for media clicks
-     * @param audioPlayListener Listener for audio playback events
-     * @param adapter Reference to the adapter
-     */
     @SuppressWarnings("unchecked")
-    protected void bind(
-            final ViewHolder holder,
-            final Object item,
-            boolean isSelected,
-            boolean isGroup,
-            final ImageLoader imageLoader,
-            final View.OnClickListener onMessageClickListener,
-            final View.OnLongClickListener onMessageLongClickListener,
-            final DateFormatter.Formatter dateHeadersFormatter,
-            final SparseArray<MessagesListAdapter.OnMessageViewClickListener> clickListenersArray,
-            final MessagesListAdapter.DateFormatterListener dateFormatterListener,
-            final MessagesListAdapter.OnDownloadListener downloadListener,
-            final MessagesListAdapter.OnMediaClickListener mediaClickListener,
-            final MessagesListAdapter.OnAudioPlayListener audioPlayListener,
-            final MessagesListAdapter adapter) {
+    protected void bind(final ViewHolder holder, final Object item, boolean isSelected, boolean isGroup,
+                        final ImageLoader imageLoader,
+                        final View.OnClickListener onMessageClickListener,
+                        final View.OnLongClickListener onMessageLongClickListener,
+                        final DateFormatter.Formatter dateHeadersFormatter,
+                        final SparseArray<MessagesListAdapter.OnMessageViewClickListener> clickListenersArray,
+                        final MessagesListAdapter.DateFormatterListener dateFormatterListener,
+                        final MessagesListAdapter.OnDownloadListener downloadListener,
+                        final MessagesListAdapter.OnMediaClickListener mediaClickListener,
+                        final MessagesListAdapter.OnAudioPlayListener audioPlayListener,
+                        final MessagesListAdapter adapter  // Replace YourMessageType with your actual message type
+    ) {
 
-        // Bind message items
         if (item instanceof IMessage) {
-            // Set holder properties
             ((BaseMessageViewHolder) holder).isSelected = isSelected;
             ((BaseMessageViewHolder) holder).isGroup = isGroup;
             ((BaseMessageViewHolder) holder).adapter = adapter;
@@ -689,178 +639,335 @@ public class MessageHolders {
             ((BaseMessageViewHolder) holder).downloadListener = downloadListener;
             ((BaseMessageViewHolder) holder).mediaClickListener = mediaClickListener;
             ((BaseMessageViewHolder) holder).audioPlayListener = audioPlayListener;
-
-            // Attach base click listeners
             holder.itemView.setOnLongClickListener(onMessageLongClickListener);
             holder.itemView.setOnClickListener(onMessageClickListener);
+//            holder.itemView
 
-            // Attach custom view click listeners
+
             for (int i = 0; i < clickListenersArray.size(); i++) {
                 final int key = clickListenersArray.keyAt(i);
                 final View view = holder.itemView.findViewById(key);
                 if (view != null) {
                     view.setOnClickListener(v ->
+
+                            // Check if the item is selected or not
+//                    if (isSelected) {
+//                        // Deselect the item
+//                        this.selectedItemsCount--;
+//                    } else {
+//                        // Select the item
+//                        this.selectedItemsCount++;
+//                    };
                             clickListenersArray.get(key).onMessageViewClick(view, (IMessage) item));
                 }
             }
-        }
-        // Bind date header items
-        else if (item instanceof Date) {
+        } else if (item instanceof Date) {
+//            Log.d("Formatter", "Found A Date Header in Message Holder " + item);
+//            ((DefaultDateHeaderViewHolder) holder).dateHeadersFormatter = dateHeadersFormatter;
             ((DefaultDateHeaderViewHolder) holder).dateListener = dateFormatterListener;
+
+//            final long dateString = System.currentTimeMillis();
+//            final Date date = new Date(dateString);
+
+//            ((DefaultDateHeaderViewHolder) holder).dateListener.onFormatDate(date);
         }
 
-        // Trigger the holder's bind method
         holder.onBind(item);
     }
 
-    /**
-     * Determines the view type for an item based on its content and sender
-     *
-     * @param item The item to get view type for (IMessage or Date)
-     * @param senderId The current user's ID (to determine incoming vs outgoing)
-     * @return Positive view type for incoming, negative for outgoing, or date header type
-     */
+
     protected int getViewType(Object item, String senderId) {
         boolean isOutcoming = false;
         int viewType;
 
         if (item instanceof IMessage) {
             IMessage message = (IMessage) item;
-            // Check if message is from current user (outgoing)
             isOutcoming = message.getUser().getId().contentEquals(senderId);
-            // Determine content type
             viewType = getContentViewType(message);
-        } else {
-            // Default to date header for non-message items
-            viewType = VIEW_TYPE_DATE_HEADER;
-        }
 
-        // Return negative view type for outgoing messages to differentiate them
+        } else viewType = VIEW_TYPE_DATE_HEADER;
+
         return isOutcoming ? viewType * -1 : viewType;
     }
 
-
-// ============================================================================
-// VIEW HOLDER FACTORY METHODS
-// ============================================================================
-
-    /**
-     * Creates a ViewHolder using the configuration object
-     *
-     * @param parent The parent ViewGroup
-     * @param holderConfig Configuration containing holder class, layout, and payload
-     * @param style Styling configuration for the message list
-     * @return Instantiated ViewHolder
-     */
     private ViewHolder getHolder(ViewGroup parent, HolderConfig holderConfig,
                                  MessagesListStyle style) {
         return getHolder(parent, holderConfig.layout, holderConfig.holder, style, holderConfig.payload);
     }
 
-    /**
-     * Creates a ViewHolder by inflating a layout and instantiating the holder class.
-     * Attempts to use constructor with payload first, falls back to basic constructor.
-     *
-     * @param parent The parent ViewGroup
-     * @param layout Layout resource ID to inflate
-     * @param holderClass ViewHolder class to instantiate
-     * @param style Styling configuration for the message list
-     * @param payload Optional data to pass to the ViewHolder constructor
-     * @return Instantiated and styled ViewHolder
-     * @throws UnsupportedOperationException if ViewHolder instantiation fails
-     */
     private <HOLDER extends ViewHolder>
     ViewHolder getHolder(ViewGroup parent, @LayoutRes int layout, Class<HOLDER> holderClass,
                          MessagesListStyle style, Object payload) {
 
-        // Inflate the layout for this ViewHolder
         View v = LayoutInflater.from(parent.getContext()).inflate(layout, parent, false);
-
         try {
             Constructor<HOLDER> constructor = null;
             HOLDER holder;
-
             try {
-                // Try to find constructor with (View, Object) signature for payload support
                 constructor = holderClass.getDeclaredConstructor(View.class, Object.class);
                 constructor.setAccessible(true);
                 holder = constructor.newInstance(v, payload);
             } catch (NoSuchMethodException e) {
-                // Fallback to basic (View) constructor if payload constructor doesn't exist
                 constructor = holderClass.getDeclaredConstructor(View.class);
                 constructor.setAccessible(true);
                 holder = constructor.newInstance(v);
             }
-
-            // Apply styling if this is a default message ViewHolder
             if (holder instanceof DefaultMessageViewHolder && style != null) {
                 ((DefaultMessageViewHolder) holder).applyStyle(style);
             }
-
             return holder;
         } catch (Exception e) {
-            throw new UnsupportedOperationException(
-                    "Somehow we couldn't create the ViewHolder for message. " +
-                            "Please, report this issue on GitHub with full stacktrace in description.", e);
+            throw new UnsupportedOperationException("Somehow we couldn't create the ViewHolder for message. Please, report this issue on GitHub with full stacktrace in description.", e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private short getContentViewType(IMessage message) {
+
+
+        if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getImageUrl() != null) {
+
+//            Log.d("Holder Attachments", "IMage Found , Image Path : " + ((MessageContentType.Image) message).getImageUrl());
+            return VIEW_TYPE_IMAGE_MESSAGE;
+        } else if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getAudioUrl() != null) {
+//            Log.d("Holder Attachments", "Audio Found, Path : " + ((MessageContentType.Image) message).getAudioUrl());
+            return VIEW_TYPE_AUDIO_MESSAGE;
+        } else if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getVideoUrl() != null) {
+//            Log.d("Holder Attachments", "Video Found, Path : " + ((MessageContentType.Image) message).getVideoUrl());
+            return VIEW_TYPE_VIDEO_MESSAGE;
+        } else if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getVoiceUrl() != null) {
+//            Log.d("Holder Attachments", "Voice Found, Path : " + ((MessageContentType.Image) message).getVoiceUrl());
+        } else if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getDocUrl() != null) {
+//            Log.d("Holder Attachments", "Document Found, Path : " + ((MessageContentType.Image) message).getDocUrl());
+            return VIEW_TYPE_DOCUMENT_MESSAGE;
+        }
+
+        // other default types will be here
+
+        if (message instanceof MessageContentType) {
+            for (int i = 0; i < customContentTypes.size(); i++) {
+                ContentTypeConfig config = customContentTypes.get(i);
+                if (contentChecker == null) {
+                    throw new IllegalArgumentException("ContentChecker cannot be null when using custom content types!");
+                }
+                boolean hasContent = contentChecker.hasContentFor(message, config.type);
+                if (hasContent) return config.type;
+            }
+        }
+
+        return VIEW_TYPE_TEXT_MESSAGE;
+    }
+
+    /*
+     * HOLDERS
+     * */
+
+    /**
+     * The base class for view holders for incoming and outcoming message.
+     * You can extend it to create your own holder in conjuction with custom layout or even using default layout.
+     */
+    public static abstract class BaseMessageViewHolder<MESSAGE extends IMessage> extends ViewHolder<MESSAGE> {
+
+        boolean isSelected;
+
+        protected MessagesListAdapter<MESSAGE> adapter;
+
+        int selectedItemCount;
+
+        boolean isGroup;
+
+        /**
+         * For setting custom data to ViewHolder
+         */
+        protected Object payload;
+
+        /**
+         * Callback for implementing images loading in message list
+         */
+        protected ImageLoader imageLoader;
+
+        protected MessagesListAdapter.OnDownloadListener downloadListener;
+
+        protected MessagesListAdapter.OnMediaClickListener mediaClickListener;
+
+        protected MessagesListAdapter.OnAudioPlayListener audioPlayListener;
+
+        @Deprecated
+        public BaseMessageViewHolder(View itemView) {
+            super(itemView);
+        }
+
+        public BaseMessageViewHolder(View itemView, Object payload) {
+            super(itemView);
+            this.payload = payload;
+        }
+
+        /**
+         * Returns whether is item selected
+         *
+         * @return weather is item selected.
+         */
+        public boolean isSelected() {
+            return isSelected;
+        }
+
+        public boolean isGroup() {
+            return isGroup;
+        }
+
+        /**
+         * Returns weather is selection mode enabled
+         *
+         * @return weather is selection mode enabled.
+         */
+        public boolean isSelectionModeEnabled() {
+            return MessagesListAdapter.isSelectionModeEnabled;
+        }
+
+        /**
+         * Getter for {@link #imageLoader}
+         *
+         * @return image loader interface.
+         */
+        public ImageLoader getImageLoader() {
+            return imageLoader;
+        }
+
+        protected void configureLinksBehavior(final TextView text) {
+            text.setLinksClickable(false);
+            text.setMovementMethod(new LinkMovementMethod() {
+                @Override
+                public boolean onTouchEvent(TextView widget, Spannable buffer, MotionEvent event) {
+                    boolean result = false;
+                    if (!MessagesListAdapter.isSelectionModeEnabled) {
+                        result = super.onTouchEvent(widget, buffer, event);
+                    }
+                    itemView.onTouchEvent(event);
+                    return result;
+                }
+            });
         }
     }
 
     /**
-     * Creates the appropriate ViewHolder based on the view type.
-     * Handles both incoming and outgoing messages for various content types.
-     *
-     * @param parent The parent ViewGroup
-     * @param viewType The view type constant (negative for outgoing messages)
-     * @param messagesListStyle Styling configuration for the message list
-     * @return Instantiated ViewHolder for the specified type
-     * @throws IllegalStateException if view type is not recognized
+     * Default view holder implementation for incoming text message
      */
-    protected ViewHolder getHolder(ViewGroup parent, int viewType, MessagesListStyle messagesListStyle) {
-        switch (viewType) {
-            // Date separator header
-            case VIEW_TYPE_DATE_HEADER:
-                return getHolder(parent, dateHeaderLayout, dateHeaderHolder, messagesListStyle, null);
+    public static class IncomingTextMessageViewHolder<MESSAGE extends IMessage>
+            extends BaseIncomingMessageViewHolder<MESSAGE> {
 
-            // Text messages (incoming and outgoing)
-            case VIEW_TYPE_TEXT_MESSAGE:
-                return getHolder(parent, incomingTextConfig, messagesListStyle);
-            case -VIEW_TYPE_TEXT_MESSAGE:
-                return getHolder(parent, outcomingTextConfig, messagesListStyle);
+        protected ViewGroup bubble;
+        protected TextView text;
 
-            // Image messages (incoming and outgoing)
-            case VIEW_TYPE_IMAGE_MESSAGE:
-                return getHolder(parent, incomingImageConfig, messagesListStyle);
-            case -VIEW_TYPE_IMAGE_MESSAGE:
-                return getHolder(parent, outcomingImageConfig, messagesListStyle);
-
-            // Video messages (incoming and outgoing)
-            case VIEW_TYPE_VIDEO_MESSAGE:
-                return getHolder(parent, inComingVideoConfig, messagesListStyle);
-            case -VIEW_TYPE_VIDEO_MESSAGE:
-                return getHolder(parent, outGoingVideoConfig, messagesListStyle);
-
-            // Audio messages (incoming and outgoing)
-            case VIEW_TYPE_AUDIO_MESSAGE:
-                return getHolder(parent, inComingAudioConfig, messagesListStyle);
-            case -VIEW_TYPE_AUDIO_MESSAGE:
-                return getHolder(parent, outGoingAudioConfig, messagesListStyle);
-
-            // Voice messages (incoming and outgoing)
-            case VIEW_TYPE_VOICE_MESSAGE:
-                return getHolder(parent, inComingVoiceConfig, messagesListStyle);
-            case -VIEW_TYPE_VOICE_MESSAGE:
-                return getHolder(parent, outGoingVoiceConfig, messagesListStyle);
-
-            // Document messages (incoming and outgoing)
-            case VIEW_TYPE_DOCUMENT_MESSAGE:
-                return getHolder(parent, inComingDocConfig, messagesListStyle);
-            case -VIEW_TYPE_DOCUMENT_MESSAGE:
-                return getHolder(parent, outGoingDocConfig, messagesListStyle);
+        @Deprecated
+        public IncomingTextMessageViewHolder(View itemView) {
+            super(itemView);
+            init(itemView);
         }
 
-        throw new IllegalStateException("Wrong message view type...");
+        public IncomingTextMessageViewHolder(View itemView, Object payload) {
+            super(itemView, payload);
+            init(itemView);
+        }
+
+        @Override
+        public void onBind(MESSAGE message) {
+            super.onBind(message);
+            if (bubble != null) {
+                bubble.setSelected(isSelected());
+            }
+
+            if (text != null) {
+                text.setText(message.getText());
+            }
+        }
+
+        @Override
+        public void applyStyle(MessagesListStyle style) {
+            super.applyStyle(style);
+            if (bubble != null) {
+                bubble.setPadding(style.getIncomingDefaultBubblePaddingLeft(),
+                        style.getIncomingDefaultBubblePaddingTop(),
+                        style.getIncomingDefaultBubblePaddingRight(),
+                        style.getIncomingDefaultBubblePaddingBottom());
+                ViewCompat.setBackground(bubble, style.getIncomingBubbleDrawable());
+            }
+
+            if (text != null) {
+                text.setTextColor(style.getIncomingTextColor());
+                text.setTextSize(TypedValue.COMPLEX_UNIT_PX, style.getIncomingTextSize());
+                text.setTypeface(text.getTypeface(), Typeface.NORMAL);
+                text.setAutoLinkMask(style.getTextAutoLinkMask());
+                text.setLinkTextColor(style.getIncomingTextLinkColor());
+                configureLinksBehavior(text);
+            }
+        }
+
+        private void init(View itemView) {
+            bubble = itemView.findViewById(R.id.bubble);
+            text = itemView.findViewById(R.id.messageText);
+        }
     }
 
+    /**
+     * Default view holder implementation for outcoming text message
+     */
+    public static class OutcomingTextMessageViewHolder<MESSAGE extends MessageContentType.Image>
+            extends BaseOutcomingMessageViewHolder<MESSAGE> {
+
+        protected ViewGroup bubble;
+        protected TextView text;
+
+        @Deprecated
+        public OutcomingTextMessageViewHolder(View itemView) {
+            super(itemView);
+            init(itemView);
+        }
+
+        public OutcomingTextMessageViewHolder(View itemView, Object payload) {
+            super(itemView, payload);
+            init(itemView);
+        }
+
+        @Override
+        public void onBind(MESSAGE message) {
+            super.onBind(message);
+            if (bubble != null) {
+                bubble.setSelected(isSelected());
+
+
+            }
+
+            if (text != null) {
+                text.setText(message.getText());
+            }
+        }
+
+        @Override
+        public final void applyStyle(MessagesListStyle style) {
+            super.applyStyle(style);
+            if (bubble != null) {
+                bubble.setPadding(style.getOutcomingDefaultBubblePaddingLeft(),
+                        style.getOutcomingDefaultBubblePaddingTop(),
+                        style.getOutcomingDefaultBubblePaddingRight(),
+                        style.getOutcomingDefaultBubblePaddingBottom());
+                ViewCompat.setBackground(bubble, style.getOutcomingBubbleDrawable());
+            }
+
+            if (text != null) {
+                text.setTextColor(style.getOutcomingTextColor());
+                text.setTextSize(TypedValue.COMPLEX_UNIT_PX, style.getOutcomingTextSize());
+                text.setTypeface(text.getTypeface(), Typeface.NORMAL);
+                text.setAutoLinkMask(style.getTextAutoLinkMask());
+                text.setLinkTextColor(style.getOutcomingTextLinkColor());
+                configureLinksBehavior(text);
+            }
+        }
+
+        private void init(View itemView) {
+            bubble = itemView.findViewById(R.id.bubble);
+            text = itemView.findViewById(R.id.messageText);
+        }
+    }
 
 
     public static void getFileSizeFromUrl(String url, OnFileSizeReceivedListener listener) {
@@ -956,230 +1063,6 @@ public class MessageHolders {
     }
 
 
-
-    interface DefaultMessageViewHolder {
-        void applyStyle(MessagesListStyle style);
-    }
-
-
-
-    public static abstract class BaseMessageViewHolder<MESSAGE extends IMessage>
-            extends ViewHolder<MESSAGE> {
-
-        boolean isSelected;
-
-        protected MessagesListAdapter<MESSAGE> adapter;
-
-        int selectedItemCount;
-
-        boolean isGroup;
-
-
-        protected Object payload;
-
-
-        protected ImageLoader imageLoader;
-
-        protected MessagesListAdapter.OnDownloadListener downloadListener;
-
-        protected MessagesListAdapter.OnMediaClickListener mediaClickListener;
-
-        protected MessagesListAdapter.OnAudioPlayListener audioPlayListener;
-
-        @Deprecated
-        public BaseMessageViewHolder(View itemView) {
-            super(itemView);
-        }
-
-        public BaseMessageViewHolder(View itemView, Object payload) {
-            super(itemView);
-            this.payload = payload;
-        }
-
-
-        public boolean isSelected() {
-            return isSelected;
-        }
-
-        public boolean isGroup() {
-            return isGroup;
-        }
-
-
-        public boolean isSelectionModeEnabled() {
-            return MessagesListAdapter.isSelectionModeEnabled;
-        }
-
-
-        public ImageLoader getImageLoader() {
-            return imageLoader;
-        }
-
-        protected void configureLinksBehavior(final TextView text) {
-            text.setLinksClickable(false);
-            text.setMovementMethod(new LinkMovementMethod() {
-                @Override
-                public boolean onTouchEvent(TextView widget, Spannable buffer, MotionEvent event) {
-                    boolean result = false;
-                    if (!MessagesListAdapter.isSelectionModeEnabled) {
-                        result = super.onTouchEvent(widget, buffer, event);
-                    }
-                    itemView.onTouchEvent(event);
-                    return result;
-                }
-            });
-        }
-    }
-
-
-    public static class IncomingTextMessageViewHolder<MESSAGE extends IMessage>
-            extends BaseIncomingMessageViewHolder<MESSAGE> {
-
-        protected ViewGroup bubble;
-        protected TextView text;
-
-        @Deprecated
-        public IncomingTextMessageViewHolder(View itemView) {
-            super(itemView);
-            init(itemView);
-        }
-
-        public IncomingTextMessageViewHolder(View itemView, Object payload) {
-            super(itemView, payload);
-            init(itemView);
-        }
-
-        @Override
-        public void onBind(MESSAGE message) {
-            super.onBind(message);
-            if (bubble != null) {
-                bubble.setSelected(isSelected());
-            }
-
-            if (text != null) {
-                text.setText(message.getText());
-            }
-        }
-
-        @Override
-        public void applyStyle(MessagesListStyle style) {
-            super.applyStyle(style);
-            if (bubble != null) {
-                bubble.setPadding(style.getIncomingDefaultBubblePaddingLeft(),
-                        style.getIncomingDefaultBubblePaddingTop(),
-                        style.getIncomingDefaultBubblePaddingRight(),
-                        style.getIncomingDefaultBubblePaddingBottom());
-                ViewCompat.setBackground(bubble, style.getIncomingBubbleDrawable());
-            }
-
-            if (text != null) {
-                text.setTextColor(style.getIncomingTextColor());
-                text.setTextSize(TypedValue.COMPLEX_UNIT_PX, style.getIncomingTextSize());
-                text.setTypeface(text.getTypeface(), Typeface.NORMAL);
-                text.setAutoLinkMask(style.getTextAutoLinkMask());
-                text.setLinkTextColor(style.getIncomingTextLinkColor());
-                configureLinksBehavior(text);
-            }
-        }
-
-        private void init(View itemView) {
-            bubble = itemView.findViewById(R.id.bubble);
-            text = itemView.findViewById(R.id.messageText);
-        }
-
-        @Override
-        public void onViewRecycled() {
-
-        }
-    }
-
-
-    public static class OutcomingTextMessageViewHolder<MESSAGE extends MessageContentType.Image>
-            extends BaseOutcomingMessageViewHolder<MESSAGE> {
-
-        protected ViewGroup bubble;
-        protected TextView text;
-        protected ProgressBar progressBar;
-
-        @Deprecated
-        public OutcomingTextMessageViewHolder(View itemView) {
-            super(itemView);
-            init(itemView);
-        }
-
-        public OutcomingTextMessageViewHolder(View itemView, Object payload) {
-            super(itemView, payload);
-            init(itemView);
-        }
-
-        @Override
-        public void onBind(MESSAGE message) {
-            super.onBind(message);
-
-            if (bubble != null) {
-                bubble.setSelected(isSelected());
-            }
-
-            if (text != null) {
-                text.setText(message.getText());
-            }
-
-            if (progressBar != null) {
-                if (Objects.equals(message.getMessageStatus(), "Sending")) {
-                    progressBar.setVisibility(View.VISIBLE);
-                } else {
-                    progressBar.setVisibility(View.GONE);
-                }
-            }
-
-            if (status != null) {
-                if (Objects.equals(message.getStatus(), "Sent")) {
-                    status.setBackgroundResource(R.drawable.status___sent);
-                } else if (Objects.equals(message.getStatus(), "Seen")) {
-                    status.setBackgroundResource(R.drawable.status_____seen);
-                } else if (Objects.equals(message.getStatus(), "Sending")) {
-                    status.setBackgroundResource(R.drawable.status___sending);
-                } else if (Objects.equals(message.getStatus(), "Delivered")) {
-                    status.setBackgroundResource(R.drawable.status___received);
-                } else {
-                    status.setBackgroundResource(R.drawable.status_seen);
-                }
-            }
-        }
-
-        @Override
-        public final void applyStyle(MessagesListStyle style) {
-            super.applyStyle(style);
-            if (bubble != null) {
-                bubble.setPadding(style.getOutcomingDefaultBubblePaddingLeft(),
-                        style.getOutcomingDefaultBubblePaddingTop(),
-                        style.getOutcomingDefaultBubblePaddingRight(),
-                        style.getOutcomingDefaultBubblePaddingBottom());
-                ViewCompat.setBackground(bubble, style.getOutcomingBubbleDrawable());
-            }
-
-            if (text != null) {
-                text.setTextColor(style.getOutcomingTextColor());
-                text.setTextSize(TypedValue.COMPLEX_UNIT_PX, style.getOutcomingTextSize());
-                text.setTypeface(text.getTypeface(), Typeface.NORMAL);
-                text.setAutoLinkMask(style.getTextAutoLinkMask());
-                text.setLinkTextColor(style.getOutcomingTextLinkColor());
-                configureLinksBehavior(text);
-            }
-        }
-
-        private void init(View itemView) {
-            bubble = itemView.findViewById(R.id.bubble);
-            text = itemView.findViewById(R.id.messageText);
-            progressBar = itemView.findViewById(R.id.fileSendProgress);
-        }
-
-        @Override
-        public void onViewRecycled() {
-
-        }
-    }
-
     //    Incoming Video Holder
     public static class IncomingVideoMessageViewHolder<MESSAGE extends MessageContentType.Image>
             extends BaseIncomingMessageViewHolder<MESSAGE> {
@@ -1230,7 +1113,9 @@ public class MessageHolders {
                 imageOverlay.setSelected(isSelected());
             }
 
-
+//        if (downOverlay != null){
+//            downOverlay.setSelected(true);
+//        }
 
             if (down != null) {
                 String imageUrl = message.getVideoUrl();
@@ -1354,7 +1239,11 @@ public class MessageHolders {
             }
         }
 
-
+        /**
+         * Override this method to have ability to pass custom data in ImageLoader for loading image(not avatar).
+         *
+         * @param message Message with image
+         */
         protected Object getPayloadForImageLoader(MESSAGE message) {
             return null;
         }
@@ -1379,13 +1268,12 @@ public class MessageHolders {
                 );
             }
         }
-
-        @Override
-        public void onViewRecycled() {
-
-        }
     }
 
+
+    /**
+     * Default view holder implementation for incoming image message
+     */
     public static class IncomingImageMessageViewHolder<MESSAGE extends MessageContentType.Image>
             extends BaseIncomingMessageViewHolder<MESSAGE> {
 
@@ -1464,7 +1352,7 @@ public class MessageHolders {
                             @Override
                             public void onClick(View v) {
 
-                                if (adapter.getSelectedItemsCount() == 0) {
+                                if (adapter.getSelectedItemsCount() == 0){
                                     mediaClickListener.onMediaClick(imageUrl, v, message);
                                 } else {
                                     itemView.performClick();
@@ -1472,7 +1360,7 @@ public class MessageHolders {
                             }
                         });
                     } else {
-
+//                        download.setVisibility(View.VISIBLE);
                     }
                 } else {
                     // It's a remote URL
@@ -1563,7 +1451,11 @@ public class MessageHolders {
             }
         }
 
-
+        /**
+         * Override this method to have ability to pass custom data in ImageLoader for loading image(not avatar).
+         *
+         * @param message Message with image
+         */
         protected Object getPayloadForImageLoader(MESSAGE message) {
             return null;
         }
@@ -1586,12 +1478,11 @@ public class MessageHolders {
                 );
             }
         }
-
-        @Override
-        public void onViewRecycled() {
-
-        }
     }
+
+    /**
+     * Default view holder implementation for outcoming image message
+     */
     public static class OutcomingImageMessageViewHolder<MESSAGE extends MessageContentType.Image>
             extends BaseOutcomingMessageViewHolder<MESSAGE> {
 
@@ -1637,14 +1528,15 @@ public class MessageHolders {
                                     if (adapter.getSelectedItemsCount() == 0) {
                                         mediaClickListener.onMediaClick(message.getImageUrl(), v, message);
                                     } else {
-
+//                                       // Toggle the selected state when items are selected
                                         itemView.performClick();
-
+//                                        imageOverlay.setSelected(!imageOverlay.isSelected());
                                     }
                                 }
                             });
                         } else {
-
+                            // Disable the click listener
+//                            image.setOnClickListener(null);
                         }
                         // Rest of your code
                     } else {
@@ -1667,7 +1559,9 @@ public class MessageHolders {
                     imageOverlay.setSelected(isSelected());
                 }
             } else {
-
+//                // Your code here for other messages
+//                itemView.setVisibility(View.GONE);
+//                itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
                 Log.d("NotFromLocal", "Image");
             }
 
@@ -1687,7 +1581,11 @@ public class MessageHolders {
             }
         }
 
-
+        /**
+         * Override this method to have ability to pass custom data in ImageLoader for loading image(not avatar).
+         *
+         * @param message Message with image
+         */
         protected Object getPayloadForImageLoader(MESSAGE message) {
             return null;
         }
@@ -1705,11 +1603,6 @@ public class MessageHolders {
                         R.dimen.message_bubble_corners_radius
                 );
             }
-        }
-
-        @Override
-        public void onViewRecycled() {
-
         }
     }
 
@@ -1836,7 +1729,11 @@ public class MessageHolders {
             }
         }
 
-
+        /**
+         * Override this method to have ability to pass custom data in ImageLoader for loading image(not avatar).
+         *
+         * @param message Message with image
+         */
         protected Object getPayloadForImageLoader(MESSAGE message) {
             return null;
         }
@@ -1864,11 +1761,6 @@ public class MessageHolders {
                 );
             }
         }
-
-        @Override
-        public void onViewRecycled() {
-
-        }
     }
 
     //    OutGoing Doc Holder
@@ -1883,7 +1775,8 @@ public class MessageHolders {
         protected TextView docTitle;
         protected ProgressBar progressBar;
 
-
+//    protected ImageView playAudio;
+//    protected View imageOverlay;
 
         @Deprecated
         public OutGoingDocMessageViewHolder(View itemView) {
@@ -1910,26 +1803,6 @@ public class MessageHolders {
 
             if (docSize != null) {
                 docSize.setText(message.getDocTitle());
-            }
-
-            if (Objects.equals(message.getMessageStatus(), "Sending")) {
-                progressBar.setVisibility(View.VISIBLE);
-            } else {
-                progressBar.setVisibility(View.GONE);
-            }
-
-            if (status != null) {
-                if (Objects.equals(message.getStatus(), "Sent")) {
-                    status.setBackgroundResource(R.drawable.status___sent);
-                } else if (Objects.equals(message.getStatus(), "Seen")) {
-                    status.setBackgroundResource(R.drawable.status_____seen);
-                } else if (Objects.equals(message.getStatus(), "Sending")) {
-                    status.setBackgroundResource(R.drawable.status___sending);
-                } else if (Objects.equals(message.getStatus(), "Delivered")) {
-                    status.setBackgroundResource(R.drawable.status___received);
-                } else {
-                    status.setBackgroundResource(R.drawable.status_seen);
-                }
             }
 
             Log.d("AudioDoc", "Document Found Title" + message.getDocTitle());
@@ -1993,6 +1866,11 @@ public class MessageHolders {
             }
         }
 
+        /**
+         * Override this method to have ability to pass custom data in ImageLoader for loading image(not avatar).
+         *
+         * @param message Message with image
+         */
         protected Object getPayloadForImageLoader(MESSAGE message) {
             return null;
         }
@@ -2014,11 +1892,6 @@ public class MessageHolders {
                         R.dimen.message_bubble_corners_radius
                 );
             }
-        }
-
-        @Override
-        public void onViewRecycled() {
-
         }
     }
 
@@ -2042,6 +1915,7 @@ public class MessageHolders {
         protected ProgressBar progressBar;
 
 
+//    protected View imageOverlay;
 
         @Deprecated
         public InComingAudioMessageViewHolder(View itemView) {
@@ -2067,17 +1941,44 @@ public class MessageHolders {
                 playAudio.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-
+//                    mediaClickListener.onMediaClick(message.getAudioUrl(),v,message);
                         audioPlayListener.onAudioPlayClick(message.getAudio(), playAudio, audioDuration, audioSeekBar, message);
                     }
                 });
             }
 
+//        if (downIcon != null){
+//            String url = message.getAudio();
+//            if (url != null ){
+//                if (url.startsWith("file:/") || url.startsWith("/storage/")){
+//                    downIcon.setVisibility(View.GONE);
+//
+//                    bubble.setOnClickListener(new View.OnClickListener() {
+//                        @Override
+//                        public void onClick(View v) {
+//                            downIcon.setVisibility(View.GONE);
+//                            downProgress.setVisibility(View.VISIBLE);
+//                            audioPlayListener.onAudioPlayClick(url,playAudio,audioDuration,audioSeekBar,message);
+//
+////                            downloadListener.onDownloadClick(url,title,progressBar,downIcon,downIcon,"Audio",message);
+//                        }
+//                    });
+//                } else {
+//                    downIcon.setVisibility(View.VISIBLE);
+//                    bubble.setOnClickListener(new View.OnClickListener() {
+//                        @Override
+//                        public void onClick(View v) {
+//                            audioPlayListener.onAudioPlayClick(url,playAudio,audioDuration,audioSeekBar,message);
+//                        }
+//                    });
+//                }
+//            }
+//        }
 
 
             if (audioDuration != null) {
                 long durationSeconds = 200;
-
+//            long durationSeconds = message.getAudioDuration();
                 long dueMinutes = durationSeconds / 60;
                 long dueSeconds = durationSeconds % 60;
                 String formattedDuration = String.format(Locale.getDefault(), "%02d:%02d", dueMinutes, dueSeconds);
@@ -2121,7 +2022,11 @@ public class MessageHolders {
             }
         }
 
-
+        /**
+         * Override this method to have ability to pass custom data in ImageLoader for loading image(not avatar).
+         *
+         * @param message Message with image
+         */
         protected Object getPayloadForImageLoader(MESSAGE message) {
             return null;
         }
@@ -2139,12 +2044,14 @@ public class MessageHolders {
 //        playAudio = itemView.findViewById(R.id.playVideo);
             bubble = itemView.findViewById(R.id.bubble);
 
-
-        }
-
-        @Override
-        public void onViewRecycled() {
-
+//        if (video instanceof RoundedImageView) {
+//            ((RoundedImageView) video).setCorners(
+//                    R.dimen.message_bubble_corners_radius,
+//                    R.dimen.message_bubble_corners_radius,
+//                    0,
+//                    R.dimen.message_bubble_corners_radius
+//            );
+//        }
         }
     }
 
@@ -2153,7 +2060,7 @@ public class MessageHolders {
     public static class OutGoingAudioMessageViewHolder<MESSAGE extends MessageContentType.Image>
             extends BaseOutcomingMessageViewHolder<MESSAGE> {
 
-
+//    protected ImageView video;
 
         protected ViewGroup bubble;
 
@@ -2164,7 +2071,7 @@ public class MessageHolders {
         protected ImageView playAudio;
         protected ProgressBar progressBar;
 
-
+//    protected View imageOverlay;
 
         @Deprecated
         public OutGoingAudioMessageViewHolder(View itemView) {
@@ -2189,42 +2096,42 @@ public class MessageHolders {
                 bubble.setSelected(isSelected());
             }
 
+//            Log.d("AudioDoc", "Audio Found Title  " + message.getAudioTitle());
+//            Log.d("AudioDoc", "Audio Found Duration  " + message.getAudioDuration());
+//            Log.d("AudioDoc", "Audio Found Url  " + message.getAudio());
 
             if (audioDuration != null) {
                 long durationSeconds = 100;
-
+//                long durationSeconds = getCachedOrCalculateAudioDuration(Objects.requireNonNull(message.getAudio()));
                 audioDuration.setText("02:33");
-
+//                getAudioDuration(message.getAudio(), new OnAudioDuration(){
+//
+//                    @Override
+//                    public void onDuration(long duration) {
+//                        long dueMinutes = duration / 60;
+//                        long dueSeconds = duration % 60;
+//                        String formattedDuration = String.format(Locale.getDefault(), "%02d:%02d", dueMinutes, dueSeconds);
+//
+//                        audioDuration.post(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                if (audioDuration != null){
+//                                    audioDuration.setText(formattedDuration);
+//                                }
+//                            }
+//                        });
+//                    }
+//                });
 
             }
-
-
-            if (Objects.equals(message.getMessageStatus(), "Sending")) {
-                progressBar.setVisibility(View.VISIBLE);
-            } else {
-                progressBar.setVisibility(View.GONE);
-            }
-
-            if (status != null) {
-                if (Objects.equals(message.getStatus(), "Sent")) {
-                    status.setBackgroundResource(R.drawable.status___sent);
-                } else if (Objects.equals(message.getStatus(), "Seen")) {
-                    status.setBackgroundResource(R.drawable.status_____seen);
-                } else if (Objects.equals(message.getStatus(), "Sending")) {
-                    status.setBackgroundResource(R.drawable.status___sending);
-                } else if (Objects.equals(message.getStatus(), "Delivered")) {
-                    status.setBackgroundResource(R.drawable.status___received);
-                } else {
-                    status.setBackgroundResource(R.drawable.status_seen);
-                }
-            }
+            ;
 
 
             if (playAudio != null) {
                 playAudio.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-
+//                        mediaClickListener.onMediaClick(message.getAudioUrl(),v,message);
                         audioPlayListener.onAudioPlayClick(message.getAudio(), playAudio, audioDuration, audioSeekBar, message);
                     }
                 });
@@ -2236,7 +2143,12 @@ public class MessageHolders {
         }
 
         public static long getCachedOrCalculateAudioDuration(String audioFilePath) {
+//            SharedPreferences preferences = context.getSharedPreferences("audio_duration_cache", Context.MODE_PRIVATE);
 
+//            // Check if the cache contains the duration for the given audioFilePath
+//            if (preferences.contains(audioFilePath)) {
+//                return preferences.getLong(audioFilePath, 0);
+//            }
 
             if (audioFilePath.startsWith("file://") || audioFilePath.startsWith("/storage/")) {
                 // Create or obtain a reference to the SharedPreferences
@@ -2265,6 +2177,10 @@ public class MessageHolders {
 
                         long duration = Long.parseLong(durationStr);
 
+//                        // Cache the duration for future use
+//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+//                            preferences.edit().putLong(audioFilePath, duration).apply();
+//                        }
 
                         return duration;
                     }
@@ -2311,7 +2227,11 @@ public class MessageHolders {
             }
         }
 
-
+        /**
+         * Override this method to have ability to pass custom data in ImageLoader for loading image(not avatar).
+         *
+         * @param message Message with image
+         */
         protected Object getPayloadForImageLoader(MESSAGE message) {
             return null;
         }
@@ -2324,16 +2244,19 @@ public class MessageHolders {
             bubble = itemView.findViewById(R.id.bubble);
             progressBar = itemView.findViewById(R.id.fileSendProgress);
 
-
-        }
-
-        @Override
-        public void onViewRecycled() {
-
+//        if (video instanceof RoundedImageView) {
+//            ((RoundedImageView) video).setCorners(
+//                    R.dimen.message_bubble_corners_radius,
+//                    R.dimen.message_bubble_corners_radius,
+//                    0,
+//                    R.dimen.message_bubble_corners_radius
+//            );
+//        }
         }
     }
 
 
+//    Default Video Holder
 
     public static class OutGoingVideoMessageViewHolder<MESSAGE extends MessageContentType.Image>
             extends BaseOutcomingMessageViewHolder<MESSAGE> {
@@ -2373,27 +2296,10 @@ public class MessageHolders {
                     }
                 });
 
+//                video.setVideoURI(Uri.parse(message.getVideoUrl()));
+
+//                message.getVideoThumbUrl(this, message.getVideoUrl());
                 imageLoader.loadImage(video, message.getVideoUrl(), getPayloadForImageLoader(message));
-            }
-
-            if (Objects.equals(message.getMessageStatus(), "Sending")) {
-                progressBar.setVisibility(View.VISIBLE);
-            } else {
-                progressBar.setVisibility(View.GONE);
-            }
-
-            if (status != null) {
-                if (Objects.equals(message.getStatus(), "Sent")) {
-                    status.setBackgroundResource(R.drawable.status___sent);
-                } else if (Objects.equals(message.getStatus(), "Seen")) {
-                    status.setBackgroundResource(R.drawable.status_____seen);
-                } else if (Objects.equals(message.getStatus(), "Sending")) {
-                    status.setBackgroundResource(R.drawable.status___sending);
-                } else if (Objects.equals(message.getStatus(), "Delivered")) {
-                    status.setBackgroundResource(R.drawable.status___received);
-                } else {
-                    status.setBackgroundResource(R.drawable.status_seen);
-                }
             }
 
             if (playVideo != null) {
@@ -2431,7 +2337,11 @@ public class MessageHolders {
             }
         }
 
-
+        /**
+         * Override this method to have ability to pass custom data in ImageLoader for loading image(not avatar).
+         *
+         * @param message Message with image
+         */
         protected Object getPayloadForImageLoader(MESSAGE message) {
             return null;
         }
@@ -2451,16 +2361,17 @@ public class MessageHolders {
                 );
             }
         }
-
-        @Override
-        public void onViewRecycled() {
-
-        }
     }
 
+    /**
+     * Default view holder implementation for date header
+     */
     public static class DefaultDateHeaderViewHolder extends ViewHolder<Date>
             implements DefaultMessageViewHolder {
 
+//        int {
+//            Log.d("Formatter", "Date Header View Holder");
+//        }
 
         protected TextView text;
         protected String dateFormat;
@@ -2477,14 +2388,15 @@ public class MessageHolders {
         @Override
         public void onBind(Date date) {
 
+//            Log.d("Formatter", "Binding Date Header Before Checking Text");
 
             if (text != null) {
                 String formattedDate = null;
                 if (dateListener != null) formattedDate = dateListener.onFormatDate(date);
 
-
+//                Log.d("Formatter", "Binding Date Header " +  formattedDate);
                 text.setText(formattedDate == null ? "Unknown Date" : formattedDate);
-
+//                text.setText(R.string.app_name);
             }
         }
 
@@ -2503,7 +2415,9 @@ public class MessageHolders {
         }
     }
 
-
+    /**
+     * Base view holder for incoming message
+     */
     public abstract static class BaseIncomingMessageViewHolder<MESSAGE extends IMessage>
             extends BaseMessageViewHolder<MESSAGE> implements DefaultMessageViewHolder {
 
@@ -2577,11 +2491,11 @@ public class MessageHolders {
             userAvatar = itemView.findViewById(R.id.messageUserAvatar);
             userName = itemView.findViewById(R.id.userName);
         }
-
-        public abstract void onViewRecycled();
     }
 
-
+    /**
+     * Base view holder for outcoming message
+     */
     public abstract static class BaseOutcomingMessageViewHolder<MESSAGE extends IMessage>
             extends BaseMessageViewHolder<MESSAGE> implements DefaultMessageViewHolder {
 
@@ -2606,27 +2520,32 @@ public class MessageHolders {
                 time.setText(DateFormatter.format(message.getCreatedAt(), DateFormatter.Template.TIME));
             }
 
+//            Log.d("MessageStatus", "Status: " + message.getStatus());
+
 
             if (status != null) {
 
                 if (Objects.equals(message.getStatus(), "Sent")) {
                     status.setBackgroundResource(R.drawable.status___sent);
                 } else if (Objects.equals(message.getStatus(), "Seen")) {
-
+//                        status.text = "Seen";
+//                        status.setTextColor(Color.GREEN);
                     status.setBackgroundResource(R.drawable.status_____seen);
 
                 } else if (Objects.equals(message.getStatus(), "Sending")) {
-
+//                        status.text = "Sending";
+//                        status.setTextColor(Color.GRAY);
                     status.setBackgroundResource(R.drawable.status___sending);
 
                 } else if (Objects.equals(message.getStatus(), "Delivered")) {
-
+//                        status.text = "Delivered";
+//                        status.setTextColor(Color.MAGENTA);
                     status.setBackgroundResource(R.drawable.status___received);
 
                 } else {
-
+//                    status.setBackgroundResource(R.drawable.status___sending);
                     status.setBackgroundResource(R.drawable.status_seen);
-
+//                    Log.d("MessageStatus", "Unknown Status: " + message.getStatus());
                 }
             }
         }
@@ -2644,8 +2563,14 @@ public class MessageHolders {
             time = itemView.findViewById(R.id.messageTime);
             status = itemView.findViewById(R.id.status);
         }
+    }
 
-        public abstract void onViewRecycled();
+    /*
+     * DEFAULTS
+     * */
+
+    interface DefaultMessageViewHolder {
+        void applyStyle(MessagesListStyle style);
     }
 
     private static class DefaultIncomingTextMessageViewHolder
@@ -2728,603 +2653,36 @@ public class MessageHolders {
         }
     }
 
+    private static class ContentTypeConfig<TYPE extends MessageContentType> {
 
-    public static class DefaultOutGoingVoiceMessageViewHolder
-            extends MessageHolders.BaseOutcomingMessageViewHolder<MessageContentType.Image> {
+        private byte type;
+        private HolderConfig<TYPE> incomingConfig;
+        private HolderConfig<TYPE> outcomingConfig;
 
-        private View bubble;
-        private ImageView playButton;
-        private TextView duration;
-        private TextView time;
+        private ContentTypeConfig(
+                byte type, HolderConfig<TYPE> incomingConfig, HolderConfig<TYPE> outcomingConfig) {
 
-
-        protected ProgressBar progressBar;
-
-        private LinearLayout waveformContainer;
-
-        private boolean isPlaying = false;
-        private MediaPlayer mediaPlayer;
-        private Handler handler = new Handler();
-        private int currentDuration = 0;
-        private int totalDuration = 0;
-        private int currentWavePosition = 0;
-
-        public DefaultOutGoingVoiceMessageViewHolder(View itemView) {
-            super(itemView);
-            bubble = itemView.findViewById(R.id.bubble);
-            playButton = itemView.findViewById(R.id.playButton);
-            duration = itemView.findViewById(R.id.duration);
-            time = itemView.findViewById(R.id.time);
-            //messageStatus = itemView.findViewById(R.id.messageStatus);
-            waveformContainer = itemView.findViewById(R.id.waveformContainer);
-
-            Log.d("VoiceViewHolder", "Constructor called");
-        }
-
-        @Override
-        public void onBind(MessageContentType.Image message) {
-            super.onBind(message);
-
-            boolean isVoiceMessage = message.getVoiceUrl() != null && !message.getVoiceUrl().isEmpty();
-
-            if (!isVoiceMessage) {
-                isVoiceMessage = message.getVoiceDuration() > 0 ||
-                        (message.getImageUrl() != null && message.getImageUrl().endsWith(".mp3")) ||
-                        (message.getAudioUrl() != null && (message.getAudioUrl().contains("/vn/") || message.getAudioUrl().contains("rec_")));
-            }
-
-            if (status != null) {
-
-                if (Objects.equals(message.getStatus(), "Sent")) {
-                    status.setBackgroundResource(R.drawable.status___sent);
-                } else if (Objects.equals(message.getStatus(), "Seen")) {
-
-                    status.setBackgroundResource(R.drawable.status_____seen);
-
-                } else if (Objects.equals(message.getStatus(), "Sending")) {
-
-                    status.setBackgroundResource(R.drawable.status___sending);
-
-                } else if (Objects.equals(message.getStatus(), "Delivered")) {
-
-                    status.setBackgroundResource(R.drawable.status___received);
-
-                } else {
-
-                    status.setBackgroundResource(R.drawable.status_seen);
-
-                }
-            }
-
-            if (isVoiceMessage) {
-                Log.d("VoiceViewHolder", "Rendering as VOICE MESSAGE");
-
-                if (playButton != null) playButton.setVisibility(View.VISIBLE);
-                if (duration != null) duration.setVisibility(View.VISIBLE);
-                if (waveformContainer != null) waveformContainer.setVisibility(View.VISIBLE);
-
-                String audioUrl = message.getVoiceUrl();
-                if (audioUrl == null || audioUrl.isEmpty()) {
-                    audioUrl = message.getImageUrl();
-                }
-                if (audioUrl == null || audioUrl.isEmpty()) {
-                    audioUrl = message.getAudioUrl();
-                }
-
-                totalDuration = message.getVoiceDuration();
-                if (totalDuration <= 0) {
-                    totalDuration = 3000;
-                }
-
-                // Show total duration before playing
-                if (duration != null) {
-                    duration.setText(formatDuration(totalDuration));
-                }
-
-                if (message.getCreatedAt() != null && time != null) {
-                    time.setText(formatTime(message.getCreatedAt()));
-                }
-
-                if (waveformContainer != null) {
-                    generateWaveform(totalDuration);
-                }
-
-                resetPlayState();
-
-                final String finalAudioUrl = audioUrl;
-                final MessageContentType.Image finalMessage = message;
-
-                if (playButton != null) {
-                    playButton.setOnClickListener(v -> {
-                        if (finalAudioUrl != null && !finalAudioUrl.isEmpty()) {
-                            if (!isPlaying) {
-                                startPlaying(finalAudioUrl, finalMessage);
-                            } else {
-                                pausePlaying();
-                            }
-                        }
-                    });
-                }
-
-                if (progressBar != null) {
-                    setMessageStatus(message);
-                }
-
-            } else {
-                if (playButton != null) playButton.setVisibility(View.GONE);
-                if (duration != null) duration.setVisibility(View.GONE);
-                if (waveformContainer != null) waveformContainer.setVisibility(View.GONE);
-            }
-        }
-
-        private void startPlaying(String audioUrl, MessageContentType.Image message) {
-            isPlaying = true;
-            currentDuration = 0;
-            currentWavePosition = 0;
-
-            // Animate play button scaling
-            if (playButton != null) {
-                playButton.animate()
-                        .scaleX(1.2f)
-                        .scaleY(1.2f)
-                        .setDuration(150)
-                        .withEndAction(() -> playButton.setImageResource(R.drawable.baseline_pause_24))
-                        .start();
-            }
-
-            // Notify listener to start playing
-            if (audioPlayListener != null) {
-                audioPlayListener.onAudioPlayClick(
-                        audioUrl,
-                        playButton,
-                        duration,
-                        null,
-                        message
-                );
-            }
-
-            // Update duration every 100ms
-            updateDurationRunnable();
-        }
-
-        private void updateDurationRunnable() {
-            if (isPlaying && duration != null) {
-                currentDuration += 100;
-                duration.setText(formatDuration(currentDuration));
-
-                // Update waveform animation
-                updateWaveformProgress();
-
-                if (currentDuration <= totalDuration) {
-                    handler.postDelayed(this::updateDurationRunnable, 100);
-                } else {
-                    finishPlaying();
-                }
-            }
-        }
-
-        private void updateWaveformProgress() {
-            if (waveformContainer == null) return;
-
-            float progress = (float) currentDuration / totalDuration;
-            int barCount = waveformContainer.getChildCount();
-            int progressBar = (int) (barCount * progress);
-
-            for (int i = 0; i < barCount; i++) {
-                View bar = waveformContainer.getChildAt(i);
-                if (bar != null) {
-                    if (i < progressBar) {
-                        // Highlight bars that have been played
-                        bar.setAlpha(1.0f);
-                        bar.setScaleY(1.15f);
-                    } else {
-                        // Dim bars that haven't been played yet
-                        bar.setAlpha(0.4f);
-                        bar.setScaleY(1.0f);
-                    }
-                }
-            }
-        }
-
-        private void pausePlaying() {
-            isPlaying = false;
-            handler.removeCallbacksAndMessages(null);
-
-            if (playButton != null) {
-                playButton.animate()
-                        .scaleX(1.0f)
-                        .scaleY(1.0f)
-                        .setDuration(150)
-                        .withEndAction(() -> playButton.setImageResource(R.drawable.baseline_play_arrow_24))
-                        .start();
-            }
-        }
-
-        private void finishPlaying() {
-            isPlaying = false;
-            handler.removeCallbacksAndMessages(null);
-            resetPlayState();
-        }
-
-        private void resetPlayState() {
-            isPlaying = false;
-            currentDuration = 0;
-            currentWavePosition = 0;
-
-            if (playButton != null) {
-                playButton.setScaleX(1.0f);
-                playButton.setScaleY(1.0f);
-                playButton.setImageResource(R.drawable.baseline_play_arrow_24);
-            }
-
-            // Reset duration to show total duration again
-            if (duration != null) {
-                duration.setText(formatDuration(totalDuration));
-            }
-
-            // Reset waveform
-            if (waveformContainer != null) {
-                for (int i = 0; i < waveformContainer.getChildCount(); i++) {
-                    View bar = waveformContainer.getChildAt(i);
-                    if (bar != null) {
-                        bar.setAlpha(0.8f);
-                        bar.setScaleY(1.0f);
-                    }
-                }
-            }
-        }
-
-        private void setMessageStatus(MessageContentType.Image message) {
-            if (progressBar != null) {
-                progressBar = itemView.findViewById(R.id.fileSendProgress);
-            }
-        }
-
-        // Updated generateWaveform for DefaultOutGoingVoiceMessageViewHolder
-        private void generateWaveform(int durationMillis) {
-            waveformContainer.removeAllViews();
-
-            int seconds = Math.max(durationMillis / 1000, 1);
-            // More bars for WhatsApp-like density
-            int barCount = Math.min(Math.max(seconds * 8, 50), 90);
-
-            // WhatsApp-style thin bars
-            int barWidth = dpToPx(2);
-            int barSpacing = dpToPx(2);
-            int maxHeight = dpToPx(20);
-            int minHeight = dpToPx(4);
-
-            for (int i = 0; i < barCount; i++) {
-                View bar = new View(waveformContainer.getContext());
-
-                // Create more natural waveform pattern
-                double progress = (double) i / barCount;
-                double wave1 = Math.sin(progress * Math.PI * 3) * 0.4;
-                double wave2 = Math.sin(progress * Math.PI * 7) * 0.3;
-                double randomness = Math.random() * 0.3;
-                double combinedWave = Math.abs(wave1 + wave2 + randomness);
-
-                int height = minHeight + (int)((maxHeight - minHeight) * combinedWave);
-
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(barWidth, height);
-                params.setMarginEnd(barSpacing);
-
-                bar.setLayoutParams(params);
-                bar.setBackgroundColor(Color.WHITE);
-                bar.setAlpha(0.8f);
-
-                // Rounded corners for bars
-                GradientDrawable shape = new GradientDrawable();
-                shape.setShape(GradientDrawable.RECTANGLE);
-                shape.setColor(Color.WHITE);
-                shape.setCornerRadius(dpToPx(1));
-                bar.setBackground(shape);
-                bar.setAlpha(0.8f);
-
-                waveformContainer.addView(bar);
-            }
-        }
-
-
-        private int dpToPx(int dp) {
-            float density = waveformContainer.getContext().getResources().getDisplayMetrics().density;
-            return Math.round(dp * density);
-        }
-
-        private String formatDuration(int millis) {
-            int seconds = millis / 1000;
-            int minutes = seconds / 60;
-            seconds = seconds % 60;
-            return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds);
-        }
-
-        private String formatTime(Date date) {
-            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
-            return sdf.format(date);
-        }
-
-        @Override
-        public void onViewRecycled() {
-            if (isPlaying) {
-                pausePlaying();
-            }
-            handler.removeCallbacksAndMessages(null);
+            this.type = type;
+            this.incomingConfig = incomingConfig;
+            this.outcomingConfig = outcomingConfig;
         }
     }
 
-    public static class DefaultInComingVoiceMessageViewHolder
-            extends MessageHolders.BaseIncomingMessageViewHolder<MessageContentType.Image> {
+    private static class HolderConfig<T extends IMessage> {
 
-        private View bubble;
-        private ImageView playButton;
-        private TextView duration;
-        private TextView time;
-        private LinearLayout waveformContainer;
+        protected Class<? extends BaseMessageViewHolder<? extends T>> holder;
+        protected int layout;
+        protected Object payload;
 
-        private boolean isPlaying = false;
-        private Handler handler = new Handler();
-        private int currentDuration = 0;
-        private int totalDuration = 0;
-
-        public DefaultInComingVoiceMessageViewHolder(View itemView) {
-            super(itemView);
-            bubble = itemView.findViewById(R.id.bubble);
-            playButton = itemView.findViewById(R.id.playButton);
-            duration = itemView.findViewById(R.id.duration);
-            time = itemView.findViewById(R.id.time);
-            waveformContainer = itemView.findViewById(R.id.waveformContainer);
-
-            Log.d("VoiceViewHolder", "INCOMING Constructor called");
+        HolderConfig(Class<? extends BaseMessageViewHolder<? extends T>> holder, int layout) {
+            this.holder = holder;
+            this.layout = layout;
         }
 
-        @Override
-        public void onBind(MessageContentType.Image message) {
-            super.onBind(message);
-
-            boolean isVoiceMessage = message.getVoiceUrl() != null && !message.getVoiceUrl().isEmpty();
-
-            if (!isVoiceMessage) {
-                isVoiceMessage = message.getVoiceDuration() > 0 ||
-                        (message.getImageUrl() != null && message.getImageUrl().endsWith(".mp3")) ||
-                        (message.getAudioUrl() != null && (message.getAudioUrl().contains("/vn/") || message.getAudioUrl().contains("rec_")));
-            }
-
-            if (isVoiceMessage) {
-                Log.d("VoiceViewHolder", "✅ Rendering as VOICE MESSAGE");
-
-                if (playButton != null) playButton.setVisibility(View.VISIBLE);
-                if (duration != null) duration.setVisibility(View.VISIBLE);
-                if (waveformContainer != null) waveformContainer.setVisibility(View.VISIBLE);
-
-                String audioUrl = message.getVoiceUrl();
-                if (audioUrl == null || audioUrl.isEmpty()) {
-                    audioUrl = message.getImageUrl();
-                }
-                if (audioUrl == null || audioUrl.isEmpty()) {
-                    audioUrl = message.getAudioUrl();
-                }
-
-                totalDuration = message.getVoiceDuration();
-                if (totalDuration <= 0) {
-                    totalDuration = 3000;
-                }
-
-                // Show total duration before playing
-                if (duration != null) {
-                    duration.setText(formatDuration(totalDuration));
-                }
-
-                if (message.getCreatedAt() != null && time != null) {
-                    time.setText(formatTime(message.getCreatedAt()));
-                }
-
-                if (waveformContainer != null) {
-                    generateWaveform(totalDuration);
-                }
-
-                resetPlayState();
-
-                final String finalAudioUrl = audioUrl;
-                final MessageContentType.Image finalMessage = message;
-
-                if (playButton != null) {
-                    playButton.setOnClickListener(v -> {
-                        if (finalAudioUrl != null && !finalAudioUrl.isEmpty()) {
-                            if (!isPlaying) {
-                                startPlaying(finalAudioUrl, finalMessage);
-                            } else {
-                                pausePlaying();
-                            }
-                        }
-                    });
-                }
-
-            } else {
-                if (playButton != null) playButton.setVisibility(View.GONE);
-                if (duration != null) duration.setVisibility(View.GONE);
-                if (waveformContainer != null) waveformContainer.setVisibility(View.GONE);
-            }
-        }
-
-        private void startPlaying(String audioUrl, MessageContentType.Image message) {
-            isPlaying = true;
-            currentDuration = 0;
-
-            if (playButton != null) {
-                playButton.animate()
-                        .scaleX(1.2f)
-                        .scaleY(1.2f)
-                        .setDuration(150)
-                        .withEndAction(() -> playButton.setImageResource(R.drawable.baseline_pause_24))
-                        .start();
-            }
-
-            if (audioPlayListener != null) {
-                audioPlayListener.onAudioPlayClick(
-                        audioUrl,
-                        playButton,
-                        duration,
-                        null,
-                        message
-                );
-            }
-
-            updateDurationRunnable();
-        }
-
-        private void updateDurationRunnable() {
-            if (isPlaying && duration != null) {
-                currentDuration += 100;
-                duration.setText(formatDuration(currentDuration));
-
-                updateWaveformProgress();
-
-                if (currentDuration <= totalDuration) {
-                    handler.postDelayed(this::updateDurationRunnable, 100);
-                } else {
-                    finishPlaying();
-                }
-            }
-        }
-
-        private void updateWaveformProgress() {
-            if (waveformContainer == null) return;
-
-            float progress = (float) currentDuration / totalDuration;
-            int barCount = waveformContainer.getChildCount();
-            int progressBar = (int) (barCount * progress);
-
-            for (int i = 0; i < barCount; i++) {
-                View bar = waveformContainer.getChildAt(i);
-                if (bar != null) {
-                    if (i < progressBar) {
-                        bar.setAlpha(1.0f);
-                        bar.setScaleY(1.15f);
-                    } else {
-                        bar.setAlpha(0.4f);
-                        bar.setScaleY(1.0f);
-                    }
-                }
-            }
-        }
-
-        private void pausePlaying() {
-            isPlaying = false;
-            handler.removeCallbacksAndMessages(null);
-
-            if (playButton != null) {
-                playButton.animate()
-                        .scaleX(1.0f)
-                        .scaleY(1.0f)
-                        .setDuration(150)
-                        .withEndAction(() -> playButton.setImageResource(R.drawable.baseline_play_arrow_24))
-                        .start();
-            }
-        }
-
-        private void finishPlaying() {
-            isPlaying = false;
-            handler.removeCallbacksAndMessages(null);
-            resetPlayState();
-        }
-
-        private void resetPlayState() {
-            isPlaying = false;
-            currentDuration = 0;
-
-            if (playButton != null) {
-                playButton.setScaleX(1.0f);
-                playButton.setScaleY(1.0f);
-                playButton.setImageResource(R.drawable.baseline_play_arrow_24);
-            }
-
-            // Reset duration to show total duration again
-            if (duration != null) {
-                duration.setText(formatDuration(totalDuration));
-            }
-
-            if (waveformContainer != null) {
-                for (int i = 0; i < waveformContainer.getChildCount(); i++) {
-                    View bar = waveformContainer.getChildAt(i);
-                    if (bar != null) {
-                        bar.setAlpha(0.7f);
-                        bar.setScaleY(1.0f);
-                    }
-                }
-            }
-        }
-
-        // Updated generateWaveform for DefaultInComingVoiceMessageViewHolder
-        private void generateWaveform(int durationMillis) {
-            waveformContainer.removeAllViews();
-
-            int seconds = Math.max(durationMillis / 1000, 1);
-            // More bars for WhatsApp-like density
-            int barCount = Math.min(Math.max(seconds * 8, 50), 90);
-
-            // WhatsApp-style thin bars
-            int barWidth = dpToPx(2);
-            int barSpacing = dpToPx(2);
-            int maxHeight = dpToPx(20);
-            int minHeight = dpToPx(4);
-
-            for (int i = 0; i < barCount; i++) {
-                View bar = new View(waveformContainer.getContext());
-
-                // Create more natural waveform pattern
-                double progress = (double) i / barCount;
-                double wave1 = Math.sin(progress * Math.PI * 3) * 0.4;
-                double wave2 = Math.sin(progress * Math.PI * 7) * 0.3;
-                double randomness = Math.random() * 0.3;
-                double combinedWave = Math.abs(wave1 + wave2 + randomness);
-
-                int height = minHeight + (int)((maxHeight - minHeight) * combinedWave);
-
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(barWidth, height);
-                params.setMarginEnd(barSpacing);
-
-                bar.setLayoutParams(params);
-
-                // Rounded corners for bars
-                GradientDrawable shape = new GradientDrawable();
-                shape.setShape(GradientDrawable.RECTANGLE);
-                shape.setColor(Color.parseColor("#666666"));
-                shape.setCornerRadius(dpToPx(1));
-                bar.setBackground(shape);
-                bar.setAlpha(0.7f);
-
-                waveformContainer.addView(bar);
-            }
-        }
-
-        private int dpToPx(int dp) {
-            float density = waveformContainer.getContext().getResources().getDisplayMetrics().density;
-            return Math.round(dp * density);
-        }
-
-        private String formatDuration(int millis) {
-            int seconds = millis / 1000;
-            int minutes = seconds / 60;
-            seconds = seconds % 60;
-            return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds);
-        }
-
-        private String formatTime(Date date) {
-            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
-            return sdf.format(date);
-        }
-
-        @Override
-        public void onViewRecycled() {
-            if (isPlaying) {
-                pausePlaying();
-            }
-            handler.removeCallbacksAndMessages(null);
+        HolderConfig(Class<? extends BaseMessageViewHolder<? extends T>> holder, int layout, Object payload) {
+            this.holder = holder;
+            this.layout = layout;
+            this.payload = payload;
         }
     }
-
-
-
-
-
 }

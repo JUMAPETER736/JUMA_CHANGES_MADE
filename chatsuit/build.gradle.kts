@@ -5,10 +5,10 @@ plugins {
 
 android {
     namespace = "com.uyscuti.social.chatsuit"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 26
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -45,10 +45,9 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    implementation("com.vanniktech:emoji-google-compat:0.18.0")
-    implementation("com.vanniktech:emoji-twitter:0.18.0")
-    implementation("com.vanniktech:emoji-facebook:0.18.0")
-    implementation("com.vanniktech:emoji-google:0.18.0")
-    implementation("com.vanniktech:emoji-ios:0.18.0")
-
+    implementation("com.vanniktech:emoji-google-compat:0.21.0")
+    implementation("com.vanniktech:emoji-twitter:0.21.0")
+    implementation("com.vanniktech:emoji-facebook:0.21.0")
+    implementation("com.vanniktech:emoji-google:0.21.0")
+    implementation("com.vanniktech:emoji-ios:0.21.0")
 }

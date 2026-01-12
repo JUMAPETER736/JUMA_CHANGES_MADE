@@ -1,0 +1,27 @@
+<!-- res/drawable/ic_report.xml -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+
+    <!-- Gray circular background -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M20,2C10.06,2 2,10.06 2,20s8.06,18 18,18 18,-8.06 18,-18S29.94,2 20,2z"/>
+
+    <!-- Enlarged centered triangle -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="1.5"
+        android:fillColor="@android:color/transparent"
+        android:strokeLineJoin="round"
+        android:pathData="M20,8 L30,30 H10 Z" />
+
+    <!-- Exclamation mark (re-centered inside larger triangle) -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="1.5"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M21,24h-2v-2h2v2zm0,-4h-2v-6h2v6z"/>
+</vector>

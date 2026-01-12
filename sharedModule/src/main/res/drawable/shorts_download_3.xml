@@ -1,0 +1,22 @@
+<vector android:height="24dp" android:viewportHeight="24"
+    android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="#00000000"
+        android:pathData="M12,10.3L12,15.8" android:strokeColor="#FFF"
+        android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="2"/>
+
+    <!-- Rotation transformation to make it look down -->
+    <group
+        android:pivotX="12"
+        android:pivotY="12"
+        android:rotation="180">
+        <!-- Original path data -->
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M7.9,10.7l4.1,-4l4.1,4"
+            android:strokeColor="#FFF"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:strokeWidth="2"/>
+    </group>
+    <path android:fillColor="#FFF" android:pathData="M3.75,15C3.75,14.586 3.414,14.25 3,14.25C2.586,14.25 2.25,14.586 2.25,15V15.055C2.25,16.423 2.25,17.525 2.367,18.392C2.488,19.292 2.746,20.05 3.348,20.652C3.95,21.254 4.708,21.513 5.608,21.633C6.475,21.75 7.578,21.75 8.945,21.75H15.055C16.423,21.75 17.525,21.75 18.392,21.633C19.292,21.513 20.05,21.254 20.652,20.652C21.254,20.05 21.513,19.292 21.633,18.392C21.75,17.525 21.75,16.423 21.75,15.055V15C21.75,14.586 21.414,14.25 21,14.25C20.586,14.25 20.25,14.586 20.25,15C20.25,16.435 20.248,17.437 20.147,18.192C20.048,18.926 19.868,19.314 19.591,19.591C19.314,19.868 18.926,20.048 18.192,20.147C17.437,20.248 16.435,20.25 15,20.25H9C7.565,20.25 6.563,20.248 5.808,20.147C5.074,20.048 4.686,19.868 4.409,19.591C4.132,19.314 3.952,18.926 3.853,18.192C3.752,17.437 3.75,16.435 3.75,15Z"/>
+</vector>

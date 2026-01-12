@@ -1,0 +1,6 @@
+<!-- Filled rectangle without outline -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="100dp" /> <!-- Adjust the radius as needed -->
+    <solid android:color="@color/bluejeans" /> <!-- Set the background color -->
+</shape>

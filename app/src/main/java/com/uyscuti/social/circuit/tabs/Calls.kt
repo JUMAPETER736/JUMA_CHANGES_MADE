@@ -14,12 +14,12 @@ import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.social.circuit.MainActivity
-import com.uyscuti.social.circuit.calls.CallInfoActivity
-import com.uyscuti.social.circuit.calls.adapter.CallLogAdapter
-import com.uyscuti.social.circuit.calls.viewmodel.CallViewModel
+import com.uyscuti.social.circuit.CallInfoActivity
+import com.uyscuti.sharedmodule.calls.adapter.CallLogAdapter
+import com.uyscuti.sharedmodule.calls.viewmodel.CallViewModel
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.interfaces.OnBackPressedListener
-import com.uyscuti.social.circuit.presentation.MainViewModel
+import com.uyscuti.sharedmodule.interfaces.OnBackPressedListener
+import com.uyscuti.sharedmodule.presentation.MainViewModel
 import com.uyscuti.social.core.common.data.room.entity.CallLogEntity
 import com.uyscuti.social.core.common.data.room.repository.calls.CallLogRepository
 import dagger.hilt.android.AndroidEntryPoint

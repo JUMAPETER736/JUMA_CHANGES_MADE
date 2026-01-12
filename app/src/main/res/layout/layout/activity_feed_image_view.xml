@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:background="@color/black"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.feedactivities.FeedImageViewActivity">
+
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/feed_view_custom" />
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_below="@id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:contentDescription="@string/content_description"
+        android:focusable="true" />
+
+
+    <ImageView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:src="@drawable/like_svgrepo_com_white"
+        android:padding="20dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:id="@+id/like"
+        app:tint="@color/blueJeans"
+        android:contentDescription="@string/content_description"
+        />
+    <ImageView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:src="@drawable/chat_round_svgrepo_com_shorts"
+        android:padding="20dp"
+        android:layout_marginStart="5dp"
+        app:layout_constraintLeft_toRightOf="@id/like"
+        android:id="@+id/comment"
+        app:tint="@color/blueJeans"
+        android:contentDescription="@string/content_description"
+        />
+    <ImageView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:src="@drawable/favorite_svgrepo_com__1_"
+        android:padding="20dp"
+        android:layout_marginStart="5dp"
+        app:layout_constraintLeft_toRightOf="@id/comment"
+        android:id="@+id/fav"
+        app:tint="@color/blueJeans"
+        android:contentDescription="@string/content_description"
+        />
+    <ImageView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:src="@drawable/retweet_svgrepo_com"
+        android:padding="20dp"
+        android:layout_marginStart="5dp"
+        app:layout_constraintLeft_toRightOf="@id/fav"
+        android:id="@+id/re"
+
+        app:tint="@color/blueJeans" />
+    <ImageView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:src="@drawable/baseline_share_24"
+        android:padding="20dp"
+        android:layout_marginStart="5dp"
+        app:layout_constraintLeft_toRightOf="@id/re"
+        android:id="@+id/share"
+        app:tint="@color/blueJeans"
+        android:contentDescription="@string/content_description"
+        />
+    <ImageView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:src="@drawable/options_vertical_svgrepo_com"
+        android:padding="20dp"
+        android:layout_marginStart="5dp"
+        android:contentDescription="@string/content_description"
+        app:layout_constraintLeft_toRightOf="@id/share"
+        android:id="@+id/mo"
+        app:tint="@color/blueJeans" />
+</androidx.constraintlayout.widget.ConstraintLayout>

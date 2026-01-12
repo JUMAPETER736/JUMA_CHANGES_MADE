@@ -1,8 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="seeAllText" type="id" />
-    <item name="authorUsername" type="id" />
-    <item name="postContent" type="id" />
-    <item name="chatAvatar" type="id" />
     <item name="tv_user_handle" type="id" />
 </resources>

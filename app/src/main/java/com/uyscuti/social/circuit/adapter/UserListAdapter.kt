@@ -12,8 +12,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
+import com.uyscuti.sharedmodule.data.model.User
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.data.model.User
 
 class UserListAdapter(
     private val context: Context, private val listener: (User) -> Unit) :
@@ -71,7 +71,8 @@ class UserListAdapter(
 
 
         fun bind(user: User, listener: (User) -> Unit) {
-
+            // Bind data to the views
+            // For example:
 
             Glide.with(itemView.context)
                 .load(user.avatar)

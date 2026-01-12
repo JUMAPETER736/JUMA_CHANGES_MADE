@@ -1,0 +1,23 @@
+<!-- res/drawable/ic_not_interested.xml -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+
+    <!-- Gray circular background -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M20,2C10.06,2 2,10.06 2,20s8.06,18 18,18 18,-8.06 18,-18S29.94,2 20,2z"/>
+
+    <!-- Broken heart outline -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="1.5"
+        android:fillColor="@android:color/transparent"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:pathData="M20,12 l-2,3 2,2 -2,3 2,3 -2,2 m0,-16
+                          c1.38,-2 4.5,-3 6.5,-1.5 2.02,1.53 2.5,5.5 -3.5,9.5
+                          m-1,-8c-1.38,-2 -4.5,-3 -6.5,-1.5 -2.02,1.53 -2.5,5.5 3.5,9.5" />
+</vector>

@@ -10,6 +10,5 @@
     <!-- Optional: Add a subtle background -->
     <solid android:color="@android:color/transparent" />
 
- />
 
 </shape>

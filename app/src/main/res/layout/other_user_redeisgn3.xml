@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".User_Interface.OtherUserProfile.OtherUserProfileAccount">
+    tools:context="com.uyscuti.sharedmodule.OtherUserProfile">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:id="@+id/coordinatorLayout"
@@ -564,7 +564,7 @@
                     </LinearLayout>
 
                     <!-- Waveform visualization -->
-                    <com.uyscuti.social.circuit.views.WaveFormView
+                    <com.uyscuti.sharedmodule.views.WaveFormView
                         android:id="@+id/waveForm"
                         android:layout_width="match_parent"
                         android:layout_height="60dp"
@@ -588,7 +588,7 @@
                             android:src="@drawable/play_button_filled"
                             app:tint="@android:color/white" />
 
-                        <com.uyscuti.social.circuit.utils.waveformseekbar.WaveformSeekBar
+                        <com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
                             android:id="@+id/wave"
                             android:layout_width="0dp"
                             android:layout_height="32dp"

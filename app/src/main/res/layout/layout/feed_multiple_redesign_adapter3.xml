@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="2dp">
+
+    <!-- For 5 images (similar to Facebook - 2 rows: 2 images on top, 3 on bottom) -->
+
+    <ImageView
+        android:id="@+id/image_1"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="1dp"
+        android:layout_marginBottom="1dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toTopOf="@+id/image_3"
+        app:layout_constraintDimensionRatio="H,3:2"
+        app:layout_constraintEnd_toStartOf="@+id/image_2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:src="@drawable/imageplaceholder" />
+
+    <ImageView
+        android:id="@+id/image_2"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="1dp"
+        android:layout_marginBottom="1dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toTopOf="@+id/image_4"
+        app:layout_constraintDimensionRatio="H,3:2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/image_1"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:src="@drawable/imageplaceholder" />
+
+    <ImageView
+        android:id="@+id/image_3"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="1dp"
+        android:layout_marginEnd="1dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintDimensionRatio="H,3:2"
+        app:layout_constraintEnd_toStartOf="@+id/image_4"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/image_1"
+        tools:src="@drawable/imageplaceholder" />
+
+    <ImageView
+        android:id="@+id/image_4"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="1dp"
+        android:layout_marginTop="1dp"
+        android:layout_marginEnd="1dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintDimensionRatio="H,3:2"
+        app:layout_constraintEnd_toStartOf="@+id/image_5"
+        app:layout_constraintStart_toEndOf="@+id/image_3"
+        app:layout_constraintTop_toBottomOf="@+id/image_2"
+        tools:src="@drawable/imageplaceholder" />
+
+    <ImageView
+        android:id="@+id/image_5"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="1dp"
+        android:layout_marginTop="1dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintDimensionRatio="H,3:2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/image_4"
+        app:layout_constraintTop_toBottomOf="@+id/image_2"
+        tools:src="@drawable/imageplaceholder" />
+
+    <!-- More than 5 images overlay on the last image -->
+    <FrameLayout
+        android:id="@+id/more_images_overlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#80000000"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/image_5"
+        app:layout_constraintEnd_toEndOf="@+id/image_5"
+        app:layout_constraintStart_toStartOf="@+id/image_5"
+        app:layout_constraintTop_toTopOf="@+id/image_5"
+        tools:visibility="visible">
+
+        <TextView
+            android:id="@+id/more_images_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            tools:text="+3" />
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

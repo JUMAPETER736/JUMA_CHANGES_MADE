@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Create this as res/menu/post_options_menu.xml -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/menu_save_post"
+        android:icon="@drawable/favorite_svgrepo_com__1_"
+        android:title="Save Post"
+        android:iconTint="@android:color/black" />
+
+    <item
+        android:id="@+id/menu_copy_link"
+        android:icon="@drawable/ic_action_copy"
+        android:title="Copy Link"
+        android:iconTint="@android:color/black" />
+
+    <item
+        android:id="@+id/menu_not_interested"
+        android:icon="@drawable/not_interested"
+        android:title="Not Interested"
+        android:iconTint="@android:color/black" />
+
+    <group android:id="@+id/user_actions_group">
+        <item
+            android:id="@+id/menu_mute_user"
+            android:icon="@drawable/mute"
+            android:title="Mute User"
+            android:iconTint="@android:color/black" />
+
+        <item
+            android:id="@+id/menu_block_user"
+            android:icon="@drawable/baseline_block_24"
+            android:title="Block User"
+            android:iconTint="@android:color/black" />
+
+        <item
+            android:id="@+id/menu_report"
+            android:icon="@drawable/report"
+            android:title="Report"
+            android:iconTint="@android:color/black" />
+    </group>
+
+</menu>

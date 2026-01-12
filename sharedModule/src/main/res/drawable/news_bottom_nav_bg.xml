@@ -1,0 +1,4 @@
+<!-- res/drawable/news_bottom_nav_bg.xml -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="#E91E63" />
+</shape>

@@ -5,11 +5,11 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
 
-import com.uyscuti.social.network.api.response.getmyprofile.Account
-import com.uyscuti.social.network.api.response.getmyprofile.CoverImage
+import com.uyscuti.social.network.api.response.getallshorts.Author
 import com.uyscuti.social.network.api.response.getallshorts.Image
 import com.uyscuti.social.network.api.response.getallshorts.Thumbnail
-import com.uyscuti.social.network.api.response.getallshorts.Author
+import com.uyscuti.social.network.api.response.getmyprofile.Account
+import com.uyscuti.social.network.api.response.getmyprofile.CoverImage
 
 class ShortsConverter {
     private val gson = Gson()

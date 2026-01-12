@@ -10,7 +10,7 @@ import androidx.work.Constraints
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.uyscuti.social.circuit.FlashWorker
+import com.uyscuti.sharedmodule.FlashWorker
 import java.util.concurrent.TimeUnit
 
 class ConnectivityReceiver : BroadcastReceiver() {
