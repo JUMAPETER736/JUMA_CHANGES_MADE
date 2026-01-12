@@ -220,11 +220,13 @@ class UniversalSearchActivity : AppCompatActivity() {
     private val recentUserViewModel: RecentUserViewModel by viewModels()
 
     // ===== CACHE ALL DATA HERE - LOAD ONCE =====
+    private var cachedRecentUsers: List<Author> = emptyList()
     private var cachedPeople: List<Author> = emptyList()
     private var cachedShorts: List<Post> = emptyList()
     private var cachedFeedPosts: List<Post> = emptyList()
     private var cachedChats: List<DialogEntity> = emptyList()
     private var cachedBusinessPosts: List<Post> = emptyList()
+    private var isRecentUsersCacheValid = false
     private var isDataLoaded = false
     private var isLoadingData = false
 
@@ -345,7 +347,7 @@ class UniversalSearchActivity : AppCompatActivity() {
 
                 // Show loading indicator
                 binding.noResultsText.text = "Sorry, results not found"
-                binding.noResultsText.visibility = View.VISIBLE
+                binding.noResultsText.visibility = View.GONE
 
                 withContext(Dispatchers.IO) {
                     // Load all data in parallel
@@ -383,68 +385,108 @@ class UniversalSearchActivity : AppCompatActivity() {
     private fun loadRecentUsers() {
         lifecycleScope.launch {
             try {
+                // STEP 1: Show cached recent users immediately (instant display)
+                if (isRecentUsersCacheValid && cachedRecentUsers.isNotEmpty()) {
+                    searchAdapter.showRecentUsers(cachedRecentUsers)
+                    binding.noResultsText.visibility = View.GONE
+                    Log.d("RecentUsers", "Showing ${cachedRecentUsers.size} cached recent users instantly")
+                }
+
+                // STEP 2: Load from database
                 val recentUsers = withContext(Dispatchers.IO) {
                     recentUserViewModel.getRecentUsers()
                 }
 
-                if (recentUsers.isNotEmpty()) {
-                    // Convert to basic Authors first
-                    val basicAuthors = recentUsers.map { it.toAuthor() }
+                if (recentUsers.isEmpty()) {
+                    if (cachedRecentUsers.isEmpty()) {
+                        searchAdapter.submitList(emptyList())
+                    }
+                    return@launch
+                }
 
-                    // Enrich with full profile data
-                    val enrichedAuthors = withContext(Dispatchers.IO) {
-                        basicAuthors.mapNotNull { author ->
-                            async {
-                                try {
-                                    // Fetch full profile by username
-                                    val profileResponse = apiService.getOtherUsersProfileByUsername(author.account.username)
-                                    val profileData = profileResponse.body()?.data
+                // STEP 3: Convert to basic Authors with username only
+                val basicAuthors = recentUsers.map { it.toAuthor() }
 
-                                    if (profileData != null && profileResponse.isSuccessful) {
-                                        // Return enriched Author with full data
-                                        author.copy(
-                                            firstName = profileData.firstName ?: "",
-                                            lastName = profileData.lastName ?: "",
-                                            bio = profileData.bio ?: "",
-                                            coverImage = CoverImage(
-                                                _id = profileData.coverImage?._id ?: "",
-                                                localPath = profileData.coverImage?.localPath ?: "",
-                                                url = profileData.coverImage?.url ?: "https://via.placeholder.com/800x450.png"
-                                            ),
-                                            location = profileData.location ?: "",
-                                            phoneNumber = profileData.phoneNumber ?: "",
-                                            dob = profileData.dob ?: "",
-                                            countryCode = profileData.countryCode ?: ""
-                                        )
-                                    } else {
-                                        // If profile fetch fails, return null to filter out
-                                        Log.w("RecentUsers", "Profile data null or unsuccessful for ${author.account.username}")
-                                        null
+                // STEP 4: Show basic authors immediately (usernames only)
+                if (!isRecentUsersCacheValid) {
+                    searchAdapter.showRecentUsers(basicAuthors)
+                    binding.noResultsText.visibility = View.GONE
+                    Log.d("RecentUsers", "Showing ${basicAuthors.size} basic recent users")
+                }
+
+                // STEP 5: Enrich with full profile data in background
+                val enrichedAuthors = withContext(Dispatchers.IO) {
+                    basicAuthors.mapIndexedNotNull { index, author ->
+                        async {
+                            try {
+                                val profileResponse = apiService.getOtherUsersProfileByUsername(author.account.username)
+                                val profileData = profileResponse.body()?.data
+
+                                if (profileData != null && profileResponse.isSuccessful) {
+                                    val enrichedAuthor = author.copy(
+                                        firstName = profileData.firstName ?: "",
+                                        lastName = profileData.lastName ?: "",
+                                        bio = profileData.bio ?: "",
+                                        coverImage = CoverImage(
+                                            _id = profileData.coverImage?._id ?: "",
+                                            localPath = profileData.coverImage?.localPath ?: "",
+                                            url = profileData.coverImage?.url ?: "https://via.placeholder.com/800x450.png"
+                                        ),
+                                        location = profileData.location ?: "",
+                                        phoneNumber = profileData.phoneNumber ?: "",
+                                        dob = profileData.dob ?: "",
+                                        countryCode = profileData.countryCode ?: ""
+                                    )
+
+                                    // Update UI progressively as each profile loads
+                                    withContext(Dispatchers.Main) {
+                                        val currentList = cachedRecentUsers.toMutableList()
+                                        if (index < currentList.size) {
+                                            currentList[index] = enrichedAuthor
+                                        } else {
+                                            currentList.add(enrichedAuthor)
+                                        }
+                                        cachedRecentUsers = currentList
+                                        searchAdapter.showRecentUsers(cachedRecentUsers)
                                     }
-                                } catch (e: Exception) {
-                                    Log.e("RecentUsers", "Error fetching profile for ${author.account.username}: ${e.message}", e)
-                                    // Return null on error to filter out incomplete data
+
+                                    enrichedAuthor
+                                } else {
+                                    Log.w("RecentUsers", "Profile unsuccessful for ${author.account.username}")
                                     null
                                 }
+                            } catch (e: Exception) {
+                                Log.e("RecentUsers", "Error for ${author.account.username}: ${e.message}")
+                                null
                             }
-                        }.awaitAll().filterNotNull()
-                    }
+                        }
+                    }.awaitAll().filterNotNull()
+                }
 
-                    if (enrichedAuthors.isNotEmpty()) {
-                        searchAdapter.showRecentUsers(enrichedAuthors)
-                        binding.noResultsText.visibility = View.GONE
-                    } else {
-                        Log.w("RecentUsers", "No enriched users available after profile fetch")
-                        searchAdapter.submitList(emptyList())
-                        binding.noResultsText.visibility = View.VISIBLE
-                        binding.noResultsText.text = "Unable to load recent users"
+                // STEP 6: Update cache and display final enriched list
+                if (enrichedAuthors.isNotEmpty()) {
+                    cachedRecentUsers = enrichedAuthors
+                    isRecentUsersCacheValid = true
+                    searchAdapter.showRecentUsers(enrichedAuthors)
+                    binding.noResultsText.visibility = View.GONE
+                    Log.d("RecentUsers", "Loaded ${enrichedAuthors.size} enriched recent users")
+                } else {
+                    Log.w("RecentUsers", "No enriched users available")
+                    // Keep showing basic authors if enrichment failed
+                    if (basicAuthors.isNotEmpty()) {
+                        cachedRecentUsers = basicAuthors
+                        isRecentUsersCacheValid = true
                     }
+                }
+
+            } catch (e: Exception) {
+                Log.e("RecentUsers", "Error loading recent users: ${e.message}", e)
+                // Show cached data even on error
+                if (cachedRecentUsers.isNotEmpty()) {
+                    searchAdapter.showRecentUsers(cachedRecentUsers)
                 } else {
                     searchAdapter.submitList(emptyList())
                 }
-            } catch (e: Exception) {
-                Log.e("RecentUsers", "Error loading recent users: ${e.message}", e)
-                searchAdapter.submitList(emptyList())
             }
         }
     }
@@ -836,30 +878,76 @@ class UniversalSearchActivity : AppCompatActivity() {
         }
     }
 
+    // ===== ADD THIS: Load recent users' posts from cached data =====
+    private fun getRecentUsersPosts(): List<Post> {
+        if (cachedRecentUsers.isEmpty()) return emptyList()
+
+        val recentUserIds = cachedRecentUsers.map { it._id }.toSet()
+        val recentUsernames = cachedRecentUsers.map { it.account.username }.toSet()
+
+        // Filter all cached posts by recent users
+        val recentPosts = mutableListOf<Post>()
+
+        // Add shorts from recent users
+        recentPosts.addAll(cachedShorts.filter { post ->
+            post.author._id in recentUserIds || post.author.account.username in recentUsernames
+        })
+
+        // Add feed posts from recent users
+        recentPosts.addAll(cachedFeedPosts.filter { post ->
+            post.author._id in recentUserIds || post.author.account.username in recentUsernames
+        })
+
+        // Add business posts from recent users
+        recentPosts.addAll(cachedBusinessPosts.filter { post ->
+            post.author._id in recentUserIds || post.author.account.username in recentUsernames
+        })
+
+        // Sort by creation date (most recent first)
+        return recentPosts.sortedByDescending { it.createdAt }
+    }
+
+    // ===== MODIFY displaySearchResults to show recent posts when appropriate =====
     private fun displaySearchResults(results: SearchResults) {
         val items = mutableListOf<Any>()
 
         when (currentFilter) {
             ContentFilter.ALL -> {
-                if (results.people.isNotEmpty()) {
-                    items.add("PEOPLE_HEADER")
-                    items.addAll(results.people)
-                }
-                if (results.chats.isNotEmpty()) {
-                    items.add("CHATS_HEADER")
-                    items.addAll(results.chats)
-                }
-                if (results.shorts.isNotEmpty()) {
-                    items.add("SHORTS_HEADER")
-                    items.addAll(results.shorts)
-                }
-                if (results.feedPosts.isNotEmpty()) {
-                    items.add("FEED_HEADER")
-                    items.addAll(results.feedPosts)
-                }
-                if (results.business.isNotEmpty()) {
-                    items.add("BUSINESS_HEADER")
-                    items.addAll(results.business)
+                // If showing recent users (empty query), show their posts too
+                if (searchAdapter.isShowingRecentUsers() && isDataLoaded) {
+                    if (results.people.isNotEmpty()) {
+                        items.add("PEOPLE_HEADER")
+                        items.addAll(results.people)
+                    }
+
+                    // Add recent users' posts
+                    val recentPosts = getRecentUsersPosts().take(20) // Limit to 20 posts
+                    if (recentPosts.isNotEmpty()) {
+                        items.add("RECENT_POSTS_HEADER")
+                        items.addAll(recentPosts)
+                    }
+                } else {
+                    // Normal search results
+                    if (results.people.isNotEmpty()) {
+                        items.add("PEOPLE_HEADER")
+                        items.addAll(results.people)
+                    }
+                    if (results.chats.isNotEmpty()) {
+                        items.add("CHATS_HEADER")
+                        items.addAll(results.chats)
+                    }
+                    if (results.shorts.isNotEmpty()) {
+                        items.add("SHORTS_HEADER")
+                        items.addAll(results.shorts)
+                    }
+                    if (results.feedPosts.isNotEmpty()) {
+                        items.add("FEED_HEADER")
+                        items.addAll(results.feedPosts)
+                    }
+                    if (results.business.isNotEmpty()) {
+                        items.add("BUSINESS_HEADER")
+                        items.addAll(results.business)
+                    }
                 }
             }
             ContentFilter.SHORTS -> {
@@ -977,6 +1065,8 @@ class UniversalSearchActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 recentUserViewModel.addRecentUser(user)
+                // Invalidate cache so next load will refresh
+                isRecentUsersCacheValid = false
             } catch (e: Exception) {
                 Log.e("SearchUsers", "Error adding recent user: ${e.message}")
             }
@@ -1148,14 +1238,18 @@ class SearchUserNameAdapter(
     private val onUserClicked: (Author) -> Unit,
     private val onPostClicked: (Post) -> Unit = {},
     private val onChatClicked: (DialogEntity) -> Unit = {},
+    var onRecentPostsSeeAllClicked: (() -> Unit)? = null,  // ADD THIS
+    var onPeopleSeeAllClicked: (() -> Unit)? = null,       // Optional
+    var onShortsSeeAllClicked: (() -> Unit)? = null,        // Optional
+    var onPostsSeeAllClicked: (() -> Unit)? = null
 
-    ) : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback())
+) : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback())
 {
 
     companion object {
 
         private const val TYPE_CHAT = 1
-        private const val TYPE_FEED = 2
+        const val TYPE_RECENT_POSTS_HEADER = 2
         private const val TYPE_USER = 3
         private const val TYPE_HEADER = 4
         private const val TYPE_LOADING = 5
@@ -1273,12 +1367,12 @@ class SearchUserNameAdapter(
     override fun getItemViewType(position: Int): Int = when (val item = getItem(position)) {
         "RECENT_HEADER", "SEARCH_HEADER", "PEOPLE_HEADER",
         "SHORTS_HEADER", "FEED_HEADER", "BUSINESS_HEADER",
-        "CHATS_HEADER", "USER_CONTENT_HEADER" -> TYPE_HEADER
+        "CHATS_HEADER", "USER_CONTENT_HEADER", "RECENT_POSTS_HEADER" -> TYPE_HEADER  // ADD "RECENT_POSTS_HEADER" here
 
         is Author -> TYPE_USER
         "LOADING" -> TYPE_LOADING
         "NO_RESULTS" -> TYPE_NO_RESULTS
-        "SEE_ALL_PEOPLE", "SEE_ALL_SHORTS", "SEE_ALL_POSTS" -> TYPE_SEE_ALL
+        "SEE_ALL_PEOPLE", "SEE_ALL_SHORTS", "SEE_ALL_POSTS", "SEE_ALL_RECENT_POSTS" -> TYPE_SEE_ALL  // ADD "SEE_ALL_RECENT_POSTS" here
 
         is Post -> {
             // Business posts
@@ -1341,6 +1435,7 @@ class SearchUserNameAdapter(
                 LoadingViewHolder(view)
             }
 
+
             // ============ REUSE FEEDADAPTER LAYOUTS ============
 
             TYPE_TEXT_FEED -> {
@@ -1379,7 +1474,15 @@ class SearchUserNameAdapter(
             }
             TYPE_SEE_ALL -> {
                 val view = inflater.inflate(R.layout.search_see_all_item, parent, false)
-                SeeAllViewHolder(view)
+                SeeAllViewHolder(view, onSeeAllClick = { type ->
+                    // Trigger callback based on type
+                    when (type) {
+                        "SEE_ALL_RECENT_POSTS" -> onRecentPostsSeeAllClicked?.invoke()
+                        "SEE_ALL_PEOPLE" -> onPeopleSeeAllClicked?.invoke()
+                        "SEE_ALL_SHORTS" -> onShortsSeeAllClicked?.invoke()
+                        "SEE_ALL_POSTS" -> onPostsSeeAllClicked?.invoke()
+                    }
+                })
             }
             TYPE_CHAT -> {
                 val view = inflater.inflate(R.layout.chats_item_layout, parent, false)
@@ -6122,7 +6225,8 @@ class SearchUserNameAdapter(
     }
 
     // SeeAllViewHolder
-    private class SeeAllViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+    private class SeeAllViewHolder(private val itemView: View, private val onSeeAllClick: ((String) -> Unit)? = null
+    ) : RecyclerView.ViewHolder(itemView) {
         private val seeAllText: TextView = itemView.findViewById(R.id.seeAllText)
 
         fun bind(type: String) {
@@ -6130,7 +6234,13 @@ class SearchUserNameAdapter(
                 "SEE_ALL_PEOPLE" -> "See all people"
                 "SEE_ALL_SHORTS" -> "See all shorts"
                 "SEE_ALL_POSTS" -> "See all posts"
+                "SEE_ALL_RECENT_POSTS" -> "See all recent posts"
                 else -> "See all"
+            }
+
+            // Set click listener
+            itemView.setOnClickListener {
+                onSeeAllClick?.invoke(type)
             }
         }
     }
@@ -6149,6 +6259,7 @@ class SearchUserNameAdapter(
                 "BUSINESS_HEADER" -> "Business"
                 "CHATS_HEADER" -> "Chats"
                 "USER_CONTENT_HEADER" -> "Content"
+                "RECENT_POSTS_HEADER" -> "Recent Posts"  // ADD THIS
                 else -> ""
             }
         }
