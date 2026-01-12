@@ -393,14 +393,14 @@ class UniversalSearchActivity : AppCompatActivity() {
 
                     // Enrich with full profile data
                     val enrichedAuthors = withContext(Dispatchers.IO) {
-                        basicAuthors.map { author ->
+                        basicAuthors.mapNotNull { author ->
                             async {
                                 try {
                                     // Fetch full profile by username
                                     val profileResponse = apiService.getOtherUsersProfileByUsername(author.account.username)
                                     val profileData = profileResponse.body()?.data
 
-                                    if (profileData != null) {
+                                    if (profileData != null && profileResponse.isSuccessful) {
                                         // Return enriched Author with full data
                                         author.copy(
                                             firstName = profileData.firstName ?: "",
@@ -417,25 +417,33 @@ class UniversalSearchActivity : AppCompatActivity() {
                                             countryCode = profileData.countryCode ?: ""
                                         )
                                     } else {
-                                        // If profile fetch fails, return basic author
-                                        author
+                                        // If profile fetch fails, return null to filter out
+                                        Log.w("RecentUsers", "Profile data null or unsuccessful for ${author.account.username}")
+                                        null
                                     }
                                 } catch (e: Exception) {
-                                    Log.e("RecentUsers", "Error fetching profile for ${author.account.username}: ${e.message}")
-                                    // Return basic author on error
-                                    author
+                                    Log.e("RecentUsers", "Error fetching profile for ${author.account.username}: ${e.message}", e)
+                                    // Return null on error to filter out incomplete data
+                                    null
                                 }
                             }
-                        }.awaitAll()
+                        }.awaitAll().filterNotNull()
                     }
 
-                    searchAdapter.showRecentUsers(enrichedAuthors)
-                    binding.noResultsText.visibility = View.GONE
+                    if (enrichedAuthors.isNotEmpty()) {
+                        searchAdapter.showRecentUsers(enrichedAuthors)
+                        binding.noResultsText.visibility = View.GONE
+                    } else {
+                        Log.w("RecentUsers", "No enriched users available after profile fetch")
+                        searchAdapter.submitList(emptyList())
+                        binding.noResultsText.visibility = View.VISIBLE
+                        binding.noResultsText.text = "Unable to load recent users"
+                    }
                 } else {
                     searchAdapter.submitList(emptyList())
                 }
             } catch (e: Exception) {
-                Log.e("RecentUsers", "Error loading recent users: ${e.message}")
+                Log.e("RecentUsers", "Error loading recent users: ${e.message}", e)
                 searchAdapter.submitList(emptyList())
             }
         }
