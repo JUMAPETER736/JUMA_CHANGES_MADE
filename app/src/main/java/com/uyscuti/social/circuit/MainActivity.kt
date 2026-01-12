@@ -1404,23 +1404,7 @@ class MainActivity : AppCompatActivity(),
 
             // If currently gone, make it visible and set the transition to start
             binding.motionLayout.visibility = View.VISIBLE
-//            httpDataSourceFactory = DefaultHttpDataSource.Factory()
-//                .setAllowCrossProtocolRedirects(true)
-//            defaultDataSourceFactory = DefaultDataSourceFactory(
-//                this, httpDataSourceFactory
-//            )
-//            cacheDataSourceFactory = CacheDataSource.Factory()
-//                .setCache(simpleCache)
-//                .setUpstreamDataSourceFactory(httpDataSourceFactory)
-//                .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
-//            val mediaSourceFactory: MediaSource.Factory =
-//                DefaultMediaSourceFactory(this)
-//                    .setDataSourceFactory(cacheDataSourceFactory)
-//            exoPlayer = ExoPlayer.Builder(this)
-//                .setMediaSourceFactory(mediaSourceFactory)
-//                .build()
 
-//            binding.motionLayout.setTransition(R.id.start, R.id.start)
             binding.motionLayout.transitionToStart()
         }
     }
@@ -1491,7 +1475,7 @@ class MainActivity : AppCompatActivity(),
             } catch (e: Exception) {
                 Log.e("UserProfileShortsViewModel", "Exception: ${e.message}")
                 lifecycleScope.launch {
-//                    hideShimmer()
+
                     if (page == 1) {
                         hideShimmer()
                     } else {
@@ -1508,7 +1492,7 @@ class MainActivity : AppCompatActivity(),
         val TAG = "observeComments"
         commentsViewModel.commentsLiveData.observe(this) { it ->
             Log.d(TAG, "observeComments comments size: ${it.size}")
-//            val commentsWithReplies = it.find{it.}
+
             val commentsWithReplies = it.filter { it.replyCount > 0 }
             Log.d(TAG, "observeComments comments with replies size: ${commentsWithReplies.size}")
 
@@ -1584,7 +1568,7 @@ class MainActivity : AppCompatActivity(),
         val constraintLayout = binding.constraintLayout
         val bottomNavigationView = binding.bottomNavigationView
         val reference = binding.reference
-//        val visibleConstraintSet = ConstraintSet()
+
 
         val visibleConstraintSet = ConstraintSet()
         visibleConstraintSet.clone(constraintLayout)
@@ -1737,20 +1721,7 @@ class MainActivity : AppCompatActivity(),
     }
 
 
-//    private fun requestPermissions() {
-//        // Check if the permission is already granted
-//        if (ContextCompat.checkSelfPermission(
-//                this,
-//                Manifest.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION
-//            ) == PackageManager.PERMISSION_GRANTED
-//        ) {
-//            // Permission is already granted, you can proceed with starting the service
-//            startForegroundService()
-//        } else {
-//            // Permission is not granted, request it
-//            requestPermissionLauncher.launch(Manifest.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION)
-//        }
-//    }
+
 
     private fun startCombinedWorker() {
         val workManager = WorkManager.getInstance(this)
@@ -1761,7 +1732,7 @@ class MainActivity : AppCompatActivity(),
             Log.d(WORKER_TAG, "Combined Work already exists, Replacing.......")
 
             ExistingWorkPolicy.REPLACE
-//            return
+
         }
 
         val request = OneTimeWorkRequestBuilder<CombinedWorker>().setBackoffCriteria(
@@ -1816,8 +1787,7 @@ class MainActivity : AppCompatActivity(),
                     Log.d("Download", "File Downloaded: ${destinationFile.absolutePath}")
                     Glide.with(applicationContext).asBitmap().load(destinationFile)
                         .transform(CircleCrop()).placeholder(R.drawable.google)
-//            .apply(RequestOptions.bitmapTransform(CircleCrop()))
-//            .apply(RequestOptions.placeholderOf(R.drawable.google))
+
                         .error(R.drawable.error_drawable) // Drawable to display on load failure
                         .fallback(R.drawable.fallback_drawable)
                         .into(object : CustomTarget<Bitmap>() {
@@ -1830,7 +1800,7 @@ class MainActivity : AppCompatActivity(),
                                     "BitmapSize",
                                     "Width: ${resource.width}, Height: ${resource.height}"
                                 )
-//                    resource.
+
                             }
 
                             override fun onLoadCleared(placeholder: Drawable?) {
