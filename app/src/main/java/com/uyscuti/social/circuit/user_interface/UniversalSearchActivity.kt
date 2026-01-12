@@ -1249,20 +1249,19 @@ class SearchUserNameAdapter(
     companion object {
 
         private const val TYPE_CHAT = 1
-        const val TYPE_RECENT_POSTS_HEADER = 2
-        private const val TYPE_USER = 3
-        private const val TYPE_HEADER = 4
-        private const val TYPE_LOADING = 5
-        private const val TYPE_SEE_ALL = 6
-        private const val TYPE_TEXT_FEED = 7
-        internal const val TYPE_BUSINESS = 8
-        private const val TYPE_NO_RESULTS = 9
-        private const val TYPE_NO_BUSINESS = 10
-        private const val TYPE_REPOST_POST = 11
-        internal const val TYPE_SHORTS_GRID = 12
-        internal const val TYPE_BUSINESS_GRID = 13
-        private const val TYPE_MIXED_FEED_FILES = 14
-        private const val TYPE_REPOST_WITH_NEW_FILES = 15
+        private const val TYPE_USER = 2
+        private const val TYPE_HEADER = 3
+        private const val TYPE_LOADING = 4
+        private const val TYPE_SEE_ALL = 5
+        private const val TYPE_TEXT_FEED = 6
+        internal const val TYPE_BUSINESS = 7
+        private const val TYPE_NO_RESULTS = 8
+        private const val TYPE_NO_BUSINESS = 9
+        private const val TYPE_REPOST_POST = 10
+        internal const val TYPE_SHORTS_GRID = 11
+        internal const val TYPE_BUSINESS_GRID = 12
+        private const val TYPE_MIXED_FEED_FILES = 13
+        private const val TYPE_REPOST_WITH_NEW_FILES = 14
 
     }
 
