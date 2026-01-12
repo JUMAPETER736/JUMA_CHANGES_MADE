@@ -41,6 +41,7 @@ import androidx.core.graphics.toColorInt
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.media3.common.util.UnstableApi
@@ -449,7 +450,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             initializeViews(view)
             initializeRecyclerView()
             setupInteractionButtonsClickPrevention()
-
+            setupBackPressHandler()
             // Verify views are initialized
             if (!isViewsInitialized()) {
                 Log.e(TAG, "Critical views not initialized properly")
@@ -458,7 +459,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
             // Setup other components
             setupRecyclerViews()
-            setupBackNavigation()
+
 
             // Hide UI elements
             EventBus.getDefault().post(HideAppBar(true))
@@ -599,6 +600,48 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
+    private fun isViewsInitialized(): Boolean {
+        return try {
+            _binding != null &&
+                    ::itemView.isInitialized &&
+                    ::headerTitle.isInitialized &&
+                    ::originalPosterProfileImage.isInitialized &&
+                    ::originalPosterName.isInitialized &&
+                    ::recyclerViews.isInitialized &&
+                    ::multipleAudiosContainer.isInitialized &&
+                    ::mixedFilesCardView.isInitialized &&
+                    ::originalFeedImage.isInitialized &&
+                    ::cancelButton.isInitialized &&
+                    ::headerMenuButton.isInitialized &&
+                    ::quotedPostCard.isInitialized &&
+                    ::originalPostContainer.isInitialized &&
+                    ::tvQuotedUserHandle.isInitialized &&
+                    ::dateTime.isInitialized &&
+                    ::originalPostText.isInitialized &&
+                    ::tvQuotedHashtags.isInitialized &&
+                    ::ivQuotedPostImage.isInitialized &&
+                    ::likeSection.isInitialized &&
+                    ::likeButtonIcon.isInitialized &&
+                    ::likesCount.isInitialized &&
+                    ::commentSection.isInitialized &&
+                    ::commentButtonIcon.isInitialized &&
+                    ::commentCount.isInitialized &&
+                    ::favoriteSection.isInitialized &&
+                    ::favoritesButton.isInitialized &&
+                    ::favoriteCounts.isInitialized &&
+                    ::retweetSection.isInitialized &&
+                    ::repostPost.isInitialized &&
+                    ::repostCount.isInitialized &&
+                    ::shareSection.isInitialized &&
+                    ::shareButtonIcon.isInitialized &&
+                    ::shareCount.isInitialized &&
+                    ::followButton.isInitialized  // Add this line
+        } catch (e: Exception) {
+            Log.e(TAG, "Views initialization check failed: ${e.message}")
+            false
+        }
+    }
+
     private fun setupClickListeners(data: Post) {
         Log.d(TAG, "setupClickListeners - Data type: ${data::class.java.simpleName}, ID: ${data._id}")
 
@@ -645,6 +688,96 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
     }
 
+    private fun initializeViews(view: View) {
+        itemView = view
+        try {
+            _binding?.let { safeBinding ->
+                cancelButton = safeBinding.cancelButton
+                headerTitle = safeBinding.headerTitle
+                headerMenuButton = safeBinding.headerMenuButton
+                quotedPostCard = safeBinding.quotedPostCard
+                originalPostContainer = safeBinding.originalPostContainer
+                originalPosterProfileImage = safeBinding.originalPosterProfileImage
+                originalPosterName = safeBinding.originalPosterName
+                tvQuotedUserHandle = safeBinding.tvQuotedUserHandle
+                dateTime = safeBinding.dateTime
+                originalPostText = safeBinding.originalPostText
+                tvQuotedHashtags = safeBinding.tvQuotedHashtags
+                mixedFilesCardView = safeBinding.mixedFilesCardView
+                originalFeedImage = safeBinding.originalFeedImage
+                multipleAudiosContainer = safeBinding.multipleAudiosContainer
+                recyclerViews = safeBinding.recyclerView
+                ivQuotedPostImage = safeBinding.ivQuotedPostImage
+
+                likeSection = safeBinding.likeLayout
+                likeButtonIcon = safeBinding.likeButtonIcon
+                likesCount = safeBinding.likesCount
+                commentSection = safeBinding.commentLayout
+                commentButtonIcon = safeBinding.commentButtonIcon
+                commentCount = safeBinding.commentCount
+                favoriteSection = safeBinding.favoriteSection
+                favoritesButton = safeBinding.favoritesButton
+                favoriteCounts = safeBinding.favoriteCounts
+                retweetSection = safeBinding.repostLayout
+                repostPost = safeBinding.repostPost
+                repostCount = safeBinding.repostCount
+                shareSection = safeBinding.shareLayout
+                shareButtonIcon = safeBinding.shareButton
+                shareCount = safeBinding.shareCount
+
+                followButton = safeBinding.followButton  // Add this line
+
+                Log.d(TAG, "All views initialized successfully")
+            } ?: run {
+                Log.e(TAG, "Binding is null, cannot initialize views")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing views: ${e.message}", e)
+        }
+    }
+
+    private fun setupBackPressHandler() {
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    cleanupAndGoBack()
+                }
+            }
+        )
+    }
+
+    private fun cleanupAndGoBack() {
+        try {
+            // Simply pop the back stack to go back
+            activity?.supportFragmentManager?.popBackStack()
+
+            // Show UI elements when leaving
+            EventBus.getDefault().post(HideAppBar(false))
+            EventBus.getDefault().post(HideBottomNav(false))
+
+            Log.d(TAG, "cleanupAndGoBack: Fragment removed from back stack")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in cleanupAndGoBack: ${e.message}", e)
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        try {
+            // Show UI elements when view is destroyed
+            EventBus.getDefault().post(HideAppBar(false))
+            EventBus.getDefault().post(HideBottomNav(false))
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in onDestroyView cleanup: ${e.message}", e)
+        }
+        _binding = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy: Cleanup")
+    }
 
     private fun showOptionsMenu(anchor: View) {
         val context = requireContext()
@@ -763,150 +896,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         } catch (e: Exception) {
             Log.e(TAG, "Error navigating to fragment: $tag", e)
         }
-    }
-
-    private fun isViewsInitialized(): Boolean {
-        return try {
-            _binding != null &&
-                    ::itemView.isInitialized &&
-                    ::headerTitle.isInitialized &&
-                    ::originalPosterProfileImage.isInitialized &&
-                    ::originalPosterName.isInitialized &&
-                    ::recyclerViews.isInitialized &&
-                    ::multipleAudiosContainer.isInitialized &&
-                    ::mixedFilesCardView.isInitialized &&
-                    ::originalFeedImage.isInitialized &&
-                    ::cancelButton.isInitialized &&
-                    ::headerMenuButton.isInitialized &&
-                    ::quotedPostCard.isInitialized &&
-                    ::originalPostContainer.isInitialized &&
-                    ::tvQuotedUserHandle.isInitialized &&
-                    ::dateTime.isInitialized &&
-                    ::originalPostText.isInitialized &&
-                    ::tvQuotedHashtags.isInitialized &&
-                    ::ivQuotedPostImage.isInitialized &&
-                    ::likeSection.isInitialized &&
-                    ::likeButtonIcon.isInitialized &&
-                    ::likesCount.isInitialized &&
-                    ::commentSection.isInitialized &&
-                    ::commentButtonIcon.isInitialized &&
-                    ::commentCount.isInitialized &&
-                    ::favoriteSection.isInitialized &&
-                    ::favoritesButton.isInitialized &&
-                    ::favoriteCounts.isInitialized &&
-                    ::retweetSection.isInitialized &&
-                    ::repostPost.isInitialized &&
-                    ::repostCount.isInitialized &&
-                    ::shareSection.isInitialized &&
-                    ::shareButtonIcon.isInitialized &&
-                    ::shareCount.isInitialized &&
-                    ::followButton.isInitialized  // Add this line
-        } catch (e: Exception) {
-            Log.e(TAG, "Views initialization check failed: ${e.message}")
-            false
-        }
-    }
-
-    private fun initializeViews(view: View) {
-        itemView = view
-        try {
-            _binding?.let { safeBinding ->
-                cancelButton = safeBinding.cancelButton
-                headerTitle = safeBinding.headerTitle
-                headerMenuButton = safeBinding.headerMenuButton
-                quotedPostCard = safeBinding.quotedPostCard
-                originalPostContainer = safeBinding.originalPostContainer
-                originalPosterProfileImage = safeBinding.originalPosterProfileImage
-                originalPosterName = safeBinding.originalPosterName
-                tvQuotedUserHandle = safeBinding.tvQuotedUserHandle
-                dateTime = safeBinding.dateTime
-                originalPostText = safeBinding.originalPostText
-                tvQuotedHashtags = safeBinding.tvQuotedHashtags
-                mixedFilesCardView = safeBinding.mixedFilesCardView
-                originalFeedImage = safeBinding.originalFeedImage
-                multipleAudiosContainer = safeBinding.multipleAudiosContainer
-                recyclerViews = safeBinding.recyclerView
-                ivQuotedPostImage = safeBinding.ivQuotedPostImage
-
-                likeSection = safeBinding.likeLayout
-                likeButtonIcon = safeBinding.likeButtonIcon
-                likesCount = safeBinding.likesCount
-                commentSection = safeBinding.commentLayout
-                commentButtonIcon = safeBinding.commentButtonIcon
-                commentCount = safeBinding.commentCount
-                favoriteSection = safeBinding.favoriteSection
-                favoritesButton = safeBinding.favoritesButton
-                favoriteCounts = safeBinding.favoriteCounts
-                retweetSection = safeBinding.repostLayout
-                repostPost = safeBinding.repostPost
-                repostCount = safeBinding.repostCount
-                shareSection = safeBinding.shareLayout
-                shareButtonIcon = safeBinding.shareButton
-                shareCount = safeBinding.shareCount
-
-                followButton = safeBinding.followButton  // Add this line
-
-                Log.d(TAG, "All views initialized successfully")
-            } ?: run {
-                Log.e(TAG, "Binding is null, cannot initialize views")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error initializing views: ${e.message}", e)
-        }
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun setupBackNavigation() {
-        val callback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                cleanupAndGoBack()
-            }
-        }
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun cleanupAndGoBack() {
-        // IMMEDIATE: Go back first - this is the priority
-        try {
-            if (isAdded && !parentFragmentManager.isStateSaved) {
-                parentFragmentManager.popBackStackImmediate()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error popping back stack", e)
-            // If immediate fails, try regular popBackStack
-            parentFragmentManager.popBackStack()
-        }
-
-        // Everything else happens AFTER we're already going back
-        view?.post {
-            // Clear focus
-            _binding?.replyInput?.clearFocus()
-
-            // Hide keyboard
-            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-            imm?.hideSoftInputFromWindow(view?.windowToken, 0)
-
-            // Restore system bars
-            activity?.let { act ->
-                WindowCompat.setDecorFitsSystemWindows(act.window, true)
-                WindowInsetsControllerCompat(act.window, act.window.decorView)
-                    .show(WindowInsetsCompat.Type.systemBars())
-
-                EventBus.getDefault().post(ShowAppBar(true))
-                EventBus.getDefault().post(ShowBottomNav(true))
-            }
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d(TAG, "onDestroy: Cleanup")
     }
 
     private fun showRepostHeader(post: Post) {
