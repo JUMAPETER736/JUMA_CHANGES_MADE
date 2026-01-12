@@ -31,10 +31,19 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:paddingStart="1dp"
-                android:paddingEnd="12dp"
+                android:paddingEnd="10dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:background="?android:attr/selectableItemBackgroundBorderless">
+
+                <ImageView
+                    android:layout_marginLeft="@dimen/caption_text_size"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/baseline_arrow_back_ios_24"
+                    android:contentDescription="Back"
+                    app:tint="@color/white" />
+
             </LinearLayout>
 
             <!-- Search Input in Toolbar -->
@@ -43,7 +52,7 @@
                 android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="1dp"
                 android:autofillHints="shorts"
                 android:background="@drawable/search_input_border"
                 android:hint="Search..."
