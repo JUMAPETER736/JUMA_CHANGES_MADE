@@ -250,7 +250,9 @@ class UniversalSearchActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
         binding = ActivityUniversalSearchBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -269,10 +271,124 @@ class UniversalSearchActivity : AppCompatActivity() {
         setupFilters()
         loadRecentUsers()
 
-        // ===== LOAD ALL DATA ONCE ON STARTUP =====
+        // Load recent users immediately (they'll show instantly from cache if available)
+        loadRecentUsers()
+
+        // Start loading all data in background for instant search
         loadAllDataOnce()
     }
 
+// Add this to your setupSearch() function in UniversalSearchActivity
+
+    private fun setupSearch() {
+        // Add search icon click listener
+        binding.searchIcon.setOnClickListener {
+            val query = binding.searchEditText.text.toString().trim()
+
+            if (query.isEmpty()) {
+                // Show recent users and their posts
+                showRecentUsersAndPosts()
+            } else {
+                // Perform normal search
+                performSearch(query)
+                hideKeyboard()
+                binding.searchEditText.clearFocus()
+            }
+        }
+
+        binding.searchEditText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                performSearch(binding.searchEditText.text.toString().trim())
+                hideKeyboard()
+                binding.searchEditText.clearFocus()
+                true
+            } else false
+        }
+
+        binding.searchEditText.addTextChangedListener(afterTextChanged = { editable ->
+            val query = editable.toString().trim()
+            searchJob?.cancel()
+
+            if (query.isEmpty()) {
+                binding.filterChipsGroup.visibility = View.GONE
+                binding.noResultsText.visibility = View.GONE
+                loadRecentUsers()
+            } else {
+                binding.filterChipsGroup.visibility = View.VISIBLE
+                searchJob = lifecycleScope.launch {
+                    delay(50)
+                    performSearch(query)
+                }
+            }
+        })
+    }
+
+    // Add this new function to show recent users and their posts
+    private fun showRecentUsersAndPosts() {
+        if (!isDataLoaded) {
+            // If data isn't loaded yet, show loading and trigger load
+            binding.noResultsText.text = "Loading..."
+            binding.noResultsText.visibility = View.VISIBLE
+            loadAllDataOnce()
+
+            // Wait for data to load then show results
+            lifecycleScope.launch {
+                // Poll until data is loaded (with timeout)
+                var attempts = 0
+                while (!isDataLoaded && attempts < 50) { // 5 seconds max
+                    delay(100)
+                    attempts++
+                }
+
+                if (isDataLoaded) {
+                    binding.noResultsText.visibility = View.GONE
+                    displayRecentUsersAndPosts()
+                } else {
+                    binding.noResultsText.text = "Failed to load data. Please try again."
+                }
+            }
+        } else {
+            // Data already loaded, show immediately
+            displayRecentUsersAndPosts()
+        }
+    }
+
+    // Add this function to display recent users and their posts
+    private fun displayRecentUsersAndPosts() {
+        val items = mutableListOf<Any>()
+
+        // Add recent users section
+        if (cachedRecentUsers.isNotEmpty()) {
+            items.add("PEOPLE_HEADER")
+            items.addAll(cachedRecentUsers.take(5)) // Show top 5 recent users
+
+            if (cachedRecentUsers.size > 5) {
+                items.add("SEE_ALL_PEOPLE")
+            }
+        }
+
+        // Add recent posts section
+        val recentPosts = getRecentUsersPosts().take(20)
+        if (recentPosts.isNotEmpty()) {
+            items.add("RECENT_POSTS_HEADER")
+            items.addAll(recentPosts)
+
+            if (getRecentUsersPosts().size > 20) {
+                items.add("SEE_ALL_RECENT_POSTS")
+            }
+        }
+
+        if (items.isEmpty()) {
+            binding.noResultsText.text = "No recent searches"
+            binding.noResultsText.visibility = View.VISIBLE
+            searchAdapter.submitList(emptyList())
+        } else {
+            binding.noResultsText.visibility = View.GONE
+            searchAdapter.submitList(items)
+            // Make sure we're using linear layout for this view
+            binding.searchResultsRecyclerView.layoutManager = LinearLayoutManager(this)
+        }
+    }
 
     // ===== ALSO UPDATE THE PERFORM SEARCH TO HANDLE EMPTY QUERIES BETTER =====
     private fun performSearch(query: String) {
@@ -1238,9 +1354,9 @@ class SearchUserNameAdapter(
     private val onUserClicked: (Author) -> Unit,
     private val onPostClicked: (Post) -> Unit = {},
     private val onChatClicked: (DialogEntity) -> Unit = {},
-    var onRecentPostsSeeAllClicked: (() -> Unit)? = null,  // ADD THIS
-    var onPeopleSeeAllClicked: (() -> Unit)? = null,       // Optional
-    var onShortsSeeAllClicked: (() -> Unit)? = null,        // Optional
+    var onRecentPostsSeeAllClicked: (() -> Unit)? = null,
+    var onPeopleSeeAllClicked: (() -> Unit)? = null,
+    var onShortsSeeAllClicked: (() -> Unit)? = null,
     var onPostsSeeAllClicked: (() -> Unit)? = null
 
 ) : ListAdapter<Any, RecyclerView.ViewHolder>(SearchDiffCallback())
@@ -1575,12 +1691,43 @@ class SearchUserNameAdapter(
         override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean = oldItem == newItem
     }
 
-    inner class NoBusinessViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val messageText: TextView = itemView.findViewById(R.id.no_business_message)
+    // SeeAllViewHolder
+    private class SeeAllViewHolder(private val itemView: View, private val onSeeAllClick: ((String) -> Unit)? = null) : RecyclerView.ViewHolder(itemView) {
+        private val seeAllText: TextView = itemView.findViewById(R.id.seeAllText)
 
-        @SuppressLint("SetTextI18n")
-        fun bind(username: String) {
-            messageText.text = "@$username does not have a Business Profile"
+        fun bind(type: String) {
+            seeAllText.text = when (type) {
+                "SEE_ALL_PEOPLE" -> "See all people"
+                "SEE_ALL_SHORTS" -> "See all shorts"
+                "SEE_ALL_POSTS" -> "See all posts"
+                "SEE_ALL_RECENT_POSTS" -> "See all recent posts"
+                else -> "See all"
+            }
+
+            // Set click listener
+            itemView.setOnClickListener {
+                onSeeAllClick?.invoke(type)
+            }
+        }
+    }
+
+    // HeaderViewHolder
+    private class HeaderViewHolder(private val view: View) : RecyclerView.ViewHolder(view) {
+        private val headerText: TextView = view.findViewById(R.id.headerText)
+
+        fun bind(headerType: String) {
+            headerText.text = when (headerType) {
+                "RECENT_HEADER" -> "Recent Searches"
+                "SEARCH_HEADER" -> "Search Results"
+                "PEOPLE_HEADER" -> "People"
+                "SHORTS_HEADER" -> "Shorts"
+                "FEED_HEADER" -> "Feed"
+                "BUSINESS_HEADER" -> "Business"
+                "CHATS_HEADER" -> "Chats"
+                "USER_CONTENT_HEADER" -> "Content"
+                "RECENT_POSTS_HEADER" -> "Recent Posts"  // ADD THIS
+                else -> ""
+            }
         }
     }
 
@@ -6223,46 +6370,6 @@ class SearchUserNameAdapter(
 
     }
 
-    // SeeAllViewHolder
-    private class SeeAllViewHolder(private val itemView: View, private val onSeeAllClick: ((String) -> Unit)? = null
-    ) : RecyclerView.ViewHolder(itemView) {
-        private val seeAllText: TextView = itemView.findViewById(R.id.seeAllText)
-
-        fun bind(type: String) {
-            seeAllText.text = when (type) {
-                "SEE_ALL_PEOPLE" -> "See all people"
-                "SEE_ALL_SHORTS" -> "See all shorts"
-                "SEE_ALL_POSTS" -> "See all posts"
-                "SEE_ALL_RECENT_POSTS" -> "See all recent posts"
-                else -> "See all"
-            }
-
-            // Set click listener
-            itemView.setOnClickListener {
-                onSeeAllClick?.invoke(type)
-            }
-        }
-    }
-
-    // HeaderViewHolder
-    private class HeaderViewHolder(private val view: View) : RecyclerView.ViewHolder(view) {
-        private val headerText: TextView = view.findViewById(R.id.headerText)
-
-        fun bind(headerType: String) {
-            headerText.text = when (headerType) {
-                "RECENT_HEADER" -> "Recent Searches"
-                "SEARCH_HEADER" -> "Search Results"
-                "PEOPLE_HEADER" -> "People"
-                "SHORTS_HEADER" -> "Shorts"
-                "FEED_HEADER" -> "Feed"
-                "BUSINESS_HEADER" -> "Business"
-                "CHATS_HEADER" -> "Chats"
-                "USER_CONTENT_HEADER" -> "Content"
-                "RECENT_POSTS_HEADER" -> "Recent Posts"  // ADD THIS
-                else -> ""
-            }
-        }
-    }
 
     // LoadingViewHolder
     private class LoadingViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -8590,7 +8697,14 @@ class SearchUserNameAdapter(
         override fun getItemCount(): Int = mediaUrls.size
     }
 
+    inner class NoBusinessViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val messageText: TextView = itemView.findViewById(R.id.no_business_message)
 
+        @SuppressLint("SetTextI18n")
+        fun bind(username: String) {
+            messageText.text = "@$username does not have a Business Profile"
+        }
+    }
 }
 
 

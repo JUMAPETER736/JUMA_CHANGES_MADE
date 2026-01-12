@@ -864,7 +864,11 @@ interface IFlashapi {
     @DELETE("business/catalogue/products/{productId}")
     suspend fun deleteProduct(@Path("productId") productId: String): Response<DeleteProductResponse>
 
-    
+
+    /////////////////////////////
+    /////////////////////////////
+
+
     /* ============================================================
     * AUTHENTICATION
     * ============================================================ */
