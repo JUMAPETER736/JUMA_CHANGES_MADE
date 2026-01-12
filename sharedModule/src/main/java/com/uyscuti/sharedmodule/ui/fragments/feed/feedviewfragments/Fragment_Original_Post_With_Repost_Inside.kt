@@ -15,6 +15,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -33,8 +34,13 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.activity.OnBackPressedCallback
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.media3.common.util.UnstableApi
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File
 import kotlin.collections.isNotEmpty
@@ -42,10 +48,14 @@ import com.uyscuti.social.network.api.response.getfeedandresposts.Thumbnail
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.google.android.material.card.MaterialCardView
 import com.uyscuti.sharedmodule.databinding.FragmentOriginalPostWithRepostInsideBinding
+import com.uyscuti.sharedmodule.model.ShowAppBar
+import com.uyscuti.sharedmodule.model.ShowBottomNav
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
 import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.AudioDuration
 import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.Duration
+import org.greenrobot.eventbus.EventBus
 
 
 private const val TAG = "Fragment_Original_Post_With_Repost_Inside"
@@ -317,11 +327,19 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     private fun setupClickListeners() {
         // Header click listeners
-        backButton.setOnClickListener { handleBackButtonClick() }
-        headerMenuButton.setOnClickListener { handleMenuButtonClick() }
+        backButton.setOnClickListener {
+            Log.d(TAG, "Cancel button clicked")
+            cleanupAndGoBack()
+        }
+
+        headerMenuButton.setOnClickListener {
+            handleMenuButtonClick()
+        }
 
         // User interaction click listeners
-        followButton.setOnClickListener { handleFollowButtonClick() }
+        followButton.setOnClickListener {
+            handleFollowButtonClick()
+        }
 
         // Post click listeners
         repostContainer.setOnClickListener { handleMainPostClick() }
@@ -341,6 +359,40 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         // ADD THESE NEW CLICK LISTENERS FOR DOCUMENT FILES
         originalFeedImages.setOnClickListener { handleRepostFileClick() }
         originalFeedImage.setOnClickListener { handleOriginalFileClick() }
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun cleanupAndGoBack() {
+        // IMMEDIATE: Go back first - this is the priority
+        try {
+            if (isAdded && !parentFragmentManager.isStateSaved) {
+                parentFragmentManager.popBackStackImmediate()
+            }
+        } catch (e: Exception) {
+            Log.e(Fragment_Edit_Post_To_Repost.Companion.TAG, "Error popping back stack", e)
+            // If immediate fails, try regular popBackStack
+            parentFragmentManager.popBackStack()
+        }
+
+        // Everything else happens AFTER we're already going back
+        view?.post {
+            // Clear focus
+
+
+            // Hide keyboard
+            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.hideSoftInputFromWindow(view?.windowToken, 0)
+
+            // Restore system bars
+            activity?.let { act ->
+                WindowCompat.setDecorFitsSystemWindows(act.window, true)
+                WindowInsetsControllerCompat(act.window, act.window.decorView)
+                    .show(WindowInsetsCompat.Type.systemBars())
+
+                EventBus.getDefault().post(ShowAppBar(true))
+                EventBus.getDefault().post(ShowBottomNav(true))
+            }
+        }
     }
 
     private fun handleRepostFileClick() {
@@ -2740,13 +2792,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         recyclerView.visibility = View.GONE
     }
 
-    private fun handleBackButtonClick() {
-        if (parentFragmentManager.backStackEntryCount > 0) {
-            parentFragmentManager.popBackStack()
-        } else {
-            requireActivity().finish()
-        }
-    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

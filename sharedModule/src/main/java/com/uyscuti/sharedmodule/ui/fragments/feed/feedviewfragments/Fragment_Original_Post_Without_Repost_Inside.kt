@@ -161,6 +161,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private lateinit var cancelButton: ImageView
     private lateinit var headerTitle: TextView
     private lateinit var headerMenuButton: ImageView
+    private var isNavigatingBack = false
 
     // Original Post Views
     private lateinit var quotedPostCard: CardView
@@ -400,7 +401,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
         }
     }
-
 
     private var onMultipleFilesClickListener:
             OnMultipleFilesClickListener? = null
@@ -648,7 +648,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         setupInitialFollowButtonState(data)
         cancelButton.setOnClickListener {
             Log.d(TAG, "Cancel button clicked")
-            it.isEnabled = false
             cleanupAndGoBack()
         }
 
@@ -736,6 +735,40 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
+    @OptIn(UnstableApi::class)
+    private fun cleanupAndGoBack() {
+        // IMMEDIATE: Go back first - this is the priority
+        try {
+            if (isAdded && !parentFragmentManager.isStateSaved) {
+                parentFragmentManager.popBackStackImmediate()
+            }
+        } catch (e: Exception) {
+            Log.e(Fragment_Edit_Post_To_Repost.Companion.TAG, "Error popping back stack", e)
+            // If immediate fails, try regular popBackStack
+            parentFragmentManager.popBackStack()
+        }
+
+        // Everything else happens AFTER we're already going back
+        view?.post {
+            // Clear focus
+            _binding?.replyInput?.clearFocus()
+
+            // Hide keyboard
+            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.hideSoftInputFromWindow(view?.windowToken, 0)
+
+            // Restore system bars
+            activity?.let { act ->
+                WindowCompat.setDecorFitsSystemWindows(act.window, true)
+                WindowInsetsControllerCompat(act.window, act.window.decorView)
+                    .show(WindowInsetsCompat.Type.systemBars())
+
+                EventBus.getDefault().post(ShowAppBar(true))
+                EventBus.getDefault().post(ShowBottomNav(true))
+            }
+        }
+    }
+
     private fun setupBackPressHandler() {
         requireActivity().onBackPressedDispatcher.addCallback(
             viewLifecycleOwner,
@@ -745,21 +778,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 }
             }
         )
-    }
-
-    private fun cleanupAndGoBack() {
-        try {
-            // Simply pop the back stack to go back
-            activity?.supportFragmentManager?.popBackStack()
-
-            // Show UI elements when leaving
-            EventBus.getDefault().post(HideAppBar(false))
-            EventBus.getDefault().post(HideBottomNav(false))
-
-            Log.d(TAG, "cleanupAndGoBack: Fragment removed from back stack")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in cleanupAndGoBack: ${e.message}", e)
-        }
     }
 
     override fun onDestroyView() {
