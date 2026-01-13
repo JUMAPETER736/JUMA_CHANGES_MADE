@@ -1209,7 +1209,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
 }
 
-// ========== DATA CLASSES ==========
 data class PostItem(
 
     val postId: String,
@@ -1217,7 +1216,6 @@ data class PostItem(
     val username: String?,
     val authorName: String?,
     val avatarUrl: String?,
-    val isVerified: Boolean = false,
     val audioUrl: String?,
     val audioThumbnailUrl: String?,
     val videoUrl: String?,
@@ -1233,7 +1231,6 @@ data class PostItem(
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
-        parcel.readByte() != 0.toByte(),
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
@@ -1243,15 +1240,12 @@ data class PostItem(
         parcel.readString() ?: ""
     )
 
-
-
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(postId)
         parcel.writeString(userId)
         parcel.writeString(username)
         parcel.writeString(authorName)
         parcel.writeString(avatarUrl)
-        parcel.writeByte(if (isVerified) 1 else 0)
         parcel.writeString(audioUrl)
         parcel.writeString(audioThumbnailUrl)
         parcel.writeString(videoUrl)
