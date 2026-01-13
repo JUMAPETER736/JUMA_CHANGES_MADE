@@ -4043,15 +4043,26 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                         putStringArrayList("file_ids", ArrayList(fileIds))
                         val postItems = ArrayList<PostItem>()
                         files.forEachIndexed { index, file ->
+
                             val postItem = PostItem(
+                                postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                                userId = null,
+                                username = null,
+                                authorName = null,
+                                avatarUrl = null,
+                                isVerified = false,
+
                                 audioUrl = file.url,
                                 audioThumbnailUrl = null,
                                 videoUrl = file.url,
                                 videoThumbnailUrl = null,
-                                postId = fileIds.getOrNull(index) ?: "file_$index",
+
                                 data = "Post data for file $index",
-                                files = arrayListOf(file.url)
+                                files = arrayListOf(file.url),
+                                fileType = ""
                             )
+
                             postItems.add(postItem)
                         }
                         putParcelableArrayList("post_list", postItems)
@@ -4327,14 +4338,24 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                                 currentPostData?.fileNames?.find { it.fileId == fileId }?.fileName
                                     ?: ""
                             val postItem = PostItem(
+                                postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                                userId = null,
+                                username = null,
+                                authorName = null,
+                                avatarUrl = null,
+                                isVerified = false,
+
                                 audioUrl = file.url,
                                 audioThumbnailUrl = null,
-                                videoUrl = null,
+                                videoUrl = file.url,
                                 videoThumbnailUrl = null,
-                                postId = fileId ?: "audio_file_$index",
-                                data = "Audio file: $fileName",
-                                files = arrayListOf(file.url)
+
+                                data = "Post data for file $index",
+                                files = arrayListOf(file.url),
+                                fileType = ""
                             )
+
                             postItems.add(postItem)
                         }
                         putParcelableArrayList("post_list", postItems)
@@ -4644,15 +4665,26 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                         putStringArrayList("file_ids", ArrayList(fileIds))
                         val postItems = ArrayList<PostItem>()
                         files.forEachIndexed { index, file ->
+
                             val postItem = PostItem(
-                                audioUrl = null,
+                                postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                                userId = null,
+                                username = null,
+                                authorName = null,
+                                avatarUrl = null,
+                                isVerified = false,
+
+                                audioUrl = file.url,
                                 audioThumbnailUrl = null,
                                 videoUrl = file.url,
                                 videoThumbnailUrl = null,
-                                postId = fileIds.getOrNull(index) ?: "video_file_$index",
-                                data = "Video file $index",
-                                files = arrayListOf(file.url)
+
+                                data = "Post data for file $index",
+                                files = arrayListOf(file.url),
+                                fileType = ""
                             )
+
                             postItems.add(postItem)
                         }
                         putParcelableArrayList("post_list", postItems)
@@ -4913,15 +4945,26 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                             val fileId = fileIds.getOrNull(index)
                             val fileName =
                                 post?.fileNames?.find { it.fileId == fileId }?.fileName ?: ""
+
                             val postItem = PostItem(
-                                audioUrl = null,
+                                postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                                userId = null,
+                                username = null,
+                                authorName = null,
+                                avatarUrl = null,
+                                isVerified = false,
+
+                                audioUrl = file.url,
                                 audioThumbnailUrl = null,
-                                videoUrl = null,
+                                videoUrl = file.url,
                                 videoThumbnailUrl = null,
-                                postId = fileId ?: "document_file_$index",
-                                data = "Document file: $fileName",
-                                files = arrayListOf(file.url)
+
+                                data = "Post data for file $index",
+                                files = arrayListOf(file.url),
+                                fileType = ""
                             )
+
                             postItems.add(postItem)
                         }
                         putParcelableArrayList("post_list", postItems)
@@ -5638,15 +5681,26 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                             val fileType =
                                 currentPostData?.fileTypes?.find { it.fileId == fileId }?.fileType?.lowercase()
                                     ?: ""
+
                             val postItem = PostItem(
-                                audioUrl = if (fileType.contains("audio")) file.url else null,
+                                postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                                userId = null,
+                                username = null,
+                                authorName = null,
+                                avatarUrl = null,
+                                isVerified = false,
+
+                                audioUrl = file.url,
                                 audioThumbnailUrl = null,
-                                videoUrl = if (fileType.contains("video")) file.url else null,
-                                videoThumbnailUrl = currentPostData?.thumbnail?.find { it.fileId == fileId }?.thumbnailUrl,
-                                postId = fileId ?: "file_$index",
+                                videoUrl = file.url,
+                                videoThumbnailUrl = null,
+
                                 data = "Post data for file $index",
-                                files = arrayListOf(file.url)
+                                files = arrayListOf(file.url),
+                                fileType = ""
                             )
+
                             postItems.add(postItem)
                         }
                         putParcelableArrayList("post_list", postItems)
