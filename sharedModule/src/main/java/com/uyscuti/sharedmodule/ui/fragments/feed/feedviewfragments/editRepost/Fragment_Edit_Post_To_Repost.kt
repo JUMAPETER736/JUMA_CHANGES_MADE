@@ -4027,7 +4027,8 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                 context: Context,
                 currentIndex: Int,
                 files: List<com.uyscuti.social.network.api.response.posts.File>,
-                fileIds: List<String>
+                fileIds: List<String>,
+                post: Post
             ) {
                 val activity = getActivityFromContext(context)
                 if (activity != null) {
@@ -4044,24 +4045,27 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                         val postItems = ArrayList<PostItem>()
                         files.forEachIndexed { index, file ->
 
+                            val author = post.author
+                            val account = author?.account
+
                             val postItem = PostItem(
-                                postId = fileIds.getOrNull(index) ?: "file_$index",
-
-                                userId = null,
-                                username = null,
-                                authorName = null,
-                                avatarUrl = null,
-                                isVerified = false,
-
-                                audioUrl = file.url,
+                                postId = post._id,
+                                userId = author?._id,
+                                username = account?.username,
+                                authorName = listOfNotNull(
+                                    author?.firstName?.takeIf { it.isNotBlank() },
+                                    author?.lastName?.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").ifBlank { account?.username },
+                                avatarUrl = account?.avatar?.url,
+                                audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
-                                videoUrl = file.url,
+                                videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                                 videoThumbnailUrl = null,
-
-                                data = "Post data for file $index",
+                                data = post.content.orEmpty(),
                                 files = arrayListOf(file.url),
-                                fileType = ""
+                                fileType = file.url.substringAfterLast('.', "")
                             )
+
 
                             postItems.add(postItem)
                         }
@@ -4107,7 +4111,8 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                         context,
                         absoluteAdapterPosition,
                         data.files,
-                        data.fileIds as List<String>
+                        data.fileIds as List<String>,
+                        data
                     )
                     onMultipleFilesClickListener?.multipleFileClickListener(
                         absoluteAdapterPosition,
@@ -4120,7 +4125,8 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                         context,
                         absoluteAdapterPosition,
                         data.files,
-                        data.fileIds as List<String>
+                        data.fileIds as List<String>,
+                        data
                     )
                 }
                 materialCardView.setOnClickListener {
@@ -4128,7 +4134,8 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                         context,
                         absoluteAdapterPosition,
                         data.files,
-                        data.fileIds as List<String>
+                        data.fileIds as List<String>,
+                        data
                     )
                 }
 
@@ -4337,24 +4344,27 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                             val fileName =
                                 currentPostData?.fileNames?.find { it.fileId == fileId }?.fileName
                                     ?: ""
+                            val author = post.author
+                            val account = author?.account
+
                             val postItem = PostItem(
-                                postId = fileIds.getOrNull(index) ?: "file_$index",
-
-                                userId = null,
-                                username = null,
-                                authorName = null,
-                                avatarUrl = null,
-                                isVerified = false,
-
-                                audioUrl = file.url,
+                                postId = post._id,
+                                userId = author?._id,
+                                username = account?.username,
+                                authorName = listOfNotNull(
+                                    author?.firstName?.takeIf { it.isNotBlank() },
+                                    author?.lastName?.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").ifBlank { account?.username },
+                                avatarUrl = account?.avatar?.url,
+                                audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
-                                videoUrl = file.url,
+                                videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                                 videoThumbnailUrl = null,
-
-                                data = "Post data for file $index",
+                                data = post.content.orEmpty(),
                                 files = arrayListOf(file.url),
-                                fileType = ""
+                                fileType = file.url.substringAfterLast('.', "")
                             )
+
 
                             postItems.add(postItem)
                         }
@@ -4666,24 +4676,27 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                         val postItems = ArrayList<PostItem>()
                         files.forEachIndexed { index, file ->
 
+                            val author = post.author
+                            val account = author?.account
+
                             val postItem = PostItem(
-                                postId = fileIds.getOrNull(index) ?: "file_$index",
-
-                                userId = null,
-                                username = null,
-                                authorName = null,
-                                avatarUrl = null,
-                                isVerified = false,
-
-                                audioUrl = file.url,
+                                postId = post._id,
+                                userId = author?._id,
+                                username = account?.username,
+                                authorName = listOfNotNull(
+                                    author?.firstName?.takeIf { it.isNotBlank() },
+                                    author?.lastName?.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").ifBlank { account?.username },
+                                avatarUrl = account?.avatar?.url,
+                                audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
-                                videoUrl = file.url,
+                                videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                                 videoThumbnailUrl = null,
-
-                                data = "Post data for file $index",
+                                data = post.content.orEmpty(),
                                 files = arrayListOf(file.url),
-                                fileType = ""
+                                fileType = file.url.substringAfterLast('.', "")
                             )
+
 
                             postItems.add(postItem)
                         }
@@ -4946,24 +4959,27 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                             val fileName =
                                 post?.fileNames?.find { it.fileId == fileId }?.fileName ?: ""
 
+                            val author = post.author
+                            val account = author?.account
+
                             val postItem = PostItem(
-                                postId = fileIds.getOrNull(index) ?: "file_$index",
-
-                                userId = null,
-                                username = null,
-                                authorName = null,
-                                avatarUrl = null,
-                                isVerified = false,
-
-                                audioUrl = file.url,
+                                postId = post._id,
+                                userId = author?._id,
+                                username = account?.username,
+                                authorName = listOfNotNull(
+                                    author?.firstName?.takeIf { it.isNotBlank() },
+                                    author?.lastName?.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").ifBlank { account?.username },
+                                avatarUrl = account?.avatar?.url,
+                                audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
-                                videoUrl = file.url,
+                                videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                                 videoThumbnailUrl = null,
-
-                                data = "Post data for file $index",
+                                data = post.content.orEmpty(),
                                 files = arrayListOf(file.url),
-                                fileType = ""
+                                fileType = file.url.substringAfterLast('.', "")
                             )
+
 
                             postItems.add(postItem)
                         }
@@ -5661,7 +5677,8 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                 context: Context,
                 currentIndex: Int,
                 files: List<com.uyscuti.social.network.api.response.posts.File>,
-                fileIds: List<String>
+                fileIds: List<String>,
+                post: Post
             ) {
                 val activity = getActivityFromContext(context)
                 if (activity != null) {
@@ -5682,24 +5699,27 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                                 currentPostData?.fileTypes?.find { it.fileId == fileId }?.fileType?.lowercase()
                                     ?: ""
 
+                            val author = post.author
+                            val account = author?.account
+
                             val postItem = PostItem(
-                                postId = fileIds.getOrNull(index) ?: "file_$index",
-
-                                userId = null,
-                                username = null,
-                                authorName = null,
-                                avatarUrl = null,
-                                isVerified = false,
-
-                                audioUrl = file.url,
+                                postId = post._id,
+                                userId = author?._id,
+                                username = account?.username,
+                                authorName = listOfNotNull(
+                                    author?.firstName?.takeIf { it.isNotBlank() },
+                                    author?.lastName?.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").ifBlank { account?.username },
+                                avatarUrl = account?.avatar?.url,
+                                audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
-                                videoUrl = file.url,
+                                videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                                 videoThumbnailUrl = null,
-
-                                data = "Post data for file $index",
+                                data = post.content.orEmpty(),
                                 files = arrayListOf(file.url),
-                                fileType = ""
+                                fileType = file.url.substringAfterLast('.', "")
                             )
+
 
                             postItems.add(postItem)
                         }
@@ -5793,7 +5813,8 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                 val clickListener = View.OnClickListener {
                     navigateToTappedFilesFragment(
                         context,
-                        actualFileIndex, data.files, data.fileIds as List<String>
+                        actualFileIndex, data.files, data.fileIds as List<String>,
+                        data
                     )
                     onMultipleFilesClickListener?.multipleFileClickListener(
                         actualFileIndex, data.files, data.fileIds as List<String>
