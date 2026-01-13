@@ -421,55 +421,61 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    private fun loadAuthorDetails(userId: String) {
-        // Show loading state
+    private fun loadAuthorDetails(post: PostItem) {
+        val userId = post.userId
+        val username = post.username
+
+        if (userId.isNullOrEmpty() && username.isNullOrEmpty()) {
+            Log.w(TAG, "No userId or username available")
+            showDefaultAuthorInfo()
+            return
+        }
+
         showAuthorLoadingState()
 
-        // Fetch from API using Retrofit
         lifecycleScope.launch(Dispatchers.IO) {
             try {
+                // Prefer userId if your API supports it
+                val response = when {
+                    !username.isNullOrEmpty() ->
+                        apiService.getOtherUsersProfileByUsername(username)
 
-                // If you have userId, you might need to fetch by ID instead
-                val post = postList?.find { it.postId == userId }
-                val username = post?.postId?: return@launch
-
-                val response = retrofitInstance.apiService.getOtherUsersProfileByUsername(username)
+                    else ->
+                        apiService.getOtherUsersProfileByUsername(userId!!)
+                }
 
                 if (response.isSuccessful) {
                     val profileData = response.body()?.data
-
                     if (profileData != null) {
-                        // Extract author data
-                        val firstName = extractFieldValue(profileData, "firstName", "first_name") ?: ""
-                        val lastName = extractFieldValue(profileData, "lastName", "last_name") ?: ""
-                        authorName = "$firstName $lastName".trim().ifEmpty { username }
-                        authorUsername = extractFieldValue(profileData, "username") ?: username
-                        authorAvatarUrl = extractNestedFieldValue(profileData, "account", "avatar", "url")
-                        isAuthorVerified = extractFieldValue(profileData, "isVerified")?.toBoolean() ?: false
+                        val firstName =
+                            extractFieldValue(profileData, "firstName", "first_name") ?: ""
+                        val lastName =
+                            extractFieldValue(profileData, "lastName", "last_name") ?: ""
 
-                        // Update UI on main thread
+                        authorName = "$firstName $lastName".trim()
+                        authorUsername =
+                            extractFieldValue(profileData, "username")
+                        authorAvatarUrl =
+                            extractNestedFieldValue(profileData, "account", "avatar", "url")
+                        isAuthorVerified =
+                            extractFieldValue(profileData, "isVerified")?.toBoolean() ?: false
+
                         withContext(Dispatchers.Main) {
                             updateAuthorUI()
                         }
                     } else {
-                        withContext(Dispatchers.Main) {
-                            showDefaultAuthorInfo()
-                        }
+                        withContext(Dispatchers.Main) { showDefaultAuthorInfo() }
                     }
                 } else {
-                    Log.e(TAG, "API error: ${response.code()}")
-                    withContext(Dispatchers.Main) {
-                        showDefaultAuthorInfo()
-                    }
+                    withContext(Dispatchers.Main) { showDefaultAuthorInfo() }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error fetching author details", e)
-                withContext(Dispatchers.Main) {
-                    showDefaultAuthorInfo()
-                }
+                Log.e(TAG, "Error loading author", e)
+                withContext(Dispatchers.Main) { showDefaultAuthorInfo() }
             }
         }
     }
+
 
     private fun showAuthorLoadingState() {
         // Update hidden TextViews
@@ -545,7 +551,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
         // Load author details using the userId from the post
         post.postId?.let { userId ->
-            loadAuthorDetails(userId)
+            loadAuthorDetails(post)
         } ?: run {
             Log.w(TAG, "No userId found for post $postId")
             showDefaultAuthorInfo()
@@ -573,30 +579,25 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     private fun navigateToAuthorProfile() {
         val post = postList?.getOrNull(viewPager.currentItem) ?: return
 
-        post.postId?.let { userId ->
-            // Create intent to open OtherUserProfileAccount
-            val intent = android.content.Intent(requireContext(), OtherUserProfileAccount::class.java)
-            intent.putExtra("extra_user_id", userId)
-            intent.putExtra("extra_username", authorUsername?.removePrefix("@") ?: "")
-            intent.putExtra("extra_user_name", authorName ?: "")
-            intent.putExtra("user_full_name", authorName ?: "")
-            intent.putExtra("extra_avatar_url", authorAvatarUrl)
+        val userId = post.userId
+        val username = post.username
 
-            startActivity(intent)
-            requireActivity().overridePendingTransition(
-                R.anim.slide_in_right,
-                R.anim.slide_out_left
-            )
-
-            // Optional: Add haptic feedback
-            view?.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK)
-
-            Log.d(TAG, "Navigating to profile - userId: $userId, username: $authorUsername")
-        } ?: run {
-            Toast.makeText(requireContext(), "User information not available", Toast.LENGTH_SHORT).show()
-            Log.w(TAG, "Cannot navigate to profile - userId is null")
+        if (userId == null) {
+            Toast.makeText(requireContext(), "User not available", Toast.LENGTH_SHORT).show()
+            return
         }
+
+        val intent = Intent(requireContext(), OtherUserProfileAccount::class.java).apply {
+            putExtra("extra_user_id", userId)
+            putExtra("extra_username", username ?: "")
+            putExtra("extra_user_name", authorName ?: "")
+            putExtra("user_full_name", authorName ?: "")
+            putExtra("extra_avatar_url", authorAvatarUrl)
+        }
+
+        startActivity(intent)
     }
+
 
     private fun loadInitialPost() {
         postList?.let { posts ->
@@ -606,7 +607,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
                 // Load author details
                 post.postId?.let { userId ->
-                    loadAuthorDetails(userId)
+                    loadAuthorDetails(post)
                 }
 
                 loadPostMetrics(postId!!)
@@ -648,7 +649,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
                     // Load author details for new post
                     post?.postId?.let { userId ->
-                        loadAuthorDetails(userId)
+                        loadAuthorDetails(post)
                     }
 
                     postId?.let {
@@ -1227,7 +1228,7 @@ data class PostItem(
 ) : Parcelable {
 
     constructor(parcel: Parcel) : this(
-        parcel.readString() ?: "",              
+        parcel.readString() ?: "",
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
