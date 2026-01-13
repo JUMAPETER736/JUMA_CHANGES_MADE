@@ -431,7 +431,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             return
         }
 
-        showAuthorLoadingState()
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -477,20 +476,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
 
-    private fun showAuthorLoadingState() {
-        // Update hidden TextViews
-        authorNameTextView?.text = "Loading..."
-        authorUsernameTextView?.text = ""
-
-        // Update visible header TextViews
-        val headerFullName = view?.findViewById<TextView>(R.id.fullNameTextView)
-        val headerUsername = view?.findViewById<TextView>(R.id.usernameTextView)
-        val verifiedBadge = view?.findViewById<ImageView>(R.id.verifiedBadge)
-
-        headerFullName?.text = "Loading..."
-        headerUsername?.text = ""
-        verifiedBadge?.visibility = View.GONE
-    }
 
     private fun updateAuthorUI() {
         // Set author name in BOTH the hidden TextView AND the visible header
