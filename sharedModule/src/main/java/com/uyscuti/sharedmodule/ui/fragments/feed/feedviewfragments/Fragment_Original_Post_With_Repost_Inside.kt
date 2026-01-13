@@ -1,5 +1,6 @@
 package com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments
 
+import android.R.attr.data
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.ContextWrapper
@@ -61,6 +62,8 @@ import org.greenrobot.eventbus.EventBus
 private const val TAG = "Fragment_Original_Post_With_Repost_Inside"
 
 class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
+
+    private lateinit var feedPost: com.uyscuti.social.network.api.response.posts.Post
 
     // Views from header_toolbar.xml
     private lateinit var backButton: ImageButton
@@ -155,7 +158,8 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         context: Context,
         currentIndex: Int,
         files: List<File>,
-        fileIds: List<String>
+        fileIds: List<String>,
+        post: Post
     ) {
         val activity = getActivityFromContext(context)
         if (activity != null) {
@@ -179,24 +183,27 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                 val postItems = ArrayList<PostItem>()
                 files.forEachIndexed { index, file ->
 
+                    val author = post.author
+                    val account = author?.account
+
                     val postItem = PostItem(
-                        postId = fileIds.getOrNull(index) ?: "file_$index",
-
-                        userId = null,
-                        username = null,
-                        authorName = null,
-                        avatarUrl = null,
-                        isVerified = false,
-
-                        audioUrl = file.url,
+                        postId = post._id,
+                        userId = author?._id,
+                        username = account?.username,
+                        authorName = listOfNotNull(
+                            author?.firstName?.takeIf { it.isNotBlank() },
+                            author?.lastName?.takeIf { it.isNotBlank() }
+                        ).joinToString(" ").ifBlank { account?.username },
+                        avatarUrl = account?.avatar?.url,
+                        audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                         audioThumbnailUrl = null,
-                        videoUrl = file.url,
+                        videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                         videoThumbnailUrl = null,
-
-                        data = "Post data for file $index",
+                        data = post.content.orEmpty(),
                         files = arrayListOf(file.url),
-                        fileType = ""
+                        fileType = file.url.substringAfterLast('.', "")
                     )
+
 
                     postItems.add(postItem)
                 }
@@ -425,7 +432,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                 }
                 val fileIds = currentPost.files.map { it ?: "unknown_id" }
                 navigateToTappedFilesFragment(requireContext(),
-                    0, files, fileIds as List<String>)
+                    0, files, fileIds as List<String>, currentPost )
             }
         }
     }
@@ -446,7 +453,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                 }
 
                 val fileIds = originalPost.files.map { it.fileId ?: "unknown_id" }
-                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds)
+                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds, post!!)
             }
         }
     }
@@ -471,7 +478,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                     }
                 }
                 val fileIds = currentPost.files.map { it ?: "unknown_id" }
-                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds as List<String>)
+                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds as List<String>,  currentPost)
             }
         }
     }
@@ -518,7 +525,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                 }
 
                 val fileIds = files.map { it.fileId }
-                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds)
+                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds, post!!)
             }
         }
     }
