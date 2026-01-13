@@ -202,7 +202,8 @@ class FeedMixedFilesViewAdapter(
             context: Context,
             currentIndex: Int,
             files: ArrayList<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
@@ -313,7 +314,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
 
                 // Optional: Still call the original listener if you need it for other purposes
@@ -331,7 +333,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -341,7 +344,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -611,7 +615,8 @@ class FeedMixedFilesViewAdapter(
             context: Context,
             currentIndex: Int,
             files: ArrayList<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
@@ -988,7 +993,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
 
                 // Optional: Still call the original listener if you need it for other purposes
@@ -1005,7 +1011,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -1015,7 +1022,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -1025,7 +1033,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -1035,7 +1044,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -1045,7 +1055,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
         }
@@ -1152,7 +1163,8 @@ class FeedMixedFilesViewAdapter(
             context: Context,
             currentIndex: Int,
             files: ArrayList<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
@@ -1249,7 +1261,8 @@ class FeedMixedFilesViewAdapter(
                     itemView.context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
                 onMultipleFilesClickListener?.multipleFileClickListener(
                     absoluteAdapterPosition,
@@ -1301,7 +1314,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
 
                 // Optional: Still call the original listener if you need it for other purposes
@@ -1318,7 +1332,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -1328,7 +1343,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -1338,7 +1354,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -1348,7 +1365,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -1358,7 +1376,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -1561,7 +1580,8 @@ class FeedMixedFilesViewAdapter(
             context: Context,
             currentIndex: Int,
             files: List<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
@@ -1735,7 +1755,7 @@ class FeedMixedFilesViewAdapter(
 
             // Set click listeners
             val clickListener = View.OnClickListener {
-                navigateToTappedFilesFragment(context, position, actualFiles, actualFileIds)
+                navigateToTappedFilesFragment(context, position, actualFiles, actualFileIds, data)
             }
             itemView.setOnClickListener(clickListener)
             pdfImageView.setOnClickListener(clickListener)
@@ -2093,7 +2113,8 @@ class FeedMixedFilesViewAdapter(
             context: Context,
             currentIndex: Int,
             files: ArrayList<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
@@ -2225,7 +2246,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     actualFileIndex,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -2234,7 +2256,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     actualFileIndex,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -2243,7 +2266,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     actualFileIndex,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -2252,7 +2276,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     actualFileIndex,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -2261,7 +2286,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     actualFileIndex,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -2270,7 +2296,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     actualFileIndex,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
@@ -2756,7 +2783,8 @@ class FeedMixedFilesViewAdapter(
             context: Context,
             currentIndex: Int,
             files: ArrayList<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
@@ -2967,7 +2995,8 @@ class FeedMixedFilesViewAdapter(
                     context,
                     actualFileIndex,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
