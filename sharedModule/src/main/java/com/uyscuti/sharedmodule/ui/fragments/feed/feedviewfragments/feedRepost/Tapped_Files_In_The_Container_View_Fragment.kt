@@ -72,6 +72,7 @@ import androidx.navigation.fragment.findNavController
 import android.widget.ImageButton
 import androidx.core.net.toUri
 import androidx.core.graphics.createBitmap
+import androidx.lifecycle.lifecycleScope
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.sharedmodule.model.GetShortFragments
@@ -80,7 +81,15 @@ import com.uyscuti.sharedmodule.model.HideBottomNav
 import com.uyscuti.sharedmodule.model.ShowAppBar
 import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
+import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import org.greenrobot.eventbus.EventBus
+import android.content.Intent
+import com.uyscuti.social.network.utils.LocalStorage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
 
 
 // ========== CONSTANTS ==========
@@ -112,6 +121,10 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             }
         }
     }
+
+    // Retrofit instance
+    private lateinit var retrofitInstance: RetrofitInstance
+    private lateinit var apiService: IFlashapi
 
     private lateinit var authorNameTextView: TextView
     private lateinit var authorUsernameTextView: TextView
@@ -187,16 +200,14 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     private var isNavigatingBack = false
 
 
-
-
-    // ========== LIFECYCLE METHODS ==========
+// ========== LIFECYCLE METHODS ==========
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         extractArguments()
         setupBackPressHandler()
         hideSystemBars()
-
+        initializeApiService()
     }
 
     override fun onCreateView(
@@ -211,18 +222,15 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
     // Call these in onViewCreated after setting up ViewPager
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?)  {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         hideSystemBars()
-        // setupSystemBarVisibilityListener()
 
         EventBus.getDefault().post(HideAppBar(true))
         EventBus.getDefault().post(HideBottomNav(true))
 
-
         // Initialize video components
-
         videoView = view.findViewById(R.id.videoView)
         videoProgressBar = view.findViewById(R.id.videoProgressBar)
 
@@ -271,9 +279,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         var isNavigating = false
 
         cancelButton.setOnClickListener {
-
-
-
             if (isNavigating) return@setOnClickListener
             isNavigating = true
 
@@ -284,14 +289,11 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                 // For Restore system bars
                 restoreSystemBars()
 
-                // setupSystemBarVisibilityListener()
-
                 // Show app bar if it was hidden
                 EventBus.getDefault().post(ShowAppBar(true))
                 EventBus.getDefault().post(ShowBottomNav(true))
 
                 // Use the activity's onBackPressedDispatcher for proper back navigation
-
                 requireActivity().onBackPressedDispatcher.onBackPressed()
 
             } catch (e: Exception) {
@@ -311,12 +313,17 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                 }, 100)
             }
         }
+    }
 
-
+    private fun initializeApiService() {
+        if (!::retrofitInstance.isInitialized) {
+            val localStorage = LocalStorage(requireContext())
+            retrofitInstance = RetrofitInstance(localStorage, requireContext())
+        }
+        apiService = retrofitInstance.apiService
     }
 
     private fun initializeAllViews(view: View) {
-
         authorNameTextView = view.findViewById(R.id.authorName)
         authorUsernameTextView = view.findViewById(R.id.authorUsername)
         authorAvatarImageView = view.findViewById(R.id.authorAvatar)
@@ -332,7 +339,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         videoView = view.findViewById(R.id.videoView)
         videoProgressBar = view.findViewById(R.id.videoProgressBar)
         videoThumbnail = view.findViewById(R.id.videoThumbnail)
-
 
         // Initialize UI components
         commentCountTextView = view.findViewById(R.id.commentCount)
@@ -370,7 +376,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
     private fun setupClickListeners() {
-
         // Click on avatar
         authorAvatarImageView.setOnClickListener {
             navigateToAuthorProfile()
@@ -413,37 +418,54 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-// ========== ADD THIS NEW METHOD TO FETCH AUTHOR DETAILS ==========
-
     private fun loadAuthorDetails(userId: String) {
-        // Show loading state (optional)
+        // Show loading state
         showAuthorLoadingState()
 
-        // Fetch from Firestore
-        val firestore = FirebaseFirestore.getInstance()
+        // Fetch from API using Retrofit
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                
+                // If you have userId, you might need to fetch by ID instead
+                val post = postList?.find { it.postId == userId }
+                val username = post?.postId?: return@launch
 
-        firestore.collection("users")
-            .document(userId)
-            .get()
-            .addOnSuccessListener { document ->
-                if (document != null && document.exists()) {
-                    // Extract author data
-                    authorName = document.getString("firstName") + " " + document.getString("lastName")
-                    authorUsername = document.getString("username")
-                    authorAvatarUrl = document.getString("profileImageUrl")
-                    isAuthorVerified = document.getBoolean("isVerified") ?: false
+                val response = retrofitInstance.apiService.getOtherUsersProfileByUsername(username)
 
-                    // Update UI with author details
-                    updateAuthorUI()
+                if (response.isSuccessful) {
+                    val profileData = response.body()?.data
+
+                    if (profileData != null) {
+                        // Extract author data
+                        val firstName = extractFieldValue(profileData, "firstName", "first_name") ?: ""
+                        val lastName = extractFieldValue(profileData, "lastName", "last_name") ?: ""
+                        authorName = "$firstName $lastName".trim().ifEmpty { username }
+                        authorUsername = extractFieldValue(profileData, "username") ?: username
+                        authorAvatarUrl = extractNestedFieldValue(profileData, "account", "avatar", "url")
+                        isAuthorVerified = extractFieldValue(profileData, "isVerified")?.toBoolean() ?: false
+
+                        // Update UI on main thread
+                        withContext(Dispatchers.Main) {
+                            updateAuthorUI()
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            showDefaultAuthorInfo()
+                        }
+                    }
                 } else {
-                    Log.w(TAG, "Author document does not exist for userId: $userId")
+                    Log.e(TAG, "API error: ${response.code()}")
+                    withContext(Dispatchers.Main) {
+                        showDefaultAuthorInfo()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching author details", e)
+                withContext(Dispatchers.Main) {
                     showDefaultAuthorInfo()
                 }
             }
-            .addOnFailureListener { exception ->
-                Log.e(TAG, "Error fetching author details", exception)
-                showDefaultAuthorInfo()
-            }
+        }
     }
 
     private fun showAuthorLoadingState() {
@@ -515,11 +537,11 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
     private fun loadPostContent(postId: String) {
-        // Fetch post data by ID from Firestore or local source
+        // Fetch post data by ID from your post list
         val post = postList?.find { it.postId == postId } ?: return
 
         // Load author details using the userId from the post
-        post.userId?.let { userId ->
+        post.postId?.let { userId ->
             loadAuthorDetails(userId)
         } ?: run {
             Log.w(TAG, "No userId found for post $postId")
@@ -544,17 +566,18 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         headerUsername?.setOnClickListener { navigateToAuthorProfile() }
     }
 
+    @OptIn(UnstableApi::class)
     private fun navigateToAuthorProfile() {
-        val post = postList?.get(viewPager.currentItem)
-        post?.userId?.let { userId ->
+        val post = postList?.getOrNull(viewPager.currentItem) ?: return
+
+        post.postId?.let { userId ->
             // Create intent to open OtherUserProfileAccount
-            val intent = Intent(requireContext(), OtherUserProfileAccount::class.java).apply {
-                putExtra("extra_user_id", userId)
-                putExtra("extra_username", authorUsername?.removePrefix("@") ?: "")
-                putExtra("extra_user_name", authorName ?: "")
-                putExtra("user_full_name", authorName ?: "")
-                putExtra("extra_avatar_url", authorAvatarUrl)
-            }
+            val intent = android.content.Intent(requireContext(), OtherUserProfileAccount::class.java)
+            intent.putExtra("extra_user_id", userId)
+            intent.putExtra("extra_username", authorUsername?.removePrefix("@") ?: "")
+            intent.putExtra("extra_user_name", authorName ?: "")
+            intent.putExtra("user_full_name", authorName ?: "")
+            intent.putExtra("extra_avatar_url", authorAvatarUrl)
 
             startActivity(intent)
             requireActivity().overridePendingTransition(
@@ -563,7 +586,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             )
 
             // Optional: Add haptic feedback
-            view?.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+            view?.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK)
 
             Log.d(TAG, "Navigating to profile - userId: $userId, username: $authorUsername")
         } ?: run {
@@ -579,7 +602,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                 postId = post.postId
 
                 // Load author details
-                post.userId?.let { userId ->
+                post.postId?.let { userId ->
                     loadAuthorDetails(userId)
                 }
 
@@ -594,7 +617,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-// ========== VIEWPAGER SETUP ==========
+    // ========== VIEWPAGER SETUP ==========
 
     private fun setupViewPager(view: View) {
         viewPager = view.findViewById(R.id.viewPager)
@@ -617,11 +640,11 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             pageChangeCallback = object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
                     Log.d(TAG, "Page selected: $position")
-                    val post = postList?.get(position)
+                    val post = postList?.getOrNull(position)
                     postId = post?.postId
 
                     // Load author details for new post
-                    post?.userId?.let { userId ->
+                    post?.postId?.let { userId ->
                         loadAuthorDetails(userId)
                     }
 
@@ -634,6 +657,48 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             }
 
             viewPager.registerOnPageChangeCallback(pageChangeCallback)
+        }
+    }
+
+    // ========== HELPER METHODS ==========
+
+    private fun extractFieldValue(obj: Any, vararg fieldNames: String): String? {
+        for (fieldName in fieldNames) {
+            try {
+                val field = obj.javaClass.getDeclaredField(fieldName)
+                field.isAccessible = true
+                val value = field.get(obj)
+                return when (value) {
+                    null -> null
+                    is String -> value
+                    else -> value.toString()
+                }
+            } catch (e: NoSuchFieldException) {
+                continue
+            } catch (e: Exception) {
+                Log.w(TAG, "Error accessing field '$fieldName': ${e.message}")
+                continue
+            }
+        }
+        return null
+    }
+
+    private fun extractNestedFieldValue(obj: Any, vararg fieldPath: String): String? {
+        try {
+            var currentObj: Any? = obj
+            for (i in 0 until fieldPath.size - 1) {
+                val field = currentObj?.javaClass?.getDeclaredField(fieldPath[i])
+                field?.isAccessible = true
+                currentObj = field?.get(currentObj)
+                if (currentObj == null) return null
+            }
+
+            val finalField = currentObj?.javaClass?.getDeclaredField(fieldPath.last())
+            finalField?.isAccessible = true
+            val value = finalField?.get(currentObj)?.toString()
+            return if (value != "null") value else null
+        } catch (e: Exception) {
+            return null
         }
     }
 
@@ -1138,7 +1203,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             else -> count.toString()
         }
     }
-    
+
 
 }
 
