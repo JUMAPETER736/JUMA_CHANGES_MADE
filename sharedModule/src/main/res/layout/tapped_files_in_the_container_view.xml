@@ -110,7 +110,7 @@
                 android:layout_toEndOf="@id/userProfileIcon"
                 android:layout_below="@id/cancelButton"
                 android:layout_marginStart="12dp"
-                android:text="Loading..."
+                android:text="Uy Scuti"
                 android:textColor="@android:color/white"
                 android:textSize="16sp"
                 android:textStyle="bold"
