@@ -171,15 +171,26 @@ class FeedRepostViewFileAdapter(
 
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
                             videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url)
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -505,16 +516,26 @@ class FeedRepostViewFileAdapter(
                     files.forEachIndexed { index, file ->
                         val fileId = fileIds.getOrNull(index)
                         val fileName = data?.fileNames?.find { it.fileId == fileId }?.fileName ?: ""
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
-                            videoUrl = null,
+                            videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileId ?: "audio_file_$index",
-                            data = "Audio file: $fileName",
+
+                            data = "Post data for file $index",
                             files = arrayListOf(file.url),
-                            fileType = "audio"
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -995,14 +1016,24 @@ class FeedRepostViewFileAdapter(
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
                             videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url)
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -1298,15 +1329,26 @@ class FeedRepostViewFileAdapter(
 
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
                             videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url)
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -1892,15 +1934,26 @@ class FeedRepostViewFileAdapter(
 
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
                             videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url)
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
