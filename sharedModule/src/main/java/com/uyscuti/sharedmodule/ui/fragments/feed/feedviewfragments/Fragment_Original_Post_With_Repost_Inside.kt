@@ -189,7 +189,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                     val postItem = PostItem(
                         postId = post._id,
                         userId = author?._id,
-                        username = account?.username,
+                        username = author.account.username,
                         authorName = listOfNotNull(
                             author?.firstName?.takeIf { it.isNotBlank() },
                             author?.lastName?.takeIf { it.isNotBlank() }

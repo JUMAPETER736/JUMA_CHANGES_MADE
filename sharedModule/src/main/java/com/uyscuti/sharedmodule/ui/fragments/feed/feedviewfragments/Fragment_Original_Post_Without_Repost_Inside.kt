@@ -3401,11 +3401,11 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         val postItem = PostItem(
                             postId = post._id,
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
-                            ).joinToString(" ").ifBlank { account?.username },
+                            ).joinToString(" ").ifBlank { author.account.username },
                             avatarUrl = account?.avatar?.url,
                             audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                             audioThumbnailUrl = null,
@@ -3806,13 +3806,13 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                         val postItem = PostItem(
                             postId = post._id,
-                            userId = author?._id,
-                            username = account?.username,
+                            userId = post.author._id,
+                            username = post.author.account.username,
                             authorName = listOfNotNull(
-                                author?.firstName?.takeIf { it.isNotBlank() },
-                                author?.lastName?.takeIf { it.isNotBlank() }
-                            ).joinToString(" ").ifBlank { account?.username },
-                            avatarUrl = account?.avatar?.url,
+                                post.author.firstName.takeIf { it.isNotBlank() },
+                                post.author.lastName.takeIf { it.isNotBlank() }
+                            ).joinToString(" ").ifBlank { post.author.account.username }, // fallback to username
+                            avatarUrl = post.author.account.avatar.url,
                             audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                             audioThumbnailUrl = null,
                             videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
@@ -3821,6 +3821,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                             files = arrayListOf(file.url),
                             fileType = file.url.substringAfterLast('.', "")
                         )
+
 
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -4132,11 +4133,11 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         val postItem = PostItem(
                             postId = post._id,
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
-                            ).joinToString(" ").ifBlank { account?.username },
+                            ).joinToString(" ").ifBlank { author.account.username },
                             avatarUrl = account?.avatar?.url,
                             audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                             audioThumbnailUrl = null,
@@ -4425,11 +4426,11 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         val postItem = PostItem(
                             postId = post._id,
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
-                            ).joinToString(" ").ifBlank { account?.username },
+                            ).joinToString(" ").ifBlank { author.account.username },
                             avatarUrl = account?.avatar?.url,
                             audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                             audioThumbnailUrl = null,
@@ -4805,11 +4806,11 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         val postItem = PostItem(
                             postId = post._id,
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
-                            ).joinToString(" ").ifBlank { account?.username },
+                            ).joinToString(" ").ifBlank { author.account.username },
                             avatarUrl = account?.avatar?.url,
                             audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                             audioThumbnailUrl = null,
@@ -5580,11 +5581,11 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         val postItem = PostItem(
                             postId = post._id,
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
-                            ).joinToString(" ").ifBlank { account?.username },
+                            ).joinToString(" ").ifBlank { author.account.username },
                             avatarUrl = account?.avatar?.url,
                             audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                             audioThumbnailUrl = null,

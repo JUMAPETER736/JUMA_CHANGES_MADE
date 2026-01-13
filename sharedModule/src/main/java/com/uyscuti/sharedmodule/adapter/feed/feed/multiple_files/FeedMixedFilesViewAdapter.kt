@@ -235,7 +235,7 @@ class FeedMixedFilesViewAdapter(
 
                             // ✅ AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -647,7 +647,7 @@ class FeedMixedFilesViewAdapter(
 
                             // ✅ AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -1185,7 +1185,7 @@ class FeedMixedFilesViewAdapter(
 
                             // ✅ AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -1585,7 +1585,7 @@ class FeedMixedFilesViewAdapter(
 
                             // ✅ AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -2123,7 +2123,7 @@ class FeedMixedFilesViewAdapter(
 
                             // ✅ AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -2792,7 +2792,7 @@ class FeedMixedFilesViewAdapter(
 
                             //AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }

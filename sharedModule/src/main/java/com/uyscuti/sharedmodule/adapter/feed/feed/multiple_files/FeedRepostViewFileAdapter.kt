@@ -181,7 +181,7 @@ class FeedRepostViewFileAdapter(
 
                             // AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -538,7 +538,7 @@ class FeedRepostViewFileAdapter(
 
                             // AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -1048,7 +1048,7 @@ class FeedRepostViewFileAdapter(
 
                             // AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -1374,7 +1374,7 @@ class FeedRepostViewFileAdapter(
 
                             // AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -1990,12 +1990,12 @@ class FeedRepostViewFileAdapter(
 
                             // AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username,
+                            username = author.account.username,
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
                             ).joinToString(" ").ifBlank {
-                                account?.username
+                                author.account.username
                             },
                             avatarUrl = account?.avatar?.url,
 

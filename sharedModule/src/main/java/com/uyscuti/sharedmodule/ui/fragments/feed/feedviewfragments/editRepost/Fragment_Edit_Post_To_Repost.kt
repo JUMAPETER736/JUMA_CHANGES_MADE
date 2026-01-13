@@ -178,6 +178,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         }
     }
 
+    private lateinit var feedPost: Post
 
     @Inject
     lateinit var retrofitInterface: RetrofitInstance
@@ -4051,11 +4052,11 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                             val postItem = PostItem(
                                 postId = post._id,
                                 userId = author?._id,
-                                username = account?.username,
+                                username = author.account.username,
                                 authorName = listOfNotNull(
                                     author?.firstName?.takeIf { it.isNotBlank() },
                                     author?.lastName?.takeIf { it.isNotBlank() }
-                                ).joinToString(" ").ifBlank { account?.username },
+                                ).joinToString(" ").ifBlank { author.account.username },
                                 avatarUrl = account?.avatar?.url,
                                 audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
@@ -4350,11 +4351,11 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                             val postItem = PostItem(
                                 postId = post._id,
                                 userId = author?._id,
-                                username = account?.username,
+                                username = author.account.username,
                                 authorName = listOfNotNull(
                                     author?.firstName?.takeIf { it.isNotBlank() },
                                     author?.lastName?.takeIf { it.isNotBlank() }
-                                ).joinToString(" ").ifBlank { account?.username },
+                                ).joinToString(" ").ifBlank { author.account.username },
                                 avatarUrl = account?.avatar?.url,
                                 audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
@@ -4682,11 +4683,11 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                             val postItem = PostItem(
                                 postId = post._id,
                                 userId = author?._id,
-                                username = account?.username,
+                                username = author.account.username,
                                 authorName = listOfNotNull(
                                     author?.firstName?.takeIf { it.isNotBlank() },
                                     author?.lastName?.takeIf { it.isNotBlank() }
-                                ).joinToString(" ").ifBlank { account?.username },
+                                ).joinToString(" ").ifBlank { author.account.username },
                                 avatarUrl = account?.avatar?.url,
                                 audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
@@ -4965,11 +4966,11 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                             val postItem = PostItem(
                                 postId = post._id,
                                 userId = author?._id,
-                                username = account?.username,
+                                username = author.account.username,
                                 authorName = listOfNotNull(
                                     author?.firstName?.takeIf { it.isNotBlank() },
                                     author?.lastName?.takeIf { it.isNotBlank() }
-                                ).joinToString(" ").ifBlank { account?.username },
+                                ).joinToString(" ").ifBlank { author.account.username },
                                 avatarUrl = account?.avatar?.url,
                                 audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
@@ -5705,11 +5706,11 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                             val postItem = PostItem(
                                 postId = post._id,
                                 userId = author?._id,
-                                username = account?.username,
+                                username = author.account.username,
                                 authorName = listOfNotNull(
                                     author?.firstName?.takeIf { it.isNotBlank() },
                                     author?.lastName?.takeIf { it.isNotBlank() }
-                                ).joinToString(" ").ifBlank { account?.username },
+                                ).joinToString(" ").ifBlank { author.account.username },
                                 avatarUrl = account?.avatar?.url,
                                 audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
