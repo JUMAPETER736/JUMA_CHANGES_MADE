@@ -1,5 +1,6 @@
 package com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments
 
+import android.R.attr.data
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -3369,7 +3370,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             context: Context,
             currentIndex: Int,
             files: List<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
@@ -3393,11 +3395,11 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
-                        val author = feedPost.author
+                        val author = post.author
                         val account = author?.account
 
                         val postItem = PostItem(
-                            postId = feedPost._id,
+                            postId = post._id,
                             userId = author?._id,
                             username = account?.username,
                             authorName = listOfNotNull(
@@ -3409,10 +3411,11 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                             audioThumbnailUrl = null,
                             videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                             videoThumbnailUrl = null,
-                            data = feedPost.content.orEmpty(),
+                            data = post.content.orEmpty(),
                             files = arrayListOf(file.url),
                             fileType = file.url.substringAfterLast('.', "")
                         )
+
 
                         postItems.add(postItem)
                     }
@@ -3500,7 +3503,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     context,
                     absoluteAdapterPosition,
                     actualFiles,
-                    actualFileIds
+                    actualFileIds,
+                    data
                 )
             }
 
@@ -3509,7 +3513,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     context,
                     absoluteAdapterPosition,
                     actualFiles,
-                    actualFileIds
+                    actualFileIds,
+                    data
                 )
             }
 
@@ -3518,7 +3523,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     context,
                     absoluteAdapterPosition,
                     actualFiles,
-                    actualFileIds
+                    actualFileIds,
+                    data
                 )
             }
 
@@ -3781,7 +3787,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             context: Context,
             currentIndex: Int,
             files: List<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
@@ -3794,25 +3801,27 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
+                        val author = post.author
+                        val account = author?.account
+
                         val postItem = PostItem(
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
-
-                            userId = null,
-                            username = null,
-                            authorName = null,
-                            avatarUrl = null,
-                            isVerified = false,
-
-                            audioUrl = file.url,
+                            postId = post._id,
+                            userId = author?._id,
+                            username = account?.username,
+                            authorName = listOfNotNull(
+                                author?.firstName?.takeIf { it.isNotBlank() },
+                                author?.lastName?.takeIf { it.isNotBlank() }
+                            ).joinToString(" ").ifBlank { account?.username },
+                            avatarUrl = account?.avatar?.url,
+                            audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                             audioThumbnailUrl = null,
-                            videoUrl = file.url,
+                            videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                             videoThumbnailUrl = null,
-
-                            data = "Post data for file $index",
+                            data = post.content.orEmpty(),
                             files = arrayListOf(file.url),
-                            fileType = ""
-
+                            fileType = file.url.substringAfterLast('.', "")
                         )
+
                     }
                     putParcelableArrayList("post_list", postItems)
                     putString("post_id", fileIds.getOrNull(currentIndex) ?: "audio_file_$currentIndex")
@@ -4036,7 +4045,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
             // Set click listeners
             val clickListener = View.OnClickListener {
-                navigateToTappedFilesFragment(context, position, actualFiles, actualFileIds)
+                navigateToTappedFilesFragment(context, position, actualFiles, actualFileIds, data)
             }
             itemView.setOnClickListener(clickListener)
             materialCardView.setOnClickListener(clickListener)
@@ -4092,7 +4101,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             context: Context,
             currentIndex: Int,
             files: List<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
@@ -4116,24 +4126,27 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
+                        val author = post.author
+                        val account = author?.account
+
                         val postItem = PostItem(
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
-
-                            userId = null,
-                            username = null,
-                            authorName = null,
-                            avatarUrl = null,
-                            isVerified = false,
-
-                            audioUrl = file.url,
+                            postId = post._id,
+                            userId = author?._id,
+                            username = account?.username,
+                            authorName = listOfNotNull(
+                                author?.firstName?.takeIf { it.isNotBlank() },
+                                author?.lastName?.takeIf { it.isNotBlank() }
+                            ).joinToString(" ").ifBlank { account?.username },
+                            avatarUrl = account?.avatar?.url,
+                            audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                             audioThumbnailUrl = null,
-                            videoUrl = file.url,
+                            videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                             videoThumbnailUrl = null,
-
-                            data = "Post data for file $index",
+                            data = post.content.orEmpty(),
                             files = arrayListOf(file.url),
-                            fileType = ""
+                            fileType = file.url.substringAfterLast('.', "")
                         )
+
 
                         postItems.add(postItem)
                     }
@@ -4206,7 +4219,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     itemView.context,
                     position,
                     actualFiles,
-                    actualFileIds
+                    actualFileIds,
+                    data
                 )
             }
             itemView.setOnClickListener(clickListener)
@@ -4389,7 +4403,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             context: Context,
             currentIndex: Int,
             files: List<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
@@ -4404,24 +4419,27 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
+                        val author = post.author
+                        val account = author?.account
+
                         val postItem = PostItem(
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
-
-                            userId = null,
-                            username = null,
-                            authorName = null,
-                            avatarUrl = null,
-                            isVerified = false,
-
-                            audioUrl = file.url,
+                            postId = post._id,
+                            userId = author?._id,
+                            username = account?.username,
+                            authorName = listOfNotNull(
+                                author?.firstName?.takeIf { it.isNotBlank() },
+                                author?.lastName?.takeIf { it.isNotBlank() }
+                            ).joinToString(" ").ifBlank { account?.username },
+                            avatarUrl = account?.avatar?.url,
+                            audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                             audioThumbnailUrl = null,
-                            videoUrl = file.url,
+                            videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                             videoThumbnailUrl = null,
-
-                            data = "Post data for file $index",
+                            data = post.content.orEmpty(),
                             files = arrayListOf(file.url),
-                            fileType = ""
+                            fileType = file.url.substringAfterLast('.', "")
                         )
+
 
                         postItems.add(postItem)
                     }
@@ -4543,7 +4561,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
             // Set click listeners
             val clickListener = View.OnClickListener {
-                navigateToTappedFilesFragment(context, position, actualFiles, actualFileIds)
+                navigateToTappedFilesFragment(context, position, actualFiles, actualFileIds, data)
             }
             itemView.setOnClickListener(clickListener)
             pdfImageView.setOnClickListener(clickListener)
@@ -4759,7 +4777,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             context: Context,
             currentIndex: Int,
             files: List<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
@@ -4780,24 +4799,27 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
+                        val author = post.author
+                        val account = author?.account
+
                         val postItem = PostItem(
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
-
-                            userId = null,
-                            username = null,
-                            authorName = null,
-                            avatarUrl = null,
-                            isVerified = false,
-
-                            audioUrl = file.url,
+                            postId = post._id,
+                            userId = author?._id,
+                            username = account?.username,
+                            authorName = listOfNotNull(
+                                author?.firstName?.takeIf { it.isNotBlank() },
+                                author?.lastName?.takeIf { it.isNotBlank() }
+                            ).joinToString(" ").ifBlank { account?.username },
+                            avatarUrl = account?.avatar?.url,
+                            audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                             audioThumbnailUrl = null,
-                            videoUrl = file.url,
+                            videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                             videoThumbnailUrl = null,
-
-                            data = "Post data for file $index",
+                            data = post.content.orEmpty(),
                             files = arrayListOf(file.url),
-                            fileType = ""
+                            fileType = file.url.substringAfterLast('.', "")
                         )
+
 
                         postItems.add(postItem)
                     }
@@ -4907,7 +4929,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
             // Set click listeners
             val clickListener = View.OnClickListener {
-                navigateToTappedFilesFragment(context, actualFileIndex, actualFiles, actualFileIds)
+                navigateToTappedFilesFragment(context, actualFileIndex, actualFiles, actualFileIds, data)
             }
             itemView.setOnClickListener(clickListener)
             imageView.setOnClickListener(clickListener)
@@ -5524,7 +5546,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             context: Context,
             currentIndex: Int,
             files: List<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
@@ -5551,24 +5574,27 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
+                        val author = post.author
+                        val account = author?.account
+
                         val postItem = PostItem(
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
-
-                            userId = null,
-                            username = null,
-                            authorName = null,
-                            avatarUrl = null,
-                            isVerified = false,
-
-                            audioUrl = file.url,
+                            postId = post._id,
+                            userId = author?._id,
+                            username = account?.username,
+                            authorName = listOfNotNull(
+                                author?.firstName?.takeIf { it.isNotBlank() },
+                                author?.lastName?.takeIf { it.isNotBlank() }
+                            ).joinToString(" ").ifBlank { account?.username },
+                            avatarUrl = account?.avatar?.url,
+                            audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                             audioThumbnailUrl = null,
-                            videoUrl = file.url,
+                            videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                             videoThumbnailUrl = null,
-
-                            data = "Post data for file $index",
+                            data = post.content.orEmpty(),
                             files = arrayListOf(file.url),
-                            fileType = ""
+                            fileType = file.url.substringAfterLast('.', "")
                         )
+
 
                         postItems.add(postItem)
                     }
@@ -5716,7 +5742,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     context,
                     actualFileIndex,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
             }
 
