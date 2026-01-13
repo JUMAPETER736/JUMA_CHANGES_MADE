@@ -126,10 +126,10 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     private lateinit var retrofitInstance: RetrofitInstance
     private lateinit var apiService: IFlashapi
 
-    private lateinit var authorNameTextView: TextView
-    private lateinit var authorUsernameTextView: TextView
-    private lateinit var authorAvatarImageView: ImageView
-    private lateinit var authorVerifiedBadge: ImageView
+    private var authorNameTextView: TextView? = null
+    private var authorUsernameTextView: TextView? = null
+    private var authorAvatarImageView: ImageView? = null
+    private var authorVerifiedBadge: ImageView? = null
 
     // Author data
     private var authorName: String? = null
@@ -259,6 +259,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         setupVideoPlayer()
         setupVideoControls()
         loadInitialPost()
+        setupHeaderProfileClick()
 
         // Get the post item from arguments or fallback to null
         val postItem = arguments?.getParcelable<PostItem>("current_post_item")
@@ -377,17 +378,17 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
     private fun setupClickListeners() {
         // Click on avatar
-        authorAvatarImageView.setOnClickListener {
+        authorAvatarImageView?.setOnClickListener {
             navigateToAuthorProfile()
         }
 
         // Click on name
-        authorNameTextView.setOnClickListener {
+        authorNameTextView?.setOnClickListener {
             navigateToAuthorProfile()
         }
 
         // Click on username
-        authorUsernameTextView.setOnClickListener {
+        authorUsernameTextView?.setOnClickListener {
             navigateToAuthorProfile()
         }
 
@@ -425,7 +426,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         // Fetch from API using Retrofit
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                
+
                 // If you have userId, you might need to fetch by ID instead
                 val post = postList?.find { it.postId == userId }
                 val username = post?.postId?: return@launch
@@ -470,8 +471,8 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
     private fun showAuthorLoadingState() {
         // Update hidden TextViews
-        authorNameTextView.text = "Loading..."
-        authorUsernameTextView.text = ""
+        authorNameTextView?.text = "Loading..."
+        authorUsernameTextView?.text = ""
 
         // Update visible header TextViews
         val headerFullName = view?.findViewById<TextView>(R.id.fullNameTextView)
@@ -489,8 +490,8 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         val displayUsername = if (authorUsername != null) "@$authorUsername" else ""
 
         // Update hidden TextViews (for compatibility)
-        authorNameTextView.text = displayName
-        authorUsernameTextView.text = displayUsername
+        authorNameTextView?.text = displayName
+        authorUsernameTextView?.text = displayUsername
 
         // Update VISIBLE header TextViews
         val headerFullName = view?.findViewById<TextView>(R.id.fullNameTextView)
@@ -521,8 +522,8 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
     private fun showDefaultAuthorInfo() {
         // Update hidden TextViews
-        authorNameTextView.text = "Unknown User"
-        authorUsernameTextView.text = ""
+        authorNameTextView?.text = "Unknown User"
+        authorUsernameTextView?.text = ""
 
         // Update visible header TextViews
         val headerFullName = view?.findViewById<TextView>(R.id.fullNameTextView)
@@ -766,7 +767,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             val fieldPopup = PopupMenu::class.java.getDeclaredField("mPopup")
             fieldPopup.isAccessible = true
             val menuPopupWindow = fieldPopup.get(popup)
-            // Note: MenuPopupWindow.setForceShowIcon() might not be available in all versions
+
             // You may need to handle this differently based on your target SDK
         } catch (e: Exception) {
             e.printStackTrace()
@@ -861,8 +862,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         // Keep screen on while viewing content
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
-
-
 
     private fun cleanupResources() {
         try {
