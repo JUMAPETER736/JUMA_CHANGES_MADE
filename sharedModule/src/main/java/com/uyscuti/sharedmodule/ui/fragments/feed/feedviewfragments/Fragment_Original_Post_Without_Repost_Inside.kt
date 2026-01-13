@@ -3390,15 +3390,26 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
                             videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url)
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -3778,15 +3789,26 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     putStringArrayList("file_ids", ArrayList(fileIds))
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
-                        postItems.add(PostItem(
+
+                        val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
-                            videoUrl = null,
+                            videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "audio_file_$index",
-                            data = "Audio file",
-                            files = arrayListOf(file.url)
-                        ))
+
+                            data = "Post data for file $index",
+                            files = arrayListOf(file.url),
+                            fileType = ""
+
+                        )
                     }
                     putParcelableArrayList("post_list", postItems)
                     putString("post_id", fileIds.getOrNull(currentIndex) ?: "audio_file_$currentIndex")
@@ -4089,15 +4111,26 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     // **ADD THIS: Create PostItem list for the ViewPager**
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
-                            videoUrl = file.url, // or null if it's not a video
+                            videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url) // Pass the URL
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -4366,15 +4399,26 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     putStringArrayList("file_ids", ArrayList(fileIds))
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
                             videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url)
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -4731,15 +4775,26 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
                             videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url)
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -5491,15 +5546,26 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
                             videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url)
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
