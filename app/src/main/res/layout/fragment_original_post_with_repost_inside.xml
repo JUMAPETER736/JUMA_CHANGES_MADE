@@ -104,7 +104,7 @@
         <LinearLayout android:id="@+id/inputContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="vertical" android:background="@color/white" android:elevation="8dp">
             <!--  Top border line for input container  -->
             <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E1E8ED"/>
-            <EditText android:id="@+id/replyInput" android:layout_width="match_parent" android:layout_height="48dp" android:layout_margin="8dp" android:background="@drawable/bottom_input_field_blue_color" android:gravity="center_vertical" android:hint="Post your reply" android:paddingHorizontal="16dp" android:textColor="@android:color/black" android:textColorHint="#808080" android:textSize="16sp"/>
+            <EditText android:id="@+id/replyInput" android:layout_width="match_parent" android:layout_height="48dp" android:layout_margin="8dp" android:background="@drawable/bottom_input_field_blue_color" android:gravity="center_vertical" android:hint="Post your reply" android:paddingHorizontal="16dp" android:textColor="@android:color/black" android:textColorHint="#808080" android:textSize="16sp" android:visibility="gone"/>
         </LinearLayout>
     </RelativeLayout>
 </androidx.cardview.widget.CardView>

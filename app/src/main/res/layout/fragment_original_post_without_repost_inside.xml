@@ -7,11 +7,23 @@
                 <!--  Header Section  -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="@dimen/header_height" android:orientation="horizontal" android:gravity="center_vertical" android:paddingHorizontal="@dimen/header_padding_horizontal" android:background="@color/blueJeans">
                     <!--  Back Button  -->
-                    <ImageButton android:id="@+id/cancelButton" android:layout_width="@dimen/header_button_size" android:layout_height="@dimen/header_button_size" android:background="@android:color/transparent" android:src="@drawable/cancel_svgrepo_com" android:contentDescription="Back" app:tint="@android:color/white"/>
+                    <ImageButton
+                        android:id="@+id/cancelButton"
+                        android:layout_width="@dimen/header_button_size"
+                        android:layout_height="@dimen/header_button_size"
+                        android:background="@android:color/transparent"
+                        android:src="@drawable/cancel_svgrepo_com"
+                        android:contentDescription="Back"
+                        app:tint="@android:color/white"/>
                     <!--  Post Title  -->
                     <TextView android:id="@+id/headerTitle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Post" android:textColor="@android:color/white" android:textSize="@dimen/header_text_size" android:textStyle="bold" android:gravity="center"/>
                     <!--  Menu Button  -->
-                    <ImageButton android:id="@+id/headerMenuButton" android:layout_width="@dimen/header_button_size" android:layout_height="@dimen/header_button_size" android:background="@android:color/transparent" android:src="@drawable/options_vertical_svgrepo_com" android:contentDescription="More options" app:tint="@android:color/white"/>
+                    <ImageButton
+                        android:id="@+id/headerMenuButton"
+                        android:layout_width="@dimen/header_button_size"
+                        android:layout_height="@dimen/header_button_size"
+                        android:background="@android:color/transparent" android:src="@drawable/options_vertical_svgrepo_com" android:contentDescription="More options" app:tint="@android:color/white"/>
+
                 </LinearLayout>
                 <!--  Content Section  -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@color/white">
@@ -85,7 +97,21 @@
         <LinearLayout android:id="@+id/inputContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" android:orientation="vertical" android:background="@color/white">
             <!--  Top border line for input container  -->
             <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E1E8ED"/>
-            <EditText android:id="@+id/replyInput" android:layout_width="match_parent" android:layout_height="48dp" android:background="@android:color/transparent" android:gravity="center_vertical" android:hint="Post your reply" android:paddingHorizontal="16dp" android:textColor="@android:color/black" android:textColorHint="#808080" android:textSize="16sp"/>
+            <EditText
+                android:id="@+id/replyInput"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:gravity="center_vertical"
+                android:hint="Post your reply"
+                android:paddingHorizontal="16dp"
+                android:textColor="@android:color/black"
+                android:textColorHint="#808080"
+                android:visibility="gone"
+                android:textSize="16sp"/>
+
         </LinearLayout>
+
     </RelativeLayout>
+
 </androidx.cardview.widget.CardView>

@@ -28,15 +28,13 @@
 
             <!-- Back Button -->
             <ImageButton
-                android:id="@+id/backButton"
+                android:id="@+id/cancelButton"
                 android:layout_width="@dimen/header_button_size"
                 android:layout_height="@dimen/header_button_size"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/back_button"
+                android:background="@android:color/transparent"
+                android:src="@drawable/cancel_svgrepo_com"
                 android:contentDescription="Back"
-                app:tint="@android:color/white"
-                android:clickable="true"
-                android:focusable="true" />
+                app:tint="@android:color/white"/>
 
             <!-- Post Title -->
             <TextView
@@ -56,7 +54,7 @@
                 android:layout_width="@dimen/header_button_size"
                 android:layout_height="@dimen/header_button_size"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/options_horizontal_svgrepo_com"
+                android:src="@drawable/options_vertical_svgrepo_com"
                 android:contentDescription="More options"
                 app:tint="@android:color/white"
                 android:clickable="true"
