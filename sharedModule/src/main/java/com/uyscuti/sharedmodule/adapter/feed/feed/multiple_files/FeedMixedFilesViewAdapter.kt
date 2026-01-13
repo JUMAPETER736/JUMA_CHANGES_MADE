@@ -225,15 +225,27 @@ class FeedMixedFilesViewAdapter(
 
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
                             videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url)
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -616,14 +628,24 @@ class FeedMixedFilesViewAdapter(
                         val fileName = currentPostData?.fileNames?.find { it.fileId == fileId }?.fileName ?: ""
 
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
-                            videoUrl = null,
+                            videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileId ?: "audio_file_$index",
-                            data = "Audio file: $fileName",
-                            files = arrayListOf(file.url)
+
+                            data = "Post data for file $index",
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -1130,15 +1152,27 @@ class FeedMixedFilesViewAdapter(
                     // **ADD THIS: Create PostItem list for the ViewPager**
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
-                            videoUrl = file.url, // or null if it's not a video
+                            videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url) // Pass the URL
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -1506,15 +1540,26 @@ class FeedMixedFilesViewAdapter(
                     putStringArrayList("file_ids", ArrayList(fileIds))
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
                             videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url)
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -2021,15 +2066,26 @@ class FeedMixedFilesViewAdapter(
 
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
                             videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url)
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
@@ -2668,15 +2724,26 @@ class FeedMixedFilesViewAdapter(
 
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
                         val postItem = PostItem(
+                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
+                            userId = null,
+                            username = null,
+                            authorName = null,
+                            avatarUrl = null,
+                            isVerified = false,
+
                             audioUrl = file.url,
                             audioThumbnailUrl = null,
                             videoUrl = file.url,
                             videoThumbnailUrl = null,
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+
                             data = "Post data for file $index",
-                            files = arrayListOf(file.url)
+                            files = arrayListOf(file.url),
+                            fileType = ""
                         )
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
