@@ -99,6 +99,7 @@ private const val ARG_POST_LIST = "post_list"
 private const val ARG_CURRENT_POSITION = "current_position"
 private const val TAG = "SocialPostFragment"
 
+
 // ========== MAIN FRAGMENT CLASS ==========
 class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
@@ -325,6 +326,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
     private fun initializeAllViews(view: View) {
+
         authorNameTextView = view.findViewById(R.id.authorName)
         authorUsernameTextView = view.findViewById(R.id.authorUsername)
         authorAvatarImageView = view.findViewById(R.id.authorAvatar)
@@ -1208,37 +1210,56 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
 // ========== DATA CLASSES ==========
 data class PostItem(
+
+    val postId: String,
+    val userId: String?,
+    val username: String?,
+    val authorName: String?,
+    val avatarUrl: String?,
+    val isVerified: Boolean = false,
     val audioUrl: String?,
     val audioThumbnailUrl: String?,
     val videoUrl: String?,
     val videoThumbnailUrl: String?,
-    val postId: String,
     val data: String,
     val files: ArrayList<String>? = null,
     val fileType: String = ""
 ) : Parcelable {
 
     constructor(parcel: Parcel) : this(
+        parcel.readString() ?: "",              
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
-        parcel.readString() ?: "",
+        parcel.readByte() != 0.toByte(),
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readString(),
         parcel.readString() ?: "",
         parcel.createStringArrayList(),
         parcel.readString() ?: ""
     )
 
+
+
     override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(postId)
+        parcel.writeString(userId)
+        parcel.writeString(username)
+        parcel.writeString(authorName)
+        parcel.writeString(avatarUrl)
+        parcel.writeByte(if (isVerified) 1 else 0)
         parcel.writeString(audioUrl)
         parcel.writeString(audioThumbnailUrl)
         parcel.writeString(videoUrl)
         parcel.writeString(videoThumbnailUrl)
-        parcel.writeString(postId)
         parcel.writeString(data)
         parcel.writeStringList(files)
         parcel.writeString(fileType)
     }
+
 
     override fun describeContents(): Int = 0
 
