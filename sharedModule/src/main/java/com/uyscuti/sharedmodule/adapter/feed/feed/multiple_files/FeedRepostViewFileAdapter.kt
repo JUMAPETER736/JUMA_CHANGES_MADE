@@ -172,24 +172,36 @@ class FeedRepostViewFileAdapter(
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
+                        val author = feedPost.author
+                        val account = author?.account
+                        val file = files[index]   // your file list item
+
                         val postItem = PostItem(
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+                            postId = feedPost._id,
 
-                            userId = null,
-                            username = null,
-                            authorName = null,
-                            avatarUrl = null,
-                            isVerified = false,
+                            // AUTHOR (post owner)
+                            userId = author?._id,
+                            username = account?.username,
+                            authorName = listOfNotNull(
+                                author?.firstName?.takeIf { it.isNotBlank() },
+                                author?.lastName?.takeIf { it.isNotBlank() }
+                            ).joinToString(" ").ifBlank {
+                                account?.username
+                            },
+                            avatarUrl = account?.avatar?.url,
 
-                            audioUrl = file.url,
+                            // MEDIA
+                            audioUrl = if (file.url.endsWith(".mp3") || file.url.endsWith(".aac")) file.url else null,
                             audioThumbnailUrl = null,
-                            videoUrl = file.url,
+                            videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mkv")) file.url else null,
                             videoThumbnailUrl = null,
 
-                            data = "Post data for file $index",
+                            // CONTENT
+                            data = feedPost.content ?: "",
                             files = arrayListOf(file.url),
-                            fileType = ""
+                            fileType = file.url.substringAfterLast('.', "")
                         )
+
 
                         postItems.add(postItem)
                     }
@@ -517,23 +529,34 @@ class FeedRepostViewFileAdapter(
                         val fileId = fileIds.getOrNull(index)
                         val fileName = data?.fileNames?.find { it.fileId == fileId }?.fileName ?: ""
 
+                        val author = feedPost.author
+                        val account = author?.account
+                        val file = files[index]   // your file list item
+
                         val postItem = PostItem(
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+                            postId = feedPost._id,
 
-                            userId = null,
-                            username = null,
-                            authorName = null,
-                            avatarUrl = null,
-                            isVerified = false,
+                            // AUTHOR (post owner)
+                            userId = author?._id,
+                            username = account?.username,
+                            authorName = listOfNotNull(
+                                author?.firstName?.takeIf { it.isNotBlank() },
+                                author?.lastName?.takeIf { it.isNotBlank() }
+                            ).joinToString(" ").ifBlank {
+                                account?.username
+                            },
+                            avatarUrl = account?.avatar?.url,
 
-                            audioUrl = file.url,
+                            // MEDIA
+                            audioUrl = if (file.url.endsWith(".mp3") || file.url.endsWith(".aac")) file.url else null,
                             audioThumbnailUrl = null,
-                            videoUrl = file.url,
+                            videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mkv")) file.url else null,
                             videoThumbnailUrl = null,
 
-                            data = "Post data for file $index",
+                            // CONTENT
+                            data = feedPost.content ?: "",
                             files = arrayListOf(file.url),
-                            fileType = ""
+                            fileType = file.url.substringAfterLast('.', "")
                         )
 
                         postItems.add(postItem)
@@ -1015,23 +1038,35 @@ class FeedRepostViewFileAdapter(
 
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
+
+                        val author = feedPost.author
+                        val account = author?.account
+                        val file = files[index]   // your file list item
+
                         val postItem = PostItem(
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+                            postId = feedPost._id,
 
-                            userId = null,
-                            username = null,
-                            authorName = null,
-                            avatarUrl = null,
-                            isVerified = false,
+                            // AUTHOR (post owner)
+                            userId = author?._id,
+                            username = account?.username,
+                            authorName = listOfNotNull(
+                                author?.firstName?.takeIf { it.isNotBlank() },
+                                author?.lastName?.takeIf { it.isNotBlank() }
+                            ).joinToString(" ").ifBlank {
+                                account?.username
+                            },
+                            avatarUrl = account?.avatar?.url,
 
-                            audioUrl = file.url,
+                            // MEDIA
+                            audioUrl = if (file.url.endsWith(".mp3") || file.url.endsWith(".aac")) file.url else null,
                             audioThumbnailUrl = null,
-                            videoUrl = file.url,
+                            videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mkv")) file.url else null,
                             videoThumbnailUrl = null,
 
-                            data = "Post data for file $index",
+                            // CONTENT
+                            data = feedPost.content ?: "",
                             files = arrayListOf(file.url),
-                            fileType = ""
+                            fileType = file.url.substringAfterLast('.', "")
                         )
 
                         postItems.add(postItem)
@@ -1330,23 +1365,34 @@ class FeedRepostViewFileAdapter(
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
+                        val author = feedPost.author
+                        val account = author?.account
+                        val file = files[index]   // your file list item
+
                         val postItem = PostItem(
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+                            postId = feedPost._id,
 
-                            userId = null,
-                            username = null,
-                            authorName = null,
-                            avatarUrl = null,
-                            isVerified = false,
+                            // AUTHOR (post owner)
+                            userId = author?._id,
+                            username = account?.username,
+                            authorName = listOfNotNull(
+                                author?.firstName?.takeIf { it.isNotBlank() },
+                                author?.lastName?.takeIf { it.isNotBlank() }
+                            ).joinToString(" ").ifBlank {
+                                account?.username
+                            },
+                            avatarUrl = account?.avatar?.url,
 
-                            audioUrl = file.url,
+                            // MEDIA
+                            audioUrl = if (file.url.endsWith(".mp3") || file.url.endsWith(".aac")) file.url else null,
                             audioThumbnailUrl = null,
-                            videoUrl = file.url,
+                            videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mkv")) file.url else null,
                             videoThumbnailUrl = null,
 
-                            data = "Post data for file $index",
+                            // CONTENT
+                            data = feedPost.content ?: "",
                             files = arrayListOf(file.url),
-                            fileType = ""
+                            fileType = file.url.substringAfterLast('.', "")
                         )
 
                         postItems.add(postItem)
@@ -1935,23 +1981,34 @@ class FeedRepostViewFileAdapter(
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
+                        val author = feedPost.author
+                        val account = author?.account
+                        val file = files[index]   // your file list item
+
                         val postItem = PostItem(
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
+                            postId = feedPost._id,
 
-                            userId = null,
-                            username = null,
-                            authorName = null,
-                            avatarUrl = null,
-                            isVerified = false,
+                            // AUTHOR (post owner)
+                            userId = author?._id,
+                            username = account?.username,
+                            authorName = listOfNotNull(
+                                author?.firstName?.takeIf { it.isNotBlank() },
+                                author?.lastName?.takeIf { it.isNotBlank() }
+                            ).joinToString(" ").ifBlank {
+                                account?.username
+                            },
+                            avatarUrl = account?.avatar?.url,
 
-                            audioUrl = file.url,
+                            // MEDIA
+                            audioUrl = if (file.url.endsWith(".mp3") || file.url.endsWith(".aac")) file.url else null,
                             audioThumbnailUrl = null,
-                            videoUrl = file.url,
+                            videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mkv")) file.url else null,
                             videoThumbnailUrl = null,
 
-                            data = "Post data for file $index",
+                            // CONTENT
+                            data = feedPost.content ?: "",
                             files = arrayListOf(file.url),
-                            fileType = ""
+                            fileType = file.url.substringAfterLast('.', "")
                         )
 
                         postItems.add(postItem)

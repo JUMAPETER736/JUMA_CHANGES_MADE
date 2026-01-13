@@ -135,6 +135,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
+    private lateinit var feedPost: Post
+
     // View binding
     private var _binding: FragmentOriginalPostWithoutRepostInsideBinding? = null
     private val binding get() = _binding!!
@@ -3391,23 +3393,25 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
+                        val author = feedPost.author
+                        val account = author?.account
+
                         val postItem = PostItem(
-                            postId = fileIds.getOrNull(index) ?: "file_$index",
-
-                            userId = null,
-                            username = null,
-                            authorName = null,
-                            avatarUrl = null,
-                            isVerified = false,
-
-                            audioUrl = file.url,
+                            postId = feedPost._id,
+                            userId = author?._id,
+                            username = account?.username,
+                            authorName = listOfNotNull(
+                                author?.firstName?.takeIf { it.isNotBlank() },
+                                author?.lastName?.takeIf { it.isNotBlank() }
+                            ).joinToString(" ").ifBlank { account?.username },
+                            avatarUrl = account?.avatar?.url,
+                            audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                             audioThumbnailUrl = null,
-                            videoUrl = file.url,
+                            videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                             videoThumbnailUrl = null,
-
-                            data = "Post data for file $index",
+                            data = feedPost.content.orEmpty(),
                             files = arrayListOf(file.url),
-                            fileType = ""
+                            fileType = file.url.substringAfterLast('.', "")
                         )
 
                         postItems.add(postItem)
