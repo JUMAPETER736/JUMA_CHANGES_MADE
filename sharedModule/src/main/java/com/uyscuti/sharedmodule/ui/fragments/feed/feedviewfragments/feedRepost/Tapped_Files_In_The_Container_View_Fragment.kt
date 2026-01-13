@@ -73,6 +73,7 @@ import android.widget.ImageButton
 import androidx.core.net.toUri
 import androidx.core.graphics.createBitmap
 import com.uyscuti.sharedmodule.R
+import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.sharedmodule.model.GetShortFragments
 import com.uyscuti.sharedmodule.model.HideAppBar
 import com.uyscuti.sharedmodule.model.HideBottomNav
@@ -112,7 +113,16 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    // Added these new properties for video ang Audios handling...
+    private lateinit var authorNameTextView: TextView
+    private lateinit var authorUsernameTextView: TextView
+    private lateinit var authorAvatarImageView: ImageView
+    private lateinit var authorVerifiedBadge: ImageView
+
+    // Author data
+    private var authorName: String? = null
+    private var authorUsername: String? = null
+    private var authorAvatarUrl: String? = null
+    private var isAuthorVerified: Boolean = false
 
     private lateinit var videoView: VideoView
     private lateinit var mediaController: MediaController
@@ -307,6 +317,11 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
     private fun initializeAllViews(view: View) {
 
+        authorNameTextView = view.findViewById(R.id.authorName)
+        authorUsernameTextView = view.findViewById(R.id.authorUsername)
+        authorAvatarImageView = view.findViewById(R.id.authorAvatar)
+        authorVerifiedBadge = view.findViewById(R.id.verifiedBadge)
+
         // Initialize UI Controls
         cancelButton = view.findViewById(R.id.cancelButton)
         headerMenuButton = view.findViewById(R.id.headerMenuButton)
@@ -355,6 +370,22 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
     private fun setupClickListeners() {
+
+        // Click on avatar
+        authorAvatarImageView.setOnClickListener {
+            navigateToAuthorProfile()
+        }
+
+        // Click on name
+        authorNameTextView.setOnClickListener {
+            navigateToAuthorProfile()
+        }
+
+        // Click on username
+        authorUsernameTextView.setOnClickListener {
+            navigateToAuthorProfile()
+        }
+
         // Menu button click listener
         headerMenuButton.setOnClickListener { view ->
             showOptionsMenu(view)
@@ -381,6 +412,231 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             handleShareClick()
         }
     }
+
+// ========== ADD THIS NEW METHOD TO FETCH AUTHOR DETAILS ==========
+
+    private fun loadAuthorDetails(userId: String) {
+        // Show loading state (optional)
+        showAuthorLoadingState()
+
+        // Fetch from Firestore
+        val firestore = FirebaseFirestore.getInstance()
+
+        firestore.collection("users")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    // Extract author data
+                    authorName = document.getString("firstName") + " " + document.getString("lastName")
+                    authorUsername = document.getString("username")
+                    authorAvatarUrl = document.getString("profileImageUrl")
+                    isAuthorVerified = document.getBoolean("isVerified") ?: false
+
+                    // Update UI with author details
+                    updateAuthorUI()
+                } else {
+                    Log.w(TAG, "Author document does not exist for userId: $userId")
+                    showDefaultAuthorInfo()
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.e(TAG, "Error fetching author details", exception)
+                showDefaultAuthorInfo()
+            }
+    }
+
+    private fun showAuthorLoadingState() {
+        // Update hidden TextViews
+        authorNameTextView.text = "Loading..."
+        authorUsernameTextView.text = ""
+
+        // Update visible header TextViews
+        val headerFullName = view?.findViewById<TextView>(R.id.fullNameTextView)
+        val headerUsername = view?.findViewById<TextView>(R.id.usernameTextView)
+        val verifiedBadge = view?.findViewById<ImageView>(R.id.verifiedBadge)
+
+        headerFullName?.text = "Loading..."
+        headerUsername?.text = ""
+        verifiedBadge?.visibility = View.GONE
+    }
+
+    private fun updateAuthorUI() {
+        // Set author name in BOTH the hidden TextView AND the visible header
+        val displayName = authorName ?: "Unknown User"
+        val displayUsername = if (authorUsername != null) "@$authorUsername" else ""
+
+        // Update hidden TextViews (for compatibility)
+        authorNameTextView.text = displayName
+        authorUsernameTextView.text = displayUsername
+
+        // Update VISIBLE header TextViews
+        val headerFullName = view?.findViewById<TextView>(R.id.fullNameTextView)
+        val headerUsername = view?.findViewById<TextView>(R.id.usernameTextView)
+        val headerProfileIcon = view?.findViewById<ImageView>(R.id.userProfileIcon)
+
+        headerFullName?.text = displayName
+        headerUsername?.text = displayUsername
+
+        // Load avatar image into the VISIBLE header profile icon
+        if (!authorAvatarUrl.isNullOrEmpty()) {
+            headerProfileIcon?.let { imageView ->
+                Glide.with(requireContext())
+                    .load(authorAvatarUrl)
+                    .placeholder(R.drawable.flash21)
+                    .error(R.drawable.flash21)
+                    .circleCrop()
+                    .into(imageView)
+            }
+        } else {
+            headerProfileIcon?.setImageResource(R.drawable.flash21)
+        }
+
+        // Show/hide verified badge
+        val verifiedBadge = view?.findViewById<ImageView>(R.id.verifiedBadge)
+        verifiedBadge?.visibility = if (isAuthorVerified) View.VISIBLE else View.GONE
+    }
+
+    private fun showDefaultAuthorInfo() {
+        // Update hidden TextViews
+        authorNameTextView.text = "Unknown User"
+        authorUsernameTextView.text = ""
+
+        // Update visible header TextViews
+        val headerFullName = view?.findViewById<TextView>(R.id.fullNameTextView)
+        val headerUsername = view?.findViewById<TextView>(R.id.usernameTextView)
+        val headerProfileIcon = view?.findViewById<ImageView>(R.id.userProfileIcon)
+        val verifiedBadge = view?.findViewById<ImageView>(R.id.verifiedBadge)
+
+        headerFullName?.text = "Unknown User"
+        headerUsername?.text = ""
+        headerProfileIcon?.setImageResource(R.drawable.flash21)
+        verifiedBadge?.visibility = View.GONE
+    }
+
+    private fun loadPostContent(postId: String) {
+        // Fetch post data by ID from Firestore or local source
+        val post = postList?.find { it.postId == postId } ?: return
+
+        // Load author details using the userId from the post
+        post.userId?.let { userId ->
+            loadAuthorDetails(userId)
+        } ?: run {
+            Log.w(TAG, "No userId found for post $postId")
+            showDefaultAuthorInfo()
+        }
+
+        val firstFile = post.files?.firstOrNull()
+        if (firstFile != null) {
+            // displayMediaPreview(firstFile)
+        } else {
+            Log.w(TAG, "No media file found for post $postId")
+        }
+    }
+
+    private fun setupHeaderProfileClick() {
+        val headerProfileIcon = view?.findViewById<ImageView>(R.id.userProfileIcon)
+        val headerFullName = view?.findViewById<TextView>(R.id.fullNameTextView)
+        val headerUsername = view?.findViewById<TextView>(R.id.usernameTextView)
+
+        headerProfileIcon?.setOnClickListener { navigateToAuthorProfile() }
+        headerFullName?.setOnClickListener { navigateToAuthorProfile() }
+        headerUsername?.setOnClickListener { navigateToAuthorProfile() }
+    }
+
+    private fun navigateToAuthorProfile() {
+        val post = postList?.get(viewPager.currentItem)
+        post?.userId?.let { userId ->
+            // Create intent to open OtherUserProfileAccount
+            val intent = Intent(requireContext(), OtherUserProfileAccount::class.java).apply {
+                putExtra("extra_user_id", userId)
+                putExtra("extra_username", authorUsername?.removePrefix("@") ?: "")
+                putExtra("extra_user_name", authorName ?: "")
+                putExtra("user_full_name", authorName ?: "")
+                putExtra("extra_avatar_url", authorAvatarUrl)
+            }
+
+            startActivity(intent)
+            requireActivity().overridePendingTransition(
+                R.anim.slide_in_right,
+                R.anim.slide_out_left
+            )
+
+            // Optional: Add haptic feedback
+            view?.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+
+            Log.d(TAG, "Navigating to profile - userId: $userId, username: $authorUsername")
+        } ?: run {
+            Toast.makeText(requireContext(), "User information not available", Toast.LENGTH_SHORT).show()
+            Log.w(TAG, "Cannot navigate to profile - userId is null")
+        }
+    }
+
+    private fun loadInitialPost() {
+        postList?.let { posts ->
+            if (posts.isNotEmpty() && currentPosition < posts.size) {
+                val post = posts[currentPosition]
+                postId = post.postId
+
+                // Load author details
+                post.userId?.let { userId ->
+                    loadAuthorDetails(userId)
+                }
+
+                loadPostMetrics(postId!!)
+                loadPostContent(postId!!)
+                updateUI()
+
+                // Set current item AFTER adapter is set
+                viewPager.setCurrentItem(currentPosition, false)
+                Log.d(TAG, "Initial post loaded: ${post.postId}")
+            }
+        }
+    }
+
+// ========== VIEWPAGER SETUP ==========
+
+    private fun setupViewPager(view: View) {
+        viewPager = view.findViewById(R.id.viewPager)
+
+        view.post {
+            // Set up the adapter ONLY ONCE
+            postList?.let { posts ->
+                if (posts.isNotEmpty()) {
+                    val adapter = PostPagerAdapter(requireActivity(), posts)
+                    viewPager.adapter = adapter
+                    Log.d(TAG, "ViewPager Adapter set with ${posts.size} Posts")
+                } else {
+                    Log.w(TAG, "Post list is empty, cannot set Adapter")
+                }
+            } ?: run {
+                Log.e(TAG, "Post list is null, cannot set Adapter")
+            }
+
+            // Set up page change callback
+            pageChangeCallback = object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    Log.d(TAG, "Page selected: $position")
+                    val post = postList?.get(position)
+                    postId = post?.postId
+
+                    // Load author details for new post
+                    post?.userId?.let { userId ->
+                        loadAuthorDetails(userId)
+                    }
+
+                    postId?.let {
+                        loadPostMetrics(it)
+                        loadPostContent(it)
+                        updateUI()
+                    }
+                }
+            }
+
+            viewPager.registerOnPageChangeCallback(pageChangeCallback)
+        }
+    }
+
 
     // Add these handler methods for the action sections
     private fun handleCommentClick() {
@@ -735,17 +991,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    private fun loadPostContent(postId: String) {
-        // Fetch post data by ID from Firestore or local source
-        val post = postList?.find { it.postId == postId } ?: return
 
-        val firstFile = post.files?.firstOrNull()
-        if (firstFile != null) {
-            //  displayMediaPreview(firstFile)  // firstFile is MediaFile
-        } else {
-            Log.w(TAG, "No media file found for post $postId")
-        }
-    }
 
     @SuppressLint("UseKtx", "ObsoleteSdkInt")
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -772,58 +1018,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
     }
 
-    // ========== VIEWPAGER SETUP ==========
-
-    private fun setupViewPager(view: View) {
-        viewPager = view.findViewById(R.id.viewPager)
-
-        view.post {
-            // Set up the adapter ONLY ONCE
-            postList?.let { posts ->
-                if (posts.isNotEmpty()) {
-                    val adapter = PostPagerAdapter(requireActivity(), posts)
-                    viewPager.adapter = adapter
-                    Log.d(TAG, "ViewPager Adapter set with ${posts.size} Posts")
-                } else {
-                    Log.w(TAG, "Post list is empty, cannot set Adapter")
-                }
-            } ?: run {
-                Log.e(TAG, "Post list is null, cannot set Adapter")
-            }
-
-            // Set up page change callback
-            pageChangeCallback = object : ViewPager2.OnPageChangeCallback() {
-                override fun onPageSelected(position: Int) {
-                    Log.d(TAG, "Page selected: $position")
-                    val post = postList?.get(position)
-                    postId = post?.postId
-                    postId?.let {
-                        loadPostMetrics(it)
-                        loadPostContent(it)
-                        updateUI()
-                    }
-                }
-            }
-
-            viewPager.registerOnPageChangeCallback(pageChangeCallback)
-        }
-    }
-
-    private fun loadInitialPost() {
-        postList?.let { posts ->
-            if (posts.isNotEmpty() && currentPosition < posts.size) {
-                val post = posts[currentPosition]
-                postId = post.postId
-                loadPostMetrics(postId!!)
-                loadPostContent(postId!!)
-                updateUI()
-
-                // Set current item AFTER adapter is set
-                viewPager.setCurrentItem(currentPosition, false)
-                Log.d(TAG, "Initial post loaded: ${post.postId}")
-            }
-        }
-    }
 
     private fun cleanupViewPager() {
         if (this::pageChangeCallback.isInitialized && this::viewPager.isInitialized) {
@@ -944,12 +1138,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             else -> count.toString()
         }
     }
-
-    private fun showFeedback(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
-
-
+    
 
 }
 
