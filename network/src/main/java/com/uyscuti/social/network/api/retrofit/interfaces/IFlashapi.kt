@@ -26,9 +26,7 @@ import com.uyscuti.social.network.api.request.messages.SendMessageRequest
 import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
 import com.uyscuti.social.network.api.request.register.RegisterRequest
 import com.uyscuti.social.network.api.request.search.SearchUsersRequest
-import com.uyscuti.social.network.api.response.GeneralSearch.GeneralSearchResponse
 import com.uyscuti.social.network.api.response.GeneralSearch.SearchShortsResponse
-import com.uyscuti.social.network.api.response.GeneralSearch.SearchUserFeedResponse
 import com.uyscuti.social.network.api.response.MainResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.AllFeedRepostsPost
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostRequest
@@ -37,6 +35,8 @@ import com.uyscuti.social.network.api.response.business.response.businesslocatio
 import com.uyscuti.social.network.api.response.business.response.businesslocation.BusinessLocationResponse
 import com.uyscuti.social.network.api.response.business.response.post.BusinessPost
 import com.uyscuti.social.network.api.response.business.response.post.ProductPost
+import com.uyscuti.social.network.api.response.business.response.post.comment.BusinessCommentResponse
+import com.uyscuti.social.network.api.response.business.response.post.comment.CommentsResponse
 import com.uyscuti.social.network.api.response.business.response.post.likes.LikeResponse
 import com.uyscuti.social.network.api.response.chats.ChatsResponse
 import com.uyscuti.social.network.api.response.chats.FetchChatResponse
@@ -62,12 +62,13 @@ import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 import com.uyscuti.social.network.api.response.createchat.CreateChatResponse
+import com.uyscuti.social.network.api.response.favoritefeed.FeedFavoriteResponse
 import com.uyscuti.social.network.api.response.favoritefeed.GetFavoriteFeedResponse
 import com.uyscuti.social.network.api.response.favoriteshort.ShortsFavoriteResponse
 import com.uyscuti.social.network.api.response.feed.FeedUploadResponse
 import com.uyscuti.social.network.api.response.feed.deletefeed.DeleteFeedResponse
-import com.uyscuti.social.network.api.response.follow_unfollow.OtherUsersFollowersAndFollowingResponse
 import com.uyscuti.social.network.api.response.follow_unfollow.FollowUnFollowResponse
+import com.uyscuti.social.network.api.response.follow_unfollow.OtherUsersFollowersAndFollowingResponse
 import com.uyscuti.social.network.api.response.getCommentNotification.GetCommentNotification
 import com.uyscuti.social.network.api.response.getPageComment.GetPageCommentId
 import com.uyscuti.social.network.api.response.getUnifiedNotification.GetUnifiedNotifications
@@ -75,6 +76,7 @@ import com.uyscuti.social.network.api.response.getallshorts.GetAllShortsResponse
 import com.uyscuti.social.network.api.response.getallshorts.ResponseData
 import com.uyscuti.social.network.api.response.getfavoriteshorts.GetFavoriteShortsResponse
 import com.uyscuti.social.network.api.response.getmyprofile.GetMyProfile
+import com.uyscuti.social.network.api.response.getrepostsPostsoriginal.GetRepostsPostsOriginal
 import com.uyscuti.social.network.api.response.gif.GifResponse
 import com.uyscuti.social.network.api.response.gif.allgifs.AllGifsResponse
 import com.uyscuti.social.network.api.response.googleloginresponse.GoogleLoginResponse
@@ -96,64 +98,108 @@ import okhttp3.RequestBody
 import retrofit2.http.DELETE
 import retrofit2.http.PUT
 
-
 interface IFlashapi {
 
-    // ============================================================================
-    // AUTHENTICATION & USER MANAGEMENT
-    // ============================================================================
+
 
     @POST("auth/facebook-login")
     suspend fun facebookLogin(@Body request: FacebookLoginRequest): Response<LoginResponse>
+
 
     @POST("users/register")
     suspend fun registerUsers(@Body requestPost: RegisterRequest): Response<RegisterResponse>
 
     @POST("users/login")
-    suspend fun loginUsers(@Body requestPost: LoginRequest): Response<LoginResponse>
+    suspend fun  loginUsers(@Body requestPost: LoginRequest): Response<LoginResponse>
 
     @POST("users/google-login")
-    suspend fun googleLogin(@Body requestPost: GoogleLoginRequest): Response<GoogleLoginResponse>
-
-    @POST("users/resend-email-verification")
-    suspend fun resendEmailVerification(): Response<MainResponse>
-
-    @Multipart
-    @PATCH("users/avatar")
-    suspend fun updateUserAvatar(@Part avatar: MultipartBody.Part): Response<UpdateAvatarResponse>
-
-
-    // ============================================================================
-    // CHAT & MESSAGING
-    // ============================================================================
-
+    suspend fun  googleLogin(@Body requestPost: GoogleLoginRequest): Response<GoogleLoginResponse>
     @GET("chat-app/chats")
     suspend fun getChats(): Response<ChatsResponse>
 
+    @GET("social-media/profile/{username}/followers")
+    suspend fun getOtherUserFollowers(
+        @Path("username") username: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): Response<UserOtherFollowersResponse>
+
+    @GET("social-media/profile/{username}/following")
+    suspend fun getOtherUserFollowing(
+        @Path("username") username: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): Response<OtherUserFollowingResponse>
+
+
+
+    @DELETE("social-media/followers/{userId}")
+    suspend fun removeFollower(@Path("userId") userId: String): Response<FollowUnFollowResponse>
+
+    // Unfollow a user by user ID
+    @DELETE("social-media/following/{userId}")
+    suspend fun unfollowUser(@Path("userId") userId: String): Response<FollowUnFollowResponse>
+
+    @GET("social-media/following/status/{userId}")
+    suspend fun getOtherUsersFollowersAndFollowingStatus(
+        @Path("userId") userId: String): Response<OtherUsersFollowersAndFollowingResponse>
+
+    // Block a user
+    @POST("social-media/block/{userId}")
+    suspend fun blockUser(@Path("userId") userId: String): Response<FollowUnFollowResponse>
+
+    // Unblock a user
+    @DELETE("social-media/block/{userId}")
+    suspend fun unBlockUser(@Path("userId") userId: String): Response<FollowUnFollowResponse>
+
+    @GET("social-media/followers/my")
+    suspend fun getMyFollowers(
+        @Query("page") page: Int,
+        @Query("limit") limit: Int = 20
+    ): Response<UsersResponse>
+
+    // Get who I'm following
+    @GET("social-media/following/my")
+    suspend fun getMyFollowing(
+        @Query("page") page: Int,
+        @Query("limit") limit: Int = 20
+    ): Response<UsersResponse>
+
+
+    // Get blocked users
+    @GET("social-media/blocked")
+    suspend fun getBlockedUsers(
+        @Query("page") page: Int,
+        @Query("limit") limit: Int = 20
+    ): Response<UsersResponse>
+
+
+    @GET("chat-app/chats/fetchChat/{chatId}")
+    suspend fun fetchChat(@Path("chatId") chatId: String): Response<FetchChatResponse>
+
     @GET("chat-app/chats")
     suspend fun getChats(
-        @Query("limit") limit: Int,
-        @Query("offset") offset: Int
+        @Query("limit") limit: Int, // Specify the number of items to fetch in a batch
+        @Query("offset") offset: Int // Specify the starting point for the next batch
     ): Response<ChatsResponse>
+
+    @POST("users/resend-email-verification")
+    suspend fun resendEmailVerification(): Response<MainResponse>
 
     @GET("chat-app/chats")
     suspend fun getChats(
         @Query("limit") limit: Int,
         @Query("offset") offset: Int,
-        @Query("sort") sort: String = "-createdAt"
+        @Query("sort") sort: String = "-createdAt" // Assuming createdAt is the timestamp field, - indicates descending order
     ): Response<ChatsResponse>
 
     @GET("chat-app/chats")
-    suspend fun fetchChatItems(): String
-
-    @GET("chat-app/chats/fetchChat/{chatId}")
-    suspend fun fetchChat(@Path("chatId") chatId: String): Response<FetchChatResponse>
+    suspend fun fetchChatItems(): String // Adjust the return type as needed
 
     @GET("chat-app/chats/users")
     suspend fun getUsers(): Response<UsersResponse>
 
-    @GET("chat-app/chats/users")
-    suspend fun getOtherUsers(): Response<GetAvailableUsers>
+
 
     @POST("chat-app/chats/users/search")
     suspend fun searchUsers(@Body request: SearchUsersRequest): Response<UsersResponse>
@@ -173,8 +219,22 @@ interface IFlashapi {
     @POST("chat-app/chats/group")
     suspend fun createGroupChat(@Body groupChatRequest: RequestGroupChat): Response<ResponseGroupChat>
 
+
+//    @POST("chat-app/chats/c/{receiverId}")
+//    suspend fun createUserChat(@Path("receiverId") receiverId: String): Response<CreateChatResponse>
+//
+//    @POST("chat-app/chats/c/{receiverId}")
+//    suspend fun createGroupChat(@Path("receiverId") receiverId: String): Response<CreateChatResponse>
+//
+//    @POST("chat-app/chats/group")
+//    suspend fun createGroupChat(@Body groupChatRequest: GroupChatRequest): Response<GroupChatResponse>
+//
+//    @POST("chat-app/chats/c/")
+//    suspend fun createChat(@Query("receiverId") receiverId: String): Response<CreateChatResponse>
+
     @GET("chat-app/messages/{chatId}")
     suspend fun getMessages(@Path("chatId") chatId: String): Response<GetMessagesResponse>
+
 
     @GET("chat-app/messages/{chatId}")
     suspend fun getMessages(
@@ -183,91 +243,220 @@ interface IFlashapi {
         @Query("offset") offset: Int
     ): Response<GetMessagesResponse>
 
+
+
     @POST("chat-app/messages/{chatId}")
-    suspend fun sendMessage(
-        @Path("chatId") chatId: String,
-        @Body requestPost: SendMessageRequest
-    ): Response<SendMessageResponse>
+    suspend fun sendMessage(@Path("chatId") chatId: String, @Body requestPost: SendMessageRequest): Response<SendMessageResponse>
+
+
 
     @Multipart
-    @POST("chat-app/messages/{chatId}")
+    @POST("chat-app/messages/{chatId}") // Replace with your actual API endpoint
     suspend fun sendAttachment(
         @Path("chatId") chatId: String,
         @Part filePath: MultipartBody.Part
     ): Response<SendMessageResponse>
 
     @Multipart
-    @POST("chat-app/messages/{chatId}")
+    @POST("chat-app/messages/{chatId}") // Replace with your actual API endpoint
     suspend fun uploadImage(
         @Path("chatId") chatId: String,
         @Part image: MultipartBody.Part
     ): Response<SendFileResponse>
 
 
-    // ============================================================================
-    // SOCIAL MEDIA - POSTS (SHORTS)
-    // ============================================================================
+
+
+//    @GET("social-media/posts")
+//    suspend fun getAllPosts(): Response<GetAllShortsResponse>
+//
+//    @GET("social-media/posts")
+//    suspend fun getAllPosts2(): Response<ShortsGetResponse>
 
     @GET("social-media/posts")
     suspend fun getAllPosts3(): Response<ApiResponse<ResponseData>>
 
     @GET("social-media/posts")
     suspend fun getShorts(
-        @Query("page") page: String
+        @Query("page") page: String,
+
     ): Response<ApiResponse<ResponseData>>
+
+    //        @Query("limit") limit: String
 
     @GET("social-media/posts/getAllShortsByFeedShortBusinessId/{feedShortsBusinessId}")
     suspend fun getAllShortsByFeedShortBusinessId(
-        @Path("feedShortsBusinessId") feedShortsBusinessId: String
+        @Path("feedShortsBusinessId")feedShortsBusinessId: String,
     ): Response<ApiResponse<ResponseData>>
+//    @GET("social-media/posts")
+//    suspend fun getShorts(
+//        @Query("page") page: String,
+////        @Query("limit") limit: String
+//    ): Response<GetAllShortsResponse>
 
     @GET("social-media/posts/get/my")
     suspend fun myShorts(
-        @Query("page") page: String
+        @Query("page") page: String,
+//        @Query("limit") limit: String
     ): Response<GetAllShortsResponse>
 
+    //    @Multipart
+//    @POST("chat-app/messages/{chatId}") // Replace with your actual API endpoint
+//    suspend fun uploadShort(
+//        @Path("chatId") chatId: String,
+//        @Part image: MultipartBody.Part,
+//        @Part("content") content: RequestBody
+//    ): Response<SendFileResponse>
+    @Multipart
+    @PATCH("users/avatar")
+    suspend fun updateUserAvatar(@Part avatar: MultipartBody.Part): Response<UpdateAvatarResponse>
+
+    @GET("social-media/profile")
+    suspend fun getMyProfile(): Response<GetMyProfile>
+
+    @GET("social-media/profile/u/{username}")
+    suspend fun getOtherUsersProfileByUsername(@Path("username") username: String): Response<OtherUsersProfileResponse>
+
     @GET("social-media/posts/get/u/{username}")
-    suspend fun getShortsByUsername(
-        @Path("username") username: String
-    ): Response<OtherUsersProfileShortsResponse>
-
-    // In the SOCIAL MEDIA - FEED section, add this:
-
-    @GET("feed/post/user/{username}")
-    suspend fun getSearchAllFeedByUsername(
-        @Path("username") username: String,
-        @Query("page") page: String
-    ): Response<FeedResponse>
-
-    // Also fix the existing one that's missing @GET annotation:
-    @GET("feed/post/get/u/{username}")
-    suspend fun getOtherUserFeed(
-        @Path("username") username: String,
-        @Query("page") page: String
-    ): Response<AllFeedRepostsPost>
+    suspend fun getShortsByUsername(@Path("username") username: String): Response<OtherUsersProfileShortsResponse>
 
     @GET("social-media/posts/get/u/{username}")
     suspend fun getShortsByUsernameWithPage(
         @Path("username") username: String,
-        @Query("page") page: String
+        @Query("page") page: String,
     ): Response<OtherUsersProfileShortsResponse>
 
-    @GET("social-media/posts/search")
-    suspend fun searchAllShorts(
-        @Query("query") query: String,
-        @Query("page") page: String = "1"
-    ): Response<ApiResponse<ResponseData>>
+    @GET("social-media/bookmarks")
+    suspend fun getFavoriteShorts(
+        @Query("page") page: String,
+    ): Response<GetFavoriteShortsResponse>
 
-    @GET("social-media/posts/user/{username}")
-    suspend fun getShortsByUsernameOnly(
-        @Path("username") username: String,
-        @Query("page") page: String
-    ): Response<ApiResponse<ResponseData>>
+    @PATCH("social-media/profile")
+    suspend fun updateMyProfile(@Body requestPost: UpdateSocialProfileRequest): Response<GetMyProfile>
 
-    @GET("social-media/posts/{postId}")
-    suspend fun getPostById(
-        @Path("postId") postId: String
-    ): Response<GetPostById>
+
+//    @POST("chat-app/chats/group/{chatId}/{participantId}")
+//    suspend fun addParticipantToGroupChat(@Path("chatId") chatId: String, @Path("participantId") participantId: String): Response<AddParticipantResponse>
+
+//    @DELETE("chat-app/chats/group/{chatId}")
+//    suspend fun deleteGroupChat(@Path("chatId") chatId: String): Response<DeleteGroupChatResponse>
+//
+
+//    @DELETE("chat-app/chats/leave/group/{chatId}")
+//    suspend fun leaveGroupChat(@Path("chatId") chatId: String): Response<LeaveGroup>
+//
+//    @PATCH("chat-app/chats/group/{chatId}")
+//    suspend fun changeGroupName(@Body requestPost: ChangeGroupNameRequest): Response<ChangeGroupName>
+//
+//    @DELETE("chat-app/chats/remove/{chatId}")
+//    suspend fun deleteChat(@Path("chatId") chatId: String): Response<DeleteOneOnOneChat>
+//
+//    @DELETE("chat-app/chats/group/{chatId}/{participantId}")
+//    suspend fun removeParticipant(@Path("chatId") chatId: String, @Path("participantId") participantId: String): Response<RemoveParticipantResponse>
+//
+////    Social Media
+//
+    @POST("social-media/follow/{toBeFollowedUserId}")
+    suspend fun followUnFollow(@Path("toBeFollowedUserId") toBeFollowedUserId: String): Response<FollowUnFollowResponse>
+
+    @POST("social-media/like/post/{postId}")
+    suspend fun likeUnLikeShort(@Path("postId") postId: String): Response<LikeUnLikeShortResponse>
+
+    @POST("feed/like/{postId}")
+    suspend fun likeUnLikeFeed(@Path("postId") postId: String): Response<LikeUnLikeShortResponse>
+
+    @POST("feed/like/comment/{commentId}")
+    suspend fun likeUnLikeFeedComment(@Path("commentId") commentId: String): Response<LikeUnLikeCommentResponse>
+
+    @POST("social-media/like/comment/{commentId}")
+    suspend fun likeUnLikeComment(@Path("commentId") commentId: String): Response<LikeUnLikeCommentResponse>
+
+    @POST("social-media/like/comment/reply/{commentReplyId}")
+    suspend fun likeUnLikeCommentReply(@Path("commentReplyId") commentReplyId: String): Response<LikeUnLikeCommentResponse>
+
+    @POST("feed/like/comment/reply/{commentReplyId}")
+    suspend fun likeUnLikeFeedCommentReply(@Path("commentReplyId") commentReplyId: String): Response<LikeUnLikeCommentResponse>
+
+    @POST("social-media/bookmarks/{postId}")
+    suspend fun favoriteShort(@Path("postId") postId: String): Response<ShortsFavoriteResponse>
+
+
+    @POST("feed/bookmarks/{postId}")
+    suspend fun favoriteFeed(@Path("postId") postId: String): Response<ShortsFavoriteResponse>
+//    @Multipart
+    @POST("social-media/comments/post/{postId}")
+    suspend fun addComment(
+    @Path("postId") postId: String, @Body requestBody: CommentRequestBody,
+    ) : Response<ShortCommentResponse>
+
+    @POST("feed/comments/{postId}")
+    suspend fun addFeedComment(
+        @Path("postId") postId: String, @Body requestBody: CommentRequestBody,
+    ) : Response<ShortCommentResponse>
+
+    @Multipart
+    @POST("business/product-posts/comments/{businessPostId}")
+    suspend fun addBusinessComment(
+        @Path("businessPostId") businessPostId: String,
+        @Part("content") content: RequestBody? = null,
+        @Part("contentType") contentType: RequestBody,
+        @Part("localUpdateId") localUpdateId: RequestBody,
+        @Part image: List<MultipartBody.Part>? = null,
+        @Part video: List<MultipartBody.Part>? = null,
+        @Part thumbnail: List<MultipartBody.Part>? = null,
+        @Part audio: List<MultipartBody.Part>? = null,
+        @Part docs: List<MultipartBody.Part>? = null,
+        @Part("duration") duration: RequestBody? = null,
+        @Part("fileName") fileName: RequestBody? = null,
+        @Part("fileType") fileType: RequestBody? = null,
+        @Part("fileSize") fileSize: RequestBody? = null,
+        @Part("numberOfPages") numberOfPages: RequestBody? = null,
+        @Part("gif") gif: RequestBody? = null
+    ): Response<BusinessCommentResponse>
+
+    @Multipart
+    @POST("business/product-posts/comments/replies/{commentId}")
+    suspend fun addReplyBusinessComment(
+        @Path("commentId") commentId: String,
+        @Part("content") content: RequestBody? = null,
+        @Part("contentType") contentType: RequestBody,
+        @Part("localUpdateId") localUpdateId: RequestBody,
+        @Part image: List<MultipartBody.Part>? = null,
+        @Part video: List<MultipartBody.Part>? = null,
+        @Part thumbnail: List<MultipartBody.Part>? = null,
+        @Part audio: List<MultipartBody.Part>? = null,
+        @Part docs: List<MultipartBody.Part>? = null,
+        @Part("duration") duration: RequestBody? = null,
+        @Part("fileName") fileName: RequestBody? = null,
+        @Part("fileType") fileType: RequestBody? = null,
+        @Part("fileSize") fileSize: RequestBody? = null,
+        @Part("numberOfPages") numberOfPages: RequestBody? = null,
+        @Part("gif") gif: RequestBody? = null
+    ): Response<BusinessCommentResponse>
+
+    @POST("social-media/comments/post/{postId}")
+    suspend fun addGifComment(
+        @Path("postId") postId: String,
+        @Body requestBody: GifCommentRequestBody,
+    ) : Response<ShortCommentResponse>
+
+    @POST("feed/comments/{postId}")
+    suspend fun addGifFeedComment(
+        @Path("postId") postId: String,
+        @Body requestBody: GifCommentRequestBody,
+    ) : Response<ShortCommentResponse>
+
+    @POST("social-media/comment/reply/comment/{commentId}")
+    suspend fun addGifCommentReply(
+        @Path("commentId") commentId:String,
+        @Body requestBody: GifCommentRequestBody,
+    ) : Response<CommentReplyResponse>
+
+    @POST("feed/comment/reply/comment/{commentId}")
+    suspend fun addFeedGifCommentReply(
+        @Path("commentId") commentId:String,
+        @Body requestBody: GifCommentRequestBody,
+    ) : Response<CommentReplyResponse>
 
     @Multipart
     @POST("social-media/posts")
@@ -290,15 +479,11 @@ interface IFlashapi {
         @Part thumbnail: MultipartBody.Part
     ): Response<ShortsUploadResponse>
 
-
-    // ============================================================================
-    // SOCIAL MEDIA - FEED
-    // ============================================================================
-
     @POST("feed/post")
     suspend fun uploadTextFeed(
-        @Body requestBody: FeedTextUploadRequestBody
+        @Body requestBody: FeedTextUploadRequestBody,
     ): Response<FeedUploadResponse>
+
 
     @Multipart
     @POST("feed/post")
@@ -308,7 +493,8 @@ interface IFlashapi {
         @Part("duration") duration: RequestBody,
         @Part files: MultipartBody.Part,
         @Part("tags") tags: Array<RequestBody>? = null,
-        @Part thumbnail: MultipartBody.Part?
+        @Part thumbnail: MultipartBody.Part
+
     ): Response<FeedUploadResponse>
 
     @Multipart
@@ -318,7 +504,7 @@ interface IFlashapi {
         @Part("contentType") contentType: RequestBody,
         @Part("duration") duration: RequestBody,
         @Part files: MultipartBody.Part,
-        @Part("tags") tags: Array<RequestBody>? = null
+        @Part("tags") tags: Array<RequestBody>? = null,
     ): Response<FeedUploadResponse>
 
     @Multipart
@@ -328,7 +514,7 @@ interface IFlashapi {
         @Part("contentType") contentType: RequestBody,
         @Part("duration") duration: RequestBody,
         @Part files: List<MultipartBody.Part>,
-        @Part("tags") tags: Array<RequestBody>? = null
+        @Part("tags") tags: Array<RequestBody>? = null,
     ): Response<FeedUploadResponse>
 
     @Multipart
@@ -337,6 +523,8 @@ interface IFlashapi {
         @Part("content") content: RequestBody,
         @Part("contentType") contentType: RequestBody,
         @Part("feedShortsBusinessId") feedShortsBusinessId: RequestBody,
+//        @Part("duration") duration: List<RequestBody>,
+//        @Part parts: List<MultipartBody.Part>,
         @Part("duration") duration: Array<RequestBody>,
         @Part("fileTypes") fileTypes: Array<RequestBody>,
         @Part("numberOfPages") numberOfPages: Array<RequestBody>,
@@ -345,9 +533,8 @@ interface IFlashapi {
         @Part("fileIds") fileIds: RequestBody,
         @Part files: List<MultipartBody.Part>,
         @Part thumbnail: List<MultipartBody.Part>,
-        @Part("tags") tags: Array<RequestBody>? = null
+        @Part("tags") tags: Array<RequestBody>? = null,
     ): Response<FeedUploadResponse>
-
     @Multipart
     @POST("feed/post")
     suspend fun uploadMultipleVideoFilesFeed(
@@ -356,7 +543,7 @@ interface IFlashapi {
         @Part("duration") duration: RequestBody,
         @Part files: List<MultipartBody.Part>,
         @Part thumbnail: List<MultipartBody.Part>,
-        @Part("tags") tags: Array<RequestBody>? = null
+        @Part("tags") tags: Array<RequestBody>? = null,
     ): Response<FeedUploadResponse>
 
     @Multipart
@@ -369,64 +556,21 @@ interface IFlashapi {
         @Part("docType") docType: RequestBody,
         @Part files: List<MultipartBody.Part>,
         @Part thumbnail: List<MultipartBody.Part>,
-        @Part("tags") tags: Array<RequestBody>? = null
+        @Part("tags") tags: Array<RequestBody>? = null,
     ): Response<FeedUploadResponse>
 
-    @GET("feed/post/test")
+//    @GET("feed/post")
+//    suspend fun getAllFeed(
+//        @Query("page") page: String,
+//    ): Response<GetRepostsPostsOriginal>
+
+
+    // For getting All Feed
+        @GET("feed/post/test")
     suspend fun getAllFeed(
-        @Query("page") page: String
-    ): Response<FeedResponse>
-
-    @GET("feed/post/search")
-    suspend fun getSearchAllFeed(
         @Query("page") page: String,
-        @Query("query") query: String
     ): Response<FeedResponse>
 
-    @GET("feed/post/get/my")
-    suspend fun getMyFeed(
-        @Query("page") page: String
-    ): Response<AllFeedRepostsPost>
-
-
-    @DELETE("feed/post/{postId}")
-    suspend fun deleteFeed(
-        @Path("postId") postId: String
-    ): Response<DeleteFeedResponse>
-
-    @POST("feed/post/repost/{postId}")
-    suspend fun repostsFeed(
-        @Path("postId") postId: String,
-        @Body request: RepostRequest
-    ): Response<CreateRepostFeedPost>
-
-
-    // ============================================================================
-    // SOCIAL MEDIA - COMMENTS (SHORTS)
-    // ============================================================================
-
-    @GET("social-media/comments/post/{postId}")
-    suspend fun getShortComments(
-        @Path("postId") postId: String,
-        @Query("page") page: String
-    ): Response<AllShortComments>
-
-    @GET("social-media/comments/{commentId}")
-    suspend fun getPageComment(
-        @Path("commentId") commentId: String
-    ): Response<GetPageCommentId>
-
-    @POST("social-media/comments/post/{postId}")
-    suspend fun addComment(
-        @Path("postId") postId: String,
-        @Body requestBody: CommentRequestBody
-    ): Response<ShortCommentResponse>
-
-    @POST("social-media/comments/post/{postId}")
-    suspend fun addGifComment(
-        @Path("postId") postId: String,
-        @Body requestBody: GifCommentRequestBody
-    ): Response<ShortCommentResponse>
 
     @Multipart
     @POST("social-media/comments/post/{postId}")
@@ -437,8 +581,20 @@ interface IFlashapi {
         @Part("localUpdateId") localUpdateId: RequestBody,
         @Part("duration") duration: RequestBody,
         @Part video: MultipartBody.Part,
-        @Part thumbnail: MultipartBody.Part
-    ): Response<ShortCommentResponse>
+        @Part thumbnail: MultipartBody.Part,
+    ) : Response<ShortCommentResponse>
+
+    @Multipart
+    @POST("feed/comments/{postId}")
+    suspend fun addVideoFeedComment(
+        @Path("postId") postId: String,
+        @Part("content") content: RequestBody,
+        @Part("contentType") contentType: RequestBody,
+        @Part("localUpdateId") localUpdateId: RequestBody,
+        @Part("duration") duration: RequestBody,
+        @Part video: MultipartBody.Part,
+        @Part thumbnail: MultipartBody.Part,
+    ) : Response<ShortCommentResponse>
 
     @Multipart
     @POST("social-media/comments/post/{postId}")
@@ -451,66 +607,8 @@ interface IFlashapi {
         @Part("fileSize") fileSize: RequestBody,
         @Part("fileType") fileType: RequestBody,
         @Part("numberOfPages") numberOfPages: RequestBody,
-        @Part docs: MultipartBody.Part
-    ): Response<ShortCommentResponse>
-
-    @Multipart
-    @POST("social-media/comments/post/{postId}")
-    suspend fun addComment(
-        @Path("postId") postId: String,
-        @Part("content") content: RequestBody,
-        @Part("contentType") contentType: RequestBody,
-        @Part("localUpdateId") localUpdateId: RequestBody,
-        @Part("fileName") fileName: RequestBody,
-        @Part("fileType") fileType: RequestBody,
-        @Part("duration") duration: RequestBody,
-        @Part audio: MultipartBody.Part
-    ): Response<ShortCommentResponse>
-
-    @Multipart
-    @POST("social-media/comments/post/{postId}")
-    suspend fun addImageComment(
-        @Path("postId") postId: String,
-        @Part("content") content: RequestBody,
-        @Part("contentType") contentType: RequestBody,
-        @Part("localUpdateId") localUpdateId: RequestBody,
-        @Part image: MultipartBody.Part
-    ): Response<ShortCommentResponse>
-
-
-    // ============================================================================
-    // SOCIAL MEDIA - COMMENTS (FEED)
-    // ============================================================================
-
-    @GET("feed/comments/{postId}")
-    suspend fun getFeedComments(
-        @Path("postId") postId: String,
-        @Query("page") page: String
-    ): Response<AllShortComments>
-
-    @POST("feed/comments/{postId}")
-    suspend fun addFeedComment(
-        @Path("postId") postId: String,
-        @Body requestBody: CommentRequestBody
-    ): Response<ShortCommentResponse>
-
-    @POST("feed/comments/{postId}")
-    suspend fun addGifFeedComment(
-        @Path("postId") postId: String,
-        @Body requestBody: GifCommentRequestBody
-    ): Response<ShortCommentResponse>
-
-    @Multipart
-    @POST("feed/comments/{postId}")
-    suspend fun addVideoFeedComment(
-        @Path("postId") postId: String,
-        @Part("content") content: RequestBody,
-        @Part("contentType") contentType: RequestBody,
-        @Part("localUpdateId") localUpdateId: RequestBody,
-        @Part("duration") duration: RequestBody,
-        @Part video: MultipartBody.Part,
-        @Part thumbnail: MultipartBody.Part
-    ): Response<ShortCommentResponse>
+        @Part docs: MultipartBody.Part,
+    ) : Response<ShortCommentResponse>
 
     @Multipart
     @POST("feed/comments/{postId}")
@@ -523,8 +621,20 @@ interface IFlashapi {
         @Part("fileSize") fileSize: RequestBody,
         @Part("fileType") fileType: RequestBody,
         @Part("numberOfPages") numberOfPages: RequestBody,
-        @Part docs: MultipartBody.Part
-    ): Response<ShortCommentResponse>
+        @Part docs: MultipartBody.Part,
+    ) : Response<ShortCommentResponse>
+    @Multipart
+    @POST("social-media/comments/post/{postId}")
+    suspend fun addComment(
+        @Path("postId") postId: String,
+        @Part("content") content: RequestBody,
+        @Part("contentType") contentType: RequestBody,
+        @Part("localUpdateId") localUpdateId: RequestBody,
+        @Part("fileName") fileName: RequestBody,
+        @Part("fileType") fileType: RequestBody,
+        @Part("duration") duration: RequestBody,
+        @Part audio: MultipartBody.Part,
+    ) : Response<ShortCommentResponse>
 
     @Multipart
     @POST("feed/comments/{postId}")
@@ -536,9 +646,18 @@ interface IFlashapi {
         @Part("fileName") fileName: RequestBody,
         @Part("fileType") fileType: RequestBody,
         @Part("duration") duration: RequestBody,
-        @Part audio: MultipartBody.Part
-    ): Response<ShortCommentResponse>
+        @Part audio: MultipartBody.Part,
+    ) : Response<ShortCommentResponse>
 
+    @Multipart
+    @POST("social-media/comments/post/{postId}")
+    suspend fun addImageComment(
+        @Path("postId") postId: String,
+        @Part("content") content: RequestBody,
+        @Part("contentType") contentType: RequestBody,
+        @Part("localUpdateId") localUpdateId: RequestBody,
+        @Part image: MultipartBody.Part,
+    ) : Response<ShortCommentResponse>
     @Multipart
     @POST("feed/comments/{postId}")
     suspend fun addImageFeedComment(
@@ -546,143 +665,119 @@ interface IFlashapi {
         @Part("content") content: RequestBody,
         @Part("contentType") contentType: RequestBody,
         @Part("localUpdateId") localUpdateId: RequestBody,
-        @Part image: MultipartBody.Part
-    ): Response<ShortCommentResponse>
+        @Part image: MultipartBody.Part,
+    ) : Response<ShortCommentResponse>
+
+//    @Multipart
 
 
-    // ============================================================================
-    // SOCIAL MEDIA - COMMENT REPLIES (SHORTS)
-    // ============================================================================
 
-    @GET("social-media/comment/reply/comment/{commentId}")
-    suspend fun getCommentReplies(
-        @Path("commentId") commentId: String,
+    @GET("social-media/comments/post/{postId}")
+    suspend fun getShortComments(
+        @Path("postId") postId: String,
+        @Query("page") page:String
+    ): Response<AllShortComments>
+
+    @GET("feed/comments/{postId}")
+    suspend fun getFeedComments(
+        @Path("postId") postId: String,
+        @Query("page") page:String
+    ): Response<AllShortComments>
+
+
+    @GET("business/product-posts/comments/{postId}")
+    suspend fun getBusinessPostComment(
+        @Path("postId") postId: String,
+        @Query("page") page: String
+    ): Response<CommentsResponse>
+
+    @GET("business/product-posts/comments/replies/{commentId}")
+    suspend fun getBusinessCommentReplies(
+        @Path("commentId") postId: String,
         @Query("page") page: String
     ): Response<AllCommentReplies>
 
-    @POST("social-media/comment/reply/comment/{commentId}")
-    suspend fun addCommentReply(
-        @Path("commentId") commentId: String,
-        @Body requestBody: CommentRequestBody
-    ): Response<CommentReplyResponse>
 
     @POST("social-media/comment/reply/comment/{commentId}")
-    suspend fun addGifCommentReply(
-        @Path("commentId") commentId: String,
-        @Body requestBody: GifCommentRequestBody
-    ): Response<CommentReplyResponse>
+    suspend fun addCommentReply(@Path("commentId") commentId: String, @Body requestBody: CommentRequestBody) : Response<CommentReplyResponse>
+
+    @POST("feed/comment/reply/comment/{commentId}")
+    suspend fun addFeedCommentReply(@Path("commentId") commentId: String, @Body requestBody: CommentRequestBody) : Response<CommentReplyResponse>
 
     @Multipart
     @POST("social-media/comment/reply/comment/{commentId}")
     suspend fun addCommentReply(
-        @Path("commentId") commentId: String,
+        @Path("commentId") commentId:String,
         @Part("content") content: RequestBody,
         @Part("contentType") contentType: RequestBody,
         @Part("localUpdateId") localUpdateId: RequestBody,
         @Part("fileName") fileName: RequestBody,
         @Part("fileType") fileType: RequestBody,
         @Part("duration") duration: RequestBody,
-        @Part audio: MultipartBody.Part
-    ): Response<CommentReplyResponse>
+        @Part audio: MultipartBody.Part,
+    ) : Response<CommentReplyResponse>
+
+    @Multipart
+    @POST("feed/comment/reply/comment/{commentId}")
+    suspend fun addFeedCommentReply(
+        @Path("commentId") commentId:String,
+        @Part("content") content: RequestBody,
+        @Part("contentType") contentType: RequestBody,
+        @Part("localUpdateId") localUpdateId: RequestBody,
+        @Part("fileName") fileName: RequestBody,
+        @Part("fileType") fileType: RequestBody,
+        @Part("duration") duration: RequestBody,
+        @Part audio: MultipartBody.Part,
+    ) : Response<CommentReplyResponse>
 
     @Multipart
     @POST("social-media/comment/reply/comment/{commentId}")
     suspend fun addImageCommentReply(
-        @Path("commentId") commentId: String,
+        @Path("commentId") commentId:String,
         @Part("content") content: RequestBody,
         @Part("contentType") contentType: RequestBody,
         @Part("localUpdateId") localUpdateId: RequestBody,
-        @Part image: MultipartBody.Part
-    ): Response<CommentReplyResponse>
-
-    @Multipart
-    @POST("social-media/comment/reply/comment/{commentId}")
-    suspend fun addVideoCommentReply(
-        @Path("commentId") commentId: String,
-        @Part("content") content: RequestBody,
-        @Part("contentType") contentType: RequestBody,
-        @Part("localUpdateId") localUpdateId: RequestBody,
-        @Part("duration") duration: RequestBody,
-        @Part video: MultipartBody.Part,
-        @Part thumbnail: MultipartBody.Part
-    ): Response<CommentReplyResponse>
-
-    @Multipart
-    @POST("social-media/comment/reply/comment/{commentId}")
-    suspend fun addDocumentCommentReply(
-        @Path("commentId") commentId: String,
-        @Part("content") content: RequestBody,
-        @Part("contentType") contentType: RequestBody,
-        @Part("localUpdateId") localUpdateId: RequestBody,
-        @Part("fileName") fileName: RequestBody,
-        @Part("fileSize") fileSize: RequestBody,
-        @Part("fileType") fileType: RequestBody,
-        @Part("numberOfPages") numberOfPages: RequestBody,
-        @Part docs: MultipartBody.Part
-    ): Response<CommentReplyResponse>
-
-
-    // ============================================================================
-    // SOCIAL MEDIA - COMMENT REPLIES (FEED)
-    // ============================================================================
-
-    @GET("feed/comment/reply/comment/{commentId}")
-    suspend fun getFeedCommentReplies(
-        @Path("commentId") commentId: String,
-        @Query("page") page: String
-    ): Response<AllCommentReplies>
-
-    @POST("feed/comment/reply/comment/{commentId}")
-    suspend fun addFeedCommentReply(
-        @Path("commentId") commentId: String,
-        @Body requestBody: CommentRequestBody
-    ): Response<CommentReplyResponse>
-
-    @POST("feed/comment/reply/comment/{commentId}")
-    suspend fun addFeedGifCommentReply(
-        @Path("commentId") commentId: String,
-        @Body requestBody: GifCommentRequestBody
-    ): Response<CommentReplyResponse>
-
-    @Multipart
-    @POST("feed/comment/reply/comment/{commentId}")
-    suspend fun addFeedCommentReply(
-        @Path("commentId") commentId: String,
-        @Part("content") content: RequestBody,
-        @Part("contentType") contentType: RequestBody,
-        @Part("localUpdateId") localUpdateId: RequestBody,
-        @Part("fileName") fileName: RequestBody,
-        @Part("fileType") fileType: RequestBody,
-        @Part("duration") duration: RequestBody,
-        @Part audio: MultipartBody.Part
-    ): Response<CommentReplyResponse>
+        @Part image: MultipartBody.Part,
+    ) : Response<CommentReplyResponse>
 
     @Multipart
     @POST("feed/comment/reply/comment/{commentId}")
     suspend fun addFeedImageCommentReply(
-        @Path("commentId") commentId: String,
+        @Path("commentId") commentId:String,
         @Part("content") content: RequestBody,
         @Part("contentType") contentType: RequestBody,
         @Part("localUpdateId") localUpdateId: RequestBody,
-        @Part image: MultipartBody.Part
-    ): Response<CommentReplyResponse>
+        @Part image: MultipartBody.Part,
+    ) : Response<CommentReplyResponse>
 
     @Multipart
-    @POST("feed/comment/reply/comment/{commentId}")
-    suspend fun addFeedVideoCommentReply(
-        @Path("commentId") commentId: String,
+    @POST("social-media/comment/reply/comment/{commentId}")
+    suspend fun addVideoCommentReply(
+        @Path("commentId") commentId:String,
         @Part("content") content: RequestBody,
         @Part("contentType") contentType: RequestBody,
         @Part("localUpdateId") localUpdateId: RequestBody,
         @Part("duration") duration: RequestBody,
         @Part video: MultipartBody.Part,
-        @Part thumbnail: MultipartBody.Part
-    ): Response<CommentReplyResponse>
+        @Part thumbnail: MultipartBody.Part,
+    ) : Response<CommentReplyResponse>
 
     @Multipart
     @POST("feed/comment/reply/comment/{commentId}")
-    suspend fun addFeedDocumentCommentReply(
-        @Path("commentId") commentId: String,
+    suspend fun addFeedVideoCommentReply(
+        @Path("commentId") commentId:String,
+        @Part("content") content: RequestBody,
+        @Part("contentType") contentType: RequestBody,
+        @Part("localUpdateId") localUpdateId: RequestBody,
+        @Part("duration") duration: RequestBody,
+        @Part video: MultipartBody.Part,
+        @Part thumbnail: MultipartBody.Part,
+    ) : Response<CommentReplyResponse>
+
+    @Multipart
+    @POST("social-media/comment/reply/comment/{commentId}")
+    suspend fun addDocumentCommentReply(
+        @Path("commentId") commentId:String,
         @Part("content") content: RequestBody,
         @Part("contentType") contentType: RequestBody,
         @Part("localUpdateId") localUpdateId: RequestBody,
@@ -690,153 +785,50 @@ interface IFlashapi {
         @Part("fileSize") fileSize: RequestBody,
         @Part("fileType") fileType: RequestBody,
         @Part("numberOfPages") numberOfPages: RequestBody,
-        @Part docs: MultipartBody.Part
-    ): Response<CommentReplyResponse>
+        @Part docs: MultipartBody.Part,
+    ) : Response<CommentReplyResponse>
+
+    @Multipart
+    @POST("feed/comment/reply/comment/{commentId}")
+    suspend fun addFeedDocumentCommentReply(
+        @Path("commentId") commentId:String,
+        @Part("content") content: RequestBody,
+        @Part("contentType") contentType: RequestBody,
+        @Part("localUpdateId") localUpdateId: RequestBody,
+        @Part("fileName") fileName: RequestBody,
+        @Part("fileSize") fileSize: RequestBody,
+        @Part("fileType") fileType: RequestBody,
+        @Part("numberOfPages") numberOfPages: RequestBody,
+        @Part docs: MultipartBody.Part,
+    ) : Response<CommentReplyResponse>
 
 
-    // ============================================================================
-    // SOCIAL MEDIA - INTERACTIONS (LIKE, FOLLOW, BOOKMARK, BLOCK)
-    // ============================================================================
+    @GET("social-media/comment/reply/comment/{commentId}")
+    suspend fun getCommentReplies(
+        @Path("commentId") commentId: String,
+        @Query("page") page:String
+    ): Response<AllCommentReplies>
 
-    // Follow/Unfollow
-    @POST("social-media/follow/{toBeFollowedUserId}")
-    suspend fun followUnFollow(
-        @Path("toBeFollowedUserId") toBeFollowedUserId: String
-    ): Response<FollowUnFollowResponse>
+    @GET("feed/comment/reply/comment/{commentId}")
+    suspend fun getFeedCommentReplies(
+        @Path("commentId") commentId: String,
+        @Query("page") page:String
+    ): Response<AllCommentReplies>
 
-    @DELETE("social-media/followers/{userId}")
-    suspend fun removeFollower(
-        @Path("userId") userId: String
-    ): Response<FollowUnFollowResponse>
+    @Multipart
+    @POST("gif")
+    suspend fun addGif(
+        @Part("fileType") fileType: RequestBody,
+        @Part gif: MultipartBody.Part,
+    ) : Response<GifResponse>
+    @GET("gif")
+    suspend fun getGif(
+        @Query("page") page:String
+    ): Response<AllGifsResponse>
 
-    @DELETE("social-media/following/{userId}")
-    suspend fun unfollowUser(
-        @Path("userId") userId: String
-    ): Response<FollowUnFollowResponse>
+    @GET("chat-app/chats/users")
+    suspend fun getOtherUsers(): Response<GetAvailableUsers>
 
-    @GET("social-media/following/status/{userId}")
-    suspend fun getOtherUsersFollowersAndFollowingStatus(
-        @Path("userId") userId: String
-    ): Response<OtherUsersFollowersAndFollowingResponse>
-
-    // Block/Unblock
-    @POST("social-media/block/{userId}")
-    suspend fun blockUser(
-        @Path("userId") userId: String
-    ): Response<FollowUnFollowResponse>
-
-    @DELETE("social-media/block/{userId}")
-    suspend fun unBlockUser(
-        @Path("userId") userId: String
-    ): Response<FollowUnFollowResponse>
-
-    @GET("social-media/blocked")
-    suspend fun getBlockedUsers(
-        @Query("page") page: Int,
-        @Query("limit") limit: Int = 20
-    ): Response<UsersResponse>
-
-    // Like/Unlike - Shorts
-    @POST("social-media/like/post/{postId}")
-    suspend fun likeUnLikeShort(
-        @Path("postId") postId: String
-    ): Response<LikeUnLikeShortResponse>
-
-    @POST("social-media/like/comment/{commentId}")
-    suspend fun likeUnLikeComment(
-        @Path("commentId") commentId: String
-    ): Response<LikeUnLikeCommentResponse>
-
-    @POST("social-media/like/comment/reply/{commentReplyId}")
-    suspend fun likeUnLikeCommentReply(
-        @Path("commentReplyId") commentReplyId: String
-    ): Response<LikeUnLikeCommentResponse>
-
-    // Like/Unlike - Feed
-    @POST("feed/like/{postId}")
-    suspend fun likeUnLikeFeed(
-        @Path("postId") postId: String
-    ): Response<LikeUnLikeShortResponse>
-
-    @POST("feed/like/comment/{commentId}")
-    suspend fun likeUnLikeFeedComment(
-        @Path("commentId") commentId: String
-    ): Response<LikeUnLikeCommentResponse>
-
-    @POST("feed/like/comment/reply/{commentReplyId}")
-    suspend fun likeUnLikeFeedCommentReply(
-        @Path("commentReplyId") commentReplyId: String
-    ): Response<LikeUnLikeCommentResponse>
-
-    // Bookmarks/Favorites
-    @POST("social-media/bookmarks/{postId}")
-    suspend fun favoriteShort(
-        @Path("postId") postId: String
-    ): Response<ShortsFavoriteResponse>
-
-    @GET("social-media/bookmarks")
-    suspend fun getFavoriteShorts(
-        @Query("page") page: String
-    ): Response<GetFavoriteShortsResponse>
-
-    @POST("feed/bookmarks/{postId}")
-    suspend fun favoriteFeed(
-        @Path("postId") postId: String
-    ): Response<ShortsFavoriteResponse>
-
-    @GET("feed/bookmarks")
-    suspend fun getFavoriteFeed(
-        @Query("page") page: String
-    ): Response<GetFavoriteFeedResponse>
-
-
-    // ============================================================================
-    // SOCIAL MEDIA - PROFILE
-    // ============================================================================
-
-    @GET("social-media/profile")
-    suspend fun getMyProfile(): Response<GetMyProfile>
-
-    @PATCH("social-media/profile")
-    suspend fun updateMyProfile(
-        @Body requestPost: UpdateSocialProfileRequest
-    ): Response<GetMyProfile>
-
-    @GET("social-media/profile/u/{username}")
-    suspend fun getOtherUsersProfileByUsername(
-        @Path("username") username: String
-    ): Response<OtherUsersProfileResponse>
-
-    @GET("social-media/profile/{username}/followers")
-    suspend fun getOtherUserFollowers(
-        @Path("username") username: String,
-        @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 20
-    ): Response<UserOtherFollowersResponse>
-
-    @GET("social-media/profile/{username}/following")
-    suspend fun getOtherUserFollowing(
-        @Path("username") username: String,
-        @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 20
-    ): Response<OtherUserFollowingResponse>
-
-    @GET("social-media/followers/my")
-    suspend fun getMyFollowers(
-        @Query("page") page: Int,
-        @Query("limit") limit: Int = 20
-    ): Response<UsersResponse>
-
-    @GET("social-media/following/my")
-    suspend fun getMyFollowing(
-        @Query("page") page: Int,
-        @Query("limit") limit: Int = 20
-    ): Response<UsersResponse>
-
-
-    // ============================================================================
-    // BUSINESS PROFILE & CATALOGUE
-    // ============================================================================
 
     @GET("business/profile")
     suspend fun getBusinessProfile(): Response<ProfileResponse>
@@ -846,140 +838,12 @@ interface IFlashapi {
         @Body profile: CreateBusinessProfile
     ): Response<CreateProfileResponse>
 
-    @GET("business/profile/{userId}")
-    suspend fun getUserBusinessProfile(
-        @Path("userId") userId: String
-    ): Response<GetBusinessProfileById>
-
-    @Multipart
-    @PATCH("business/profile/background")
-    suspend fun updateBackground(
-        @Part avatar: MultipartBody.Part
-    ): Response<BackgroundImageResponse>
-
-    @Multipart
-    @PATCH("business/profile/v")
-    suspend fun updateBackgroundVideo(
-        @Part video: MultipartBody.Part,
-        @Part thumbnail: MultipartBody.Part
-    ): Response<BackgroundVideoResponse>
-
-    @Multipart
-    @PATCH("business/profile/livelocation")
-    suspend fun updateLiveLocation(
-        @Part("latitude") latitude: RequestBody,
-        @Part("longitude") longitude: RequestBody,
-        @Part("accuracy") accuracy: RequestBody,
-        @Part("range") range: RequestBody
-    ): Response<LiveLocationResponse>
-
     @GET("business/catalogue")
     suspend fun getCatalogue(): Response<GetMyCatalogueResponse>
 
-    @GET("business/catalogue/{userId}")
-    suspend fun getUserBusinessCatalogue(
-        @Path("userId") userId: String
-    ): Response<GetCatalogueByUserId>
-
     @Multipart
-    @POST("business/catalogue/product")
-    suspend fun addProduct(
-        @Part("itemName") itemName: RequestBody,
-        @Part("description") description: RequestBody,
-        @Part("features") features: RequestBody,
-        @Part("price") price: RequestBody,
-        @Part images: List<MultipartBody.Part>
-    ): Response<AddProductResponse>
-
-    @GET("business/catalogue/m/products")
-    suspend fun getProducts(): Response<GetProductsResponse>
-
-    @DELETE("business/catalogue/products/{productId}")
-    suspend fun deleteProduct(
-        @Path("productId") productId: String
-    ): Response<DeleteProductResponse>
-
-
-    // ============================================================================
-    // NOTIFICATIONS
-    // ============================================================================
-
-    @GET("notifications/my")
-    suspend fun getMyNotifications(): Response<GetMyNotifications>
-
-    @GET("notifications/myComment")
-    suspend fun getCommentNotification(): Response<GetCommentNotification>
-
-    @GET("notifications/u")
-    suspend fun getMyUnifiedNotifications(): Response<GetUnifiedNotifications>
-
-    @PUT("notifications/read/{notificationId}")
-    suspend fun markNotificationRead(
-        @Path("notificationId") notificationId: String
-    ): Response<ReadNotificationResponse>
-
-
-    // ============================================================================
-    // GIF MANAGEMENT
-    // ============================================================================
-
-    @Multipart
-    @POST("gif")
-    suspend fun addGif(
-        @Part("fileType") fileType: RequestBody,
-        @Part gif: MultipartBody.Part
-    ): Response<GifResponse>
-
-    @GET("gif")
-    suspend fun getGif(
-        @Query("page") page: String
-    ): Response<AllGifsResponse>
-
-
-
-    // ============================================================================
-    // GIF MANAGEMENT
-    // ============================================================================
-
-
-    @GET("feed/post/search")
-    suspend fun getSearchAllFeed(
-        @Query("query") query: String,
-        @Query("filter") filter: String = "all",
-        @Query("page") page: String = "1",
-        @Query("limit") limit: String = "10"
-    ): Response<GeneralSearchResponse>
-
-
-    @GET("feed/post/user/{username}")
-    suspend fun getSearchAllFeedByUserId(
-        @Path("username") username: String,
-        @Query("page") page: String = "1",
-        @Query("limit") limit: String = "10"
-    ): Response<SearchUserFeedResponse>
-
-
-    @GET("social-media/posts")
-    suspend fun getAllPostsForSearch(
-        @Query("page") page: String,
-        @Query("limit") limit: String
-    ): Response<SearchShortsResponse>
-
-
-    @GET("feed/post/test")
-    suspend fun getUserFeedForSearch(
-        @Query("username") username: String,
-        @Query("page") page: String,
-        @Query("limit") limit: String
-    ): Response<FeedResponse>
-
-
-    @GET("business/product-posts/post")
-    suspend fun getBusinessPost(@Query("page") page: String): Response<BusinessPost>
-
-
-
-
+    @PATCH("business/profile/background")
+    suspend fun updateBackground(@Part avatar: MultipartBody.Part): Response<BackgroundImageResponse>
 
     @Multipart
     @PATCH("business/profile/livelocation")
@@ -1001,6 +865,9 @@ interface IFlashapi {
         @Part("range") range: RequestBody,
     ): Response<BusinessLocationResponse>
 
+    @Multipart
+    @PATCH("business/profile/v")
+    suspend fun updateBackgroundVideo(@Part video: MultipartBody.Part, @Part thumbnail: MultipartBody.Part): Response<BackgroundVideoResponse>
 
 
     @Multipart
@@ -1019,11 +886,27 @@ interface IFlashapi {
         @Part("accuracy")  accuracy: RequestBody
     ): Response<AdvertisementResponse>
 
+    @Multipart
+    @POST("business/catalogue/product")
+    suspend fun addProduct(
+        @Part("itemName") itemName: RequestBody,
+        @Part("description") description: RequestBody,
+        @Part("features") features: RequestBody,
+        @Part("price") price: RequestBody,
+        @Part images: List<MultipartBody.Part>
+    ): Response<AddProductResponse>
 
+    @GET("business/catalogue/m/products")
+    suspend fun getProducts(): Response<GetProductsResponse>
 
     @GET("business/catalogue/m/products")
     suspend fun getPagedProducts(@Query("page") page: String): Response<GetProductsResponse>
 
+    @DELETE("business/catalogue/products/{productId}")
+    suspend fun deleteProduct(@Path("productId") productId: String): Response<DeleteProductResponse>
+
+    @GET("business/product-posts/post")
+    suspend fun getBusinessPost(@Query("page") page: String): Response<BusinessPost>
 
     @GET("business/product-posts/product/{productId}")
     suspend fun getSingleAggregatedProduct(@Path("productId") productId: String): Response<ProductPost>
@@ -1046,6 +929,103 @@ interface IFlashapi {
     @POST("business/product-posts/likes/comment/reply/{commentReplyId}")
     suspend fun likeAndUnlikeBusinessCommentReply(@Path("commentReplyId") commentReplyId: String): Response<LikeUnLikeCommentResponse>
 
+    @GET("business/profile/{userId}")
+    suspend fun getUserBusinessProfile(@Path("userId") userId: String): Response<GetBusinessProfileById>
 
+    @GET ("business/catalogue/{userId}")
+    suspend fun getUserBusinessCatalogue(@Path("userId") userId: String): Response<GetCatalogueByUserId>
+
+    @GET("feed/bookmarks/")
+    suspend fun getFavoriteFeed(
+        @Query("page") page: String,
+    ): Response<FeedFavoriteResponse>
+
+    @GET("feed/post/followed")
+    suspend fun getFollowedPosts(@Query("page") page: String): Response<AllFeedRepostsPost>
+
+
+//    @GET("feed/posts/get/my")
+//    suspend fun myFeed(
+//        @Query("page") page: String,
+////        @Query("limit") limit: String
+//    ): Response<GetAllFeedResponse>
+
+    @GET("feed/post/get/my")
+    suspend fun getMyFeed(
+        @Query("page") page: String,
+    ): Response<AllFeedRepostsPost>
+
+//    @GET("feed/post/get/u/{username}")
+//    suspend fun getOtherUserFeed(
+//        @Path("username") username: String,
+//        @Query("page") page: String
+//    ): Response<GetAllFeedResponse>
+    suspend fun getOtherUserFeed(
+        @Path("username") username: String,
+        @Query("page") page: String
+    ): Response<AllFeedRepostsPost>
+
+//    @GET("social-media/posts/get/u/{username}")
+//    suspend fun getShortsByUsernameWithPage(
+//        @Path("username") username: String,
+//        @Query("page") page: String,
+//    ): Response<OtherUsersProfileShortsResponse>
+
+    @DELETE("feed/post/{postId}")
+    suspend fun deleteFeed(@Path("postId") postId: String): Response<DeleteFeedResponse>
+
+    @POST("feed/bookmarks/delete/{bookmarkId}")
+    suspend fun deleteFavoriteFeed(@Path("bookmarkId") bookmarkId: String): Response<DeleteFeedResponse>
+
+    @GET("feed/post")
+    suspend fun getFeedReposts(
+    @Query("page") page: String,
+    ):Response<GetRepostsPostsOriginal>
+
+    @POST("feed/post/repost/{postId}")
+    suspend fun repostsFeed(
+        @Path("postId") postId: String,
+        @Body request: RepostRequest
+        ): Response<CreateRepostFeedPost>
+//    @POST("feed/post/retweet/{postId}")
+//    suspend fun retweetFeed(@Path("postId") postId: String): Response<RetweetFeedResponse>
+// Notifications
+    @GET("notifications/my")
+    suspend fun getMyNotifications(): Response<GetMyNotifications>
+
+
+
+    @GET("notifications/myComment")
+    suspend fun getCommentNotification():Response<GetCommentNotification>
+
+    @GET("notifications/u")
+    suspend fun getMyUnifiedNotifications(@Query("limit") page:String): Response<GetUnifiedNotifications>
+
+    @PUT("notifications/read/{notificationId}")
+    suspend fun markNotificationRead(@Path("notificationId")notificationId:String): Response<ReadNotificationResponse>
+//    @GET("social-media/comments/{commentId}")
+//    suspend fun getOneComments(@Path("commentId") commentId: String): Response<GetOneCommentId>
+
+    @GET("social-media/comments/{commentId}")
+    suspend fun getPageComment(@Path("commentId") commentId: String): Response<GetPageCommentId>
+
+    ///new code implemented here
+    @GET("social-media/posts/{postId}")
+    suspend fun getPostById(@Path("postId")postId: String ):Response<GetPostById>
+
+
+    @GET("social-media/posts")
+    suspend fun getAllPostsForSearch(
+        @Query("page") page: String,
+        @Query("limit") limit: String
+    ): Response<SearchShortsResponse>
+
+
+    @GET("feed/post/test")
+    suspend fun getUserFeedForSearch(
+        @Query("username") username: String,
+        @Query("page") page: String,
+        @Query("limit") limit: String
+    ): Response<FeedResponse>
 
 }

@@ -1,4 +1,5 @@
 package com.uyscuti.social.network.api.response.otherusersprofile
+
 import com.uyscuti.social.network.api.response.otherusersprofile.Account
 import com.uyscuti.social.network.api.response.otherusersprofile.CoverImage
 
