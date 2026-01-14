@@ -556,17 +556,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         updateFollowButtonVisibility()
     }
 
-    private fun checkIfFollowing(userId: String, username: String?): Boolean {
-        val isFollowingById = followingUserIds.contains(userId)
-
-        Log.d(TAG, "checkIfFollowing - userId: $userId, username: $username")
-        Log.d(TAG, "  - Following list size: ${followingUserIds.size}")
-        Log.d(TAG, "  - Is following by ID: $isFollowingById")
-        Log.d(TAG, "  - Following IDs: $followingUserIds")
-
-        return isFollowingById
-    }
-
     private fun updateFollowButtonVisibility() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
         val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
@@ -669,6 +658,35 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
+    private fun checkIfFollowing(userId: String, username: String?): Boolean {
+        val isFollowingById = followingUserIds.contains(userId)
+
+        // Also check by username (case-insensitive, remove @)
+        val cleanUsername = username?.trim()?.lowercase()?.removePrefix("@") ?: ""
+        val isFollowingByUsername = if (cleanUsername.isNotEmpty()) {
+            FeedAdapter.getCachedFollowingUsernames().any {
+                it.trim().lowercase().removePrefix("@") == cleanUsername
+            }
+        } else {
+            false
+        }
+
+
+        Log.d(TAG, "CHECKING IF FOLLOWING")
+        Log.d(TAG, "User ID: $userId")
+        Log.d(TAG, "Username: @$username (cleaned: $cleanUsername)")
+        Log.d(TAG, "Following IDs: $followingUserIds")
+        Log.d(TAG, "Following Usernames: ${FeedAdapter.getCachedFollowingUsernames()}")
+        Log.d(TAG, "Following by ID? $isFollowingById")
+        Log.d(TAG, "Following by Username? $isFollowingByUsername")
+
+        val result = isFollowingById || isFollowingByUsername
+        Log.d(TAG, "FINAL RESULT: ${if (result) "FOLLOWING" else "NOT FOLLOWING"}")
+
+
+        return result
+    }
+
     private fun showDefaultAuthorInfo() {
         // Update hidden TextViews
         authorNameTextView?.text = "Unknown User"
@@ -756,38 +774,38 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
             if (!followingIds.isNullOrEmpty()) {
                 followingUserIds = followingIds.toMutableSet()
-                Log.d(TAG, "✅ Following IDs loaded from arguments: ${followingUserIds.size}")
-                Log.d(TAG, "✅ Following IDs: $followingUserIds")
+                Log.d(TAG, "Following IDs loaded from arguments: ${followingUserIds.size}")
+                Log.d(TAG, "Following IDs: $followingUserIds")
             } else {
                 // Fallback to FeedAdapter cache
                 followingUserIds = FeedAdapter.getCachedFollowingList().toMutableSet()
-                Log.d(TAG, "⚠️ Using FeedAdapter cache: ${followingUserIds.size} IDs")
-                Log.d(TAG, "⚠️ Cache IDs: $followingUserIds")
+                Log.d(TAG, "Using FeedAdapter cache: ${followingUserIds.size} IDs")
+                Log.d(TAG, "Cache IDs: $followingUserIds")
             }
 
             // If still empty, load from FollowingManager (localStorage first, then server)
             if (followingUserIds.isEmpty()) {
                 // Load from localStorage synchronously first
                 followingUserIds = followingManager.getFollowingList().toMutableSet()
-                Log.d(TAG, "⚠️ Loaded from localStorage: ${followingUserIds.size} IDs")
+                Log.d(TAG, "Loaded from localStorage: ${followingUserIds.size} IDs")
 
                 // Then fetch fresh data from server in background
                 lifecycleScope.launch {
                     try {
                         val serverList = followingManager.loadFollowingList()
                         followingUserIds = serverList.toMutableSet()
-                        Log.d(TAG, "✅ Loaded from server: ${followingUserIds.size} IDs")
+                        Log.d(TAG, "Loaded from server: ${followingUserIds.size} IDs")
 
                         // Update UI after loading from server
                         updateFollowButtonVisibility()
                     } catch (e: Exception) {
-                        Log.e(TAG, "❌ Error loading from server: ${e.message}")
+                        Log.e(TAG, "Error loading from server: ${e.message}")
                     }
                 }
             }
 
             Log.d(TAG, "Arguments extracted - PostList size: ${postList?.size}, CurrentPosition: $currentPosition")
-            Log.d(TAG, "📊 INITIAL Following List Size: ${followingUserIds.size}")
+            Log.d(TAG, "INITIAL Following List Size: ${followingUserIds.size}")
         }
     }
 
