@@ -168,10 +168,11 @@
             <Button
                 android:id="@+id/followButton"
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_height="24dp"
                 android:layout_alignParentEnd="true"
                 android:layout_below="@id/headerMenuButton"
                 android:layout_marginEnd="16dp"
+                android:layout_marginTop="@dimen/caption_text_size"
                 android:minWidth="80dp"
                 android:text="@string/follow"
                 android:textAllCaps="false"

@@ -212,6 +212,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         hideSystemBars()
         initializeApiService()
         followingUserIds = getCachedFollowingList().toMutableSet()
+        Log.d(TAG, "Following IDs loaded: ${followingUserIds.size} users")
     }
 
     override fun onCreateView(
@@ -428,126 +429,161 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         val userId = post.userId
         val username = post.username
 
+        Log.d(TAG, "loadAuthorDetails called - userId: $userId, username: $username")
+
         if (userId.isNullOrEmpty() && username.isNullOrEmpty()) {
             Log.w(TAG, "No userId or username available")
             showDefaultAuthorInfo()
             return
         }
 
-
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // Prefer userId if your API supports it
+                // Prefer username for API call
                 val response = when {
-                    !username.isNullOrEmpty() ->
+                    !username.isNullOrEmpty() -> {
+                        Log.d(TAG, "Fetching profile by username: $username")
                         apiService.getOtherUsersProfileByUsername(username)
-
-                    else ->
-                        apiService.getOtherUsersProfileByUsername(userId!!)
+                    }
+                    !userId.isNullOrEmpty() -> {
+                        Log.d(TAG, "Fetching profile by userId: $userId")
+                        apiService.getOtherUsersProfileByUsername(userId)
+                    }
+                    else -> {
+                        withContext(Dispatchers.Main) { showDefaultAuthorInfo() }
+                        return@launch
+                    }
                 }
 
                 if (response.isSuccessful) {
                     val profileData = response.body()?.data
                     if (profileData != null) {
-                        val firstName =
-                            extractFieldValue(profileData, "firstName", "first_name") ?: ""
-                        val lastName =
-                            extractFieldValue(profileData, "lastName", "last_name") ?: ""
+                        val firstName = extractFieldValue(profileData, "firstName", "first_name") ?: ""
+                        val lastName = extractFieldValue(profileData, "lastName", "last_name") ?: ""
 
-                        authorName = "$firstName $lastName".trim()
-                        authorUsername =
-                            extractFieldValue(profileData, "username")
-                        authorAvatarUrl =
-                            extractNestedFieldValue(profileData, "account", "avatar", "url")
-                        isAuthorVerified =
-                            extractFieldValue(profileData, "isVerified")?.toBoolean() ?: false
+                        authorName = "$firstName $lastName".trim().takeIf { it.isNotEmpty() } ?: "Unknown User"
+                        authorUsername = extractFieldValue(profileData, "username")
+                        authorAvatarUrl = extractNestedFieldValue(profileData, "account", "avatar", "url")
+                        isAuthorVerified = extractFieldValue(profileData, "isVerified")?.toBoolean() ?: false
+
+                        Log.d(TAG, "Author details loaded - Name: $authorName, Username: $authorUsername")
 
                         withContext(Dispatchers.Main) {
                             updateAuthorUI()
                         }
                     } else {
+                        Log.w(TAG, "Profile data is null")
                         withContext(Dispatchers.Main) { showDefaultAuthorInfo() }
                     }
                 } else {
+                    Log.e(TAG, "API call failed with code: ${response.code()}")
                     withContext(Dispatchers.Main) { showDefaultAuthorInfo() }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading author", e)
+                Log.e(TAG, "Error loading author details", e)
                 withContext(Dispatchers.Main) { showDefaultAuthorInfo() }
             }
         }
     }
 
     private fun updateAuthorUI() {
-        // Set author name in BOTH the hidden TextView AND the visible header
         val displayName = authorName ?: "Unknown User"
-        val displayUsername = if (authorUsername != null) "@$authorUsername" else ""
+        val displayUsername = authorUsername?.let { "@$it" } ?: ""
+
+        Log.d(TAG, "updateAuthorUI - Name: $displayName, Username: $displayUsername")
 
         // Update hidden TextViews (for compatibility)
         authorNameTextView?.text = displayName
         authorUsernameTextView?.text = displayUsername
 
         // Update VISIBLE header TextViews
-        val headerFullName = view?.findViewById<TextView>(R.id.fullNameTextView)
-        val headerUsername = view?.findViewById<TextView>(R.id.usernameTextView)
-        val headerProfileIcon = view?.findViewById<ImageView>(R.id.userProfileIcon)
-        val followButton = view?.findViewById<Button>(R.id.followButton)
+        view?.findViewById<TextView>(R.id.fullNameTextView)?.apply {
+            text = displayName
+            visibility = View.VISIBLE
+        }
 
-        headerFullName?.text = displayName
-        headerUsername?.text = displayUsername
-        headerUsername?.visibility = if (displayUsername.isNotEmpty()) View.VISIBLE else View.GONE
+        view?.findViewById<TextView>(R.id.usernameTextView)?.apply {
+            text = displayUsername
+            visibility = if (displayUsername.isNotEmpty()) View.VISIBLE else View.GONE
+        }
 
-        // Load avatar image into the VISIBLE header profile icon
-        if (!authorAvatarUrl.isNullOrEmpty()) {
-            headerProfileIcon?.let { imageView ->
+        // Load avatar
+        view?.findViewById<ImageView>(R.id.userProfileIcon)?.let { imageView ->
+            if (!authorAvatarUrl.isNullOrEmpty()) {
                 Glide.with(requireContext())
                     .load(authorAvatarUrl)
                     .placeholder(R.drawable.flash21)
                     .error(R.drawable.flash21)
                     .circleCrop()
                     .into(imageView)
+            } else {
+                imageView.setImageResource(R.drawable.flash21)
             }
-        } else {
-            headerProfileIcon?.setImageResource(R.drawable.flash21)
         }
 
         // Show/hide verified badge
-        val verifiedBadge = view?.findViewById<ImageView>(R.id.verifiedBadge)
-        verifiedBadge?.visibility = if (isAuthorVerified) View.VISIBLE else View.GONE
+        view?.findViewById<ImageView>(R.id.verifiedBadge)?.apply {
+            visibility = if (isAuthorVerified) View.VISIBLE else View.GONE
+        }
 
-        // Handle follow button visibility
+        // Handle follow button
+        updateFollowButtonVisibility()
+    }
+
+    private fun updateFollowButtonVisibility() {
+
+        val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
         val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
         val post = postList?.getOrNull(viewPager.currentItem)
         val feedOwnerId = post?.userId
 
-        if (feedOwnerId == currentUserId) {
-            // Hide if viewing own post
-            followButton?.visibility = View.GONE
-        } else {
-            // Check if following
-            val cachedFollowingList = getCachedFollowingList()
-            val cachedFollowingUsernames = getCachedFollowingUsernames()
-            val isFollowing = when {
-                feedOwnerId != null && followingUserIds.contains(feedOwnerId) -> true
-                feedOwnerId != null && cachedFollowingList.contains(feedOwnerId) -> true
-                authorUsername != null && cachedFollowingUsernames.contains(authorUsername) -> true
-                else -> false
-            }
+        Log.d(TAG, "updateFollowButtonVisibility - currentUserId: $currentUserId, feedOwnerId: $feedOwnerId")
 
-            followButton?.visibility = if (isFollowing) View.GONE else View.VISIBLE
+        when {
+            feedOwnerId == null -> {
+                followButton.visibility = View.GONE
+                Log.d(TAG, "Follow button hidden - no feedOwnerId")
+            }
+            feedOwnerId == currentUserId -> {
+                followButton.visibility = View.GONE
+                Log.d(TAG, "Follow button hidden - own post")
+            }
+            else -> {
+                val isFollowing = checkIfFollowing(feedOwnerId, authorUsername)
+                followButton.visibility = if (isFollowing) View.GONE else View.VISIBLE
+                Log.d(TAG, "Follow button visibility: ${if (isFollowing) "GONE" else "VISIBLE"}")
+            }
         }
     }
 
+    private fun checkIfFollowing(userId: String, username: String?): Boolean {
+        val cachedFollowingList = getCachedFollowingList()
+        val cachedFollowingUsernames = getCachedFollowingUsernames()
+
+        return followingUserIds.contains(userId) ||
+                cachedFollowingList.contains(userId) ||
+                (username != null && cachedFollowingUsernames.contains(username))
+    }
+
     private fun getCachedFollowingList(): Set<String> {
-        val prefs = requireContext().getSharedPreferences("user_following", Context.MODE_PRIVATE)
-        return prefs.getStringSet("following_ids", emptySet()) ?: emptySet()
+        return try {
+            val prefs = requireContext().getSharedPreferences("user_following", Context.MODE_PRIVATE)
+            prefs.getStringSet("following_ids", emptySet()) ?: emptySet()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting cached following list", e)
+            emptySet()
+        }
     }
 
     private fun getCachedFollowingUsernames(): Set<String> {
-        val prefs = requireContext().getSharedPreferences("user_following", Context.MODE_PRIVATE)
-        return prefs.getStringSet("following_usernames", emptySet()) ?: emptySet()
+        return try {
+            val prefs = requireContext().getSharedPreferences("user_following", Context.MODE_PRIVATE)
+            prefs.getStringSet("following_usernames", emptySet()) ?: emptySet()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting cached following usernames", e)
+            emptySet()
+        }
     }
-    
 
     private fun showDefaultAuthorInfo() {
         // Update hidden TextViews
