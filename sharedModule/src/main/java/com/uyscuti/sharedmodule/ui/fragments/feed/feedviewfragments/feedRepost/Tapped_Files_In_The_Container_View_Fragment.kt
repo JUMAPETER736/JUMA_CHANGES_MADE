@@ -562,37 +562,13 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         val post = postList?.getOrNull(viewPager.currentItem)
         val feedOwnerId = post?.userId
 
+        // ALWAYS hide the follow button from the start
+        followButton.visibility = View.GONE
 
         Log.d(TAG, "FOLLOW BUTTON CHECK")
         Log.d(TAG, "Current User ID: $currentUserId")
         Log.d(TAG, "Feed Owner ID: $feedOwnerId")
-        Log.d(TAG, "Following List Size: ${followingUserIds.size}")
-        Log.d(TAG, "Following IDs: $followingUserIds")
-
-        when {
-            feedOwnerId == null -> {
-                followButton.visibility = View.GONE
-                Log.d(TAG, "Follow button HIDDEN - no feedOwnerId")
-            }
-            feedOwnerId == currentUserId -> {
-                followButton.visibility = View.GONE
-                Log.d(TAG, "Follow button HIDDEN - this is MY post")
-            }
-            else -> {
-                val isFollowing = checkIfFollowing(feedOwnerId, authorUsername)
-                followButton.visibility = if (isFollowing) View.GONE else View.VISIBLE
-
-                Log.d(TAG, "Is following by ID check: ${followingUserIds.contains(feedOwnerId)}")
-                Log.d(TAG, "Final isFollowing result: $isFollowing")
-
-                if (isFollowing) {
-                    Log.d(TAG, "Follow button HIDDEN - Already following @$authorUsername")
-                } else {
-                    Log.d(TAG, "Follow button VISIBLE - Not following @$authorUsername")
-                    setupFollowButtonClickListener(feedOwnerId, authorUsername)
-                }
-            }
-        }
+        Log.d(TAG, "Follow button ALWAYS HIDDEN")
         Log.d(TAG, "═══════════════════════════════════════")
     }
 
