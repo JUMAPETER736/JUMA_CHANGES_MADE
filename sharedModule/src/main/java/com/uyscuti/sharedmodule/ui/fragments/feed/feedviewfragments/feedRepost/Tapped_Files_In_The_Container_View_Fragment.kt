@@ -594,60 +594,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         Log.d(TAG, "═══════════════════════════════════════")
     }
 
-    private fun handleFollowButtonClick(feedOwnerId: String, username: String) {
-        val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
-
-        // Animation
-        YoYo.with(Techniques.Pulse)
-            .duration(300)
-            .playOn(followButton)
-
-        Log.d(TAG, "Follow button clicked for user: $feedOwnerId (@$username)")
-
-        // Hide button immediately for better UX
-        followButton.visibility = View.GONE
-
-        // Add to LOCAL following list
-        followingUserIds.add(feedOwnerId)
-
-        // Update FollowingManager
-        followingManager.addToFollowing(feedOwnerId)
-
-        // Update FeedAdapter global cache
-        FeedAdapter.addToFollowingCache(feedOwnerId)
-
-        Log.d(TAG, "Now following user $feedOwnerId (@$username)")
-        Log.d(TAG, "Updated following list size: ${followingUserIds.size}")
-
-        // Make API call to follow
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val response = apiService.getOtherUserFollowing(feedOwnerId)
-                if (response.isSuccessful) {
-                    Log.d(TAG, "Successfully followed user on server")
-                } else {
-                    Log.e(TAG, "Failed to follow user on server: ${response.code()}")
-                    // Revert on failure
-                    withContext(Dispatchers.Main) {
-                        followingUserIds.remove(feedOwnerId)
-                        followingManager.removeFromFollowing(feedOwnerId)
-                        followButton.visibility = View.VISIBLE
-                        Toast.makeText(requireContext(), "Failed to follow user", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error following user", e)
-                // Revert on error
-                withContext(Dispatchers.Main) {
-                    followingUserIds.remove(feedOwnerId)
-                    followingManager.removeFromFollowing(feedOwnerId)
-                    followButton.visibility = View.VISIBLE
-                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
     private fun loadPostContent(postId: String) {
         // Fetch post data by ID from your post list
         val post = postList?.find { it.postId == postId } ?: return

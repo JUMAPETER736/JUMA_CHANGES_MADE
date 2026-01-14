@@ -38,6 +38,7 @@
         android:background="#000000"
         android:orientation="vertical">
 
+        <!-- Replace your existing Header Section with this updated version -->
         <!-- Header Section -->
         <RelativeLayout
             android:paddingTop="@dimen/dimen_8"
@@ -76,7 +77,8 @@
                 android:scaleType="fitCenter"
                 app:tint="@android:color/white" />
 
-            <!-- Profile Icon - Bottom Left, First -->
+            <!-- Profile Icon - Bottom Left -->
+            <!-- This is the CLICKABLE avatar that navigates to profile -->
             <ImageView
                 android:id="@+id/userProfileIcon"
                 android:layout_width="48dp"
@@ -88,9 +90,19 @@
                 android:background="@drawable/circle_background"
                 android:contentDescription="Profile"
                 android:scaleType="centerCrop"
-                android:src="@drawable/flash21" />
+                android:src="@drawable/flash21"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- Hidden ImageView for author avatar loading (used by Glide in code) -->
+            <ImageView
+                android:id="@+id/authorAvatar"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
 
             <!-- Full Name TextView - Next to Profile Icon -->
+            <!-- This is CLICKABLE and navigates to profile -->
             <TextView
                 android:id="@+id/fullNameTextView"
                 android:layout_width="wrap_content"
@@ -103,9 +115,32 @@
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:maxLines="1"
-                android:ellipsize="end" />
+                android:ellipsize="end"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- Hidden TextView for author name (used in code) -->
+            <TextView
+                android:id="@+id/authorName"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+
+            <!-- Verified Badge - Next to Full Name -->
+            <ImageView
+                android:id="@+id/verifiedBadge"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_toEndOf="@id/fullNameTextView"
+                android:layout_below="@id/cancelButton"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="2dp"
+                android:src="@drawable/ic_verified"
+                android:visibility="gone"
+                android:contentDescription="Verified" />
 
             <!-- Username TextView - Below Full Name -->
+            <!-- This is CLICKABLE and navigates to profile -->
             <TextView
                 android:id="@+id/usernameTextView"
                 android:layout_width="wrap_content"
@@ -118,18 +153,28 @@
                 android:textColor="#CCCCCC"
                 android:textSize="14sp"
                 android:maxLines="1"
-                android:ellipsize="end" />
+                android:ellipsize="end"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- Hidden TextView for author username (used in code) -->
+            <TextView
+                android:id="@+id/authorUsername"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
 
             <!-- Follow Button - Bottom Right -->
             <Button
                 android:id="@+id/followButton"
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_height="24dp"
                 android:layout_alignParentEnd="true"
                 android:layout_below="@id/headerMenuButton"
                 android:layout_marginEnd="16dp"
+                android:layout_marginTop="@dimen/caption_text_size"
                 android:minWidth="80dp"
-                android:text="Follow"
+                android:text="@string/follow"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white"
                 android:textSize="14sp"
@@ -374,7 +419,9 @@
                     android:contentDescription="Comments"
                     android:src="@drawable/comments"
                     android:scaleType="fitCenter"
-                    app:tint="@android:color/white" />
+                    app:tint="@android:color/white"
+                    tools:tint="@color/white"
+                    />
 
                 <TextView
                     android:id="@+id/commentCount"
@@ -407,7 +454,9 @@
                     android:contentDescription="Retweet"
                     android:src="@drawable/repeat_svgrepo_com"
                     android:scaleType="fitCenter"
-                    app:tint="@android:color/white" />
+                    app:tint="@android:color/white"
+                    tools:tint="@color/white"
+                    />
 
                 <TextView
                     android:id="@+id/repostCount"
@@ -440,7 +489,9 @@
                     android:contentDescription="Like"
                     android:src="@drawable/heart_svgrepo_com"
                     android:scaleType="fitCenter"
-                    app:tint="@android:color/white" />
+                    app:tint="@android:color/white"
+                    tools:tint="@color/white"
+                    />
 
                 <TextView
                     android:id="@+id/likesCount"
@@ -473,7 +524,9 @@
                     android:contentDescription="Views"
                     android:src="@drawable/favorite_svgrepo_com__1_"
                     android:scaleType="fitCenter"
-                    app:tint="@android:color/white" />
+                    app:tint="@android:color/white"
+                    tools:tint="@color/white"
+                    />
 
                 <TextView
                     android:id="@+id/viewsCount"
@@ -506,7 +559,9 @@
                     android:contentDescription="Share"
                     android:src="@drawable/share_svgrepo_com"
                     android:scaleType="fitCenter"
-                    app:tint="@android:color/white" />
+                    app:tint="@android:color/white"
+                    tools:tint="@color/white"
+                    />
 
                 <TextView
                     android:id="@+id/shareCountText"
