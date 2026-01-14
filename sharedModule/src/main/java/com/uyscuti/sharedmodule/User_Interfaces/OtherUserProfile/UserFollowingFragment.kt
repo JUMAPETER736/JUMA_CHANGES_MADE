@@ -3,6 +3,7 @@ package com.uyscuti.social.circuit.User_Interface.OtherUserProfile
 import UserFollowingDisplayModel
 import android.app.AlertDialog
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -678,9 +679,11 @@ class FollowingAdapter(
     override fun onBindViewHolder(holder: FollowingViewHolder, position: Int) {
         val followingUser = following[position]
 
+        // Username and full name
         holder.usernameText.text = "@${followingUser.username}"
         holder.fullNameText.text = followingUser.fullName
 
+        // Load profile image
         followingUser.avatar?.let { avatar ->
             Glide.with(holder.profileImage.context)
                 .load(avatar.url)
@@ -692,21 +695,48 @@ class FollowingAdapter(
             holder.profileImage.setImageResource(R.drawable.flash21)
         }
 
-        holder.followButton.text = if (followingUser.isFollowing) "Follow Back" else "Un Follow"
+        // Set button text and color
+        if (followingUser.isFollowing) {
+            // Already following → show Message
+            holder.followButton.text = "Message"
+            holder.followButton.backgroundTintList = ContextCompat.getColorStateList(
+                holder.itemView.context,
+                R.color.blueJeans
+            )
+            holder.followButton.setTextColor(Color.WHITE)
+        } else {
+            // Not following → show Follow Back
+            holder.followButton.text = "Follow Back"
+            holder.followButton.backgroundTintList = ContextCompat.getColorStateList(
+                holder.itemView.context,
+                R.color.blueJeans
+            )
+            holder.followButton.setTextColor(Color.WHITE)
+        }
 
-        holder.followButton.backgroundTintList = ContextCompat.getColorStateList(
-            holder.itemView.context,
-            R.color.blueJeans
-        )
+        // Handle button click
+        holder.followButton.setOnClickListener {
+            if (followingUser.isFollowing) {
+                // Already following → show message
+                Toast.makeText(holder.itemView.context, "Message feature coming soon", Toast.LENGTH_SHORT).show()
+            } else {
+                // Not following → trigger follow back/unfollow logic
+                onUnfollowClick(followingUser)
+            }
+        }
 
+        // Optional elements: verification, suggestions, mutual connections, online, story ring
         setupOptionalElements(holder, followingUser)
 
+        // Item click → navigate to user profile
         holder.itemView.setOnClickListener { onFollowingClick(followingUser) }
-        holder.followButton.setOnClickListener { onUnfollowClick(followingUser) }
+
+        // More options button
         holder.moreOptionsButton.setOnClickListener {
             onMoreOptionsClick?.invoke(followingUser)
         }
     }
+
 
     private fun setupOptionalElements(holder: FollowingViewHolder, user: UserFollowingDisplayModel) {
         holder.verificationBadge.visibility = if (user.isVerified) View.VISIBLE else View.GONE
