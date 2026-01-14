@@ -422,11 +422,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                         withContext(Dispatchers.Main) {
                             progressBar.visibility = View.GONE
                             isLoading = false
-                            Toast.makeText(
-                                requireContext(),
-                                "You're not following anyone yet. Follow some users to see their posts here!",
-                                Toast.LENGTH_LONG
-                            ).show()
+
                         }
                         return@launch
                     }
