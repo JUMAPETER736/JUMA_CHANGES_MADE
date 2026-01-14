@@ -85,6 +85,10 @@ import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import org.greenrobot.eventbus.EventBus
 import android.content.Intent
+import com.daimajia.androidanimations.library.Techniques
+import com.daimajia.androidanimations.library.YoYo
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
+import com.uyscuti.sharedmodule.utils.FollowingManager
 import com.uyscuti.social.network.utils.LocalStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -124,6 +128,8 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
     private var followingUserIds: MutableSet<String> = mutableSetOf()
+    private lateinit var followingManager: FollowingManager
+
 
     // Retrofit instance
     private lateinit var retrofitInstance: RetrofitInstance
@@ -211,8 +217,10 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         setupBackPressHandler()
         hideSystemBars()
         initializeApiService()
-        followingUserIds = getCachedFollowingList().toMutableSet()
-        Log.d(TAG, "Following IDs loaded: ${followingUserIds.size} users")
+
+        // Initialize FollowingManager
+        followingManager = FollowingManager(requireContext())
+
     }
 
     override fun onCreateView(
@@ -442,7 +450,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // Prefer username for API call
                 val response = when {
                     !username.isNullOrEmpty() -> {
                         Log.d(TAG, "Fetching profile by username: $username")
@@ -466,15 +473,12 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
                         authorName = "$firstName $lastName".trim().takeIf { it.isNotEmpty() } ?: "Unknown User"
 
-                        // Try to get username from API, fallback to post data
                         val apiUsername = extractFieldValue(profileData, "username")
                             ?: extractNestedFieldValue(profileData, "account", "username")
 
-                        // Use API username if available, otherwise keep the one from post
                         if (!apiUsername.isNullOrEmpty()) {
                             authorUsername = apiUsername
                         }
-                        // If still null, use username from post parameter
                         if (authorUsername.isNullOrEmpty()) {
                             authorUsername = username
                         }
@@ -490,21 +494,18 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                     } else {
                         Log.w(TAG, "Profile data is null")
                         withContext(Dispatchers.Main) {
-                            // Still show username from post even if API fails
                             updateAuthorUI()
                         }
                     }
                 } else {
                     Log.e(TAG, "API call failed with code: ${response.code()}")
                     withContext(Dispatchers.Main) {
-                        // Still show username from post even if API fails
                         updateAuthorUI()
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading author details", e)
                 withContext(Dispatchers.Main) {
-                    // Still show username from post even if exception occurs
                     updateAuthorUI()
                 }
             }
@@ -555,8 +556,18 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         updateFollowButtonVisibility()
     }
 
-    private fun updateFollowButtonVisibility() {
+    private fun checkIfFollowing(userId: String, username: String?): Boolean {
+        val isFollowingById = followingUserIds.contains(userId)
 
+        Log.d(TAG, "checkIfFollowing - userId: $userId, username: $username")
+        Log.d(TAG, "  - Following list size: ${followingUserIds.size}")
+        Log.d(TAG, "  - Is following by ID: $isFollowingById")
+        Log.d(TAG, "  - Following IDs: $followingUserIds")
+
+        return isFollowingById
+    }
+
+    private fun updateFollowButtonVisibility() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
         val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
         val post = postList?.getOrNull(viewPager.currentItem)
@@ -576,37 +587,62 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             else -> {
                 val isFollowing = checkIfFollowing(feedOwnerId, authorUsername)
                 followButton.visibility = if (isFollowing) View.GONE else View.VISIBLE
-                Log.d(TAG, "Follow button visibility: ${if (isFollowing) "GONE" else "VISIBLE"}")
+                Log.d(TAG, "Follow button visibility: ${if (isFollowing) "GONE (already following)" else "VISIBLE (not following)"}")
+
+                if (!isFollowing) {
+                    setupFollowButtonClickListener(feedOwnerId, authorUsername)
+                }
             }
         }
     }
 
-    private fun checkIfFollowing(userId: String, username: String?): Boolean {
-        val cachedFollowingList = getCachedFollowingList()
-        val cachedFollowingUsernames = getCachedFollowingUsernames()
+    private fun setupFollowButtonClickListener(feedOwnerId: String, username: String?) {
+        val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
 
-        return followingUserIds.contains(userId) ||
-                cachedFollowingList.contains(userId) ||
-                (username != null && cachedFollowingUsernames.contains(username))
-    }
-
-    private fun getCachedFollowingList(): Set<String> {
-        return try {
-            val prefs = requireContext().getSharedPreferences("user_following", Context.MODE_PRIVATE)
-            prefs.getStringSet("following_ids", emptySet()) ?: emptySet()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error getting cached following list", e)
-            emptySet()
+        followButton.setOnClickListener {
+            handleFollowButtonClick(feedOwnerId, username ?: "")
         }
     }
 
-    private fun getCachedFollowingUsernames(): Set<String> {
-        return try {
-            val prefs = requireContext().getSharedPreferences("user_following", Context.MODE_PRIVATE)
-            prefs.getStringSet("following_usernames", emptySet()) ?: emptySet()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error getting cached following usernames", e)
-            emptySet()
+    private fun handleFollowButtonClick(feedOwnerId: String, username: String) {
+        val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
+
+        // Animation
+        YoYo.with(Techniques.Pulse)
+            .duration(300)
+            .playOn(followButton)
+
+        Log.d(TAG, "Follow button clicked for user: $feedOwnerId (@$username)")
+
+        // Hide button immediately for better UX
+        followButton.visibility = View.GONE
+
+        // Add to following lists using FollowingManager
+        followingUserIds.add(feedOwnerId)
+        followingManager.addToFollowing(feedOwnerId)
+
+        Log.d(TAG, "Now following user $feedOwnerId (@$username)")
+
+        // Make API call to follow
+        lifecycleScope.launch(Dispatchers.IO) {
+//            try {
+//                val response = apiService.followUser(feedOwnerId)
+//                if (response.isSuccessful) {
+//                    Log.d(TAG, "Successfully followed user on server")
+//                } else {
+//                    Log.e(TAG, "Failed to follow user on server: ${response.code()}")
+//                    // Revert on failure
+//                    withContext(Dispatchers.Main) {
+//                        revertFollowAction(feedOwnerId, username)
+//                    }
+//                }
+//            } catch (e: Exception) {
+//                Log.e(TAG, "Error following user", e)
+//                // Revert on error
+//                withContext(Dispatchers.Main) {
+//                    revertFollowAction(feedOwnerId, username)
+//                }
+//            }
         }
     }
 
@@ -683,6 +719,31 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         startActivity(intent)
     }
 
+    private fun extractArguments() {
+        arguments?.let { bundle ->
+            postId = bundle.getString(ARG_POST_ID) ?: bundle.getString("post_id")
+            postData = bundle.getString(ARG_POST_DATA)
+            postList = bundle.getParcelableArrayList(ARG_POST_LIST) ?:
+                    bundle.getParcelableArrayList("post_list")
+            currentPosition = bundle.getInt(ARG_CURRENT_POSITION,
+                bundle.getInt("current_index", 0))
+
+            // LOAD FOLLOWING LIST FROM ARGUMENTS (passed from adapter)
+            val followingIds = bundle.getStringArrayList("following_ids")
+
+            if (!followingIds.isNullOrEmpty()) {
+                followingUserIds = followingIds.toMutableSet()
+                Log.d(TAG, "Following IDs loaded from arguments: ${followingUserIds.size}")
+                Log.d(TAG, "Following IDs: $followingUserIds")
+            } else {
+                // Fallback to FeedAdapter cache
+                followingUserIds = FeedAdapter.getCachedFollowingList().toMutableSet()
+                Log.d(TAG, "Using FeedAdapter cache: ${followingUserIds.size} IDs")
+            }
+
+            Log.d(TAG, "Arguments extracted - PostList size: ${postList?.size}, CurrentPosition: $currentPosition")
+        }
+    }
 
     private fun loadInitialPost() {
         postList?.let { posts ->
@@ -1151,20 +1212,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
 
     // ========== INITIALIZATION METHODS ==========
-
-    private fun extractArguments() {
-        arguments?.let { bundle ->
-            postId = bundle.getString(ARG_POST_ID) ?: bundle.getString("post_id")
-            postData = bundle.getString(ARG_POST_DATA)
-            postList = bundle.getParcelableArrayList(ARG_POST_LIST) ?:
-                    bundle.getParcelableArrayList("post_list")
-            currentPosition = bundle.getInt(ARG_CURRENT_POSITION,
-                bundle.getInt("current_index", 0))
-
-            Log.d(TAG,
-                "Arguments extracted - PostList size: ${postList?.size}, CurrentPosition: $currentPosition")
-        }
-    }
 
     private fun setupBackPressHandler() {
 

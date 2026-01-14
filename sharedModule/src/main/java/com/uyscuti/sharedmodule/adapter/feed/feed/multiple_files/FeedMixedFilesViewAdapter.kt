@@ -43,6 +43,9 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.google.android.material.imageview.ShapeableImageView
 import com.uyscuti.sharedmodule.R
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.Companion.getCachedFollowingList
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.Companion.getCachedFollowingUsernames
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
 import com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
@@ -205,10 +208,7 @@ class FeedMixedFilesViewAdapter(
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
-                // Hide AppBar (Toolbar) if available
                 activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
-
-                // Hide Bottom Navigation if available
                 activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
 
                 val fragment = Tapped_Files_In_The_Container_View_Fragment()
@@ -222,18 +222,21 @@ class FeedMixedFilesViewAdapter(
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
+                    // PASS FOLLOWING LIST FROM ADAPTER
+                    val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
+                    putStringArrayList("following_ids", ArrayList(cachedFollowingIds))
+
+                    Log.d(TAG, "Passing ${cachedFollowingIds.size} following IDs to fragment")
+
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
-
                         val author = post.author
                         val account = author?.account
 
                         val postItem = PostItem(
                             postId = post._id,
-
-                            // AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username ?: "", // FIXED: Use account.username directly
+                            username = account?.username ?: "",
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -241,14 +244,10 @@ class FeedMixedFilesViewAdapter(
                                 account?.username
                             },
                             avatarUrl = account?.avatar?.url,
-
-                            // MEDIA
                             audioUrl = if (file.url.endsWith(".mp3") || file.url.endsWith(".aac")) file.url else null,
                             audioThumbnailUrl = null,
                             videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mkv")) file.url else null,
                             videoThumbnailUrl = null,
-
-                            //  CONTENT
                             data = post.content ?: "",
                             files = arrayListOf(file.url),
                             fileType = file.url.substringAfterLast('.', "")
@@ -271,9 +270,7 @@ class FeedMixedFilesViewAdapter(
                     .addToBackStack("tapped_files_view")
                     .commit()
 
-                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files, starting at index $currentIndex")
-            } else {
-                Log.e(TAG, "Activity is null, cannot navigate to fragment")
+                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files")
             }
         }
 
@@ -616,10 +613,7 @@ class FeedMixedFilesViewAdapter(
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
-                // Hide AppBar (Toolbar) if available
                 activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
-
-                // Hide Bottom Navigation if available
                 activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
 
                 val fragment = Tapped_Files_In_The_Container_View_Fragment()
@@ -633,18 +627,21 @@ class FeedMixedFilesViewAdapter(
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
+                    // ✅ PASS FOLLOWING LIST FROM ADAPTER
+                    val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
+                    putStringArrayList("following_ids", ArrayList(cachedFollowingIds))
+
+                    Log.d(TAG, "Passing ${cachedFollowingIds.size} following IDs to fragment")
+
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
-
                         val author = post.author
                         val account = author?.account
 
                         val postItem = PostItem(
                             postId = post._id,
-
-                            // AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username ?: "", // FIXED: Use account.username directly
+                            username = account?.username ?: "",
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -652,14 +649,10 @@ class FeedMixedFilesViewAdapter(
                                 account?.username
                             },
                             avatarUrl = account?.avatar?.url,
-
-                            // MEDIA
                             audioUrl = if (file.url.endsWith(".mp3") || file.url.endsWith(".aac")) file.url else null,
                             audioThumbnailUrl = null,
                             videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mkv")) file.url else null,
                             videoThumbnailUrl = null,
-
-                            //  CONTENT
                             data = post.content ?: "",
                             files = arrayListOf(file.url),
                             fileType = file.url.substringAfterLast('.', "")
@@ -682,9 +675,7 @@ class FeedMixedFilesViewAdapter(
                     .addToBackStack("tapped_files_view")
                     .commit()
 
-                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files, starting at index $currentIndex")
-            } else {
-                Log.e(TAG, "Activity is null, cannot navigate to fragment")
+                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files")
             }
         }
 
@@ -1147,10 +1138,7 @@ class FeedMixedFilesViewAdapter(
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
-                // Hide AppBar (Toolbar) if available
                 activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
-
-                // Hide Bottom Navigation if available
                 activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
 
                 val fragment = Tapped_Files_In_The_Container_View_Fragment()
@@ -1164,18 +1152,21 @@ class FeedMixedFilesViewAdapter(
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
+                    // PASS FOLLOWING LIST FROM ADAPTER
+                    val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
+                    putStringArrayList("following_ids", ArrayList(cachedFollowingIds))
+
+                    Log.d(TAG, "Passing ${cachedFollowingIds.size} following IDs to fragment")
+
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
-
                         val author = post.author
                         val account = author?.account
 
                         val postItem = PostItem(
                             postId = post._id,
-
-                            // AUTHOR (post owner)
                             userId = author?._id,
-                            username = account?.username ?: "", // FIXED: Use account.username directly
+                            username = account?.username ?: "",
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -1183,14 +1174,10 @@ class FeedMixedFilesViewAdapter(
                                 account?.username
                             },
                             avatarUrl = account?.avatar?.url,
-
-                            // MEDIA
                             audioUrl = if (file.url.endsWith(".mp3") || file.url.endsWith(".aac")) file.url else null,
                             audioThumbnailUrl = null,
                             videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mkv")) file.url else null,
                             videoThumbnailUrl = null,
-
-                            //  CONTENT
                             data = post.content ?: "",
                             files = arrayListOf(file.url),
                             fileType = file.url.substringAfterLast('.', "")
@@ -1213,9 +1200,7 @@ class FeedMixedFilesViewAdapter(
                     .addToBackStack("tapped_files_view")
                     .commit()
 
-                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files, starting at index $currentIndex")
-            } else {
-                Log.e(TAG, "Activity is null, cannot navigate to fragment")
+                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files")
             }
         }
 
@@ -1556,15 +1541,28 @@ class FeedMixedFilesViewAdapter(
             post: Post
         ) {
             val activity = getActivityFromContext(context)
+
             if (activity != null) {
+
                 val fragment = Tapped_Files_In_The_Container_View_Fragment()
+
                 val bundle = Bundle().apply {
+
                     putInt("current_index", currentIndex)
                     putInt("total_files", files.size)
+
                     val fileUrls = ArrayList<String>()
                     files.forEach { file -> fileUrls.add(file.url) }
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
+
+                    // PASS FOLLOWING LIST FROM ADAPTER
+                    val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
+                    putStringArrayList("following_ids", ArrayList(cachedFollowingIds))
+
+                    Log.d(TAG, "Passing ${cachedFollowingIds.size} following IDs to fragment")
+
+
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
@@ -1575,7 +1573,7 @@ class FeedMixedFilesViewAdapter(
                         val postItem = PostItem(
                             postId = feedPost._id,
 
-                            // ✅ AUTHOR (post owner)
+                            // AUTHOR (post owner)
                             userId = author?._id,
                             username = account?.username ?: "",
                             authorName = listOfNotNull(
@@ -1586,13 +1584,13 @@ class FeedMixedFilesViewAdapter(
                             },
                             avatarUrl = account?.avatar?.url,
 
-                            // ✅ MEDIA
+                            // MEDIA
                             audioUrl = if (file.url.endsWith(".mp3") || file.url.endsWith(".aac")) file.url else null,
                             audioThumbnailUrl = null,
                             videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mkv")) file.url else null,
                             videoThumbnailUrl = null,
 
-                            // ✅ CONTENT
+                            // CONTENT
                             data = feedPost.content ?: "",
                             files = arrayListOf(file.url),
                             fileType = file.url.substringAfterLast('.', "")
@@ -2084,31 +2082,39 @@ class FeedMixedFilesViewAdapter(
         private fun navigateToTappedFilesFragment(
             context: Context,
             currentIndex: Int,
-            files: List<File>,
+            files: ArrayList<File>,
             fileIds: List<String>,
             post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
+                activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
+                activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
+
                 val fragment = Tapped_Files_In_The_Container_View_Fragment()
+
                 val bundle = Bundle().apply {
                     putInt("current_index", currentIndex)
                     putInt("total_files", files.size)
+
                     val fileUrls = ArrayList<String>()
                     files.forEach { file -> fileUrls.add(file.url) }
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
+
+                    // ✅ PASS FOLLOWING LIST FROM ADAPTER
+                    val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
+                    putStringArrayList("following_ids", ArrayList(cachedFollowingIds))
+
+                    Log.d(TAG, "Passing ${cachedFollowingIds.size} following IDs to fragment")
+
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
-
-                        val author = feedPost.author
+                        val author = post.author
                         val account = author?.account
-                        val file = files[index]   // your file list item
 
                         val postItem = PostItem(
-                            postId = feedPost._id,
-
-                            // ✅ AUTHOR (post owner)
+                            postId = post._id,
                             userId = author?._id,
                             username = account?.username ?: "",
                             authorName = listOfNotNull(
@@ -2118,26 +2124,23 @@ class FeedMixedFilesViewAdapter(
                                 account?.username
                             },
                             avatarUrl = account?.avatar?.url,
-
-                            // ✅ MEDIA
                             audioUrl = if (file.url.endsWith(".mp3") || file.url.endsWith(".aac")) file.url else null,
                             audioThumbnailUrl = null,
                             videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mkv")) file.url else null,
                             videoThumbnailUrl = null,
-
-                            // ✅ CONTENT
-                            data = feedPost.content ?: "",
+                            data = post.content ?: "",
                             files = arrayListOf(file.url),
                             fileType = file.url.substringAfterLast('.', "")
                         )
-
 
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
                     putString("post_id", fileIds.getOrNull(currentIndex) ?: "file_$currentIndex")
                 }
+
                 fragment.arguments = bundle
+
                 activity.supportFragmentManager.beginTransaction()
                     .setCustomAnimations(
                         R.anim.slide_in_right,
@@ -2146,12 +2149,8 @@ class FeedMixedFilesViewAdapter(
                     .replace(R.id.frame_layout, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
-                Log.d(
-                    TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} " +
-                            "files, starting at index $currentIndex"
-                )
-            } else {
-                Log.e(TAG, "Activity is null, cannot navigate to fragment")
+
+                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files")
             }
         }
 
