@@ -225,16 +225,15 @@ class FeedMixedFilesViewAdapter(
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
-                        val author = feedPost.author
+                        val author = post.author
                         val account = author?.account
-                        val file = files[index]   // your file list item
 
                         val postItem = PostItem(
-                            postId = feedPost._id,
+                            postId = post._id,
 
-                            // ✅ AUTHOR (post owner)
+                            // AUTHOR (post owner)
                             userId = author?._id,
-                            username = author.account.username,
+                            username = account?.username ?: "", // FIXED: Use account.username directly
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -243,18 +242,17 @@ class FeedMixedFilesViewAdapter(
                             },
                             avatarUrl = account?.avatar?.url,
 
-                            // ✅ MEDIA
+                            // MEDIA
                             audioUrl = if (file.url.endsWith(".mp3") || file.url.endsWith(".aac")) file.url else null,
                             audioThumbnailUrl = null,
                             videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mkv")) file.url else null,
                             videoThumbnailUrl = null,
 
-                            // ✅ CONTENT
-                            data = feedPost.content ?: "",
+                            //  CONTENT
+                            data = post.content ?: "",
                             files = arrayListOf(file.url),
                             fileType = file.url.substringAfterLast('.', "")
                         )
-
 
                         postItems.add(postItem)
                     }
@@ -618,39 +616,35 @@ class FeedMixedFilesViewAdapter(
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
-                // Create the fragment instance
+                // Hide AppBar (Toolbar) if available
+                activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
+
+                // Hide Bottom Navigation if available
+                activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
+
                 val fragment = Tapped_Files_In_The_Container_View_Fragment()
 
-                // Create bundle to pass data to the fragment
                 val bundle = Bundle().apply {
                     putInt("current_index", currentIndex)
                     putInt("total_files", files.size)
 
-                    // Convert files to ArrayList of URLs for easy passing
                     val fileUrls = ArrayList<String>()
-                    files.forEach { file ->
-                        fileUrls.add(file.url)
-                    }
+                    files.forEach { file -> fileUrls.add(file.url) }
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
-                    // Create PostItem list for the ViewPager with audio-specific data
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
-                        val fileId = fileIds.getOrNull(index)
-                        val durationItem = currentPostData?.duration?.find { it.fileId == fileId }
-                        val fileName = currentPostData?.fileNames?.find { it.fileId == fileId }?.fileName ?: ""
 
-                        val author = feedPost.author
+                        val author = post.author
                         val account = author?.account
-                        val file = files[index]   // your file list item
 
                         val postItem = PostItem(
-                            postId = feedPost._id,
+                            postId = post._id,
 
-                            // ✅ AUTHOR (post owner)
+                            // AUTHOR (post owner)
                             userId = author?._id,
-                            username = author.account.username,
+                            username = account?.username ?: "", // FIXED: Use account.username directly
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -659,49 +653,36 @@ class FeedMixedFilesViewAdapter(
                             },
                             avatarUrl = account?.avatar?.url,
 
-                            // ✅ MEDIA
+                            // MEDIA
                             audioUrl = if (file.url.endsWith(".mp3") || file.url.endsWith(".aac")) file.url else null,
                             audioThumbnailUrl = null,
                             videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mkv")) file.url else null,
                             videoThumbnailUrl = null,
 
-                            // ✅ CONTENT
-                            data = feedPost.content ?: "",
+                            //  CONTENT
+                            data = post.content ?: "",
                             files = arrayListOf(file.url),
                             fileType = file.url.substringAfterLast('.', "")
                         )
 
-
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
-
-                    // Set a default post ID
-                    putString("post_id", fileIds.getOrNull(currentIndex) ?: "audio_file_$currentIndex")
-
-                    // Add audio-specific metadata
-                    putString("media_type", "audio")
+                    putString("post_id", fileIds.getOrNull(currentIndex) ?: "file_$currentIndex")
                 }
 
                 fragment.arguments = bundle
 
-                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} " +
-                        "audio files, starting at index $currentIndex")
+                activity.supportFragmentManager.beginTransaction()
+                    .setCustomAnimations(
+                        R.anim.slide_in_right,
+                        R.anim.slide_out_left
+                    )
+                    .replace(R.id.frame_layout, fragment)
+                    .addToBackStack("tapped_files_view")
+                    .commit()
 
-                try {
-                    // Navigate to the fragment with animation
-                    activity.supportFragmentManager.beginTransaction()
-                        .setCustomAnimations(
-                            R.anim.slide_in_right,
-                            R.anim.slide_out_left,
-                        )
-                        .replace(R.id.frame_layout, fragment)
-                        .addToBackStack("tapped_audio_files_view")
-                        .commit()
-                } catch (e: Exception){
-                    Log.e(TAG, e.printStackTrace().toString())
-                }
-
+                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files, starting at index $currentIndex")
             } else {
                 Log.e(TAG, "Activity is null, cannot navigate to fragment")
             }
@@ -1166,36 +1147,35 @@ class FeedMixedFilesViewAdapter(
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
-                // Create the fragment instance
+                // Hide AppBar (Toolbar) if available
+                activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
+
+                // Hide Bottom Navigation if available
+                activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
+
                 val fragment = Tapped_Files_In_The_Container_View_Fragment()
 
-                // Create bundle to pass data to the fragment
                 val bundle = Bundle().apply {
                     putInt("current_index", currentIndex)
                     putInt("total_files", files.size)
 
-                    // Convert files to ArrayList of URLs for easy passing
                     val fileUrls = ArrayList<String>()
-                    files.forEach { file ->
-                        fileUrls.add(file.url)
-                    }
+                    files.forEach { file -> fileUrls.add(file.url) }
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
-                    // **ADD THIS: Create PostItem list for the ViewPager**
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
-                        val author = feedPost.author
+                        val author = post.author
                         val account = author?.account
-                        val file = files[index]   // your file list item
 
                         val postItem = PostItem(
-                            postId = feedPost._id,
+                            postId = post._id,
 
-                            // ✅ AUTHOR (post owner)
+                            // AUTHOR (post owner)
                             userId = author?._id,
-                            username = author.account.username,
+                            username = account?.username ?: "", // FIXED: Use account.username directly
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -1204,42 +1184,36 @@ class FeedMixedFilesViewAdapter(
                             },
                             avatarUrl = account?.avatar?.url,
 
-                            // ✅ MEDIA
+                            // MEDIA
                             audioUrl = if (file.url.endsWith(".mp3") || file.url.endsWith(".aac")) file.url else null,
                             audioThumbnailUrl = null,
                             videoUrl = if (file.url.endsWith(".mp4") || file.url.endsWith(".mkv")) file.url else null,
                             videoThumbnailUrl = null,
 
-                            // ✅ CONTENT
-                            data = feedPost.content ?: "",
+                            //  CONTENT
+                            data = post.content ?: "",
                             files = arrayListOf(file.url),
                             fileType = file.url.substringAfterLast('.', "")
                         )
 
-
-
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
-
-                    // Set a default post ID
                     putString("post_id", fileIds.getOrNull(currentIndex) ?: "file_$currentIndex")
                 }
 
                 fragment.arguments = bundle
 
-                // Navigate to the fragment with animation
                 activity.supportFragmentManager.beginTransaction()
                     .setCustomAnimations(
                         R.anim.slide_in_right,
-                        R.anim.slide_out_left,
+                        R.anim.slide_out_left
                     )
                     .replace(R.id.frame_layout, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
 
-                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} " +
-                        "files, starting at index $currentIndex")
+                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files, starting at index $currentIndex")
             } else {
                 Log.e(TAG, "Activity is null, cannot navigate to fragment")
             }
@@ -1603,7 +1577,7 @@ class FeedMixedFilesViewAdapter(
 
                             // ✅ AUTHOR (post owner)
                             userId = author?._id,
-                            username = author.account.username,
+                            username = account?.username ?: "",
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -2110,26 +2084,20 @@ class FeedMixedFilesViewAdapter(
         private fun navigateToTappedFilesFragment(
             context: Context,
             currentIndex: Int,
-            files: ArrayList<File>,
+            files: List<File>,
             fileIds: List<String>,
             post: Post
         ) {
             val activity = getActivityFromContext(context)
             if (activity != null) {
-                activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
-                activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
-
                 val fragment = Tapped_Files_In_The_Container_View_Fragment()
-
                 val bundle = Bundle().apply {
                     putInt("current_index", currentIndex)
                     putInt("total_files", files.size)
-
                     val fileUrls = ArrayList<String>()
                     files.forEach { file -> fileUrls.add(file.url) }
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
-
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
@@ -2142,7 +2110,7 @@ class FeedMixedFilesViewAdapter(
 
                             // ✅ AUTHOR (post owner)
                             userId = author?._id,
-                            username = author.account.username,
+                            username = account?.username ?: "",
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -2163,14 +2131,13 @@ class FeedMixedFilesViewAdapter(
                             fileType = file.url.substringAfterLast('.', "")
                         )
 
+
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
                     putString("post_id", fileIds.getOrNull(currentIndex) ?: "file_$currentIndex")
                 }
-
                 fragment.arguments = bundle
-
                 activity.supportFragmentManager.beginTransaction()
                     .setCustomAnimations(
                         R.anim.slide_in_right,
@@ -2179,8 +2146,15 @@ class FeedMixedFilesViewAdapter(
                     .replace(R.id.frame_layout, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
+                Log.d(
+                    TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} " +
+                            "files, starting at index $currentIndex"
+                )
+            } else {
+                Log.e(TAG, "Activity is null, cannot navigate to fragment")
             }
         }
+
 
         @SuppressLint("SetTextI18n", "UseKtx")
         fun onBind(data: Post) {

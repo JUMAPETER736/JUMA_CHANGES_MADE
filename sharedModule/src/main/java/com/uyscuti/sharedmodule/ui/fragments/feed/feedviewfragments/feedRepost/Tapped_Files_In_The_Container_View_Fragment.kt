@@ -437,6 +437,9 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             return
         }
 
+        // Set username immediately from post data
+        authorUsername = username
+
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 // Prefer username for API call
@@ -462,26 +465,48 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                         val lastName = extractFieldValue(profileData, "lastName", "last_name") ?: ""
 
                         authorName = "$firstName $lastName".trim().takeIf { it.isNotEmpty() } ?: "Unknown User"
-                        authorUsername = extractFieldValue(profileData, "username")
+
+                        // Try to get username from API, fallback to post data
+                        val apiUsername = extractFieldValue(profileData, "username")
+                            ?: extractNestedFieldValue(profileData, "account", "username")
+
+                        // Use API username if available, otherwise keep the one from post
+                        if (!apiUsername.isNullOrEmpty()) {
+                            authorUsername = apiUsername
+                        }
+                        // If still null, use username from post parameter
+                        if (authorUsername.isNullOrEmpty()) {
+                            authorUsername = username
+                        }
+
                         authorAvatarUrl = extractNestedFieldValue(profileData, "account", "avatar", "url")
                         isAuthorVerified = extractFieldValue(profileData, "isVerified")?.toBoolean() ?: false
 
-                        Log.d(TAG, "Author details loaded - Name: $authorName, Username: $authorUsername")
+                        Log.d(TAG, "Author details loaded - Name: $authorName, Username: $authorUsername, Avatar: $authorAvatarUrl")
 
                         withContext(Dispatchers.Main) {
                             updateAuthorUI()
                         }
                     } else {
                         Log.w(TAG, "Profile data is null")
-                        withContext(Dispatchers.Main) { showDefaultAuthorInfo() }
+                        withContext(Dispatchers.Main) {
+                            // Still show username from post even if API fails
+                            updateAuthorUI()
+                        }
                     }
                 } else {
                     Log.e(TAG, "API call failed with code: ${response.code()}")
-                    withContext(Dispatchers.Main) { showDefaultAuthorInfo() }
+                    withContext(Dispatchers.Main) {
+                        // Still show username from post even if API fails
+                        updateAuthorUI()
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading author details", e)
-                withContext(Dispatchers.Main) { showDefaultAuthorInfo() }
+                withContext(Dispatchers.Main) {
+                    // Still show username from post even if exception occurs
+                    updateAuthorUI()
+                }
             }
         }
     }
