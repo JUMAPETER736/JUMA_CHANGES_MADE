@@ -16,25 +16,32 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatButton
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.daimajia.androidanimations.library.Techniques
+import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.gson.JsonSyntaxException
 import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.databinding.ActivityUserFollowingBinding
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
+import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.UserEntity
 import com.uyscuti.social.network.api.response.follow_unfollow.OtherUserDisplayFollowersModel
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -140,7 +147,8 @@ class UserFollowingFragment : AppCompatActivity() {
             },
             onMoreOptionsClick = { user ->
                 showMoreOptions(user)
-            }
+            },
+            retrofitInstance = retrofitInstance
         )
 
 
@@ -647,13 +655,19 @@ class UserFollowingFragment : AppCompatActivity() {
     }
 }
 
+
+
+
 // Following Adapter
 class FollowingAdapter(
     private val following: MutableList<UserFollowingDisplayModel>,
     private val onFollowingClick: (UserFollowingDisplayModel) -> Unit,
     private val onUnfollowClick: (UserFollowingDisplayModel) -> Unit,
-    private val onMoreOptionsClick: ((UserFollowingDisplayModel) -> Unit)? = null
+    private val onMoreOptionsClick: ((UserFollowingDisplayModel) -> Unit)? = null,
+    private val retrofitInstance: RetrofitInstance // Add this parameter
 ) : RecyclerView.Adapter<FollowingAdapter.FollowingViewHolder>() {
+
+    private val TAG = "FollowingAdapter"
 
     inner class FollowingViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val profileImageContainer: View = view.findViewById(R.id.profileImageContainer)
@@ -736,10 +750,10 @@ class FollowingAdapter(
                 val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
                 usersList.add(userModel)
 
-                // Create temporary dialog using Dialog constructor directly
+                // Create temporary dialog using Dialog constructor directly - using username
                 val tempDialog = com.uyscuti.sharedmodule.data.model.Dialog(
                     "temp_${followingUser.id}_${System.currentTimeMillis()}",
-                    followingUser.fullName,
+                    followingUser.username,
                     followingUser.avatar?.url ?: "",
                     usersList,
                     null, // No last message for temp dialog
@@ -748,14 +762,14 @@ class FollowingAdapter(
 
                 MessagesActivity.open(
                     context = context,
-                    dialogName = followingUser.fullName,
+                    dialogName = followingUser.username,
                     dialog = tempDialog,
                     temporally = true,
                     productReference = ""
                 )
             } else {
-                // Follow Back action
-                onUnfollowClick(followingUser)
+                // Follow Back action - Updated to behave like feed's follow button
+                handleFollowBackClick(holder, followingUser, position)
             }
         }
 
@@ -770,6 +784,96 @@ class FollowingAdapter(
             onMoreOptionsClick?.invoke(followingUser)
         }
     }
+
+    
+
+    private fun handleFollowBackClick(
+        holder: FollowingViewHolder,
+        followingUser: UserFollowingDisplayModel,
+        position: Int
+    ) {
+        // Disable button during API call
+        if (!holder.followButton.isEnabled) return
+        holder.followButton.isEnabled = false
+
+        // Add pulse animation
+        YoYo.with(Techniques.Pulse)
+            .duration(300)
+            .playOn(holder.followButton)
+
+        Log.d(TAG, "Follow Back button clicked for user: ${followingUser.id}")
+
+        // Store previous state for potential rollback
+        val previousFollowStatus = followingUser.isFollowing
+
+        // Update UI optimistically (immediately)
+        followingUser.isFollowing = true
+        holder.followButton.text = "Message"
+        holder.followButton.backgroundTintList =
+            ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
+        holder.followButton.setTextColor(Color.WHITE)
+
+        // Make API call to follow user on server
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // Use your existing followUnFollow endpoint
+                val response = retrofitInstance.apiService.followUnFollow(followingUser.id)
+
+                withContext(Dispatchers.Main) {
+                    holder.followButton.isEnabled = true
+
+                    if (response.isSuccessful) {
+                        Log.d(TAG, "Successfully followed user ${followingUser.id} on server")
+
+                        Toast.makeText(
+                            holder.itemView.context,
+                            "Now following @${followingUser.username}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        // Notify parent through callback
+                        onUnfollowClick(followingUser)
+                    } else {
+                        Log.e(TAG, "Failed to follow user on server: ${response.code()}")
+                        // Revert UI changes on failure
+                        followingUser.isFollowing = previousFollowStatus
+                        holder.followButton.text = "Follow Back"
+                        holder.followButton.backgroundTintList =
+                            ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
+                        holder.followButton.setTextColor(Color.WHITE)
+                        notifyItemChanged(position)
+
+                        Toast.makeText(
+                            holder.itemView.context,
+                            "Failed to follow user. Please try again.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error following user", e)
+                withContext(Dispatchers.Main) {
+                    holder.followButton.isEnabled = true
+
+                    // Revert UI changes on error
+                    followingUser.isFollowing = previousFollowStatus
+                    holder.followButton.text = "Follow Back"
+                    holder.followButton.backgroundTintList =
+                        ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
+                    holder.followButton.setTextColor(Color.WHITE)
+                    notifyItemChanged(position)
+
+                    Toast.makeText(
+                        holder.itemView.context,
+                        "Network error: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+
 
     private fun setupOptionalElements(holder: FollowingViewHolder, user: UserFollowingDisplayModel) {
         holder.verificationBadge.visibility = if (user.isVerified == true) View.VISIBLE else View.GONE

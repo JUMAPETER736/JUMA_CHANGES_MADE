@@ -555,6 +555,9 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 }
+
+
+
 class FollowersAdapter(
     private val followers: MutableList<OtherUserDisplayFollowersModel>,
     private val onFollowerClick: (OtherUserDisplayFollowersModel) -> Unit,
@@ -646,20 +649,20 @@ class FollowersAdapter(
                 val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
                 usersList.add(userModel)
 
-                // Create temporary dialog
+                // Create temporary dialog - using username instead of full name
                 val tempDialog = com.uyscuti.sharedmodule.data.model.Dialog(
                     "temp_${follower.id}_${System.currentTimeMillis()}",
-                    follower.fullName,
+                    follower.username,  // Changed from follower.fullName to follower.username
                     follower.avatar?.url ?: "",
                     usersList,
                     null, // No last message for temp dialog
                     0     // No unread count
                 )
 
-                // Open MessagesActivity
+                // Open MessagesActivity - using username
                 MessagesActivity.open(
                     context = context,
-                    dialogName = follower.fullName,
+                    dialogName = follower.username,  // Changed from follower.fullName to follower.username
                     dialog = tempDialog,
                     temporally = true,
                     productReference = ""
