@@ -128,8 +128,6 @@ class FeedMixedFilesViewAdapter(
         }
     }
 
-
-
     inner class FeedImagesOnly(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         private val imageView: ImageView = itemView.findViewById(R.id.imageView)

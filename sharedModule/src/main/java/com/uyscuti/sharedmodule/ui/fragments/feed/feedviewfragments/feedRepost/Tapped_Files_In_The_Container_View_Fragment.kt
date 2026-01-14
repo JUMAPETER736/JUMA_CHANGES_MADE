@@ -123,6 +123,8 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
+    private var followingUserIds: MutableSet<String> = mutableSetOf()
+
     // Retrofit instance
     private lateinit var retrofitInstance: RetrofitInstance
     private lateinit var apiService: IFlashapi
@@ -209,6 +211,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         setupBackPressHandler()
         hideSystemBars()
         initializeApiService()
+        followingUserIds = getCachedFollowingList().toMutableSet()
     }
 
     override fun onCreateView(
@@ -475,8 +478,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-
-
     private fun updateAuthorUI() {
         // Set author name in BOTH the hidden TextView AND the visible header
         val displayName = authorName ?: "Unknown User"
@@ -490,9 +491,11 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         val headerFullName = view?.findViewById<TextView>(R.id.fullNameTextView)
         val headerUsername = view?.findViewById<TextView>(R.id.usernameTextView)
         val headerProfileIcon = view?.findViewById<ImageView>(R.id.userProfileIcon)
+        val followButton = view?.findViewById<Button>(R.id.followButton)
 
         headerFullName?.text = displayName
         headerUsername?.text = displayUsername
+        headerUsername?.visibility = if (displayUsername.isNotEmpty()) View.VISIBLE else View.GONE
 
         // Load avatar image into the VISIBLE header profile icon
         if (!authorAvatarUrl.isNullOrEmpty()) {
@@ -511,7 +514,40 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         // Show/hide verified badge
         val verifiedBadge = view?.findViewById<ImageView>(R.id.verifiedBadge)
         verifiedBadge?.visibility = if (isAuthorVerified) View.VISIBLE else View.GONE
+
+        // Handle follow button visibility
+        val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
+        val post = postList?.getOrNull(viewPager.currentItem)
+        val feedOwnerId = post?.userId
+
+        if (feedOwnerId == currentUserId) {
+            // Hide if viewing own post
+            followButton?.visibility = View.GONE
+        } else {
+            // Check if following
+            val cachedFollowingList = getCachedFollowingList()
+            val cachedFollowingUsernames = getCachedFollowingUsernames()
+            val isFollowing = when {
+                feedOwnerId != null && followingUserIds.contains(feedOwnerId) -> true
+                feedOwnerId != null && cachedFollowingList.contains(feedOwnerId) -> true
+                authorUsername != null && cachedFollowingUsernames.contains(authorUsername) -> true
+                else -> false
+            }
+
+            followButton?.visibility = if (isFollowing) View.GONE else View.VISIBLE
+        }
     }
+
+    private fun getCachedFollowingList(): Set<String> {
+        val prefs = requireContext().getSharedPreferences("user_following", Context.MODE_PRIVATE)
+        return prefs.getStringSet("following_ids", emptySet()) ?: emptySet()
+    }
+
+    private fun getCachedFollowingUsernames(): Set<String> {
+        val prefs = requireContext().getSharedPreferences("user_following", Context.MODE_PRIVATE)
+        return prefs.getStringSet("following_usernames", emptySet()) ?: emptySet()
+    }
+    
 
     private fun showDefaultAuthorInfo() {
         // Update hidden TextViews
@@ -523,11 +559,14 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         val headerUsername = view?.findViewById<TextView>(R.id.usernameTextView)
         val headerProfileIcon = view?.findViewById<ImageView>(R.id.userProfileIcon)
         val verifiedBadge = view?.findViewById<ImageView>(R.id.verifiedBadge)
+        val followButton = view?.findViewById<Button>(R.id.followButton)
 
         headerFullName?.text = "Unknown User"
         headerUsername?.text = ""
+        headerUsername?.visibility = View.GONE
         headerProfileIcon?.setImageResource(R.drawable.flash21)
         verifiedBadge?.visibility = View.GONE
+        followButton?.visibility = View.GONE
     }
 
     private fun loadPostContent(postId: String) {
