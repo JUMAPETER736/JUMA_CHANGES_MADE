@@ -35,13 +35,13 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
 
-private const val TAG = "UserFollowingFragment"
+private const val TAG = "MyUserFollowersFragment"
 
 @UnstableApi
 @AndroidEntryPoint
-class UserFollowingFragment : AppCompatActivity() {
+class MyUserFollowersFragment : AppCompatActivity() {
 
-    private lateinit var binding: ActivityUserFollowingBinding
+    private lateinit var binding: ActivityMyUserFollowersBinding
     private lateinit var followingAdapter: FollowingAdapter
     private lateinit var blockedAdapter: BlockedAdapter
     private lateinit var retrofitInstance: RetrofitInstance

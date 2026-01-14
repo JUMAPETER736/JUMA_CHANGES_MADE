@@ -37,13 +37,13 @@ import retrofit2.HttpException
 import java.io.IOException
 
 
-private const val TAG = "UserFollowersFragment"
+private const val TAG = "MyUserFollowingFragment"
 
 @UnstableApi
 @AndroidEntryPoint
-class UserFollowersFragment : AppCompatActivity() {
+class MyUserFollowingFragment : AppCompatActivity() {
 
-    private lateinit var binding: ActivityUserFollowersBinding
+    private lateinit var binding: ActivityMyUserFollowingBinding
     private lateinit var followersAdapter: FollowersAdapter
     private lateinit var retrofitInstance: RetrofitInstance
 

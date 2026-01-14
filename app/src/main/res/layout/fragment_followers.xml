@@ -19,7 +19,7 @@
             android:clipToPadding="false"
             android:paddingTop="8dp"
             android:paddingBottom="8dp"
-            tools:listitem="@layout/activity_user_followers" />
+            tools:listitem="@layout/activity_my_user_following" />
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
