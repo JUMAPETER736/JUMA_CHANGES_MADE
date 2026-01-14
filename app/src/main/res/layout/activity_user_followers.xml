@@ -202,7 +202,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="36dp"
                         android:minWidth="80dp"
-                        android:text="Following"
+                        android:text="Follow Back"
                         android:textSize="12sp"
                         android:textAllCaps="false"
                         app:cornerRadius="18dp"

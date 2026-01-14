@@ -464,7 +464,7 @@ class UserFollowingFragment : AppCompatActivity() {
     }
 
     private fun unFollow(user: UserFollowingDisplayModel) {
-        Log.d(TAG, "Un Follow: ${user.username}")
+        Log.d(TAG, "Following: ${user.username}")
         Toast.makeText(this, "Un Following Coming soon", Toast.LENGTH_SHORT).show()
     }
 
