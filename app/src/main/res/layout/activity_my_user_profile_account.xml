@@ -248,37 +248,7 @@
                             android:gravity="center"
                             android:orientation="horizontal">
 
-                            <!-- Following -->
-                            <LinearLayout
-                                android:id="@+id/followingSection"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginEnd="40dp"
-                                android:gravity="center"
-                                android:orientation="vertical"
-                                android:background="?attr/selectableItemBackground"
-                                android:padding="12dp">
-
-                                <TextView
-                                    android:id="@+id/followingCount"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="501"
-                                    android:textColor="#000000"
-                                    android:textSize="22sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Following"
-                                    android:textColor="#666666"
-                                    android:textSize="14sp"
-                                    android:textStyle="normal" />
-
-                            </LinearLayout>
-
-                            <!-- Followers with growth indicator -->
+                            <!-- Followers with growth indicator (now first/left) -->
                             <LinearLayout
                                 android:id="@+id/followersSection"
                                 android:layout_width="wrap_content"
@@ -344,7 +314,37 @@
 
                             </LinearLayout>
 
-                            <!-- Likes -->
+                            <!-- Following (now second/right) -->
+                            <LinearLayout
+                                android:id="@+id/followingSection"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="40dp"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:background="?attr/selectableItemBackground"
+                                android:padding="12dp">
+
+                                <TextView
+                                    android:id="@+id/followingCount"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="501"
+                                    android:textColor="#000000"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Following"
+                                    android:textColor="#666666"
+                                    android:textSize="14sp"
+                                    android:textStyle="normal" />
+
+                            </LinearLayout>
+
+                            <!-- Likes (unchanged) -->
                             <LinearLayout
                                 android:id="@+id/likesSection"
                                 android:layout_width="wrap_content"

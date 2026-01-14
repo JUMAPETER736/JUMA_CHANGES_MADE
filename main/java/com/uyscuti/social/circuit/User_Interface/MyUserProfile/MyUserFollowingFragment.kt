@@ -105,9 +105,9 @@ class MyUserFollowingFragment : AppCompatActivity() {
 
         val formattedCount = formatCount(followersCount)
         val titleText = if (isMyFollowers) {
-            "My $formattedCount Followers"
+            "My $formattedCount Following"
         } else {
-            "$formattedCount Followers"
+            "$formattedCount Following"
         }
         binding.toolbarTitle.text = titleText
 
@@ -319,7 +319,7 @@ class MyUserFollowingFragment : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading more followers: ${e.message}", e)
+                Log.e(TAG, "Error loading more following: ${e.message}", e)
             } finally {
                 withContext(Dispatchers.Main) {
                     isLoading = false
