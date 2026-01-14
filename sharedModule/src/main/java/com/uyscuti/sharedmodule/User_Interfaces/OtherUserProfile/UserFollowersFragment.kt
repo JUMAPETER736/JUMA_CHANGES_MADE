@@ -610,7 +610,7 @@ class FollowersAdapter(
         if (follower.isFollowing) {
             holder.followButton.text = "Message"
             holder.followButton.setBackgroundColor(
-                ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
+                ContextCompat.getColor(holder.itemView.context, R.color.gray_dark_transparent)
             )
             holder.followButton.setTextColor(Color.WHITE)
         } else {
