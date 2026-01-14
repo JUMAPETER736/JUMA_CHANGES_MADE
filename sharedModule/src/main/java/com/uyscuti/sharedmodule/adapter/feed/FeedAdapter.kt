@@ -525,6 +525,8 @@ class FeedAdapter(
                     setupChildClickBubbling(data)
                     setupPostClickListeners(data)
 
+                    followButton.visibility = View.GONE
+
                 }
             }
 
@@ -535,7 +537,7 @@ class FeedAdapter(
             val feedOwnerId = data.author?.account?._id ?: return
             val feedOwnerUsername = data.author?.account?.username ?: return
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
-
+            followButton.visibility = View.GONE
             // Check multiple sources for following status (by ID and username)
             val cachedFollowingList = getCachedFollowingList()
             val cachedFollowingUsernames = getCachedFollowingUsernames()

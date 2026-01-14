@@ -594,14 +594,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         Log.d(TAG, "═══════════════════════════════════════")
     }
 
-    private fun setupFollowButtonClickListener(feedOwnerId: String, username: String?) {
-        val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
-
-        followButton.setOnClickListener {
-            handleFollowButtonClick(feedOwnerId, username ?: "")
-        }
-    }
-
     private fun handleFollowButtonClick(feedOwnerId: String, username: String) {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
 
