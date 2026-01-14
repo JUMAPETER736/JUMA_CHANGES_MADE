@@ -552,8 +552,30 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             visibility = if (isAuthorVerified) View.VISIBLE else View.GONE
         }
 
-        // Handle follow button
-        updateFollowButtonVisibility()
+        // ALWAYS hide follow button
+        view?.findViewById<Button>(R.id.followButton)?.visibility = View.GONE
+    }
+
+    private fun showDefaultAuthorInfo() {
+        // Update hidden TextViews
+        authorNameTextView?.text = "Unknown User"
+        authorUsernameTextView?.text = ""
+
+        // Update visible header TextViews
+        val headerFullName = view?.findViewById<TextView>(R.id.fullNameTextView)
+        val headerUsername = view?.findViewById<TextView>(R.id.usernameTextView)
+        val headerProfileIcon = view?.findViewById<ImageView>(R.id.userProfileIcon)
+        val verifiedBadge = view?.findViewById<ImageView>(R.id.verifiedBadge)
+        val followButton = view?.findViewById<Button>(R.id.followButton)
+
+        headerFullName?.text = "Unknown User"
+        headerUsername?.text = ""
+        headerUsername?.visibility = View.GONE
+        headerProfileIcon?.setImageResource(R.drawable.flash21)
+        verifiedBadge?.visibility = View.GONE
+
+        // ALWAYS hide follow button
+        followButton?.visibility = View.GONE
     }
 
     private fun updateFollowButtonVisibility() {
@@ -632,55 +654,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                 }
             }
         }
-    }
-
-    private fun checkIfFollowing(userId: String, username: String?): Boolean {
-        val isFollowingById = followingUserIds.contains(userId)
-
-        // Also check by username (case-insensitive, remove @)
-        val cleanUsername = username?.trim()?.lowercase()?.removePrefix("@") ?: ""
-        val isFollowingByUsername = if (cleanUsername.isNotEmpty()) {
-            FeedAdapter.getCachedFollowingUsernames().any {
-                it.trim().lowercase().removePrefix("@") == cleanUsername
-            }
-        } else {
-            false
-        }
-
-
-        Log.d(TAG, "CHECKING IF FOLLOWING")
-        Log.d(TAG, "User ID: $userId")
-        Log.d(TAG, "Username: @$username (cleaned: $cleanUsername)")
-        Log.d(TAG, "Following IDs: $followingUserIds")
-        Log.d(TAG, "Following Usernames: ${FeedAdapter.getCachedFollowingUsernames()}")
-        Log.d(TAG, "Following by ID? $isFollowingById")
-        Log.d(TAG, "Following by Username? $isFollowingByUsername")
-
-        val result = isFollowingById || isFollowingByUsername
-        Log.d(TAG, "FINAL RESULT: ${if (result) "FOLLOWING" else "NOT FOLLOWING"}")
-
-
-        return result
-    }
-
-    private fun showDefaultAuthorInfo() {
-        // Update hidden TextViews
-        authorNameTextView?.text = "Unknown User"
-        authorUsernameTextView?.text = ""
-
-        // Update visible header TextViews
-        val headerFullName = view?.findViewById<TextView>(R.id.fullNameTextView)
-        val headerUsername = view?.findViewById<TextView>(R.id.usernameTextView)
-        val headerProfileIcon = view?.findViewById<ImageView>(R.id.userProfileIcon)
-        val verifiedBadge = view?.findViewById<ImageView>(R.id.verifiedBadge)
-        val followButton = view?.findViewById<Button>(R.id.followButton)
-
-        headerFullName?.text = "Unknown User"
-        headerUsername?.text = ""
-        headerUsername?.visibility = View.GONE
-        headerProfileIcon?.setImageResource(R.drawable.flash21)
-        verifiedBadge?.visibility = View.GONE
-        followButton?.visibility = View.GONE
     }
 
     private fun loadPostContent(postId: String) {
