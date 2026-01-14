@@ -123,6 +123,7 @@ class UserFollowingFragment : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
+
         // Initialize adapters with empty lists - they'll be updated later
         followingAdapter = FollowingAdapter(
             following = mutableListOf(),
@@ -130,12 +131,14 @@ class UserFollowingFragment : AppCompatActivity() {
                 navigateToOtherUserProfile(user)
             },
             onUnfollowClick = { user ->
-              //  showUnfollowConfirmation(user)
+                // THIS WAS MISSING – now it calls unfollow
+                unfollowUser(user)
             },
             onMoreOptionsClick = { user ->
                 showMoreOptions(user)
             }
         )
+
 
         blockedAdapter = BlockedAdapter(
             blockedUsers = mutableListOf(),
@@ -574,6 +577,7 @@ class UserFollowingFragment : AppCompatActivity() {
         Toast.makeText(this, "Report submitted", Toast.LENGTH_SHORT).show()
     }
 
+
     @OptIn(UnstableApi::class)
     private fun unfollowUser(user: UserFollowingDisplayModel) {
         lifecycleScope.launch {
@@ -583,8 +587,11 @@ class UserFollowingFragment : AppCompatActivity() {
                 }
 
                 if (response.isSuccessful) {
+                    // Remove user from lists
                     followingList.removeAll { it.id == user.id }
                     filteredFollowingList.removeAll { it.id == user.id }
+
+                    // Update adapter
                     followingAdapter.notifyDataSetChanged()
 
                     Toast.makeText(
@@ -593,6 +600,7 @@ class UserFollowingFragment : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
 
+                    // Show empty state if list is empty
                     if (filteredFollowingList.isEmpty()) {
                         binding.emptyStateLayout.visibility = View.VISIBLE
                         binding.recyclerView.visibility = View.GONE
@@ -608,6 +616,7 @@ class UserFollowingFragment : AppCompatActivity() {
             }
         }
     }
+
 
     private fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
@@ -637,10 +646,12 @@ class UserFollowingFragment : AppCompatActivity() {
 
 // Following Adapter
 class FollowingAdapter(
+
     private val following: MutableList<UserFollowingDisplayModel>,
     private val onFollowingClick: (UserFollowingDisplayModel) -> Unit,
     private val onUnfollowClick: (UserFollowingDisplayModel) -> Unit,
     private val onMoreOptionsClick: ((UserFollowingDisplayModel) -> Unit)? = null
+
 ) : RecyclerView.Adapter<FollowingAdapter.FollowingViewHolder>() {
 
     inner class FollowingViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -681,7 +692,8 @@ class FollowingAdapter(
             holder.profileImage.setImageResource(R.drawable.flash21)
         }
 
-        holder.followButton.text = "Following"
+        holder.followButton.text = if (followingUser.isFollowing) "Following" else "Follow"
+
         holder.followButton.backgroundTintList = ContextCompat.getColorStateList(
             holder.itemView.context,
             R.color.blueJeans
