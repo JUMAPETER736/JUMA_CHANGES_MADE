@@ -23,8 +23,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.gson.JsonSyntaxException
+import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
+import com.uyscuti.sharedmodule.data.model.Dialog
 import com.uyscuti.sharedmodule.databinding.ActivityUserFollowersBinding
 import com.uyscuti.social.network.api.response.follow_unfollow.OtherUserDisplayFollowersModel
 import com.uyscuti.social.network.api.response.profile.followersList.Data
@@ -36,6 +38,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
+import java.util.Date
 
 
 private const val TAG = "UserFollowersFragment"
@@ -47,6 +50,7 @@ class UserFollowersFragment : AppCompatActivity() {
     private lateinit var binding: ActivityUserFollowersBinding
     private lateinit var followersAdapter: FollowersAdapter
     private lateinit var retrofitInstance: RetrofitInstance
+    private lateinit var localStorage: LocalStorage
 
     private var userId: String = ""
     private var username: String = ""
@@ -73,6 +77,7 @@ class UserFollowersFragment : AppCompatActivity() {
         setupSearchView()
         setupPullToRefresh()
         loadFollowers()
+        localStorage = LocalStorage(this)
     }
 
     private fun extractIntentData() {
@@ -124,7 +129,7 @@ class UserFollowersFragment : AppCompatActivity() {
             onFollowerClick = { user -> openUserProfile(user) },
             onFollowClick = { user -> toggleFollowUser(user) },
             onMoreOptionsClick = { user -> showMoreOptions(user) },
-            isMyFollowers = isMyFollowers
+            localStorage = localStorage // pass your LocalStorage instance
         )
 
         binding.recyclerView.apply {
@@ -149,6 +154,7 @@ class UserFollowersFragment : AppCompatActivity() {
             })
         }
     }
+
 
     private fun setupSearchView() {
         binding.searchEditText.addTextChangedListener(object : TextWatcher {
@@ -409,13 +415,14 @@ class UserFollowersFragment : AppCompatActivity() {
 
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful) {
+                        // Toggle the follow status
                         user.isFollowing = !user.isFollowing
                         followersAdapter.notifyDataSetChanged()
 
                         val message = if (user.isFollowing) {
                             "Following ${user.username}"
                         } else {
-                            "Unfollowed ${user.username}"
+                            "Un followed ${user.username}"
                         }
                         Toast.makeText(this@UserFollowersFragment, message, Toast.LENGTH_SHORT).show()
                     } else {
@@ -430,6 +437,7 @@ class UserFollowersFragment : AppCompatActivity() {
             }
         }
     }
+
 
     private fun showMoreOptions(user: OtherUserDisplayFollowersModel) {
         if (isMyFollowers) {
@@ -544,14 +552,14 @@ class UserFollowersFragment : AppCompatActivity() {
     }
 }
 
+
 class FollowersAdapter(
 
     private val followers: MutableList<OtherUserDisplayFollowersModel>,
     private val onFollowerClick: (OtherUserDisplayFollowersModel) -> Unit,
     private val onFollowClick: (OtherUserDisplayFollowersModel) -> Unit,
     private val onMoreOptionsClick: (OtherUserDisplayFollowersModel) -> Unit,
-    private val isMyFollowers: Boolean = false
-
+    private val localStorage: LocalStorage  // Needed for opening chat
 ) : RecyclerView.Adapter<FollowersAdapter.FollowerViewHolder>() {
 
     inner class FollowerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -572,11 +580,12 @@ class FollowersAdapter(
     override fun onBindViewHolder(holder: FollowerViewHolder, position: Int) {
         val follower = followers[position]
 
+        // Set username and full name
         holder.usernameText.text = "@${follower.username}"
         holder.fullNameText.text = follower.fullName
 
         // Show bio if available
-        if (follower.bio.isNotEmpty()) {
+        if (!follower.bio.isNullOrEmpty()) {
             holder.bioText.visibility = View.VISIBLE
             holder.bioText.text = follower.bio
         } else {
@@ -584,20 +593,18 @@ class FollowersAdapter(
         }
 
         // Load profile image
-        follower.avatar?.let { avatar ->
+        follower.avatar?.url?.let { avatarUrl ->
             Glide.with(holder.profileImage.context)
-                .load(avatar.url)
+                .load(avatarUrl)
                 .placeholder(R.drawable.flash21)
                 .error(R.drawable.flash21)
                 .circleCrop()
                 .into(holder.profileImage)
-        } ?: run {
-            holder.profileImage.setImageResource(R.drawable.flash21)
-        }
+        } ?: holder.profileImage.setImageResource(R.drawable.flash21)
 
-        // Update follow button state
+        // Update follow button appearance
         if (follower.isFollowing) {
-            holder.followButton.text = "Following"
+            holder.followButton.text = "Message"
             holder.followButton.setBackgroundColor(
                 ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
             )
@@ -605,7 +612,7 @@ class FollowersAdapter(
                 ContextCompat.getColor(holder.itemView.context, R.color.text_primary)
             )
         } else {
-            holder.followButton.text = "Follow"
+            holder.followButton.text = "Follow Back"
             holder.followButton.setBackgroundColor(
                 ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
             )
@@ -614,10 +621,34 @@ class FollowersAdapter(
             )
         }
 
-        holder.itemView.setOnClickListener { onFollowerClick(follower) }
-        holder.followButton.setOnClickListener { onFollowClick(follower) }
-        holder.moreOptionsButton.setOnClickListener { onMoreOptionsClick(follower) }
+        // Follow button click logic
+        holder.followButton.setOnClickListener {
+            if (!follower.isFollowing) {
+                // Follow back logic
+                onFollowClick(follower)
+                follower.isFollowing = true
+                notifyItemChanged(position)
+            }
+            // If following, button does nothing but is clickable
+        }
+
+        // Click on item to open profile
+        holder.itemView.setOnClickListener {
+            onFollowerClick(follower)
+        }
+
+        // More options button
+        holder.moreOptionsButton.setOnClickListener {
+            onMoreOptionsClick(follower)
+        }
     }
 
+
     override fun getItemCount(): Int = followers.size
+
+    fun updateList(newList: List<OtherUserDisplayFollowersModel>) {
+        followers.clear()
+        followers.addAll(newList)
+        notifyDataSetChanged()
+    }
 }
