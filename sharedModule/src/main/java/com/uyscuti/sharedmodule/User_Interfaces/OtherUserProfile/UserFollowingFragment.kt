@@ -784,7 +784,7 @@ class FollowingAdapter(
             onMoreOptionsClick?.invoke(followingUser)
         }
     }
-    
+
 
     private fun handleFollowBackClick(
         holder: FollowingViewHolder,

@@ -56,7 +56,10 @@ import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.databinding.ActivityOtherUserProfileAccountBinding
 import com.uyscuti.sharedmodule.fragments.ProfileViewFragment
 import com.uyscuti.sharedmodule.model.User
-import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.AllOtherUsersBusinessFragment
+import com.daimajia.androidanimations.library.Techniques
+import com.daimajia.androidanimations.library.YoYo
+import androidx.core.content.ContextCompat
+import com.uyscuti.social.network.api.response.follow_unfollow.FollowUnFollowResponse
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.AllOtherUsersFavoritesFragment
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.AllVideosOnlyFragment
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.UserFollowersFragment
@@ -96,7 +99,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
 
 
     private lateinit var apiService: IFlashapi
-
+    private var isFollowingUser = false
 
     private lateinit var binding: ActivityOtherUserProfileAccountBinding
     private var isFollowing = false
@@ -161,10 +164,11 @@ class OtherUserProfileAccount : AppCompatActivity() {
         // Existing click listeners
         binding.backButton.setOnClickListener { finish() }
 
+
         binding.followIcon.setOnClickListener {
-            isFollowing = !isFollowing
-            binding.followIcon.text = if (isFollowing) "Following" else "Follow"
+            handleFollowUnfollow()
         }
+
 
         binding.actionMessage.setOnClickListener {
             Log.d(TAG, "Message button clicked for user: $userId")
@@ -325,6 +329,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
         }
     }
 
+
     private fun extractAndProcessProfile(profileData: Any) {
         try {
             // Extract user stats
@@ -341,20 +346,24 @@ class OtherUserProfileAccount : AppCompatActivity() {
             val extractedFirstName = extractFieldValue(profileData, "firstName") ?: ""
             val extractedLastName = extractFieldValue(profileData, "lastName") ?: ""
 
-            // CRITICAL FIX: Use "owner" field (account ID), NOT "_id" (author profile ID)
+            // Extract owner ID and following status
             val extractedOwnerId = extractFieldValue(profileData, "owner") ?: ""
             val extractedProfileId = extractFieldValue(profileData, "_id", "id") ?: ""
             val extractedUsername = extractFieldValue(profileData, "username") ?: username
 
+            // CRITICAL: Extract isFollowing status
+            val followingStatus = extractFieldValue(profileData, "isFollowing")
+            isFollowingUser = followingStatus?.toBoolean() ?: false
+            Log.d(TAG, "Following status from API: $isFollowingUser")
+
             // Extract avatar from nested structure
             val avatarFromProfile = extractNestedFieldValue(profileData, "account", "avatar", "url")
 
-            // CRITICAL: Set userId to the owner/account ID, NOT the profile _id
+            // Set userId to the owner/account ID
             if (extractedOwnerId.isNotEmpty()) {
-                userId = extractedOwnerId  // This is the correct account ID!
+                userId = extractedOwnerId
                 Log.d(TAG, "✓ Set userId to owner/account ID: $userId")
             } else if (extractedProfileId.isNotEmpty()) {
-                // Fallback: try to get owner from nested account
                 val nestedOwnerId = extractNestedFieldValue(profileData, "account", "_id")
                 if (!nestedOwnerId.isNullOrEmpty()) {
                     userId = nestedOwnerId
@@ -385,15 +394,14 @@ class OtherUserProfileAccount : AppCompatActivity() {
             userLocation = location.ifBlank { "Lilongwe, Malawi" }
             joinDate = formatJoinDate(joinedDate)
 
-            // Store posts count temporarily
             val initialPostsCount = postsCount
 
-            Log.d(TAG, "Profile processed - userId: $userId, username: $username, name: $fullName")
+            Log.d(TAG, "Profile processed - userId: $userId, username: $username, name: $fullName, isFollowing: $isFollowingUser")
 
             // Update UI immediately with available data
             lifecycleScope.launch(Dispatchers.Main) {
                 setupUserInterface()
-                // Show initial posts count
+                updateFollowButton()
                 binding.postsCount.text = formatCount(initialPostsCount)
             }
 
@@ -402,6 +410,116 @@ class OtherUserProfileAccount : AppCompatActivity() {
 
         } catch (e: Exception) {
             Log.e(TAG, "Error processing profile data: ${e.message}", e)
+        }
+    }
+
+    private fun updateFollowButton() {
+        if (isFollowingUser) {
+            binding.followIcon.text = "Following"
+            binding.followIcon.backgroundTintList =
+                ContextCompat.getColorStateList(this, R.color.gray)
+            binding.followIcon.setTextColor(Color.WHITE)
+        } else {
+            binding.followIcon.text = "Follow"
+            binding.followIcon.backgroundTintList =
+                ContextCompat.getColorStateList(this, R.color.blueJeans)
+            binding.followIcon.setTextColor(Color.WHITE)
+        }
+    }
+
+    private fun handleFollowUnfollow() {
+        // Disable button during API call
+        if (!binding.followIcon.isEnabled) return
+        binding.followIcon.isEnabled = false
+
+        // Add pulse animation
+        YoYo.with(Techniques.Pulse)
+            .duration(300)
+            .playOn(binding.followIcon)
+
+        // Store previous state for rollback
+        val previousFollowStatus = isFollowingUser
+
+        // Update UI optimistically
+        isFollowingUser = !isFollowingUser
+        updateFollowButton()
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofitInstance.apiService.followUnFollow(userId)
+
+                withContext(Dispatchers.Main) {
+                    binding.followIcon.isEnabled = true
+
+                    if (response.isSuccessful && response.body() != null) {
+                        val responseBody = response.body()!!
+
+                        Log.d(TAG, "Follow/Unfollow Response - Success: ${responseBody.success}, Following: ${responseBody.data.following}")
+
+                        if (responseBody.success) {
+                            // Update based on server response
+                            isFollowingUser = responseBody.data.following
+                            updateFollowButton()
+
+                            // Update follower count
+                            if (responseBody.data.following) {
+                                followerCount++
+                                Toast.makeText(
+                                    this@OtherUserProfileAccount,
+                                    "Now following @$username",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                followerCount--
+                                Toast.makeText(
+                                    this@OtherUserProfileAccount,
+                                    "Unfollowed @$username",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                            binding.followersCount.text = formatCount(followerCount)
+
+                        } else {
+                            // API returned success=false - revert
+                            isFollowingUser = previousFollowStatus
+                            updateFollowButton()
+
+                            Toast.makeText(
+                                this@OtherUserProfileAccount,
+                                responseBody.message ?: "Failed to update follow status",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } else {
+                        Log.e(TAG, "API error: ${response.code()}")
+                        // Revert UI changes
+                        isFollowingUser = previousFollowStatus
+                        updateFollowButton()
+
+                        Toast.makeText(
+                            this@OtherUserProfileAccount,
+                            "Failed to update follow status. Please try again.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in follow/unfollow: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    binding.followIcon.isEnabled = true
+
+                    // Revert UI changes
+                    isFollowingUser = previousFollowStatus
+                    updateFollowButton()
+
+                    Toast.makeText(
+                        this@OtherUserProfileAccount,
+                        "Network error: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         }
     }
 
