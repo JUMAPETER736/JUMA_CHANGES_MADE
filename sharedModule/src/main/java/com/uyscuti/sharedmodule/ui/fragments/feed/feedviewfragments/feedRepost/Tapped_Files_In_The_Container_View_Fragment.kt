@@ -235,7 +235,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
     // Call these in onViewCreated after setting up ViewPager
-    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    @OptIn(UnstableApi::class)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
