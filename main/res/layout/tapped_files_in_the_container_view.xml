@@ -164,23 +164,22 @@
                 android:layout_height="0dp"
                 android:visibility="gone" />
 
-            <!-- Follow Button - Bottom Right -->
             <Button
                 android:id="@+id/followButton"
                 android:layout_width="wrap_content"
-                android:layout_height="24dp"
+                android:layout_height="wrap_content"
+                android:minHeight="32dp"
+                android:minWidth="80dp"
                 android:layout_alignParentEnd="true"
                 android:layout_below="@id/headerMenuButton"
                 android:layout_marginEnd="16dp"
-                android:layout_marginTop="@dimen/caption_text_size"
-                android:minWidth="80dp"
+                android:layout_marginTop="8dp"
                 android:text="@string/follow"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white"
                 android:textSize="14sp"
-                android:background="@drawable/rounded_background_corners"
-                android:clickable="true"
-                android:focusable="true" />
+                android:backgroundTint="@color/bluejeans" />
+
 
         </RelativeLayout>
 
