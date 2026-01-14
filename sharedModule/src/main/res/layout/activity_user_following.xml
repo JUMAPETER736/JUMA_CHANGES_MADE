@@ -5,8 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/background_primary"
-    >
+    android:background="@color/background"
+    tools:context=".User_Interface.OtherUserProfile.UserFollowingFragment">
 
     <!-- Toolbar -->
     <com.google.android.material.appbar.MaterialToolbar
@@ -15,7 +15,7 @@
         android:layout_height="?attr/actionBarSize"
         android:background="@color/blueJeans"
         android:elevation="4dp"
-        app:navigationIcon="@drawable/baseline_arrow_back_black">
+        app:navigationIcon="@drawable/baseline_black_arrow_back_24">
 
         <TextView
             android:id="@+id/toolbar_title"
@@ -25,7 +25,7 @@
             android:textColor="@color/text_primary"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:text="Following" />
+            android:text="Followers" />
 
     </com.google.android.material.appbar.MaterialToolbar>
 
@@ -35,7 +35,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="12dp"
-        android:background="@color/surface_primary"
+        android:background="@color/primary"
         android:gravity="center_vertical">
 
         <com.google.android.material.textfield.TextInputLayout
@@ -51,7 +51,7 @@
             app:boxStrokeWidth="0dp"
             app:boxStrokeWidthFocused="2dp"
             app:hintTextColor="@color/text_secondary"
-            app:boxBackgroundColor="@color/background_secondary">
+            app:boxBackgroundColor="@color/background">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/searchEditText"
@@ -157,7 +157,6 @@
                         android:scaleType="centerCrop"
                         android:src="@drawable/person_button_svgrepo_com"
                         android:elevation="4dp"
-                        app:shapeAppearanceOverlay="@style/CircularImageView"
                         app:strokeColor="#FFFFFF"
                         app:strokeWidth="3dp"
                         app:layout_constraintStart_toStartOf="parent"
@@ -170,7 +169,6 @@
                         android:layout_height="70dp"
                         android:src="@drawable/story_ring_gradient"
                         android:visibility="gone"
-                        app:shapeAppearanceOverlay="@style/CircularImageView"
                         app:layout_constraintStart_toStartOf="@id/profile_image"
                         app:layout_constraintTop_toTopOf="@id/profile_image"
                         app:layout_constraintEnd_toEndOf="@id/profile_image"
@@ -223,7 +221,7 @@
                         android:layout_marginStart="4dp"
                         android:src="@drawable/ic_verified"
                         android:visibility="gone"
-                        app:tint="@color/verification_blue"
+                        app:tint="@color/blueJeans"
                         tools:visibility="visible" />
 
                 </LinearLayout>
@@ -302,7 +300,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
                     android:minWidth="80dp"
-                    android:text="Following"
+                    android:text="Follow Back"
                     android:textSize="13sp"
                     android:textAllCaps="false"
                     android:textStyle="bold"
@@ -325,7 +323,7 @@
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:padding="0dp"
-                    app:icon="@drawable/options_vertical_svgrepo_com"
+                    app:icon="@drawable/ic_more_vert"
                     app:iconSize="20dp"
                     app:iconTint="#2196F3"
                     app:iconGravity="textStart"

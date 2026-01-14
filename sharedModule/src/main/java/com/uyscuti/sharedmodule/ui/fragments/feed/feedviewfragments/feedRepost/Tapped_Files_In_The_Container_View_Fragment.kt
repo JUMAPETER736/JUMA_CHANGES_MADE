@@ -128,7 +128,10 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
     private var followingUserIds: MutableSet<String> = mutableSetOf()
-    private lateinit var followingManager: FollowingManager
+    private val followingManager by lazy {
+        FollowingManager(requireContext())
+    }
+
 
 
     // Retrofit instance
@@ -213,13 +216,11 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
         extractArguments()
         setupBackPressHandler()
         hideSystemBars()
         initializeApiService()
-
-        // Initialize FollowingManager
-        followingManager = FollowingManager(requireContext())
 
     }
 
