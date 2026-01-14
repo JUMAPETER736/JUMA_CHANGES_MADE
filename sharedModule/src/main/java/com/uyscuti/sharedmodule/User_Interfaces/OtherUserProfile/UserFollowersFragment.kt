@@ -555,10 +555,7 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 }
-
-
 class FollowersAdapter(
-
     private val followers: MutableList<OtherUserDisplayFollowersModel>,
     private val onFollowerClick: (OtherUserDisplayFollowersModel) -> Unit,
     private val onFollowClick: (OtherUserDisplayFollowersModel) -> Unit,
@@ -612,28 +609,67 @@ class FollowersAdapter(
             holder.followButton.setBackgroundColor(
                 ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
             )
-            holder.followButton.setTextColor(
-                Color.WHITE   // Set text color to white
-            )
+            holder.followButton.setTextColor(Color.WHITE)
         } else {
             holder.followButton.text = "Follow Back"
             holder.followButton.setBackgroundColor(
                 ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
             )
-            holder.followButton.setTextColor(
-                Color.WHITE   // Set text color to white
-            )
+            holder.followButton.setTextColor(Color.WHITE)
         }
 
         // Follow button click logic
         holder.followButton.setOnClickListener {
-            if (!follower.isFollowing) {
+            if (follower.isFollowing) {
+                // Open messaging
+                val context = holder.itemView.context
+
+                // Create temporary user entity
+                val otherUserEntity = com.uyscuti.social.core.common.data.room.entity.UserEntity(
+                    id = follower.id,
+                    name = "${follower.fullName}|${follower.username}",
+                    avatar = follower.avatar?.url ?: "",
+                    online = follower.isOnline,
+                    lastSeen = follower.lastseen
+                )
+
+                // Convert to User model for Dialog
+                val userModel = com.uyscuti.sharedmodule.data.model.User(
+                    otherUserEntity.id,
+                    otherUserEntity.name,
+                    otherUserEntity.avatar,
+                    otherUserEntity.online,
+                    otherUserEntity.lastSeen
+                )
+
+                // Create ArrayList for Dialog constructor
+                val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
+                usersList.add(userModel)
+
+                // Create temporary dialog
+                val tempDialog = com.uyscuti.sharedmodule.data.model.Dialog(
+                    "temp_${follower.id}_${System.currentTimeMillis()}",
+                    follower.fullName,
+                    follower.avatar?.url ?: "",
+                    usersList,
+                    null, // No last message for temp dialog
+                    0     // No unread count
+                )
+
+                // Open MessagesActivity
+                MessagesActivity.open(
+                    context = context,
+                    dialogName = follower.fullName,
+                    dialog = tempDialog,
+                    temporally = true,
+                    productReference = ""
+                )
+            } else {
                 // Follow back logic
                 onFollowClick(follower)
                 follower.isFollowing = true
                 notifyItemChanged(position)
             }
-            // If following, button does nothing but is clickable
         }
 
         // Click on item to open profile
@@ -646,7 +682,6 @@ class FollowersAdapter(
             onMoreOptionsClick(follower)
         }
     }
-
 
     override fun getItemCount(): Int = followers.size
 

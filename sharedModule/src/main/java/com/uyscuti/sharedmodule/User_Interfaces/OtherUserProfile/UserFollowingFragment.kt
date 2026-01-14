@@ -25,9 +25,12 @@ import com.bumptech.glide.Glide
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.gson.JsonSyntaxException
+import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.sharedmodule.databinding.ActivityUserFollowingBinding
+import com.uyscuti.social.core.common.data.room.entity.DialogEntity
+import com.uyscuti.social.core.common.data.room.entity.UserEntity
 import com.uyscuti.social.network.api.response.follow_unfollow.OtherUserDisplayFollowersModel
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
@@ -644,15 +647,12 @@ class UserFollowingFragment : AppCompatActivity() {
     }
 }
 
-
 // Following Adapter
 class FollowingAdapter(
-
     private val following: MutableList<UserFollowingDisplayModel>,
     private val onFollowingClick: (UserFollowingDisplayModel) -> Unit,
     private val onUnfollowClick: (UserFollowingDisplayModel) -> Unit,
     private val onMoreOptionsClick: ((UserFollowingDisplayModel) -> Unit)? = null
-
 ) : RecyclerView.Adapter<FollowingAdapter.FollowingViewHolder>() {
 
     inner class FollowingViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -697,35 +697,69 @@ class FollowingAdapter(
 
         // Set button text and color
         if (followingUser.isFollowing) {
-            // Already following → show Message
             holder.followButton.text = "Message"
-            holder.followButton.backgroundTintList = ContextCompat.getColorStateList(
-                holder.itemView.context,
-                R.color.blueJeans
-            )
+            holder.followButton.backgroundTintList =
+                ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
             holder.followButton.setTextColor(Color.WHITE)
         } else {
-            // Not following → show Follow Back
             holder.followButton.text = "Follow Back"
-            holder.followButton.backgroundTintList = ContextCompat.getColorStateList(
-                holder.itemView.context,
-                R.color.blueJeans
-            )
+            holder.followButton.backgroundTintList =
+                ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
             holder.followButton.setTextColor(Color.WHITE)
         }
 
         // Handle button click
         holder.followButton.setOnClickListener {
             if (followingUser.isFollowing) {
-                // Already following → show message
-                Toast.makeText(holder.itemView.context, "Message feature coming soon", Toast.LENGTH_SHORT).show()
+                // Open messaging
+                val context = holder.itemView.context
+
+                // Create temporary user
+                val otherUserEntity = com.uyscuti.social.core.common.data.room.entity.UserEntity(
+                    id = followingUser.id,
+                    name = "${followingUser.fullName}|${followingUser.username}",
+                    avatar = followingUser.avatar?.url ?: "",
+                    online = followingUser.isOnline ?: false,
+                    lastSeen = followingUser.lastseen ?: Date()
+                )
+
+                // Convert to User model for Dialog
+                val userModel = com.uyscuti.sharedmodule.data.model.User(
+                    otherUserEntity.id,
+                    otherUserEntity.name,
+                    otherUserEntity.avatar,
+                    otherUserEntity.online,
+                    otherUserEntity.lastSeen
+                )
+
+                // Create ArrayList for Dialog constructor
+                val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
+                usersList.add(userModel)
+
+                // Create temporary dialog using Dialog constructor directly
+                val tempDialog = com.uyscuti.sharedmodule.data.model.Dialog(
+                    "temp_${followingUser.id}_${System.currentTimeMillis()}",
+                    followingUser.fullName,
+                    followingUser.avatar?.url ?: "",
+                    usersList,
+                    null, // No last message for temp dialog
+                    0     // No unread count
+                )
+
+                MessagesActivity.open(
+                    context = context,
+                    dialogName = followingUser.fullName,
+                    dialog = tempDialog,
+                    temporally = true,
+                    productReference = ""
+                )
             } else {
-                // Not following → trigger follow back/unfollow logic
+                // Follow Back action
                 onUnfollowClick(followingUser)
             }
         }
 
-        // Optional elements: verification, suggestions, mutual connections, online, story ring
+        // Optional elements
         setupOptionalElements(holder, followingUser)
 
         // Item click → navigate to user profile
@@ -737,28 +771,27 @@ class FollowingAdapter(
         }
     }
 
-
     private fun setupOptionalElements(holder: FollowingViewHolder, user: UserFollowingDisplayModel) {
-        holder.verificationBadge.visibility = if (user.isVerified) View.VISIBLE else View.GONE
+        holder.verificationBadge.visibility = if (user.isVerified == true) View.VISIBLE else View.GONE
 
-        holder.suggestionContainer.visibility = if (user.isSuggested) View.VISIBLE else View.GONE
-        if (user.isSuggested) {
+        holder.suggestionContainer.visibility = if (user.isSuggested == true) View.VISIBLE else View.GONE
+        if (user.isSuggested == true) {
             holder.suggestionText.text = "Suggested for you"
         }
 
-        if (user.mutualConnectionsCount > 0) {
+        if ((user.mutualConnectionsCount ?: 0) > 0) {
             holder.mutualConnectionsText.visibility = View.VISIBLE
             holder.mutualConnectionsText.text = "Followed by ${user.mutualConnectionsCount} others"
         } else {
             holder.mutualConnectionsText.visibility = View.GONE
         }
 
-        holder.onlineStatusIndicator.visibility = if (user.isOnline) View.VISIBLE else View.GONE
-        if (user.isOnline) {
+        holder.onlineStatusIndicator.visibility = if (user.isOnline == true) View.VISIBLE else View.GONE
+        if (user.isOnline == true) {
             holder.onlineStatusIndicator.setBackgroundResource(R.drawable.ic_edit_text_bkg)
         }
 
-        holder.storyRing.visibility = if (user.hasActiveStory) View.VISIBLE else View.GONE
+        holder.storyRing.visibility = if (user.hasActiveStory == true) View.VISIBLE else View.GONE
     }
 
     override fun getItemCount(): Int = following.size
