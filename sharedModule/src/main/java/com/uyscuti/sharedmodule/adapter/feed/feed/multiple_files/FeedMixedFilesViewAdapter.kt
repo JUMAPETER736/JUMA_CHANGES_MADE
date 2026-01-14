@@ -223,7 +223,7 @@ class FeedMixedFilesViewAdapter(
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
                     // PASS FOLLOWING LIST FROM ADAPTER
-                    val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
+                    val cachedFollowingIds = getCachedFollowingList()
                     putStringArrayList("following_ids", ArrayList(cachedFollowingIds))
 
                     Log.d(TAG, "Passing ${cachedFollowingIds.size} following IDs to fragment")

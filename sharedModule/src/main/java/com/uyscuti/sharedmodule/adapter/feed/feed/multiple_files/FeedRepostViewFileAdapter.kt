@@ -36,6 +36,7 @@ import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
 import com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 
 
 private const val VIEW_TYPE_IMAGE_FEED = 0
@@ -151,10 +152,14 @@ class FeedRepostViewFileAdapter(
             context: Context,
             currentIndex: Int,
             files: List<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            originalPost: OriginalPost
         ) {
+
             val activity = getActivityFromContext(context)
+
             if (activity != null) {
+
                 activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
                 activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
 
@@ -169,19 +174,24 @@ class FeedRepostViewFileAdapter(
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
+                    // PASS FOLLOWING LIST FROM ADAPTER CACHE
+                    val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
+                    putStringArrayList("following_ids", ArrayList(cachedFollowingIds))
+
+                    Log.d(TAG, "Passing ${cachedFollowingIds.size} following IDs to fragment")
+
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
                         val author = feedPost.author
                         val account = author?.account
-                        val file = files[index]   // your file list item
 
                         val postItem = PostItem(
                             postId = feedPost._id,
 
                             // AUTHOR (post owner)
                             userId = author?._id,
-                            username = author.account.username,
+                            username = account?.username ?: "", // Fixed: Use account?.username with null safety
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -201,7 +211,6 @@ class FeedRepostViewFileAdapter(
                             files = arrayListOf(file.url),
                             fileType = file.url.substringAfterLast('.', "")
                         )
-
 
                         postItems.add(postItem)
                     }
@@ -255,7 +264,8 @@ class FeedRepostViewFileAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
 
                 onMultipleFilesClickListener?.multipleFileClickListener(
@@ -467,6 +477,8 @@ class FeedRepostViewFileAdapter(
 
     inner class FeedRepostAudiosOnly(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
+        private var data: OriginalPost? = null
+
         private val audioDurationTextView: TextView = itemView.findViewById(R.id.audioDuration)
         private val materialCardView: MaterialCardView = itemView.findViewById(R.id.materialCardView)
         private val artworkLayout: LinearLayout = itemView.findViewById(R.id.artworkLayout)
@@ -506,10 +518,14 @@ class FeedRepostViewFileAdapter(
             context: Context,
             currentIndex: Int,
             files: List<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            originalPost: OriginalPost
         ) {
+
             val activity = getActivityFromContext(context)
+
             if (activity != null) {
+
                 activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
                 activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
 
@@ -524,21 +540,24 @@ class FeedRepostViewFileAdapter(
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
+                    // PASS FOLLOWING LIST FROM ADAPTER CACHE
+                    val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
+                    putStringArrayList("following_ids", ArrayList(cachedFollowingIds))
+
+                    Log.d(TAG, "Passing ${cachedFollowingIds.size} following IDs to fragment")
+
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
-                        val fileId = fileIds.getOrNull(index)
-                        val fileName = data?.fileNames?.find { it.fileId == fileId }?.fileName ?: ""
 
                         val author = feedPost.author
                         val account = author?.account
-                        val file = files[index]   // your file list item
 
                         val postItem = PostItem(
                             postId = feedPost._id,
 
                             // AUTHOR (post owner)
                             userId = author?._id,
-                            username = author.account.username,
+                            username = account?.username ?: "", // Fixed: Use account?.username with null safety
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -562,8 +581,7 @@ class FeedRepostViewFileAdapter(
                         postItems.add(postItem)
                     }
                     putParcelableArrayList("post_list", postItems)
-                    putString("post_id", fileIds.getOrNull(currentIndex) ?: "audio_file_$currentIndex")
-                    putString("media_type", "audio")
+                    putString("post_id", fileIds.getOrNull(currentIndex) ?: "file_$currentIndex")
                 }
 
                 fragment.arguments = bundle
@@ -574,16 +592,17 @@ class FeedRepostViewFileAdapter(
                         R.anim.slide_out_left
                     )
                     .replace(R.id.frame_layout, fragment)
-                    .addToBackStack("tapped_audio_files_view")
+                    .addToBackStack("tapped_files_view")
                     .commit()
 
-                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} audio files, starting at index $currentIndex")
+                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with " +
+                        "${files.size} files, starting at index $currentIndex")
             } else {
                 Log.e(TAG, "Activity is null, cannot navigate to fragment")
             }
         }
 
-        private var data: OriginalPost? = null
+
 
         @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
         @SuppressLint("SetTextI18n")
@@ -630,7 +649,8 @@ class FeedRepostViewFileAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds as List<String>
+                    data.fileIds as List<String>,
+                    data
                 )
 
                 onMultipleFilesClickListener?.multipleFileClickListener(
@@ -1018,10 +1038,14 @@ class FeedRepostViewFileAdapter(
             context: Context,
             currentIndex: Int,
             files: List<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            originalPost: OriginalPost
         ) {
+
             val activity = getActivityFromContext(context)
+
             if (activity != null) {
+
                 activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
                 activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
 
@@ -1036,19 +1060,24 @@ class FeedRepostViewFileAdapter(
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
+                    // PASS FOLLOWING LIST FROM ADAPTER CACHE
+                    val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
+                    putStringArrayList("following_ids", ArrayList(cachedFollowingIds))
+
+                    Log.d(TAG, "Passing ${cachedFollowingIds.size} following IDs to fragment")
+
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
                         val author = feedPost.author
                         val account = author?.account
-                        val file = files[index]   // your file list item
 
                         val postItem = PostItem(
                             postId = feedPost._id,
 
                             // AUTHOR (post owner)
                             userId = author?._id,
-                            username = author.account.username,
+                            username = account?.username ?: "", // Fixed: Use account?.username with null safety
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -1086,8 +1115,8 @@ class FeedRepostViewFileAdapter(
                     .addToBackStack("tapped_files_view")
                     .commit()
 
-                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with" +
-                        " ${files.size} files, starting at index $currentIndex")
+                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with " +
+                        "${files.size} files, starting at index $currentIndex")
             } else {
                 Log.e(TAG, "Activity is null, cannot navigate to fragment")
             }
@@ -1137,7 +1166,8 @@ class FeedRepostViewFileAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds
+                    data.fileIds,
+                    data
                 )
 
                 onMultipleFilesClickListener?.multipleFileClickListener(
@@ -1152,7 +1182,8 @@ class FeedRepostViewFileAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds
+                    data.fileIds,
+                    data
                 )
             }
 
@@ -1161,7 +1192,8 @@ class FeedRepostViewFileAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds
+                    data.fileIds,
+                    data
                 )
             }
 
@@ -1337,18 +1369,19 @@ class FeedRepostViewFileAdapter(
             }
         }
 
-        // Add the navigation function
         private fun navigateToTappedFilesFragment(
             context: Context,
             currentIndex: Int,
             files: List<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            originalPost: OriginalPost
         ) {
+
             val activity = getActivityFromContext(context)
+
             if (activity != null) {
-                // Hide AppBar (Toolbar) if available
+
                 activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
-                // Hide Bottom Navigation if available
                 activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
 
                 val fragment = Tapped_Files_In_The_Container_View_Fragment()
@@ -1362,19 +1395,24 @@ class FeedRepostViewFileAdapter(
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
+                    // PASS FOLLOWING LIST FROM ADAPTER CACHE
+                    val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
+                    putStringArrayList("following_ids", ArrayList(cachedFollowingIds))
+
+                    Log.d(TAG, "Passing ${cachedFollowingIds.size} following IDs to fragment")
+
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
                         val author = feedPost.author
                         val account = author?.account
-                        val file = files[index]   // your file list item
 
                         val postItem = PostItem(
                             postId = feedPost._id,
 
                             // AUTHOR (post owner)
                             userId = author?._id,
-                            username = author.account.username,
+                            username = account?.username ?: "", // Fixed: Use account?.username with null safety
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
@@ -1412,7 +1450,8 @@ class FeedRepostViewFileAdapter(
                     .addToBackStack("tapped_files_view")
                     .commit()
 
-                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files, starting at index $currentIndex")
+                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with " +
+                        "${files.size} files, starting at index $currentIndex")
             } else {
                 Log.e(TAG, "Activity is null, cannot navigate to fragment")
             }
@@ -1441,7 +1480,8 @@ class FeedRepostViewFileAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds
+                    data.fileIds,
+                    data
                 )
 
                 // Optional: Still call the original listener if needed
@@ -1458,7 +1498,8 @@ class FeedRepostViewFileAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds
+                    data.fileIds,
+                    data
                 )
             }
 
@@ -1468,7 +1509,8 @@ class FeedRepostViewFileAdapter(
                     context,
                     absoluteAdapterPosition,
                     data.files,
-                    data.fileIds
+                    data.fileIds,
+                    data
                 )
             }
 
@@ -1960,10 +2002,14 @@ class FeedRepostViewFileAdapter(
             context: Context,
             currentIndex: Int,
             files: List<File>,
-            fileIds: List<String>
+            fileIds: List<String>,
+            originalPost: OriginalPost
         ) {
+
             val activity = getActivityFromContext(context)
+
             if (activity != null) {
+
                 activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
                 activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
 
@@ -1978,24 +2024,29 @@ class FeedRepostViewFileAdapter(
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
+                    // PASS FOLLOWING LIST FROM ADAPTER CACHE
+                    val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
+                    putStringArrayList("following_ids", ArrayList(cachedFollowingIds))
+
+                    Log.d(TAG, "Passing ${cachedFollowingIds.size} following IDs to fragment")
+
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
                         val author = feedPost.author
                         val account = author?.account
-                        val file = files[index]   // your file list item
 
                         val postItem = PostItem(
                             postId = feedPost._id,
 
                             // AUTHOR (post owner)
                             userId = author?._id,
-                            username = author.account.username,
+                            username = account?.username ?: "", // Fixed: Use account?.username with null safety
                             authorName = listOfNotNull(
                                 author?.firstName?.takeIf { it.isNotBlank() },
                                 author?.lastName?.takeIf { it.isNotBlank() }
                             ).joinToString(" ").ifBlank {
-                                author.account.username
+                                account?.username
                             },
                             avatarUrl = account?.avatar?.url,
 
@@ -2020,10 +2071,18 @@ class FeedRepostViewFileAdapter(
                 fragment.arguments = bundle
 
                 activity.supportFragmentManager.beginTransaction()
-                    .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left)
+                    .setCustomAnimations(
+                        R.anim.slide_in_right,
+                        R.anim.slide_out_left
+                    )
                     .replace(R.id.frame_layout, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
+
+                Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with " +
+                        "${files.size} files, starting at index $currentIndex")
+            } else {
+                Log.e(TAG, "Activity is null, cannot navigate to fragment")
             }
         }
 
@@ -2061,22 +2120,57 @@ class FeedRepostViewFileAdapter(
             countTextView.visibility = View.GONE
 
             itemView.setOnClickListener {
-                navigateToTappedFilesFragment(context, actualFileIndex, data.files, data.fileIds as List<String>)
+                navigateToTappedFilesFragment(
+                    context,
+                    actualFileIndex,
+                    data.files,
+                    data.fileIds as List<String>,
+                    data
+                )
             }
             imageView.setOnClickListener {
-                navigateToTappedFilesFragment(context, actualFileIndex, data.files, data.fileIds as List<String>)
+                navigateToTappedFilesFragment(
+                    context,
+                    actualFileIndex,
+                    data.files,
+                    data.fileIds as List<String>,
+                    data
+                )
             }
             materialCardView.setOnClickListener {
-                navigateToTappedFilesFragment(context, actualFileIndex, data.files, data.fileIds as List<String>)
+                navigateToTappedFilesFragment(
+                    context,
+                    actualFileIndex,
+                    data.files,
+                    data.fileIds as List<String>,
+                    data
+                )
             }
             countTextView.setOnClickListener {
-                navigateToTappedFilesFragment(context, actualFileIndex, data.files, data.fileIds as List<String>)
+                navigateToTappedFilesFragment(
+                    context,
+                    actualFileIndex,
+                    data.files,
+                    data.fileIds as List<String>,
+                    data
+                )
             }
             imageView2.setOnClickListener {
-                navigateToTappedFilesFragment(context, actualFileIndex, data.files, data.fileIds as List<String>)
+                navigateToTappedFilesFragment(
+                    context,
+                    actualFileIndex,
+                    data.files,
+                    data.fileIds as List<String>,
+                    data
+                )
             }
             feedVideoImageView.setOnClickListener {
-                navigateToTappedFilesFragment(context, actualFileIndex, data.files, data.fileIds as List<String>)
+                navigateToTappedFilesFragment(
+                    context,
+                    actualFileIndex,
+                    data.files, data.fileIds as List<String>,
+                    data
+                )
             }
 
             val layoutParams = materialCardView.layoutParams as ViewGroup.MarginLayoutParams
