@@ -406,7 +406,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                         withContext(Dispatchers.Main) {
                             progressBar.visibility = View.GONE
                             isLoading = false
-                           
+
                         }
                         return@launch
                     }

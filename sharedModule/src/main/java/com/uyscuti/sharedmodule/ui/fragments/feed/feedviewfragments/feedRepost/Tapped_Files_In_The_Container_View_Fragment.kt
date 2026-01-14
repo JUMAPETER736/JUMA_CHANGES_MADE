@@ -585,15 +585,22 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         val post = postList?.getOrNull(viewPager.currentItem)
         val feedOwnerId = post?.userId
 
-        // ALWAYS hide the follow button from the start
-        followButton.visibility = View.GONE
+        // Don't show follow button if feed owner is current user
+        if (feedOwnerId == null || feedOwnerId == currentUserId) {
+            followButton.visibility = View.GONE
+            return
+        }
+
+        // Show follow button only if user is NOT already following
+        followButton.visibility = if (followingUserIds.contains(feedOwnerId)) View.GONE else View.VISIBLE
 
         Log.d(TAG, "FOLLOW BUTTON CHECK")
         Log.d(TAG, "Current User ID: $currentUserId")
         Log.d(TAG, "Feed Owner ID: $feedOwnerId")
-        Log.d(TAG, "Follow button ALWAYS HIDDEN")
-        Log.d(TAG, "═══════════════════════════════════════")
+        Log.d(TAG, "Following List: $followingUserIds")
+        Log.d(TAG, "Follow button visibility: ${followButton.visibility}")
     }
+
 
     private fun loadPostContent(postId: String) {
         // Fetch post data by ID from your post list
