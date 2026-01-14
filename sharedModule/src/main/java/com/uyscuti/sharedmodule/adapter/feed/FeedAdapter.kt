@@ -117,6 +117,7 @@ private const val BUSINESS_POST_VIEW = 7
 const val TAG = "FeedAdapter"
 
 class FeedAdapter(
+
     private val context: Context,
     private val retrofitInterface: RetrofitInstance,
     private val feedClickListener: OnFeedClickListener,
@@ -155,6 +156,18 @@ class FeedAdapter(
             Log.d("FeedAdapter", "Cached following list updated with ${userIds.size} users")
         }
 
+        // ADD THESE TWO NEW METHODS
+        fun addToFollowingCache(userId: String) {
+            cachedFollowingList.add(userId)
+            cachedFollowingUserIds = cachedFollowingList.toSet()
+            Log.d("FeedAdapter", "Added $userId to global following cache (Total: ${cachedFollowingList.size})")
+        }
+
+        fun removeFromFollowingCache(userId: String) {
+            cachedFollowingList.remove(userId)
+            cachedFollowingUserIds = cachedFollowingList.toSet()
+            Log.d("FeedAdapter", "Removed $userId from global following cache (Total: ${cachedFollowingList.size})")
+        }
     }
 
     init {
@@ -175,6 +188,38 @@ class FeedAdapter(
 
     private var businessPost: com.uyscuti.social.network.api.response.business.response.post.Post? = null
 
+
+    fun addToFollowing(userId: String, username: String) {
+        // Add to all caches
+        followingUserIds = followingUserIds + userId
+        cachedFollowingUserIds = followingUserIds
+        cachedFollowingList.add(userId)
+        cachedFollowingUsernames.add(username)
+
+        Log.d("FeedAdapter", "Added user $userId (@$username) to following list")
+        Log.d("FeedAdapter", "Total following: ${followingUserIds.size} users")
+
+        updatePostsForUser(userId)
+
+        // Save to local storage
+        saveFollowingListToStorage(context, followingUserIds)
+    }
+
+    fun removeFromFollowing(userId: String, username: String) {
+        // Remove from all caches
+        followingUserIds = followingUserIds - userId
+        cachedFollowingUserIds = followingUserIds
+        cachedFollowingList.remove(userId)
+        cachedFollowingUsernames.remove(username)
+
+        Log.d("FeedAdapter", "Removed user $userId (@$username) from following list")
+        Log.d("FeedAdapter", "Total following: ${followingUserIds.size} users")
+
+        updatePostsForUser(userId)
+
+        // Save to local storage
+        saveFollowingListToStorage(context, followingUserIds)
+    }
 
     fun updateFollowingList(followingIds: List<String>) {
         cachedFollowingList.clear()
@@ -204,33 +249,7 @@ class FeedAdapter(
         }
     }
 
-    fun addToFollowing(userId: String, username: String) {
-        // Add to all caches
-        followingUserIds = followingUserIds + userId
-        cachedFollowingUserIds = followingUserIds
-        cachedFollowingList.add(userId)
-        cachedFollowingUsernames.add(username)
 
-        Log.d("FeedAdapter", "Added user $userId (@$username) to following list")
-        updatePostsForUser(userId)
-
-        // Save to local storage
-        saveFollowingListToStorage(context, followingUserIds)
-    }
-
-    fun removeFromFollowing(userId: String, username: String) {
-        // Remove from all caches
-        followingUserIds = followingUserIds - userId
-        cachedFollowingUserIds = followingUserIds
-        cachedFollowingList.remove(userId)
-        cachedFollowingUsernames.remove(username)
-
-        Log.d("FeedAdapter", "Removed user $userId (@$username) from following list")
-        updatePostsForUser(userId)
-
-        // Save to local storage
-        saveFollowingListToStorage(context, followingUserIds)
-    }
 
     private fun saveFollowingListToStorage(context: Context, userIds: Set<String>) {
         try {
@@ -243,26 +262,10 @@ class FeedAdapter(
         }
     }
 
-    fun updateFollowingList(newFollowingIds: Set<String>) {
-        followingUserIds = newFollowingIds
-        cachedFollowingUserIds = newFollowingIds
-        cachedFollowingList.clear()
-        cachedFollowingList.addAll(newFollowingIds)
-
-        Log.d("FeedAdapter", "Following list updated: ${followingUserIds.size} users")
-
-        // Save to storage
-        saveFollowingListToStorage(context, followingUserIds)
-    }
-
     fun isUserFollowing(userId: String): Boolean {
         return followingUserIds.contains(userId) ||
                 cachedFollowingUserIds.contains(userId) ||
                 Companion.cachedFollowingList.contains(userId)
-    }
-
-    fun isUsernameFollowing(username: String): Boolean {
-        return cachedFollowingUsernames.contains(username)
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -270,14 +273,6 @@ class FeedAdapter(
         clear()
         addAll(newPosts.toMutableList())
         notifyDataSetChanged()
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    fun appendPosts(newPosts: List<com.uyscuti.social.network.api.response.posts.Post>) {
-        val startPosition = itemCount
-        addAll(newPosts.toMutableList())
-        initializeCommentCounts(newPosts)
-        notifyItemRangeInserted(startPosition, newPosts.size)
     }
 
 

@@ -101,7 +101,7 @@ private const val ARG_POST_ID = "post_id"
 private const val ARG_POST_DATA = "post_data"
 private const val ARG_POST_LIST = "post_list"
 private const val ARG_CURRENT_POSITION = "current_position"
-private const val TAG = "SocialPostFragment"
+private const val TAG = "Tapped Files"
 
 
 // ========== MAIN FRAGMENT CLASS ==========
@@ -573,27 +573,38 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         val post = postList?.getOrNull(viewPager.currentItem)
         val feedOwnerId = post?.userId
 
-        Log.d(TAG, "updateFollowButtonVisibility - currentUserId: $currentUserId, feedOwnerId: $feedOwnerId")
+
+        Log.d(TAG, "FOLLOW BUTTON CHECK")
+        Log.d(TAG, "Current User ID: $currentUserId")
+        Log.d(TAG, "Feed Owner ID: $feedOwnerId")
+        Log.d(TAG, "Following List Size: ${followingUserIds.size}")
+        Log.d(TAG, "Following IDs: $followingUserIds")
 
         when {
             feedOwnerId == null -> {
                 followButton.visibility = View.GONE
-                Log.d(TAG, "Follow button hidden - no feedOwnerId")
+                Log.d(TAG, "Follow button HIDDEN - no feedOwnerId")
             }
             feedOwnerId == currentUserId -> {
                 followButton.visibility = View.GONE
-                Log.d(TAG, "Follow button hidden - own post")
+                Log.d(TAG, "Follow button HIDDEN - this is MY post")
             }
             else -> {
                 val isFollowing = checkIfFollowing(feedOwnerId, authorUsername)
                 followButton.visibility = if (isFollowing) View.GONE else View.VISIBLE
-                Log.d(TAG, "Follow button visibility: ${if (isFollowing) "GONE (already following)" else "VISIBLE (not following)"}")
 
-                if (!isFollowing) {
+                Log.d(TAG, "Is following by ID check: ${followingUserIds.contains(feedOwnerId)}")
+                Log.d(TAG, "Final isFollowing result: $isFollowing")
+
+                if (isFollowing) {
+                    Log.d(TAG, "Follow button HIDDEN - Already following @$authorUsername")
+                } else {
+                    Log.d(TAG, "Follow button VISIBLE - Not following @$authorUsername")
                     setupFollowButtonClickListener(feedOwnerId, authorUsername)
                 }
             }
         }
+        Log.d(TAG, "═══════════════════════════════════════")
     }
 
     private fun setupFollowButtonClickListener(feedOwnerId: String, username: String?) {
@@ -617,32 +628,44 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         // Hide button immediately for better UX
         followButton.visibility = View.GONE
 
-        // Add to following lists using FollowingManager
+        // Add to LOCAL following list
         followingUserIds.add(feedOwnerId)
+
+        // Update FollowingManager
         followingManager.addToFollowing(feedOwnerId)
 
+        // Update FeedAdapter global cache
+        FeedAdapter.addToFollowingCache(feedOwnerId)
+
         Log.d(TAG, "Now following user $feedOwnerId (@$username)")
+        Log.d(TAG, "Updated following list size: ${followingUserIds.size}")
 
         // Make API call to follow
         lifecycleScope.launch(Dispatchers.IO) {
-//            try {
-//                val response = apiService.followUser(feedOwnerId)
-//                if (response.isSuccessful) {
-//                    Log.d(TAG, "Successfully followed user on server")
-//                } else {
-//                    Log.e(TAG, "Failed to follow user on server: ${response.code()}")
-//                    // Revert on failure
-//                    withContext(Dispatchers.Main) {
-//                        revertFollowAction(feedOwnerId, username)
-//                    }
-//                }
-//            } catch (e: Exception) {
-//                Log.e(TAG, "Error following user", e)
-//                // Revert on error
-//                withContext(Dispatchers.Main) {
-//                    revertFollowAction(feedOwnerId, username)
-//                }
-//            }
+            try {
+                val response = apiService.getOtherUserFollowing(feedOwnerId)
+                if (response.isSuccessful) {
+                    Log.d(TAG, "Successfully followed user on server")
+                } else {
+                    Log.e(TAG, "Failed to follow user on server: ${response.code()}")
+                    // Revert on failure
+                    withContext(Dispatchers.Main) {
+                        followingUserIds.remove(feedOwnerId)
+                        followingManager.removeFromFollowing(feedOwnerId)
+                        followButton.visibility = View.VISIBLE
+                        Toast.makeText(requireContext(), "Failed to follow user", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error following user", e)
+                // Revert on error
+                withContext(Dispatchers.Main) {
+                    followingUserIds.remove(feedOwnerId)
+                    followingManager.removeFromFollowing(feedOwnerId)
+                    followButton.visibility = View.VISIBLE
+                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
@@ -733,15 +756,38 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
             if (!followingIds.isNullOrEmpty()) {
                 followingUserIds = followingIds.toMutableSet()
-                Log.d(TAG, "Following IDs loaded from arguments: ${followingUserIds.size}")
-                Log.d(TAG, "Following IDs: $followingUserIds")
+                Log.d(TAG, "✅ Following IDs loaded from arguments: ${followingUserIds.size}")
+                Log.d(TAG, "✅ Following IDs: $followingUserIds")
             } else {
                 // Fallback to FeedAdapter cache
                 followingUserIds = FeedAdapter.getCachedFollowingList().toMutableSet()
-                Log.d(TAG, "Using FeedAdapter cache: ${followingUserIds.size} IDs")
+                Log.d(TAG, "⚠️ Using FeedAdapter cache: ${followingUserIds.size} IDs")
+                Log.d(TAG, "⚠️ Cache IDs: $followingUserIds")
+            }
+
+            // If still empty, load from FollowingManager (localStorage first, then server)
+            if (followingUserIds.isEmpty()) {
+                // Load from localStorage synchronously first
+                followingUserIds = followingManager.getFollowingList().toMutableSet()
+                Log.d(TAG, "⚠️ Loaded from localStorage: ${followingUserIds.size} IDs")
+
+                // Then fetch fresh data from server in background
+                lifecycleScope.launch {
+                    try {
+                        val serverList = followingManager.loadFollowingList()
+                        followingUserIds = serverList.toMutableSet()
+                        Log.d(TAG, "✅ Loaded from server: ${followingUserIds.size} IDs")
+
+                        // Update UI after loading from server
+                        updateFollowButtonVisibility()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "❌ Error loading from server: ${e.message}")
+                    }
+                }
             }
 
             Log.d(TAG, "Arguments extracted - PostList size: ${postList?.size}, CurrentPosition: $currentPosition")
+            Log.d(TAG, "📊 INITIAL Following List Size: ${followingUserIds.size}")
         }
     }
 

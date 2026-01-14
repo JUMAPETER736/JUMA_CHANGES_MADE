@@ -24,24 +24,45 @@ class FollowingManager(private val context: Context) {
         }
     }
 
+    //Synchronous method to get from localStorage only
+    fun getFollowingList(): Set<String> {
+        val list = localStorage.getFollowingList()
+        Log.d("FollowingManager", "Get Following List from localStorage: ${list.size} users")
+        return list
+    }
+
+    //Async method to fetch from server
     suspend fun loadFollowingList(): Set<String> {
         // First, load from cache
         val cachedList = localStorage.getFollowingList()
-        Log.d("FollowingManager", "Loaded ${cachedList.size} users from cache")
+        Log.d("FollowingManager", "Loaded ${cachedList.size} users from localStorage cache")
 
-        // Update adapter cache immediately
+        // Update adapter cache immediately with cached data
         FeedAdapter.setCachedFollowingList(cachedList)
 
-        // Then fetch fresh data from server in background
-        fetchFollowingListFromServer()
+        // Then fetch fresh data from server
+        val serverList = fetchFollowingListFromServer()
 
-        return cachedList
+        // Return the server list (or cached list if server fetch failed)
+        return if (serverList.isNotEmpty()) {
+            Log.d("FollowingManager", "Returning server data: ${serverList.size} users")
+            serverList
+        } else {
+            Log.d("FollowingManager", "Server fetch failed, returning cached data: ${cachedList.size} users")
+            cachedList
+        }
     }
 
-    private suspend fun fetchFollowingListFromServer() {
-        withContext(Dispatchers.IO) {
+    //  Returns the fetched list
+    private suspend fun fetchFollowingListFromServer(): Set<String> {
+        return withContext(Dispatchers.IO) {
             try {
-                val currentUsername = localStorage.getUsername() ?: return@withContext
+                val currentUsername = localStorage.getUsername()
+                if (currentUsername.isNullOrEmpty()) {
+                    Log.e("FollowingManager", "Username is null or empty")
+                    return@withContext emptySet()
+                }
+
                 val followingUserIds = mutableSetOf<String>()
                 var currentPage = 1
                 var hasMorePages = true
@@ -78,18 +99,21 @@ class FollowingManager(private val context: Context) {
                     }
                 }
 
-                // Save to local storage
-                withContext(Dispatchers.Main) {
-                    if (followingUserIds.isNotEmpty()) {
+                // Save to local storage if we got data
+                if (followingUserIds.isNotEmpty()) {
+                    withContext(Dispatchers.Main) {
                         val json = Gson().toJson(followingUserIds.toList())
                         localStorage.saveFollowingList(json)
                         FeedAdapter.setCachedFollowingList(followingUserIds)
-                        Log.d("FollowingManager", "Saved ${followingUserIds.size} following users")
+                        Log.d("FollowingManager", "Saved ${followingUserIds.size} following users to localStorage")
                     }
                 }
 
+                return@withContext followingUserIds
+
             } catch (e: Exception) {
-                Log.e("FollowingManager", "Error fetching following list", e)
+                Log.e("FollowingManager", "Error fetching following list from server", e)
+                return@withContext emptySet()
             }
         }
     }
@@ -99,8 +123,12 @@ class FollowingManager(private val context: Context) {
         currentList.add(userId)
         val json = Gson().toJson(currentList.toList())
         localStorage.saveFollowingList(json)
+
+        // Update BOTH FeedAdapter cache methods
         FeedAdapter.setCachedFollowingList(currentList)
-        Log.d("FollowingManager", "Added user $userId to following list")
+        FeedAdapter.addToFollowingCache(userId)
+
+        Log.d("FollowingManager", "Added user $userId to following list (Total: ${currentList.size})")
     }
 
     fun removeFromFollowing(userId: String) {
@@ -108,7 +136,11 @@ class FollowingManager(private val context: Context) {
         currentList.remove(userId)
         val json = Gson().toJson(currentList.toList())
         localStorage.saveFollowingList(json)
+
+        // Update BOTH FeedAdapter cache methods
         FeedAdapter.setCachedFollowingList(currentList)
-        Log.d("FollowingManager", "Removed user $userId from following list")
+        FeedAdapter.removeFromFollowingCache(userId)
+
+        Log.d("FollowingManager", "Removed user $userId from following list (Total: ${currentList.size})")
     }
 }

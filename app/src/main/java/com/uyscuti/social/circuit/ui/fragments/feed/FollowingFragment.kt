@@ -448,7 +448,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             // Clear old cached data before loading new data
             getFeedViewModel.clearAllFeedData()
             followedPostsAdapter.submitItems(mutableListOf())
-            Log.d(TAG, "🧹 CLEARED old cached posts from adapter and ViewModel")
+            Log.d(TAG, "CLEARED old cached posts from adapter and ViewModel")
         }
 
         Log.d(TAG, "═══════════════════════════════════════")
@@ -464,7 +464,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 if (!response.isSuccessful || response.body() == null) break
 
                 val pagePosts = response.body()!!.data.data.posts
-                Log.d(TAG, "📦 Page $pageNum: ${pagePosts.size} posts")
+                Log.d(TAG, "Page $pageNum: ${pagePosts.size} posts")
 
                 val filtered = pagePosts.mapNotNull { post ->
                     try {
@@ -477,12 +477,12 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                             // This is a REPOST - check who REPOSTED it (not original author)
                             posterAccountId = post.repostedUser.owner
                             posterUsername = post.repostedUser.username.trim().lowercase()
-                            Log.d(TAG, "  📌 REPOST by @${post.repostedUser.username} (ID: $posterAccountId)")
+                            Log.d(TAG, "  REPOST by @${post.repostedUser.username} (ID: $posterAccountId)")
                         } else {
                             // This is an ORIGINAL POST - check the author
                             posterAccountId = post.author?.account?._id ?: return@mapNotNull null
                             posterUsername = post.author.account.username.trim().lowercase()
-                            Log.d(TAG, "  📌 ORIGINAL POST by @${post.author.account.username} (ID: $posterAccountId)")
+                            Log.d(TAG, "  ORIGINAL POST by @${post.author.account.username} (ID: $posterAccountId)")
                         }
 
                         // Skip own posts
@@ -505,10 +505,10 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                         if (isFollowingById || isFollowingByUsername) {
                             uniqueAuthors.add(posterAccountId)
-                            Log.d(TAG, "    ✅ YES, I follow @$posterUsername - INCLUDE THIS POST")
+                            Log.d(TAG, "    YES, I follow @$posterUsername - INCLUDE THIS POST")
                             return@mapNotNull post
                         } else {
-                            Log.d(TAG, "    ❌ NO, I DON'T follow @$posterUsername - EXCLUDE THIS POST")
+                            Log.d(TAG, "    NO, I DON'T follow @$posterUsername - EXCLUDE THIS POST")
                             return@mapNotNull null
                         }
 
@@ -547,7 +547,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             Log.d(TAG, "═══════════════════════════════════════")
 
             if (allFollowingPosts.isEmpty()) {
-                // ✅ Make sure adapter is empty
+                // Make sure adapter is empty
                 followedPostsAdapter.submitItems(mutableListOf())
                 Toast.makeText(
                     requireContext(),
@@ -555,16 +555,16 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                     Toast.LENGTH_LONG
                 ).show()
             } else {
-                // ✅ CRITICAL: Clear old data first, then add new filtered data
+                // CRITICAL: Clear old data first, then add new filtered data
                 getFeedViewModel.clearAllFeedData()
                 getFeedViewModel.addAllFeedData(allFollowingPosts.toMutableList())
                 getFeedViewModel.filterOutUserPosts(currentUserId)
 
                 val finalPosts = getFeedViewModel.getAllFeedData()
-                Log.d(TAG, "📤 Submitting ${finalPosts.size} posts to adapter")
+                Log.d(TAG, "Submitting ${finalPosts.size} posts to adapter")
                 followedPostsAdapter.submitItems(finalPosts)
 
-                // ✅ Force adapter to refresh
+                // Force adapter to refresh
                 followedPostsAdapter.notifyDataSetChanged()
             }
 
@@ -676,10 +676,10 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 }
 
                 if (isFollowingById || isFollowingByUsername) {
-                    Log.d(TAG, "  ✓ Keeping post by @$posterUsername (I follow them)")
+                    Log.d(TAG, "  Keeping post by @$posterUsername (I follow them)")
                     return@mapNotNull post
                 } else {
-                    Log.d(TAG, "  ✗ Removing post by @$posterUsername (I don't follow them)")
+                    Log.d(TAG, "  Removing post by @$posterUsername (I don't follow them)")
                     return@mapNotNull null
                 }
 
@@ -699,7 +699,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     fun clearAndReloadFeed() {
-        Log.d(TAG, "🔄 Clearing and reloading Following feed")
+        Log.d(TAG, "Clearing and reloading Following feed")
 
         // Clear all old data
         getFeedViewModel.clearAllFeedData()
@@ -751,7 +751,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                         followingIdsList.add(userId)
                         followingUsernamesList.add(username)
 
-                        Log.d(TAG, "  ✓ Following: @$username (ID: $userId)")
+                        Log.d(TAG, "  Following: @$username (ID: $userId)")
                     }
                 }
 
@@ -762,7 +762,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                     FeedAdapter.setCachedFollowingList(followingUserIds)
                     followedPostsAdapter.updateFollowingList(followingIdsList)
                     followedPostsAdapter.updateFollowingUsernames(followingUsernamesList)
-                    Log.d(TAG, "✓ Updated adapter with ${followingUserIds.size} following users")
+                    Log.d(TAG, "Updated adapter with ${followingUserIds.size} following users")
                 }
 
                 Log.d(TAG, "Successfully loaded ${followingUserIds.size} following users")
