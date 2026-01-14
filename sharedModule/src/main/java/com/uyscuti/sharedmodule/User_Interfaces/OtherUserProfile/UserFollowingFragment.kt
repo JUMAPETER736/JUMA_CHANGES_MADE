@@ -692,7 +692,7 @@ class FollowingAdapter(
             holder.profileImage.setImageResource(R.drawable.flash21)
         }
 
-        holder.followButton.text = if (followingUser.isFollowing) "Following" else "Follow"
+        holder.followButton.text = if (followingUser.isFollowing) "Follow Back" else "Un Follow"
 
         holder.followButton.backgroundTintList = ContextCompat.getColorStateList(
             holder.itemView.context,

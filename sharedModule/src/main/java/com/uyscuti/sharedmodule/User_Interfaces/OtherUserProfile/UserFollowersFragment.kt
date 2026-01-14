@@ -2,6 +2,7 @@ package com.uyscuti.social.circuit.User_Interface.OtherUserProfile
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -16,6 +17,7 @@ import android.widget.Toast
 import android.widget.ImageButton
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
@@ -70,6 +72,8 @@ class UserFollowersFragment : AppCompatActivity() {
         binding = ActivityUserFollowersBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        localStorage = LocalStorage(this)
+
         extractIntentData()
         setupRetrofit()
         setupToolbar()
@@ -77,7 +81,7 @@ class UserFollowersFragment : AppCompatActivity() {
         setupSearchView()
         setupPullToRefresh()
         loadFollowers()
-        localStorage = LocalStorage(this)
+
     }
 
     private fun extractIntentData() {
@@ -609,7 +613,7 @@ class FollowersAdapter(
                 ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
             )
             holder.followButton.setTextColor(
-                ContextCompat.getColor(holder.itemView.context, R.color.text_primary)
+                Color.WHITE   // Set text color to white
             )
         } else {
             holder.followButton.text = "Follow Back"
@@ -617,7 +621,7 @@ class FollowersAdapter(
                 ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
             )
             holder.followButton.setTextColor(
-                ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
+                Color.WHITE   // Set text color to white
             )
         }
 
