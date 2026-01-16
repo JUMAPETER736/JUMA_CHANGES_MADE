@@ -855,7 +855,6 @@ class FollowingAdapter(
         }
     }
 
-
     private fun handleFollowBackClick(
         holder: FollowingViewHolder,
         followingUser: UserFollowingDisplayModel,
@@ -890,50 +889,70 @@ class FollowingAdapter(
                 withContext(Dispatchers.Main) {
                     holder.followButton.isEnabled = true
 
-                    if (response.isSuccessful && response.body() != null) {
-                        val responseBody = response.body()!!
+                    if (response.isSuccessful) {
+                        // ✅ Log raw response to see what server is returning
+                        val rawResponse = response.raw().body?.string()
+                        Log.d(TAG, "Raw response: $rawResponse")
 
-                        // Log the response for debugging
-                        Log.d(TAG, "Follow/Unfollow Response - Success: ${responseBody.success}, Following: ${responseBody.data.following}, Message: ${responseBody.message}")
+                        if (response.body() != null) {
+                            val responseBody = response.body()!!
 
-                        if (responseBody.success) {
-                            // Update based on server response
-                            followingUser.isFollowing = responseBody.data.following
+                            Log.d(TAG, "Follow/Unfollow Response - Success: ${responseBody.success}, Following: ${responseBody.data.following}, Message: ${responseBody.message}")
 
-                            // Update follower count based on server response
-                            if (responseBody.data.following) {
-                                // Now following
-                                followingUser.followingCount++
-                                holder.followButton.text = "Message"
-                                holder.followButton.backgroundTintList =
-                                    ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
-                                holder.followButton.setTextColor(Color.WHITE)
+                            if (responseBody.success) {
+                                // Update based on server response
+                                followingUser.isFollowing = responseBody.data.following
 
-                                Toast.makeText(
-                                    holder.itemView.context,
-                                    "Now following @${followingUser.username}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                // Update follower count based on server response
+                                if (responseBody.data.following) {
+                                    // Now following
+                                    followingUser.followingCount++
+                                    holder.followButton.text = "Message"
+                                    holder.followButton.backgroundTintList =
+                                        ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
+                                    holder.followButton.setTextColor(Color.WHITE)
+
+                                    Toast.makeText(
+                                        holder.itemView.context,
+                                        "Now following @${followingUser.username}",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    // Unfollowed
+                                    followingUser.followingCount--
+                                    holder.followButton.text = "Follow Back"
+                                    holder.followButton.backgroundTintList =
+                                        ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
+                                    holder.followButton.setTextColor(Color.WHITE)
+
+                                    Toast.makeText(
+                                        holder.itemView.context,
+                                        "Unfollowed @${followingUser.username}",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+
+                                // Notify parent through callback
+                                onUnfollowClick(followingUser)
                             } else {
-                                // Unfollowed
-                                followingUser.followingCount--
+                                // API returned success=false - revert
+                                Log.e(TAG, "API returned success=false: ${responseBody.message}")
+                                followingUser.isFollowing = previousFollowStatus
                                 holder.followButton.text = "Follow Back"
                                 holder.followButton.backgroundTintList =
                                     ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
                                 holder.followButton.setTextColor(Color.WHITE)
+                                notifyItemChanged(position)
 
                                 Toast.makeText(
                                     holder.itemView.context,
-                                    "Unfollowed @${followingUser.username}",
+                                    responseBody.message ?: "Failed to follow user",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
-
-                            // Notify parent through callback
-                            onUnfollowClick(followingUser)
                         } else {
-                            // API returned success=false - revert
-                            Log.e(TAG, "API returned success=false: ${responseBody.message}")
+                            // ✅ Response body is null - server returned non-JSON
+                            Log.e(TAG, "Response body is null - server may have returned HTML or plain text")
                             followingUser.isFollowing = previousFollowStatus
                             holder.followButton.text = "Follow Back"
                             holder.followButton.backgroundTintList =
@@ -943,12 +962,15 @@ class FollowingAdapter(
 
                             Toast.makeText(
                                 holder.itemView.context,
-                                responseBody.message ?: "Failed to follow user",
+                                "Server error. Please try again.",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
                     } else {
-                        Log.e(TAG, "API error: ${response.code()}, ${response.errorBody()?.string()}")
+                        // ✅ Log error body
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(TAG, "API error: ${response.code()}, Error body: $errorBody")
+
                         // Revert UI changes on failure
                         followingUser.isFollowing = previousFollowStatus
                         holder.followButton.text = "Follow Back"
@@ -965,7 +987,7 @@ class FollowingAdapter(
                     }
                 }
             } catch (e: com.google.gson.JsonSyntaxException) {
-                Log.e(TAG, "JSON parsing error: ${e.message}", e)
+                Log.e(TAG, "JSON parsing error - Server returned invalid JSON: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     holder.followButton.isEnabled = true
 
@@ -979,7 +1001,7 @@ class FollowingAdapter(
 
                     Toast.makeText(
                         holder.itemView.context,
-                        "Server response error. Please try again.",
+                        "Server response error. Please contact support.",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
