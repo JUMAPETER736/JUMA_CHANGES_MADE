@@ -128,6 +128,7 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
+
     @OptIn(UnstableApi::class)
     private fun setupRecyclerView() {
         followersAdapter = FollowersAdapter(
@@ -135,7 +136,7 @@ class UserFollowersFragment : AppCompatActivity() {
             onFollowerClick = { user -> openUserProfile(user) },
             onFollowClick = { user -> toggleFollowUser(user) },
             onMoreOptionsClick = { user -> showMoreOptions(user) },
-            localStorage = localStorage // pass your LocalStorage instance
+            localStorage = localStorage  // Pass localStorage instance
         )
 
         binding.recyclerView.apply {
@@ -160,7 +161,6 @@ class UserFollowersFragment : AppCompatActivity() {
             })
         }
     }
-
 
     private fun setupSearchView() {
         binding.searchEditText.addTextChangedListener(object : TextWatcher {
@@ -619,7 +619,7 @@ class FollowersAdapter(
 ) : RecyclerView.Adapter<FollowersAdapter.FollowerViewHolder>() {
 
     private val TAG = "FollowersAdapter"
-    
+
     private val currentUserId: String by lazy { localStorage.getUserId() }
     private val currentUsername: String by lazy { localStorage.getUsername() }
 
