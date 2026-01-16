@@ -599,7 +599,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
 
-    // Updated handleFollowButtonClick function for Tapped_Files_In_The_Container_View_Fragment
     private fun handleFollowButtonClick(followButton: Button, feedOwnerId: String, feedOwnerUsername: String) {
         // Disable button during API call
         if (!followButton.isEnabled) return
@@ -660,17 +659,16 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                             followingUserIds.add(feedOwnerId)
                             followButton.visibility = View.GONE
 
-                            // Update FeedAdapter static cache - USE CORRECT METHOD NAMES
+                            // Update FeedAdapter static cache
                             try {
-                                FeedAdapter.addToFollowingCache(feedOwnerId)  // CHANGED
-                                FeedAdapter.setCachedFollowingList(followingUserIds)  // CHANGED
+                                FeedAdapter.addToFollowingCache(feedOwnerId)
+                                FeedAdapter.setCachedFollowingList(followingUserIds)
                             } catch (e: Exception) {
                                 Log.w(TAG, "FeedAdapter cache update failed: ${e.message}")
                             }
 
-                            // Save to local storage via FollowingManager
+                            // Save to local storage via FollowingManager - CORRECTED
                             followingManager.addToFollowing(feedOwnerId)
-                            followingManager.saveFollowingList(followingUserIds.toList())
 
                             Toast.makeText(
                                 requireContext(),
@@ -683,17 +681,16 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                             followButton.visibility = View.VISIBLE
                             followButton.text = "Follow"
 
-                            // Update FeedAdapter static cache - USE CORRECT METHOD NAMES
+                            // Update FeedAdapter static cache
                             try {
-                                FeedAdapter.removeFromFollowingCache(feedOwnerId)  // CHANGED
-                                FeedAdapter.setCachedFollowingList(followingUserIds)  // CHANGED
+                                FeedAdapter.removeFromFollowingCache(feedOwnerId)
+                                FeedAdapter.setCachedFollowingList(followingUserIds)
                             } catch (e: Exception) {
                                 Log.w(TAG, "FeedAdapter cache update failed: ${e.message}")
                             }
 
-                            // Remove from local storage
+                            // Remove from local storage - CORRECTED
                             followingManager.removeFromFollowing(feedOwnerId)
-                            followingManager.saveFollowingList(followingUserIds.toList())
 
                             Toast.makeText(
                                 requireContext(),
