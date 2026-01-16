@@ -484,6 +484,7 @@ class UserFollowingFragment : AppCompatActivity() {
                 username = user.username,
                 profilePic = user.avatar?.url ?: "",  // Changed from profilePicUrl
                 userId = user.id,
+                bio = user.bio,
                 isVerified = user.isVerified ?: false,
                 linkInBio = null,
                 isCreator = false,

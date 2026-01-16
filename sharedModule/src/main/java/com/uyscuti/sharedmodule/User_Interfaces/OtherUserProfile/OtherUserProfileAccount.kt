@@ -414,12 +414,17 @@ class OtherUserProfileAccount : AppCompatActivity() {
     }
 
     private fun updateFollowButton() {
+
         if (isFollowingUser) {
-            binding.followIcon.text = "Following"
-            binding.followIcon.backgroundTintList =
-                ContextCompat.getColorStateList(this, R.color.gray)
-            binding.followIcon.setTextColor(Color.WHITE)
+            // User is being followed - show "Unfollow" button
+            binding.followIcon.text = "Un Follow"
+            binding.followIcon.backgroundTintList = null
+            binding.followIcon.setBackgroundResource(R.drawable.button_outline_blue)
+            binding.followIcon.setTextColor(
+                ContextCompat.getColor(this, R.color.blueJeans)
+            )
         } else {
+            // User is NOT being followed - show "Follow" button
             binding.followIcon.text = "Follow"
             binding.followIcon.backgroundTintList =
                 ContextCompat.getColorStateList(this, R.color.blueJeans)
@@ -461,24 +466,33 @@ class OtherUserProfileAccount : AppCompatActivity() {
                             isFollowingUser = responseBody.data.following
                             updateFollowButton()
 
-                            // Update follower count
-                            if (responseBody.data.following) {
-                                followerCount++
-                                Toast.makeText(
-                                    this@OtherUserProfileAccount,
-                                    "Now following @$username",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                followerCount--
-                                Toast.makeText(
-                                    this@OtherUserProfileAccount,
-                                    "Unfollowed @$username",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                            // Find this section in handleFollowUnfollow():
+                            if (responseBody.success) {
+                                // Update based on server response
+                                isFollowingUser = responseBody.data.following
+                                updateFollowButton()
+
+                                // Update follower count
+                                if (responseBody.data.following) {
+                                    followerCount++
+                                    Toast.makeText(
+                                        this@OtherUserProfileAccount,
+                                        "Now following @$username",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    followerCount--
+                                    Toast.makeText(
+                                        this@OtherUserProfileAccount,
+                                        "Unfollowed @$username", 
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+
+                                binding.followersCount.text = formatCount(followerCount)
                             }
 
-                            binding.followersCount.text = formatCount(followerCount)
+
 
                         } else {
                             // API returned success=false - revert
