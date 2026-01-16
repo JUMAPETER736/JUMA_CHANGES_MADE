@@ -17,7 +17,6 @@ import android.widget.Toast
 import android.widget.ImageButton
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
@@ -29,7 +28,10 @@ import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.sharedmodule.data.model.Dialog
+import com.uyscuti.sharedmodule.data.model.User
+import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.databinding.ActivityUserFollowersBinding
+import com.uyscuti.social.core.common.data.room.entity.UserEntity
 import com.uyscuti.social.network.api.response.follow_unfollow.OtherUserDisplayFollowersModel
 import com.uyscuti.social.network.api.response.profile.followersList.Data
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -395,21 +397,66 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
-
-    @UnstableApi
+    @OptIn(UnstableApi::class)
     private fun openUserProfile(user: OtherUserDisplayFollowersModel) {
         try {
-            val intent = Intent(this, OtherUserProfileAccount::class.java).apply {
-                // Pass individual string extras - the way OtherUserProfileAccount expects them
-                putExtra("user_id", user.id)  // This is the account/owner ID
-                putExtra("username", user.username)
-                putExtra("user_full_name", "${user.firstName} ${user.lastName}".trim())
-                putExtra("extra_avatar_url", user.avatar?.url ?: "")
+            Log.d(TAG, "Opening profile for user: ${user.username}")
 
+            // Create a complete OtherUsersProfile object matching the exact data class
+            val otherUsersProfile = OtherUsersProfile(
+                name = user.fullName,
+                username = user.username,
+                profilePic = user.avatar?.url ?: "",  
+                userId = user.id,
+                isVerified = user.isVerified ?: false,
+                bio = user.bio,
+                linkInBio = null,
+                isCreator = false,
+                isTrending = false,
+                isFollowing = user.isFollowing,
+                isPrivate = false,
+                followersCount = 0L,
+                followingCount = 0L,
+                postsCount = 0L,
+                shortsCount = 0L,
+                videosCount = 0L,
+                isOnline = user.isOnline ?: false,
+                lastSeen = user.lastseen,
+                joinedDate = Date(),
+                location = null,
+                website = null,
+                email = user.email,
+                phoneNumber = null,
+                dateOfBirth = null,
+                gender = null,
+                accountType = user.role ?: "user",
+                isBlocked = false,
+                isMuted = false,
+                badgeType = null,
+                level = 1,
+                reputation = 0L,
+                coverPhoto = null,
+                theme = null,
+                language = null,
+                timezone = null,
+                notificationsEnabled = true,
+                privacySettings = null,
+                socialLinks = null,
+                achievements = null,
+                interests = null,
+                categories = null
+            )
 
-            }
-            startActivity(intent)
+            // Open the OtherUserProfileAccount activity using the static method
+            OtherUserProfileAccount.open(
+                context = this,
+                user = otherUsersProfile,
+                dialogPhoto = user.avatar?.url,
+                dialogId = user.id
+            )
+
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+
         } catch (e: Exception) {
             Log.e(TAG, "Error navigating to profile", e)
             Toast.makeText(this, "Unable to open profile", Toast.LENGTH_SHORT).show()
@@ -647,7 +694,7 @@ class FollowersAdapter(
                 val context = holder.itemView.context
 
                 // Create temporary user entity
-                val otherUserEntity = com.uyscuti.social.core.common.data.room.entity.UserEntity(
+                val otherUserEntity = UserEntity(
                     id = follower.id,
                     name = "${follower.fullName}|${follower.username}",
                     avatar = follower.avatar?.url ?: "",
@@ -656,7 +703,7 @@ class FollowersAdapter(
                 )
 
                 // Convert to User model for Dialog
-                val userModel = com.uyscuti.sharedmodule.data.model.User(
+                val userModel = User(
                     otherUserEntity.id,
                     otherUserEntity.name,
                     otherUserEntity.avatar,
@@ -665,11 +712,11 @@ class FollowersAdapter(
                 )
 
                 // Create ArrayList for Dialog constructor
-                val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
+                val usersList = ArrayList<User>()
                 usersList.add(userModel)
 
                 // Create temporary dialog - using username instead of full name
-                val tempDialog = com.uyscuti.sharedmodule.data.model.Dialog(
+                val tempDialog = Dialog(
                     "temp_${follower.id}_${System.currentTimeMillis()}",
                     follower.username,  // Changed from follower.fullName to follower.username
                     follower.avatar?.url ?: "",
