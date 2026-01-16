@@ -11,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -59,13 +60,17 @@ import com.uyscuti.sharedmodule.model.User
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import androidx.core.content.ContextCompat
+import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.social.network.api.response.follow_unfollow.FollowUnFollowResponse
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.AllOtherUsersFavoritesFragment
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.AllVideosOnlyFragment
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.UserFollowersFragment
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.UserFollowingFragment
+import com.uyscuti.social.network.api.response.follow_unfollow.OtherUserDisplayFollowersModel
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.network.utils.LocalStorage
+import android.view.Gravity
+import android.widget.LinearLayout
 
 
 private const val TAG = "OtherUserProfileAccount"
@@ -98,8 +103,6 @@ class OtherUserProfileAccount : AppCompatActivity() {
     }
 
 
-    private lateinit var apiService: IFlashapi
-    private var isFollowingUser = false
 
     private lateinit var binding: ActivityOtherUserProfileAccountBinding
     private var isFollowing = false
@@ -107,7 +110,11 @@ class OtherUserProfileAccount : AppCompatActivity() {
     val userProfileLiveData = MutableLiveData<Any>()
     val onErrorFeedBack = MutableLiveData<String>()
 
+    private lateinit var apiService: IFlashapi
+    private var isFollowingUser = false
 
+    private var mutualFollowers = mutableListOf<OtherUserDisplayFollowersModel>()
+    private lateinit var localStorage: LocalStorage
 
     private var currentUsername: String = ""
     private var currentUserId: String = ""
@@ -143,7 +150,8 @@ class OtherUserProfileAccount : AppCompatActivity() {
         initializeApiService()
         currentUsername = username
         currentUserId = userId
-
+        localStorage = LocalStorage(this)
+        
         extractUserData()
         setupUserInterface()
         setupToolbar()
@@ -153,9 +161,9 @@ class OtherUserProfileAccount : AppCompatActivity() {
         setupStoryRingAnimation()
         observeUserProfile()
 
-        // Load profile if we have username
         if (username.isNotEmpty()) {
             loadUserProfile(username)
+            fetchMutualFollowers()
         }
     }
 
@@ -410,6 +418,191 @@ class OtherUserProfileAccount : AppCompatActivity() {
 
         } catch (e: Exception) {
             Log.e(TAG, "Error processing profile data: ${e.message}", e)
+        }
+    }
+
+
+    // Replace your showMutualConnections() function with this:
+    private fun showMutualConnections() {
+        if (mutualFollowers.isEmpty()) {
+            binding.mutualConnectionsSection.visibility = View.GONE
+            return
+        }
+
+        binding.mutualConnectionsSection.visibility = View.VISIBLE
+        binding.mutualConnectionsSection.removeAllViews()
+
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+
+        // Add "Followed by " text
+        val followedByText = TextView(this).apply {
+            text = "Followed by "
+            textSize = 13f
+            setTextColor(ContextCompat.getColor(this@OtherUserProfileAccount, R.color.gray))
+        }
+        container.addView(followedByText)
+
+        // Show up to 2 mutual followers
+        val displayCount = minOf(2, mutualFollowers.size)
+
+        for (i in 0 until displayCount) {
+            val follower = mutualFollowers[i]
+
+            val usernameText = TextView(this).apply {
+                text = follower.username
+                textSize = 13f
+                setTextColor(Color.BLACK)
+                setTypeface(null, Typeface.BOLD)
+                background = ContextCompat.getDrawable(
+                    this@OtherUserProfileAccount,
+                    android.R.drawable.list_selector_background
+                )
+                setPadding(8, 4, 8, 4)
+
+                setOnClickListener {
+                    openMutualFollowerProfile(follower)
+                }
+            }
+            container.addView(usernameText)
+
+            // Add comma if not the last one in the display
+            if (i < displayCount - 1) {
+                val commaText = TextView(this).apply {
+                    text = ", "
+                    textSize = 13f
+                    setTextColor(Color.BLACK)
+                    setTypeface(null, Typeface.BOLD)
+                }
+                container.addView(commaText)
+            }
+        }
+
+        // Add "and X others you follow" if there are more
+        if (mutualFollowers.size > 2) {
+            val remainingCount = mutualFollowers.size - 2
+            val othersText = TextView(this).apply {
+                text = " and $remainingCount ${if (remainingCount == 1) "other" else "others"} you follow"
+                textSize = 13f
+                setTextColor(ContextCompat.getColor(this@OtherUserProfileAccount, R.color.gray))
+            }
+            container.addView(othersText)
+        } else if (mutualFollowers.size <= 2) {
+            val youFollowText = TextView(this).apply {
+                text = " you follow"
+                textSize = 13f
+                setTextColor(ContextCompat.getColor(this@OtherUserProfileAccount, R.color.gray))
+            }
+            container.addView(youFollowText)
+        }
+
+        binding.mutualConnectionsSection.addView(container)
+    }
+
+    // Add this new function to open the mutual follower's profile
+    @OptIn(UnstableApi::class)
+    private fun openMutualFollowerProfile(follower: OtherUserDisplayFollowersModel) {
+        try {
+            val otherUsersProfile = OtherUsersProfile(
+                name = follower.fullName,
+                username = follower.username,
+                profilePic = follower.avatar?.url ?: "",
+                userId = follower.id,
+                isVerified = follower.isVerified ?: false,
+                bio = follower.bio,
+                linkInBio = null,
+                isCreator = false,
+                isTrending = false,
+                isFollowing = follower.isFollowing,
+                isPrivate = false,
+                followersCount = 0L,
+                followingCount = 0L,
+                postsCount = 0L,
+                shortsCount = 0L,
+                videosCount = 0L,
+                isOnline = follower.isOnline ?: false,
+                lastSeen = follower.lastseen,
+                joinedDate = Date(),
+                location = null,
+                website = null,
+                email = follower.email,
+                phoneNumber = null,
+                dateOfBirth = null,
+                gender = null,
+                accountType = follower.role ?: "user",
+                isBlocked = false,
+                isMuted = false,
+                badgeType = null,
+                level = 1,
+                reputation = 0L,
+                coverPhoto = null,
+                theme = null,
+                language = null,
+                timezone = null,
+                notificationsEnabled = true,
+                privacySettings = null,
+                socialLinks = null,
+                achievements = null,
+                interests = null,
+                categories = null
+            )
+
+            OtherUserProfileAccount.open(
+                context = this,
+                user = otherUsersProfile,
+                dialogPhoto = follower.avatar?.url,
+                dialogId = follower.id
+            )
+
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error opening mutual follower profile", e)
+            Toast.makeText(this, "Unable to open profile", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Add this new function to fetch mutual followers
+    private fun fetchMutualFollowers() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val currentUserId = localStorage.getUserId()
+                val currentUsername = localStorage.getUsername()
+
+                // Fetch the followers of the profile being viewed
+                val response = retrofitInstance.apiService.getOtherUserFollowers(username, 1, 50)
+
+                if (response.isSuccessful) {
+                    val followers = response.body()?.data ?: emptyList()
+
+                    // Convert to OtherUserDisplayFollowersModel
+                    val followersWithStatus = followers.map { follower ->
+                        OtherUserDisplayFollowersModel.fromApiData(follower, follower.isFollowingBack)
+                    }
+
+                    // Filter to only show followers that the current user follows
+                    // and exclude the current user
+                    val mutuals = followersWithStatus.filter { follower ->
+                        follower.isFollowing &&
+                                follower.id != currentUserId &&
+                                follower.username != currentUsername
+                    }
+
+                    mutualFollowers.clear()
+                    mutualFollowers.addAll(mutuals)
+
+                    withContext(Dispatchers.Main) {
+                        showMutualConnections()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching mutual followers: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    binding.mutualConnectionsSection.visibility = View.GONE
+                }
+            }
         }
     }
 
@@ -734,10 +927,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
 
     }
 
-    private fun showMutualConnections() {
-        Toast.makeText(this, "Mutual Connections", Toast.LENGTH_SHORT).show()
 
-    }
 
     private fun openUserStories() {
         Toast.makeText(this, "Opening stories...", Toast.LENGTH_SHORT).show()
