@@ -697,8 +697,6 @@ class UserFollowingFragment : AppCompatActivity() {
 }
 
 
-
-
 // Following Adapter
 class FollowingAdapter(
 
@@ -857,152 +855,43 @@ class FollowingAdapter(
 
     private fun handleFollowBackClick(
         holder: FollowingViewHolder,
-        followingUser: UserFollowingDisplayModel,
+        user: UserFollowingDisplayModel,
         position: Int
     ) {
-        // Disable button during API call
-        if (!holder.followButton.isEnabled) return
+        // Disable button to avoid double click
         holder.followButton.isEnabled = false
 
-        // Add pulse animation
-        YoYo.with(Techniques.Pulse)
-            .duration(300)
-            .playOn(holder.followButton)
+        // Optimistic UI update
+        user.isFollowing = true
+        notifyItemChanged(position)
 
-        Log.d(TAG, "Follow Back button clicked for user: ${followingUser.id}")
-
-        // Store previous state for potential rollback
-        val previousFollowStatus = followingUser.isFollowing
-
-        // Update UI optimistically (immediately)
-        followingUser.isFollowing = true
-        holder.followButton.text = "Message"
-        holder.followButton.backgroundTintList =
-            ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
-        holder.followButton.setTextColor(Color.WHITE)
-
-        // Make API call to follow user on server
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = retrofitInstance.apiService.followUnFollow(followingUser.id)
+                val response = retrofitInstance.apiService.followUnFollow(user.id)
 
                 withContext(Dispatchers.Main) {
                     holder.followButton.isEnabled = true
 
-                    if (response.isSuccessful && response.body() != null) {
-                        val responseBody = response.body()!!
-
-                        Log.d(TAG, "Follow/Unfollow Response - Success: ${responseBody.success}, Following: ${responseBody.data.following}, Message: ${responseBody.message}")
-
-                        if (responseBody.success) {
-                            // Update based on server response
-                            followingUser.isFollowing = responseBody.data.following
-
-                            // Update follower count based on server response
-                            if (responseBody.data.following) {
-                                // Now following
-                                followingUser.followingCount++
-                                holder.followButton.text = "Message"
-                                holder.followButton.backgroundTintList =
-                                    ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
-                                holder.followButton.setTextColor(Color.WHITE)
-
-                                Toast.makeText(
-                                    holder.itemView.context,
-                                    "Now following @${followingUser.username}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                // Unfollowed
-                                followingUser.followingCount--
-                                holder.followButton.text = "Follow Back"
-                                holder.followButton.backgroundTintList =
-                                    ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
-                                holder.followButton.setTextColor(Color.WHITE)
-
-                                Toast.makeText(
-                                    holder.itemView.context,
-                                    "Unfollowed @${followingUser.username}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-
-                            // Notify parent through callback
-                            onUnfollowClick(followingUser)
-                        } else {
-                            // API returned success=false - revert
-                            Log.e(TAG, "API returned success=false: ${responseBody.message}")
-                            followingUser.isFollowing = previousFollowStatus
-                            holder.followButton.text = "Follow Back"
-                            holder.followButton.backgroundTintList =
-                                ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
-                            holder.followButton.setTextColor(Color.WHITE)
-                            notifyItemChanged(position)
-
-                            Toast.makeText(
-                                holder.itemView.context,
-                                responseBody.message ?: "Failed to follow user",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    } else {
-                        Log.e(TAG, "API error: ${response.code()}")
-                        // Revert UI changes on failure
-                        followingUser.isFollowing = previousFollowStatus
-                        holder.followButton.text = "Follow Back"
-                        holder.followButton.backgroundTintList =
-                            ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
-                        holder.followButton.setTextColor(Color.WHITE)
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        val isNowFollowing = response.body()!!.data.following
+                        user.isFollowing = isNowFollowing
                         notifyItemChanged(position)
-
-                        Toast.makeText(
-                            holder.itemView.context,
-                            "Failed to follow user. Please try again.",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    } else {
+                        // rollback
+                        user.isFollowing = false
+                        notifyItemChanged(position)
                     }
                 }
-            } catch (e: com.google.gson.JsonSyntaxException) {
-                Log.e(TAG, "JSON parsing error: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    holder.followButton.isEnabled = true
-
-                    // Revert UI changes
-                    followingUser.isFollowing = previousFollowStatus
-                    holder.followButton.text = "Follow Back"
-                    holder.followButton.backgroundTintList =
-                        ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
-                    holder.followButton.setTextColor(Color.WHITE)
-                    notifyItemChanged(position)
-
-                    Toast.makeText(
-                        holder.itemView.context,
-                        "Server response error. Please try again.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
             } catch (e: Exception) {
-                Log.e(TAG, "Error following user: ${e.message}", e)
                 withContext(Dispatchers.Main) {
+                    user.isFollowing = false
                     holder.followButton.isEnabled = true
-
-                    // Revert UI changes on error
-                    followingUser.isFollowing = previousFollowStatus
-                    holder.followButton.text = "Follow Back"
-                    holder.followButton.backgroundTintList =
-                        ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
-                    holder.followButton.setTextColor(Color.WHITE)
                     notifyItemChanged(position)
-
-                    Toast.makeText(
-                        holder.itemView.context,
-                        "Network error: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             }
         }
     }
+
 
     private fun setupOptionalElements(holder: FollowingViewHolder, user: UserFollowingDisplayModel) {
         holder.verificationBadge.visibility = if (user.isVerified == true) View.VISIBLE else View.GONE
