@@ -235,7 +235,7 @@ class UserFollowersFragment : AppCompatActivity() {
             val follower = followersList[followerIndex]
 
             Log.d(TAG, "Found follower: ${follower.username}")
-            Log.d(TAG, "Old isFollowing: ${follower.isFollowing} -> New: ${followEntity.isFollowing}")
+            Log.d(TAG, "Do i Follow this Person: ${follower.isFollowing} , Now i want to Follow The Person: ${followEntity.isFollowing}")
 
             // ALWAYS UPDATE - don't check if unchanged
             follower.isFollowing = followEntity.isFollowing
@@ -256,7 +256,7 @@ class UserFollowersFragment : AppCompatActivity() {
             // Notify adapter to refresh this item
             followersAdapter.notifyItemChanged(followerIndex)
 
-            Log.d(TAG, "✓ Updated follower ${follower.username} isFollowing status to ${followEntity.isFollowing}")
+            Log.d(TAG, "✓ Updated Followers Now im Following ${follower.username} and set Status to ${followEntity.isFollowing}")
         } else {
             Log.d(TAG, "⚠️ User ${followEntity.userId} not found in followers list")
         }
@@ -702,10 +702,14 @@ class FollowersAdapter(
 
     private val TAG = "FollowersAdapter"
 
+
     private val currentUserId: String by lazy { localStorage.getUserId() }
     private val currentUsername: String by lazy { localStorage.getUsername() }
+    override fun getItemCount(): Int = followers.size
+
 
     inner class FollowerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+
         val profileImage: ImageView = view.findViewById(R.id.profile_image)
         val usernameText: TextView = view.findViewById(R.id.usernameText)
         val fullNameText: TextView = view.findViewById(R.id.full_name)
@@ -904,12 +908,12 @@ class FollowersAdapter(
                                 isButtonVisible = false
                             )
 
-                            Log.d(TAG, "==============================================")
+
                             Log.d(TAG, "POSTING EventBus event for ${follower.username}")
-                            Log.d(TAG, "userId: ${follower.id}")
-                            Log.d(TAG, "isFollowing: true")
-                            Log.d(TAG, "follower.isFollowing in adapter (before event): ${follower.isFollowing}")
-                            Log.d(TAG, "==============================================")
+                            Log.d(TAG, "User ID: ${follower.id}")
+                            Log.d(TAG, "Do i Follow this Person: true")
+                            Log.d(TAG, "Follower is Following in adapter (before event): ${follower.isFollowing}")
+
 
                             EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
 
@@ -948,7 +952,7 @@ class FollowersAdapter(
         }
     }
 
-    override fun getItemCount(): Int = followers.size
+
 
     fun updateList(newList: List<OtherUserDisplayFollowersModel>) {
         followers.clear()
