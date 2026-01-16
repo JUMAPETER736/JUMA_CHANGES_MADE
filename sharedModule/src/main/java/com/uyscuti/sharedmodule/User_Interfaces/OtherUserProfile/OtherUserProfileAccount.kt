@@ -484,7 +484,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
                                     followerCount--
                                     Toast.makeText(
                                         this@OtherUserProfileAccount,
-                                        "Unfollowed @$username", 
+                                        "Unfollowed @$username",
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }

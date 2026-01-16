@@ -616,8 +616,12 @@ class FollowersAdapter(
     private val onFollowClick: (OtherUserDisplayFollowersModel) -> Unit,
     private val onMoreOptionsClick: (OtherUserDisplayFollowersModel) -> Unit,
     private val localStorage: LocalStorage  // Needed for opening chat
-
 ) : RecyclerView.Adapter<FollowersAdapter.FollowerViewHolder>() {
+
+    private val TAG = "FollowersAdapter"
+    
+    private val currentUserId: String by lazy { localStorage.getUserId() }
+    private val currentUsername: String by lazy { localStorage.getUsername() }
 
     inner class FollowerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val profileImage: ImageView = view.findViewById(R.id.profile_image)
@@ -635,8 +639,20 @@ class FollowersAdapter(
     }
 
     override fun onBindViewHolder(holder: FollowerViewHolder, position: Int) {
-
         val follower = followers[position]
+
+        // Don't show current user
+        if (follower.id == currentUserId || follower.username == currentUsername) {
+            holder.itemView.visibility = View.GONE
+            holder.itemView.layoutParams = RecyclerView.LayoutParams(0, 0)
+            return
+        } else {
+            holder.itemView.visibility = View.VISIBLE
+            holder.itemView.layoutParams = RecyclerView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
 
         // Set username and full name
         holder.usernameText.text = "@${follower.username}"
@@ -671,7 +687,6 @@ class FollowersAdapter(
         } ?: holder.profileImage.setImageResource(R.drawable.flash21)
 
         // Update follow button appearance
-        // Set button text and color
         if (follower.isFollowing) {
             holder.followButton.text = "Message"
             holder.followButton.backgroundTintList = null
@@ -694,7 +709,7 @@ class FollowersAdapter(
                 val context = holder.itemView.context
 
                 // Create temporary user entity
-                val otherUserEntity = UserEntity(
+                val otherUserEntity = com.uyscuti.social.core.common.data.room.entity.UserEntity(
                     id = follower.id,
                     name = "${follower.fullName}|${follower.username}",
                     avatar = follower.avatar?.url ?: "",
@@ -703,7 +718,7 @@ class FollowersAdapter(
                 )
 
                 // Convert to User model for Dialog
-                val userModel = User(
+                val userModel = com.uyscuti.sharedmodule.data.model.User(
                     otherUserEntity.id,
                     otherUserEntity.name,
                     otherUserEntity.avatar,
@@ -712,13 +727,13 @@ class FollowersAdapter(
                 )
 
                 // Create ArrayList for Dialog constructor
-                val usersList = ArrayList<User>()
+                val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
                 usersList.add(userModel)
 
-                // Create temporary dialog - using username instead of full name
-                val tempDialog = Dialog(
+                // Create temporary dialog - using username
+                val tempDialog = com.uyscuti.sharedmodule.data.model.Dialog(
                     "temp_${follower.id}_${System.currentTimeMillis()}",
-                    follower.username,  // Changed from follower.fullName to follower.username
+                    follower.username,
                     follower.avatar?.url ?: "",
                     usersList,
                     null, // No last message for temp dialog
@@ -728,7 +743,7 @@ class FollowersAdapter(
                 // Open MessagesActivity - using username
                 MessagesActivity.open(
                     context = context,
-                    dialogName = follower.username,  // Changed from follower.fullName to follower.username
+                    dialogName = follower.username,
                     dialog = tempDialog,
                     temporally = true,
                     productReference = ""
@@ -741,11 +756,6 @@ class FollowersAdapter(
             }
         }
 
-        // Click on item to open profile
-        holder.itemView.setOnClickListener {
-            onFollowerClick(follower)
-        }
-
         // More options button
         holder.moreOptionsButton.setOnClickListener {
             onMoreOptionsClick(follower)
@@ -756,7 +766,13 @@ class FollowersAdapter(
 
     fun updateList(newList: List<OtherUserDisplayFollowersModel>) {
         followers.clear()
-        followers.addAll(newList)
+        // Filter out current user when updating list
+        val filteredList = newList.filter {
+            it.id != currentUserId && it.username != currentUsername
+        }
+        followers.addAll(filteredList)
         notifyDataSetChanged()
+
+        Log.d(TAG, "List updated: ${newList.size} total, ${filteredList.size} after filtering out current user")
     }
 }
