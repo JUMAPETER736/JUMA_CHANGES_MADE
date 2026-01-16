@@ -2,6 +2,7 @@ package com.uyscuti.social.circuit.User_Interface.OtherUserProfile
 
 import UserFollowingDisplayModel
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
@@ -701,7 +702,6 @@ class UserFollowingFragment : AppCompatActivity() {
     }
 }
 
-
 // Following Adapter
 class FollowingAdapter(
 
@@ -709,7 +709,7 @@ class FollowingAdapter(
     private val onFollowingClick: (UserFollowingDisplayModel) -> Unit,
     private val onUnfollowClick: (UserFollowingDisplayModel) -> Unit,
     private val onMoreOptionsClick: ((UserFollowingDisplayModel) -> Unit)? = null,
-    private val retrofitInstance: RetrofitInstance, // Add this parameter
+    private val retrofitInstance: RetrofitInstance,
     private val localStorage: LocalStorage
 
 ) : RecyclerView.Adapter<FollowingAdapter.FollowingViewHolder>() {
@@ -781,76 +781,21 @@ class FollowingAdapter(
             holder.profileImage.setImageResource(R.drawable.flash21)
         }
 
-        // Set button text and color
-        if (followingUser.isFollowing) {
-            holder.followButton.text = "Message"
-            holder.followButton.backgroundTintList = null
-            holder.followButton.setBackgroundResource(R.drawable.button_outline_blue)
-            holder.followButton.setTextColor(
-                ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
-            )
-        } else {
-            holder.followButton.text = "Follow Back"
-            holder.followButton.backgroundTintList =
-                ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
-            holder.followButton.setTextColor(Color.WHITE)
-        }
-        // Handle button click
+        // Always show "Message" button since these are people you're following
+        holder.followButton.text = "Message"
+        holder.followButton.backgroundTintList = null
+        holder.followButton.setBackgroundResource(R.drawable.button_outline_blue)
+        holder.followButton.setTextColor(
+            ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
+        )
+
+        // Handle button click - open messaging
         holder.followButton.setOnClickListener {
-            if (followingUser.isFollowing) {
-                // Open messaging
-                val context = holder.itemView.context
-
-                // Create temporary user
-                val otherUserEntity = com.uyscuti.social.core.common.data.room.entity.UserEntity(
-                    id = followingUser.id,
-                    name = "${followingUser.fullName}|${followingUser.username}",
-                    avatar = followingUser.avatar?.url ?: "",
-                    online = followingUser.isOnline ?: false,
-                    lastSeen = followingUser.lastseen ?: Date()
-                )
-
-                // Convert to User model for Dialog
-                val userModel = com.uyscuti.sharedmodule.data.model.User(
-                    otherUserEntity.id,
-                    otherUserEntity.name,
-                    otherUserEntity.avatar,
-                    otherUserEntity.online,
-                    otherUserEntity.lastSeen
-                )
-
-                // Create ArrayList for Dialog constructor
-                val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
-                usersList.add(userModel)
-
-                // Create temporary dialog using Dialog constructor directly - using username
-                val tempDialog = com.uyscuti.sharedmodule.data.model.Dialog(
-                    "temp_${followingUser.id}_${System.currentTimeMillis()}",
-                    followingUser.username,
-                    followingUser.avatar?.url ?: "",
-                    usersList,
-                    null, // No last message for temp dialog
-                    0     // No unread count
-                )
-
-                MessagesActivity.open(
-                    context = context,
-                    dialogName = followingUser.username,
-                    dialog = tempDialog,
-                    temporally = true,
-                    productReference = ""
-                )
-            } else {
-                // Follow Back action - Updated to behave like feed's follow button
-                handleFollowBackClick(holder, followingUser, position)
-            }
+            openMessaging(holder.itemView.context, followingUser)
         }
 
         // Optional elements
         setupOptionalElements(holder, followingUser)
-
-        // Item click → navigate to user profile
-        holder.itemView.setOnClickListener { onFollowingClick(followingUser) }
 
         // More options button
         holder.moreOptionsButton.setOnClickListener {
@@ -858,92 +803,48 @@ class FollowingAdapter(
         }
     }
 
-    private fun handleFollowBackClick(holder: FollowingViewHolder, followingUser: UserFollowingDisplayModel, position: Int) {
-        YoYo.with(Techniques.Pulse)
-            .duration(300)
-            .playOn(holder.followButton)
+    private fun openMessaging(context: Context, followingUser: UserFollowingDisplayModel) {
+        // Create temporary user
+        val otherUserEntity = com.uyscuti.social.core.common.data.room.entity.UserEntity(
+            id = followingUser.id,
+            name = "${followingUser.fullName}|${followingUser.username}",
+            avatar = followingUser.avatar?.url ?: "",
+            online = followingUser.isOnline ?: false,
+            lastSeen = followingUser.lastseen ?: Date()
+        )
 
-        Log.d(TAG, "Follow button clicked for user: ${followingUser.id}")
+        // Convert to User model for Dialog
+        val userModel = com.uyscuti.sharedmodule.data.model.User(
+            otherUserEntity.id,
+            otherUserEntity.name,
+            otherUserEntity.avatar,
+            otherUserEntity.online,
+            otherUserEntity.lastSeen
+        )
 
-        // Update UI immediately
-        holder.followButton.isEnabled = false
-        holder.followButton.text = "Following"
+        // Create ArrayList for Dialog constructor
+        val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
+        usersList.add(userModel)
 
-        // Make API call using CoroutineScope
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = retrofitInstance.apiService.followUnFollow(followingUser.id)
+        // Create temporary dialog using Dialog constructor directly - using username
+        val tempDialog = com.uyscuti.sharedmodule.data.model.Dialog(
+            "temp_${followingUser.id}_${System.currentTimeMillis()}",
+            followingUser.username,
+            followingUser.avatar?.url ?: "",
+            usersList,
+            null, // No last message for temp dialog
+            0     // No unread count
+        )
 
-                if (response.isSuccessful && response.body() != null) {
-                    val isFollowing = response.body()!!.data.following
-
-                    withContext(Dispatchers.Main) {
-                        // Update the user's following status
-                        followingUser.isFollowing = isFollowing
-
-                        // Update UI based on response
-                        if (isFollowing) {
-                            holder.followButton.text = "Message"
-                            holder.followButton.backgroundTintList = null
-                            holder.followButton.setBackgroundResource(R.drawable.button_outline_blue)
-                            holder.followButton.setTextColor(
-                                ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
-                            )
-
-                            Toast.makeText(
-                                holder.itemView.context,
-                                "Now following @${followingUser.username}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                            Log.d(TAG, "Now following user ${followingUser.id}")
-
-                            // Prevent accidental unfollow - keep button disabled for 5 seconds
-                            holder.followButton.isEnabled = false
-                            holder.itemView.postDelayed({
-                                holder.followButton.isEnabled = true
-                            }, 5000)
-                        } else {
-                            holder.followButton.text = "Follow Back"
-                            holder.followButton.backgroundTintList =
-                                ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
-                            holder.followButton.setTextColor(Color.WHITE)
-                            holder.followButton.isEnabled = true
-
-                            Log.d(TAG, "Unfollowed user ${followingUser.id}")
-                        }
-
-                        // Update database
-                        val followEntity = FollowUnFollowEntity(followingUser.id, isFollowing)
-                        // Post EventBus event if needed
-                        EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
-                    }
-                } else {
-                    withContext(Dispatchers.Main) {
-                        holder.followButton.isEnabled = true
-                        holder.followButton.text = "Follow Back"
-                        Toast.makeText(
-                            holder.itemView.context,
-                            "Failed to follow user",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error following user", e)
-                withContext(Dispatchers.Main) {
-                    holder.followButton.isEnabled = true
-                    holder.followButton.text = "Follow Back"
-                    Toast.makeText(
-                        holder.itemView.context,
-                        "Network error: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
+        MessagesActivity.open(
+            context = context,
+            dialogName = followingUser.username,
+            dialog = tempDialog,
+            temporally = true,
+            productReference = ""
+        )
     }
-    
+
     private fun setupOptionalElements(holder: FollowingViewHolder, user: UserFollowingDisplayModel) {
         holder.verificationBadge.visibility = if (user.isVerified == true) View.VISIBLE else View.GONE
 
