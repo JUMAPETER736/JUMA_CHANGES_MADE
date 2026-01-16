@@ -406,7 +406,7 @@ class UserFollowersFragment : AppCompatActivity() {
             val otherUsersProfile = OtherUsersProfile(
                 name = user.fullName,
                 username = user.username,
-                profilePic = user.avatar?.url ?: "",  
+                profilePic = user.avatar?.url ?: "",
                 userId = user.id,
                 isVerified = user.isVerified ?: false,
                 bio = user.bio,

@@ -33,6 +33,7 @@ import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
+import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.databinding.ActivityUserFollowingBinding
 import com.uyscuti.social.core.common.data.room.entity.DialogEntity
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
@@ -472,21 +473,65 @@ class UserFollowingFragment : AppCompatActivity() {
             .show()
     }
 
-
     @OptIn(UnstableApi::class)
     private fun navigateToOtherUserProfile(user: UserFollowingDisplayModel) {
         try {
-            val intent = Intent(this, OtherUserProfileAccount::class.java).apply {
-                // Pass individual string extras - the way OtherUserProfileAccount expects them
-                putExtra("user_id", user.id)  // This is the account/owner ID
-                putExtra("username", user.username)
-                putExtra("user_full_name", user.fullName)
-                putExtra("extra_avatar_url", user.avatar?.url ?: "")
+            Log.d(TAG, "Opening profile for user: ${user.username}")
 
-                // Don't pass the user object as serializable
-            }
-            startActivity(intent)
+            // Create a complete OtherUsersProfile object matching the exact data class
+            val otherUsersProfile = OtherUsersProfile(
+                name = user.fullName,
+                username = user.username,
+                profilePic = user.avatar?.url ?: "",  // Changed from profilePicUrl
+                userId = user.id,
+                isVerified = user.isVerified ?: false,
+                linkInBio = null,
+                isCreator = false,
+                isTrending = false,
+                isFollowing = user.isFollowing,
+                isPrivate = false,
+                followersCount = 0L,
+                followingCount = 0L,
+                postsCount = 0L,
+                shortsCount = 0L,
+                videosCount = 0L,
+                isOnline = user.isOnline ?: false,
+                lastSeen = user.lastseen,
+                joinedDate = Date(),
+                location = null,
+                website = null,
+                email = user.email,
+                phoneNumber = null,
+                dateOfBirth = null,
+                gender = null,
+                accountType = user.role ?: "user",
+                isBlocked = false,
+                isMuted = false,
+                badgeType = null,
+                level = 1,
+                reputation = 0L,
+                coverPhoto = null,
+                theme = null,
+                language = null,
+                timezone = null,
+                notificationsEnabled = true,
+                privacySettings = null,
+                socialLinks = null,
+                achievements = null,
+                interests = null,
+                categories = null
+            )
+
+            // Open the OtherUserProfileAccount activity using the static method
+            OtherUserProfileAccount.open(
+                context = this,
+                user = otherUsersProfile,
+                dialogPhoto = user.avatar?.url,
+                dialogId = user.id
+            )
+
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+
         } catch (e: Exception) {
             Log.e(TAG, "Error navigating to profile", e)
             Toast.makeText(this, "Unable to open profile", Toast.LENGTH_SHORT).show()
