@@ -607,12 +607,14 @@ class FollowersAdapter(
         } ?: holder.profileImage.setImageResource(R.drawable.flash21)
 
         // Update follow button appearance
+        // Set button text and color
         if (follower.isFollowing) {
             holder.followButton.text = "Message"
-            holder.followButton.setBackgroundColor(
-                ContextCompat.getColor(holder.itemView.context, R.color.gray_dark_transparent)
+            holder.followButton.backgroundTintList = null
+            holder.followButton.setBackgroundResource(R.drawable.button_outline_blue)
+            holder.followButton.setTextColor(
+                ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
             )
-            holder.followButton.setTextColor(Color.WHITE)
         } else {
             holder.followButton.text = "Follow Back"
             holder.followButton.setBackgroundColor(
