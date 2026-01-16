@@ -472,32 +472,25 @@ class UserFollowingFragment : AppCompatActivity() {
             .show()
     }
 
-    // Add this extension function
-    fun UserFollowingDisplayModel.toUserDisplayFollowersModel(): OtherUserDisplayFollowersModel {
-        return OtherUserDisplayFollowersModel(
-            _id = this._id,
-            avatar = this.avatar,
-            email = this.email ?: "",
-            isEmailVerified = this.isEmailVerified ?: false,
-            role = this.role ?: "",
-            username = this.username,
-            lastseen = this.lastseen ?: Date(),
-            isFollowing = this.isFollowing,
-            firstName = this.firstName ?: "",
-            lastName = this.lastName ?: "",
-            isVerified = this.isVerified ?: false,
-            isOnline = this.isOnline ?: false,
-            hasActiveStory = this.hasActiveStory ?: false,
-            mutualConnectionsCount = this.mutualConnectionsCount ?: 0,
-            isSuggested = this.isSuggested ?: false,
 
-        )
-    }
-
-    // Then use it in your methods
+    @OptIn(UnstableApi::class)
     private fun navigateToOtherUserProfile(user: UserFollowingDisplayModel) {
-        val followerModel = user.toUserDisplayFollowersModel()
-        // Use followerModel for navigation
+        try {
+            val intent = Intent(this, OtherUserProfileAccount::class.java).apply {
+                // Pass individual string extras - the way OtherUserProfileAccount expects them
+                putExtra("user_id", user.id)  // This is the account/owner ID
+                putExtra("username", user.username)
+                putExtra("user_full_name", user.fullName)
+                putExtra("extra_avatar_url", user.avatar?.url ?: "")
+
+                // Don't pass the user object as serializable
+            }
+            startActivity(intent)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error navigating to profile", e)
+            Toast.makeText(this, "Unable to open profile", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun sendMessageToUser(user: UserFollowingDisplayModel) {
@@ -660,11 +653,13 @@ class UserFollowingFragment : AppCompatActivity() {
 
 // Following Adapter
 class FollowingAdapter(
+
     private val following: MutableList<UserFollowingDisplayModel>,
     private val onFollowingClick: (UserFollowingDisplayModel) -> Unit,
     private val onUnfollowClick: (UserFollowingDisplayModel) -> Unit,
     private val onMoreOptionsClick: ((UserFollowingDisplayModel) -> Unit)? = null,
     private val retrofitInstance: RetrofitInstance // Add this parameter
+
 ) : RecyclerView.Adapter<FollowingAdapter.FollowingViewHolder>() {
 
     private val TAG = "FollowingAdapter"
@@ -696,6 +691,16 @@ class FollowingAdapter(
         // Username and full name
         holder.usernameText.text = "@${followingUser.username}"
         holder.fullNameText.text = followingUser.fullName
+
+        // Item click → navigate to user profile
+        holder.itemView.setOnClickListener {
+            onFollowingClick(followingUser)
+        }
+
+        // Also add click on profile image (common UX pattern)
+        holder.profileImage.setOnClickListener {
+            onFollowingClick(followingUser)
+        }
 
         // Load profile image
         followingUser.avatar?.let { avatar ->
