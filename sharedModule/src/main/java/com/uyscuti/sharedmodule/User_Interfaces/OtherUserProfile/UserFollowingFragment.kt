@@ -136,22 +136,21 @@ class UserFollowingFragment : AppCompatActivity() {
 
     private fun setupRecyclerView() {
 
-        // Initialize adapters with empty lists - they'll be updated later
         followingAdapter = FollowingAdapter(
+
             following = mutableListOf(),
             onFollowingClick = { user ->
                 navigateToOtherUserProfile(user)
             },
             onUnfollowClick = { user ->
-                // THIS WAS MISSING – now it calls unfollow
                 unfollowUser(user)
             },
             onMoreOptionsClick = { user ->
                 showMoreOptions(user)
             },
-            retrofitInstance = retrofitInstance
+            retrofitInstance = retrofitInstance,
+            localStorage = localStorage  // Pass localStorage instance
         )
-
 
         blockedAdapter = BlockedAdapter(
             blockedUsers = mutableListOf(),
