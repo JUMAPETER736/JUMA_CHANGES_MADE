@@ -897,11 +897,13 @@ class FollowingAdapter(
                         Log.d(TAG, "Follow/Unfollow Response - Success: ${responseBody.success}, Following: ${responseBody.data.following}, Message: ${responseBody.message}")
 
                         if (responseBody.success) {
-                            // Update UI based on actual server response
+                            // Update based on server response
                             followingUser.isFollowing = responseBody.data.following
 
+                            // Update follower count based on server response
                             if (responseBody.data.following) {
                                 // Now following
+                                followingUser.followingCount++
                                 holder.followButton.text = "Message"
                                 holder.followButton.backgroundTintList =
                                     ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
@@ -913,7 +915,8 @@ class FollowingAdapter(
                                     Toast.LENGTH_SHORT
                                 ).show()
                             } else {
-                                // Not following (unfollowed)
+                                // Unfollowed
+                                followingUser.followingCount--
                                 holder.followButton.text = "Follow Back"
                                 holder.followButton.backgroundTintList =
                                     ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
@@ -929,7 +932,7 @@ class FollowingAdapter(
                             // Notify parent through callback
                             onUnfollowClick(followingUser)
                         } else {
-                            // API returned success=false
+                            // API returned success=false - revert
                             Log.e(TAG, "API returned success=false: ${responseBody.message}")
                             followingUser.isFollowing = previousFollowStatus
                             holder.followButton.text = "Follow Back"

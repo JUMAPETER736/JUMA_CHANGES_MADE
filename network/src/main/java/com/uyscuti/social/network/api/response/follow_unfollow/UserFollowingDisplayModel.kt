@@ -23,7 +23,8 @@ data class UserFollowingDisplayModel(
     val isOnline: Boolean = false,
     val hasActiveStory: Boolean = false,
     val mutualConnectionsCount: Int = 0,
-    val isSuggested: Boolean = false
+    val isSuggested: Boolean = false,
+    var followingCount: Int = 0
 ) {
     // Constructor from your existing User model
     constructor(user: User, isFollowing: Boolean = false) : this(
@@ -41,7 +42,8 @@ data class UserFollowingDisplayModel(
         isOnline = isUserOnline(user.lastseen),
         hasActiveStory = false,
         mutualConnectionsCount = 0,
-        isSuggested = false
+        isSuggested = false,
+        followingCount = 0
     )
 
     val id: String get() = _id
@@ -73,7 +75,8 @@ data class UserFollowingDisplayModel(
                 isOnline = false,
                 hasActiveStory = false,
                 mutualConnectionsCount = 0,
-                isSuggested = false
+                isSuggested = false,
+                followingCount = 0
             )
         }
 
@@ -94,7 +97,8 @@ data class UserFollowingDisplayModel(
                 isOnline = false,
                 hasActiveStory = false,
                 mutualConnectionsCount = 0,
-                isSuggested = false
+                isSuggested = false,
+                followingCount = 0
             )
         }
 
