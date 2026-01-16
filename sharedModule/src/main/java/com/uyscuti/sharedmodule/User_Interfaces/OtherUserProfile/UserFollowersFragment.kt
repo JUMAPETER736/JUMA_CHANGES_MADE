@@ -395,14 +395,18 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
+
     @UnstableApi
     private fun openUserProfile(user: OtherUserDisplayFollowersModel) {
         try {
             val intent = Intent(this, OtherUserProfileAccount::class.java).apply {
-                putExtra("user_id", user.id)
+                // Pass individual string extras - the way OtherUserProfileAccount expects them
+                putExtra("user_id", user.id)  // This is the account/owner ID
                 putExtra("username", user.username)
-                putExtra("full_name", user.fullName)
-                putExtra("avatar_url", user.avatar?.url)
+                putExtra("user_full_name", "${user.firstName} ${user.lastName}".trim())
+                putExtra("extra_avatar_url", user.avatar?.url ?: "")
+
+
             }
             startActivity(intent)
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
@@ -559,11 +563,13 @@ class UserFollowersFragment : AppCompatActivity() {
 
 
 class FollowersAdapter(
+
     private val followers: MutableList<OtherUserDisplayFollowersModel>,
     private val onFollowerClick: (OtherUserDisplayFollowersModel) -> Unit,
     private val onFollowClick: (OtherUserDisplayFollowersModel) -> Unit,
     private val onMoreOptionsClick: (OtherUserDisplayFollowersModel) -> Unit,
     private val localStorage: LocalStorage  // Needed for opening chat
+
 ) : RecyclerView.Adapter<FollowersAdapter.FollowerViewHolder>() {
 
     inner class FollowerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -582,11 +588,22 @@ class FollowersAdapter(
     }
 
     override fun onBindViewHolder(holder: FollowerViewHolder, position: Int) {
+
         val follower = followers[position]
 
         // Set username and full name
         holder.usernameText.text = "@${follower.username}"
         holder.fullNameText.text = follower.fullName
+
+        // Click on profile image to open profile
+        holder.profileImage.setOnClickListener {
+            onFollowerClick(follower)
+        }
+
+        // Click on item to open profile
+        holder.itemView.setOnClickListener {
+            onFollowerClick(follower)
+        }
 
         // Show bio if available
         if (!follower.bio.isNullOrEmpty()) {
