@@ -58,6 +58,7 @@ import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentIn
 import com.uyscuti.sharedmodule.model.FeedCommentClicked
 import com.uyscuti.sharedmodule.model.HideAppBar
 import com.uyscuti.sharedmodule.model.HideBottomNav
+import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
 import com.uyscuti.sharedmodule.model.ShowAppBar
 import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.NewRepostedPostFragment
@@ -74,6 +75,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -152,6 +155,10 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         arguments?.let {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
+        }
+
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this)
         }
     }
 
@@ -820,11 +827,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         EventBus.getDefault().post(ShowAppBar(false))
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d(TAG, "onDestroy: called")
-        EventBus.getDefault().unregister(this)
-    }
 
     override fun onDetach() {
         super.onDetach()
@@ -870,6 +872,41 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             }
         } else {
             followButton.visibility = View.GONE
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onFollowEvent(event: ShortsFollowButtonClicked) {
+        val followEntity = event.followUnFollowEntity
+
+        Log.d(TAG, "═══════════════════════════════════════")
+        Log.d(TAG, "FOLLOW EVENT in FollowingFragment")
+        Log.d(TAG, "User: ${followEntity.userId}")
+        Log.d(TAG, "isFollowing: ${followEntity.isFollowing}")
+        Log.d(TAG, "═══════════════════════════════════════")
+
+        if (followEntity.isFollowing) {
+            // User followed someone new
+            followingUserIds.add(followEntity.userId)
+
+            // Update FeedAdapter cache
+            FeedAdapter.addToFollowingCache(followEntity.userId)
+
+            Log.d(TAG, "Added user to following list. Total following: ${followingUserIds.size}")
+
+            // Optionally reload feed to show their posts
+            // clearAndReloadFeed()
+        } else {
+            // User unfollowed someone
+            followingUserIds.remove(followEntity.userId)
+
+            // Update FeedAdapter cache
+            FeedAdapter.removeFromFollowingCache(followEntity.userId)
+
+            Log.d(TAG, "Removed user from following list. Total following: ${followingUserIds.size}")
+
+            // Refresh to remove their posts
+            refreshFeedAfterUnfollow()
         }
     }
 
@@ -1723,6 +1760,12 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         TODO("Not yet implemented")
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        if (EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().unregister(this)
+        }
+    }
 
 }
 

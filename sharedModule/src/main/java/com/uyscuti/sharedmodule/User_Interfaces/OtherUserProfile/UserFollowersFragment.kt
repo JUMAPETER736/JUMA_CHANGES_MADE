@@ -30,6 +30,7 @@ import com.google.gson.JsonSyntaxException
 import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.data.model.Dialog
 import com.uyscuti.sharedmodule.data.model.User
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
@@ -47,6 +48,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 import retrofit2.HttpException
 import java.io.IOException
 import java.util.Date
@@ -82,6 +85,10 @@ class UserFollowersFragment : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityUserFollowersBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this)
+        }
 
         localStorage = LocalStorage(this)
 
@@ -207,6 +214,32 @@ class UserFollowersFragment : AppCompatActivity() {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         binding.emptyStateLayout.visibility = View.VISIBLE
         binding.recyclerView.visibility = View.GONE
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onFollowEvent(event: ShortsFollowButtonClicked) {
+        val followEntity = event.followUnFollowEntity
+
+        Log.d(TAG, "Follow event received for user: ${followEntity.userId}, isFollowing: ${followEntity.isFollowing}")
+
+        // Update the follower in the list
+        val follower = followersList.find { it.id == followEntity.userId }
+        if (follower != null) {
+            follower.isFollowing = followEntity.isFollowing
+
+            // Also update in filtered list
+            val filteredFollower = filteredFollowersList.find { it.id == followEntity.userId }
+            filteredFollower?.isFollowing = followEntity.isFollowing
+
+            // Update FeedAdapter cache
+            if (followEntity.isFollowing) {
+                FeedAdapter.addToFollowingCache(followEntity.userId)
+            } else {
+                FeedAdapter.removeFromFollowingCache(followEntity.userId)
+            }
+
+            Log.d(TAG, "Updated follower ${follower.username} isFollowing status to ${followEntity.isFollowing}")
+        }
     }
 
 
@@ -618,6 +651,14 @@ class UserFollowersFragment : AppCompatActivity() {
             else -> count.toString()
         }
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().unregister(this)
+        }
+    }
+
 }
 
 
@@ -814,6 +855,12 @@ class FollowersAdapter(
                             // Successfully followed - update to PERMANENT "Message" state
                             follower.isFollowing = true
 
+                            // CRITICAL: Update the adapter's list directly
+                            val indexInList = followers.indexOfFirst { it.id == follower.id }
+                            if (indexInList != -1) {
+                                followers[indexInList].isFollowing = true
+                            }
+
                             // Update UI to Message button (permanent)
                             holder.followButton.text = "Message"
                             holder.followButton.backgroundTintList = null
@@ -833,9 +880,13 @@ class FollowersAdapter(
 
                             Log.d(TAG, "Successfully followed ${follower.username}")
 
+                            // Update FeedAdapter's global cache
+                            FeedAdapter.addToFollowingCache(follower.id)
+
                             // Update database
                             val followEntity = FollowUnFollowEntity(follower.id, true)
                             EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
+                            Log.d(TAG, "Posted follow event: userId=${follower.id}, isFollowing=true")
 
                             // Notify callback
                             onFollowClick(follower)
@@ -873,7 +924,7 @@ class FollowersAdapter(
             }
         }
     }
-    
+
     override fun getItemCount(): Int = followers.size
 
     fun updateList(newList: List<OtherUserDisplayFollowersModel>) {
