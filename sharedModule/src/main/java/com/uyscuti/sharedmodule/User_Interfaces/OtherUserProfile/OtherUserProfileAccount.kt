@@ -441,7 +441,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
         val followedByText = TextView(this).apply {
             text = "Followed by "
             textSize = 13f
-            setTextColor(ContextCompat.getColor(this@OtherUserProfileAccount, R.color.gray))
+            setTextColor(ContextCompat.getColor(this@OtherUserProfileAccount, R.color.black))
         }
         container.addView(followedByText)
 
@@ -456,10 +456,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
                 textSize = 13f
                 setTextColor(Color.BLACK)
                 setTypeface(null, Typeface.BOLD)
-                background = ContextCompat.getDrawable(
-                    this@OtherUserProfileAccount,
-                    android.R.drawable.list_selector_background
-                )
+
                 setPadding(8, 4, 8, 4)
 
                 setOnClickListener {
@@ -486,14 +483,14 @@ class OtherUserProfileAccount : AppCompatActivity() {
             val othersText = TextView(this).apply {
                 text = " and $remainingCount ${if (remainingCount == 1) "other" else "others"} you follow"
                 textSize = 13f
-                setTextColor(ContextCompat.getColor(this@OtherUserProfileAccount, R.color.gray))
+                setTextColor(ContextCompat.getColor(this@OtherUserProfileAccount, R.color.black))
             }
             container.addView(othersText)
         } else if (mutualFollowers.size <= 2) {
             val youFollowText = TextView(this).apply {
                 text = " you follow"
                 textSize = 13f
-                setTextColor(ContextCompat.getColor(this@OtherUserProfileAccount, R.color.gray))
+                setTextColor(ContextCompat.getColor(this@OtherUserProfileAccount, R.color.black))
             }
             container.addView(youFollowText)
         }
