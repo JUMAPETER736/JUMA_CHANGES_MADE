@@ -218,7 +218,7 @@ class UserFollowersFragment : AppCompatActivity() {
         binding.recyclerView.visibility = View.GONE
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = false, priority = 1)
+    @Subscribe(threadMode = ThreadMode.MAIN)
     fun onFollowEvent(event: ShortsFollowButtonClicked) {
         val followEntity = event.followUnFollowEntity
 
@@ -228,63 +228,73 @@ class UserFollowersFragment : AppCompatActivity() {
         Log.d(TAG, "isFollowing: ${followEntity.isFollowing}")
         Log.d(TAG, "==============================================")
 
-        // Find the user in the list
+        // Update the follower in the list
         val followerIndex = followersList.indexOfFirst { it.id == followEntity.userId }
 
         if (followerIndex != -1) {
             val follower = followersList[followerIndex]
 
-            // Only update if status changed
-            if (follower.isFollowing != followEntity.isFollowing) {
-                Log.d(TAG, "Updating ${follower.username} from ${follower.isFollowing} to ${followEntity.isFollowing}")
+            Log.d(TAG, "Found follower: ${follower.username}")
+            Log.d(TAG, "Old isFollowing: ${follower.isFollowing} -> New: ${followEntity.isFollowing}")
 
-                follower.isFollowing = followEntity.isFollowing
+            // ALWAYS UPDATE - don't check if unchanged
+            follower.isFollowing = followEntity.isFollowing
 
-                // Update filtered list
-                val filteredIndex = filteredFollowersList.indexOfFirst { it.id == followEntity.userId }
-                if (filteredIndex != -1) {
-                    filteredFollowersList[filteredIndex].isFollowing = followEntity.isFollowing
-                }
-
-                // Notify only this item changed
-                followersAdapter.notifyItemChanged(followerIndex)
-
-                Log.d(TAG, "✓ Successfully updated follower status")
-            } else {
-                Log.d(TAG, "Status unchanged, skipping update")
+            // Also update in filtered list
+            val filteredIndex = filteredFollowersList.indexOfFirst { it.id == followEntity.userId }
+            if (filteredIndex != -1) {
+                filteredFollowersList[filteredIndex].isFollowing = followEntity.isFollowing
             }
+
+            // Update FeedAdapter cache
+            if (followEntity.isFollowing) {
+                FeedAdapter.addToFollowingCache(followEntity.userId)
+            } else {
+                FeedAdapter.removeFromFollowingCache(followEntity.userId)
+            }
+
+            // Notify adapter to refresh this item
+            followersAdapter.notifyItemChanged(followerIndex)
+
+            Log.d(TAG, "✓ Updated follower ${follower.username} isFollowing status to ${followEntity.isFollowing}")
         } else {
-            Log.d(TAG, "User not found in followers list")
+            Log.d(TAG, "⚠️ User ${followEntity.userId} not found in followers list")
         }
     }
 
-
     private suspend fun checkFollowStatus(
-        users: List<Data>):
-            List<OtherUserDisplayFollowersModel> {
+        users: List<Data>
+    ): List<OtherUserDisplayFollowersModel> {
 
         return users.map { user ->
             try {
-                val followStatusResponse = retrofitInstance.apiService.getOtherUsersFollowersAndFollowingStatus(user._id)
-                val isFollowing = if (followStatusResponse.isSuccessful && followStatusResponse.body() != null) {
-                    // This should return whether YOU are following THEM
-                    followStatusResponse.body()?.data?.isFollowing ?: false
+                val response =
+                    retrofitInstance.apiService
+                        .getOtherUsersFollowersAndFollowingStatus(user._id)
+
+                val isFollowing = if (response.isSuccessful && response.body() != null) {
+                    response.body()!!.data?.isFollowing ?: false
                 } else {
-                    false  // Default to false if API call fails
+                    // Use existing global cache
+                    FeedAdapter.getCachedFollowingList().contains(user._id)
                 }
 
                 Log.d(TAG, "Follow status for ${user.username}: isFollowing=$isFollowing")
                 OtherUserDisplayFollowersModel.fromApiData(user, isFollowing)
+
             } catch (e: JsonSyntaxException) {
-                Log.e(TAG, "JSON error checking follow status for ${user.username}: ${e.message}")
-                // Default to false (not following)
-                OtherUserDisplayFollowersModel.fromApiData(user, false)
+                Log.e(TAG, "JSON error for ${user.username}: ${e.message}")
+                val cached = FeedAdapter.getCachedFollowingList().contains(user._id)
+                OtherUserDisplayFollowersModel.fromApiData(user, cached)
+
             } catch (e: Exception) {
-                Log.e(TAG, "Error checking follow status for ${user.username}: ${e.message}")
-                OtherUserDisplayFollowersModel.fromApiData(user, false)
+                Log.e(TAG, "Error for ${user.username}: ${e.message}")
+                val cached = FeedAdapter.getCachedFollowingList().contains(user._id)
+                OtherUserDisplayFollowersModel.fromApiData(user, cached)
             }
         }
     }
+
 
     private fun loadFollowers() {
         if (isLoading) return
@@ -857,6 +867,7 @@ class FollowersAdapter(
             .playOn(holder.followButton)
 
         Log.d(TAG, "Follow Back clicked for user: ${follower.username} (${follower.id})")
+        Log.d(TAG, "Current follower.isFollowing BEFORE API call: ${follower.isFollowing}")
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -867,16 +878,8 @@ class FollowersAdapter(
                         val responseBody = response.body()!!
 
                         if (responseBody.success && responseBody.data.following) {
-                            // Update model
-                            follower.isFollowing = true
 
-                            // Update list
-                            val indexInList = followers.indexOfFirst { it.id == follower.id }
-                            if (indexInList != -1) {
-                                followers[indexInList].isFollowing = true
-                            }
-
-                            // Update UI
+                            // Update UI IMMEDIATELY for better UX
                             holder.followButton.text = "Message"
                             holder.followButton.backgroundTintList = null
                             holder.followButton.setBackgroundResource(R.drawable.button_outline_blue)
@@ -894,25 +897,21 @@ class FollowersAdapter(
                             // Update FeedAdapter cache
                             FeedAdapter.addToFollowingCache(follower.id)
 
-                            // Post EventBus event with CORRECT parameters
+                            // Post EventBus event - LET THE FRAGMENT UPDATE THE MODEL
                             val followEntity = FollowUnFollowEntity(
                                 userId = follower.id,
                                 isFollowing = true,
-                                isButtonVisible = false  // Hide button since now following
+                                isButtonVisible = false
                             )
 
                             Log.d(TAG, "==============================================")
                             Log.d(TAG, "POSTING EventBus event for ${follower.username}")
                             Log.d(TAG, "userId: ${follower.id}")
                             Log.d(TAG, "isFollowing: true")
+                            Log.d(TAG, "follower.isFollowing in adapter (before event): ${follower.isFollowing}")
                             Log.d(TAG, "==============================================")
 
                             EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
-
-                            // Small delay to ensure event is processed
-                            delay(100)
-
-                            onFollowClick(follower)
 
                             Log.d(TAG, "✓ Successfully followed ${follower.username}")
 
@@ -923,6 +922,7 @@ class FollowersAdapter(
                                 "Failed to follow user",
                                 Toast.LENGTH_SHORT
                             ).show()
+                            Log.e(TAG, "API returned success=false for ${follower.username}")
                         }
                     } else {
                         holder.followButton.isEnabled = true
@@ -931,6 +931,7 @@ class FollowersAdapter(
                             "Failed to follow user",
                             Toast.LENGTH_SHORT
                         ).show()
+                        Log.e(TAG, "API error: ${response.code()}")
                     }
                 }
             } catch (e: Exception) {
