@@ -701,41 +701,46 @@ class FollowersAdapter(
                 .into(holder.profileImage)
         } ?: holder.profileImage.setImageResource(R.drawable.flash21)
 
-        // Update follow button appearance
-        // isFollowing = true means YOU are following THEM
-        // isFollowing = false means YOU are NOT following THEM (so show "Follow Back")
-        if (follower.isFollowing) {
-            // You're already following them, show Message button
-            holder.followButton.text = "Message"
-            holder.followButton.backgroundTintList = null
-            holder.followButton.setBackgroundResource(R.drawable.button_outline_blue)
-            holder.followButton.setTextColor(
-                ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
-            )
-        } else {
-            // You're NOT following them, show Follow Back button
-            holder.followButton.text = "Follow Back"
-            holder.followButton.setBackgroundColor(
-                ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
-            )
-            holder.followButton.setTextColor(Color.WHITE)
+        // Update follow button appearance based on whether YOU are following THEM back
+        when {
+            follower.isFollowing -> {
+                // You're following them back - show Message button (permanent state)
+                holder.followButton.text = "Message"
+                holder.followButton.backgroundTintList = null
+                holder.followButton.setBackgroundResource(R.drawable.button_outline_blue)
+                holder.followButton.setTextColor(
+                    ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
+                )
+            }
+            else -> {
+                // You're NOT following them - show Follow Back button
+                holder.followButton.text = "Follow Back"
+                holder.followButton.setBackgroundResource(R.drawable.button_blue_solid)
+                holder.followButton.setTextColor(Color.WHITE)
+            }
         }
 
         // Follow button click logic
         holder.followButton.setOnClickListener {
-            if (follower.isFollowing) {
-                // You're following them, open messaging
-                openMessaging(holder.itemView.context, follower)
-            } else {
-                // You're NOT following them, show Follow Back
-                handleFollowBackClick(holder, follower, position)
+            when {
+                follower.isFollowing -> {
+                    // Already following - open messaging
+                    openMessaging(holder.itemView.context, follower)
+                }
+                else -> {
+                    // Not following - execute follow back
+                    handleFollowBackClick(holder, follower, position)
+                }
             }
         }
+
 
         // More options button
         holder.moreOptionsButton.setOnClickListener {
             onMoreOptionsClick(follower)
         }
+
+
     }
 
     private fun openMessaging(context: Context, follower: OtherUserDisplayFollowersModel) {
@@ -781,31 +786,35 @@ class FollowersAdapter(
         )
     }
 
-    private fun handleFollowBackClick(holder: FollowerViewHolder, follower: OtherUserDisplayFollowersModel, position: Int) {
+    private fun handleFollowBackClick(
+        holder: FollowerViewHolder,
+        follower: OtherUserDisplayFollowersModel,
+        position: Int
+    ) {
+        // Prevent double-clicks
+        if (!holder.followButton.isEnabled) return
+
+        holder.followButton.isEnabled = false
+
         YoYo.with(Techniques.Pulse)
             .duration(300)
             .playOn(holder.followButton)
 
-        Log.d(TAG, "Follow Back button clicked for user: ${follower.id}")
+        Log.d(TAG, "Follow Back clicked for user: ${follower.username} (${follower.id})")
 
-        // Update UI immediately
-        holder.followButton.isEnabled = false
-
-
-        // Make API call using CoroutineScope
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = retrofitInstance.apiService.followUnFollow(follower.id)
 
-                if (response.isSuccessful && response.body() != null) {
-                    val isFollowing = response.body()!!.data.following
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful && response.body() != null) {
+                        val responseBody = response.body()!!
 
-                    withContext(Dispatchers.Main) {
-                        // Update the follower's following status
-                        follower.isFollowing = isFollowing
+                        if (responseBody.success && responseBody.data.following) {
+                            // Successfully followed - update to PERMANENT "Message" state
+                            follower.isFollowing = true
 
-                        // Update UI based on response
-                        if (isFollowing) {
+                            // Update UI to Message button (permanent)
                             holder.followButton.text = "Message"
                             holder.followButton.backgroundTintList = null
                             holder.followButton.setBackgroundResource(R.drawable.button_outline_blue)
@@ -813,54 +822,48 @@ class FollowersAdapter(
                                 ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
                             )
 
+                            // Re-enable button for messaging functionality
+                            holder.followButton.isEnabled = true
+
                             Toast.makeText(
                                 holder.itemView.context,
                                 "Now following @${follower.username}",
                                 Toast.LENGTH_SHORT
                             ).show()
 
-                            Log.d(TAG, "Now following user ${follower.id}")
+                            Log.d(TAG, "Successfully followed ${follower.username}")
 
-                            // Prevent accidental unfollow - keep button disabled for 5 seconds
-                            holder.followButton.isEnabled = false
-                            holder.itemView.postDelayed({
-                                holder.followButton.isEnabled = true
-                            }, 5000)
+                            // Update database
+                            val followEntity = FollowUnFollowEntity(follower.id, true)
+                            EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
+
+                            // Notify callback
+                            onFollowClick(follower)
+
                         } else {
-                            holder.followButton.text = "Follow Back"
-                            holder.followButton.setBackgroundColor(
-                                ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
-                            )
-                            holder.followButton.setTextColor(Color.WHITE)
+                            // Failed to follow - keep as Follow Back
                             holder.followButton.isEnabled = true
-
-                            Log.d(TAG, "Unfollowed user ${follower.id}")
+                            Toast.makeText(
+                                holder.itemView.context,
+                                "Failed to follow user",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            Log.e(TAG, "API returned success=false for ${follower.username}")
                         }
-
-                        // Update database
-                        val followEntity = FollowUnFollowEntity(follower.id, isFollowing)
-                        // Post EventBus event if needed
-                        EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
-
-                        // Notify the callback
-                        onFollowClick(follower)
-                    }
-                } else {
-                    withContext(Dispatchers.Main) {
+                    } else {
                         holder.followButton.isEnabled = true
-                        holder.followButton.text = "Follow Back"
                         Toast.makeText(
                             holder.itemView.context,
                             "Failed to follow user",
                             Toast.LENGTH_SHORT
                         ).show()
+                        Log.e(TAG, "API error: ${response.code()}")
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error following user", e)
+                Log.e(TAG, "Error following user: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     holder.followButton.isEnabled = true
-                    holder.followButton.text = "Follow Back"
                     Toast.makeText(
                         holder.itemView.context,
                         "Network error: ${e.message}",
@@ -870,7 +873,7 @@ class FollowersAdapter(
             }
         }
     }
-
+    
     override fun getItemCount(): Int = followers.size
 
     fun updateList(newList: List<OtherUserDisplayFollowersModel>) {
