@@ -437,9 +437,75 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
+    private fun updateFollowButtonVisibility() {
+        val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
+        val post = postList?.getOrNull(viewPager.currentItem)
+        val feedOwnerId = post?.userId
+
+        // Get current user credentials
+        val localStorage = LocalStorage.getInstance(requireContext())
+        val currentUserId = localStorage.getUserId()
+        val currentUsername = localStorage.getUsername()?.trim()?.lowercase()
+        val feedOwnerUsername = post?.username?.trim()?.lowercase()
+
+        Log.d(TAG, "FOLLOW BUTTON CHECK")
+        Log.d(TAG, "Current User ID: $currentUserId")
+        Log.d(TAG, "Current Username: $currentUsername")
+        Log.d(TAG, "Feed Owner ID: $feedOwnerId")
+        Log.d(TAG, "Feed Owner Username: $feedOwnerUsername")
+        Log.d(TAG, "Following List: $followingUserIds")
+
+        // PRIORITY 1: Check username match (most reliable in your case)
+        if (!currentUsername.isNullOrEmpty() &&
+            !feedOwnerUsername.isNullOrEmpty() &&
+            currentUsername == feedOwnerUsername) {
+            followButton.visibility = View.GONE
+            Log.d(TAG, "Follow button GONE - Own post (username match: @$currentUsername)")
+            return
+        }
+
+        // PRIORITY 2: Check ID match (backup check)
+        if (feedOwnerId != null && feedOwnerId == currentUserId) {
+            followButton.visibility = View.GONE
+            Log.d(TAG, "Follow button GONE - Own post (ID match: $currentUserId)")
+            return
+        }
+
+        // PRIORITY 3: Check if no feed owner
+        if (feedOwnerId == null) {
+            followButton.visibility = View.GONE
+            Log.d(TAG, "Follow button GONE - No feed owner")
+            return
+        }
+
+        // PRIORITY 4: Check if already following
+        val isFollowing = followingUserIds.contains(feedOwnerId)
+
+        if (isFollowing) {
+            followButton.visibility = View.GONE
+            Log.d(TAG, "Follow button GONE - Already following $feedOwnerId")
+        } else {
+            followButton.visibility = View.VISIBLE
+            followButton.text = "Follow"
+            Log.d(TAG, "Follow button VISIBLE - Not following $feedOwnerId")
+        }
+
+        Log.d(TAG, "Follow button visibility: ${followButton.visibility} (0=VISIBLE, 4=INVISIBLE, 8=GONE)")
+    }
+
     private fun loadAuthorDetails(post: PostItem) {
         val userId = post.userId
         val username = post.username
+
+        // ADD DEBUG
+        val myUserId = LocalStorage.getInstance(requireContext()).getUserId()
+        val myUsername = LocalStorage.getInstance(requireContext()).getUsername()
+        Log.d(TAG, "MY USER ID: $myUserId")
+        Log.d(TAG, "MY USERNAME: $myUsername")
+        Log.d(TAG, "POST USER ID: $userId")
+        Log.d(TAG, "POST USERNAME: $username")
+        Log.d(TAG, "IDs MATCH: ${myUserId == userId}")
+        Log.d(TAG, "USERNAMES MATCH: ${myUsername?.trim()?.lowercase() == username?.trim()?.lowercase()}")
 
         Log.d(TAG, "loadAuthorDetails called - userId: $userId, username: $username")
 
@@ -559,8 +625,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             visibility = if (isAuthorVerified) View.VISIBLE else View.GONE
         }
 
-        // ALWAYS hide follow button
-        view?.findViewById<Button>(R.id.followButton)?.visibility = View.GONE
     }
 
     private fun showDefaultAuthorInfo() {
@@ -597,7 +661,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             handleFollowButtonClick(followButton, feedOwnerId, feedOwnerUsername)
         }
     }
-
 
     private fun handleFollowButtonClick(followButton: Button, feedOwnerId: String, feedOwnerUsername: String) {
         // Disable button during API call
@@ -775,28 +838,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                 ).show()
             }
         }
-    }
-
-    private fun updateFollowButtonVisibility() {
-        val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
-        val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
-        val post = postList?.getOrNull(viewPager.currentItem)
-        val feedOwnerId = post?.userId
-
-        // Don't show follow button if feed owner is current user
-        if (feedOwnerId == null || feedOwnerId == currentUserId) {
-            followButton.visibility = View.GONE
-            return
-        }
-
-        // Show follow button only if user is NOT already following
-        followButton.visibility = if (followingUserIds.contains(feedOwnerId)) View.GONE else View.VISIBLE
-
-        Log.d(TAG, "FOLLOW BUTTON CHECK")
-        Log.d(TAG, "Current User ID: $currentUserId")
-        Log.d(TAG, "Feed Owner ID: $feedOwnerId")
-        Log.d(TAG, "Following List: $followingUserIds")
-        Log.d(TAG, "Follow button visibility: ${followButton.visibility}")
     }
 
     private fun loadPostContent(postId: String) {

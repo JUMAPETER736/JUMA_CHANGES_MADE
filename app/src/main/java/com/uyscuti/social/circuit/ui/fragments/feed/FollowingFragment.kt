@@ -545,11 +545,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             if (allFollowingPosts.isEmpty()) {
                 // Make sure adapter is empty
                 followedPostsAdapter.submitItems(mutableListOf())
-                Toast.makeText(
-                    requireContext(),
-                    "No posts yet from people you follow",
-                    Toast.LENGTH_LONG
-                ).show()
+
             } else {
                 // CRITICAL: Clear old data first, then add new filtered data
                 getFeedViewModel.clearAllFeedData()
