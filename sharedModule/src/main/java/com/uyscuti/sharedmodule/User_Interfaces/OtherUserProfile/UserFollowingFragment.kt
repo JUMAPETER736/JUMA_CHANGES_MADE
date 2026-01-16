@@ -60,6 +60,7 @@ class UserFollowingFragment : AppCompatActivity() {
     private lateinit var followingAdapter: FollowingAdapter
     private lateinit var blockedAdapter: BlockedAdapter
     private lateinit var retrofitInstance: RetrofitInstance
+    private lateinit var localStorage: LocalStorage
 
     private var userId: String = ""
     private var username: String = ""
@@ -135,9 +136,8 @@ class UserFollowingFragment : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-
+        // Initialize adapters with empty lists - they'll be updated later
         followingAdapter = FollowingAdapter(
-
             following = mutableListOf(),
             onFollowingClick = { user ->
                 navigateToOtherUserProfile(user)
@@ -149,7 +149,7 @@ class UserFollowingFragment : AppCompatActivity() {
                 showMoreOptions(user)
             },
             retrofitInstance = retrofitInstance,
-            localStorage = localStorage  // Pass localStorage instance
+            localStorage = localStorage  // ADD THIS LINE
         )
 
         blockedAdapter = BlockedAdapter(
@@ -166,6 +166,58 @@ class UserFollowingFragment : AppCompatActivity() {
             layoutManager = LinearLayoutManager(this@UserFollowingFragment)
             adapter = followingAdapter
         }
+    }
+
+    private fun filterOutCurrentUser(followingUsers: List<UserFollowingDisplayModel>): List<UserFollowingDisplayModel> {
+        val currentUserId = localStorage.getUserId()
+        val currentUsername = localStorage.getUsername()
+
+        Log.d(TAG, "Filtering out current user - ID: $currentUserId, Username: $currentUsername")
+
+        return followingUsers.filter { user ->
+            val keep = user.id != currentUserId && user.username != currentUsername
+            if (!keep) {
+                Log.d(TAG, "Filtered out current user: ${user.username}")
+            }
+            keep
+        }
+    }
+
+    private fun handleFollowingResponse(usersList: List<UserFollowingDisplayModel>) {
+        Log.d(TAG, "handleFollowingResponse called with ${usersList.size} users")
+
+        if (currentPage == 1) {
+            followingList.clear()
+            Log.d(TAG, "Cleared followingList for first page")
+        }
+
+        // Filter out current user before adding to list
+        val filteredUsers = filterOutCurrentUser(usersList)  // ADD THIS LINE
+        Log.d(TAG, "After filtering: ${filteredUsers.size} users remain")
+
+        followingList.addAll(filteredUsers)  // CHANGE: was usersList
+        Log.d(TAG, "followingList now has ${followingList.size} items")
+
+        filteredFollowingList.clear()
+        filteredFollowingList.addAll(followingList)
+        Log.d(TAG, "filteredFollowingList now has ${filteredFollowingList.size} items")
+
+        followingAdapter.updateList(filteredFollowingList)
+        Log.d(TAG, "Adapter updated, item count: ${followingAdapter.itemCount}")
+
+        // Update UI visibility
+        if (followingList.isEmpty()) {
+            Log.d(TAG, "List is empty, showing empty state")
+            binding.emptyStateLayout.visibility = View.VISIBLE
+            binding.recyclerView.visibility = View.GONE
+        } else {
+            Log.d(TAG, "List has data, showing RecyclerView")
+            binding.emptyStateLayout.visibility = View.GONE
+            binding.recyclerView.visibility = View.VISIBLE
+        }
+
+        hasMoreData = usersList.size >= 20
+        currentPage++
     }
 
     private fun setupSwipeRefresh() {
@@ -194,7 +246,7 @@ class UserFollowingFragment : AppCompatActivity() {
         binding.recyclerView.visibility = View.GONE
     }
 
-    // SIMPLIFIED: Skip the follow status check since it's causing JSON errors
+
     // Just use the followsBack value from the API response
     private suspend fun checkFollowingStatus(
         users: List<com.uyscuti.social.network.api.response.profile.followingList.Data>
@@ -205,38 +257,7 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
-    private fun handleFollowingResponse(usersList: List<UserFollowingDisplayModel>) {
-        Log.d(TAG, "handleFollowingResponse called with ${usersList.size} users")
 
-        if (currentPage == 1) {
-            followingList.clear()
-            Log.d(TAG, "Cleared followingList for first page")
-        }
-
-        followingList.addAll(usersList)
-        Log.d(TAG, "followingList now has ${followingList.size} items")
-
-        filteredFollowingList.clear()
-        filteredFollowingList.addAll(followingList)
-        Log.d(TAG, "filteredFollowingList now has ${filteredFollowingList.size} items")
-
-        followingAdapter.updateList(filteredFollowingList)
-        Log.d(TAG, "Adapter updated, item count: ${followingAdapter.itemCount}")
-
-        // Update UI visibility
-        if (followingList.isEmpty()) {
-            Log.d(TAG, "List is empty, showing empty state")
-            binding.emptyStateLayout.visibility = View.VISIBLE
-            binding.recyclerView.visibility = View.GONE
-        } else {
-            Log.d(TAG, "List has data, showing RecyclerView")
-            binding.emptyStateLayout.visibility = View.GONE
-            binding.recyclerView.visibility = View.VISIBLE
-        }
-
-        hasMoreData = usersList.size >= 20
-        currentPage++
-    }
 
     private fun filterList(query: String) {
         filteredFollowingList.clear()
@@ -357,7 +378,8 @@ class UserFollowingFragment : AppCompatActivity() {
     }
 
     private fun setupRetrofit() {
-        val localStorage = LocalStorage(this)
+
+        localStorage = LocalStorage(this)
 
         try {
             retrofitInstance = RetrofitInstance(
@@ -418,25 +440,6 @@ class UserFollowingFragment : AppCompatActivity() {
             }
         }
     }
-
-    @OptIn(UnstableApi::class)
-    private fun navigateToOtherUserProfile(user: OtherUserDisplayFollowersModel) {
-        Log.d(TAG, "Navigate to Other User Profile: ${user.username}")
-
-        try {
-            val intent = Intent(this, OtherUserProfileAccount::class.java).apply {
-                putExtra("user_id", user.id)
-                putExtra("username", user.username)
-                putExtra("full_name", user.fullName)
-                putExtra("avatar_url", user.avatar?.url)
-            }
-            startActivity(intent)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error navigating to profile", e)
-            Toast.makeText(this, "Unable to open profile", Toast.LENGTH_SHORT).show()
-        }
-    }
-
 
 
     private fun showUnblockConfirmation(user: UserFollowingDisplayModel) {
@@ -703,11 +706,15 @@ class FollowingAdapter(
     private val onFollowingClick: (UserFollowingDisplayModel) -> Unit,
     private val onUnfollowClick: (UserFollowingDisplayModel) -> Unit,
     private val onMoreOptionsClick: ((UserFollowingDisplayModel) -> Unit)? = null,
-    private val retrofitInstance: RetrofitInstance // Add this parameter
+    private val retrofitInstance: RetrofitInstance, // Add this parameter
+    private val localStorage: LocalStorage
 
 ) : RecyclerView.Adapter<FollowingAdapter.FollowingViewHolder>() {
 
     private val TAG = "FollowingAdapter"
+
+    private val currentUserId: String get() = localStorage.getUserId()
+    private val currentUsername: String get() = localStorage.getUsername()
 
     inner class FollowingViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val profileImageContainer: View = view.findViewById(R.id.profileImageContainer)
@@ -736,6 +743,18 @@ class FollowingAdapter(
         // Username and full name
         holder.usernameText.text = "@${followingUser.username}"
         holder.fullNameText.text = followingUser.fullName
+
+        if (followingUser.id == currentUserId || followingUser.username == currentUsername) {
+            holder.itemView.visibility = View.GONE
+            holder.itemView.layoutParams = RecyclerView.LayoutParams(0, 0)
+            return
+        } else {
+            holder.itemView.visibility = View.VISIBLE
+            holder.itemView.layoutParams = RecyclerView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
 
         // Item click → navigate to user profile
         holder.itemView.setOnClickListener {
@@ -1013,9 +1032,16 @@ class FollowingAdapter(
 
     fun updateList(newList: List<UserFollowingDisplayModel>) {
         following.clear()
-        following.addAll(newList)
+        // Filter out current user when updating list
+        val filteredList = newList.filter {
+            it.id != currentUserId && it.username != currentUsername
+        }
+        following.addAll(filteredList)
         notifyDataSetChanged()
+
+        Log.d(TAG, "List updated: ${newList.size} total, ${filteredList.size} after filtering out current user")
     }
+
 }
 
 // Blocked Users Adapter
