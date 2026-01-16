@@ -1124,9 +1124,90 @@ class MyUserProfileAccount : AppCompatActivity() {
 
 
     private fun showMutualConnections() {
-        Toast.makeText(this, "Showing mutual connections with $fullName", Toast.LENGTH_SHORT).show()
 
+        // Mutual = they follow you AND you follow them
+        val mutualUsers = followersList.filter { it.isFollowing }
+
+        if (mutualUsers.isEmpty()) {
+            Toast.makeText(
+                this,
+                "No mutual connections with $fullName",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        // Show usernames only
+        val usernames = mutualUsers.map { "@${it.username}" }.toTypedArray()
+
+        AlertDialog.Builder(this)
+            .setTitle("Mutual connections")
+            .setItems(usernames) { _, index ->
+                val selectedUser = mutualUsers[index]
+                openMutualUserProfile(selectedUser)
+            }
+            .setNegativeButton("Close", null)
+            .show()
     }
+
+    @OptIn(UnstableApi::class)
+    private fun openMutualUserProfile(user: OtherUserDisplayFollowersModel) {
+
+        val otherUsersProfile = OtherUsersProfile(
+            name = user.fullName,
+            username = user.username,
+            profilePic = user.avatar?.url ?: "",
+            userId = user.id,
+            isVerified = user.isVerified ?: false,
+            bio = user.bio,
+            linkInBio = null,
+            isCreator = false,
+            isTrending = false,
+            isFollowing = user.isFollowing,
+            isPrivate = false,
+            followersCount = 0L,
+            followingCount = 0L,
+            postsCount = 0L,
+            shortsCount = 0L,
+            videosCount = 0L,
+            isOnline = user.isOnline ?: false,
+            lastSeen = user.lastseen,
+            joinedDate = Date(),
+            location = null,
+            website = null,
+            email = user.email,
+            phoneNumber = null,
+            dateOfBirth = null,
+            gender = null,
+            accountType = user.role ?: "user",
+            isBlocked = false,
+            isMuted = false,
+            badgeType = null,
+            level = 1,
+            reputation = 0L,
+            coverPhoto = null,
+            theme = null,
+            language = null,
+            timezone = null,
+            notificationsEnabled = true,
+            privacySettings = null,
+            socialLinks = null,
+            achievements = null,
+            interests = null,
+            categories = null
+        )
+
+        OtherUserProfileAccount.open(
+            context = this,
+            user = otherUsersProfile,
+            dialogPhoto = user.avatar?.url,
+            dialogId = user.id
+        )
+
+        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+    }
+
+
 
     private fun openFollowingScreen() {
         val intent = Intent(this, UserFollowingFragment::class.java).apply {

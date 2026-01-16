@@ -414,23 +414,21 @@ class OtherUserProfileAccount : AppCompatActivity() {
     }
 
     private fun updateFollowButton() {
-
         if (isFollowingUser) {
-            // User is being followed - show "Unfollow" button
-            binding.followIcon.text = "Un Follow"
-            binding.followIcon.backgroundTintList = null
+            // Unfollow
+            binding.followIcon.text = "Unfollow"
             binding.followIcon.setBackgroundResource(R.drawable.button_outline_blue)
             binding.followIcon.setTextColor(
                 ContextCompat.getColor(this, R.color.blueJeans)
             )
         } else {
-            // User is NOT being followed - show "Follow" button
+            // Follow
             binding.followIcon.text = "Follow"
-            binding.followIcon.backgroundTintList =
-                ContextCompat.getColorStateList(this, R.color.blueJeans)
+            binding.followIcon.setBackgroundResource(R.drawable.button_blue_solid)
             binding.followIcon.setTextColor(Color.WHITE)
         }
     }
+
 
     private fun handleFollowUnfollow() {
         // Disable button during API call
