@@ -151,7 +151,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
         currentUsername = username
         currentUserId = userId
         localStorage = LocalStorage(this)
-        
+
         extractUserData()
         setupUserInterface()
         setupToolbar()
