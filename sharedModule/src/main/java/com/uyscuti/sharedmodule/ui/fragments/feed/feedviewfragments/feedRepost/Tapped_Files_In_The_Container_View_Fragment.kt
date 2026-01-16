@@ -700,10 +700,23 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         // Notify via EventBus
         EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
 
-        lifecycleScope.launch {
+        // CRITICAL FIX: Use viewLifecycleOwner.lifecycleScope instead of lifecycleScope
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
+                // CRITICAL FIX: Check if fragment is still attached before every context access
+                if (!isAdded) {
+                    Log.w(TAG, "Fragment detached, aborting follow action")
+                    return@launch
+                }
+
                 val response = withContext(Dispatchers.IO) {
                     apiService.followUnFollow(feedOwnerId)
+                }
+
+                // CRITICAL FIX: Check again after async call
+                if (!isAdded || view == null) {
+                    Log.w(TAG, "Fragment detached during API call")
+                    return@launch
                 }
 
                 followButton.isEnabled = true
@@ -730,14 +743,19 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                                 Log.w(TAG, "FeedAdapter cache update failed: ${e.message}")
                             }
 
-                            // Save to local storage via FollowingManager - CORRECTED
-                            followingManager.addToFollowing(feedOwnerId)
+                            // Save to local storage via FollowingManager - check context first
+                            if (isAdded) {
+                                followingManager.addToFollowing(feedOwnerId)
+                            }
 
-                            Toast.makeText(
-                                requireContext(),
-                                "Now following @$feedOwnerUsername",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            // CRITICAL FIX: Check context before showing Toast
+                            if (isAdded && context != null) {
+                                Toast.makeText(
+                                    requireContext(),
+                                    "Now following @$feedOwnerUsername",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         } else {
                             // Unfollowed - remove from all caches
                             followingUserIds.remove(feedOwnerId)
@@ -752,14 +770,19 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                                 Log.w(TAG, "FeedAdapter cache update failed: ${e.message}")
                             }
 
-                            // Remove from local storage - CORRECTED
-                            followingManager.removeFromFollowing(feedOwnerId)
+                            // Remove from local storage - check context first
+                            if (isAdded) {
+                                followingManager.removeFromFollowing(feedOwnerId)
+                            }
 
-                            Toast.makeText(
-                                requireContext(),
-                                "Unfollowed @$feedOwnerUsername",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            // CRITICAL FIX: Check context before showing Toast
+                            if (isAdded && context != null) {
+                                Toast.makeText(
+                                    requireContext(),
+                                    "Unfollowed @$feedOwnerUsername",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
 
                         // Update button visibility after server confirms
@@ -776,11 +799,14 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                             followButton.visibility = View.VISIBLE
                         }
 
-                        Toast.makeText(
-                            requireContext(),
-                            responseBody.message ?: "Failed to follow user",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        // CRITICAL FIX: Check context before showing Toast
+                        if (isAdded && context != null) {
+                            Toast.makeText(
+                                requireContext(),
+                                responseBody.message ?: "Failed to follow user",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 } else {
                     Log.e(TAG, "API error: ${response.code()}, ${response.errorBody()?.string()}")
@@ -794,11 +820,14 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                         followButton.visibility = View.VISIBLE
                     }
 
-                    Toast.makeText(
-                        requireContext(),
-                        "Failed to follow user. Please try again.",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    // CRITICAL FIX: Check context before showing Toast
+                    if (isAdded && context != null) {
+                        Toast.makeText(
+                            requireContext(),
+                            "Failed to follow user. Please try again.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             } catch (e: com.google.gson.JsonSyntaxException) {
                 Log.e(TAG, "JSON parsing error: ${e.message}", e)
@@ -813,11 +842,14 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                     followButton.visibility = View.VISIBLE
                 }
 
-                Toast.makeText(
-                    requireContext(),
-                    "Server response error. Please try again.",
-                    Toast.LENGTH_SHORT
-                ).show()
+                // CRITICAL FIX: Check context before showing Toast
+                if (isAdded && context != null) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Server response error. Please try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error following user: ${e.message}", e)
                 followButton.isEnabled = true
@@ -831,11 +863,14 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                     followButton.visibility = View.VISIBLE
                 }
 
-                Toast.makeText(
-                    requireContext(),
-                    "Network error: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                // CRITICAL FIX: Check context before showing Toast
+                if (isAdded && context != null) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Network error: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
     }
