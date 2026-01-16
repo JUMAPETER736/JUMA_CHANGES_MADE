@@ -712,16 +712,17 @@ class FollowingAdapter(
         // Set button text and color
         if (followingUser.isFollowing) {
             holder.followButton.text = "Message"
-            holder.followButton.backgroundTintList =
-                ContextCompat.getColorStateList(holder.itemView.context, R.color.gray_dark_transparent)
-            holder.followButton.setTextColor(Color.WHITE)
+            holder.followButton.backgroundTintList = null
+            holder.followButton.setBackgroundResource(R.drawable.button_outline_blue)
+            holder.followButton.setTextColor(
+                ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
+            )
         } else {
             holder.followButton.text = "Follow Back"
             holder.followButton.backgroundTintList =
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.blueJeans)
             holder.followButton.setTextColor(Color.WHITE)
         }
-
         // Handle button click
         holder.followButton.setOnClickListener {
             if (followingUser.isFollowing) {
