@@ -218,18 +218,21 @@ class UserFollowersFragment : AppCompatActivity() {
             try {
                 val followStatusResponse = retrofitInstance.apiService.getOtherUsersFollowersAndFollowingStatus(user._id)
                 val isFollowing = if (followStatusResponse.isSuccessful && followStatusResponse.body() != null) {
-                    followStatusResponse.body()?.data?.isFollowing ?: user.isFollowingBack
+                    // This should return whether YOU are following THEM
+                    followStatusResponse.body()?.data?.isFollowing ?: false
                 } else {
-                    user.isFollowingBack
+                    false  // Default to false if API call fails
                 }
+
+                Log.d(TAG, "Follow status for ${user.username}: isFollowing=$isFollowing")
                 OtherUserDisplayFollowersModel.fromApiData(user, isFollowing)
             } catch (e: JsonSyntaxException) {
                 Log.e(TAG, "JSON error checking follow status for ${user.username}: ${e.message}")
-                // Use isFollowingBack from the API response as fallback
-                OtherUserDisplayFollowersModel.fromApiData(user, user.isFollowingBack)
+                // Default to false (not following)
+                OtherUserDisplayFollowersModel.fromApiData(user, false)
             } catch (e: Exception) {
                 Log.e(TAG, "Error checking follow status for ${user.username}: ${e.message}")
-                OtherUserDisplayFollowersModel.fromApiData(user, user.isFollowingBack)
+                OtherUserDisplayFollowersModel.fromApiData(user, false)
             }
         }
     }
@@ -626,7 +629,8 @@ class FollowersAdapter(
     private val onFollowClick: (OtherUserDisplayFollowersModel) -> Unit,
     private val onMoreOptionsClick: (OtherUserDisplayFollowersModel) -> Unit,
     private val localStorage: LocalStorage,
-    private val retrofitInstance: RetrofitInstance  // Add this parameter
+    private val retrofitInstance: RetrofitInstance
+
 ) : RecyclerView.Adapter<FollowersAdapter.FollowerViewHolder>() {
 
     private val TAG = "FollowersAdapter"
@@ -698,7 +702,10 @@ class FollowersAdapter(
         } ?: holder.profileImage.setImageResource(R.drawable.flash21)
 
         // Update follow button appearance
+        // isFollowing = true means YOU are following THEM
+        // isFollowing = false means YOU are NOT following THEM (so show "Follow Back")
         if (follower.isFollowing) {
+            // You're already following them, show Message button
             holder.followButton.text = "Message"
             holder.followButton.backgroundTintList = null
             holder.followButton.setBackgroundResource(R.drawable.button_outline_blue)
@@ -706,6 +713,7 @@ class FollowersAdapter(
                 ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
             )
         } else {
+            // You're NOT following them, show Follow Back button
             holder.followButton.text = "Follow Back"
             holder.followButton.setBackgroundColor(
                 ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
@@ -716,10 +724,10 @@ class FollowersAdapter(
         // Follow button click logic
         holder.followButton.setOnClickListener {
             if (follower.isFollowing) {
-                // Open messaging
+                // You're following them, open messaging
                 openMessaging(holder.itemView.context, follower)
             } else {
-                // Follow back logic
+                // You're NOT following them, show Follow Back
                 handleFollowBackClick(holder, follower, position)
             }
         }
@@ -782,7 +790,7 @@ class FollowersAdapter(
 
         // Update UI immediately
         holder.followButton.isEnabled = false
-        holder.followButton.text = "Following..."
+
 
         // Make API call using CoroutineScope
         CoroutineScope(Dispatchers.IO).launch {
