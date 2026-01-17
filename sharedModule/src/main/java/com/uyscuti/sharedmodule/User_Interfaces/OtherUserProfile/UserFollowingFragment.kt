@@ -471,8 +471,8 @@ class UserFollowingFragment : AppCompatActivity() {
             .setTitle("@${user.username}")
             .setItems(options) { _, which ->
                 when (which) {
-                    1 -> blockUser(user)
-                    2 -> reportUser(user)
+                    1 -> blockUserFollowing(user)
+                    2 -> reportUserFollowing(user)
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -545,12 +545,8 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
-    private fun sendMessageToUser(user: UserFollowingDisplayModel) {
-        Log.d(TAG, "Send message to: ${user.username}")
-        Toast.makeText(this, "Message feature coming soon", Toast.LENGTH_SHORT).show()
-    }
 
-    private fun blockUser(user: UserFollowingDisplayModel) {
+    private fun blockUserFollowing(user: UserFollowingDisplayModel) {
         AlertDialog.Builder(this)
             .setTitle("Block @${user.username}?")
             .setMessage("This user will no longer be able to see your content or contact you.")
@@ -629,7 +625,7 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
-    private fun reportUser(user: UserFollowingDisplayModel) {
+    private fun reportUserFollowing(user: UserFollowingDisplayModel) {
         Log.d(TAG, "Report user: ${user.username}")
         Toast.makeText(this, "Report submitted", Toast.LENGTH_SHORT).show()
     }

@@ -1,5 +1,6 @@
 package com.uyscuti.social.circuit.User_Interface.OtherUserProfile
 
+import UserFollowingDisplayModel
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -566,8 +567,8 @@ class UserFollowersFragment : AppCompatActivity() {
                 .setTitle("Options")
                 .setItems(arrayOf("View Profile", "Block User")) { _, which ->
                     when (which) {
-                        0 -> openUserProfile(user)
-                        1 -> blockUser(user)
+                        0 -> reportFollower(user)
+                        1 -> blockFollower(user)
                     }
                 }
                 .show()
@@ -601,7 +602,12 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
-    private fun blockUser(user: OtherUserDisplayFollowersModel) {
+    private fun reportFollower(user: OtherUserDisplayFollowersModel) {
+        Log.d(TAG, "Report user: ${user.username}")
+        Toast.makeText(this, "Report submitted", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun blockFollower(user: OtherUserDisplayFollowersModel) {
         AlertDialog.Builder(this)
             .setTitle("Block ${user.username}?")
             .setMessage("They won't be able to see your profile or posts.")
@@ -611,6 +617,7 @@ class UserFollowersFragment : AppCompatActivity() {
             .setNegativeButton("Cancel", null)
             .show()
     }
+
 
     private fun performBlockUser(user: OtherUserDisplayFollowersModel) {
         lifecycleScope.launch(Dispatchers.IO) {
