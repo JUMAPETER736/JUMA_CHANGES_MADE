@@ -44,6 +44,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -612,69 +613,50 @@ class UserFollowersFragment : AppCompatActivity() {
             .show()
     }
 
+
     private fun performBlockUser(user: OtherUserDisplayFollowersModel) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val response = retrofitInstance.apiService.blockUser(user.id)
+                // Make a raw OkHttp call to see the actual response
+                val client = OkHttpClient()
+                val request = okhttp3.Request.Builder()
+                    .url("http://192.168.1.103:8080/api/v/social-media/block/${user.id}")
+                    .post(okhttp3.RequestBody.create(null, ""))
+                    .addHeader("Authorization", "Bearer ${localStorage.getToken()}") // Add your auth header
+                    .build()
+
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string()
 
                 withContext(Dispatchers.Main) {
-                    if (response.isSuccessful && response.body() != null) {
-                        val responseBody = response.body()!!
+                    Log.d(TAG, "================== BLOCK API RESPONSE ==================")
+                    Log.d(TAG, "HTTP Status Code: ${response.code}")
+                    Log.d(TAG, "Is Successful: ${response.isSuccessful}")
+                    Log.d(TAG, "Response Headers: ${response.headers}")
+                    Log.d(TAG, "Response Body: $responseBody")
+                    Log.d(TAG, "Response Body Length: ${responseBody?.length}")
+                    Log.d(TAG, "======================================================")
 
-                        if (responseBody.success) {
-                            // Update the user's blocked status
-                            user.isBlocked = true
-                            user.isFollowing = false // They can't be following if blocked
 
-                            // Update adapter to refresh the UI
-                            followersAdapter.notifyDataSetChanged()
 
-                            Toast.makeText(
-                                this@UserFollowersFragment,
-                                responseBody.message,
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                            Log.d(TAG, "Successfully blocked user: ${user.username}")
-                        } else {
-                            Toast.makeText(
-                                this@UserFollowersFragment,
-                                responseBody.message,
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    } else {
-                        Log.e(TAG, "Failed to block user. HTTP code: ${response.code()}")
-                        Toast.makeText(
-                            this@UserFollowersFragment,
-                            "Failed to block user",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            } catch (e: JsonSyntaxException) {
-                Log.e(TAG, "JSON parsing error - API response format mismatch", e)
-                withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@UserFollowersFragment,
-                        "Error: Invalid server response",
-                        Toast.LENGTH_SHORT
+                        "Check Logcat for API response details",
+                        Toast.LENGTH_LONG
                     ).show()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error blocking user: ${e.message}", e)
+                Log.e(TAG, "Error calling block API: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@UserFollowersFragment,
-                        "Network error",
+                        "Error: ${e.message}",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             }
         }
     }
-
-
     private fun updateFollowersCount(change: Int) {
         followersCount += change
         val formattedCount = formatCount(followersCount)
