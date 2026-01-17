@@ -67,6 +67,7 @@ import com.uyscuti.social.network.api.response.favoritefeed.GetFavoriteFeedRespo
 import com.uyscuti.social.network.api.response.favoriteshort.ShortsFavoriteResponse
 import com.uyscuti.social.network.api.response.feed.FeedUploadResponse
 import com.uyscuti.social.network.api.response.feed.deletefeed.DeleteFeedResponse
+import com.uyscuti.social.network.api.response.follow_unfollow.BlockUnblockResponse
 import com.uyscuti.social.network.api.response.follow_unfollow.FollowUnFollowResponse
 import com.uyscuti.social.network.api.response.follow_unfollow.OtherUsersFollowersAndFollowingResponse
 import com.uyscuti.social.network.api.response.getCommentNotification.GetCommentNotification
@@ -256,17 +257,25 @@ interface IFlashapi {
 
     // ==================== SOCIAL MEDIA - BLOCK/UNBLOCK ====================
 
+//    @POST("social-media/block/{userId}")
+//    suspend fun blockUser(@Path("userId") userId: String): Response<FollowUnFollowResponse>
+//
+//    @DELETE("social-media/block/{userId}")
+//    suspend fun unBlockUser(@Path("userId") userId: String): Response<FollowUnFollowResponse>
+
+
     @POST("social-media/block/{userId}")
-    suspend fun blockUser(@Path("userId") userId: String): Response<FollowUnFollowResponse>
+    suspend fun blockUser(@Path("userId") userId: String): Response<BlockUnblockResponse>
 
     @DELETE("social-media/block/{userId}")
-    suspend fun unBlockUser(@Path("userId") userId: String): Response<FollowUnFollowResponse>
+    suspend fun unBlockUser(@Path("userId") userId: String): Response<BlockUnblockResponse>
 
     @GET("social-media/blocked")
     suspend fun getBlockedUsers(
         @Query("page") page: Int,
         @Query("limit") limit: Int = 20
     ): Response<UsersResponse>
+
 
 
     // ==================== SOCIAL MEDIA - SHORTS (POSTS) ====================

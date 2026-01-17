@@ -8,3 +8,15 @@ data class FollowUnFollowResponse(
     val statusCode: Int,
     val success: Boolean
 )
+
+
+data class BlockUnblockResponse(
+    val data: BlockData?,
+    val message: String,
+    val statusCode: Int,
+    val success: Boolean
+)
+
+data class BlockData(
+    val blocked: Boolean
+)

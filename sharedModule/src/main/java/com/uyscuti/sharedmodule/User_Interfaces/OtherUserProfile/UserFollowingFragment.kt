@@ -470,7 +470,7 @@ class UserFollowingFragment : AppCompatActivity() {
             .setTitle("@${user.username}")
             .setItems(options) { _, which ->
                 when (which) {
-                    1 -> blockUserFollowing(user)
+                    1 -> muteUserFollowing(user)
                     2 -> reportUserFollowing(user)
                 }
             }
@@ -544,9 +544,9 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
-    private fun blockUserFollowing(user: UserFollowingDisplayModel) {
+    private fun muteUserFollowing(user: UserFollowingDisplayModel) {
         AlertDialog.Builder(this)
-            .setTitle("Block @${user.username}?")
+            .setTitle("Are you sure to Mute @${user.username}?")
             .setMessage("This user will no longer be able to see your content or contact you.")
             .setPositiveButton("Block") { _, _ ->
                 performBlockUser(user)

@@ -24,8 +24,11 @@ data class OtherUserDisplayFollowersModel(
     val mutualConnectionsCount: Int = 0,
     val isSuggested: Boolean = false,
     val location: String = "",
-    val followedAt: String = ""
+    val followedAt: String = "",
+    var isBlocked: Boolean = false
+
 ) {
+
     constructor(user: User, isFollowing: Boolean = false) : this(
         _id = user._id,
         avatar = user.avatar,
@@ -41,7 +44,8 @@ data class OtherUserDisplayFollowersModel(
         isOnline = isUserOnline(user.lastseen),
         hasActiveStory = false,
         mutualConnectionsCount = 0,
-        isSuggested = false
+        isSuggested = false,
+        isBlocked = false
     )
 
     val id: String get() = _id
@@ -97,7 +101,8 @@ data class OtherUserDisplayFollowersModel(
                 mutualConnectionsCount = 0,
                 isSuggested = false,
                 location = data.location,
-                followedAt = data.followedAt
+                followedAt = data.followedAt,
+                isBlocked = false
             )
         }
     }

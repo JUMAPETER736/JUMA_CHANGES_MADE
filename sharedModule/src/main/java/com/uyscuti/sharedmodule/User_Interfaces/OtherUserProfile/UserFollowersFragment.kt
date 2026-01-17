@@ -1,9 +1,8 @@
 package com.uyscuti.social.circuit.User_Interface.OtherUserProfile
 
-import UserFollowingDisplayModel
+
 import android.app.AlertDialog
 import android.content.Context
-import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
@@ -32,13 +31,10 @@ import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
-import com.uyscuti.sharedmodule.data.model.Dialog
-import com.uyscuti.sharedmodule.data.model.User
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.databinding.ActivityUserFollowersBinding
 import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
-import com.uyscuti.social.core.common.data.room.entity.UserEntity
 import com.uyscuti.social.network.api.response.follow_unfollow.OtherUserDisplayFollowersModel
 import com.uyscuti.social.network.api.response.profile.followersList.Data
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -46,7 +42,6 @@ import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
@@ -55,9 +50,6 @@ import org.greenrobot.eventbus.ThreadMode
 import retrofit2.HttpException
 import java.io.IOException
 import java.util.Date
-import kotlin.collections.addAll
-import kotlin.inc
-import kotlin.text.clear
 
 
 private const val TAG = "UserFollowersFragment"
@@ -86,8 +78,9 @@ class UserFollowersFragment : AppCompatActivity() {
     private var isLoading = false
     private var hasMoreData = true
 
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         binding = ActivityUserFollowersBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -610,7 +603,7 @@ class UserFollowersFragment : AppCompatActivity() {
 
     private fun blockFollower(user: OtherUserDisplayFollowersModel) {
         AlertDialog.Builder(this)
-            .setTitle("Block ${user.username}?")
+            .setTitle("Are you sure to Block ${user.username}?")
             .setMessage("They won't be able to see your profile or posts.")
             .setPositiveButton("Block") { _, _ ->
                 performBlockUser(user)
@@ -619,32 +612,68 @@ class UserFollowersFragment : AppCompatActivity() {
             .show()
     }
 
-
     private fun performBlockUser(user: OtherUserDisplayFollowersModel) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val response = retrofitInstance.apiService.blockUser(user.id)
 
                 withContext(Dispatchers.Main) {
-                    if (response.isSuccessful) {
-                        followersList.remove(user)
-                        filteredFollowersList.remove(user)
-                        followersAdapter.notifyDataSetChanged()
-                        updateEmptyState()
+                    if (response.isSuccessful && response.body() != null) {
+                        val responseBody = response.body()!!
 
-                        Toast.makeText(this@UserFollowersFragment, "Blocked ${user.username}", Toast.LENGTH_SHORT).show()
+                        if (responseBody.success) {
+                            // Update the user's blocked status
+                            user.isBlocked = true
+                            user.isFollowing = false // They can't be following if blocked
+
+                            // Update adapter to refresh the UI
+                            followersAdapter.notifyDataSetChanged()
+
+                            Toast.makeText(
+                                this@UserFollowersFragment,
+                                responseBody.message,
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            Log.d(TAG, "Successfully blocked user: ${user.username}")
+                        } else {
+                            Toast.makeText(
+                                this@UserFollowersFragment,
+                                responseBody.message,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     } else {
-                        Toast.makeText(this@UserFollowersFragment, "Failed to block user", Toast.LENGTH_SHORT).show()
+                        Log.e(TAG, "Failed to block user. HTTP code: ${response.code()}")
+                        Toast.makeText(
+                            this@UserFollowersFragment,
+                            "Failed to block user",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
+                }
+            } catch (e: JsonSyntaxException) {
+                Log.e(TAG, "JSON parsing error - API response format mismatch", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@UserFollowersFragment,
+                        "Error: Invalid server response",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error blocking user: ${e.message}", e)
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@UserFollowersFragment, "Network error", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@UserFollowersFragment,
+                        "Network error",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
     }
+
 
     private fun updateFollowersCount(change: Int) {
         followersCount += change
@@ -705,7 +734,6 @@ class UserFollowersFragment : AppCompatActivity() {
     }
 
 }
-
 
 
 class FollowersAdapter(
@@ -791,10 +819,16 @@ class FollowersAdapter(
                 .into(holder.profileImage)
         } ?: holder.profileImage.setImageResource(R.drawable.flash21)
 
-        // Update follow button appearance based on whether YOU are following THEM back
+        // Update follow button appearance based on blocked status and following status
         when {
+            follower.isBlocked -> {
+                // User is blocked - show Blocked button with red background
+                holder.followButton.text = "Blocked"
+                holder.followButton.setBackgroundResource(R.drawable.follower_blocked_button
+                holder.followButton.setTextColor(Color.WHITE)
+            }
             follower.isFollowing -> {
-                // You're following them back - show Message button (permanent state)
+                // You're following them back - show Message button
                 holder.followButton.text = "Message"
                 holder.followButton.backgroundTintList = null
                 holder.followButton.setBackgroundResource(R.drawable.button_outline_blue)
@@ -813,6 +847,10 @@ class FollowersAdapter(
         // Follow button click logic
         holder.followButton.setOnClickListener {
             when {
+                follower.isBlocked -> {
+                    // User is blocked - show unblock option
+                    handleUnblockClick(holder, follower, position)
+                }
                 follower.isFollowing -> {
                     // Already following - open messaging
                     openMessaging(holder.itemView.context, follower)
@@ -824,14 +862,12 @@ class FollowersAdapter(
             }
         }
 
-
         // More options button
         holder.moreOptionsButton.setOnClickListener {
             onMoreOptionsClick(follower)
         }
-
-
     }
+
 
     private fun openMessaging(context: Context, follower: OtherUserDisplayFollowersModel) {
         // Create temporary user entity
@@ -969,6 +1005,103 @@ class FollowersAdapter(
                 }
             }
         }
+    }
+
+
+    private fun performUnblock(
+        holder: FollowerViewHolder,
+        follower: OtherUserDisplayFollowersModel,
+        position: Int
+    ) {
+        if (!holder.followButton.isEnabled) return
+
+        holder.followButton.isEnabled = false
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // Call your unblock API endpoint
+                val response = retrofitInstance.apiService.unBlockUser(follower.id)
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful && response.body() != null) {
+                        val responseBody = response.body()!!
+
+                        if (responseBody.success) {
+                            // Update UI
+                            follower.isBlocked = false
+                            holder.followButton.text = "Follow Back"
+                            holder.followButton.setBackgroundResource(R.drawable.button_blue_solid)
+                            holder.followButton.setTextColor(Color.WHITE)
+                            holder.followButton.isEnabled = true
+
+                            Toast.makeText(
+                                holder.itemView.context,
+                                responseBody.message,
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            notifyItemChanged(position)
+
+                            Log.d(TAG, "Successfully unblocked: ${follower.username}")
+                        } else {
+                            holder.followButton.isEnabled = true
+                            Toast.makeText(
+                                holder.itemView.context,
+                                responseBody.message,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } else {
+                        holder.followButton.isEnabled = true
+                        Toast.makeText(
+                            holder.itemView.context,
+                            "Failed to unblock user",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        Log.e(TAG, "Unblock failed. HTTP code: ${response.code()}")
+                    }
+                }
+            } catch (e: JsonSyntaxException) {
+                Log.e(TAG, "JSON parsing error during unblock", e)
+                withContext(Dispatchers.Main) {
+                    holder.followButton.isEnabled = true
+                    Toast.makeText(
+                        holder.itemView.context,
+                        "Error: Invalid server response",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error unblocking user: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    holder.followButton.isEnabled = true
+                    Toast.makeText(
+                        holder.itemView.context,
+                        "Network error: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+
+
+
+    private fun handleUnblockClick(
+        holder: FollowerViewHolder,
+        follower: OtherUserDisplayFollowersModel,
+        position: Int
+    ) {
+        AlertDialog.Builder(holder.itemView.context)
+            .setTitle("Unblock ${follower.username}?")
+            .setMessage("This will allow them to see your posts again.")
+            .setPositiveButton("Unblock") { _, _ ->
+                // User clicked "Unblock" - proceed with unblocking
+                performUnblock(holder, follower, position)
+            }
+            .setNegativeButton("Cancel", null) // User clicked "Cancel" - dialog closes
+            .show()
     }
 
 
