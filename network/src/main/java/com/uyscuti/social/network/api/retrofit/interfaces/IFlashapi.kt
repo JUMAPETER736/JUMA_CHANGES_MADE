@@ -264,11 +264,13 @@ interface IFlashapi {
 //    suspend fun unBlockUser(@Path("userId") userId: String): Response<FollowUnFollowResponse>
 
 
-    @POST("social-media/block/{userId}")
+    @POST("social-media/block/{userId}")  // ← Check if this is correct!
     suspend fun blockUser(@Path("userId") userId: String): Response<BlockUnblockResponse>
 
-    @DELETE("social-media/block/{userId}")
+    @DELETE("social-media/block/{userId}")  // ← Check if this is correct!
     suspend fun unBlockUser(@Path("userId") userId: String): Response<BlockUnblockResponse>
+
+
 
     @GET("social-media/blocked")
     suspend fun getBlockedUsers(
