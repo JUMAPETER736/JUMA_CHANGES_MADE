@@ -449,7 +449,6 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
-
     private fun showUnblockConfirmation(user: UserFollowingDisplayModel) {
         AlertDialog.Builder(this)
             .setTitle("Unblock @${user.username}?")
@@ -545,7 +544,6 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
-
     private fun blockUserFollowing(user: UserFollowingDisplayModel) {
         AlertDialog.Builder(this)
             .setTitle("Block @${user.username}?")
@@ -630,7 +628,6 @@ class UserFollowingFragment : AppCompatActivity() {
         Toast.makeText(this, "Report submitted", Toast.LENGTH_SHORT).show()
     }
 
-
     @OptIn(UnstableApi::class)
     private fun unfollowUser(user: UserFollowingDisplayModel) {
         lifecycleScope.launch {
@@ -670,7 +667,6 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
-
     private fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
@@ -694,7 +690,9 @@ class UserFollowingFragment : AppCompatActivity() {
             else -> count.toString()
         }
     }
+
 }
+
 
 // Following Adapter
 class FollowingAdapter(
@@ -878,6 +876,7 @@ class FollowingAdapter(
 
 }
 
+
 // Blocked Users Adapter
 class BlockedAdapter(
 
@@ -887,12 +886,17 @@ class BlockedAdapter(
 
 ) : RecyclerView.Adapter<BlockedAdapter.BlockedViewHolder>() {
 
+
+    override fun getItemCount(): Int = blockedUsers.size
+
     inner class BlockedViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+
         val profileImage: ShapeableImageView = view.findViewById(R.id.profile_image)
         val usernameText: TextView = view.findViewById(R.id.usernameText)
         val fullNameText: TextView = view.findViewById(R.id.full_name)
         val actionButton: MaterialButton = view.findViewById(R.id.followButton)
         val moreOptionsButton: MaterialButton = view.findViewById(R.id.moreOptionsButton)
+
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BlockedViewHolder {
@@ -902,6 +906,7 @@ class BlockedAdapter(
     }
 
     override fun onBindViewHolder(holder: BlockedViewHolder, position: Int) {
+
         val blockedUser = blockedUsers[position]
 
         holder.usernameText.text = "@${blockedUser.username}"
@@ -930,11 +935,11 @@ class BlockedAdapter(
         holder.actionButton.setOnClickListener { onUnblockClick(blockedUser) }
     }
 
-    override fun getItemCount(): Int = blockedUsers.size
 
     fun updateList(newList: List<UserFollowingDisplayModel>) {
         blockedUsers.clear()
         blockedUsers.addAll(newList)
         notifyDataSetChanged()
     }
+
 }

@@ -86,6 +86,7 @@ class UserFollowersFragment : AppCompatActivity() {
     private var isLoading = false
     private var hasMoreData = true
 
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityUserFollowersBinding.inflate(layoutInflater)
@@ -159,7 +160,7 @@ class UserFollowersFragment : AppCompatActivity() {
             onFollowClick = { user -> toggleFollowUser(user) },
             onMoreOptionsClick = { user -> showMoreOptions(user) },
             localStorage = localStorage,
-            retrofitInstance = retrofitInstance  // ADD THIS LINE
+            retrofitInstance = retrofitInstance
         )
 
         binding.recyclerView.apply {
@@ -226,11 +227,11 @@ class UserFollowersFragment : AppCompatActivity() {
     fun onFollowEvent(event: ShortsFollowButtonClicked) {
         val followEntity = event.followUnFollowEntity
 
-        Log.d(TAG, "==============================================")
+
         Log.d(TAG, "Follow event RECEIVED in UserFollowersFragment")
         Log.d(TAG, "User ID: ${followEntity.userId}")
         Log.d(TAG, "isFollowing: ${followEntity.isFollowing}")
-        Log.d(TAG, "==============================================")
+
 
         // Update the follower in the list
         val followerIndex = followersList.indexOfFirst { it.id == followEntity.userId }
@@ -260,9 +261,9 @@ class UserFollowersFragment : AppCompatActivity() {
             // Notify adapter to refresh this item
             followersAdapter.notifyItemChanged(followerIndex)
 
-            Log.d(TAG, "✓ Updated Followers Now im Following ${follower.username} and set Status to ${followEntity.isFollowing}")
+            Log.d(TAG, "Updated Followers Now im Following ${follower.username} and set Status to ${followEntity.isFollowing}")
         } else {
-            Log.d(TAG, "⚠️ User ${followEntity.userId} not found in followers list")
+            Log.d(TAG, "User ${followEntity.userId} not found in followers list")
         }
     }
 
