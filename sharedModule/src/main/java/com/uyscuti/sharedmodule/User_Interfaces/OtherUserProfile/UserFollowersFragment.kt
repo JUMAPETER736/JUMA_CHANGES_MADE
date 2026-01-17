@@ -824,7 +824,7 @@ class FollowersAdapter(
             follower.isBlocked -> {
                 // User is blocked - show Blocked button with red background
                 holder.followButton.text = "Blocked"
-                holder.followButton.setBackgroundResource(R.drawable.follower_blocked_button
+                holder.followButton.setBackgroundResource(R.drawable.follower_blocked_button)
                 holder.followButton.setTextColor(Color.WHITE)
             }
             follower.isFollowing -> {
