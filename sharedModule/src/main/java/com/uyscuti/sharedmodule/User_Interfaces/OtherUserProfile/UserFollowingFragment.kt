@@ -86,6 +86,12 @@ class UserFollowingFragment : AppCompatActivity() {
     private var isLoading = false
     private var hasMoreData = true
 
+    private enum class ViewMode {
+        FOLLOWING, BLOCKED
+    }
+
+    private var currentViewMode = ViewMode.FOLLOWING
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityUserFollowingBinding.inflate(layoutInflater)
@@ -98,7 +104,284 @@ class UserFollowingFragment : AppCompatActivity() {
         setupRecyclerView()
         setupSwipeRefresh()
         loadFollowingList()
+        setupTabs()
     }
+
+    // ADD THIS NEW METHOD
+    private fun setupTabs() {
+        binding.followingTab.setOnClickListener {
+            if (currentViewMode != ViewMode.FOLLOWING) {
+                switchToFollowingView()
+            }
+        }
+
+        binding.blockedTab.setOnClickListener {
+            if (currentViewMode != ViewMode.BLOCKED) {
+                switchToBlockedView()
+            }
+        }
+
+        // Set initial state
+        updateTabStyles()
+    }
+
+    // ADD THIS NEW METHOD
+    private fun switchToFollowingView() {
+        currentViewMode = ViewMode.FOLLOWING
+        updateTabStyles()
+
+        // Switch adapter
+        binding.recyclerView.adapter = followingAdapter
+
+        // Update toolbar title
+        val formattedCount = formatCount(followingCount)
+        binding.toolbarTitle.text = "$formattedCount Following"
+
+        // Refresh data if list is empty
+        if (followingList.isEmpty()) {
+            refreshData()
+        } else {
+            filterList(binding.searchEditText.text.toString())
+        }
+    }
+
+    // ADD THIS NEW METHOD
+    private fun switchToBlockedView() {
+        currentViewMode = ViewMode.BLOCKED
+        updateTabStyles()
+
+        // Switch adapter
+        binding.recyclerView.adapter = blockedAdapter
+
+        // Update toolbar title
+        binding.toolbarTitle.text = "Blocked Users"
+
+        // Clear search
+        binding.searchEditText.text?.clear()
+
+        // Load blocked users
+        loadBlockedList()
+    }
+
+    // ADD THIS NEW METHOD
+    private fun updateTabStyles() {
+        when (currentViewMode) {
+            ViewMode.FOLLOWING -> {
+                binding.followingTab.apply {
+                    strokeWidth = 0
+                    backgroundTintList = ContextCompat.getColorStateList(
+                        this@UserFollowingFragment,
+                        R.color.blueJeans
+                    )
+                    setTextColor(Color.WHITE)
+                }
+                binding.blockedTab.apply {
+                    strokeWidth = 2
+                    backgroundTintList = null
+                    setTextColor(ContextCompat.getColor(
+                        this@UserFollowingFragment,
+                        R.color.blueJeans
+                    ))
+                }
+            }
+            ViewMode.BLOCKED -> {
+                binding.blockedTab.apply {
+                    strokeWidth = 0
+                    backgroundTintList = ContextCompat.getColorStateList(
+                        this@UserFollowingFragment,
+                        R.color.red
+                    )
+                    setTextColor(Color.WHITE)
+                }
+                binding.followingTab.apply {
+                    strokeWidth = 2
+                    backgroundTintList = null
+                    setTextColor(ContextCompat.getColor(
+                        this@UserFollowingFragment,
+                        R.color.blueJeans
+                    ))
+                }
+            }
+        }
+    }
+
+    // UPDATE filterList to work with both modes
+    private fun filterList(query: String) {
+        when (currentViewMode) {
+            ViewMode.FOLLOWING -> {
+                filteredFollowingList.clear()
+                if (query.isEmpty()) {
+                    filteredFollowingList.addAll(followingList)
+                } else {
+                    val filtered = followingList.filter { user ->
+                        user.username.contains(query, ignoreCase = true) ||
+                                user.fullName.contains(query, ignoreCase = true)
+                    }
+                    filteredFollowingList.addAll(filtered)
+                }
+                followingAdapter.updateList(filteredFollowingList)
+
+                binding.emptyStateLayout.visibility = if (filteredFollowingList.isEmpty()) View.VISIBLE else View.GONE
+                binding.recyclerView.visibility = if (filteredFollowingList.isEmpty()) View.GONE else View.VISIBLE
+            }
+            ViewMode.BLOCKED -> {
+                filteredBlockedList.clear()
+                if (query.isEmpty()) {
+                    filteredBlockedList.addAll(blockedList)
+                } else {
+                    val filtered = blockedList.filter { user ->
+                        user.username.contains(query, ignoreCase = true) ||
+                                user.fullName.contains(query, ignoreCase = true)
+                    }
+                    filteredBlockedList.addAll(filtered)
+                }
+                blockedAdapter.updateList(filteredBlockedList)
+
+                binding.emptyStateLayout.visibility = if (filteredBlockedList.isEmpty()) View.VISIBLE else View.GONE
+                binding.recyclerView.visibility = if (filteredBlockedList.isEmpty()) View.GONE else View.VISIBLE
+            }
+        }
+    }
+
+    // UPDATE loadBlockedList method
+    private fun loadBlockedList() {
+        if (isLoading) return
+
+        isLoading = true
+        showLoading(true)
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Loading blocked users list")
+
+                val response = retrofitInstance.apiService.getBlockedUsers(
+                    page = 1,
+                    limit = 100
+                )
+
+                Log.d(TAG, "Blocked users API response code: ${response.code()}")
+
+                if (response.isSuccessful) {
+                    val usersResponse = response.body()
+                    val users = usersResponse?.data ?: emptyList()
+
+                    Log.d(TAG, "Found ${users.size} blocked users")
+
+                    withContext(Dispatchers.Main) {
+                        blockedList.clear()
+                        blockedList.addAll(users.map { user ->
+                            UserFollowingDisplayModel(user, false)
+                        })
+
+                        filteredBlockedList.clear()
+                        filteredBlockedList.addAll(blockedList)
+
+                        blockedAdapter.updateList(filteredBlockedList)
+
+                        if (blockedList.isEmpty()) {
+                            binding.emptyStateLayout.visibility = View.VISIBLE
+                            binding.recyclerView.visibility = View.GONE
+                        } else {
+                            binding.emptyStateLayout.visibility = View.GONE
+                            binding.recyclerView.visibility = View.VISIBLE
+                        }
+                    }
+                } else {
+                    Log.e(TAG, "Failed to load blocked users: ${response.code()}")
+                    withContext(Dispatchers.Main) {
+                        handleError("Failed to load blocked users: ${response.code()}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading blocked users", e)
+                withContext(Dispatchers.Main) {
+                    handleError("Network error: ${e.message}")
+                }
+            } finally {
+                withContext(Dispatchers.Main) {
+                    isLoading = false
+                    showLoading(false)
+                    binding.swipeRefreshLayout.isRefreshing = false
+                }
+            }
+        }
+    }
+
+    // UPDATE performBlockUser to refresh blocked list if on that tab
+    @OptIn(UnstableApi::class)
+    private fun performBlockUser(user: UserFollowingDisplayModel) {
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    retrofitInstance.apiService.blockUser(user.id)
+                }
+
+                if (response.isSuccessful) {
+                    followingList.removeAll { it.id == user.id }
+                    filteredFollowingList.removeAll { it.id == user.id }
+                    followingAdapter.notifyDataSetChanged()
+
+                    Toast.makeText(
+                        this@UserFollowingFragment,
+                        "Blocked @${user.username}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    if (filteredFollowingList.isEmpty()) {
+                        binding.emptyStateLayout.visibility = View.VISIBLE
+                        binding.recyclerView.visibility = View.GONE
+                    }
+
+                    updateFollowingCount(-1)
+
+                    // ADD THIS: Refresh blocked list if viewing blocked tab
+                    if (currentViewMode == ViewMode.BLOCKED) {
+                        loadBlockedList()
+                    }
+                } else {
+                    showError("Failed to block user")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error blocking user", e)
+                showError("Network error: ${e.message}")
+            }
+        }
+    }
+
+    // UPDATE performUnBlockUser
+    @OptIn(UnstableApi::class)
+    private fun performUnBlockUser(user: UserFollowingDisplayModel) {
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    retrofitInstance.apiService.unBlockUser(user.id)
+                }
+
+                if (response.isSuccessful) {
+                    blockedList.removeAll { it.id == user.id }
+                    filteredBlockedList.removeAll { it.id == user.id }
+                    blockedAdapter.updateList(filteredBlockedList)
+
+                    Toast.makeText(
+                        this@UserFollowingFragment,
+                        "Unblocked @${user.username}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    if (filteredBlockedList.isEmpty()) {
+                        binding.emptyStateLayout.visibility = View.VISIBLE
+                        binding.recyclerView.visibility = View.GONE
+                    }
+                } else {
+                    showError("Failed to unblock user")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error unblocking user", e)
+                showError("Network error: ${e.message}")
+            }
+        }
+    }
+
 
     private fun extractIntentData() {
         userId = intent.getStringExtra("user_id") ?: ""
@@ -265,24 +548,6 @@ class UserFollowingFragment : AppCompatActivity() {
 
 
 
-    private fun filterList(query: String) {
-        filteredFollowingList.clear()
-        if (query.isEmpty()) {
-            filteredFollowingList.addAll(followingList)
-        } else {
-            val filteredList = followingList.filter { user ->
-                user.username.contains(query, ignoreCase = true) ||
-                        user.fullName.contains(query, ignoreCase = true)
-            }
-            filteredFollowingList.addAll(filteredList)
-        }
-        followingAdapter.notifyDataSetChanged()
-
-        // Show/hide empty view
-        binding.emptyStateLayout.visibility = if (filteredFollowingList.isEmpty()) View.VISIBLE else View.GONE
-        binding.recyclerView.visibility = if (filteredFollowingList.isEmpty()) View.GONE else View.VISIBLE
-    }
-
     private fun loadFollowingList() {
         if (isLoading) return
 
@@ -395,55 +660,6 @@ class UserFollowingFragment : AppCompatActivity() {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to setup Retrofit", e)
             handleError("Failed to initialize network connection")
-        }
-    }
-
-    private fun loadBlockedList() {
-        binding.progressBar.visibility = View.VISIBLE
-        binding.recyclerView.visibility = View.GONE
-        binding.emptyStateLayout.visibility = View.GONE
-
-        lifecycleScope.launch {
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    retrofitInstance.apiService.getBlockedUsers(
-                        page = 1,
-                        limit = 50
-                    )
-                }
-
-                if (response.isSuccessful && response.body() != null) {
-                    val usersResponse = response.body()!!
-                    val users = usersResponse.data ?: emptyList()
-
-                    blockedList.clear()
-                    blockedList.addAll(users.map { user ->
-                        UserFollowingDisplayModel(user, false)
-                    })
-
-                    filteredBlockedList.clear()
-                    filteredBlockedList.addAll(blockedList)
-
-                    // Switch to blocked adapter
-                    binding.recyclerView.adapter = blockedAdapter
-                    blockedAdapter.notifyDataSetChanged()
-
-                    if (blockedList.isEmpty()) {
-                        binding.emptyStateLayout.visibility = View.VISIBLE
-                        binding.recyclerView.visibility = View.GONE
-                    } else {
-                        binding.emptyStateLayout.visibility = View.GONE
-                        binding.recyclerView.visibility = View.VISIBLE
-                    }
-                } else {
-                    showError("Failed to load blocked users")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading blocked users", e)
-                showError("Network error: ${e.message}")
-            } finally {
-                binding.progressBar.visibility = View.GONE
-            }
         }
     }
 
@@ -563,73 +779,6 @@ class UserFollowingFragment : AppCompatActivity() {
             .show()
     }
 
-    @OptIn(UnstableApi::class)
-    private fun performBlockUser(user: UserFollowingDisplayModel) {
-        lifecycleScope.launch {
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    retrofitInstance.apiService.blockUser(user.id)
-                }
-
-                if (response.isSuccessful) {
-                    followingList.removeAll { it.id == user.id }
-                    filteredFollowingList.removeAll { it.id == user.id }
-                    followingAdapter.notifyDataSetChanged()
-
-                    Toast.makeText(
-                        this@UserFollowingFragment,
-                        "Blocked @${user.username}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    if (filteredFollowingList.isEmpty()) {
-                        binding.emptyStateLayout.visibility = View.VISIBLE
-                        binding.recyclerView.visibility = View.GONE
-                    }
-
-                    updateFollowingCount(-1)
-                } else {
-                    showError("Failed to block user")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error blocking user", e)
-                showError("Network error: ${e.message}")
-            }
-        }
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun performUnBlockUser(user: UserFollowingDisplayModel) {
-        lifecycleScope.launch {
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    retrofitInstance.apiService.unBlockUser(user.id)
-                }
-
-                if (response.isSuccessful) {
-                    blockedList.removeAll { it.id == user.id }
-                    filteredBlockedList.removeAll { it.id == user.id }
-                    blockedAdapter.notifyDataSetChanged()
-
-                    Toast.makeText(
-                        this@UserFollowingFragment,
-                        "Unblocked @${user.username}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    if (filteredBlockedList.isEmpty()) {
-                        binding.emptyStateLayout.visibility = View.VISIBLE
-                        binding.recyclerView.visibility = View.GONE
-                    }
-                } else {
-                    showError("Failed to unblock user")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error unblocking user", e)
-                showError("Network error: ${e.message}")
-            }
-        }
-    }
 
     private fun reportUser(user: UserFollowingDisplayModel) {
         Log.d(TAG, "Report user: ${user.username}")

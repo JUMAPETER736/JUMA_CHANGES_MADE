@@ -27,6 +27,7 @@
             android:textStyle="bold"
             android:text="Following" />
 
+
     </com.google.android.material.appbar.MaterialToolbar>
 
     <!-- Search Bar -->
