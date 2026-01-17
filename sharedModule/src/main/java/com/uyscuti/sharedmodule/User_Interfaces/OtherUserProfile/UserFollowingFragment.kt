@@ -463,8 +463,6 @@ class UserFollowingFragment : AppCompatActivity() {
 
     private fun showMoreOptions(user: UserFollowingDisplayModel) {
         val options = arrayOf(
-            "View Profile",
-            "Send Message",
             "Block User",
             "Report User"
         )
@@ -473,10 +471,8 @@ class UserFollowingFragment : AppCompatActivity() {
             .setTitle("@${user.username}")
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> navigateToOtherUserProfile(user)
-                    1 -> sendMessageToUser(user)
-                    2 -> blockUser(user)
-                    3 -> reportUser(user)
+                    1 -> blockUser(user)
+                    2 -> reportUser(user)
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -888,9 +884,11 @@ class FollowingAdapter(
 
 // Blocked Users Adapter
 class BlockedAdapter(
+
     private val blockedUsers: MutableList<UserFollowingDisplayModel>,
     private val onUserClick: (UserFollowingDisplayModel) -> Unit,
     private val onUnblockClick: (UserFollowingDisplayModel) -> Unit
+
 ) : RecyclerView.Adapter<BlockedAdapter.BlockedViewHolder>() {
 
     inner class BlockedViewHolder(view: View) : RecyclerView.ViewHolder(view) {
