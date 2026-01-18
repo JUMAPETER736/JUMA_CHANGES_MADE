@@ -371,6 +371,7 @@ class FeedAdapter(
 
 
     var onItemVisible: ((Int) -> Unit)? = null
+
     inner class FeedTextOnyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
 
@@ -537,7 +538,7 @@ class FeedAdapter(
             val feedOwnerId = data.author?.account?._id ?: return
             val feedOwnerUsername = data.author?.account?.username ?: return
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
-            followButton.visibility = View.GONE
+
             // Check multiple sources for following status (by ID and username)
             val cachedFollowingList = getCachedFollowingList()
             val cachedFollowingUsernames = getCachedFollowingUsernames()
@@ -557,15 +558,26 @@ class FeedAdapter(
                 return
             }
 
-            // Show follow button only for users we're NOT following
+            // Check if this person follows YOU (is in YOUR followers list)
+            val isInMyFollowersList = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+
+            // Show button with appropriate text
             followButton.visibility = View.VISIBLE
-            followButton.text = "Follow"
+
+            if (isInMyFollowersList) {
+                // They follow you, but you don't follow them back
+                followButton.text = "Follow Back"
+                Log.d(TAG, "setupFollowButton: Showing 'Follow Back' for $feedOwnerId (@$feedOwnerUsername) - They follow you")
+            } else {
+                // They don't follow you
+                followButton.text = "Follow"
+                Log.d(TAG, "setupFollowButton: Showing 'Follow' for $feedOwnerId (@$feedOwnerUsername) - They don't follow you")
+            }
+
             followButton.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
                 R.color.blueJeans
             )
-
-            Log.d(TAG, "setupFollowButton: Showing follow button for $feedOwnerId (@$feedOwnerUsername)")
 
             followButton.setOnClickListener {
                 handleFollowButtonClick(feedOwnerId, feedOwnerUsername)
