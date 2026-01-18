@@ -813,11 +813,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             else R.drawable.retweet
         )
 
-        // Update comment button state (if needed)
-        // commentButton.isEnabled = true
-
-        // Update share button state (if needed)
-        // shareButton.isEnabled = true
     }
 
 
