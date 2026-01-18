@@ -59,7 +59,6 @@ import java.util.concurrent.TimeUnit
 import android.view.animation.LinearInterpolator
 import android.view.WindowManager
 import androidx.core.app.ActivityCompat
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -71,7 +70,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.navigation.fragment.findNavController
 import android.widget.ImageButton
 import androidx.core.net.toUri
-import androidx.core.graphics.createBitmap
 import androidx.lifecycle.lifecycleScope
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
@@ -869,101 +867,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             return false
         }
         return true
-    }
-
-    private fun handleFollowSuccess(isFollowing: Boolean, userId: String) {
-        val post = postList?.getOrNull(viewPager.currentItem) ?: return
-        val feedOwnerUsername = post.username ?: "unknown"
-        val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
-
-        Log.d(TAG, "✅ Follow status updated successfully - userId: $userId, following: $isFollowing")
-
-        if (isFollowing) {
-            // Now following - add to all caches
-            followingUserIds.add(userId)
-            followButton.visibility = View.GONE
-
-            // Update FeedAdapter static cache
-            try {
-                FeedAdapter.addToFollowingCache(userId)
-                FeedAdapter.setCachedFollowingList(followingUserIds)
-                Log.d(TAG, "Updated FeedAdapter cache - added userId: $userId")
-            } catch (e: Exception) {
-                Log.e(TAG, "FeedAdapter cache update failed", e)
-            }
-
-            // Save to local storage
-            try {
-                followingManager.addToFollowing(userId)
-                Log.d(TAG, "Saved to FollowingManager - userId: $userId")
-            } catch (e: Exception) {
-                Log.e(TAG, "FollowingManager update failed", e)
-            }
-
-            // Notify other fragments via EventBus
-            try {
-                val followEntity = FollowUnFollowEntity(userId, true)
-                EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
-                Log.d(TAG, "Posted EventBus update for follow")
-            } catch (e: Exception) {
-                Log.e(TAG, "EventBus post failed", e)
-            }
-
-            // Show success toast
-            if (context != null) {
-                Toast.makeText(
-                    requireContext(),
-                    "Now following @$feedOwnerUsername ✓",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        } else {
-            // Unfollowed - remove from all caches
-            followingUserIds.remove(userId)
-            followButton.visibility = View.VISIBLE
-            followButton.text = "Follow"
-
-            // Update FeedAdapter static cache
-            try {
-                FeedAdapter.removeFromFollowingCache(userId)
-                FeedAdapter.setCachedFollowingList(followingUserIds)
-                Log.d(TAG, "Updated FeedAdapter cache - removed userId: $userId")
-            } catch (e: Exception) {
-                Log.e(TAG, "FeedAdapter cache update failed", e)
-            }
-
-            // Remove from local storage
-            try {
-                followingManager.removeFromFollowing(userId)
-                Log.d(TAG, "Removed from FollowingManager - userId: $userId")
-            } catch (e: Exception) {
-                Log.e(TAG, "FollowingManager update failed", e)
-            }
-
-            // Notify other fragments via EventBus
-            try {
-                val followEntity = FollowUnFollowEntity(userId, false)
-                EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
-                Log.d(TAG, "Posted EventBus update for unfollow")
-            } catch (e: Exception) {
-                Log.e(TAG, "EventBus post failed", e)
-            }
-
-            // Show success toast
-            if (context != null) {
-                Toast.makeText(
-                    requireContext(),
-                    "Unfollowed @$feedOwnerUsername",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-
-        // Update button visibility
-        updateFollowButtonVisibility()
-
-        // Re-enable the button
-        followButton.isEnabled = true
     }
 
     private fun handleFollowError(errorMessage: String) {
