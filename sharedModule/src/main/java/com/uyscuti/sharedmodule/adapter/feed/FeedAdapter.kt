@@ -3197,14 +3197,12 @@ class FeedAdapter(
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
             val cachedFollowingList = getCachedFollowingList()
-            val cachedFollowingUsernames =
-                getCachedFollowingUsernames()
+            val cachedFollowingUsernames = getCachedFollowingUsernames()
 
             // Check by BOTH ID and USERNAME
             val isUserFollowing = followingUserIds.contains(accountId) ||
                     cachedFollowingList.contains(accountId) ||
                     cachedFollowingUsernames.contains(username)
-
 
             Log.d(TAG, "SETUP FOLLOW BUTTON")
             Log.d(TAG, "Account ID to check: $accountId")
@@ -3223,27 +3221,37 @@ class FeedAdapter(
                 followButton.visibility = View.GONE
                 Log.d(
                     TAG, "✓✓✓ HIDING follow button - Reason: ${when {
-                    accountId == currentUserId -> "Own post"
-                    cachedFollowingUsernames.contains(username) -> "Already following (by username: @$username)"
-                    followingUserIds.contains(accountId) -> "Already following (by ID from followingUserIds)"
-                    cachedFollowingList.contains(accountId) -> "Already following (by ID from cachedList)"
-                    isFollowingUser -> "Already following (render check)"
-                    isUserFollowing -> "Already following (local check)"
-                    else -> "Unknown"
-                }}")
+                        accountId == currentUserId -> "Own post"
+                        cachedFollowingUsernames.contains(username) -> "Already following (by username: @$username)"
+                        followingUserIds.contains(accountId) -> "Already following (by ID from followingUserIds)"
+                        cachedFollowingList.contains(accountId) -> "Already following (by ID from cachedList)"
+                        isFollowingUser -> "Already following (render check)"
+                        isUserFollowing -> "Already following (local check)"
+                        else -> "Unknown"
+                    }}")
                 return
             }
 
-            // Show follow button
+            // Check if THEY follow YOU (are in YOUR followers list)
+            val theyFollowMe = FeedAdapter.isUserInMyFollowersList(accountId)
+
+            // Show button with appropriate text
             followButton.visibility = View.VISIBLE
-            followButton.text = "Follow"
+
+            if (theyFollowMe) {
+                // They follow you, but you don't follow them back → Show "Follow Back"
+                followButton.text = "Follow Back"
+                Log.d(TAG, "SHOWING 'Follow Back' button for account: $accountId (@$username) - They follow you")
+            } else {
+                // They don't follow you → Show "Follow"
+                followButton.text = "Follow"
+                Log.d(TAG, "SHOWING 'Follow' button for account: $accountId (@$username) - They don't follow you")
+            }
+
             followButton.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
                 R.color.blueJeans
             )
-
-            Log.d(TAG, "SHOWING follow button for account: $accountId (@$username)")
-
 
             // Pass the ACCOUNT ID (not author ID) to handleFollowButtonClick
             followButton.setOnClickListener {
@@ -3255,12 +3263,10 @@ class FeedAdapter(
         private fun handleFollowButtonClick(accountId: String, username: String) {
             YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
 
-
             Log.d(TAG, "FOLLOW BUTTON CLICKED")
             Log.d(TAG, "Account ID to follow: $accountId")
             Log.d(TAG, "Username to follow: @$username")
             Log.d(TAG, "This ID will be added to following list")
-
 
             isFollowed = !isFollowed
             val followEntity = FollowUnFollowEntity(accountId, isFollowed)
@@ -3275,8 +3281,11 @@ class FeedAdapter(
 
                 Log.d(TAG, "✓ Added account $accountId (@$username) to following list")
             } else {
-                // Show button
-                followButton.text = "Follow"
+                // Check if they follow you to determine button text
+                val theyFollowMe = FeedAdapter.isUserInMyFollowersList(accountId)
+
+                // Show button with appropriate text
+                followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
                 followButton.visibility = View.VISIBLE
 
                 // Remove from following list
