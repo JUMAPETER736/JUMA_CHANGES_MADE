@@ -210,9 +210,9 @@
                                     android:id="@+id/followButton"
                                     android:layout_width="wrap_content"
                                     android:layout_height="32dp"
-                                    android:minWidth="80dp"
-                                    android:paddingStart="16dp"
-                                    android:paddingEnd="16dp"
+                                    android:minWidth="100dp"
+                                    android:paddingStart="20dp"
+                                    android:paddingEnd="20dp"
                                     android:background="@drawable/follow_button_background"
                                     android:text="Follow"
                                     android:textAlignment="center"
@@ -224,7 +224,6 @@
                                     android:focusable="true"
                                     android:elevation="2dp"
                                     android:stateListAnimator="@null"/>
-
                             </LinearLayout>
 
                             <!-- Quoted Content -->
