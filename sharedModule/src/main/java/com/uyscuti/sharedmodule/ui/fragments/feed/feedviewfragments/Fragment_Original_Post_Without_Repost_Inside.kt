@@ -898,7 +898,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 followButton.visibility = View.GONE
 
                 // Add to following lists
-                followingUserIds.add(feedOwnerId)
+               // followingUserIds.add(feedOwnerId)
 
                 // Update FeedAdapter cache
                 FeedAdapter.addToFollowingCache(feedOwnerId)
@@ -943,7 +943,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 followButton.visibility = View.VISIBLE
 
                 // Remove from following lists
-                followingUserIds.remove(feedOwnerId)
+               // followingUserIds.remove(feedOwnerId)
 
                 // Update FeedAdapter cache
                 FeedAdapter.removeFromFollowingCache(feedOwnerId)
@@ -1000,13 +1000,10 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
     private fun updateFollowButtonUI() {
         if (isFollowing) {
-            // Hide the button when following
             followButton.visibility = View.GONE
         } else {
-            // Show the button when not following
             followButton.visibility = View.VISIBLE
 
-            // Get current post's owner ID to check follow back status
             post?.let { currentPost ->
                 val feedOwnerId = when {
                     currentPost.originalPost.isNotEmpty() ->
@@ -1015,15 +1012,9 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         currentPost.author?.account?._id ?: ""
                 }
 
-                // Check if they follow you to show correct button text
+                //Just read from cache - FollowingFragment already loaded this
                 val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
                 followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
-
-                Log.d(TAG, if (theyFollowMe) {
-                    "User $feedOwnerId follows us - showing 'Follow Back'"
-                } else {
-                    "User $feedOwnerId doesn't follow us - showing 'Follow'"
-                })
             }
 
             followButton.setBackgroundResource(R.drawable.shorts_following_button)
@@ -1305,24 +1296,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             Log.e(TAG, "Error populating original author info: ${e.message}", e)
         }
     }
-    
-    private fun checkIfUserFollowsBack(feedOwnerId: String) {
-        val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
 
-        // Get the list of users who follow the current user (followers)
-        val cachedFollowersList = FeedAdapter.getCachedFollowingList()
-
-        // Check if the feed owner is in our followers list
-        val isFollowingBack = cachedFollowersList.contains(feedOwnerId)
-
-        if (isFollowingBack) {
-            followButton.text = "Follow Back"
-            Log.d(TAG, "User $feedOwnerId follows us - showing 'Follow Back'")
-        } else {
-            followButton.text = "Follow"
-            Log.d(TAG, "User $feedOwnerId doesn't follow us - showing 'Follow'")
-        }
-    }
 
     private fun setupInitialMetrics(post: Post) {
         Log.d(TAG, "setupInitialMetrics: Setting up metrics for post ${post._id}")
