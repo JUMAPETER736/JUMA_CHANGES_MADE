@@ -1,6 +1,5 @@
 package com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments
 
-import android.R.attr.data
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -42,7 +41,6 @@ import androidx.core.graphics.toColorInt
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.media3.common.util.UnstableApi
@@ -1176,7 +1174,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 followButton.visibility = View.GONE
 
                 // Add to following lists
-                // Note: You'll need to get the adapter instance or use FollowingManager
                 FollowingManager(requireContext()).addToFollowing(feedOwnerId)
 
                 // Build display name for toast
@@ -1206,9 +1203,9 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 showToast("Now following $displayName")
                 Log.d(TAG, "✓ Added account $feedOwnerId (@$feedOwnerUsername) to following list")
             } else {
-                // Show button
+                // Show button with appropriate text
                 followButton.visibility = View.VISIBLE
-                followButton.text = "Follow"
+                updateFollowButtonUI()
 
                 // Remove from following lists
                 FollowingManager(requireContext()).removeFromFollowing(feedOwnerId)
@@ -1250,7 +1247,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             Log.d(TAG, "Initial setup: Follow button hidden for $feedOwnerId (@$feedOwnerUsername)")
         } else {
             followButton.visibility = View.VISIBLE
-            followButton.text = "Follow"
+            // Check if this user follows us back
+            checkIfUserFollowsBack(feedOwnerId)
             Log.d(TAG, "Initial setup: Follow button shown for $feedOwnerId (@$feedOwnerUsername)")
         }
     }
@@ -1262,8 +1260,42 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         } else {
             // Show the button when not following
             followButton.visibility = View.VISIBLE
-            followButton.text = "Follow"
+
+            // Get current post's owner ID to check follow back status
+            post?.let { currentPost ->
+                val feedOwnerId = when {
+                    currentPost.originalPost.isNotEmpty() ->
+                        currentPost.originalPost[0].author.owner
+                    else ->
+                        currentPost.author?.account?._id ?: ""
+                }
+
+                checkIfUserFollowsBack(feedOwnerId)
+            }
+
             followButton.setBackgroundResource(R.drawable.shorts_following_button)
+        }
+    }
+
+    /**
+     * Check if the feed owner is following the current user
+     * and update button text accordingly
+     */
+    private fun checkIfUserFollowsBack(feedOwnerId: String) {
+        val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
+
+        // Get the list of users who follow the current user (followers)
+        val cachedFollowersList = FeedAdapter.getCachedFollowingList()
+
+        // Check if the feed owner is in our followers list
+        val isFollowingBack = cachedFollowersList.contains(feedOwnerId)
+
+        if (isFollowingBack) {
+            followButton.text = "Follow Back"
+            Log.d(TAG, "User $feedOwnerId follows us - showing 'Follow Back'")
+        } else {
+            followButton.text = "Follow"
+            Log.d(TAG, "User $feedOwnerId doesn't follow us - showing 'Follow'")
         }
     }
 
@@ -6291,12 +6323,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             // Navigate to post detail fragment/activity
         }
 
-        // Utility methods
-        private fun formatDate(dateString: String?): String {
-            // Implement date formatting logic
-            return dateString ?: ""
-        }
-
         private fun formatCount(count: Int): String {
             return when {
                 count < 1000 -> count.toString()
@@ -6344,17 +6370,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             Log.w("DateFormat", "Failed to format date: $dateTimeString", e)
             "now"
         }
-    }
-
-    private fun formatCount(count: Int?): String {
-        if (count != null) {
-            return when {
-                count >= 1000000 -> "${count / 1000000}M"
-                count >= 1000 -> "${count / 1000}K"
-                else -> count.toString()
-            }
-        }
-        return "0"
     }
 
     private fun showToast(message: String) {
