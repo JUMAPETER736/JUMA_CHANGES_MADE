@@ -211,6 +211,7 @@
                                     android:layout_height="@dimen/follow_button_height"
                                     android:background="@drawable/fill_button_color"
                                     android:text="Follow"
+                                    android:textAlignment="center"
                                     android:textAllCaps="false"
                                     android:textColor="@color/white"
                                     android:textSize="@dimen/button_text_size"

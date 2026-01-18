@@ -38,8 +38,8 @@
     <dimen name="username_text_size">16sp</dimen>
     <dimen name="handle_text_size">14sp</dimen>
     <dimen name="timestamp_text_size">12sp</dimen>
-    <dimen name="follow_button_width">70dp</dimen>
-    <dimen name="follow_button_height">30dp</dimen>
+    <dimen name="follow_button_width">90dp</dimen>
+    <dimen name="follow_button_height">32dp</dimen>
     <dimen name="button_text_size">13sp</dimen>
 
     <!-- Text sizes -->
