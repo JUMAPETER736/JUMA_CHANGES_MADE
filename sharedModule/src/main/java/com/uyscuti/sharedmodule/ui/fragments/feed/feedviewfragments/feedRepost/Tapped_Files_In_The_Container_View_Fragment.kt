@@ -598,6 +598,173 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         followButton?.visibility = View.GONE
     }
 
+    private fun checkIfUserFollowsBack(feedOwnerId: String): Boolean {
+        val myFollowersList = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+        return myFollowersList.contains(feedOwnerId)
+    }
+
+    private fun handleFollowButtonClick(followButton: Button, feedOwnerId: String, feedOwnerUsername: String) {
+        // Add pulse animation (same as ViewHolder)
+        try {
+            YoYo.with(Techniques.Pulse)
+                .duration(300)
+                .playOn(followButton)
+        } catch (e: Exception) {
+            Log.w(TAG, "Animation library not available: ${e.message}")
+        }
+
+
+        Log.d(TAG, "FOLLOW BUTTON CLICKED")
+        Log.d(TAG, "User ID: $feedOwnerId")
+        Log.d(TAG, "Username: @$feedOwnerUsername")
+
+
+        // Toggle follow state (same logic as ViewHolder)
+        val isFollowed = followingUserIds.contains(feedOwnerId)
+        val newFollowStatus = !isFollowed
+
+        // Create follow entity
+        val followEntity = FollowUnFollowEntity(feedOwnerId, newFollowStatus)
+
+        if (newFollowStatus) {
+            // Now following - hide button immediately
+            followButton.visibility = View.GONE
+
+            // Add to following list
+            followingUserIds.add(feedOwnerId)
+
+            // Update FeedAdapter static cache (SAME AS VIEWHOLDER)
+            try {
+                FeedAdapter.addToFollowingCache(feedOwnerId)
+                FeedAdapter.setCachedFollowingList(followingUserIds)
+                Log.d(TAG, "Added user $feedOwnerId (@$feedOwnerUsername) to following list")
+                Log.d(TAG, "Total following: ${followingUserIds.size} users")
+            } catch (e: Exception) {
+                Log.e(TAG, "FeedAdapter cache update failed: ${e.message}")
+            }
+
+            // Save to local storage via FollowingManager
+            try {
+                followingManager.addToFollowing(feedOwnerId)
+                Log.d(TAG, "Saved to FollowingManager - userId: $feedOwnerId")
+            } catch (e: Exception) {
+                Log.e(TAG, "FollowingManager update failed: ${e.message}")
+            }
+
+            Log.d(TAG, "Now following user $feedOwnerId")
+
+        } else {
+            // Unfollowed - check if they follow you to show correct button text
+            val theyFollowMe = checkIfUserFollowsBack(feedOwnerId)
+
+            // Show button with appropriate text
+            followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
+            followButton.visibility = View.VISIBLE
+
+            // Remove from following list
+            followingUserIds.remove(feedOwnerId)
+
+            // Update FeedAdapter static cache (SAME AS VIEWHOLDER)
+            try {
+                FeedAdapter.removeFromFollowingCache(feedOwnerId)
+                FeedAdapter.setCachedFollowingList(followingUserIds)
+                Log.d(TAG, "Removed user $feedOwnerId (@$feedOwnerUsername) from following list")
+            } catch (e: Exception) {
+                Log.e(TAG, "FeedAdapter cache update failed: ${e.message}")
+            }
+
+            // Remove from local storage
+            try {
+                followingManager.removeFromFollowing(feedOwnerId)
+                Log.d(TAG, "Removed from FollowingManager - userId: $feedOwnerId")
+            } catch (e: Exception) {
+                Log.e(TAG, "FollowingManager update failed: ${e.message}")
+            }
+
+            Log.d(TAG, "Unfollowed user $feedOwnerId")
+        }
+
+        // Post EventBus event (SAME AS VIEWHOLDER)
+        try {
+            EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
+            Log.d(TAG, "Posted EventBus event: ShortsFollowButtonClicked")
+        } catch (e: Exception) {
+            Log.e(TAG, "EventBus post failed: ${e.message}")
+        }
+
+        // Make API call via ViewModel (SAME AS VIEWHOLDER)
+        try {
+            followUnfollowViewModel.followUnFollow(feedOwnerId)
+            Log.d(TAG, "API call initiated for userId: $feedOwnerId")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initiate API call", e)
+        }
+    }
+
+    private fun updateFollowButtonVisibility() {
+        val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
+        val post = postList?.getOrNull(viewPager.currentItem)
+        val feedOwnerId = post?.userId
+
+        // Get current user credentials
+        val localStorage = LocalStorage.getInstance(requireContext())
+        val currentUserId = localStorage.getUserId()
+        val currentUsername = localStorage.getUsername()?.trim()?.lowercase()
+        val feedOwnerUsername = post?.username?.trim()?.lowercase()
+
+        Log.d(TAG, "FOLLOW BUTTON CHECK")
+        Log.d(TAG, "Current User ID: $currentUserId")
+        Log.d(TAG, "Current Username: $currentUsername")
+        Log.d(TAG, "Feed Owner ID: $feedOwnerId")
+        Log.d(TAG, "Feed Owner Username: $feedOwnerUsername")
+        Log.d(TAG, "Following List: $followingUserIds")
+
+        // PRIORITY 1: Check username match
+        if (!currentUsername.isNullOrEmpty() &&
+            !feedOwnerUsername.isNullOrEmpty() &&
+            currentUsername == feedOwnerUsername) {
+            followButton.visibility = View.GONE
+            Log.d(TAG, "Follow button GONE - Own post (username match: @$currentUsername)")
+            return
+        }
+
+        // PRIORITY 2: Check ID match
+        if (feedOwnerId != null && feedOwnerId == currentUserId) {
+            followButton.visibility = View.GONE
+            Log.d(TAG, "Follow button GONE - Own post (ID match: $currentUserId)")
+            return
+        }
+
+        // PRIORITY 3: Check if no feed owner
+        if (feedOwnerId == null) {
+            followButton.visibility = View.GONE
+            Log.d(TAG, "Follow button GONE - No feed owner")
+            return
+        }
+
+        // PRIORITY 4: Check if already following
+        val isFollowing = followingUserIds.contains(feedOwnerId)
+
+        if (isFollowing) {
+            followButton.visibility = View.GONE
+            Log.d(TAG, "Follow button GONE - Already following $feedOwnerId")
+        } else {
+            // Check if they follow YOU to show correct button text
+            val theyFollowMe = checkIfUserFollowsBack(feedOwnerId)
+
+            followButton.visibility = View.VISIBLE
+
+            if (theyFollowMe) {
+                followButton.text = "Follow Back"
+                Log.d(TAG, "Follow button VISIBLE - 'Follow Back' (they follow you) - $feedOwnerId")
+            } else {
+                followButton.text = "Follow"
+                Log.d(TAG, "Follow button VISIBLE - 'Follow' (they don't follow you) - $feedOwnerId")
+            }
+        }
+
+        Log.d(TAG, "Follow button visibility: ${followButton.visibility} (0=VISIBLE, 4=INVISIBLE, 8=GONE)")
+    }
 
     private fun setupFollowButton() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
@@ -655,104 +822,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    private fun handleFollowButtonClick(followButton: Button, feedOwnerId: String, feedOwnerUsername: String) {
-        // Add pulse animation (same as ViewHolder)
-        try {
-            YoYo.with(Techniques.Pulse)
-                .duration(300)
-                .playOn(followButton)
-        } catch (e: Exception) {
-            Log.w(TAG, "Animation library not available: ${e.message}")
-        }
-
-        Log.d(TAG, "═══════════════════════════════════════")
-        Log.d(TAG, "FOLLOW BUTTON CLICKED")
-        Log.d(TAG, "User ID: $feedOwnerId")
-        Log.d(TAG, "Username: @$feedOwnerUsername")
-        Log.d(TAG, "═══════════════════════════════════════")
-
-        // Toggle follow state (same logic as ViewHolder)
-        val isFollowed = followingUserIds.contains(feedOwnerId)
-        val newFollowStatus = !isFollowed
-
-        // Create follow entity
-        val followEntity = FollowUnFollowEntity(feedOwnerId, newFollowStatus)
-
-        if (newFollowStatus) {
-            // Now following - hide button immediately
-            followButton.visibility = View.GONE
-
-            // Add to following list
-            followingUserIds.add(feedOwnerId)
-
-            // Update FeedAdapter static cache (SAME AS VIEWHOLDER)
-            try {
-                FeedAdapter.addToFollowingCache(feedOwnerId)
-                FeedAdapter.setCachedFollowingList(followingUserIds)
-                Log.d(TAG, "Added user $feedOwnerId (@$feedOwnerUsername) to following list")
-                Log.d(TAG, "Total following: ${followingUserIds.size} users")
-            } catch (e: Exception) {
-                Log.e(TAG, "FeedAdapter cache update failed: ${e.message}")
-            }
-
-            // Save to local storage via FollowingManager
-            try {
-                followingManager.addToFollowing(feedOwnerId)
-                Log.d(TAG, "Saved to FollowingManager - userId: $feedOwnerId")
-            } catch (e: Exception) {
-                Log.e(TAG, "FollowingManager update failed: ${e.message}")
-            }
-
-            Log.d(TAG, "Now following user $feedOwnerId")
-
-        } else {
-            // Unfollowed - check if they follow you to show correct button text
-            val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
-
-            // Show button with appropriate text
-            followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
-            followButton.visibility = View.VISIBLE
-
-            // Remove from following list
-            followingUserIds.remove(feedOwnerId)
-
-            // Update FeedAdapter static cache (SAME AS VIEWHOLDER)
-            try {
-                FeedAdapter.removeFromFollowingCache(feedOwnerId)
-                FeedAdapter.setCachedFollowingList(followingUserIds)
-                Log.d(TAG, "Removed user $feedOwnerId (@$feedOwnerUsername) from following list")
-            } catch (e: Exception) {
-                Log.e(TAG, "FeedAdapter cache update failed: ${e.message}")
-            }
-
-            // Remove from local storage
-            try {
-                followingManager.removeFromFollowing(feedOwnerId)
-                Log.d(TAG, "Removed from FollowingManager - userId: $feedOwnerId")
-            } catch (e: Exception) {
-                Log.e(TAG, "FollowingManager update failed: ${e.message}")
-            }
-
-            Log.d(TAG, "Unfollowed user $feedOwnerId")
-        }
-
-        // Post EventBus event (SAME AS VIEWHOLDER)
-        try {
-            EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
-            Log.d(TAG, "Posted EventBus event: ShortsFollowButtonClicked")
-        } catch (e: Exception) {
-            Log.e(TAG, "EventBus post failed: ${e.message}")
-        }
-
-        // Make API call via ViewModel (SAME AS VIEWHOLDER)
-        try {
-            followUnfollowViewModel.followUnFollow(feedOwnerId)
-            Log.d(TAG, "✅ API call initiated for userId: $feedOwnerId")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to initiate API call", e)
-        }
-    }
-
     private fun setupFollowObserver() {
         // Simple observer - just for logging (ViewHolder doesn't revert UI on API response)
         followUnfollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) { isFollowing ->
@@ -803,70 +872,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         viewPager.registerOnPageChangeCallback(pageChangeCallback)
     }
 
-    private fun updateFollowButtonVisibility() {
-        val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
-        val post = postList?.getOrNull(viewPager.currentItem)
-        val feedOwnerId = post?.userId
-
-        // Get current user credentials
-        val localStorage = LocalStorage.getInstance(requireContext())
-        val currentUserId = localStorage.getUserId()
-        val currentUsername = localStorage.getUsername()?.trim()?.lowercase()
-        val feedOwnerUsername = post?.username?.trim()?.lowercase()
-
-        Log.d(TAG, "FOLLOW BUTTON CHECK")
-        Log.d(TAG, "Current User ID: $currentUserId")
-        Log.d(TAG, "Current Username: $currentUsername")
-        Log.d(TAG, "Feed Owner ID: $feedOwnerId")
-        Log.d(TAG, "Feed Owner Username: $feedOwnerUsername")
-        Log.d(TAG, "Following List: $followingUserIds")
-
-        // PRIORITY 1: Check username match
-        if (!currentUsername.isNullOrEmpty() &&
-            !feedOwnerUsername.isNullOrEmpty() &&
-            currentUsername == feedOwnerUsername) {
-            followButton.visibility = View.GONE
-            Log.d(TAG, "Follow button GONE - Own post (username match: @$currentUsername)")
-            return
-        }
-
-        // PRIORITY 2: Check ID match
-        if (feedOwnerId != null && feedOwnerId == currentUserId) {
-            followButton.visibility = View.GONE
-            Log.d(TAG, "Follow button GONE - Own post (ID match: $currentUserId)")
-            return
-        }
-
-        // PRIORITY 3: Check if no feed owner
-        if (feedOwnerId == null) {
-            followButton.visibility = View.GONE
-            Log.d(TAG, "Follow button GONE - No feed owner")
-            return
-        }
-
-        // PRIORITY 4: Check if already following
-        val isFollowing = followingUserIds.contains(feedOwnerId)
-
-        if (isFollowing) {
-            followButton.visibility = View.GONE
-            Log.d(TAG, "Follow button GONE - Already following $feedOwnerId")
-        } else {
-            // Check if they follow YOU to show correct button text
-            val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
-
-            followButton.visibility = View.VISIBLE
-
-            if (theyFollowMe) {
-                followButton.text = "Follow Back"
-                Log.d(TAG, "Follow button VISIBLE - 'Follow Back' (they follow you) - $feedOwnerId")
-            } else {
-                followButton.text = "Follow"
-                Log.d(TAG, "Follow button VISIBLE - 'Follow' (they don't follow you) - $feedOwnerId")
-            }
-        }
-
-        Log.d(TAG, "Follow button visibility: ${followButton.visibility} (0=VISIBLE, 4=INVISIBLE, 8=GONE)")
-    }
 
     private fun isValidUserId(userId: String?): Boolean {
         // MongoDB ObjectID format: 24 hex characters
