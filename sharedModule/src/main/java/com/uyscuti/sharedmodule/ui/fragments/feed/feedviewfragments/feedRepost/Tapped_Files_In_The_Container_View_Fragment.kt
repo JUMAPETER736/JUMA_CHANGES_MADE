@@ -600,7 +600,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
     private fun checkIfUserFollowsBack(feedOwnerId: String): Boolean {
         val myFollowersList = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
-        return myFollowersList.contains(feedOwnerId)
+        return FeedAdapter.isUserInMyFollowersList(feedOwnerId)
     }
 
     private fun handleFollowButtonClick(followButton: Button, feedOwnerId: String, feedOwnerUsername: String) {
