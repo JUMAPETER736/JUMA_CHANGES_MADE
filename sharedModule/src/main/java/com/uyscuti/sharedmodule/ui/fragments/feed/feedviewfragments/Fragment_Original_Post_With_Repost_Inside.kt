@@ -48,7 +48,9 @@ import kotlin.collections.isNotEmpty
 import com.uyscuti.social.network.api.response.getfeedandresposts.Thumbnail
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.google.android.material.card.MaterialCardView
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.databinding.FragmentOriginalPostWithRepostInsideBinding
+import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
 import com.uyscuti.sharedmodule.model.ShowAppBar
 import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
@@ -57,6 +59,7 @@ import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.T
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.AudioDuration
 import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.Duration
+import com.uyscuti.social.network.utils.LocalStorage
 import org.greenrobot.eventbus.EventBus
 
 
@@ -2845,11 +2848,34 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
     private fun updateFollowButtonUI() {
-        followButton.text = if (isFollowing) "Following" else "Follow"
-        followButton.setBackgroundResource(
-            if (isFollowing) R.drawable.shorts_following_button
-            else R.drawable.shorts_following_button
-        )
+        originalPost?.let { post ->
+            if (post.originalPostReposter.isNotEmpty()) {
+                val reposterId = post.originalPostReposter[0]._id ?: return@let
+                val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
+
+                // Hide button if it's your own post or you're already following
+                if (reposterId == currentUserId || isFollowing) {
+                    followButton?.visibility = View.GONE
+                    return@let
+                }
+
+                // Check if they follow you
+                val theyFollowMe = FeedAdapter.isUserInMyFollowersList(reposterId)
+
+                // Show button with appropriate text
+                followButton?.visibility = View.VISIBLE
+                if (theyFollowMe) {
+                    followButton?.text = "Follow Back"
+                } else {
+                    followButton?.text = "Follow"
+                }
+
+                followButton?.backgroundTintList = ContextCompat.getColorStateList(
+                    requireContext(),
+                    R.color.blueJeans
+                )
+            }
+        }
     }
 
     // Helper methods
@@ -2888,7 +2914,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
         originalPost?.let { post ->
             if (post.originalPostReposter.isNotEmpty()) {
-                val reposterId = post.originalPostReposter[0].owner ?: return@let
+                val reposterId = post.originalPostReposter[0]._id ?: return@let
                 val reposterName = post.originalPostReposter[0].username ?: "User"
 
                 if (isFollowing) {
