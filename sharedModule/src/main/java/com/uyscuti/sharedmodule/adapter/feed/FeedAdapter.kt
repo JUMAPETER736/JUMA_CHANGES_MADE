@@ -133,7 +133,6 @@ class FeedAdapter(
 
     companion object {
 
-        private const val PRELOAD_AHEAD_COUNT = 20
         // Static set to persist across adapter instances
         private var cachedFollowingUserIds: Set<String> = emptySet()
         private val cachedFollowingList = mutableSetOf<String>()
@@ -153,14 +152,6 @@ class FeedAdapter(
             myFollowersCache.clear()
             myFollowersCache.addAll(followerIds)
             Log.d("FeedAdapter", "My followers cache updated with ${followerIds.size} followers")
-        }
-
-        fun addToMyFollowersList(userId: String) {
-            myFollowersCache.add(userId)
-        }
-
-        fun removeFromMyFollowersList(userId: String) {
-            myFollowersCache.remove(userId)
         }
 
         fun setCachedFollowingList(userIds: Set<String>) {
