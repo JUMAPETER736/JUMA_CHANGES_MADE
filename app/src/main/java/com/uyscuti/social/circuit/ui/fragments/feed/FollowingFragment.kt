@@ -210,12 +210,18 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         Log.d("RecyclerViewDebug", "Adapter set: ${true}")
 
         // Check if the data is empty before loading
+        // Check if the data is empty before loading
         if (getFeedViewModel.getAllFeedData().isEmpty()) {
             getAllFeed(followedPostsAdapter.startPage)
         } else {
             // Don't fetch data again if the ViewModel already has data
             followedPostsAdapter.submitItems(getFeedViewModel.getAllFeedData())
             Log.d(TAG, "Data already available, using the cached data")
+
+            // Load followers cache even when using cached data
+            lifecycleScope.launch(Dispatchers.IO) {
+                loadMyFollowersList()
+            }
         }
 
         followedPostsAdapter.setOnPaginationListener(
@@ -696,20 +702,47 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         Log.d(TAG, "═══════════════════════════════════════")
     }
 
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
-    fun clearAndReloadFeed() {
-        Log.d(TAG, "Clearing and reloading Following feed")
+    private suspend fun loadMyFollowersList() {
+        try {
+            Log.d(TAG, "Loading MY followers list...")
 
-        // Clear all old data
-        getFeedViewModel.clearAllFeedData()
-        followedPostsAdapter.submitItems(mutableListOf())
+            val myUsername = getUsername(requireContext())
+            if (myUsername.isEmpty()) {
+                Log.e(TAG, "Username is empty, cannot load my followers list")
+                return
+            }
 
-        // Reset state
-        hasLoadedFollowingList = false
-        isLoading = false
+            // Get YOUR followers (people who follow YOU)
+            val response = retrofitInstance.apiService.getOtherUserFollowers(
+                username = myUsername,
+                page = 1,
+                limit = 1000
+            )
 
-        // Reload fresh data
-        getAllFeed(1)
+            if (response.isSuccessful && response.body() != null) {
+                val myFollowers = response.body()!!.data
+
+                val myFollowerIds = mutableListOf<String>()
+
+                myFollowers?.forEach { follower ->
+                    val followerId = follower._id
+                    if (followerId.isNotEmpty()) {
+                        myFollowerIds.add(followerId)
+                        Log.d(TAG, "  ✓ My follower: @${follower.username} (ID: $followerId)")
+                    }
+                }
+
+                // Update FeedAdapter cache with YOUR followers
+                FeedAdapter.setMyFollowersList(myFollowerIds)
+                Log.d(TAG, "✓ Populated my followers cache with ${myFollowerIds.size} followers")
+
+            } else {
+                Log.e(TAG, "API error loading my followers: ${response.code()}")
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading my followers list: ${e.message}", e)
+        }
     }
 
     private suspend fun loadFollowingUserIds() {
@@ -734,7 +767,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 followingUserIds.clear()
                 followingUserMap.clear()
 
-                //  Create lists for both IDs and usernames
                 val followingIdsList = mutableListOf<String>()
                 val followingUsernamesList = mutableListOf<String>()
 
@@ -745,26 +777,30 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                     if (userId.isNotEmpty()) {
                         followingUserIds.add(userId)
                         followingUserMap[userId] = username
-
-                        // Add to both lists
                         followingIdsList.add(userId)
                         followingUsernamesList.add(username)
 
-                        Log.d(TAG, "  Following: @$username (ID: $userId)")
+                        Log.d(TAG, "  ✓ Following: @$username (ID: $userId)")
                     }
                 }
 
                 hasLoadedFollowingList = true
 
-                // Update the adapter's cached lists
-                if (::followedPostsAdapter.isInitialized) {
-                    FeedAdapter.setCachedFollowingList(followingUserIds)
-                    followedPostsAdapter.updateFollowingList(followingIdsList)
-                    followedPostsAdapter.updateFollowingUsernames(followingUsernamesList)
-                    Log.d(TAG, "Updated adapter with ${followingUserIds.size} following users")
+                // Update adapter on main thread
+                withContext(Dispatchers.Main) {
+                    if (::followedPostsAdapter.isInitialized) {
+                        FeedAdapter.setCachedFollowingList(followingUserIds)
+                        followedPostsAdapter.updateFollowingList(followingIdsList)
+                        followedPostsAdapter.updateFollowingUsernames(followingUsernamesList)
+                        followedPostsAdapter.notifyDataSetChanged()
+                        Log.d(TAG, "✓ Updated adapter with ${followingUserIds.size} following users")
+                    }
                 }
 
                 Log.d(TAG, "Successfully loaded ${followingUserIds.size} following users")
+
+                // Also load YOUR followers (people who follow YOU)
+                loadMyFollowersList()
 
             } else {
                 Log.e(TAG, "API error: ${response.code()}")
@@ -775,9 +811,25 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    fun updateFollowingList(followingIds: Set<String>) {
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
+    fun clearAndReloadFeed() {
+        Log.d(TAG, "Clearing and reloading Following feed")
 
-        Log.d("FollowingFragment", "Received ${followingIds.size} following IDs")
+        // Clear all old data
+        getFeedViewModel.clearAllFeedData()
+        followedPostsAdapter.submitItems(mutableListOf())
+
+        // Reset state
+        hasLoadedFollowingList = false
+        isLoading = false
+
+        // Reload fresh data
+        getAllFeed(1)
+    }
+
+
+    fun updateFollowingList(followingIds: Set<String>) {
+        Log.d(TAG, "updateFollowingList called with ${followingIds.size} following IDs")
 
         // Update local set for filtering logic
         this.followingUserIds.clear()
@@ -793,9 +845,9 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             followedPostsAdapter.updateFollowingList(followingIds.toList())
             followedPostsAdapter.updateFollowingUsernames(followingUsernames)
             followedPostsAdapter.notifyDataSetChanged()
-            Log.d("FollowingFragment", "Updated adapter with ${followingIds.size} IDs and ${followingUsernames.size} usernames")
+            Log.d(TAG, "Updated adapter with ${followingIds.size} IDs and ${followingUsernames.size} usernames")
         } else {
-            Log.w("FollowingFragment", "Adapter not initialized yet")
+            Log.w(TAG, "Adapter not initialized yet")
         }
     }
 
