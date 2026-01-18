@@ -828,29 +828,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     }
 
 
-    fun updateFollowingList(followingIds: Set<String>) {
-        Log.d(TAG, "updateFollowingList called with ${followingIds.size} following IDs")
-
-        // Update local set for filtering logic
-        this.followingUserIds.clear()
-        this.followingUserIds.addAll(followingIds)
-        this.hasLoadedFollowingList = true
-
-        // Extract usernames from followingUserMap
-        val followingUsernames = followingUserMap.values.toList()
-
-        // Update adapter with BOTH IDs and usernames
-        if (::followedPostsAdapter.isInitialized) {
-            FeedAdapter.setCachedFollowingList(followingIds)
-            followedPostsAdapter.updateFollowingList(followingIds.toList())
-            followedPostsAdapter.updateFollowingUsernames(followingUsernames)
-            followedPostsAdapter.notifyDataSetChanged()
-            Log.d(TAG, "Updated adapter with ${followingIds.size} IDs and ${followingUsernames.size} usernames")
-        } else {
-            Log.w(TAG, "Adapter not initialized yet")
-        }
-    }
-
     private fun handleError(message: String) {
         Log.e(TAG, message)
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
