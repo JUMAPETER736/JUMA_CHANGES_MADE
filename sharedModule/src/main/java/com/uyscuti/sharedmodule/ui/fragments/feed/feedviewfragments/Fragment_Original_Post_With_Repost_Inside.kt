@@ -54,6 +54,7 @@ import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
+import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.AudioDuration
 import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.Duration
 import org.greenrobot.eventbus.EventBus
@@ -2887,11 +2888,40 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
         originalPost?.let { post ->
             if (post.originalPostReposter.isNotEmpty()) {
+                val reposterId = post.originalPostReposter[0].owner ?: return@let
                 val reposterName = post.originalPostReposter[0].username ?: "User"
-                showToast(
-                    if (isFollowing) "Now following $reposterName"
-                    else "Unfollowed $reposterName"
+
+                if (isFollowing) {
+                    // Add to following cache
+                    FeedAdapter.addToFollowingCache(reposterId)
+
+                    showToast("Now following $reposterName")
+                } else {
+                    // Remove from following cache
+                    FeedAdapter.removeFromFollowingCache(reposterId)
+
+                    // Check if they follow you to show correct button text
+                    val theyFollowMe = FeedAdapter.isUserInMyFollowersList(reposterId)
+
+                    // Update button text based on whether they follow you
+                    if (theyFollowMe) {
+                        // They still follow you, so show "Follow Back"
+                        followButton?.text = "Follow Back"
+                    } else {
+                        // They don't follow you, show "Follow"
+                        followButton?.text = "Follow"
+                    }
+
+                    showToast("Unfollowed $reposterName")
+                }
+
+                // Post EventBus event to sync across app
+                val followEntity = FollowUnFollowEntity(
+                    userId = reposterId,
+                    isFollowing = isFollowing,
+                    isButtonVisible = !isFollowing
                 )
+                EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
             }
         }
     }
