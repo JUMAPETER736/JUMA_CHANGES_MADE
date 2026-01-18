@@ -598,6 +598,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         followButton?.visibility = View.GONE
     }
 
+
     private fun setupFollowButton() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
 
@@ -705,8 +706,11 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             Log.d(TAG, "Now following user $feedOwnerId")
 
         } else {
-            // Unfollowed - show button
-            followButton.text = "Follow"
+            // Unfollowed - check if they follow you to show correct button text
+            val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+
+            // Show button with appropriate text
+            followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
             followButton.visibility = View.VISIBLE
 
             // Remove from following list
@@ -847,9 +851,18 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             followButton.visibility = View.GONE
             Log.d(TAG, "Follow button GONE - Already following $feedOwnerId")
         } else {
+            // Check if they follow YOU to show correct button text
+            val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+
             followButton.visibility = View.VISIBLE
-            followButton.text = "Follow"
-            Log.d(TAG, "Follow button VISIBLE - Not following $feedOwnerId")
+
+            if (theyFollowMe) {
+                followButton.text = "Follow Back"
+                Log.d(TAG, "Follow button VISIBLE - 'Follow Back' (they follow you) - $feedOwnerId")
+            } else {
+                followButton.text = "Follow"
+                Log.d(TAG, "Follow button VISIBLE - 'Follow' (they don't follow you) - $feedOwnerId")
+            }
         }
 
         Log.d(TAG, "Follow button visibility: ${followButton.visibility} (0=VISIBLE, 4=INVISIBLE, 8=GONE)")
@@ -868,24 +881,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
         return true
     }
-
-    private fun handleFollowError(errorMessage: String) {
-        Log.e(TAG, "❌ Follow operation failed: $errorMessage")
-
-        val followButton = view?.findViewById<Button>(R.id.followButton)
-        followButton?.isEnabled = true
-
-        // Revert optimistic UI update if needed
-        updateFollowButtonVisibility()
-
-        if (context != null) {
-            Toast.makeText(
-                requireContext(),
-                "Failed to update follow status. Please try again.",
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
+    
 
     private fun loadPostContent(postId: String) {
         // Fetch post data by ID from your post list
