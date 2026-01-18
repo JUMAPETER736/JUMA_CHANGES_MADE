@@ -143,6 +143,30 @@ class FeedAdapter(
 
         fun getCachedFollowingList(): Set<String> = cachedFollowingList.toSet()
 
+        private val myFollowersCache = mutableSetOf<String>()
+
+        // Add this method to check if user is in your followers list
+        fun isUserInMyFollowersList(userId: String): Boolean {
+            return myFollowersCache.contains(userId)
+        }
+
+        // Add this method to populate your followers cache
+        fun setMyFollowersList(followerIds: List<String>) {
+            myFollowersCache.clear()
+            myFollowersCache.addAll(followerIds)
+            Log.d("FeedAdapter", "My followers cache updated with ${followerIds.size} followers")
+        }
+
+        // Add this method to add a single follower
+        fun addToMyFollowersList(userId: String) {
+            myFollowersCache.add(userId)
+        }
+
+        // Add this method to remove a follower
+        fun removeFromMyFollowersList(userId: String) {
+            myFollowersCache.remove(userId)
+        }
+
         fun clearCache() {
             cachedFollowingList.clear()
             cachedFollowingUsernames.clear()
