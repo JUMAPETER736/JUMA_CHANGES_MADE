@@ -143,14 +143,16 @@
                             android:orientation="vertical"
                             android:background="@color/white">
 
-                            <!-- Quoted User Header -->
+                            <!-- Quoted User Header - FIXED VERSION -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:orientation="horizontal"
                                 android:padding="@dimen/small_margin"
+                                android:gravity="center_vertical"
                                 android:background="@color/white">
 
+                                <!-- Profile Image -->
                                 <FrameLayout
                                     android:layout_width="41dp"
                                     android:layout_height="41dp"
@@ -166,12 +168,13 @@
                                         android:contentDescription="Profile image" />
                                 </FrameLayout>
 
-
+                                <!-- User Info - NOW USES layout_weight to take available space -->
                                 <LinearLayout
-                                    android:layout_width="210dp"
+                                    android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginStart="@dimen/small_margin"
                                     android:layout_weight="1"
+                                    android:layout_marginStart="@dimen/small_margin"
+                                    android:layout_marginEnd="8dp"
                                     android:background="@color/white"
                                     android:orientation="vertical">
 
@@ -183,7 +186,9 @@
                                         android:text="Unknown User"
                                         android:textColor="@color/black"
                                         android:textSize="@dimen/quoted_username_size"
-                                        android:textStyle="bold" />
+                                        android:textStyle="bold"
+                                        android:maxLines="1"
+                                        android:ellipsize="end" />
 
                                     <TextView
                                         android:id="@+id/tvQuotedUserHandle"
@@ -192,20 +197,23 @@
                                         android:background="@color/white"
                                         android:text="\@SoftwareDeveloper"
                                         android:textColor="@color/gray_dark"
-                                        android:textSize="@dimen/quoted_handle_size" />
+                                        android:textSize="@dimen/quoted_handle_size"
+                                        android:maxLines="1"
+                                        android:ellipsize="end" />
                                 </LinearLayout>
 
+                                <!-- Date/Time - wraps content -->
                                 <TextView
                                     android:id="@+id/date_time"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginEnd="@dimen/small_margin"
-                                    android:text="date"
-                                    android:textSize="14sp"
+                                    android:layout_marginEnd="8dp"
+                                    android:text="2h"
+                                    android:textSize="13sp"
                                     android:textColor="@color/gray_dark"
                                     android:background="@color/white"/>
 
-                                <!-- Updated Follow Button in your layout -->
+                                <!-- Follow Button - wraps content, no squeezing -->
                                 <androidx.appcompat.widget.AppCompatButton
                                     android:id="@+id/followButton"
                                     android:layout_width="wrap_content"
