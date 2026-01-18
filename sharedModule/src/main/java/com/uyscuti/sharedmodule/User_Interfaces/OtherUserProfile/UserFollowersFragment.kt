@@ -54,6 +54,9 @@ import org.greenrobot.eventbus.ThreadMode
 import retrofit2.HttpException
 import java.io.IOException
 import java.util.Date
+import kotlin.collections.addAll
+import kotlin.inc
+import kotlin.text.clear
 
 
 private const val TAG = "UserFollowersFragment"
@@ -413,24 +416,6 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
-    private suspend fun handleFollowersResponse(followers: List<Data>) {
-        withContext(Dispatchers.Main) {
-            if (currentPage == 1) {
-                followersList.clear()
-                filteredFollowersList.clear()
-            }
-
-            val followersWithStatus = checkFollowStatus(followers)
-            followersList.addAll(followersWithStatus)
-            filteredFollowersList.addAll(followersWithStatus)
-
-            followersAdapter.notifyDataSetChanged()
-            updateEmptyState()
-
-            hasMoreData = followers.size >= 20
-            currentPage++
-        }
-    }
 
     private fun refreshFollowers() {
         currentPage = 1
@@ -682,6 +667,32 @@ class UserFollowersFragment : AppCompatActivity() {
         super.onDestroy()
         if (EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().unregister(this)
+        }
+    }
+
+    private suspend fun handleFollowersResponse(followers: List<Data>) {
+        withContext(Dispatchers.Main) {
+            if (currentPage == 1) {
+                followersList.clear()
+                filteredFollowersList.clear()
+            }
+
+            val followersWithStatus = checkFollowStatus(followers)
+            followersList.addAll(followersWithStatus)
+            filteredFollowersList.addAll(followersWithStatus)
+
+            // ADD THIS: Populate the FeedAdapter cache with YOUR followers
+            if (isMyFollowers) {
+                val followerIds = followersWithStatus.map { it.id }
+                FeedAdapter.setMyFollowersList(followerIds)
+                Log.d(TAG, "Populated my followers cache with ${followerIds.size} followers")
+            }
+
+            followersAdapter.notifyDataSetChanged()
+            updateEmptyState()
+
+            hasMoreData = followers.size >= 20
+            currentPage++
         }
     }
 
@@ -951,7 +962,6 @@ class FollowersAdapter(
             }
         }
     }
-
 
 
     fun updateList(newList: List<OtherUserDisplayFollowersModel>) {
