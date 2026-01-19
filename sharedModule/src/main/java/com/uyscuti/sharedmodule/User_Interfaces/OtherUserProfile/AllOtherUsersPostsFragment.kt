@@ -39,7 +39,7 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
         private const val ARG_USER_ID = "userId"
         private const val ARG_USERNAME = "username"
 
-        // 🚀 SPEED: Static cache shared across instances
+        // Static cache shared across fragment instances
         private val staticCache = mutableMapOf<String, Pair<List<Post>, Long>>()
 
         fun newInstance(userId: String, username: String): AllOtherUsersPostsFragment {
@@ -52,10 +52,8 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
-
     private lateinit var apiService: IFlashapi
     private lateinit var recyclerView: RecyclerView
     private lateinit var feedAdapter: FeedAdapter
@@ -66,19 +64,15 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
     private var username: String? = null
     private var cleanUsername: String? = null
 
-    private var currentPage = 1
-    private var isLoading = false
-    private var hasMoreData = true
-    private var totalUserPosts = 0
     private val allUserPosts = mutableListOf<Post>()
-    private var hasLoadedOnce = false
-
-    // 🚀 SPEED: Caching system
     private var cachedPosts: List<Post>? = null
     private var cacheTimestamp: Long = 0L
     private val CACHE_DURATION_MS = 5 * 60 * 1000L // 5 minutes
 
-    // 🚀 SPEED: Pagination limits
+    private var currentPage = 1
+    private var isLoading = false
+    private var hasMoreData = true
+    private var hasLoadedOnce = false
     private val MAX_PAGES = 10
     private val MAX_ITEMS = 50
 
@@ -92,11 +86,9 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
 
         Log.d(TAG, "Fragment initialized - userId: $userId, username: $username")
 
-        val localStorage = LocalStorage(requireContext())
-        val retrofitInstance = RetrofitInstance(localStorage, requireContext())
         apiService = retrofitInstance.apiService
 
-        // 🚀 SPEED: Check static cache immediately
+        // Load from static cache if available
         userId?.let { id ->
             staticCache[id]?.let { (posts, timestamp) ->
                 if ((System.currentTimeMillis() - timestamp) < CACHE_DURATION_MS) {
@@ -123,422 +115,169 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupRecyclerView()
 
-        setupRecyclerViewOptimized()
-
-        // 🚀 SPEED: Instant display from cache if available
+        // If cache exists and valid, display instantly
         if (cachedPosts != null && isCacheValid()) {
-            Log.d(TAG, "⚡ Displaying cached posts instantly!")
             displayCachedData()
-
-            // Background refresh if cache is getting stale
             if ((System.currentTimeMillis() - cacheTimestamp) > (CACHE_DURATION_MS / 2)) {
-                Log.d(TAG, "🔄 Refreshing stale cache in background")
                 refreshInBackground()
             }
         } else {
-            // No cache, load fresh data
             resetAndLoadFresh()
         }
     }
 
-    private fun isCacheValid(): Boolean {
-        return cachedPosts != null &&
-                (System.currentTimeMillis() - cacheTimestamp) < CACHE_DURATION_MS
-    }
-
-    private fun displayCachedData() {
-        allUserPosts.clear()
-        allUserPosts.addAll(cachedPosts!!)
-        totalUserPosts = allUserPosts.size
-
-        feedAdapter.clear()
-        feedAdapter.submitItems(allUserPosts)
-        feedAdapter.initializeCommentCounts(allUserPosts)
-
-        if (allUserPosts.isEmpty()) {
-            showEmptyState()
-        } else {
-            showContent()
-        }
-
-        Log.d(TAG, "⚡ Displayed ${allUserPosts.size} cached posts instantly")
-    }
-
-    private fun resetAndLoadFresh() {
-        allUserPosts.clear()
-        totalUserPosts = 0
-        currentPage = 1
-        isLoading = false
-        hasMoreData = true
-
-        loadAllPostsOptimized()
-    }
-
-    private fun setupRecyclerViewOptimized() {
-        Log.d(TAG, "Setting up optimized RecyclerView")
-
+    private fun setupRecyclerView() {
         feedAdapter = FeedAdapter(
             requireContext(),
             retrofitInstance,
             this,
             fragmentManager = childFragmentManager
-            )
+        )
 
         recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = feedAdapter
-            visibility = View.VISIBLE
-
-            // 🚀 PERFORMANCE OPTIMIZATIONS
             setHasFixedSize(true)
             setItemViewCacheSize(20)
             isNestedScrollingEnabled = true
-
-            // RecycledViewPool for better performance
             val viewPool = RecyclerView.RecycledViewPool()
             viewPool.setMaxRecycledViews(0, 15)
             setRecycledViewPool(viewPool)
 
-            Log.d(TAG, "RecyclerView setup with optimizations")
-
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    super.onScrolled(recyclerView, dx, dy)
-
-                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
+                    val layoutManager = rv.layoutManager as LinearLayoutManager
                     val visibleItemCount = layoutManager.childCount
                     val totalItemCount = layoutManager.itemCount
                     val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
 
-                    // Only load more if we've finished initial batch load
                     if (!isLoading && hasMoreData && hasLoadedOnce) {
                         if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount - 5
-                            && firstVisibleItemPosition >= 0) {
-                            loadAllPostsOptimized()
+                            && firstVisibleItemPosition >= 0
+                        ) {
+                            loadPosts()
                         }
                     }
                 }
             })
         }
-
         feedAdapter.recyclerView = recyclerView
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun loadAllPostsOptimized() {
-        // 🚀 SPEED: Strict limits to prevent infinite loading
+    private fun isCacheValid(): Boolean =
+        cachedPosts != null && (System.currentTimeMillis() - cacheTimestamp) < CACHE_DURATION_MS
+
+    private fun displayCachedData() {
+        allUserPosts.clear()
+        allUserPosts.addAll(cachedPosts!!)
+        feedAdapter.clear()
+        feedAdapter.submitItems(allUserPosts)
+        feedAdapter.initializeCommentCounts(allUserPosts)
+        if (allUserPosts.isEmpty()) showEmptyState() else showContent()
+        Log.d(TAG, "⚡ Displayed ${allUserPosts.size} cached posts instantly")
+    }
+
+    private fun resetAndLoadFresh() {
+        allUserPosts.clear()
+        currentPage = 1
+        isLoading = false
+        hasMoreData = true
+        loadPosts()
+    }
+
+    private fun loadPosts() {
         if (isLoading || !hasMoreData || currentPage > MAX_PAGES || allUserPosts.size >= MAX_ITEMS) {
-            if (currentPage > MAX_PAGES) {
-                Log.d(TAG, "⚠️ Reached max pages ($MAX_PAGES) - stopping")
-            }
-            if (allUserPosts.size >= MAX_ITEMS) {
-                Log.d(TAG, "⚠️ Reached max items ($MAX_ITEMS) - stopping")
-            }
             hasMoreData = false
             hasLoadedOnce = true
             return
         }
 
         isLoading = true
-        Log.d(TAG, "⚡ Loading posts page $currentPage for @$username")
-
-        if (currentPage == 1) {
-
-            emptyStateText.visibility = View.GONE
-            allUserPosts.clear()
-        }
+        if (currentPage == 1) emptyStateText.visibility = View.GONE
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val response = apiService.getAllFeed(page = currentPage.toString())
-
-                Log.d(TAG, "API Response - Success: ${response.isSuccessful}, Code: ${response.code()}")
-
                 if (response.isSuccessful) {
-                    val responseBody = response.body()
-                    val posts = responseBody?.data?.data?.posts ?: emptyList()
-
-                    Log.d(TAG, "Page $currentPage: Received ${posts.size} posts from API")
-
+                    val posts = response.body()?.data?.data?.posts ?: emptyList()
                     val userPosts = posts.mapNotNull { post ->
-                        val isDirectPost = post.author?.let { author ->
-                            val matchesUserId = author.owner == userId
-                            val apiUsername = author.account?.username?.trim()?.lowercase()
-                            val matchesUsername = apiUsername == cleanUsername
-                            val isValid = author.account != null
-
-                            matchesUserId && matchesUsername && isValid
-                        } ?: false
-
-                        val isRepostOfUserContent = post.isReposted == true &&
-                                !post.originalPost.isNullOrEmpty() &&
-                                post.originalPost[0].author?.let { originalAuthor ->
-                                    val matchesUserId = originalAuthor.owner == userId
-                                    val apiUsername = originalAuthor.account?.username?.trim()?.lowercase()
-                                    val matchesUsername = apiUsername == cleanUsername
-                                    val isValid = originalAuthor.account != null
-
-                                    matchesUserId && matchesUsername && isValid
-                                } ?: false
-
-                        when {
-                            isDirectPost -> {
-                                Log.d(TAG, "✓ Found direct post by @$username")
-                                post
-                            }
-                            isRepostOfUserContent -> {
-                                Log.d(TAG, "✓ Found repost of @$username content")
-                                post
-                            }
-                            else -> null
-                        }
+                        if (isPostByUser(post)) validateAndFixPost(post) else null
                     }
-
-                    Log.d(TAG, "Page $currentPage: Found ${userPosts.size} posts for @$username")
 
                     withContext(Dispatchers.Main) {
                         if (userPosts.isNotEmpty()) {
-                            val validatedPosts = userPosts.mapNotNull { validateAndFixPost(it) }
-
-                            if (validatedPosts.isNotEmpty()) {
-                                allUserPosts.addAll(validatedPosts)
-
-                                if (currentPage == 1) {
-                                    feedAdapter.clear()
-                                }
-                                feedAdapter.submitItems(validatedPosts)
-                                feedAdapter.initializeCommentCounts(validatedPosts)
-
-                                totalUserPosts = allUserPosts.size
-
-                                Log.d(TAG, "✅ Added ${validatedPosts.size} posts. Total: $totalUserPosts")
-
-                                recyclerView.visibility = View.VISIBLE
-                                emptyStateText.visibility = View.GONE
-                            }
+                            allUserPosts.addAll(userPosts)
+                            if (currentPage == 1) feedAdapter.clear()
+                            feedAdapter.submitItems(userPosts)
+                            feedAdapter.initializeCommentCounts(userPosts)
                         }
-
-                        isLoading = false
-                    }
-
-                    val hasNextPage = responseBody?.data?.data?.hasNextPage ?: false
-                    val totalPages = responseBody?.data?.data?.totalPages ?: currentPage
-
-                    Log.d(TAG, "Pagination: hasNext=$hasNextPage, page=$currentPage/$totalPages")
-
-                    // 🚀 SPEED: Load initial batch (3-5 pages) automatically, then stop
-                    val shouldContinueInitialLoad = !hasLoadedOnce &&
-                            currentPage < 5 &&
-                            currentPage < MAX_PAGES &&
-                            allUserPosts.size < MAX_ITEMS
-
-                    if (hasNextPage && currentPage < totalPages && shouldContinueInitialLoad) {
-                        currentPage++
-                        Log.d(TAG, "🔄 Auto-loading next page: $currentPage")
-                        withContext(Dispatchers.Main) {
-                            isLoading = false
-                            loadAllPostsOptimized()
-                        }
-                    } else {
-                        // Finished initial load or hit limits
-                        hasMoreData = hasNextPage && currentPage < totalPages &&
-                                currentPage < MAX_PAGES &&
-                                allUserPosts.size < MAX_ITEMS
-                        hasLoadedOnce = true
-
-                        if (hasNextPage && currentPage < totalPages) {
-                            currentPage++ // Prepare for scroll-triggered load
-                        }
-
-                        withContext(Dispatchers.Main) {
-                            progressBar.visibility = View.GONE
-
-                            // 🚀 SPEED: Update cache
-                            cachedPosts = allUserPosts.toList()
-                            cacheTimestamp = System.currentTimeMillis()
-                            userId?.let { id ->
-                                staticCache[id] = Pair(cachedPosts!!, cacheTimestamp)
-                            }
-
-                            if (allUserPosts.isEmpty()) {
-                                recyclerView.visibility = View.GONE
-                                emptyStateText.apply {
-                                    visibility = View.VISIBLE
-                                    text = "@$username hasn't posted anything yet"
-                                }
-                            }
-
-                            Log.d(TAG, "✅ FINISHED - Loaded $currentPage pages, ${allUserPosts.size} posts")
-                            Log.d(TAG, "Cache updated - ${cachedPosts?.size} items stored")
-                        }
-                    }
-                } else {
-                    Log.e(TAG, "API error: ${response.code()}")
-                    withContext(Dispatchers.Main) {
-                        handleError("Failed to load: ${response.code()}")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Exception: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    handleError("Error: ${e.message}")
-                }
-            }
-        }
-    }
-
-    // 🚀 SPEED: Silent background refresh
-    private fun refreshInBackground() {
-        if (isLoading) return
-
-        Log.d(TAG, "🔄 Starting background refresh")
-        isLoading = true
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val allRefreshedPosts = mutableListOf<Post>()
-                var page = 1
-
-                // Load up to 3 pages in background
-                while (page <= 3 && page <= MAX_PAGES) {
-                    val response = apiService.getAllFeed(page = page.toString())
-
-                    if (response.isSuccessful) {
-                        val posts = response.body()?.data?.data?.posts ?: emptyList()
-
-                        val userPosts = posts.mapNotNull { post ->
-                            val isDirectPost = post.author?.let { author ->
-                                val matchesUserId = author.owner == userId
-                                val apiUsername = author.account?.username?.trim()?.lowercase()
-                                val matchesUsername = apiUsername == cleanUsername
-                                val isValid = author.account != null
-                                matchesUserId && matchesUsername && isValid
-                            } ?: false
-
-                            val isRepostOfUserContent = post.isReposted == true &&
-                                    !post.originalPost.isNullOrEmpty() &&
-                                    post.originalPost[0].author?.let { originalAuthor ->
-                                        val matchesUserId = originalAuthor.owner == userId
-                                        val apiUsername = originalAuthor.account?.username?.trim()?.lowercase()
-                                        val matchesUsername = apiUsername == cleanUsername
-                                        val isValid = originalAuthor.account != null
-                                        matchesUserId && matchesUsername && isValid
-                                    } ?: false
-
-                            if (isDirectPost || isRepostOfUserContent) {
-                                validateAndFixPost(post)
-                            } else null
-                        }
-
-                        allRefreshedPosts.addAll(userPosts)
 
                         val hasNextPage = response.body()?.data?.data?.hasNextPage ?: false
-                        if (!hasNextPage) break
-                    } else {
-                        break
-                    }
-                    page++
-                }
+                        hasMoreData = hasNextPage && currentPage < MAX_PAGES && allUserPosts.size < MAX_ITEMS
+                        hasLoadedOnce = true
+                        currentPage++
 
-                withContext(Dispatchers.Main) {
-                    if (allRefreshedPosts.isNotEmpty()) {
-                        // Update cache silently
-                        cachedPosts = allRefreshedPosts
+                        cachedPosts = allUserPosts.toList()
                         cacheTimestamp = System.currentTimeMillis()
-                        userId?.let { id ->
-                            staticCache[id] = Pair(cachedPosts!!, cacheTimestamp)
-                        }
+                        userId?.let { staticCache[it] = cachedPosts!! to cacheTimestamp }
 
-                        // Update UI if data changed significantly
-                        if (allRefreshedPosts.size != allUserPosts.size) {
-                            allUserPosts.clear()
-                            allUserPosts.addAll(allRefreshedPosts)
-                            feedAdapter.clear()
-                            feedAdapter.submitItems(allUserPosts)
-                            feedAdapter.initializeCommentCounts(allUserPosts)
-                            Log.d(TAG, "✅ Background refresh completed - UI updated")
-                        } else {
-                            Log.d(TAG, "✅ Background refresh completed - no changes")
-                        }
+                        progressBar.visibility = View.GONE
+                        if (allUserPosts.isEmpty()) showEmptyState() else showContent()
                     }
-                    isLoading = false
+                } else {
+                    withContext(Dispatchers.Main) { handleError("Failed to load: ${response.code()}") }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Background refresh failed (silent)", e)
+                withContext(Dispatchers.Main) { handleError("Error: ${e.message}") }
+            } finally {
                 isLoading = false
             }
         }
     }
 
-    private fun validateAndFixPost(post: Post): Post? {
-        try {
-            if (post.isReposted == true && !post.originalPost.isNullOrEmpty()) {
-                val originalPost = post.originalPost[0]
+    private fun isPostByUser(post: Post): Boolean {
+        val matchesDirect = post.author?.owner == userId &&
+                post.author.account?.username?.trim()?.lowercase() == cleanUsername
 
-                if (originalPost.author?.account == null) {
-                    Log.w(TAG, "Skipping repost ${post._id}: null original author")
-                    return null
-                }
+        val matchesRepost = post.isReposted == true &&
+                !post.originalPost.isNullOrEmpty() &&
+                post.originalPost[0].author?.owner == userId &&
+                post.originalPost[0].author.account?.username?.trim()?.lowercase() == cleanUsername
 
-                post.comments = originalPost.commentCount ?: 0
-                post.likes = originalPost.likeCount ?: 0
-                post.bookmarkCount = originalPost.bookmarkCount ?: 0
-                post.repostCount = originalPost.repostCount ?: 0
-                post.shareCount = 0
+        return matchesDirect || matchesRepost
+    }
 
-                if (post.contentType.isNullOrEmpty() || post.contentType == "mixed") {
-                    post.contentType = when {
-                        !originalPost.files.isNullOrEmpty() -> {
-                            when {
-                                originalPost.files.size > 1 -> "mixed_files"
-                                originalPost.fileTypes?.any { it.fileType == "video" } == true -> "videos"
-                                else -> "mixed_files"
-                            }
-                        }
-                        post.files.isNotEmpty() -> {
-                            when {
-                                post.files.size > 1 -> "mixed_files"
-                                post.fileTypes?.any { it.fileType == "video" } == true -> "videos"
-                                else -> "mixed_files"
-                            }
-                        }
-                        !originalPost.content.isNullOrEmpty() || !post.content.isNullOrEmpty() -> "text"
-                        else -> "text"
-                    }
-                }
-            } else {
-                if (post.author == null || post.author.account == null) {
-                    Log.w(TAG, "Skipping post ${post._id}: null author/account")
-                    return null
-                }
-
-                if (post.comments == null) post.comments = 0
-                if (post.likes == null) post.likes = 0
-                if (post.bookmarkCount == null) post.bookmarkCount = 0
-                if (post.repostCount == null) post.repostCount = 0
-                if (post.shareCount == null) post.shareCount = 0
-
-                if (post.contentType.isNullOrEmpty()) {
-                    post.contentType = when {
-                        post.files.isNotEmpty() -> {
-                            when {
-                                post.files.size > 1 -> "mixed_files"
-                                post.fileTypes?.any { it.fileType == "video" } == true -> "videos"
-                                else -> "mixed_files"
-                            }
-                        }
-                        !post.content.isNullOrEmpty() -> "text"
-                        else -> "text"
-                    }
+    private fun refreshInBackground() {
+        if (isLoading) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            repeat(3) { page ->
+                val response = apiService.getAllFeed(page = (page + 1).toString())
+                if (response.isSuccessful) {
+                    val posts = response.body()?.data?.data?.posts ?: emptyList()
+                    val userPosts = posts.mapNotNull { post -> if (isPostByUser(post)) validateAndFixPost(post) else null }
+                    if (userPosts.isNotEmpty()) allUserPosts.clear(); allUserPosts.addAll(userPosts)
                 }
             }
-
-            return post
-        } catch (e: Exception) {
-            Log.e(TAG, "Error validating post ${post._id}: ${e.message}", e)
-            return null
+            withContext(Dispatchers.Main) {
+                feedAdapter.clear()
+                feedAdapter.submitItems(allUserPosts)
+                feedAdapter.initializeCommentCounts(allUserPosts)
+            }
         }
+    }
+
+    private fun validateAndFixPost(post: Post): Post? {
+        // Simplified validation
+        if (post.author?.account == null) return null
+        post.comments = post.comments ?: 0
+        post.likes = post.likes ?: 0
+        post.bookmarkCount = post.bookmarkCount ?: 0
+        post.repostCount = post.repostCount ?: 0
+        post.shareCount = post.shareCount ?: 0
+        post.contentType = post.contentType ?: "text"
+        return post
     }
 
     private fun showContent() {
@@ -548,10 +287,8 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
 
     private fun showEmptyState() {
         recyclerView.visibility = View.GONE
-        emptyStateText.apply {
-            visibility = View.VISIBLE
-            text = "@$username hasn't posted anything yet"
-        }
+        emptyStateText.visibility = View.VISIBLE
+        emptyStateText.text = "@$username hasn't posted anything yet"
     }
 
     private fun handleError(message: String) {
@@ -559,23 +296,16 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
         hasMoreData = false
         hasLoadedOnce = true
         progressBar.visibility = View.GONE
-
         if (allUserPosts.isEmpty()) {
             recyclerView.visibility = View.GONE
-            emptyStateText.apply {
-                visibility = View.VISIBLE
-                text = message
-            }
+            emptyStateText.text = message
+            emptyStateText.visibility = View.VISIBLE
         } else {
             Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
         }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        // Don't clear cache on view destroy - keep it for fast reload
-    }
-
+    // OnFeedClickListener stubs
     override fun likeUnLikeFeed(position: Int, data: Post) {}
     override fun feedCommentClicked(position: Int, data: Post) {}
     override fun feedFavoriteClick(position: Int, data: Post) {}
