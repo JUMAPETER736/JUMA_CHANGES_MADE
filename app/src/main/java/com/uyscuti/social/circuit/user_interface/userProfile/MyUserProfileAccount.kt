@@ -68,6 +68,7 @@ import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.uyscuti.sharedmodule.fragments.ProfileViewFragment
 import com.uyscuti.sharedmodule.model.User
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.UserFollowersFragment
@@ -83,11 +84,12 @@ import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
 import com.uyscuti.social.network.api.response.otherusersprofile.Data
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.network.utils.LocalStorage
+import kotlinx.coroutines.async
 
 
 private const val TAG = "MyUserProfileAccount"
 private const val CAMERA_PERMISSION_CODE = 100
-private const val STORAGE_PERMISSION_CODE = 101
+
 
 @UnstableApi
 @AndroidEntryPoint
@@ -351,46 +353,452 @@ class MyUserProfileAccount : AppCompatActivity() {
         }
     }
 
-    private fun loadLoggedInUserDetails() {
 
+    private fun loadLoggedInUserDetails() {
         try {
-            // ✅ Use UserStorageHelper from LoginActivity instead of LocalStorage
             val storedUserId = getUserId(this)
             val storedUsername = getUsername(this)
-            val storedEmail = getEmail(this)
             val storedAvatarUrl = getAvatarUrl(this)
-            val storedAccessToken = getAccessToken(this)
 
             if (storedUserId.isNotEmpty() && storedUsername.isNotEmpty()) {
-                // Set the user details
                 userId = storedUserId
                 username = storedUsername
                 avatarUrl = storedAvatarUrl
 
-                Log.d(TAG, "Logged in user loaded from UserStorageHelper - ID: $userId, Username: $username")
+                Log.d(TAG, "Logged in user loaded - ID: $userId, Username: $username")
 
-                // Update UI with basic info
+                // Update UI immediately with cached data
                 binding.userName.text = "@$username"
                 binding.toolbarUserName.text = "@$username"
 
                 if (avatarUrl?.isNotEmpty() == true) {
-                    loadProfileImage()
+                    loadProfileImageOptimized()
                 }
 
-                // Now load full profile from API
-                loadUserProfile(username)
+                // Load profile data in background - don't block UI
+                lifecycleScope.launch(Dispatchers.IO) {
+                    loadUserProfile(username)
+                }
             } else {
-                Log.w(TAG, "No logged in user found in UserStorageHelper")
+                Log.w(TAG, "No logged in user found")
                 Toast.makeText(this, "Please login first", Toast.LENGTH_SHORT).show()
                 finish()
             }
-
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading logged in user from UserStorageHelper: ${e.message}", e)
+            Log.e(TAG, "Error loading user: ${e.message}", e)
             Toast.makeText(this, "Error loading user data", Toast.LENGTH_SHORT).show()
         }
     }
 
+    private fun loadUserProfile(username: String) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                // Load profile and other user data in PARALLEL
+                val profileDeferred = async { apiService.getMyProfile() }
+                val otherProfileDeferred = async {
+                    retrofitInstance.apiService.getOtherUsersProfileByUsername(username)
+                }
+
+                // Wait for my profile
+                val profileResponse = profileDeferred.await()
+
+                if (profileResponse.isSuccessful && profileResponse.body() != null) {
+                    val data = profileResponse.body()!!.data
+
+                    fullName = "${data.firstName} ${data.lastName}".trim()
+                    userBio = data.bio
+                    userLocation = data.location
+                    avatarUrl = data.account.avatar.url
+
+                    // Save to local storage in background
+                    async {
+                        val localStorage = LocalStorage(this@MyUserProfileAccount)
+                        localStorage.saveUserData(
+                            userId = data._id,
+                            username = data.account.username,
+                            email = data.account.email,
+                            avatarUrl = avatarUrl,
+                            fullName = fullName,
+                            accessToken = getAccessToken(this@MyUserProfileAccount)
+                        )
+                    }
+
+                    // Update UI
+                    withContext(Dispatchers.Main) {
+                        binding.fullName.text = fullName.ifEmpty { username }
+                        binding.userBioText.text = userBio
+                        binding.userActualLocation.text = userLocation
+                        loadProfileImageOptimized()
+                    }
+                }
+
+                // Wait for other profile data
+                val otherProfileResponse = otherProfileDeferred.await()
+                val responseBody = otherProfileResponse.body()
+
+                if (responseBody != null) {
+                    extractAndProcessProfile(responseBody.data)
+                    withContext(Dispatchers.Main) {
+                        userProfileLiveData.postValue(responseBody.data)
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading profile", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@MyUserProfileAccount,
+                        "Failed to load profile: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun extractAndProcessProfile(profileData: Any) {
+        try {
+            // Extract all data in one pass
+            followerCount = extractFieldValueAsInt(profileData, "followersCount", "followers") ?: 0
+            followingCount = extractFieldValueAsInt(profileData, "followingCount", "following") ?: 0
+            val postsCount = extractFieldValueAsInt(profileData, "postsCount", "posts") ?: 0
+
+            val bio = extractFieldValue(profileData as Data?, "bio") ?: ""
+            val location = extractFieldValue(profileData, "location") ?: ""
+            val joinedDate = extractFieldValue(profileData, "joinedDate", "createdAt")
+
+            val extractedFirstName = extractFieldValue(profileData, "firstName") ?: ""
+            val extractedLastName = extractFieldValue(profileData, "lastName") ?: ""
+            val extractedOwnerId = extractFieldValue(profileData, "owner") ?: ""
+            val extractedProfileId = extractFieldValue(profileData, "_id", "id") ?: ""
+            val extractedUsername = extractFieldValue(profileData, "username") ?: username
+
+            val avatarFromProfile = extractNestedFieldValue(profileData, "account", "avatar", "url")
+
+            // Set userId
+            if (extractedOwnerId.isNotEmpty()) {
+                userId = extractedOwnerId
+            } else if (extractedProfileId.isNotEmpty()) {
+                val nestedOwnerId = extractNestedFieldValue(profileData, "account", "_id")
+                userId = nestedOwnerId ?: extractedProfileId
+            }
+
+            if (extractedUsername.isNotEmpty()) username = extractedUsername
+
+            if (extractedFirstName.isNotEmpty() || extractedLastName.isNotEmpty()) {
+                fullName = "$extractedFirstName $extractedLastName".trim()
+                if (fullName.isEmpty()) fullName = username
+                userName = fullName
+            }
+
+            if (!avatarFromProfile.isNullOrEmpty()) {
+                avatarUrl = avatarFromProfile
+            }
+
+            userBio = bio.ifBlank {
+                "✨ Content Creator | Dancer ✨\n🎵 Music Lover | Viral Videos\n#Dance #Comedy #Viral"
+            }
+            userLocation = location.ifBlank { "Lilongwe, Malawi" }
+            joinDate = formatJoinDate(joinedDate)
+
+            // Update UI immediately with counts
+            lifecycleScope.launch(Dispatchers.Main) {
+                setupUserInterface()
+                binding.postsCount.text = formatCount(postsCount)
+            }
+
+            // Fetch detailed posts in background (don't block)
+            lifecycleScope.launch(Dispatchers.IO) {
+                fetchUserTotalPostsAndLikes(username)
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error processing profile: ${e.message}", e)
+        }
+    }
+
+    private fun fetchUserTotalPostsAndLikes(username: String) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Fetching posts for username: $username")
+
+                var totalPosts = 0
+                var totalLikes = 0
+
+                // Only fetch first page for faster initial load
+                val response = retrofitInstance.apiService.getShortsByUsername(username)
+
+                if (response.isSuccessful) {
+                    val body = response.body()?.data
+
+                    body?.posts?.let { posts ->
+                        val userPosts = posts.filter { post ->
+                            post.author?.account?.username == username
+                        }
+
+                        totalPosts = userPosts.size
+                        totalLikes = userPosts.sumOf { it.likes }
+                    }
+
+                    Log.d(TAG, "Posts: $totalPosts, Likes: $totalLikes")
+
+                    withContext(Dispatchers.Main) {
+                        binding.postsCount.text = formatCount(totalPosts)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching posts: ${e.message}", e)
+            }
+        }
+    }
+
+    private fun loadProfileImageOptimized() {
+        val imageView = binding.userProfileAvatar
+
+        if (!avatarUrl.isNullOrEmpty()) {
+            try {
+                Glide.with(this)
+                    .load(avatarUrl)
+                    .apply(
+                        RequestOptions()
+                            .circleCrop()
+                            .placeholder(R.drawable.flash21)
+                            .error(R.drawable.flash21)
+                            .override(200, 200) // Reduce size
+                            .diskCacheStrategy(DiskCacheStrategy.ALL) // Cache everything
+                            .skipMemoryCache(false) // Use memory cache
+                    )
+                    .into(imageView)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading image: ${e.message}", e)
+                imageView.setImageResource(R.drawable.flash21)
+            }
+        } else {
+            imageView.setImageResource(R.drawable.flash21)
+        }
+    }
+
+    private fun updateProfileOnServer(
+        firstName: String,
+        lastName: String,
+        bio: String,
+        location: String,
+        dob: String,
+        phoneNumber: String,
+        countryCode: String
+    ) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val updateRequest = UpdateSocialProfileRequest(
+                    firstName = firstName.ifEmpty { null },
+                    lastName = lastName.ifEmpty { null },
+                    bio = bio.ifEmpty { null },
+                    location = location.ifEmpty { null },
+                    dob = dob.ifEmpty { null },
+                    phoneNumber = phoneNumber.ifEmpty { null },
+                    countryCode = countryCode.ifEmpty { null }
+                )
+
+                val response = apiService.updateMyProfile(updateRequest)
+
+                if (response.isSuccessful && response.body() != null) {
+                    val updatedData = response.body()!!.data
+
+                    // Update local variables
+                    fullName = "${updatedData.firstName} ${updatedData.lastName}".trim()
+                    userBio = updatedData.bio
+                    userLocation = updatedData.location
+
+                    withContext(Dispatchers.Main) {
+                        // Update UI
+                        binding.fullName.text = fullName.ifEmpty { username }
+                        binding.userBioText.text = userBio
+                        binding.userActualLocation.text = userLocation
+
+                        Toast.makeText(
+                            this@MyUserProfileAccount,
+                            "Profile updated successfully!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    // Save to storage in background - don't block
+                    async {
+                        val localStorage = LocalStorage(this@MyUserProfileAccount)
+                        localStorage.saveUserData(
+                            userId = userId,
+                            username = username,
+                            email = getEmail(this@MyUserProfileAccount),
+                            avatarUrl = avatarUrl,
+                            fullName = fullName,
+                            accessToken = getAccessToken(this@MyUserProfileAccount)
+                        )
+                    }
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "Update failed: ${response.code()} - $errorBody")
+
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            this@MyUserProfileAccount,
+                            "Failed to update profile",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating profile", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@MyUserProfileAccount,
+                        "Error: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun uploadProfileImage(uri: Uri) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                // Process image in background
+                val file = async {
+                    val inputStream = contentResolver.openInputStream(uri)
+                    val tempFile = File(cacheDir, "avatar_${System.currentTimeMillis()}.jpg")
+                    inputStream?.use { input ->
+                        tempFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    tempFile
+                }.await()
+
+                val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+                val avatarPart = MultipartBody.Part.createFormData("avatar", file.name, requestFile)
+
+                val response = apiService.updateUserAvatar(avatarPart)
+
+                if (response.isSuccessful && response.body() != null) {
+                    val newAvatarUrl = response.body()!!.data.avatar.url
+                    avatarUrl = newAvatarUrl
+
+                    withContext(Dispatchers.Main) {
+                        loadProfileImageOptimized()
+                        Toast.makeText(
+                            this@MyUserProfileAccount,
+                            "Profile picture updated!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    // Save to storage in background
+                    async {
+                        val localStorage = LocalStorage(this@MyUserProfileAccount)
+                        localStorage.saveUserData(
+                            userId = userId,
+                            username = username,
+                            email = getEmail(this@MyUserProfileAccount),
+                            avatarUrl = newAvatarUrl,
+                            fullName = fullName,
+                            accessToken = getAccessToken(this@MyUserProfileAccount)
+                        )
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            this@MyUserProfileAccount,
+                            "Failed to upload image",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+
+                file.delete()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error uploading avatar", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@MyUserProfileAccount,
+                        "Error: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun showEditProfileDialog() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_profile, null)
+
+        val firstNameInput = dialogView.findViewById<EditText>(R.id.firstNameInput)
+        val lastNameInput = dialogView.findViewById<EditText>(R.id.lastNameInput)
+        val bioInput = dialogView.findViewById<EditText>(R.id.bioInput)
+        val locationInput = dialogView.findViewById<EditText>(R.id.locationInput)
+        val dobInput = dialogView.findViewById<EditText>(R.id.dobInput)
+        val phoneNumberInput = dialogView.findViewById<EditText>(R.id.phoneNumberInput)
+        val countryCodeInput = dialogView.findViewById<EditText>(R.id.countryCodeInput)
+
+        // Show dialog immediately
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Edit Profile")
+            .setView(dialogView)
+            .setPositiveButton("Save") { _, _ ->
+                val newFirstName = firstNameInput.text.toString().trim()
+                val newLastName = lastNameInput.text.toString().trim()
+                val newBio = bioInput.text.toString().trim()
+                val newLocation = locationInput.text.toString().trim()
+                val newDob = dobInput.text.toString().trim()
+                val newPhoneNumber = phoneNumberInput.text.toString().trim()
+                val newCountryCode = countryCodeInput.text.toString().trim()
+
+                updateProfileOnServer(newFirstName, newLastName, newBio, newLocation, newDob, newPhoneNumber, newCountryCode)
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.show()
+
+        // Load data in background after dialog is shown
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = apiService.getMyProfile()
+                if (response.isSuccessful && response.body() != null) {
+                    val data = response.body()!!.data
+
+                    withContext(Dispatchers.Main) {
+                        firstNameInput.setText(data.firstName ?: "")
+                        lastNameInput.setText(data.lastName ?: "")
+                        bioInput.setText(data.bio ?: "")
+                        locationInput.setText(data.location ?: "")
+                        dobInput.setText(data.dob ?: "")
+                        phoneNumberInput.setText(data.phoneNumber ?: "")
+                        countryCodeInput.setText(data.countryCode ?: "")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading profile data: ${e.message}", e)
+            }
+        }
+    }
+
+    private fun setupTabLayout() {
+        val adapter = MyUserProfilePagerAdapter(this, userId, username)
+        binding.viewPager2.adapter = adapter
+
+        // Reduce offscreen page limit for faster initial load
+        binding.viewPager2.offscreenPageLimit = 1
+
+        TabLayoutMediator(binding.tabLayout, binding.viewPager2) { tab, position ->
+            when (position) {
+                0 -> tab.setIcon(R.drawable.scroll_text_line_svgrepo_com)
+                1 -> tab.setIcon(R.drawable.play_svgrepo_com_white)
+                2 -> tab.setIcon(R.drawable.favorite_black)
+                3 -> tab.setIcon(R.drawable.business_bag_svgrepo_com)
+                4 -> tab.setIcon(R.drawable.analytics_svgrepo_com)
+            }
+        }.attach()
+    }
 
     private fun initiateVoiceCall() {
         Toast.makeText(this, "Initiating voice call to $fullName...", Toast.LENGTH_SHORT).show()
@@ -402,7 +810,7 @@ class MyUserProfileAccount : AppCompatActivity() {
 
     }
 
-    // NEW: Show image source dialog (Camera/Gallery)
+    //Show image source dialog (Camera/Gallery)
     private fun showImageSourceDialog() {
         val options = arrayOf("Take Photo", "Choose from Gallery", "View Full Picture", "Cancel")
 
@@ -418,7 +826,7 @@ class MyUserProfileAccount : AppCompatActivity() {
             .show()
     }
 
-    // NEW: Check camera permission
+    //Check camera permission
     private fun checkCameraPermissionAndOpen() {
         when {
             ContextCompat.checkSelfPermission(
@@ -562,362 +970,6 @@ class MyUserProfileAccount : AppCompatActivity() {
         bottomSheet.show()
     }
 
-
-    private fun showEditProfileDialog() {
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_profile, null)
-
-        val firstNameInput = dialogView.findViewById<EditText>(R.id.firstNameInput)
-        val lastNameInput = dialogView.findViewById<EditText>(R.id.lastNameInput)
-        val bioInput = dialogView.findViewById<EditText>(R.id.bioInput)
-        val locationInput = dialogView.findViewById<EditText>(R.id.locationInput)
-        val dobInput = dialogView.findViewById<EditText>(R.id.dobInput)
-        val phoneNumberInput = dialogView.findViewById<EditText>(R.id.phoneNumberInput)
-        val countryCodeInput = dialogView.findViewById<EditText>(R.id.countryCodeInput)
-
-        // Pre-fill current data from the profile response
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val response = apiService.getMyProfile()
-                if (response.isSuccessful && response.body() != null) {
-                    val data = response.body()!!.data
-
-                    val firstName = data.firstName ?: ""
-                    val lastName = data.lastName ?: ""
-                    val bio = data.bio ?: ""
-                    val location = data.location ?: ""
-                    val dob = data.dob ?: ""
-                    val phoneNumber = data.phoneNumber ?: ""
-                    val countryCode = data.countryCode ?: ""
-
-                    withContext(Dispatchers.Main) {
-                        firstNameInput.setText(firstName)
-                        lastNameInput.setText(lastName)
-                        bioInput.setText(bio)
-                        locationInput.setText(location)
-                        dobInput.setText(dob)
-                        phoneNumberInput.setText(phoneNumber)
-                        countryCodeInput.setText(countryCode)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "One or More Input is InCorrect: ${e.message}", e)
-            }
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("Edit Profile")
-            .setView(dialogView)
-            .setPositiveButton("Save") { _, _ ->
-                val newFirstName = firstNameInput.text.toString().trim()
-                val newLastName = lastNameInput.text.toString().trim()
-                val newBio = bioInput.text.toString().trim()
-                val newLocation = locationInput.text.toString().trim()
-                val newDob = dobInput.text.toString().trim()
-                val newPhoneNumber = phoneNumberInput.text.toString().trim()
-                val newCountryCode = countryCodeInput.text.toString().trim()
-
-                updateProfileOnServer(newFirstName, newLastName, newBio, newLocation, newDob, newPhoneNumber, newCountryCode)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun updateProfileOnServer(
-        firstName: String,
-        lastName: String,
-        bio: String,
-        location: String,
-        dob: String,
-        phoneNumber: String,
-        countryCode: String
-    ) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                // Create the request object using your existing data class
-                val updateRequest = UpdateSocialProfileRequest(
-                    firstName = firstName.ifEmpty { null },
-                    lastName = lastName.ifEmpty { null },
-                    bio = bio.ifEmpty { null },
-                    location = location.ifEmpty { null },
-                    dob = dob.ifEmpty { null },
-                    phoneNumber = phoneNumber.ifEmpty { null },
-                    countryCode = countryCode.ifEmpty { null }
-                )
-
-                // Call the API to update profile on server
-                val response = apiService.updateMyProfile(updateRequest)
-
-                if (response.isSuccessful && response.body() != null) {
-                    val updatedData = response.body()!!.data
-
-                    // Update local variables with server response
-                    fullName = "${updatedData.firstName} ${updatedData.lastName}".trim()
-                    userBio = updatedData.bio
-                    userLocation = updatedData.location
-
-                    withContext(Dispatchers.Main) {
-                        // Update UI
-                        binding.fullName.text = fullName.ifEmpty { username }
-                        binding.userBioText.text = userBio
-                        binding.userActualLocation.text = userLocation
-
-                        // Save to local storage
-                        val localStorage = LocalStorage(this@MyUserProfileAccount)
-                        localStorage.saveUserData(
-                            userId = userId,
-                            username = username,
-                            email = getEmail(this@MyUserProfileAccount),
-                            avatarUrl = avatarUrl,
-                            fullName = fullName,
-                            accessToken = getAccessToken(this@MyUserProfileAccount)
-                        )
-
-                        Toast.makeText(
-                            this@MyUserProfileAccount,
-                            "Profile updated successfully!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } else {
-                    val errorBody = response.errorBody()?.string()
-                    Log.e(TAG, "Profile update failed: ${response.code()} - $errorBody")
-
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            this@MyUserProfileAccount,
-                            "Failed to update profile: ${response.message()}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating profile", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@MyUserProfileAccount,
-                        "Error: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
-    private fun uploadProfileImage(uri: Uri) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                Log.d(TAG, "Uploading image: $uri")
-
-                // Convert URI to temporary file
-                val inputStream = contentResolver.openInputStream(uri)
-                val file = File(cacheDir, "avatar_${System.currentTimeMillis()}.jpg")
-                inputStream?.use { input -> file.outputStream().use { output -> input.copyTo(output) } }
-
-                // Prepare Multipart
-                val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
-                val avatarPart = MultipartBody.Part.createFormData("avatar", file.name, requestFile)
-
-                // Call your exact endpoint
-                val response = apiService.updateUserAvatar(avatarPart)
-
-                if (response.isSuccessful && response.body() != null) {
-                    val avatarUrl = response.body()!!.data.avatar.url
-                    Log.d(TAG, "Avatar updated: $avatarUrl")
-
-                    // Update locally
-                    this@MyUserProfileAccount.avatarUrl = avatarUrl
-                    val localStorage = LocalStorage(this@MyUserProfileAccount)
-                    localStorage.saveUserData(
-                        userId = userId,
-                        username = username,
-                        email = getEmail(this@MyUserProfileAccount),
-                        avatarUrl = avatarUrl,
-                        fullName = fullName,
-                        accessToken = getAccessToken(this@MyUserProfileAccount)
-                    )
-
-                    // Refresh UI
-                    withContext(Dispatchers.Main) {
-                        loadProfileImage()
-                        Toast.makeText(
-                            this@MyUserProfileAccount,
-                            "Profile picture updated successfully!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } else {
-                    val errorBody = response.errorBody()?.string()
-                    Log.e(TAG, "Upload failed: ${response.code()} - $errorBody")
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            this@MyUserProfileAccount,
-                            "Failed to upload: ${response.message()}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-
-                file.delete()
-            } catch (e: Exception) {
-                Log.e(TAG, "Error uploading avatar", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@MyUserProfileAccount,
-                        "Error: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
-
-
-    private fun loadUserProfile(username: String) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val response = apiService.getMyProfile()
-
-                if (response.isSuccessful && response.body() != null) {
-                    val data = response.body()!!.data
-                    Log.d(TAG, "Fetched profile: ${data.firstName} ${data.lastName}")
-
-                    // Map data to local vars
-                    fullName = "${data.firstName} ${data.lastName}".trim()
-                    userBio = data.bio
-                    userLocation = data.location
-                    avatarUrl = data.account.avatar.url
-
-                    // Save locally
-                    val localStorage = LocalStorage(this@MyUserProfileAccount)
-                    localStorage.saveUserData(
-                        userId = data._id,
-                        username = data.account.username,
-                        email = data.account.email,
-                        avatarUrl = avatarUrl,
-                        fullName = fullName,
-                        accessToken = getAccessToken(this@MyUserProfileAccount)
-                    )
-
-                    // Update UI on main thread
-                    withContext(Dispatchers.Main) {
-                        binding.fullName.text = fullName.ifEmpty { username }
-                        binding.userBioText.text = userBio
-                        binding.userActualLocation.text = userLocation
-                        loadProfileImage()
-                    }
-                } else {
-                    Log.e(TAG, "Failed to load profile: ${response.message()}")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading profile", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@MyUserProfileAccount,
-                        "Failed to load profile: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-
-        getOtherUsersProfile(username)
-    }
-
-    private fun getOtherUsersProfile(username: String) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val response = retrofitInstance.apiService.getOtherUsersProfileByUsername(username)
-                val responseBody = response.body()
-
-                if (responseBody != null) {
-                    extractAndProcessProfile(responseBody.data)
-                    withContext(Dispatchers.Main) {
-                        userProfileLiveData.postValue(responseBody.data)
-                    }
-                    Log.d(TAG, "Profile loaded successfully for: $username")
-                } else {
-                    withContext(Dispatchers.Main) {
-                        onErrorFeedBack.postValue("User data is empty")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Exception loading profile: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    onErrorFeedBack.postValue("Error connecting to server. Check internet connection.")
-                }
-            }
-        }
-    }
-
-    private fun extractAndProcessProfile(profileData: Any) {
-        try {
-            followerCount = extractFieldValueAsInt(profileData, "followersCount", "followers") ?: 0
-            followingCount = extractFieldValueAsInt(profileData, "followingCount", "following") ?: 0
-            val postsCount = extractFieldValueAsInt(profileData, "postsCount", "posts") ?: 0
-
-            val bio = extractFieldValue(profileData as Data?, "bio") ?: ""
-            val location = extractFieldValue(profileData, "location") ?: ""
-            val joinedDate = extractFieldValue(profileData, "joinedDate", "createdAt")
-
-            val extractedFirstName = extractFieldValue(profileData, "firstName") ?: ""
-            val extractedLastName = extractFieldValue(profileData, "lastName") ?: ""
-
-            val extractedOwnerId = extractFieldValue(profileData, "owner") ?: ""
-            val extractedProfileId = extractFieldValue(profileData, "_id", "id") ?: ""
-            val extractedUsername = extractFieldValue(profileData, "username") ?: username
-
-            val avatarFromProfile = extractNestedFieldValue(profileData, "account", "avatar", "url")
-
-            if (extractedOwnerId.isNotEmpty()) {
-                userId = extractedOwnerId
-                Log.d(TAG, "✓ Set userId to owner/account ID: $userId")
-            } else if (extractedProfileId.isNotEmpty()) {
-                val nestedOwnerId = extractNestedFieldValue(profileData, "account", "_id")
-                if (!nestedOwnerId.isNullOrEmpty()) {
-                    userId = nestedOwnerId
-                    Log.d(TAG, "✓ Set userId from nested account._id: $userId")
-                } else {
-                    userId = extractedProfileId
-                    Log.w(TAG, "⚠ Using profile _id as userId (may be wrong): $userId")
-                }
-            }
-
-            if (extractedUsername.isNotEmpty()) username = extractedUsername
-
-            if (extractedFirstName.isNotEmpty() || extractedLastName.isNotEmpty()) {
-                fullName = "$extractedFirstName $extractedLastName".trim()
-                if (fullName.isEmpty()) fullName = username
-                userName = fullName
-            }
-
-            if (!avatarFromProfile.isNullOrEmpty()) {
-                avatarUrl = avatarFromProfile
-                Log.d(TAG, "Avatar URL: $avatarUrl")
-            }
-
-            userBio = bio.ifBlank {
-                "✨ Content Creator | Dancer ✨\n🎵 Music Lover | Viral Videos\n#Dance #Comedy #Viral"
-            }
-            userLocation = location.ifBlank { "Lilongwe, Malawi" }
-            joinDate = formatJoinDate(joinedDate)
-
-            val initialPostsCount = postsCount
-
-            Log.d(TAG, "Profile processed - userId: $userId, username: $username, name: $fullName")
-
-            lifecycleScope.launch(Dispatchers.Main) {
-                setupUserInterface()
-                binding.postsCount.text = formatCount(initialPostsCount)
-            }
-
-            fetchUserTotalPostsAndLikes(username)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error processing profile data: ${e.message}", e)
-        }
-    }
-
     private fun extractFromUserObject(userObject: Any) {
         try {
             val extractedOwnerId = extractFieldValue(userObject as Data?, "owner")
@@ -998,56 +1050,6 @@ class MyUserProfileAccount : AppCompatActivity() {
         }
     }
 
-    private fun fetchUserTotalPostsAndLikes(username: String) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                Log.d(TAG, "Fetching posts for username: $username")
-
-                var totalPosts = 0
-                var totalLikes = 0
-                var page = 1
-                var hasMorePages = true
-
-                while (hasMorePages && page <= 10) {
-                    val response = retrofitInstance.apiService.getShortsByUsername(username)
-
-                    if (response.isSuccessful) {
-                        val body = response.body()?.data
-
-                        body?.posts?.let { posts ->
-                            val userPosts = posts.filter { post ->
-                                post.author?.account?.username == username
-                            }
-
-                            totalPosts += userPosts.size
-
-                            userPosts.forEach { post ->
-                                totalLikes += post.likes
-                            }
-                        }
-
-                        hasMorePages = body?.hasNextPage == true
-                        page++
-                    } else {
-                        Log.e(TAG, "API error: ${response.code()}")
-                        break
-                    }
-                }
-
-                Log.d(TAG, "Total posts: $totalPosts, Total likes: $totalLikes")
-
-                withContext(Dispatchers.Main) {
-                    binding.postsCount.text = formatCount(totalPosts)
-                }
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error fetching posts: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    binding.postsCount.text = "0"
-                }
-            }
-        }
-    }
 
     private fun setupUserInterface() {
         binding.fullName.text = fullName.ifEmpty { "Unknown User" }
@@ -1437,21 +1439,6 @@ class MyUserProfileAccount : AppCompatActivity() {
         }
     }
 
-    private fun setupTabLayout() {
-        val adapter = MyUserProfilePagerAdapter(this, userId, username)
-        binding.viewPager2.adapter = adapter
-        binding.viewPager2.offscreenPageLimit = 4
-
-        TabLayoutMediator(binding.tabLayout, binding.viewPager2) { tab, position ->
-            when (position) {
-                0 -> tab.setIcon(R.drawable.scroll_text_line_svgrepo_com)
-                1 -> tab.setIcon(R.drawable.play_svgrepo_com_white)
-                2 -> tab.setIcon(R.drawable.favorite_black)
-                3 -> tab.setIcon(R.drawable.business_bag_svgrepo_com)
-                4 -> tab.setIcon(R.drawable.analytics_svgrepo_com)
-            }
-        }.attach()
-    }
 
 
     // Helper extraction methods
