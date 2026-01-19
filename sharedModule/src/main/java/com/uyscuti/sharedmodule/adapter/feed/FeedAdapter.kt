@@ -2044,38 +2044,38 @@ class FeedAdapter(
             }
         }
 
-//        private fun navigateToFragment(fragment: Fragment, tag: String) {
-//            try {
-//                val activity = getActivityFromContext(itemView.context)
-//                if (activity != null) {
-//                    val currentFragment = activity.supportFragmentManager.fragments.lastOrNull {
-//                        it.isVisible && it.view != null
-//                    }
-//                    val fragmentManager = if (currentFragment != null &&
-//                        currentFragment.childFragmentManager.fragments.isNotEmpty()) {
-//                        currentFragment.childFragmentManager
-//                    } else {
-//                        activity.supportFragmentManager
-//                    }
-//
-//                    fragmentManager.beginTransaction()
-//                        .setCustomAnimations(
-//                            R.anim.slide_in_right,
-//                            R.anim.slide_out_left,
-//
-//                            )
-//                        .replace(R.id.frame_layout, fragment)
-//                        .addToBackStack(tag)
-//                        .commit()
-//                    Log.d(TAG, "Successfully navigated to fragment: $tag")
-//
-//                } else {
-//                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
-//                }
-//            } catch (e: Exception) {
-//                Log.e(TAG, "Error navigating to fragment: $tag", e)
-//            }
-//        }
+        private fun navigateToFragment(fragment: Fragment, tag: String) {
+            try {
+                val activity = getActivityFromContext(itemView.context)
+                if (activity != null) {
+                    val currentFragment = activity.supportFragmentManager.fragments.lastOrNull {
+                        it.isVisible && it.view != null
+                    }
+                    val fragmentManager = if (currentFragment != null &&
+                        currentFragment.childFragmentManager.fragments.isNotEmpty()) {
+                        currentFragment.childFragmentManager
+                    } else {
+                        activity.supportFragmentManager
+                    }
+
+                    fragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+
+                            )
+                        .replace(R.id.frame_layout, fragment)
+                        .addToBackStack(tag)
+                        .commit()
+                    Log.d(TAG, "Successfully navigated to fragment: $tag")
+
+                } else {
+                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to fragment: $tag", e)
+            }
+        }
 
         private fun setupPostInfo(data: com.uyscuti.social.network.api.response.posts.Post) {
             // Date and time
@@ -2983,59 +2983,6 @@ class FeedAdapter(
             }
         }
 
-
-        // In FeedPostViewHolder navigateToFragment method
-        private fun navigateToFragment(fragment: Fragment, tag: String) {
-            try {
-                // Check if we have a fragment manager (null means delegate to listener)
-                val activity = getActivityFromContext(itemView.context)
-                if (activity != null) {
-                    val currentFragment = activity.supportFragmentManager.fragments.lastOrNull {
-                        it.isVisible && it.view != null
-                    }
-
-                    // CRITICAL CHECK: If no fragmentManager was provided, delegate to listener
-                    val fragmentManager = if (currentFragment != null &&
-                        currentFragment.childFragmentManager.fragments.isNotEmpty()) {
-                        currentFragment.childFragmentManager
-                    } else {
-                        activity.supportFragmentManager
-                    }
-
-                    // Try to find R.id.frame_layout
-                    val containerId = try {
-                        R.id.frame_layout
-                    } catch (e: Exception) {
-                        // If frame_layout doesn't exist, delegate to listener
-                        Log.w(TAG, "frame_layout not found, delegating to listener")
-                        // Notify listener instead
-                        currentPost?.let { post ->
-                            feedClickListener.feedClickedToOriginalPost(absoluteAdapterPosition, post._id)
-                        }
-                        return
-                    }
-
-                    fragmentManager.beginTransaction()
-                        .setCustomAnimations(
-                            R.anim.slide_in_right,
-                            R.anim.slide_out_left
-                        )
-                        .replace(containerId, fragment)
-                        .addToBackStack(tag)
-                        .commit()
-                    Log.d(TAG, "Successfully navigated to fragment: $tag")
-
-                } else {
-                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error navigating to fragment: $tag", e)
-                // On error, delegate to listener
-                currentPost?.let { post ->
-                    feedClickListener.feedClickedToOriginalPost(absoluteAdapterPosition, post._id)
-                }
-            }
-        }
 
     }
 
