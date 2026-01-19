@@ -257,27 +257,18 @@ interface IFlashapi {
 
     // ==================== SOCIAL MEDIA - BLOCK/UNBLOCK ====================
 
-//    @POST("social-media/block/{userId}")
-//    suspend fun blockUser(@Path("userId") userId: String): Response<FollowUnFollowResponse>
-//
-//    @DELETE("social-media/block/{userId}")
-//    suspend fun unBlockUser(@Path("userId") userId: String): Response<FollowUnFollowResponse>
 
-
-    @POST("social-media/block/{userId}")  // ← Check if this is correct!
+    @POST("api/v1/social-media/block/{userId}")
     suspend fun blockUser(@Path("userId") userId: String): Response<BlockUnblockResponse>
 
-    @DELETE("social-media/block/{userId}")  // ← Check if this is correct!
+    @DELETE("api/v1/social-media/block/{userId}")
     suspend fun unBlockUser(@Path("userId") userId: String): Response<BlockUnblockResponse>
 
-
-
-    @GET("social-media/blocked")
+    @GET("api/v1/social-media/blocked")
     suspend fun getBlockedUsers(
         @Query("page") page: Int,
         @Query("limit") limit: Int = 20
     ): Response<UsersResponse>
-
 
 
     // ==================== SOCIAL MEDIA - SHORTS (POSTS) ====================
