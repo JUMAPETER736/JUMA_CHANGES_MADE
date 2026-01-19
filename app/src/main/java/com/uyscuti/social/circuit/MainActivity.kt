@@ -5159,10 +5159,7 @@ class MainActivity : AppCompatActivity(),
                 setOutputFile(outputFile)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
 
-//                setAudioSource(MediaRecorder.AudioSource.MIC)
-//                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-//                setOutputFile(outputFile)
-//                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+
 
                 prepare()
                 start()
@@ -5178,10 +5175,10 @@ class MainActivity : AppCompatActivity(),
 
             binding.deleteVN.isClickable = true
             binding.sendVN.isClickable = true
-//            mediaRecorder.
+
             recordedAudioFiles.add(outputFile)
 
-//            mediaRecorder.logSessionId
+
 
             Log.d("VNFile", outputFile)
             // Add any UI changes or notifications indicating recording has started
@@ -5200,7 +5197,7 @@ class MainActivity : AppCompatActivity(),
             binding.waveForm.visibility = View.VISIBLE
             binding.timerTv.visibility = View.VISIBLE
             binding.playAudioLayout.visibility = View.GONE
-//            binding.playVnAudioBtn.setImageResource(R.drawable.baseline_pause_black)
+
             binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
 
             binding.recordVN.setImageResource(R.drawable.baseline_pause_black)
@@ -5225,10 +5222,9 @@ class MainActivity : AppCompatActivity(),
             isPaused = false
 
             binding.timerTv.text = "00:00.00"
-//            binding.recordVN.setImageResource(R.drawable.baseline_pause_24)
+
             binding.recordVN.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
-//            binding.deleteVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
-//            binding.deleteVN.isClickable = false
+
             binding.sendVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
             binding.sendVN.isClickable = false
 
@@ -5241,7 +5237,7 @@ class MainActivity : AppCompatActivity(),
             binding.VNLayout.visibility = View.GONE
 
             // Add any UI changes or notifications indicating recording has stopped
-//            showSaveConfirmationDialog(outputFile)
+
             Log.d(TAG, "stopRecording: isReply is $isReply")
             binding.replyToLayout.visibility = View.GONE
 
@@ -5262,7 +5258,7 @@ class MainActivity : AppCompatActivity(),
                     Log.d("AudioPicker", "File name: $fileName")
                     Log.d("AudioPicker", "durationString: $durationString")
                     uploadVnComment(outputVnFile, fileName, durationString, "vnAudio")
-//                    firstTimeSendVn = false
+
                 } else {
                     val durationString = getFormattedDuration(outputFile)
                     val fileName = getFileNameFromLocalPath(outputFile)
@@ -5282,7 +5278,7 @@ class MainActivity : AppCompatActivity(),
                     Log.d("AudioPicker", "durationString: $durationString")
                     Log.d("AudioPicker", "reverseDurationString: $reverseDurationString")
                     uploadReplyVnComment(outputVnFile, fileName, durationString, "vnAudio")
-//                    firstTimeSendVn = false
+
                 } else {
                     val durationString = getFormattedDuration(outputFile)
                     val fileName = getFileNameFromLocalPath(outputFile)
@@ -5307,7 +5303,7 @@ class MainActivity : AppCompatActivity(),
     @RequiresApi(Build.VERSION_CODES.R)
     private fun pauseRecording() {
         val TAG = "pauseRecording"
-//        firstTimeSendVn = true
+
         if (isRecording && !isPaused) {
 
             try {
@@ -5320,15 +5316,7 @@ class MainActivity : AppCompatActivity(),
                 Log.d(TAG, " failed to stop media recorder: $e")
                 e.printStackTrace()
             }
-//            mediaRecorder?.apply {
-//                stop() // Stop the recording
-////                reset() // Reset the MediaRecorder for the next session
-//                release()
-//            }
-//            mediaRecorder = null
-//            lifecycleScope.launch(Dispatchers.IO) {
-//
-//            }
+
 
             isPaused = true
             timer.pause() // Pause the recording timer
@@ -5343,35 +5331,6 @@ class MainActivity : AppCompatActivity(),
             Log.d(TAG, "pauseRecording: list of recordings $recordedAudioFiles")
 
             mixVN()
-//            if (recordedAudioFiles.size == 1) {
-//                binding.playVnAudioBtn.setOnClickListener {
-//                    Log.d(TAG, "onEnd: play vn button clicked")
-//                    when {
-//                        !isAudioVNPlaying -> {
-//                            binding.playVnAudioBtn.setImageResource(R.drawable.baseline_pause_black)
-//                            Log.d(
-//                                "playVnAudioBtn",
-//                                "onEnd: file being send to start play and inflate ${recordedAudioFiles.toString()}"
-//                            )
-//                            Log.d(
-//                                "playVnAudioBtn",
-//                                "onEnd: file being send to start play and inflate using index ${recordedAudioFiles[0]}"
-//                            )
-//                            startPlaying(recordedAudioFiles[0])
-//                            inflateWave(outputVnFile)
-//                        }
-//
-//                        else -> {
-//                            binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-//                            pauseVn()
-//                        }
-//                    }
-//                }
-//
-//            }
-//            else {
-
-//            }
 
         }
     }
@@ -5471,7 +5430,7 @@ class MainActivity : AppCompatActivity(),
             isAudioVNPlaying = false
 
             binding.timerTv.text = "00:00.00"
-//            binding.recordVN.setImageResource(R.drawable.baseline_pause_24)
+
             binding.recordVN.setImageResource(R.drawable.mic_2)
 
 
@@ -5483,7 +5442,7 @@ class MainActivity : AppCompatActivity(),
             timer.stop()
             Log.d("TAG", "deleteRecording: recorded files size ${recordedAudioFiles.size}")
             deleteVn()
-//            if()
+
         } catch (e: Exception) {
             e.printStackTrace()
             // Handle exceptions as needed
@@ -5492,7 +5451,7 @@ class MainActivity : AppCompatActivity(),
 
     private fun deleteVn() {
         recordedAudioFiles.clear()
-//        if (recordedAudioFiles.isNotEmpty()) {
+
         val isDeleted = deleteFiles(recordedAudioFiles)
         var outputVnFileList = mutableListOf<String>()
         outputVnFileList.add(outputVnFile)
@@ -5508,7 +5467,7 @@ class MainActivity : AppCompatActivity(),
         } else {
             println("Failed to delete file.")
         }
-//        }
+
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -5520,7 +5479,7 @@ class MainActivity : AppCompatActivity(),
             Log.d(TAG, "cleanCache: inside clean cache bus in main activity try download")
 
             DownloadManager.getInstance(applicationContext).cleanCacheDir()
-//            MediaLoader.getInstance(this).
+
         } catch (e: IOException) {
             Toast.makeText(this@MainActivity, "Error clean cache", Toast.LENGTH_LONG).show()
         }
@@ -5564,15 +5523,14 @@ class MainActivity : AppCompatActivity(),
                     Log.d("VideoPicker", "File path: $filePath")
                     Log.d("VideoPicker", "File path: $isReply")
                     if (filePath != null && !isReply) {
-//                        uploadVideoComment(filePath)
+
                     } else {
                         if (filePath != null) {
-//                            uploadReplyImageComment(filePath)
+
                         }
                     }
                 }
-//                Log.d("PhotoPicker", "Number of items selected: ${uris.size}")
-//                Log.d("PhotoPicker", "photo uris ${uris.toString()}")
+
             } else {
                 Log.d("PhotoPicker", "No media selected")
             }
@@ -5637,8 +5595,7 @@ class MainActivity : AppCompatActivity(),
         placeholder: Boolean = false, update: Boolean = false
     ) {
         Log.d("uploadVnComment", "uploadVnComment: placeholder $placeholder")
-//        Log.d("uploadVnComment", "stopRecording: isReply is $isReply")
-//        Log.d("uploadVnComment", "stopRecording: duration is $durationString")
+
 
         val mongoDbTimeStamp = generateMongoDBTimestamp()
 
@@ -5709,9 +5666,7 @@ class MainActivity : AppCompatActivity(),
             }
 
             Log.d(TAG, "uploadVnComment: comment $comment")
-//        adapter.submitItems(listOf(comment) )
-//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
-//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
+
             recordedAudioFiles.clear()
 
             if (!update) {
@@ -5745,34 +5700,30 @@ class MainActivity : AppCompatActivity(),
                     myFeedToComment = feedViewModel.getMyFeedData().find { it._id == postId }
                     favoriteFeedToComment =
                         feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                    Log.d(TAG, "onSubmit: total before feed count is ${feedToComment?.comments}")
+
 
                     if (myFeedToComment != null) {
-//                        myFeedToComment!!.comments += 1
 
                         feedViewModel.getMyFeedData().forEach { feed ->
                             if (feed._id == postId) {
                                 feed.comments = myFeedToComment!!.comments
                             }
                         }
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
                     }
                     if (favoriteFeedToComment != null) {
-//                        favoriteFeedToComment!!.comments += 1
+
 
                         feedViewModel.getAllFavoriteFeedData().forEach { feed ->
                             if (feed._id == postId) {
                                 feed.comments = favoriteFeedToComment!!.comments
                             }
                         }
-//                        favoriteFeedToComment = feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                        Log.d(TAG, "onSubmit: total after feed count is ${favoriteFeedToComment?.comments}")
-//
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
 
                     }
                     if (feedToComment != null) {
-//                        feedToComment!!.comments += 1
+
 
                         feedViewModel.getAllFeedData().forEach { feed ->
                             if (feed._id == postId) {
@@ -5787,7 +5738,7 @@ class MainActivity : AppCompatActivity(),
 
                     }
                 }
-//            addCommentVN()
+
 
             }
 
@@ -5828,9 +5779,7 @@ class MainActivity : AppCompatActivity(),
             )
 
         Log.d(TAG, "onSubmit: handle reply to a comment")
-//        isReply = false
 
-//        val newCommentReplyEntity = CommentsFilesEntity(commentId, vnToUpload, vnToUpload, isReply = 1)
 
         //if it clash on upload un comment the line below//
 
@@ -5862,7 +5811,7 @@ class MainActivity : AppCompatActivity(),
             __v = data!!.__v,
             _id = data!!._id,
             author = data!!.author,
-//            content = data!!.author?.account?.username!!,
+
             content = data!!.content,
             createdAt = data!!.createdAt,
             isLiked = data!!.isLiked,
@@ -5870,7 +5819,7 @@ class MainActivity : AppCompatActivity(),
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -5908,14 +5857,14 @@ class MainActivity : AppCompatActivity(),
                     parentPosition = updateReplyPosition,
                     uploadId = uploadId
                 )
-//            commentFilesViewModel.insertCommentFile(newCommentReplyEntity)
+
 
 
             commentFilesViewModel.insertCommentFile(newCommentReplyEntity)
             Log.d(TAG, "onSubmit: inserted comment $newCommentReplyEntity")
-//            commentFilesViewModel
+
         } else {
-//            isReply = false
+
             Log.d("placeholder", "uploadReplyVnComment: its placeholder ")
         }
 
@@ -6009,9 +5958,10 @@ class MainActivity : AppCompatActivity(),
                             Log.d("ThumbnailExtract", "ThumbnailExtract failed")
                         }
                         val outputStream = ByteArrayOutputStream()
-//                            // Compress the bitmap to a byte array
+
+                           // Compress the bitmap to a byte array
                         bitmapThumbnail?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-//                            // Convert the byte array to a RequestBody
+                            // Convert the byte array to a RequestBody
                         val requestBody = outputStream.toByteArray()
                             .toRequestBody(
                                 "image/*".toMediaTypeOrNull(),
@@ -6083,7 +6033,7 @@ class MainActivity : AppCompatActivity(),
                             Log.e("CommentId", "Comment Id not initialized ")
                         }
                     } else if (it[0].localPath == "gif") {
-//                        val replyGif = createMultipartBody(this, it[0].url.toUri(), "gif")
+
                         Log.d("LocalPath", "is set to gif")
                         if (::commentId.isInitialized) {
                             commentsReplyViewModel.commentReply(
