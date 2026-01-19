@@ -4265,12 +4265,12 @@ class MainActivity : AppCompatActivity(),
         adapter?.updateItem(event.position, event.comment)
 
         if (isInternetAvailable(this)) {
-//            Log.d(TAG, "likeUnLikeComment: internet is available")
+
             Log.d(
                 TAG,
                 "likeUnLikeComment: item to update id ${itemToUpdate?._id} and comment reply id ${event.commentReply._id}"
             )
-//            Log.d(TAG, "likeUnLikeComment: internet is available")
+
             lifecycleScope.launch {
                 val result = commentReplyLikeUnLike(itemToUpdate!!._id)
                 Log.d(TAG, "likeUnLikeComment server result: $result")
@@ -4302,7 +4302,7 @@ class MainActivity : AppCompatActivity(),
         } catch (e: HttpException) {
             Log.d(TAG, "Http Exception ${e.message}")
             withContext(Dispatchers.Main) {
-//                showToast(this@MainActivity, "Check Internet Connection")
+
             }
             return false
         } catch (e: IOException) {
@@ -4330,7 +4330,7 @@ class MainActivity : AppCompatActivity(),
         } catch (e: HttpException) {
             Log.d(TAG, "Http Exception ${e.message}")
             withContext(Dispatchers.Main) {
-//                showToast(this@MainActivity, "Check Internet Connection")
+
             }
             return false
         } catch (e: IOException) {
@@ -4346,7 +4346,7 @@ class MainActivity : AppCompatActivity(),
         var amplitude = mediaRecorder!!.maxAmplitude.toFloat()
         amplitude = if (amplitude > 0) amplitude else 130f
 
-//        Log.d("onTimerTick", "onTimerTick: media recorder amplitude: ${mediaRecorder?.maxAmplitude}")
+
         binding.waveForm.addAmplitude(amplitude)
 
     }
@@ -4357,7 +4357,7 @@ class MainActivity : AppCompatActivity(),
     @SuppressLint("DefaultLocale")
     private fun inflateWave(outputVN: String) {
 
-//        outputVnFile = outputVN
+
 
         val TAG = "inflateWave"
         Log.d("playVnAudioBtn", "inflateWave: outputvn $outputVN")
@@ -4366,34 +4366,33 @@ class MainActivity : AppCompatActivity(),
         binding.wave.visibility = View.VISIBLE
         binding.playerTimerTv.visibility = View.VISIBLE
         Log.d(TAG, "render: does not start with http")
-        //                audioDuration = 100L
+
         val file = File(outputVN)
+
         Log.d(TAG, "render: file $outputVN exists: ${file.exists()}")
         val locaAudioDuration = AudioDurationHelper.getLocalAudioDuration(outputVN)
+
         if (locaAudioDuration != null) {
+
             // Duration is available, do something with it
-            //                    println("Audio duration: ${duration}ms")
+
             val minutes = (locaAudioDuration / 1000) / 60
             val seconds = (locaAudioDuration / 1000) % 60
-            //                println("Audio duration: $minutes minutes $seconds seconds")
+
             binding.thirdTimerTv.text = String.format("%02d:%02d", minutes, seconds)
         } else {
             // File does not exist or error retrieving duration
-//            println("Unable to retrieve audio duration.")
+
             Log.e(TAG, "render: failed to retrieve audio duration")
 
         }
 
 
-        //                Log.d(TAG, "render: file $audioUrl can execute: ${file.canExecute()}")
-
-//        binding.wave.setSampleFrom(audioFile)
         CoroutineScope(Dispatchers.IO).launch {
             WaveFormExtractor.getSampleFrom(applicationContext, outputVN) {
 
                 CoroutineScope(Dispatchers.Main).launch {
-//                    binding.wave.progress = 0F
-//                    binding.wave.progress = currentItem.progress
+
 
                     if (locaAudioDuration != null) {
                         binding.wave.maxProgress = locaAudioDuration.toFloat()
@@ -4406,13 +4405,13 @@ class MainActivity : AppCompatActivity(),
                             progress: Float,
                             fromUser: Boolean
                         ) {
-//                                    wave.progress = progress
+
                             binding.secondTimerTv.text = String.format(
                                 "%s",
                                 TrimVideoUtils.stringForTime(progress)
                             )
 
-//                            currentItem.progress = progress
+
 
                             if (fromUser) {
                                 if (vnRecordAudioPlaying) {
@@ -4427,7 +4426,7 @@ class MainActivity : AppCompatActivity(),
 
                         override fun onRelease(event: MotionEvent?, progress: Float) {
                             if (outputVN.isNotEmpty()) {
-//                                inflateWave(outputVN)
+
                                 if (vnRecordAudioPlaying) {
                                     Log.d(
                                         "onRelease",
@@ -4449,7 +4448,7 @@ class MainActivity : AppCompatActivity(),
             }
         }
 
-//        binding.wave.setRawData(audioFile.readBytes()) { progressAnim.start() }
+
     }
 
     private val READ_EXTERNAL_STORAGE_REQUEST_CODE = 101 // Any integer value
@@ -4462,14 +4461,14 @@ class MainActivity : AppCompatActivity(),
     private fun startPlaying(vnAudio: String) {
         binding.playVnAudioBtn.setImageResource(R.drawable.baseline_pause_white_24)
         EventBus.getDefault().post(PauseShort(true))
-//        player?.reset()
+
         isAudioVNPlaying = true
         vnRecordAudioPlaying = true
 
         isOnRecordDurationOnPause = false
         startRecordWaveRunnable()
         if (isAudioVNPaused) {
-//            progressAnim.resume()
+
             Log.d("startPlaying", "(isAudioVNPaused)->vnRecordProgress $vnRecordProgress")
 
             if (vnRecordProgress != 0) {
@@ -4481,7 +4480,7 @@ class MainActivity : AppCompatActivity(),
             player = MediaPlayer().apply {
                 try {
                     setDataSource(vnAudio)
-//                inputStream.close()
+
                     prepare()
                     Log.d("startPlaying", "vnRecordProgress $vnRecordProgress")
                     if (vnRecordProgress != 0) {
@@ -4510,7 +4509,7 @@ class MainActivity : AppCompatActivity(),
         isAudioVNPaused = true
         isOnRecordDurationOnPause = true
 
-//        progressAnim.pause()
+
         binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
     }
 
@@ -4527,7 +4526,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun resumePlaying() {
-//        player?.resume()
+
     }
 
 
@@ -4570,24 +4569,21 @@ class MainActivity : AppCompatActivity(),
     ) {
         isReplyVnPlaying = isReply
         isVnAudioToPlay = isVnAudio
-//        Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
+
         Log.d(
             "toggleAudioPlayer",
             "progress received from adapter $progress is reply $isReply    is seeking $isSeeking is vn audio $isVnAudio"
         )
-//
+
 
 
         if (currentCommentAudioPath == audioToPlayPath) {
-//            Log.d(TAG, "toggleAudioPlayer: currentCommentAudioPosition == position")
+
             if (seekTo) {
                 Log.d("SeekTo", "Seek to $progress")
                 EventBus.getDefault().post(PauseShort(true))
                 isDurationOnPause = false
-//                Log.d(
-//                    "isDurationOnPause",
-//                    " in play toggle audio player isDurationOnPause is $isDurationOnPause"
-//                )
+
                 exoPlayer?.seekTo(progress.toLong())
                 exoPlayer?.play()
             } else if (isSeeking) {
@@ -4598,7 +4594,6 @@ class MainActivity : AppCompatActivity(),
                     "toggleAudioPlayer",
                     "toggleAudioPlayer: current player is playing then pause"
                 )
-//                audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
 
                 if (isVnAudio) {
                     Log.d("waveProgress", "toggleAudioPlayer: $waveProgress")
@@ -4615,28 +4610,20 @@ class MainActivity : AppCompatActivity(),
                 exoPlayer?.pause()
                 isDurationOnPause = true
 
-//                Log.d(
-//                    "toggleAudioPlayer",
-//                    " in pause toggle audio player isDurationOnPause is $isDurationOnPause"
-//                )
 
             } else {
                 Log.d(
                     "toggleAudioPlayer",
                     "toggleAudioPlayer: current player is not playing then play"
                 )
-//                audioPlayPauseBtn.setImageResource(R.drawable.baseline_pause_black)
+
                 EventBus.getDefault().post(PauseShort(true))
                 isDurationOnPause = false
-//                Log.d(
-//                    "isDurationOnPause",
-//                    " in play toggle audio player isDurationOnPause is $isDurationOnPause"
-//                )
+
                 exoPlayer?.seekTo(progress.toLong())
                 exoPlayer?.play()
             }
         } else {
-//            Log.d(TAG, "toggleAudioPlayer: currentCommentAudioPosition != position")
 
             // If a new item is clicked, stop the currently playing item (if any)
             if (exoPlayer?.isPlaying == true) {
@@ -4646,12 +4633,9 @@ class MainActivity : AppCompatActivity(),
 
             if (isReply) {
                 Log.d("IsReply", "is reply position $position")
-//                adapter?.refreshMainComment(position)
+
             }
-            // Start playing the new audio
-//            if(!isReply) {
-//                commentAudioStartPlaying(audioToPlayPath, audioPlayPauseBtn)
-//            }
+
             commentAudioStartPlaying(audioToPlayPath, audioPlayPauseBtn, progress, position)
 
             currentCommentAudioPosition = position
@@ -4678,12 +4662,7 @@ class MainActivity : AppCompatActivity(),
         if (isVnAudioToPlay) {
             startWaveRunnable()
         }
-//        Log.d(
-//            "isDurationOnPause",
-//            " in comment audio start isDurationOnPause is $isDurationOnPause"
-//        )
 
-//        Log.d("TAG", "commentAudioStartPlaying: start playing and change to pause icon")
 
         audioPlayPauseBtn.setImageResource(R.drawable.baseline_pause_black)
 
@@ -4691,11 +4670,11 @@ class MainActivity : AppCompatActivity(),
             val file = File(vnAudio)
             if (file.exists()) {
                 val fileUrl = Uri.fromFile(file)
-//                val fileUrl = "file://$vnAudio"
+
                 exoPlayer = ExoPlayer.Builder(this)
                     .build()
                 Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: Local file $fileUrl")
-//                val dataSourceFactory = DefaultDataSourceFactory(this, Util.getUserAgent(this, "yourApplicationName"))
+
 
                 val localFileUri =
                     Uri.parse(fileUrl.toString()) // Replace with the path to your local file
