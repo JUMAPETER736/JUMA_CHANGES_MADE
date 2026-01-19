@@ -609,40 +609,40 @@ class UserFollowersFragment : AppCompatActivity() {
     }
 
 
-    private fun showMoreOptions(user: OtherUserDisplayFollowersModel) {
-        if (isMyFollowers) {
-            AlertDialog.Builder(this)
-                .setTitle("Remove follower?")
-                .setMessage("${user.username} will no longer be able to see your posts.")
-                .setPositiveButton("Remove") { _, _ ->
-                    performRemoveFollower(user)
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
-        } else {
-            AlertDialog.Builder(this)
-                .setTitle("Options")
-                .setItems(arrayOf("View Profile", "Block User")) { _, which ->
-                    when (which) {
-                        0 -> reportFollower(user)
-                        1 -> {
-                            if (blockedUserIds.contains(user.id)) {
-                                // Already blocked
-                                Toast.makeText(
-                                    this,
-                                    "${user.username} is already blocked",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                Log.d(TAG, "User ${user.username} already blocked")
-                            } else {
-                                blockFollower(user)
-                            }
-                        }
-                    }
-                }
-                .show()
-        }
-    }
+//    private fun showMoreOptions(user: OtherUserDisplayFollowersModel) {
+//        if (isMyFollowers) {
+//            AlertDialog.Builder(this)
+//                .setTitle("Remove follower?")
+//                .setMessage("${user.username} will no longer be able to see your posts.")
+//                .setPositiveButton("Remove") { _, _ ->
+//                    performRemoveFollower(user)
+//                }
+//                .setNegativeButton("Cancel", null)
+//                .show()
+//        } else {
+//            AlertDialog.Builder(this)
+//                .setTitle("Options")
+//                .setItems(arrayOf("View Profile", "Block User")) { _, which ->
+//                    when (which) {
+//                        0 -> reportFollower(user)
+//                        1 -> {
+//                            if (blockedUserIds.contains(user.id)) {
+//                                // Already blocked
+//                                Toast.makeText(
+//                                    this,
+//                                    "${user.username} is already blocked",
+//                                    Toast.LENGTH_SHORT
+//                                ).show()
+//                                Log.d(TAG, "User ${user.username} already blocked")
+//                            } else {
+//                                blockFollower(user)
+//                            }
+//                        }
+//                    }
+//                }
+//                .show()
+//        }
+//    }
 
 
     private fun reportFollower(user: OtherUserDisplayFollowersModel) {
@@ -765,6 +765,24 @@ class UserFollowersFragment : AppCompatActivity() {
         if (EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().unregister(this)
         }
+    }
+
+    private fun showMoreOptions(user: OtherUserDisplayFollowersModel) {
+
+        // ✅ SAFETY never allow options on other people's profiles
+        if (!isMyFollowers) {
+            Log.d(TAG, "More options blocked — not my followers list")
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Remove follower?")
+            .setMessage("${user.username} will no longer be able to see your posts.")
+            .setPositiveButton("Remove") { _, _ ->
+                performRemoveFollower(user)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
 
