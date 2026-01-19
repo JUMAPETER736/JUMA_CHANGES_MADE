@@ -14,7 +14,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
 import com.uyscuti.sharedmodule.R
+import com.uyscuti.sharedmodule.User_Interfaces.original_post_without_repost_inside.Fragment_Original_Post_Without_Repost_Inside
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
@@ -313,6 +315,62 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
         }
     }
 
+    // ✅ NEW: Handle post click navigation
+    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
+        try {
+            val post = allUserPosts.getOrNull(position) ?: return
+
+            Log.d(TAG, "Navigating to original Post for Post ID: ${post._id}")
+
+            // Extract author information from the Post
+            val firstName = post.author?.firstName ?: ""
+            val lastName = post.author?.lastName ?: ""
+            val displayName = when {
+                firstName.isNotBlank() && lastName.isNotBlank() -> "$firstName $lastName"
+                firstName.isNotBlank() -> firstName
+                lastName.isNotBlank() -> lastName
+                else -> post.author?.account?.username ?: "Unknown User"
+            }
+
+            val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
+                arguments = Bundle().apply {
+                    // Post data
+                    putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(post))
+                    putString("post_id", post._id)
+                    putInt("adapter_position", position)
+                    putString("navigation_source", "other_user_posts")
+                    putLong("navigation_timestamp", System.currentTimeMillis())
+
+                    // Author information
+                    putString("author_name", displayName)
+                    putString("author_username", post.author?.account?.username ?: "unknown_user")
+                    putString("author_profile_image_url", post.author?.account?.avatar?.url ?: "")
+                    putString("user_id", post.author?._id ?: "")
+
+                    Log.d(TAG, "Author Info - Name: $displayName, Username: ${post.author?.account?.username}, ID: ${post.author?._id}")
+                }
+            }
+
+            // Use the activity's fragment manager to navigate
+            activity?.supportFragmentManager?.beginTransaction()
+                ?.setCustomAnimations(
+                    R.anim.slide_in_right,
+                    R.anim.slide_out_left,
+                    R.anim.slide_in_left,
+                    R.anim.slide_out_right
+                )
+                ?.replace(android.R.id.content, fragment)  // Use android.R.id.content as the container
+                ?.addToBackStack("original_post_from_other_user")
+                ?.commit()
+
+            Log.d(TAG, "Successfully navigated to original post fragment")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error navigating to original post: ${e.message}", e)
+            Toast.makeText(requireContext(), "Unable to open post", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // OnFeedClickListener stubs
     override fun likeUnLikeFeed(position: Int, data: Post) {}
     override fun feedCommentClicked(position: Int, data: Post) {}
@@ -324,6 +382,5 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
     override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {}
     override fun feedRepostPost(position: Int, data: Post) {}
     override fun feedRepostPostClicked(position: Int, data: Post) {}
-    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {}
     override fun onImageClick() {}
 }
