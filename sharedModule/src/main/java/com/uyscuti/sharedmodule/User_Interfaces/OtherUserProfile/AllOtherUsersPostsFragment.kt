@@ -315,58 +315,21 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    // ✅ NEW: Handle post click navigation
+    // ✅ Handle post click - delegate to parent activity or open as dialog
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
+        // This will be called from FeedAdapter when post is clicked
+        // Since we're in AllOtherUsersPostsFragment inside OtherUserProfileAccount,
+        // we need to let the activity handle the navigation
+
         try {
             val post = allUserPosts.getOrNull(position) ?: return
+            Log.d(TAG, "Post clicked at position $position, delegating to activity")
 
-            Log.d(TAG, "Navigating to original Post for Post ID: ${post._id}")
-
-            // Extract author information from the Post
-            val firstName = post.author?.firstName ?: ""
-            val lastName = post.author?.lastName ?: ""
-            val displayName = when {
-                firstName.isNotBlank() && lastName.isNotBlank() -> "$firstName $lastName"
-                firstName.isNotBlank() -> firstName
-                lastName.isNotBlank() -> lastName
-                else -> post.author?.account?.username ?: "Unknown User"
-            }
-
-            val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
-                arguments = Bundle().apply {
-                    // Post data
-                    putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(post))
-                    putString("post_id", post._id)
-                    putInt("adapter_position", position)
-                    putString("navigation_source", "other_user_posts")
-                    putLong("navigation_timestamp", System.currentTimeMillis())
-
-                    // Author information
-                    putString("author_name", displayName)
-                    putString("author_username", post.author?.account?.username ?: "unknown_user")
-                    putString("author_profile_image_url", post.author?.account?.avatar?.url ?: "")
-                    putString("user_id", post.author?._id ?: "")
-
-                    Log.d(TAG, "Author Info - Name: $displayName, Username: ${post.author?.account?.username}, ID: ${post.author?._id}")
-                }
-            }
-
-            // Use the activity's fragment manager to navigate
-            activity?.supportFragmentManager?.beginTransaction()
-                ?.setCustomAnimations(
-                    R.anim.slide_in_right,
-                    R.anim.slide_out_left,
-                    R.anim.slide_in_left,
-                    R.anim.slide_out_right
-                )
-                ?.replace(android.R.id.content, fragment)  // Use android.R.id.content as the container
-                ?.addToBackStack("original_post_from_other_user")
-                ?.commit()
-
-            Log.d(TAG, "Successfully navigated to original post fragment")
+            // Call a method on the parent activity to handle navigation
+            (activity as? OtherUserProfileAccount)?.openPostDetail(post, position)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error navigating to original post: ${e.message}", e)
+            Log.e(TAG, "Error handling post click: ${e.message}", e)
             Toast.makeText(requireContext(), "Unable to open post", Toast.LENGTH_SHORT).show()
         }
     }
