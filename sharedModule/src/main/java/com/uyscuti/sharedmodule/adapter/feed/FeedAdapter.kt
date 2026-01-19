@@ -2628,36 +2628,6 @@ class FeedAdapter(
 
                     repostPost.alpha = 0.8f
 
-                    // Use targetPostId for API call
-//                    val apiCall = if (data.isReposted) {
-//                        RetrofitClient.repostService.incrementRepost(targetPostId)
-//                    } else {
-//                        RetrofitClient.repostService.decrementRepost(targetPostId)
-//                    }
-
-//                    apiCall.enqueue(object : Callback<RepostResponse> {
-//                        override fun onResponse(call: Call<RepostResponse>, response: Response<RepostResponse>) {
-//                            repostPost.isEnabled = true
-//                            repostPost.alpha = 1f
-//                            if (response.isSuccessful) {
-//                                response.body()?.let { repostResponse ->
-//                                    if (abs(repostResponse.repostCount - totalMixedRePostCounts) > 1) {
-//
-//                                        totalMixedRePostCounts = repostResponse.repostCount
-//                                        updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
-//                                    }
-//                                }
-//                            }
-//                        }
-//
-//                        override fun onFailure(call: Call<RepostResponse>, t: Throwable) {
-//                            repostPost.isEnabled = true
-//                            repostPost.alpha = 1f
-//                            Log.e(TAG, "Repost network error", t)
-//                        }
-//                    })
-
-
                     feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
                 } catch (e: Exception) {
                     repostPost.isEnabled = true
@@ -3143,12 +3113,12 @@ class FeedAdapter(
 
 
                     Log.d(TAG, "REPOST FOLLOW CHECK - Post ID: ${data._id}")
-                    Log.d(TAG, ">>> Account ID (for follow check): $feedReposterOwnerId")
-                    Log.d(TAG, ">>> Username (for follow check): @$feedReposterUsername")
-                    Log.d(TAG, ">>> Is following this account: $isFollowingUser")
-                    Log.d(TAG, ">>> Match in followingUserIds: ${followingUserIds.contains(feedReposterOwnerId)}")
-                    Log.d(TAG, ">>> Match in cachedList: ${cachedFollowingList.contains(feedReposterOwnerId)}")
-                    Log.d(TAG, ">>> Match by username: ${cachedFollowingUsernames.contains(feedReposterUsername)}")
+                    Log.d(TAG, "Account ID (for follow check): $feedReposterOwnerId")
+                    Log.d(TAG, "Username (for follow check): @$feedReposterUsername")
+                    Log.d(TAG, "Is following this account: $isFollowingUser")
+                    Log.d(TAG, "Match in followingUserIds: ${followingUserIds.contains(feedReposterOwnerId)}")
+                    Log.d(TAG, "Match in cachedList: ${cachedFollowingList.contains(feedReposterOwnerId)}")
+                    Log.d(TAG, "Match by username: ${cachedFollowingUsernames.contains(feedReposterUsername)}")
                     Log.d(TAG, "Following list (${followingUserIds.size} users): ${followingUserIds.joinToString(", ")}")
 
 
@@ -5191,16 +5161,16 @@ class FeedAdapter(
                             cachedFollowingList.contains(feedReposterOwnerId) ||
                             cachedFollowingUsernames.contains(feedReposterUsername)
 
-                    Log.d(TAG, "═══════════════════════════════════════")
+
                     Log.d(TAG, "REPOST FOLLOW CHECK - Post ID: ${data._id}")
-                    Log.d(TAG, ">>> Account ID (for follow check): $feedReposterOwnerId")
-                    Log.d(TAG, ">>> Username (for follow check): @$feedReposterUsername")
-                    Log.d(TAG, ">>> Is following this account: $isFollowingUser")
-                    Log.d(TAG, ">>> Match in followingUserIds: ${followingUserIds.contains(feedReposterOwnerId)}")
-                    Log.d(TAG, ">>> Match in cachedList: ${cachedFollowingList.contains(feedReposterOwnerId)}")
-                    Log.d(TAG, ">>> Match by username: ${cachedFollowingUsernames.contains(feedReposterUsername)}")
+                    Log.d(TAG, "Account ID (for follow check): $feedReposterOwnerId")
+                    Log.d(TAG, "Username (for follow check): @$feedReposterUsername")
+                    Log.d(TAG, "Is following this account: $isFollowingUser")
+                    Log.d(TAG, "Match in followingUserIds: ${followingUserIds.contains(feedReposterOwnerId)}")
+                    Log.d(TAG, "Match in cachedList: ${cachedFollowingList.contains(feedReposterOwnerId)}")
+                    Log.d(TAG, "Match by username: ${cachedFollowingUsernames.contains(feedReposterUsername)}")
                     Log.d(TAG, "Following list (${followingUserIds.size} users): ${followingUserIds.joinToString(", ")}")
-                    Log.d(TAG, "═══════════════════════════════════════")
+
 
                     totalMixedComments = data.comments
                     totalMixedLikesCounts = data.likes
@@ -6412,12 +6382,12 @@ class FeedAdapter(
         private fun handleFollowButtonClick(accountId: String, username: String) {
             YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
 
-            Log.d(TAG, "═══════════════════════════════════════")
+
             Log.d(TAG, "FOLLOW BUTTON CLICKED")
             Log.d(TAG, "Account ID to follow: $accountId")
             Log.d(TAG, "Username to follow: @$username")
             Log.d(TAG, "This ID will be added to following list")
-            Log.d(TAG, "═══════════════════════════════════════")
+
 
             isFollowed = !isFollowed
             val followEntity = FollowUnFollowEntity(accountId, isFollowed)
