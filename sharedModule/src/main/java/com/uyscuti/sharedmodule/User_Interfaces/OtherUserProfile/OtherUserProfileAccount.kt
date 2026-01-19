@@ -1,5 +1,6 @@
 package com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile
 
+import UserFollowingDisplayModel
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.app.AlertDialog
@@ -71,6 +72,7 @@ import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.network.utils.LocalStorage
 import android.view.Gravity
 import android.widget.LinearLayout
+import com.uyscuti.sharedmodule.MessagesActivity
 
 
 private const val TAG = "OtherUserProfileAccount"
@@ -180,7 +182,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
 
         binding.actionMessage.setOnClickListener {
             Log.d(TAG, "Message button clicked for user: $userId")
-
+            openMessaging(holder.itemView.context, followingUser)
         }
 
         binding.callButton.setOnClickListener {
@@ -619,7 +621,6 @@ class OtherUserProfileAccount : AppCompatActivity() {
         }
     }
 
-
     private fun handleFollowUnfollow() {
         // Disable button during API call
         if (!binding.followIcon.isEnabled) return
@@ -723,6 +724,48 @@ class OtherUserProfileAccount : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun openMessaging(context: Context, followingUser: UserFollowingDisplayModel) {
+        // Create temporary user
+        val otherUserEntity = com.uyscuti.social.core.common.data.room.entity.UserEntity(
+            id = followingUser.id,
+            name = "${followingUser.fullName}|${followingUser.username}",
+            avatar = followingUser.avatar?.url ?: "",
+            online = followingUser.isOnline ?: false,
+            lastSeen = followingUser.lastseen ?: Date()
+        )
+
+        // Convert to User model for Dialog
+        val userModel = com.uyscuti.sharedmodule.data.model.User(
+            otherUserEntity.id,
+            otherUserEntity.name,
+            otherUserEntity.avatar,
+            otherUserEntity.online,
+            otherUserEntity.lastSeen
+        )
+
+        // Create ArrayList for Dialog constructor
+        val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
+        usersList.add(userModel)
+
+        // Create temporary dialog using Dialog constructor directly - using username
+        val tempDialog = com.uyscuti.sharedmodule.data.model.Dialog(
+            "temp_${followingUser.id}_${System.currentTimeMillis()}",
+            followingUser.username,
+            followingUser.avatar?.url ?: "",
+            usersList,
+            null, // No last message for temp dialog
+            0     // No unread count
+        )
+
+        MessagesActivity.open(
+            context = context,
+            dialogName = followingUser.username,
+            dialog = tempDialog,
+            temporally = true,
+            productReference = ""
+        )
     }
 
     private fun extractFromUserObject(userObject: Any) {

@@ -121,10 +121,6 @@ class MyUserProfileAccount : AppCompatActivity() {
     private lateinit var retrofitInstance: RetrofitInstance
     val userProfileLiveData = MutableLiveData<Any>()
     val onErrorFeedBack = MutableLiveData<String>()
-
-    private var currentUsername: String = ""
-    private var currentUserId: String = ""
-    private var currentPage = 1
     private var currentPhotoUri: Uri? = null
 
     // User data variables
@@ -135,7 +131,6 @@ class MyUserProfileAccount : AppCompatActivity() {
     private var avatarUrl: String? = null
     private var followerCount: Int = 0
     private var followingCount: Int = 0
-    private var likesCount: Int = 0
     private var joinDate: String = ""
     private var userLocation: String = ""
     private var userBio: String = ""
