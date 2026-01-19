@@ -156,13 +156,17 @@ class UserFollowersFragment : AppCompatActivity() {
     private fun setupRecyclerView() {
 
         followersAdapter = FollowersAdapter(
+
             followers = filteredFollowersList,
             onFollowerClick = { user -> openUserProfile(user) },
             onFollowClick = { user -> toggleFollowUser(user) },
             onMoreOptionsClick = { user -> showMoreOptions(user) },
             localStorage = localStorage,
-            retrofitInstance = retrofitInstance
+            retrofitInstance = retrofitInstance,
+            isMyFollowers = isMyFollowers
+
         )
+
 
         binding.recyclerView.apply {
             adapter = followersAdapter
@@ -774,7 +778,8 @@ class FollowersAdapter(
     private val onFollowClick: (OtherUserDisplayFollowersModel) -> Unit,
     private val onMoreOptionsClick: (OtherUserDisplayFollowersModel) -> Unit,
     private val localStorage: LocalStorage,
-    private val retrofitInstance: RetrofitInstance
+    private val retrofitInstance: RetrofitInstance,
+    private val isMyFollowers: Boolean
 
 ) : RecyclerView.Adapter<FollowersAdapter.FollowerViewHolder>() {
 

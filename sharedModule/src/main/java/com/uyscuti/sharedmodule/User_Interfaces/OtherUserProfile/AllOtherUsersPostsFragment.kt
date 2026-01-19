@@ -9,14 +9,15 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.OptIn
 import androidx.appcompat.widget.AppCompatButton
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.gson.Gson
 import com.uyscuti.sharedmodule.R
-import com.uyscuti.sharedmodule.User_Interfaces.original_post_without_repost_inside.Fragment_Original_Post_Without_Repost_Inside
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
@@ -316,6 +317,7 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
     }
 
     // ✅ Handle post click - delegate to parent activity or open as dialog
+    @OptIn(UnstableApi::class)
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
         // This will be called from FeedAdapter when post is clicked
         // Since we're in AllOtherUsersPostsFragment inside OtherUserProfileAccount,
