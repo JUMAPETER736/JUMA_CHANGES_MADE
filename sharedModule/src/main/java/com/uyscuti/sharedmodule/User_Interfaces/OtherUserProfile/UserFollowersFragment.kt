@@ -54,6 +54,8 @@ import retrofit2.HttpException
 import java.io.IOException
 import java.util.Date
 import androidx.core.graphics.toColorInt
+import kotlin.collections.addAll
+import kotlin.text.clear
 
 
 private const val TAG = "UserFollowersFragment"
@@ -335,38 +337,20 @@ class UserFollowersFragment : AppCompatActivity() {
     private suspend fun checkFollowStatus(
         users: List<Data>
     ): List<OtherUserDisplayFollowersModel> {
-
         return users.map { user ->
-            try {
-                val response = retrofitInstance.apiService
-                    .getOtherUsersFollowersAndFollowingStatus(user._id)
+            // Use followsBack directly from API response without making additional calls
+            val isFollowing = user.isFollowingBack ?: false
 
-                val isFollowing = if (response.isSuccessful && response.body() != null) {
-                    response.body()!!.data?.isFollowing ?: false
-                } else {
-                    FeedAdapter.getCachedFollowingList().contains(user._id)
-                }
+            // Check if user is in blocked list
+            val isBlocked = blockedUserIds.contains(user._id)
 
-                // ✨ Check if user is in blocked list
-                val isBlocked = blockedUserIds.contains(user._id)
+            Log.d(TAG, "Status for ${user.username}: isFollowing=$isFollowing (from API), isBlocked=$isBlocked")
 
-                Log.d(TAG, "Status for ${user.username}: isFollowing=$isFollowing, isBlocked=$isBlocked")
-
-                OtherUserDisplayFollowersModel.fromApiData(user, isFollowing).apply {
-                    this.isBlocked = isBlocked
-                }
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error for ${user.username}: ${e.message}")
-                val cached = FeedAdapter.getCachedFollowingList().contains(user._id)
-                OtherUserDisplayFollowersModel.fromApiData(user, cached).apply {
-                    this.isBlocked = blockedUserIds.contains(user._id)
-                }
+            OtherUserDisplayFollowersModel.fromApiData(user, isFollowing).apply {
+                this.isBlocked = isBlocked
             }
         }
     }
-
-
 
     private fun toggleFollowUser(user: OtherUserDisplayFollowersModel) {
         lifecycleScope.launch(Dispatchers.IO) {
@@ -450,6 +434,8 @@ class UserFollowersFragment : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
+                Log.d(TAG, "Loading more followers, page: $currentPage")
+
                 val response = retrofitInstance.apiService.getOtherUserFollowers(username, currentPage, 20)
 
                 if (response.isSuccessful) {
@@ -457,17 +443,16 @@ class UserFollowersFragment : AppCompatActivity() {
 
                     if (responseBody != null) {
                         val newFollowersWithStatus = checkFollowStatus(responseBody.data)
-                        val newFollowers = newFollowersWithStatus.filter { newFollower ->
-                            followersList.none { it._id == newFollower._id }
-                        }
 
-                        if (newFollowers.isNotEmpty()) {
-                            val insertPosition = followersList.size
-                            followersList.addAll(newFollowers)
-                            filteredFollowersList.addAll(newFollowers)
-
+                        // Just add new followers - the API should handle duplicates
+                        if (newFollowersWithStatus.isNotEmpty()) {
                             withContext(Dispatchers.Main) {
-                                followersAdapter.notifyItemRangeInserted(insertPosition, newFollowers.size)
+                                val insertPosition = followersList.size
+                                followersList.addAll(newFollowersWithStatus)
+                                filteredFollowersList.addAll(newFollowersWithStatus)
+
+                                followersAdapter.notifyItemRangeInserted(insertPosition, newFollowersWithStatus.size)
+                                Log.d(TAG, "Added ${newFollowersWithStatus.size} more followers")
                             }
                         }
 
@@ -524,28 +509,38 @@ class UserFollowersFragment : AppCompatActivity() {
     }
 
     private suspend fun handleFollowersResponse(followers: List<Data>) {
+        Log.d(TAG, "handleFollowersResponse called with ${followers.size} followers")
+
         withContext(Dispatchers.Main) {
             if (currentPage == 1) {
                 followersList.clear()
                 filteredFollowersList.clear()
+                Log.d(TAG, "Cleared lists for first page")
             }
 
             val followersWithStatus = checkFollowStatus(followers)
+            Log.d(TAG, "Processed ${followersWithStatus.size} followers with status")
+
             followersList.addAll(followersWithStatus)
             filteredFollowersList.addAll(followersWithStatus)
 
-            // ADD THIS: Populate the FeedAdapter cache with YOUR followers
+            // Populate the FeedAdapter cache with YOUR followers
             if (isMyFollowers) {
                 val followerIds = followersWithStatus.map { it.id }
                 FeedAdapter.setMyFollowersList(followerIds)
                 Log.d(TAG, "Populated my followers cache with ${followerIds.size} followers")
             }
 
+            // Single adapter update
             followersAdapter.notifyDataSetChanged()
+            Log.d(TAG, "Adapter updated, item count: ${followersAdapter.itemCount}")
+
             updateEmptyState()
 
             hasMoreData = followers.size >= 20
             currentPage++
+
+            Log.d(TAG, "followersList now has ${followersList.size} items")
         }
     }
 
@@ -1165,21 +1160,21 @@ class FollowersAdapter(
             .show()
     }
 
-
     fun updateList(newList: List<OtherUserDisplayFollowersModel>) {
+        val currentUserId = localStorage.getUserId()
+        val currentUsername = localStorage.getUsername()
+
         followers.clear()
 
-        // Filter out current user and blocked users
+        // Filter out current user
         val filteredList = newList.filter { user ->
-            user.id != currentUserId &&
-                    user.username != currentUsername &&
-                    !FeedAdapter.isUserBlocked(user.id)
+            user.id != currentUserId && user.username != currentUsername
         }
 
         followers.addAll(filteredList)
         notifyDataSetChanged()
 
-        Log.d(TAG, "List updated: ${newList.size} total, ${filteredList.size} after filtering current & blocked users")
+        Log.d(TAG, "List updated: ${newList.size} total, ${filteredList.size} after filtering")
     }
 
 }
