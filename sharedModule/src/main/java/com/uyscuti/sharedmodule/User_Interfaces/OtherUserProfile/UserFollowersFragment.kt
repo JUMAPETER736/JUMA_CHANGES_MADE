@@ -620,10 +620,10 @@ class UserFollowersFragment : AppCompatActivity() {
     private fun performBlockUser(user: OtherUserDisplayFollowersModel) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                Log.d(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
                 Log.d(TAG, "Attempting to block user: ${user.username}")
                 Log.d(TAG, "User ID: ${user.id}")
-                Log.d(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
 
                 val response = retrofitInstance.apiService.blockUser(user.id)
 
@@ -638,11 +638,11 @@ class UserFollowersFragment : AppCompatActivity() {
                             Log.d(TAG, "Blocked: ${responseBody.data?.blocked}")
 
                             if (responseBody.success && responseBody.data?.blocked == true) {
-                                // Update blocked status
+                                // Update blocked status in both lists
                                 followersList.find { it.id == user.id }?.isBlocked = true
                                 filteredFollowersList.find { it.id == user.id }?.isBlocked = true
 
-                                // Update adapter
+                                // Notify adapter to update the UI
                                 followersAdapter.notifyDataSetChanged()
 
                                 Toast.makeText(
@@ -651,7 +651,7 @@ class UserFollowersFragment : AppCompatActivity() {
                                     Toast.LENGTH_SHORT
                                 ).show()
 
-                                Log.d(TAG, "✓ Successfully blocked ${user.username}")
+                                Log.d(TAG, "Successfully blocked ${user.username}")
                             } else {
                                 Toast.makeText(
                                     this@UserFollowersFragment,
@@ -664,7 +664,7 @@ class UserFollowersFragment : AppCompatActivity() {
                         !response.isSuccessful -> {
                             val errorBody = response.errorBody()?.string() ?: "No error body"
 
-                            Log.e(TAG, "❌ Block API Failed")
+                            Log.e(TAG, "Block API Failed")
                             Log.e(TAG, "HTTP Code: ${response.code()}")
                             Log.e(TAG, "Error Body: ${errorBody.take(200)}")
 
@@ -684,7 +684,7 @@ class UserFollowersFragment : AppCompatActivity() {
                         }
 
                         else -> {
-                            Log.e(TAG, "❌ Null response body")
+                            Log.e(TAG, "Null response body")
                             Toast.makeText(
                                 this@UserFollowersFragment,
                                 "Empty response from server",
@@ -694,7 +694,7 @@ class UserFollowersFragment : AppCompatActivity() {
                     }
                 }
             } catch (e: com.google.gson.JsonSyntaxException) {
-                Log.e(TAG, "❌ JSON parsing error: ${e.message}", e)
+                Log.e(TAG, "JSON parsing error: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@UserFollowersFragment,
@@ -703,7 +703,7 @@ class UserFollowersFragment : AppCompatActivity() {
                     ).show()
                 }
             } catch (e: retrofit2.HttpException) {
-                Log.e(TAG, "❌ HTTP error: ${e.code()}", e)
+                Log.e(TAG, "HTTP error: ${e.code()}", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@UserFollowersFragment,
@@ -712,7 +712,7 @@ class UserFollowersFragment : AppCompatActivity() {
                     ).show()
                 }
             } catch (e: java.io.IOException) {
-                Log.e(TAG, "❌ Network error: ${e.message}", e)
+                Log.e(TAG, "Network error: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@UserFollowersFragment,
@@ -721,7 +721,7 @@ class UserFollowersFragment : AppCompatActivity() {
                     ).show()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Exception while blocking: ${e.message}", e)
+                Log.e(TAG, "Exception while blocking: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@UserFollowersFragment,
@@ -881,11 +881,11 @@ class FollowersAdapter(
 
         // Update follow button appearance based on blocked status and following status
         when {
-
             follower.isBlocked -> {
+                // User is blocked - show red Blocked button
                 holder.followButton.text = "Blocked"
-                holder.followButton.setBackgroundResource(R.drawable.follower_blocked_button)
                 holder.followButton.backgroundTintList = ColorStateList.valueOf("#F44336".toColorInt())
+                holder.followButton.setBackgroundResource(R.drawable.follower_blocked_button)
                 holder.followButton.setTextColor(Color.WHITE)
             }
 
@@ -902,6 +902,7 @@ class FollowersAdapter(
             else -> {
                 // You're NOT following them - show Follow Back button
                 holder.followButton.text = "Follow Back"
+                holder.followButton.backgroundTintList = null
                 holder.followButton.setBackgroundResource(R.drawable.button_blue_solid)
                 holder.followButton.setTextColor(Color.WHITE)
             }
@@ -1080,13 +1081,12 @@ class FollowersAdapter(
 
         holder.followButton.isEnabled = false
 
-        // ✅ Use CoroutineScope instead of lifecycleScope
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                Log.d(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
                 Log.d(TAG, "Attempting to unblock user: ${follower.username}")
                 Log.d(TAG, "User ID: ${follower.id}")
-                Log.d(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
 
                 val response = retrofitInstance.apiService.unBlockUser(follower.id)
 
@@ -1106,10 +1106,22 @@ class FollowersAdapter(
                                 // Update blocked status
                                 follower.isBlocked = false
 
-                                // Update UI to show "Follow Back" button
-                                holder.followButton.text = "Follow Back"
-                                holder.followButton.setBackgroundResource(R.drawable.button_blue_solid)
-                                holder.followButton.setTextColor(Color.WHITE)
+                                // Update UI based on following status
+                                if (follower.isFollowing) {
+                                    // If following, show Message button
+                                    holder.followButton.text = "Message"
+                                    holder.followButton.backgroundTintList = null
+                                    holder.followButton.setBackgroundResource(R.drawable.button_outline_blue)
+                                    holder.followButton.setTextColor(
+                                        ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
+                                    )
+                                } else {
+                                    // If not following, show Follow Back button
+                                    holder.followButton.text = "Follow Back"
+                                    holder.followButton.backgroundTintList = null
+                                    holder.followButton.setBackgroundResource(R.drawable.button_blue_solid)
+                                    holder.followButton.setTextColor(Color.WHITE)
+                                }
 
                                 Toast.makeText(
                                     holder.itemView.context,
@@ -1130,7 +1142,7 @@ class FollowersAdapter(
                         !response.isSuccessful -> {
                             val errorBody = response.errorBody()?.string() ?: "No error body"
 
-                            Log.e(TAG, "❌ Unblock API Failed")
+                            Log.e(TAG, "Unblock API Failed")
                             Log.e(TAG, "HTTP Code: ${response.code()}")
                             Log.e(TAG, "Error Body: ${errorBody.take(200)}")
 
@@ -1142,7 +1154,7 @@ class FollowersAdapter(
                         }
 
                         else -> {
-                            Log.e(TAG, "❌ Null response body")
+                            Log.e(TAG, "Null response body")
                             Toast.makeText(
                                 holder.itemView.context,
                                 "Empty response from server",
@@ -1152,7 +1164,7 @@ class FollowersAdapter(
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Error unblocking user: ${e.message}", e)
+                Log.e(TAG, "Error unblocking user: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     holder.followButton.isEnabled = true
                     Toast.makeText(
