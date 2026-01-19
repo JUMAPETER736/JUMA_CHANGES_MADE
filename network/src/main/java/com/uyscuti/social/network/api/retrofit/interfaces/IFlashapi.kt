@@ -258,10 +258,11 @@ interface IFlashapi {
     // ==================== SOCIAL MEDIA - BLOCK/UNBLOCK ====================
 
 
-    @POST("api/v1/social-media/block/{userId}")
+
+    @POST("social-media/block/{userId}")
     suspend fun blockUser(@Path("userId") userId: String): Response<BlockUnblockResponse>
 
-    @DELETE("api/v1/social-media/block/{userId}")
+    @DELETE("social-media/block/{userId}")
     suspend fun unBlockUser(@Path("userId") userId: String): Response<BlockUnblockResponse>
 
     @GET("api/v1/social-media/blocked")
