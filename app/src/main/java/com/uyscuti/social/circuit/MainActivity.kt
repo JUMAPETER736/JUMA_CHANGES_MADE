@@ -6148,7 +6148,7 @@ class MainActivity : AppCompatActivity(),
                                 }
                                 replyToUpdate?._id = data._id
                                 adapter?.notifyItemChanged(it[0].parentPosition)
-//                                adapter?.updateItem(it[0].parentPosition, comment)
+
                             }
                         } else {
                             Log.e("CommentId", "Comment Id not initialized ")
@@ -6206,9 +6206,7 @@ class MainActivity : AppCompatActivity(),
             )
 
         Log.d("uploadReplyImageComment", "uploadReplyImageComment: handle reply to a comment")
-//        isReply = false
 
-//        val newCommentReplyEntity = CommentsFilesEntity(commentId, vnToUpload, vnToUpload, isReply = 1)
 
         //if it clash on upload un comment the line below//
         if (!placeholder) {
@@ -6244,7 +6242,7 @@ class MainActivity : AppCompatActivity(),
             commentId = commentId,
             updatedAt = mongoDbTimeStamp,
             images = mutableListOf(imageFile),
-//            audios = mutableListOf(vnFile),
+
             contentType = "image"
         )
 
@@ -6260,8 +6258,9 @@ class MainActivity : AppCompatActivity(),
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
+
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
             } ?: mutableListOf(),
@@ -6312,17 +6311,13 @@ class MainActivity : AppCompatActivity(),
         val TAG = "addCommentVN"
         Log.d("addCommentReply", "addComment: is reply $isReply")
 
-//        commentsViewModel.commentAudio(postId, "", "audio", filePart, video, image, docs, gif, thumbnail)
 
         if (isInternetAvailable(this)) {
 
             commentFilesViewModel.allCommentFiles.observe(this) {
 
-//                if(it.isNotEmpty()) {
-//
-//                }
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -6335,7 +6330,7 @@ class MainActivity : AppCompatActivity(),
                                 val requestFile =
                                     file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
 
-// Create MultipartBody.Part instance from RequestBody
+                                // Create MultipartBody.Part instance from RequestBody
                                 val filePart =
                                     MultipartBody.Part.createFormData(
                                         "audio",
@@ -6387,29 +6382,7 @@ class MainActivity : AppCompatActivity(),
                                     isFeedComment = i.isFeedComment
 
                                 )
-//                                { data ->
-//                                    Log.d(
-//                                        "OnSuccess",
-//                                        "OnSuccess: addCommentVN id: ${data._id} parent position ${it[0].parentPosition}"
-//                                    )
-//
-//                                    val commentPosition = adapter?.getPositionByUploadId(i.uploadId)
-//
-//                                    val comment = commentPosition?.let { it1 ->
-//                                        adapter?.getComment(
-//                                            it1
-//                                        )
-//                                    }
-//                                    Log.d(
-//                                        TAG,
-//                                        "addCommentVN: comment get successful  $comment"
-//                                    )
-//                                    if (comment != null) {
-//                                        comment._id = data._id
-//                                    }
-//                                    adapter?.notifyItemChanged(commentPosition!!)
-//                                }
-//                    commentsViewModel.comment(it[0].postId, it[0].content, "text")
+
                                 commentFilesViewModel.viewModelScope.launch {
                                     val isDeleted = commentFilesViewModel.deleteCommentById(i.id)
                                     if (isDeleted) {
@@ -6579,34 +6552,31 @@ class MainActivity : AppCompatActivity(),
                     myFeedToComment = feedViewModel.getMyFeedData().find { it._id == postId }
                     favoriteFeedToComment =
                         feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                    Log.d(TAG, "onSubmit: total before feed count is ${feedToComment?.comments}")
+
 
                     if (myFeedToComment != null) {
-//                        myFeedToComment!!.comments += 1
+
 
                         feedViewModel.getMyFeedData().forEach { feed ->
                             if (feed._id == postId) {
                                 feed.comments = myFeedToComment!!.comments
                             }
                         }
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
                     }
                     if (favoriteFeedToComment != null) {
-//                        favoriteFeedToComment!!.comments += 1
+
 
                         feedViewModel.getAllFavoriteFeedData().forEach { feed ->
                             if (feed._id == postId) {
                                 feed.comments = favoriteFeedToComment!!.comments
                             }
                         }
-//                        favoriteFeedToComment = feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                        Log.d(TAG, "onSubmit: total after feed count is ${favoriteFeedToComment?.comments}")
-//
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
 
                     }
                     if (feedToComment != null) {
-//                        feedToComment!!.comments += 1
+
 
                         feedViewModel.getAllFeedData().forEach { feed ->
                             if (feed._id == postId) {
@@ -6702,9 +6672,7 @@ class MainActivity : AppCompatActivity(),
             }
 
             Log.d("uploadImageComment", "uploadImageComment: comment $comment")
-//        adapter.submitItems(listOf(comment) )
-//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
-//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
+
 
             recordedAudioFiles.clear()
             if (!update) {
@@ -6744,34 +6712,30 @@ class MainActivity : AppCompatActivity(),
                     myFeedToComment = feedViewModel.getMyFeedData().find { it._id == postId }
                     favoriteFeedToComment =
                         feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                    Log.d(TAG, "onSubmit: total before feed count is ${feedToComment?.comments}")
+
 
                     if (myFeedToComment != null) {
-//                        myFeedToComment!!.comments += 1
+
 
                         feedViewModel.getMyFeedData().forEach { feed ->
                             if (feed._id == postId) {
                                 feed.comments = myFeedToComment!!.comments
                             }
                         }
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
                     }
                     if (favoriteFeedToComment != null) {
-//                        favoriteFeedToComment!!.comments += 1
+
 
                         feedViewModel.getAllFavoriteFeedData().forEach { feed ->
                             if (feed._id == postId) {
                                 feed.comments = favoriteFeedToComment!!.comments
                             }
                         }
-//                        favoriteFeedToComment = feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                        Log.d(TAG, "onSubmit: total after feed count is ${favoriteFeedToComment?.comments}")
-//
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
 
                     }
                     if (feedToComment != null) {
-//                        feedToComment!!.comments += 1
+
 
                         feedViewModel.getAllFeedData().forEach { feed ->
                             if (feed._id == postId) {
@@ -6788,7 +6752,6 @@ class MainActivity : AppCompatActivity(),
                 }
 
 
-//            addCommentVN()
 
             }
 
@@ -6890,9 +6853,7 @@ class MainActivity : AppCompatActivity(),
             }
 
             Log.d("uploadDocumentComment", "uploadDocumentComment: comment $comment")
-//        adapter.submitItems(listOf(comment) )
-//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
-//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
+
 
             recordedAudioFiles.clear()
             if (!update) {
@@ -6934,31 +6895,28 @@ class MainActivity : AppCompatActivity(),
                     Log.d(TAG, "onSubmit: total before feed count is ${feedToComment?.comments}")
 
                     if (myFeedToComment != null) {
-//                        myFeedToComment!!.comments += 1
+
 
                         feedViewModel.getMyFeedData().forEach { feed ->
                             if (feed._id == postId) {
                                 feed.comments = myFeedToComment!!.comments
                             }
                         }
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
                     }
                     if (favoriteFeedToComment != null) {
-//                        favoriteFeedToComment!!.comments += 1
+
 
                         feedViewModel.getAllFavoriteFeedData().forEach { feed ->
                             if (feed._id == postId) {
                                 feed.comments = favoriteFeedToComment!!.comments
                             }
                         }
-//                        favoriteFeedToComment = feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                        Log.d(TAG, "onSubmit: total after feed count is ${favoriteFeedToComment?.comments}")
-//
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
 
                     }
                     if (feedToComment != null) {
-//                        feedToComment!!.comments += 1
+
 
                         feedViewModel.getAllFeedData().forEach { feed ->
                             if (feed._id == postId) {
@@ -6973,7 +6931,7 @@ class MainActivity : AppCompatActivity(),
 
                     }
                 }
-//            addCommentVN()
+
 
             }
 
@@ -7014,7 +6972,7 @@ class MainActivity : AppCompatActivity(),
 
         Log.d("uploadReplyVideoComment", "uploadReplyVideoComment: handle reply to a comment")
 
-//        val newCommentReplyEntity = CommentsFilesEntity(commentId, vnToUpload, vnToUpload, isReply = 1)
+
 
         //if it clash on upload un comment the line below//
         if (!placeholder) {
@@ -7070,7 +7028,7 @@ class MainActivity : AppCompatActivity(),
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -7150,7 +7108,7 @@ class MainActivity : AppCompatActivity(),
             )
 
         Log.d("uploadReplyDocumentComment", "uploadReplyDocumentComment: handle reply to a comment")
-//        isReply = false
+
 
         if (!placeholder) {
             val newCommentReplyEntity =
@@ -7191,7 +7149,7 @@ class MainActivity : AppCompatActivity(),
             commentId = commentId,
             updatedAt = mongoDbTimeStamp,
             docs = mutableListOf(documentReplyFile),
-//            audios = mutableListOf(vnFile),
+
             contentType = "docs",
             fileName = fileName,
             fileSize = fileSize,
@@ -7211,7 +7169,7 @@ class MainActivity : AppCompatActivity(),
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -7265,14 +7223,12 @@ class MainActivity : AppCompatActivity(),
         val TAG = "addImageComment"
         Log.d("addImageComment", "addImageComment: is reply $isReply")
 
-//        commentsViewModel.commentAudio(postId, "", "audio", filePart, video, image, docs, gif, thumbnail)
 
         if (isInternetAvailable(this)) {
 
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -7357,10 +7313,7 @@ class MainActivity : AppCompatActivity(),
                                 }
                             }
                         }
-//                        else if(i.localPath == "video"){
-//                            Log.d("LocalPath","ready to upload video")
-//                            Log.d("LocalPath", "url ${i.url} type ${i.localPath}")
-//                        }
+
 
                     }
 
@@ -7381,14 +7334,14 @@ class MainActivity : AppCompatActivity(),
         val TAG = "addDocumentComment"
         Log.d("addDocumentComment", "addDocumentComment: is reply $isReply")
 
-//        commentsViewModel.commentAudio(postId, "", "audio", filePart, video, image, docs, gif, thumbnail)
+
 
         if (isInternetAvailable(this)) {
 
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -7419,12 +7372,7 @@ class MainActivity : AppCompatActivity(),
                                         file.name,
                                         requestFile
                                     )
-//                                val docs =
-//                                    MultipartBody.Part.createFormData(
-//                                        "docs",
-//                                        file.name,
-//                                        requestFile
-//                                    )
+
                                 Log.d(
                                     "addDocumentComment",
                                     "addDocumentComment: uri ${i.url.toUri()} ::i.url:: ${i.url}"
@@ -7486,10 +7434,7 @@ class MainActivity : AppCompatActivity(),
                                 }
                             }
                         }
-//                        else if(i.localPath == "video"){
-//                            Log.d("LocalPath","ready to upload video")
-//                            Log.d("LocalPath", "url ${i.url} type ${i.localPath}")
-//                        }
+
 
                     }
 
@@ -7516,7 +7461,7 @@ class MainActivity : AppCompatActivity(),
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -7539,9 +7484,9 @@ class MainActivity : AppCompatActivity(),
                                 Log.d("ThumbnailExtract", "ThumbnailExtract failed")
                             }
                             val outputStream = ByteArrayOutputStream()
-//                            // Compress the bitmap to a byte array
+                            // Compress the bitmap to a byte array
                             bitmapThumbnail?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-//                            // Convert the byte array to a RequestBody
+                            // Convert the byte array to a RequestBody
                             val requestBody = outputStream.toByteArray()
                                 .toRequestBody(
                                     "image/*".toMediaTypeOrNull(),
@@ -7606,7 +7551,7 @@ class MainActivity : AppCompatActivity(),
                                         isFeedComment = i.isFeedComment
                                     ) {
                                         Log.d(" onSuccess()", " onSuccess(): upload successful")
-//                                    deleteFile(i.url) addCommentFileReply
+
                                         val deleted = deleteFiled(i.url)
                                         if (deleted) {
                                             Log.d(
@@ -7665,7 +7610,7 @@ class MainActivity : AppCompatActivity(),
         commentsReplyViewModel.getReplyCommentsLiveData().observe(this) { data ->
             // Handle the response data here
             for (i in listOfReplies) {
-//                i._id
+
                 Log.d("observeCommentRepliesToRefresh", "list of replies id ${i.localUpdateId}")
             }
 
@@ -7679,7 +7624,7 @@ class MainActivity : AppCompatActivity(),
         commentsViewModel.commentsObserver().observe(this) { data ->
             // Handle the response data here
             for (mainComment in listOfReplies) {
-//                i._id
+
                 Log.d(
                     "UpdateReplyData",
                     "list of replies id ${mainComment.localUpdateId} position ${mainComment._id}"
@@ -7720,7 +7665,7 @@ class MainActivity : AppCompatActivity(),
             TAG,
             "toggleReplyToTextView: comment id $commentId data comment id ${data._id} comment position $position"
         )
-//        Log.d(TAG, "toggleReplyToTextView: data ${event.comment}")
+
         val username = data.author!!.account.username
 
         binding.replyToLayout.visibility = View.VISIBLE
@@ -7745,7 +7690,7 @@ class MainActivity : AppCompatActivity(),
             "likeUnLikeCommentFromViewsActivity",
             "likeUnLikeComment: data.isLiked ${data.isLiked} position $position isFeedComment: $isFeedComment"
         )
-//        var updatedComment : com.uyscuti.social.circuit.data.model.Comment? = null
+
         val updatedComment = if (data.isLiked) {
             data.copy(
                 likes = data.likes + 1,
@@ -7763,7 +7708,7 @@ class MainActivity : AppCompatActivity(),
 
         if (isInternetAvailable(this)) {
             Log.d(TAG, "likeUnLikeCommentFromViewsActivity: internet is available")
-//            Log.d(TAG, "likeUnLikeComment: internet is available")
+
             var result by Delegates.notNull<Boolean>()
             lifecycleScope.launch {
                 result = if (isFeedComment) {
@@ -8015,7 +7960,7 @@ class MainActivity : AppCompatActivity(),
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -8125,7 +8070,7 @@ class MainActivity : AppCompatActivity(),
     private var userDialogInput = ""
     private var dialogDismissed = false
     override fun onUserInputEntered(userInput: String) {
-//        editText.setText(userInput)
+
         userDialogInput = userInput
         Toast.makeText(this, "User input: $userInput", Toast.LENGTH_SHORT).show()
     }
@@ -8151,12 +8096,7 @@ class MainActivity : AppCompatActivity(),
             val reply = data.getBooleanExtra("reply", false)
             val updateReplyLikes = data.getBooleanExtra("updateReplyLikes", false)
             val updateLike = data.getBooleanExtra("updateLike", false)
-//
-////            Log.d("onActivityResult", "data $data")
-//            Log.d("onActivityResult", "reply data is liked ${currentReplyData?.isLiked}")
-//            Log.d("onActivityResult", "position $position")
-//            Log.d("onActivityResult", "reply $reply")
-//            Log.d("onActivityResult", "updateReplyLike $updateReplyLikes")
+
             if (reply) {
                 toggleReplyFromViewsActivity(modifiedData, position)
             }
@@ -8170,7 +8110,7 @@ class MainActivity : AppCompatActivity(),
                 likeCommentReplyFromViewsActivity(likeCommentReply)
             }
 
-//            EventBus.getDefault().post(ToggleReplyToTextView(modifiedData, position))
+
 
         } else if (requestCode == COMMENT_VIDEO_CODE && resultCode == RESULT_OK && data != null) {
             // Handle the result from the adapter
@@ -8185,12 +8125,7 @@ class MainActivity : AppCompatActivity(),
             val updateReplyLikes = data.getBooleanExtra("updateReplyLikes", false)
             val updateLike = data.getBooleanExtra("updateLike", false)
 
-//            Log.d("onActivityResult", "data $data")
-//            Log.d("COMMENT_VIDEO_CODE", "reply data is liked ${currentReplyData?.isLiked}")
-//            Log.d("COMMENT_VIDEO_CODE", "reply data is liked ${modifiedData.isLiked}")
-//            Log.d("COMMENT_VIDEO_CODE", "position $position")
-//            Log.d("COMMENT_VIDEO_CODE", "reply $reply")
-//            Log.d("COMMENT_VIDEO_CODE", "updateReplyLike $updateReplyLikes")
+
             if (reply) {
                 toggleReplyFromViewsActivity(modifiedData, position)
             }
@@ -8203,7 +8138,6 @@ class MainActivity : AppCompatActivity(),
                 likeCommentReplyFromViewsActivity(likeCommentReply)
             }
 
-//            EventBus.getDefault().post(ToggleReplyToTextView(modifiedData, position))
 
         } else if (requestCode == GIF_CODE && resultCode == RESULT_OK && data != null) {
 
@@ -8229,7 +8163,7 @@ class MainActivity : AppCompatActivity(),
             if(requestCode == 111) {
                 try {
                     data?.getSerializableExtra("resultKey")?.let { catalogue ->
-                       // fragmentProfile?.addCatalogue(catalogue as Catalogue)
+
                         catalogueViewModel.addItems(catalogue as Catalogue)
                     }
                 }catch (e: Exception) {
@@ -8252,7 +8186,7 @@ class MainActivity : AppCompatActivity(),
 
                         Log.d("MediaPicker", "onActivityResult: video: $imageUri")
                         Log.d("MediaPicker", "onActivityResult: resolved video: $resolvedUri")
-                        //fragmentProfile?.setBackgroundVideo(Uri.parse(resolved))
+
                         profile?.setProfileVideo(Uri.parse(resolvedUri))
                     }
 
@@ -8308,7 +8242,7 @@ class MainActivity : AppCompatActivity(),
             "uploadGifImageComment: inserted comment $newCommentReplyEntity"
         )
         lifecycleScope.launch {
-//                allCommentReplies2(1, commentId)
+
         }
         val mongoDbTimeStamp = generateMongoDBTimestamp()
         val gifFile = CommentFiles(_id = "", url = gifToUpload, localPath = "gif")
@@ -8324,7 +8258,7 @@ class MainActivity : AppCompatActivity(),
             commentId = commentId,
             updatedAt = mongoDbTimeStamp,
             gifs = gifToUpload,
-//            audios = mutableListOf(vnFile),
+
             contentType = "gif"
         )
 
@@ -8340,7 +8274,7 @@ class MainActivity : AppCompatActivity(),
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -8524,7 +8458,7 @@ class MainActivity : AppCompatActivity(),
         documentType: String = ""
 
     ) {
-//        binding.mainContents.visibility = View.VISIBLE
+
         val uniqueId = UniqueIdGenerator.generateUniqueId()
         Log.d("progress id", uniqueId)
 
@@ -8631,7 +8565,7 @@ class MainActivity : AppCompatActivity(),
         postId = data._id
 
 
-// Initialize adapter if it's null
+        // Initialize adapter if it's null
         if (binding.recyclerView.adapter == null) {
             Log.d(tag, "feedCommentClick: recycler view adapter is null")
         } else {
@@ -8718,7 +8652,7 @@ class MainActivity : AppCompatActivity(),
                     Log.d("feedEventCommentClick", "allFeedComments: comment adapter still null")
                 } else {
                     Log.d("feedEventCommentClick", "allFeedComments: comment adapter not null")
-//                    adapter?.setAdapterManually()
+
                     if (binding.recyclerView.adapter == null) {
                         Log.d(
                             tag,
@@ -8730,7 +8664,7 @@ class MainActivity : AppCompatActivity(),
                             "feedCommentClick: recycler view adapter is not null ${adapter?.adapter}"
                         )
                     }
-//                    adapter?.setDefaultRecyclerView(this@MainActivity, R.id.recyclerView)
+
                     val commentsWithReplies = commentViewModel.fetchFeedComments(postId, page)
                     Log.d(
                         "feedEventCommentClick",
@@ -8784,7 +8718,6 @@ class MainActivity : AppCompatActivity(),
                                 Log.e("LayoutManager", "allFeedComments: layout manager null")
                                 try {
 
-//                                    binding.recyclerView.layoutManager = adapter?.layoutManager
                                 } catch (e: Exception) {
                                     Log.e("LayoutManager", "allFeedComments: ${e.message}")
                                 }
@@ -8818,7 +8751,7 @@ class MainActivity : AppCompatActivity(),
             } catch (e: Exception) {
                 Log.e("feedEventCommentClick", "Exception: ${e.message}")
                 lifecycleScope.launch {
-//                    hideShimmer()
+
                     if (page == 1) {
                         hideShimmer()
                     } else {

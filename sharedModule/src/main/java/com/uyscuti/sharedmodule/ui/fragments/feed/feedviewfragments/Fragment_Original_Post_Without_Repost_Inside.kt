@@ -111,8 +111,6 @@ import org.greenrobot.eventbus.ThreadMode
 import retrofit2.Response
 
 
-
-
 class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFilesClickListener {
 
     companion object {
@@ -6331,11 +6329,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
         }
     }
-
-
-
-
-
 
     private fun formattedMongoDateTime(dateTimeString: String?): String {
         if (dateTimeString.isNullOrBlank()) return "Unknown Time"
