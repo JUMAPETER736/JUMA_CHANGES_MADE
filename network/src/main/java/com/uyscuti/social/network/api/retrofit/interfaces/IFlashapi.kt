@@ -288,11 +288,6 @@ interface IFlashapi {
     @GET("social-media/posts")
     suspend fun getShorts(@Query("page") page: String): Response<ApiResponse<ResponseData>>
 
-    @GET("social-media/posts")
-    suspend fun getAllPostsForSearch(
-        @Query("page") page: String,
-        @Query("limit") limit: String
-    ): Response<SearchShortsResponse>
 
     @GET("social-media/posts/getAllShortsByFeedShortBusinessId/{feedShortsBusinessId}")
     suspend fun getAllShortsByFeedShortBusinessId(
@@ -320,16 +315,6 @@ interface IFlashapi {
         @Part("content") content: RequestBody,
         @Part("fileId") fileId: RequestBody,
         @Part("feedShortsBusinessId") feedShortsBusinessId: RequestBody,
-        @Part images: MultipartBody.Part,
-        @Part("tags") tags: Array<RequestBody>? = null,
-        @Part thumbnail: MultipartBody.Part
-    ): Response<ShortsUploadResponse>
-
-    @Multipart
-    @POST("social-media/posts")
-    suspend fun uploadShortFromFeed(
-        @Part("content") content: RequestBody,
-        @Part("fileId") fileId: RequestBody,
         @Part images: MultipartBody.Part,
         @Part("tags") tags: Array<RequestBody>? = null,
         @Part thumbnail: MultipartBody.Part
@@ -509,11 +494,6 @@ interface IFlashapi {
         @Query("limit") limit: String
     ): Response<FeedResponse>
 
-    @GET("feed/post")
-    suspend fun getFeedReposts(@Query("page") page: String): Response<GetRepostsPostsOriginal>
-
-    @GET("feed/post/followed")
-    suspend fun getFollowedPosts(@Query("page") page: String): Response<AllFeedRepostsPost>
 
     @GET("feed/post/get/my")
     suspend fun getMyFeed(@Query("page") page: String): Response<AllFeedRepostsPost>
@@ -625,9 +605,6 @@ interface IFlashapi {
 
     @GET("feed/bookmarks/")
     suspend fun getFavoriteFeed(@Query("page") page: String): Response<FeedFavoriteResponse>
-
-    @POST("feed/bookmarks/delete/{bookmarkId}")
-    suspend fun deleteFavoriteFeed(@Path("bookmarkId") bookmarkId: String): Response<DeleteFeedResponse>
 
 
     // ==================== FEED - COMMENTS ====================
@@ -828,8 +805,6 @@ interface IFlashapi {
 
     // ==================== BUSINESS - CATALOGUE & PRODUCTS ====================
 
-    @GET("business/catalogue")
-    suspend fun getCatalogue(): Response<GetMyCatalogueResponse>
 
     @GET("business/catalogue/{userId}")
     suspend fun getUserBusinessCatalogue(@Path("userId") userId: String): Response<GetCatalogueByUserId>
@@ -847,9 +822,6 @@ interface IFlashapi {
     @GET("business/catalogue/m/products")
     suspend fun getProducts(): Response<GetProductsResponse>
 
-    @GET("business/catalogue/m/products")
-    suspend fun getPagedProducts(@Query("page") page: String): Response<GetProductsResponse>
-
     @DELETE("business/catalogue/products/{productId}")
     suspend fun deleteProduct(@Path("productId") productId: String): Response<DeleteProductResponse>
 
@@ -858,9 +830,6 @@ interface IFlashapi {
 
     @GET("business/product-posts/post")
     suspend fun getBusinessPost(@Query("page") page: String): Response<BusinessPost>
-
-    @GET("business/product-posts/product/{productId}")
-    suspend fun getSingleAggregatedProduct(@Path("productId") productId: String): Response<ProductPost>
 
     @POST("business/product-posts/likes/{businessPostId}")
     suspend fun likeAndUnlikeBusinessPost(@Path("businessPostId") businessPostId: String): Response<LikeResponse>
@@ -957,8 +926,6 @@ interface IFlashapi {
 
     // ==================== NOTIFICATIONS ====================
 
-    @GET("notifications/my")
-    suspend fun getMyNotifications(): Response<GetMyNotifications>
 
     @GET("notifications/myComment")
     suspend fun getCommentNotification(): Response<GetCommentNotification>
