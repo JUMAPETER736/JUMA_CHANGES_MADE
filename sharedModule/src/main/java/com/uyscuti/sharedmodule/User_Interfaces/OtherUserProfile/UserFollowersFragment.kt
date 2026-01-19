@@ -411,11 +411,15 @@ class UserFollowersFragment : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // ✨ Load blocked users FIRST
-                loadBlockedUsers()
+                // Load blocked users and followers in PARALLEL
+                val blockedUsersDeferred = async { loadBlockedUsersOptimized() }
+                val followersDeferred = async {
+                    retrofitInstance.apiService.getOtherUserFollowers(username, currentPage, 20)
+                }
 
-                // Then load followers
-                val response = retrofitInstance.apiService.getOtherUserFollowers(username, currentPage, 20)
+                // Wait for both to complete
+                blockedUsersDeferred.await()
+                val response = followersDeferred.await()
 
                 if (response.isSuccessful) {
                     val responseBody = response.body()
@@ -427,12 +431,16 @@ class UserFollowersFragment : AppCompatActivity() {
                         return@launch
                     }
 
-                    handleFollowersResponse(responseBody.data)
+                    handleFollowersResponseOptimized(responseBody.data)
                 } else {
-                    // ... existing error handling
+                    withContext(Dispatchers.Main) {
+                        handleError("Failed to load followers")
+                    }
                 }
             } catch (e: Exception) {
-                // ... existing error handling
+                withContext(Dispatchers.Main) {
+                    handleError("Error: ${e.message}")
+                }
             } finally {
                 withContext(Dispatchers.Main) {
                     isLoading = false
@@ -1168,13 +1176,18 @@ class FollowersAdapter(
 
     fun updateList(newList: List<OtherUserDisplayFollowersModel>) {
         followers.clear()
-        // Filter out current user when updating list
-        val filteredList = newList.filter {
-            it.id != currentUserId && it.username != currentUsername
+
+        // Filter out current user and blocked users
+        val filteredList = newList.filter { user ->
+            user.id != currentUserId &&
+                    user.username != currentUsername &&
+                    !FeedAdapter.isUserBlocked(user.id)
         }
+
         followers.addAll(filteredList)
         notifyDataSetChanged()
 
-        Log.d(TAG, "List updated: ${newList.size} total, ${filteredList.size} after filtering out current user")
+        Log.d(TAG, "List updated: ${newList.size} total, ${filteredList.size} after filtering current & blocked users")
     }
+
 }

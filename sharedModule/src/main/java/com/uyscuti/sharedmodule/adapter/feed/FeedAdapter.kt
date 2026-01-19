@@ -127,53 +127,25 @@ class FeedAdapter(
 
 ) : FeedPaginatedAdapter<RecyclerView.ViewHolder>(), OnMultipleImagesClickListener {
 
-    private var followList: MutableList<ShortsEntityFollowList> =
-        mutableListOf()
-
 
     companion object {
-        // Existing caches...
+
+
         private var cachedFollowingUserIds: Set<String> = emptySet()
         private val cachedFollowingList = mutableSetOf<String>()
         private val cachedFollowingUsernames = mutableSetOf<String>()
         private val cachedFollowersUsernames = mutableSetOf<String>()
         private val myFollowersCache = mutableSetOf<String>()
-
-        // ADD NEW BLOCKED USERS CACHE
         private val blockedUsersCache = mutableSetOf<String>()
 
-        // ADD THESE NEW METHODS FOR BLOCKED USERS
+        fun getCachedFollowersUsernames(): Set<String> = cachedFollowersUsernames.toSet()
+        fun getCachedFollowingUsernames(): Set<String> = cachedFollowingUsernames.toSet()
+        fun getCachedFollowingList(): Set<String> = cachedFollowingList.toSet()
+
+
         fun isUserBlocked(userId: String): Boolean {
             return blockedUsersCache.contains(userId)
         }
-
-        fun setBlockedUsersList(blockedUserIds: List<String>) {
-            blockedUsersCache.clear()
-            blockedUsersCache.addAll(blockedUserIds)
-            Log.d("FeedAdapter", "Blocked users cache updated with ${blockedUserIds.size} users")
-        }
-
-        fun addToBlockedCache(userId: String) {
-            blockedUsersCache.add(userId)
-            Log.d("FeedAdapter", "Added $userId to blocked cache (Total: ${blockedUsersCache.size})")
-        }
-
-        fun removeFromBlockedCache(userId: String) {
-            blockedUsersCache.remove(userId)
-            Log.d("FeedAdapter", "Removed $userId from blocked cache (Total: ${blockedUsersCache.size})")
-        }
-
-        fun getBlockedUsersList(): Set<String> = blockedUsersCache.toSet()
-
-        // Existing methods...
-        fun getCachedFollowersUsernames(): Set<String> = cachedFollowersUsernames.toSet()
-        fun setCachedFollowersUsernames(usernames: Set<String>) {
-            cachedFollowersUsernames.clear()
-            cachedFollowersUsernames.addAll(usernames)
-        }
-
-        fun getCachedFollowingUsernames(): Set<String> = cachedFollowingUsernames.toSet()
-        fun getCachedFollowingList(): Set<String> = cachedFollowingList.toSet()
 
         fun isUserInMyFollowersList(userId: String): Boolean {
             return myFollowersCache.contains(userId)
@@ -222,6 +194,9 @@ class FeedAdapter(
     private val currentUsername = LocalStorage.getInstance(context).getUsername()
 
     private var businessPost: com.uyscuti.social.network.api.response.business.response.post.Post? = null
+
+    private var followList: MutableList<ShortsEntityFollowList> =
+        mutableListOf()
 
 
     fun addToFollowing(userId: String, username: String) {
