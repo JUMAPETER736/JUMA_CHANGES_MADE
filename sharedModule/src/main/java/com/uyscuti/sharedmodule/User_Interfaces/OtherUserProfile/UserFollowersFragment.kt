@@ -265,27 +265,69 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
-
-    private suspend fun loadBlockedUsers() {
+    @OptIn(UnstableApi::class)
+    private fun openUserProfile(user: OtherUserDisplayFollowersModel) {
         try {
-            Log.d(TAG, "Loading blocked users...")
+            Log.d(TAG, "Opening profile for user: ${user.username}")
 
-            val response = retrofitInstance.apiService.getAllBlockedUsers(page = 1, limit = 100)
+            // Create a complete OtherUsersProfile object matching the exact data class
+            val otherUsersProfile = OtherUsersProfile(
+                name = user.fullName,
+                username = user.username,
+                profilePic = user.avatar?.url ?: "",
+                userId = user.id,
+                isVerified = user.isVerified ?: false,
+                bio = user.bio,
+                linkInBio = null,
+                isCreator = false,
+                isTrending = false,
+                isFollowing = user.isFollowing,
+                isPrivate = false,
+                followersCount = 0L,
+                followingCount = 0L,
+                postsCount = 0L,
+                shortsCount = 0L,
+                videosCount = 0L,
+                isOnline = user.isOnline ?: false,
+                lastSeen = user.lastseen,
+                joinedDate = Date(),
+                location = null,
+                website = null,
+                email = user.email,
+                phoneNumber = null,
+                dateOfBirth = null,
+                gender = null,
+                accountType = user.role ?: "user",
+                isBlocked = false,
+                isMuted = false,
+                badgeType = null,
+                level = 1,
+                reputation = 0L,
+                coverPhoto = null,
+                theme = null,
+                language = null,
+                timezone = null,
+                notificationsEnabled = true,
+                privacySettings = null,
+                socialLinks = null,
+                achievements = null,
+                interests = null,
+                categories = null
+            )
 
-            if (response.isSuccessful && response.body() != null) {
-                val responseBody = response.body()!!
+            // Open the OtherUserProfileAccount activity using the static method
+            OtherUserProfileAccount.open(
+                context = this,
+                user = otherUsersProfile,
+                dialogPhoto = user.avatar?.url,
+                dialogId = user.id
+            )
 
-                blockedUserIds = responseBody.data.blockedUsers
-                    .map { it.user._id }
-                    .toSet()
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
 
-                Log.d(TAG, "✓ Loaded ${blockedUserIds.size} blocked users")
-                Log.d(TAG, "Blocked user IDs: $blockedUserIds")
-            } else {
-                Log.e(TAG, "Failed to load blocked users: ${response.code()}")
-            }
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading blocked users: ${e.message}", e)
+            Log.e(TAG, "Error navigating to profile", e)
+            Toast.makeText(this, "Unable to open profile", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -318,6 +360,38 @@ class UserFollowersFragment : AppCompatActivity() {
                 val cached = FeedAdapter.getCachedFollowingList().contains(user._id)
                 OtherUserDisplayFollowersModel.fromApiData(user, cached).apply {
                     this.isBlocked = blockedUserIds.contains(user._id)
+                }
+            }
+        }
+    }
+
+
+
+    private fun toggleFollowUser(user: OtherUserDisplayFollowersModel) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = retrofitInstance.apiService.followUnFollow(user.id)
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        // Toggle the follow status
+                        user.isFollowing = !user.isFollowing
+                        followersAdapter.notifyDataSetChanged()
+
+                        val message = if (user.isFollowing) {
+                            "Following ${user.username}"
+                        } else {
+                            "Un followed ${user.username}"
+                        }
+                        Toast.makeText(this@UserFollowersFragment, message, Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this@UserFollowersFragment, "Action failed", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error toggling follow: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@UserFollowersFragment, "Network error", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -410,7 +484,6 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
-
     private fun refreshFollowers() {
         currentPage = 1
         hasMoreData = true
@@ -438,133 +511,40 @@ class UserFollowersFragment : AppCompatActivity() {
         updateEmptyState()
     }
 
-    private fun updateEmptyState() {
-        if (filteredFollowersList.isEmpty()) {
-            binding.emptyStateLayout.visibility = View.VISIBLE
-            binding.recyclerView.visibility = View.GONE
+    private fun updateFollowersCount(change: Int) {
+        followersCount += change
+        val formattedCount = formatCount(followersCount)
+        val titleText = if (isMyFollowers) {
+            "My $formattedCount Followers"
         } else {
-            binding.emptyStateLayout.visibility = View.GONE
-            binding.recyclerView.visibility = View.VISIBLE
+            "$formattedCount Followers"
         }
+        binding.toolbarTitle.text = titleText
     }
-
-    @OptIn(UnstableApi::class)
-    private fun openUserProfile(user: OtherUserDisplayFollowersModel) {
-        try {
-            Log.d(TAG, "Opening profile for user: ${user.username}")
-
-            // Create a complete OtherUsersProfile object matching the exact data class
-            val otherUsersProfile = OtherUsersProfile(
-                name = user.fullName,
-                username = user.username,
-                profilePic = user.avatar?.url ?: "",
-                userId = user.id,
-                isVerified = user.isVerified ?: false,
-                bio = user.bio,
-                linkInBio = null,
-                isCreator = false,
-                isTrending = false,
-                isFollowing = user.isFollowing,
-                isPrivate = false,
-                followersCount = 0L,
-                followingCount = 0L,
-                postsCount = 0L,
-                shortsCount = 0L,
-                videosCount = 0L,
-                isOnline = user.isOnline ?: false,
-                lastSeen = user.lastseen,
-                joinedDate = Date(),
-                location = null,
-                website = null,
-                email = user.email,
-                phoneNumber = null,
-                dateOfBirth = null,
-                gender = null,
-                accountType = user.role ?: "user",
-                isBlocked = false,
-                isMuted = false,
-                badgeType = null,
-                level = 1,
-                reputation = 0L,
-                coverPhoto = null,
-                theme = null,
-                language = null,
-                timezone = null,
-                notificationsEnabled = true,
-                privacySettings = null,
-                socialLinks = null,
-                achievements = null,
-                interests = null,
-                categories = null
-            )
-
-            // Open the OtherUserProfileAccount activity using the static method
-            OtherUserProfileAccount.open(
-                context = this,
-                user = otherUsersProfile,
-                dialogPhoto = user.avatar?.url,
-                dialogId = user.id
-            )
-
-            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error navigating to profile", e)
-            Toast.makeText(this, "Unable to open profile", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun toggleFollowUser(user: OtherUserDisplayFollowersModel) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val response = retrofitInstance.apiService.followUnFollow(user.id)
-
-                withContext(Dispatchers.Main) {
-                    if (response.isSuccessful) {
-                        // Toggle the follow status
-                        user.isFollowing = !user.isFollowing
-                        followersAdapter.notifyDataSetChanged()
-
-                        val message = if (user.isFollowing) {
-                            "Following ${user.username}"
-                        } else {
-                            "Un followed ${user.username}"
-                        }
-                        Toast.makeText(this@UserFollowersFragment, message, Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this@UserFollowersFragment, "Action failed", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error toggling follow: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(this@UserFollowersFragment, "Network error", Toast.LENGTH_SHORT).show()
-                }
+    
+    private suspend fun handleFollowersResponse(followers: List<Data>) {
+        withContext(Dispatchers.Main) {
+            if (currentPage == 1) {
+                followersList.clear()
+                filteredFollowersList.clear()
             }
-        }
-    }
 
+            val followersWithStatus = checkFollowStatus(followers)
+            followersList.addAll(followersWithStatus)
+            filteredFollowersList.addAll(followersWithStatus)
 
-    private fun showMoreOptions(user: OtherUserDisplayFollowersModel) {
-        if (isMyFollowers) {
-            AlertDialog.Builder(this)
-                .setTitle("Remove follower?")
-                .setMessage("${user.username} will no longer be able to see your posts.")
-                .setPositiveButton("Remove") { _, _ ->
-                    performRemoveFollower(user)
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
-        } else {
-            AlertDialog.Builder(this)
-                .setTitle("Options")
-                .setItems(arrayOf("View Profile", "Block User")) { _, which ->
-                    when (which) {
-                        0 -> reportFollower(user)
-                        1 -> blockFollower(user)
-                    }
-                }
-                .show()
+            // ADD THIS: Populate the FeedAdapter cache with YOUR followers
+            if (isMyFollowers) {
+                val followerIds = followersWithStatus.map { it.id }
+                FeedAdapter.setMyFollowersList(followerIds)
+                Log.d(TAG, "Populated my followers cache with ${followerIds.size} followers")
+            }
+
+            followersAdapter.notifyDataSetChanged()
+            updateEmptyState()
+
+            hasMoreData = followers.size >= 20
+            currentPage++
         }
     }
 
@@ -595,6 +575,62 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
+    private fun updateEmptyState() {
+        if (filteredFollowersList.isEmpty()) {
+            binding.emptyStateLayout.visibility = View.VISIBLE
+            binding.recyclerView.visibility = View.GONE
+        } else {
+            binding.emptyStateLayout.visibility = View.GONE
+            binding.recyclerView.visibility = View.VISIBLE
+        }
+    }
+
+    private suspend fun loadBlockedUsers() {
+        try {
+            Log.d(TAG, "Loading blocked users...")
+
+            val response = retrofitInstance.apiService.getAllBlockedUsers(page = 1, limit = 100)
+
+            if (response.isSuccessful && response.body() != null) {
+                val responseBody = response.body()!!
+
+                blockedUserIds = responseBody.data.blockedUsers
+                    .map { it.user._id }
+                    .toSet()
+
+                Log.d(TAG, "✓ Loaded ${blockedUserIds.size} blocked users")
+                Log.d(TAG, "Blocked user IDs: $blockedUserIds")
+            } else {
+                Log.e(TAG, "Failed to load blocked users: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading blocked users: ${e.message}", e)
+        }
+    }
+
+    private fun showMoreOptions(user: OtherUserDisplayFollowersModel) {
+        if (isMyFollowers) {
+            AlertDialog.Builder(this)
+                .setTitle("Remove follower?")
+                .setMessage("${user.username} will no longer be able to see your posts.")
+                .setPositiveButton("Remove") { _, _ ->
+                    performRemoveFollower(user)
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        } else {
+            AlertDialog.Builder(this)
+                .setTitle("Options")
+                .setItems(arrayOf("View Profile", "Block User")) { _, which ->
+                    when (which) {
+                        0 -> reportFollower(user)
+                        1 -> blockFollower(user)
+                    }
+                }
+                .show()
+        }
+    }
+
     private fun reportFollower(user: OtherUserDisplayFollowersModel) {
         Log.d(TAG, "Report user: ${user.username}")
         Toast.makeText(this, "Report submitted", Toast.LENGTH_SHORT).show()
@@ -610,7 +646,6 @@ class UserFollowersFragment : AppCompatActivity() {
             .setNegativeButton("Cancel", null)
             .show()
     }
-
 
     private fun performBlockUser(user: OtherUserDisplayFollowersModel) {
         lifecycleScope.launch(Dispatchers.IO) {
@@ -703,18 +738,6 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
-
-    private fun updateFollowersCount(change: Int) {
-        followersCount += change
-        val formattedCount = formatCount(followersCount)
-        val titleText = if (isMyFollowers) {
-            "My $formattedCount Followers"
-        } else {
-            "$formattedCount Followers"
-        }
-        binding.toolbarTitle.text = titleText
-    }
-
     private fun formatCount(count: Int): String {
         return when {
             count >= 1_000_000 -> {
@@ -736,31 +759,6 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
-    private suspend fun handleFollowersResponse(followers: List<Data>) {
-        withContext(Dispatchers.Main) {
-            if (currentPage == 1) {
-                followersList.clear()
-                filteredFollowersList.clear()
-            }
-
-            val followersWithStatus = checkFollowStatus(followers)
-            followersList.addAll(followersWithStatus)
-            filteredFollowersList.addAll(followersWithStatus)
-
-            // ADD THIS: Populate the FeedAdapter cache with YOUR followers
-            if (isMyFollowers) {
-                val followerIds = followersWithStatus.map { it.id }
-                FeedAdapter.setMyFollowersList(followerIds)
-                Log.d(TAG, "Populated my followers cache with ${followerIds.size} followers")
-            }
-
-            followersAdapter.notifyDataSetChanged()
-            updateEmptyState()
-
-            hasMoreData = followers.size >= 20
-            currentPage++
-        }
-    }
 
 }
 
