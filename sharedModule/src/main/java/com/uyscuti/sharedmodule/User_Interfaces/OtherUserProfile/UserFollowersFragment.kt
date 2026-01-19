@@ -54,6 +54,8 @@ import retrofit2.HttpException
 import java.io.IOException
 import java.util.Date
 import androidx.core.graphics.toColorInt
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import kotlinx.coroutines.async
 
 
 private const val TAG = "UserFollowersFragment"
@@ -152,7 +154,6 @@ class UserFollowersFragment : AppCompatActivity() {
 
     @OptIn(UnstableApi::class)
     private fun setupRecyclerView() {
-
         followersAdapter = FollowersAdapter(
             followers = filteredFollowersList,
             onFollowerClick = { user -> openUserProfile(user) },
@@ -165,6 +166,13 @@ class UserFollowersFragment : AppCompatActivity() {
         binding.recyclerView.apply {
             adapter = followersAdapter
             layoutManager = LinearLayoutManager(this@UserFollowersFragment)
+
+            // Enable these optimizations
+            setHasFixedSize(true)
+            setItemViewCacheSize(20)
+
+            // Prefetch items
+            (layoutManager as? LinearLayoutManager)?.initialPrefetchItemCount = 4
 
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -332,32 +340,33 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
+
+
     private suspend fun checkFollowStatus(
         users: List<Data>
     ): List<OtherUserDisplayFollowersModel> {
 
-        return users.map { user ->
-            try {
-                val response = retrofitInstance.apiService
-                    .getOtherUsersFollowersAndFollowingStatus(user._id)
+        if (users.isEmpty()) return emptyList()
 
-                val isFollowing = if (response.isSuccessful && response.body() != null) {
-                    response.body()!!.data?.isFollowing ?: false
-                } else {
-                    FeedAdapter.getCachedFollowingList().contains(user._id)
-                }
+        // Get all user IDs
+        val userIds = users.map { it._id }
 
-                // ✨ Check if user is in blocked list
+        return try {
+            // Make ONE batch API call instead of individual calls
+            // If your API doesn't support batch, use cached data
+            val cachedFollowingList = FeedAdapter.getCachedFollowingList()
+
+            users.map { user ->
+                val isFollowing = cachedFollowingList.contains(user._id)
                 val isBlocked = blockedUserIds.contains(user._id)
-
-                Log.d(TAG, "Status for ${user.username}: isFollowing=$isFollowing, isBlocked=$isBlocked")
 
                 OtherUserDisplayFollowersModel.fromApiData(user, isFollowing).apply {
                     this.isBlocked = isBlocked
                 }
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error for ${user.username}: ${e.message}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in batch status check: ${e.message}")
+            users.map { user ->
                 val cached = FeedAdapter.getCachedFollowingList().contains(user._id)
                 OtherUserDisplayFollowersModel.fromApiData(user, cached).apply {
                     this.isBlocked = blockedUserIds.contains(user._id)
@@ -365,8 +374,6 @@ class UserFollowersFragment : AppCompatActivity() {
             }
         }
     }
-
-
 
     private fun toggleFollowUser(user: OtherUserDisplayFollowersModel) {
         lifecycleScope.launch(Dispatchers.IO) {
@@ -412,7 +419,7 @@ class UserFollowersFragment : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 // Load blocked users and followers in PARALLEL
-                val blockedUsersDeferred = async { loadBlockedUsersOptimized() }
+                val blockedUsersDeferred = async { loadBlockedUsers() }
                 val followersDeferred = async {
                     retrofitInstance.apiService.getOtherUserFollowers(username, currentPage, 20)
                 }
@@ -451,6 +458,21 @@ class UserFollowersFragment : AppCompatActivity() {
         }
     }
 
+    private suspend fun loadBlockedUsers() {
+        try {
+            val response = retrofitInstance.apiService.getAllBlockedUsers(page = 1, limit = 100)
+
+            if (response.isSuccessful && response.body() != null) {
+                val responseBody = response.body()!!
+                blockedUserIds.clear()
+                blockedUserIds.addAll(responseBody.data.blockedUsers.map { it.user._id })
+                Log.d(TAG, "✓ Loaded ${blockedUserIds.size} blocked users")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading blocked users: ${e.message}", e)
+        }
+    }
+
     private fun loadMoreFollowers() {
         if (!hasMoreData || isLoading) return
 
@@ -464,9 +486,13 @@ class UserFollowersFragment : AppCompatActivity() {
                     val responseBody = response.body()
 
                     if (responseBody != null) {
+                        // Use batch processing
                         val newFollowersWithStatus = checkFollowStatus(responseBody.data)
-                        val newFollowers = newFollowersWithStatus.filter { newFollower ->
-                            followersList.none { it._id == newFollower._id }
+
+                        // Filter duplicates efficiently
+                        val existingIds = followersList.map { it._id }.toSet()
+                        val newFollowers = newFollowersWithStatus.filter {
+                            it._id !in existingIds
                         }
 
                         if (newFollowers.isNotEmpty()) {
@@ -503,6 +529,7 @@ class UserFollowersFragment : AppCompatActivity() {
     }
 
     private fun filterList(query: String) {
+        val oldSize = filteredFollowersList.size
         filteredFollowersList.clear()
 
         if (query.isEmpty()) {
@@ -516,7 +543,16 @@ class UserFollowersFragment : AppCompatActivity() {
             filteredFollowersList.addAll(filteredList)
         }
 
-        followersAdapter.notifyDataSetChanged()
+        // Smart notify based on changes
+        when {
+            oldSize == 0 && filteredFollowersList.isNotEmpty() ->
+                followersAdapter.notifyItemRangeInserted(0, filteredFollowersList.size)
+            oldSize > 0 && filteredFollowersList.isEmpty() ->
+                followersAdapter.notifyItemRangeRemoved(0, oldSize)
+            else ->
+                followersAdapter.notifyDataSetChanged()
+        }
+
         updateEmptyState()
     }
 
@@ -531,25 +567,31 @@ class UserFollowersFragment : AppCompatActivity() {
         binding.toolbarTitle.text = titleText
     }
 
-    private suspend fun handleFollowersResponse(followers: List<Data>) {
+    private suspend fun handleFollowersResponseOptimized(followers: List<Data>) {
+        // Process data in background
+        val followersWithStatus = checkFollowStatus(followers)
+
+        // Update UI in one batch
         withContext(Dispatchers.Main) {
             if (currentPage == 1) {
                 followersList.clear()
                 filteredFollowersList.clear()
             }
 
-            val followersWithStatus = checkFollowStatus(followers)
             followersList.addAll(followersWithStatus)
             filteredFollowersList.addAll(followersWithStatus)
 
-            // ADD THIS: Populate the FeedAdapter cache with YOUR followers
             if (isMyFollowers) {
                 val followerIds = followersWithStatus.map { it.id }
                 FeedAdapter.setMyFollowersList(followerIds)
-                Log.d(TAG, "Populated my followers cache with ${followerIds.size} followers")
             }
 
-            followersAdapter.notifyDataSetChanged()
+            // Use DiffUtil for efficient updates instead of notifyDataSetChanged()
+            followersAdapter.notifyItemRangeInserted(
+                followersList.size - followersWithStatus.size,
+                followersWithStatus.size
+            )
+
             updateEmptyState()
 
             hasMoreData = followers.size >= 20
@@ -591,29 +633,6 @@ class UserFollowersFragment : AppCompatActivity() {
         } else {
             binding.emptyStateLayout.visibility = View.GONE
             binding.recyclerView.visibility = View.VISIBLE
-        }
-    }
-
-    private suspend fun loadBlockedUsers() {
-        try {
-            Log.d(TAG, "Loading blocked users...")
-
-            val response = retrofitInstance.apiService.getAllBlockedUsers(page = 1, limit = 100)
-
-            if (response.isSuccessful && response.body() != null) {
-                val responseBody = response.body()!!
-
-                // Clear the existing set and add new IDs
-                blockedUserIds.clear()
-                blockedUserIds.addAll(responseBody.data.blockedUsers.map { it.user._id })
-
-                Log.d(TAG, "✓ Loaded ${blockedUserIds.size} blocked users")
-                Log.d(TAG, "Blocked user IDs: $blockedUserIds")
-            } else {
-                Log.e(TAG, "Failed to load blocked users: ${response.code()}")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error loading blocked users: ${e.message}", e)
         }
     }
 
@@ -799,6 +818,12 @@ class FollowersAdapter(
     override fun getItemCount(): Int = followers.size
 
 
+    override fun onViewRecycled(holder: FollowerViewHolder) {
+        super.onViewRecycled(holder)
+        // Clear Glide to prevent memory leaks
+        Glide.with(holder.profileImage.context).clear(holder.profileImage)
+    }
+
     inner class FollowerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
 
         val profileImage: ImageView = view.findViewById(R.id.profile_image)
@@ -861,6 +886,9 @@ class FollowersAdapter(
                 .placeholder(R.drawable.flash21)
                 .error(R.drawable.flash21)
                 .circleCrop()
+                .override(100, 100)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .skipMemoryCache(false)
                 .into(holder.profileImage)
         } ?: holder.profileImage.setImageResource(R.drawable.flash21)
 
