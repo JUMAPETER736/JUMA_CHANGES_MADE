@@ -811,7 +811,7 @@ class FollowersAdapter(
     override fun onBindViewHolder(holder: FollowerViewHolder, position: Int) {
         val follower = followers[position]
 
-        // Don't show current user
+        // Hide current user
         if (follower.id == currentUserId || follower.username == currentUsername) {
             holder.itemView.visibility = View.GONE
             holder.itemView.layoutParams = RecyclerView.LayoutParams(0, 0)
@@ -824,21 +824,11 @@ class FollowersAdapter(
             )
         }
 
-        // Set username and full name
+        // Username & name
         holder.usernameText.text = "@${follower.username}"
         holder.fullNameText.text = follower.fullName
 
-        // Click on profile image to open profile
-        holder.profileImage.setOnClickListener {
-            onFollowerClick(follower)
-        }
-
-        // Click on item to open profile
-        holder.itemView.setOnClickListener {
-            onFollowerClick(follower)
-        }
-
-        // Show bio if available
+        // Bio
         if (!follower.bio.isNullOrEmpty()) {
             holder.bioText.visibility = View.VISIBLE
             holder.bioText.text = follower.bio
@@ -846,7 +836,7 @@ class FollowersAdapter(
             holder.bioText.visibility = View.GONE
         }
 
-        // Load profile image
+        // Profile image
         follower.avatar?.url?.let { avatarUrl ->
             Glide.with(holder.profileImage.context)
                 .load(avatarUrl)
@@ -856,18 +846,23 @@ class FollowersAdapter(
                 .into(holder.profileImage)
         } ?: holder.profileImage.setImageResource(R.drawable.flash21)
 
-        // Update follow button appearance based on blocked status and following status
+        // Open profile
+        holder.profileImage.setOnClickListener { onFollowerClick(follower) }
+        holder.itemView.setOnClickListener { onFollowerClick(follower) }
+
+        // ================================
+        // FOLLOW BUTTON STATE
+        // ================================
         when {
             follower.isBlocked -> {
-                // User is blocked - show red Blocked button
                 holder.followButton.text = "Blocked"
-                holder.followButton.backgroundTintList = ColorStateList.valueOf("#F44336".toColorInt())
+                holder.followButton.backgroundTintList =
+                    ColorStateList.valueOf("#F44336".toColorInt())
                 holder.followButton.setBackgroundResource(R.drawable.follower_blocked_button)
                 holder.followButton.setTextColor(Color.WHITE)
             }
 
             follower.isFollowing -> {
-                // You're following them back - show Message button
                 holder.followButton.text = "Message"
                 holder.followButton.backgroundTintList = null
                 holder.followButton.setBackgroundResource(R.drawable.button_outline_blue)
@@ -877,7 +872,6 @@ class FollowersAdapter(
             }
 
             else -> {
-                // You're NOT following them - show Follow Back button
                 holder.followButton.text = "Follow Back"
                 holder.followButton.backgroundTintList = null
                 holder.followButton.setBackgroundResource(R.drawable.button_blue_solid)
@@ -885,29 +879,29 @@ class FollowersAdapter(
             }
         }
 
-        // Follow button click logic
+        // Follow button click
         holder.followButton.setOnClickListener {
             when {
-                follower.isBlocked -> {
-                    // User is blocked - show unblock option
-                    handleUnblockClick(holder, follower, position)
-                }
-                follower.isFollowing -> {
-                    // Already following - open messaging
-                    openMessaging(holder.itemView.context, follower)
-                }
-                else -> {
-                    // Not following - execute follow back
-                    handleFollowBackClick(holder, follower, position)
-                }
+                follower.isBlocked -> handleUnblockClick(holder, follower, position)
+                follower.isFollowing -> openMessaging(holder.itemView.context, follower)
+                else -> handleFollowBackClick(holder, follower, position)
             }
         }
 
-        // More options button
-        holder.moreOptionsButton.setOnClickListener {
-            onMoreOptionsClick(follower)
+        // ================================
+        // ✅ HIDE MORE OPTIONS IF NOT MY PROFILE
+        // ================================
+        if (isMyFollowers) {
+            holder.moreOptionsButton.visibility = View.VISIBLE
+            holder.moreOptionsButton.setOnClickListener {
+                onMoreOptionsClick(follower)
+            }
+        } else {
+            holder.moreOptionsButton.visibility = View.GONE
+            holder.moreOptionsButton.setOnClickListener(null)
         }
     }
+
 
 
     private fun openMessaging(context: Context, follower: OtherUserDisplayFollowersModel) {
