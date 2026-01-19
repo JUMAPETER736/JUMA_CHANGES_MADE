@@ -111,30 +111,34 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             }
     }
 
-
-    private var myUserId: String = ""
-    private var followingUserIds = mutableSetOf<String>()
-    private var hasLoadedFollowingList = false
-    private var param1: String? = null
-    private var param2: String? = null
     private lateinit var frameLayout:FrameLayout
-    private val getFeedViewModel: GetFeedViewModel by activityViewModels()
     private lateinit var followedPostsAdapter: FeedAdapter
     private lateinit var feedListView: RecyclerView
-    private var isLoading = false
-    private var hasMoreData = true
-    private val followingUserMap = mutableMapOf<String, String>()
-    var bitmap: Bitmap? = null
-    private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
     private lateinit var progressBar: ProgressBar
     var currentAdapterPosition = -1
     private lateinit var feedUploadRepository: FeedUploadRepository
+    private var myUserId: String = ""
+
+    private var followingUserIds = mutableSetOf<String>()
+    private var blockedUserIds = mutableSetOf<String>()
+    private val followingUserMap = mutableMapOf<String, String>()
+    private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
+    private val getFeedViewModel: GetFeedViewModel by activityViewModels()
+
+    private var isLoading = false
+    private var hasLoadedFollowingList = false
+    private var hasMoreData = true
+    var bitmap: Bitmap? = null
+
+    private var param1: String? = null
+    private var param2: String? = null
     private var positionFromShorts: SetAllFragmentScrollPosition? = null
     private var feedVideoViewFragment: FeedVideoViewFragment? = null
     private var feedTextViewFragment: FeedTextViewFragment?= null
     private var feedAudioViewFragment: FeedAudioViewFragment? = null
     private var feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
     private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
+
     private var feedDocsViewFragment: FeedDocumentViewFragment? = null
     private var feedImageViewFragment: FeedImageViewFragment? = null
     private var feedRepostDocFragment : FeedRepostDocFragment? = null
@@ -188,6 +192,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         lifecycleScope.launch(Dispatchers.IO) {
 
             loadMyFollowersList()
+            loadBlockedUsers()
         }
 
         feedUploadRepository = FeedUploadRepository()
@@ -450,6 +455,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     }
 
     private suspend fun loadAllFollowingPostsInitially() {
+
         val currentUserId = getUserId(requireContext())
         val allFollowingPosts = mutableListOf<Post>()
         var pageNum = 1
@@ -502,6 +508,12 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                         // Skip own posts
                         if (posterAccountId == currentUserId) {
                             Log.d(TAG, "    ⊘ This is MY post - SKIPPING")
+                            return@mapNotNull null
+                        }
+
+                        // Skip blocked users
+                        if (blockedUserIds.contains(posterAccountId)) {
+                            Log.d(TAG, "Skipping post from blocked user ID $posterAccountId")
                             return@mapNotNull null
                         }
 
@@ -618,6 +630,12 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                         // Skip own posts
                         if (posterAccountId == currentUserId) return@mapNotNull null
+
+                        // Skip blocked users
+                        if (blockedUserIds.contains(posterAccountId)) {
+                            Log.d(TAG, "Skipping post from blocked user ID $posterAccountId")
+                            return@mapNotNull null
+                        }
 
                         // DO I FOLLOW THE POSTER?
                         val isFollowingById = followingUserIds.contains(posterAccountId)
@@ -816,6 +834,28 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
+    private suspend fun loadBlockedUsers() {
+        try {
+            Log.d(TAG, "Loading blocked users...")
+
+            val response = retrofitInstance.apiService.getAllBlockedUsers(page = 1, limit = 100)
+
+            if (response.isSuccessful && response.body() != null) {
+                val responseBody = response.body()!!
+
+                // Clear existing and add new blocked user IDs
+                blockedUserIds.clear()
+                blockedUserIds.addAll(responseBody.data.blockedUsers.map { it.user._id })
+
+                Log.d(TAG, "Loaded ${blockedUserIds.size} blocked users")
+                Log.d(TAG, "Blocked user IDs: $blockedUserIds")
+            } else {
+                Log.e(TAG, "Failed to load blocked users: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading blocked users: ${e.message}", e)
+        }
+    }
 
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
