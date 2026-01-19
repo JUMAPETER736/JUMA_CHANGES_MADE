@@ -4732,7 +4732,7 @@ class MainActivity : AppCompatActivity(),
             exoPlayer!!.prepare()
             exoPlayer!!.seekTo(progress.toLong())
             exoPlayer!!.playWhenReady = true
-//            exoPlayer!!.play()
+
             exoPlayer!!.repeatMode = Player.REPEAT_MODE_OFF
             exoPlayer!!.addListener(playbackStateListener)
             exoPlayer!!.addListener(object : Player.Listener {
@@ -4742,9 +4742,6 @@ class MainActivity : AppCompatActivity(),
                     playbackState: Int
                 ) {
                     if (playbackState == Player.STATE_READY && exoPlayer!!.duration != C.TIME_UNSET) {
-//                                    shortsSeekBar.max = exoPlayer.duration.toInt()
-//                                    shortsAdapter.setSeekBarMax(exoPlayer!!.currentPosition.toInt())
-//                    shortSeekBar.max = exoPlayer!!.duration.toInt()
 
                     }
                 }
@@ -4763,18 +4760,16 @@ class MainActivity : AppCompatActivity(),
 
             })
             if (isReplyVnPlaying) {
-//                Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
+
                 val handler = Handler()
 
                 handler.postDelayed({
                     adapter?.refreshMainComment(position)
                 }, 200)
             } else {
-//                Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
+
             }
-//            if (isVnAudioToPlay) {
-//
-//            }
+
 
         } catch (e: Exception) {
             Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: error: ${e.message}")
@@ -4795,9 +4790,7 @@ class MainActivity : AppCompatActivity(),
 
         audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
         adapter!!.updatePlaybackButton(currentCommentAudioPosition, isReply, audioPlayPauseBtn)
-//        val replyAdapter = ReplyCommentAdapter()
-//        ReplyCommentAdapter.upda
-//        player?.pause()
+
         exoPlayer?.pause()
     }
 
@@ -4823,26 +4816,16 @@ class MainActivity : AppCompatActivity(),
         }
 
 
-//        if (isReplyVnPlaying) {
-//        } else {
-//        }
-
         currentCommentAudioPosition = RecyclerView.NO_POSITION
         currentCommentAudioPath = ""
         adapter?.resetAudioPlay()
-//        player?.let { mediaPlayer ->
-//            if (mediaPlayer.isPlaying) {
-//                mediaPlayer.stop()
-//            }
-//            mediaPlayer.release()
-//        }
-//        player = null
+
 
         exoPlayer?.let { exoPlayer ->
             if (exoPlayer.isPlaying) {
                 exoPlayer.stop()
             }
-//            exoPlayer.release()
+
         }
     }
 
@@ -4851,12 +4834,12 @@ class MainActivity : AppCompatActivity(),
         override fun onPlaybackStateChanged(state: Int) {
             when (state) {
                 ExoPlayer.STATE_ENDED -> {
-//                     The video playback ended. Move to the next video if available.
+
                     Log.d(
                         "playbackStateListener",
                         "commentAudioStartPlaying: comment audio completed"
                     )
-//                    audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
+
                     if (isVnAudioToPlay) {
                         if (::audioDurationTVCount.isInitialized) {
                             audioDurationTVCount.text = "00:00"
@@ -4891,8 +4874,7 @@ class MainActivity : AppCompatActivity(),
 
                     adapter?.refreshMainComment(position)
                     adapter?.changePlayingStatus()
-//                    adapter?.resetWaveForm()
-//                    adapter?.notifyDataSetChanged()
+
                     if (isVnAudioToPlay) {
                         stopWaveRunnable()
 
@@ -4912,36 +4894,34 @@ class MainActivity : AppCompatActivity(),
                         exoPlayer?.let { initializeSeekBar(it) }
                     }
                     Log.d("TAG", "STATE_READY")
-//                    startUpdatingSeekBar()
-//                    shortsAdapter.setSeekBarProgress(exoPlayer!!.currentPosition.toInt())
+
 
                 }
 
                 else -> {
                     Log.d("TAG", "STOP SEEK BAR")
                     // Stop updating seek bar in other states
-//                    stopUpdatingSeekBar()
+
                 }
             }
         }
 
         override fun onIsPlayingChanged(isVideoPlaying: Boolean) {
-//        super.onIsPlayingChanged(isPlaying)
+
 
         }
 
         override fun onEvents(player: Player, events: Player.Events) {
-//        super.onEvents(player, events)
+
             if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
                 events.contains(Player.EVENT_IS_PLAYING_CHANGED)
             ) {
 
-//                progressBar.visibility = View.GONE
             }
 
             if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)
             ) {
-//                player.seekTo(5000L)
+
             }
         }
     }
@@ -4962,7 +4942,7 @@ class MainActivity : AppCompatActivity(),
         val TAG = "audioWave"
 
         audioFormWave = event.audioWave
-//        event.audioWave.setSampleFrom(event.audioPath)
+
         audioDurationTVCount = event.leftDuration
         wavePosition = event.position
         Log.d(TAG, "audioWave: position $wavePosition ")
@@ -4976,7 +4956,7 @@ class MainActivity : AppCompatActivity(),
          fun commentAudioSeekBar(event: CommentAudioPlayerHandler) {
              val TAG = "commentAudioSeekBar"
              audioSeekBar = event.audioSeekBar
-//        event.audioWave.setSampleFrom(event.audioPath)
+
              audioDurationTVCount = event.leftDuration
              seekPosition = event.position
              maxDuration = event.maxDuration
@@ -4986,7 +4966,8 @@ class MainActivity : AppCompatActivity(),
     private var currentHandler: Handler? = null
     private fun initializeSeekBar(exoPlayer: ExoPlayer) {
         audioSeekBar.max = exoPlayer.duration.toInt()
-// Remove callbacks from the current handler, if any
+
+        // Remove callbacks from the current handler, if any
         currentHandler?.removeCallbacksAndMessages(currentHandler)
         val handler = Handler(Looper.getMainLooper())
         handler.postDelayed(object : Runnable {
@@ -5004,14 +4985,9 @@ class MainActivity : AppCompatActivity(),
                                     it.currentPosition.toFloat(),
                                     audioSeekBar
                                 )
-//                                audioSeekBar.progress = it.currentPosition.toInt()
-//                                seekBarProgress = it.currentPosition.toFloat()
-//                                audioDurationTVCount.text = String.format(
-//                                    "%s",
-//                                    TrimVideoUtils.stringForTime(it.currentPosition.toFloat())
-//                                )
+
                             } else {
-//                                adapter!!.updateWaveProgress(currentPosition, wavePosition)
+
                                 audioSeekBar.progress = it.currentPosition.toInt()
                                 seekBarProgress = it.currentPosition.toFloat()
                                 audioDurationTVCount.text = String.format(
@@ -5044,14 +5020,14 @@ class MainActivity : AppCompatActivity(),
 
         CoroutineScope(Dispatchers.Main).launch {
             binding.wave.progress = progress
-//            currentComment?.progress = progress
+
             Log.d("updateWaveProgress", "updateWaveProgress: $progress")
         }
     }
 
     private val waveRunnable = object : Runnable {
         override fun run() {
-//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
+
             if (!isDurationOnPause) {
                 val currentPosition = exoPlayer?.currentPosition?.toFloat()!!
 
@@ -5071,7 +5047,7 @@ class MainActivity : AppCompatActivity(),
     }
     private val onRecordWaveRunnable = object : Runnable {
         override fun run() {
-//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
+
             try {
                 if (!isOnRecordDurationOnPause) {
                     val currentPosition = player?.currentPosition?.toFloat()!!
@@ -5150,7 +5126,7 @@ class MainActivity : AppCompatActivity(),
             outputFile = getOutputFilePath("rec")
             outputVnFile = getOutputFilePath("mix")
             wasPaused = false
-//            firstTimeSendVn = false
+
 
 
             mediaRecorder = MediaRecorder().apply {
