@@ -77,7 +77,8 @@ class UserFollowersFragment : AppCompatActivity() {
 
     private var followersList = mutableListOf<OtherUserDisplayFollowersModel>()
     private var filteredFollowersList = mutableListOf<OtherUserDisplayFollowersModel>()
-    private var blockedUserIds: Set<String> = emptySet()
+    private var blockedUserIds: MutableSet<String> = mutableSetOf()
+
 
     private var currentPage = 1
     private var isLoading = false
@@ -594,9 +595,9 @@ class UserFollowersFragment : AppCompatActivity() {
             if (response.isSuccessful && response.body() != null) {
                 val responseBody = response.body()!!
 
-                blockedUserIds = responseBody.data.blockedUsers
-                    .map { it.user._id }
-                    .toSet()
+                // Clear the existing set and add new IDs
+                blockedUserIds.clear()
+                blockedUserIds.addAll(responseBody.data.blockedUsers.map { it.user._id })
 
                 Log.d(TAG, "✓ Loaded ${blockedUserIds.size} blocked users")
                 Log.d(TAG, "Blocked user IDs: $blockedUserIds")
@@ -607,6 +608,7 @@ class UserFollowersFragment : AppCompatActivity() {
             Log.e(TAG, "Error loading blocked users: ${e.message}", e)
         }
     }
+
 
     private fun showMoreOptions(user: OtherUserDisplayFollowersModel) {
         if (isMyFollowers) {
@@ -624,12 +626,25 @@ class UserFollowersFragment : AppCompatActivity() {
                 .setItems(arrayOf("View Profile", "Block User")) { _, which ->
                     when (which) {
                         0 -> reportFollower(user)
-                        1 -> blockFollower(user)
+                        1 -> {
+                            if (blockedUserIds.contains(user.id)) {
+                                // Already blocked
+                                Toast.makeText(
+                                    this,
+                                    "${user.username} is already blocked",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                Log.d(TAG, "User ${user.username} already blocked")
+                            } else {
+                                blockFollower(user)
+                            }
+                        }
                     }
                 }
                 .show()
         }
     }
+
 
     private fun reportFollower(user: OtherUserDisplayFollowersModel) {
         Log.d(TAG, "Report user: ${user.username}")
@@ -666,25 +681,19 @@ class UserFollowersFragment : AppCompatActivity() {
                             Log.d(TAG, "Blocked: ${responseBody.data?.blocked}")
 
                             if (responseBody.success && responseBody.data?.blocked == true) {
-                                // ✨ Add to blocked users cache
-                                blockedUserIds = blockedUserIds + user.id
-
-                                // Update blocked status in both lists
+                                if (!blockedUserIds.contains(user.id)) {
+                                    blockedUserIds.add(user.id)
+                                }
                                 followersList.find { it.id == user.id }?.isBlocked = true
                                 filteredFollowersList.find { it.id == user.id }?.isBlocked = true
-
-                                // Notify adapter to update the UI
                                 followersAdapter.notifyDataSetChanged()
 
                                 Toast.makeText(
                                     this@UserFollowersFragment,
                                     responseBody.message,
-                                    Toast.LENGTH_SHORT
-                                ).show()
-
-                                Log.d(TAG, "✓ Successfully blocked ${user.username}")
-                                Log.d(TAG, "Updated blocked cache: $blockedUserIds")
-                            } else {
+                                    Toast.LENGTH_SHORT).show()
+                            }
+                            else {
                                 Toast.makeText(
                                     this@UserFollowersFragment,
                                     responseBody.message ?: "Block failed",
