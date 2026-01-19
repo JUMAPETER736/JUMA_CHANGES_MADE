@@ -67,6 +67,7 @@ import com.uyscuti.social.network.api.response.favoritefeed.GetFavoriteFeedRespo
 import com.uyscuti.social.network.api.response.favoriteshort.ShortsFavoriteResponse
 import com.uyscuti.social.network.api.response.feed.FeedUploadResponse
 import com.uyscuti.social.network.api.response.feed.deletefeed.DeleteFeedResponse
+import com.uyscuti.social.network.api.response.follow_unfollow.AllBlockedUsersResponse
 import com.uyscuti.social.network.api.response.follow_unfollow.BlockUnblockResponse
 import com.uyscuti.social.network.api.response.follow_unfollow.FollowUnFollowResponse
 import com.uyscuti.social.network.api.response.follow_unfollow.OtherUsersFollowersAndFollowingResponse
@@ -265,8 +266,12 @@ interface IFlashapi {
     @DELETE("social-media/block/{userId}")
     suspend fun unBlockUser(@Path("userId") userId: String): Response<BlockUnblockResponse>
 
-    @GET("users/blocked")
-    suspend fun getBlockedUsers(): Response<BlockedUsersResponse>
+    @GET("social-media/block")
+    suspend fun getAllBlockedUsers(
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 100
+    ): Response<AllBlockedUsersResponse>
+
 
     @GET("api/v1/social-media/blocked")
     suspend fun getBlockedUsers(

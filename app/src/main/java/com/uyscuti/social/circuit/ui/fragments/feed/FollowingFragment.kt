@@ -186,7 +186,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         val scrollThreshold = 10
 
         lifecycleScope.launch(Dispatchers.IO) {
-            loadBlockedUsersList()
+
             loadMyFollowersList()
         }
 
@@ -816,37 +816,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    private suspend fun loadBlockedUsersList() {
-        try {
-            Log.d(TAG, "Loading blocked users list...")
 
-            val response = retrofitInstance.apiService.getBlockedUsers()
-
-            if (response.isSuccessful && response.body() != null) {
-                val blockedUsers = response.body()!!.data
-
-                val blockedUserIds = mutableListOf<String>()
-
-                blockedUsers?.forEach { user ->
-                    val blockedUserId = user._id
-                    if (blockedUserId.isNotEmpty()) {
-                        blockedUserIds.add(blockedUserId)
-                        Log.d(TAG, "  Blocked user: @${user.username} (ID: $blockedUserId)")
-                    }
-                }
-
-                // Update FeedAdapter cache with blocked users
-                FeedAdapter.setBlockedUsersList(blockedUserIds)
-                Log.d(TAG, "Populated blocked users cache with ${blockedUserIds.size} users")
-
-            } else {
-                Log.e(TAG, "API error loading blocked users: ${response.code()}")
-            }
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error loading blocked users list: ${e.message}", e)
-        }
-    }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     fun clearAndReloadFeed() {

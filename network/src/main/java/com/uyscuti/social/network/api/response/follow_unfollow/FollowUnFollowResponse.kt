@@ -23,20 +23,43 @@ data class BlockData(
 )
 
 
-data class BlockedUsersResponse(
-    val success: Boolean,
+data class AllBlockedUsersResponse(
+    val statusCode: Int,
+    val data: BlockedUsersData,
     val message: String,
-    val data: List<BlockedUserData>?
+    val success: Boolean
 )
 
-data class BlockedUserData(
+data class BlockedUsersData(
+    val blockedUsers: List<BlockedUserItem>,
+    val totalBlocked: Int,
+    val limit: Int,
+    val page: Int,
+    val totalPages: Int,
+    val pagingCounter: Int,
+    val hasPrevPage: Boolean,
+    val hasNextPage: Boolean,
+    val prevPage: Int?,
+    val nextPage: Int?
+)
+
+data class BlockedUserItem(
+    val _id: String,
+    val blockedAt: String,
+    val user: BlockedUserDetails
+)
+
+data class BlockedUserDetails(
     val _id: String,
     val username: String,
-    val avatar: Avatar?,
     val email: String,
-    val isEmailVerified: Boolean,
+    val avatar: Avatar?,
     val firstName: String,
-    val lastName: String,
-    val bio: String,
-    val blockedAt: String
+    val lastName: String
+)
+
+data class Avatar(
+    val _id: String,
+    val url: String,
+    val localPath: String
 )
