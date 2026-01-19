@@ -3186,7 +3186,7 @@ class FeedAdapter(
             if (shouldHideButton) {
                 followButton.visibility = View.GONE
                 Log.d(
-                    TAG, "✓✓✓ HIDING follow button - Reason: ${when {
+                    TAG, " HIDING follow button - Reason: ${when {
                         accountId == currentUserId -> "Own post"
                         cachedFollowingUsernames.contains(username) -> "Already following (by username: @$username)"
                         followingUserIds.contains(accountId) -> "Already following (by ID from followingUserIds)"
@@ -3245,7 +3245,7 @@ class FeedAdapter(
                 (bindingAdapter as? FeedAdapter)?.addToFollowing(accountId, username)
                 FollowingManager(itemView.context).addToFollowing(accountId)
 
-                Log.d(TAG, "✓ Added account $accountId (@$username) to following list")
+                Log.d(TAG, "Added account $accountId (@$username) to following list")
             } else {
                 // Check if they follow you to determine button text
                 val theyFollowMe = FeedAdapter.isUserInMyFollowersList(accountId)
@@ -3289,7 +3289,7 @@ class FeedAdapter(
                     else -> repostedUser.username
                 }
                 userHandle = "@${repostedUser.username}"
-                Log.d(tag, "📍 Reposted by: $feedOwnerUsername (Account/Owner: $feedOwnerId, Username: @${repostedUser.username})")
+                Log.d(tag, "Reposted by: $feedOwnerUsername (Account/Owner: $feedOwnerId, Username: @${repostedUser.username})")
 
             } else if (data.originalPost != null && data.originalPost.isNotEmpty()) {
                 // Use author.owner (the account ID)
@@ -6332,7 +6332,7 @@ class FeedAdapter(
                     cachedFollowingList.contains(accountId) ||
                     cachedFollowingUsernames.contains(username)
 
-            Log.d(TAG, "───────────────────────────────────────")
+
             Log.d(TAG, "SETUP FOLLOW BUTTON")
             Log.d(TAG, "Account ID to check: $accountId")
             Log.d(TAG, "Username to check: @$username")
@@ -6348,7 +6348,7 @@ class FeedAdapter(
 
             if (shouldHideButton) {
                 followButton.visibility = View.GONE
-                Log.d(TAG, "✓✓✓ HIDING follow button - Reason: ${when {
+                Log.d(TAG, " HIDING follow button - Reason: ${when {
                     accountId == currentUserId -> "Own post"
                     cachedFollowingUsernames.contains(username) -> "Already following (by username: @$username)"
                     followingUserIds.contains(accountId) -> "Already following (by ID from followingUserIds)"
@@ -6357,7 +6357,7 @@ class FeedAdapter(
                     isUserFollowing -> "Already following (local check)"
                     else -> "Unknown"
                 }}")
-                Log.d(TAG, "───────────────────────────────────────")
+
                 return
             }
 
@@ -6369,10 +6369,10 @@ class FeedAdapter(
                 R.color.blueJeans
             )
 
-            Log.d(TAG, "✓✓✓ SHOWING follow button for account: $accountId (@$username)")
-            Log.d(TAG, "───────────────────────────────────────")
+            Log.d(TAG, " SHOWING follow button for account: $accountId (@$username)")
 
-            // ✅ CRITICAL: Pass the ACCOUNT ID (not author ID) to handleFollowButtonClick
+
+            //  Pass the ACCOUNT ID (not author ID) to handleFollowButtonClick
             followButton.setOnClickListener {
                 handleFollowButtonClick(accountId, username)  // Pass both ID and username
             }
@@ -6400,7 +6400,7 @@ class FeedAdapter(
                 (bindingAdapter as? FeedAdapter)?.addToFollowing(accountId, username)
                 FollowingManager(itemView.context).addToFollowing(accountId)
 
-                Log.d(TAG, "✓ Added account $accountId (@$username) to following list")
+                Log.d(TAG, "Added account $accountId (@$username) to following list")
             } else {
                 // Show button
                 followButton.text = "Follow"
@@ -6410,7 +6410,7 @@ class FeedAdapter(
                 (bindingAdapter as? FeedAdapter)?.removeFromFollowing(accountId, username)
                 FollowingManager(itemView.context).removeFromFollowing(accountId)
 
-                Log.d(TAG, "✓ Removed account $accountId (@$username) from following list")
+                Log.d(TAG, "Removed account $accountId (@$username) from following list")
             }
 
             // Notify listener
