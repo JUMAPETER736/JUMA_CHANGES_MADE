@@ -265,6 +265,9 @@ interface IFlashapi {
     @DELETE("social-media/block/{userId}")
     suspend fun unBlockUser(@Path("userId") userId: String): Response<BlockUnblockResponse>
 
+    @GET("users/blocked")
+    suspend fun getBlockedUsers(): Response<BlockedUsersResponse>
+
     @GET("api/v1/social-media/blocked")
     suspend fun getBlockedUsers(
         @Query("page") page: Int,

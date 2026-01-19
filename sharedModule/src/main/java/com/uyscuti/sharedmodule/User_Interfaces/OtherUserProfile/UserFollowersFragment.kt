@@ -104,6 +104,13 @@ class UserFollowersFragment : AppCompatActivity() {
         setupPullToRefresh()
         loadFollowers()
 
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            loadBlockedUsersList()
+        }
+
+
+
     }
 
     private fun extractIntentData() {
@@ -617,6 +624,40 @@ class UserFollowersFragment : AppCompatActivity() {
     }
 
 
+    // ADD THIS NEW METHOD
+    private suspend fun loadBlockedUsersList() {
+        try {
+            Log.d(TAG, "Loading blocked users list...")
+
+            val response = retrofitInstance.apiService.getBlockedUsers()
+
+            if (response.isSuccessful && response.body() != null) {
+                val blockedUsers = response.body()!!.data
+
+                val blockedUserIds = mutableListOf<String>()
+
+                blockedUsers?.forEach { user ->
+                    val blockedUserId = user._id
+                    if (blockedUserId.isNotEmpty()) {
+                        blockedUserIds.add(blockedUserId)
+                        Log.d(TAG, "  ✓ Blocked user: @${user.username} (ID: $blockedUserId)")
+                    }
+                }
+
+                // Update FeedAdapter cache with blocked users
+                FeedAdapter.setBlockedUsersList(blockedUserIds)
+                Log.d(TAG, "✓ Populated blocked users cache with ${blockedUserIds.size} users")
+
+            } else {
+                Log.e(TAG, "API error loading blocked users: ${response.code()}")
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading blocked users list: ${e.message}", e)
+        }
+    }
+
+    // UPDATE performBlockUser to use cache
     private fun performBlockUser(user: OtherUserDisplayFollowersModel) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -642,6 +683,9 @@ class UserFollowersFragment : AppCompatActivity() {
                                 followersList.find { it.id == user.id }?.isBlocked = true
                                 filteredFollowersList.find { it.id == user.id }?.isBlocked = true
 
+                                // ADD THIS: Update global blocked cache
+                                FeedAdapter.addToBlockedCache(user.id)
+
                                 // Notify adapter to update the UI
                                 followersAdapter.notifyDataSetChanged()
 
@@ -651,7 +695,7 @@ class UserFollowersFragment : AppCompatActivity() {
                                     Toast.LENGTH_SHORT
                                 ).show()
 
-                                Log.d(TAG, "Successfully blocked ${user.username}")
+                                Log.d(TAG, "✓ Successfully blocked ${user.username}")
                             } else {
                                 Toast.makeText(
                                     this@UserFollowersFragment,
@@ -692,33 +736,6 @@ class UserFollowersFragment : AppCompatActivity() {
                             ).show()
                         }
                     }
-                }
-            } catch (e: com.google.gson.JsonSyntaxException) {
-                Log.e(TAG, "JSON parsing error: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@UserFollowersFragment,
-                        "Server error: Invalid response",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } catch (e: retrofit2.HttpException) {
-                Log.e(TAG, "HTTP error: ${e.code()}", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@UserFollowersFragment,
-                        "Network error: ${e.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } catch (e: java.io.IOException) {
-                Log.e(TAG, "Network error: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@UserFollowersFragment,
-                        "No internet connection",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Exception while blocking: ${e.message}", e)
@@ -932,6 +949,50 @@ class FollowersAdapter(
         }
     }
 
+    private suspend fun checkFollowStatus(
+        users: List<Data>
+    ): List<OtherUserDisplayFollowersModel> {
+
+        return users.map { user ->
+            try {
+                val response =
+                    retrofitInstance.apiService
+                        .getOtherUsersFollowersAndFollowingStatus(user._id)
+
+                val isFollowing = if (response.isSuccessful && response.body() != null) {
+                    response.body()!!.data?.isFollowing ?: false
+                } else {
+                    // Use existing global cache
+                    FeedAdapter.getCachedFollowingList().contains(user._id)
+                }
+
+                // CHECK IF USER IS BLOCKED
+                val isBlocked = FeedAdapter.isUserBlocked(user._id)
+
+                Log.d(TAG, "Follow status for ${user.username}: isFollowing=$isFollowing, isBlocked=$isBlocked")
+
+                val followerModel = OtherUserDisplayFollowersModel.fromApiData(user, isFollowing)
+                followerModel.isBlocked = isBlocked // Set blocked status
+                followerModel
+
+            } catch (e: JsonSyntaxException) {
+                Log.e(TAG, "JSON error for ${user.username}: ${e.message}")
+                val cached = FeedAdapter.getCachedFollowingList().contains(user._id)
+                val isBlocked = FeedAdapter.isUserBlocked(user._id)
+                val followerModel = OtherUserDisplayFollowersModel.fromApiData(user, cached)
+                followerModel.isBlocked = isBlocked
+                followerModel
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error for ${user.username}: ${e.message}")
+                val cached = FeedAdapter.getCachedFollowingList().contains(user._id)
+                val isBlocked = FeedAdapter.isUserBlocked(user._id)
+                val followerModel = OtherUserDisplayFollowersModel.fromApiData(user, cached)
+                followerModel.isBlocked = isBlocked
+                followerModel
+            }
+        }
+    }
 
     private fun openMessaging(context: Context, follower: OtherUserDisplayFollowersModel) {
         // Create temporary user entity
@@ -1083,10 +1144,10 @@ class FollowersAdapter(
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-
+                Log.d(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
                 Log.d(TAG, "Attempting to unblock user: ${follower.username}")
                 Log.d(TAG, "User ID: ${follower.id}")
-
+                Log.d(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
                 val response = retrofitInstance.apiService.unBlockUser(follower.id)
 
@@ -1105,6 +1166,9 @@ class FollowersAdapter(
                             if (responseBody.success && responseBody.data?.blocked == false) {
                                 // Update blocked status
                                 follower.isBlocked = false
+
+                                // REMOVE FROM GLOBAL BLOCKED CACHE
+                                FeedAdapter.removeFromBlockedCache(follower.id)
 
                                 // Update UI based on following status
                                 if (follower.isFollowing) {
@@ -1142,7 +1206,7 @@ class FollowersAdapter(
                         !response.isSuccessful -> {
                             val errorBody = response.errorBody()?.string() ?: "No error body"
 
-                            Log.e(TAG, "Unblock API Failed")
+                            Log.e(TAG, "❌ Unblock API Failed")
                             Log.e(TAG, "HTTP Code: ${response.code()}")
                             Log.e(TAG, "Error Body: ${errorBody.take(200)}")
 
@@ -1154,7 +1218,7 @@ class FollowersAdapter(
                         }
 
                         else -> {
-                            Log.e(TAG, "Null response body")
+                            Log.e(TAG, "❌ Null response body")
                             Toast.makeText(
                                 holder.itemView.context,
                                 "Empty response from server",
@@ -1164,7 +1228,7 @@ class FollowersAdapter(
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error unblocking user: ${e.message}", e)
+                Log.e(TAG, "❌ Error unblocking user: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     holder.followButton.isEnabled = true
                     Toast.makeText(

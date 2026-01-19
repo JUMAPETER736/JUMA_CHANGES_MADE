@@ -185,6 +185,11 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         var isScrollingDown = false
         val scrollThreshold = 10
 
+        lifecycleScope.launch(Dispatchers.IO) {
+            loadBlockedUsersList()
+            loadMyFollowersList()
+        }
+
         feedUploadRepository = FeedUploadRepository()
 
         feedListView = view.findViewById(R.id.rvq)
@@ -695,11 +700,11 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
         followedPostsAdapter.submitItems(filteredData.toMutableList())
 
-        Log.d(TAG, "───────────────────────────────────────")
+
         Log.d(TAG, "Posts before: ${allPosts.size}")
         Log.d(TAG, "Posts after: ${filteredData.size}")
         Log.d(TAG, "Removed: ${allPosts.size - filteredData.size} posts")
-        Log.d(TAG, "═══════════════════════════════════════")
+
     }
 
     private suspend fun loadMyFollowersList() {
@@ -728,13 +733,13 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                     val followerId = follower._id
                     if (followerId.isNotEmpty()) {
                         myFollowerIds.add(followerId)
-                        Log.d(TAG, "  ✓ My follower: @${follower.username} (ID: $followerId)")
+                        Log.d(TAG, "My follower: @${follower.username} (ID: $followerId)")
                     }
                 }
 
                 // Update FeedAdapter cache with YOUR followers
                 FeedAdapter.setMyFollowersList(myFollowerIds)
-                Log.d(TAG, "✓ Populated my followers cache with ${myFollowerIds.size} followers")
+                Log.d(TAG, "Populated my followers cache with ${myFollowerIds.size} followers")
 
             } else {
                 Log.e(TAG, "API error loading my followers: ${response.code()}")
@@ -780,7 +785,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                         followingIdsList.add(userId)
                         followingUsernamesList.add(username)
 
-                        Log.d(TAG, "  ✓ Following: @$username (ID: $userId)")
+                        Log.d(TAG, "Following: @$username (ID: $userId)")
                     }
                 }
 
@@ -793,7 +798,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                         followedPostsAdapter.updateFollowingList(followingIdsList)
                         followedPostsAdapter.updateFollowingUsernames(followingUsernamesList)
                         followedPostsAdapter.notifyDataSetChanged()
-                        Log.d(TAG, "✓ Updated adapter with ${followingUserIds.size} following users")
+                        Log.d(TAG, "Updated adapter with ${followingUserIds.size} following users")
                     }
                 }
 
@@ -808,6 +813,38 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
         } catch (e: Exception) {
             Log.e(TAG, "Error loading following list: ${e.message}", e)
+        }
+    }
+
+    private suspend fun loadBlockedUsersList() {
+        try {
+            Log.d(TAG, "Loading blocked users list...")
+
+            val response = retrofitInstance.apiService.getBlockedUsers()
+
+            if (response.isSuccessful && response.body() != null) {
+                val blockedUsers = response.body()!!.data
+
+                val blockedUserIds = mutableListOf<String>()
+
+                blockedUsers?.forEach { user ->
+                    val blockedUserId = user._id
+                    if (blockedUserId.isNotEmpty()) {
+                        blockedUserIds.add(blockedUserId)
+                        Log.d(TAG, "  Blocked user: @${user.username} (ID: $blockedUserId)")
+                    }
+                }
+
+                // Update FeedAdapter cache with blocked users
+                FeedAdapter.setBlockedUsersList(blockedUserIds)
+                Log.d(TAG, "Populated blocked users cache with ${blockedUserIds.size} users")
+
+            } else {
+                Log.e(TAG, "API error loading blocked users: ${response.code()}")
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading blocked users list: ${e.message}", e)
         }
     }
 

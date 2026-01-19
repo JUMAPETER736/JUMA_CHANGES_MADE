@@ -132,26 +132,48 @@ class FeedAdapter(
 
 
     companion object {
-
-        // Static set to persist across adapter instances
+        // Existing caches...
         private var cachedFollowingUserIds: Set<String> = emptySet()
         private val cachedFollowingList = mutableSetOf<String>()
         private val cachedFollowingUsernames = mutableSetOf<String>()
-
         private val cachedFollowersUsernames = mutableSetOf<String>()
+        private val myFollowersCache = mutableSetOf<String>()
 
+        // ADD NEW BLOCKED USERS CACHE
+        private val blockedUsersCache = mutableSetOf<String>()
+
+        // ADD THESE NEW METHODS FOR BLOCKED USERS
+        fun isUserBlocked(userId: String): Boolean {
+            return blockedUsersCache.contains(userId)
+        }
+
+        fun setBlockedUsersList(blockedUserIds: List<String>) {
+            blockedUsersCache.clear()
+            blockedUsersCache.addAll(blockedUserIds)
+            Log.d("FeedAdapter", "Blocked users cache updated with ${blockedUserIds.size} users")
+        }
+
+        fun addToBlockedCache(userId: String) {
+            blockedUsersCache.add(userId)
+            Log.d("FeedAdapter", "Added $userId to blocked cache (Total: ${blockedUsersCache.size})")
+        }
+
+        fun removeFromBlockedCache(userId: String) {
+            blockedUsersCache.remove(userId)
+            Log.d("FeedAdapter", "Removed $userId from blocked cache (Total: ${blockedUsersCache.size})")
+        }
+
+        fun getBlockedUsersList(): Set<String> = blockedUsersCache.toSet()
+
+        // Existing methods...
         fun getCachedFollowersUsernames(): Set<String> = cachedFollowersUsernames.toSet()
-
         fun setCachedFollowersUsernames(usernames: Set<String>) {
             cachedFollowersUsernames.clear()
             cachedFollowersUsernames.addAll(usernames)
         }
 
         fun getCachedFollowingUsernames(): Set<String> = cachedFollowingUsernames.toSet()
-
         fun getCachedFollowingList(): Set<String> = cachedFollowingList.toSet()
-
-        private val myFollowersCache = mutableSetOf<String>()
 
         fun isUserInMyFollowersList(userId: String): Boolean {
             return myFollowersCache.contains(userId)
@@ -170,7 +192,6 @@ class FeedAdapter(
             Log.d("FeedAdapter", "Cached following list updated with ${userIds.size} users")
         }
 
-        // ADD THESE TWO NEW METHODS
         fun addToFollowingCache(userId: String) {
             cachedFollowingList.add(userId)
             cachedFollowingUserIds = cachedFollowingList.toSet()
