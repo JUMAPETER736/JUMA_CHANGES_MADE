@@ -31,6 +31,7 @@
     <color name="settings_disc">#9F9C9C</color>
     <color name="cardBackgroundTint">#E6E1E1</color>
     <color name="transparent_grayish">#A6000000</color>
+    <color name="redBlocked">#E53935</color>
 
     <!-- Base theme colors -->
     <color name="primaryL">#3B82F6</color>

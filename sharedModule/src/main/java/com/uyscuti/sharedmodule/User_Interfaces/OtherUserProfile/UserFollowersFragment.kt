@@ -1,6 +1,7 @@
 package com.uyscuti.social.circuit.User_Interface.OtherUserProfile
 
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
@@ -29,6 +30,7 @@ import com.daimajia.androidanimations.library.YoYo
 import com.google.gson.JsonSyntaxException
 import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.R
+import android.content.res.ColorStateList
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
@@ -51,6 +53,7 @@ import org.greenrobot.eventbus.ThreadMode
 import retrofit2.HttpException
 import java.io.IOException
 import java.util.Date
+import androidx.core.graphics.toColorInt
 
 
 private const val TAG = "UserFollowersFragment"
@@ -827,6 +830,7 @@ class FollowersAdapter(
         return FollowerViewHolder(view)
     }
 
+    @SuppressLint("UseKtx")
     override fun onBindViewHolder(holder: FollowerViewHolder, position: Int) {
         val follower = followers[position]
 
@@ -877,12 +881,14 @@ class FollowersAdapter(
 
         // Update follow button appearance based on blocked status and following status
         when {
+
             follower.isBlocked -> {
-                // User is blocked - show Blocked button with red background
                 holder.followButton.text = "Blocked"
                 holder.followButton.setBackgroundResource(R.drawable.follower_blocked_button)
+                holder.followButton.backgroundTintList = ColorStateList.valueOf("#F44336".toColorInt())
                 holder.followButton.setTextColor(Color.WHITE)
             }
+
             follower.isFollowing -> {
                 // You're following them back - show Message button
                 holder.followButton.text = "Message"
@@ -892,6 +898,7 @@ class FollowersAdapter(
                     ContextCompat.getColor(holder.itemView.context, R.color.blueJeans)
                 )
             }
+
             else -> {
                 // You're NOT following them - show Follow Back button
                 holder.followButton.text = "Follow Back"
