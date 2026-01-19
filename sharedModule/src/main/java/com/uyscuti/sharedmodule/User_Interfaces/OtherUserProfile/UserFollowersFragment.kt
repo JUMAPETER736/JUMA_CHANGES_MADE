@@ -521,7 +521,7 @@ class UserFollowersFragment : AppCompatActivity() {
         }
         binding.toolbarTitle.text = titleText
     }
-    
+
     private suspend fun handleFollowersResponse(followers: List<Data>) {
         withContext(Dispatchers.Main) {
             if (currentPage == 1) {
