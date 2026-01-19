@@ -129,11 +129,12 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
     }
 
     private fun setupRecyclerView() {
+        // Use parentFragmentManager instead of childFragmentManager
         feedAdapter = FeedAdapter(
             requireContext(),
             retrofitInstance,
             this,
-            fragmentManager = childFragmentManager
+            fragmentManager = parentFragmentManager
         )
 
         recyclerView.apply {
@@ -142,6 +143,8 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
             setHasFixedSize(true)
             setItemViewCacheSize(20)
             isNestedScrollingEnabled = true
+
+            // RecycledViewPool for better performance
             val viewPool = RecyclerView.RecycledViewPool()
             viewPool.setMaxRecycledViews(0, 15)
             setRecycledViewPool(viewPool)
@@ -163,8 +166,13 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
                 }
             })
         }
-        feedAdapter.recyclerView = recyclerView
+
+        // Assign RecyclerView to adapter safely after current transactions
+        recyclerView.post {
+            feedAdapter.recyclerView = recyclerView
+        }
     }
+
 
     private fun isCacheValid(): Boolean =
         cachedPosts != null && (System.currentTimeMillis() - cacheTimestamp) < CACHE_DURATION_MS
