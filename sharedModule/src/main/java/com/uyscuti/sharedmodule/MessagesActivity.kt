@@ -3787,18 +3787,12 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             if (retryCount > MAX_RETRY_COUNT) {
                                 // Retry sending the message after a delay (e.g., 5 seconds).
                                 val delayMillis = 5000
-//                                Handler(Looper.getMainLooper()).postDelayed({
-//                                    sendPendingMessagesWithRetry(
-//                                        sendingMessages,
-//                                        currentIndex,
-//                                        retryCount + 1
-//                                    )
-//                                }, delayMillis.toLong())
+
                             } else {
                                 // Reached the maximum retry count for this message.
                                 // You can choose to skip or take other actions.
                                 sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
-//                                showToast("Sending Failed, Check Your Internet Connection And Try Again")
+
                             }
                         }
                     }
@@ -3810,7 +3804,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             val date = Date(currentMessage.createdAt)
             val user = User("0", currentMessage.userName, currentMessage.user.avatar, true, Date())
 
-//            Log.d("MessageSent", "Current Message Id : ${currentMessage.id}")
 
             val uiMessage = Message(
                 currentMessage.id,
@@ -3821,31 +3814,20 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
             sendTextMessage(currentMessage.text, uiMessage, currentMessage) { success ->
                 if (success) {
-//                    CoroutineScope(Dispatchers.IO).launch {
-//                        messageViewModel.updateMessageStatus(currentMessage)
-//                    }
+
                     sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
                 } else {
                     // Handle the case where the message failed to send.
                     retryCount+1
                     if (retryCount > MAX_RETRY_COUNT) {
-                        // Retry sending the message after a delay (e.g., 5 seconds).
-//                        retryCount+1
-//                        val delayMillis = 5000
-//                        Handler(Looper.getMainLooper()).postDelayed({
-//                            sendPendingMessagesWithRetry(
-//                                sendingMessages,
-//                                currentIndex,
-//                                retryCount + 1
-//                            )
-//                        }, delayMillis.toLong())
+
                         sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
 
                     } else {
                         // Reached the maximum retry count for this message.
                         // You can choose to skip or take other actions.
                         sendPendingMessagesWithRetry(sendingMessages, currentIndex + 1, 0)
-//                        showToast("Sending Failed, Check Your Internet Connection And Try Again")
+
                     }
                 }
             }
@@ -3865,7 +3847,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
     override fun onMessageSent(message: Message) {
 
-//        Log.d("MessageSent", "On Message Sent : $message")
+
         CoroutineScope(Dispatchers.Main).launch {
             message.status = "Sent"
             super.messagesAdapter?.modifyMessageStatus(message)
@@ -3962,11 +3944,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         if (mediaPlayer != null) {
             mediaPlayer!!.setOnCompletionListener {
                 // The audio playback has completed.
-                // You can perform any actions you need when the audio finishes.
-                // For example, you can update UI elements or play the next audio.
-                // If you're using a different audio library, use the respective callback.
-//            playButton.visibility = View.VISIBLE
-//            pauseButton.visibility = View.GONE
+
             }
         }
     }
@@ -4022,18 +4000,18 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     )
                                 } else {
                                     // Permission already granted, proceed with your code
-//                                    downloadFile(mUrl)
+
                                     downld(url, progressbar, fileDisplay, fileLocation, message)
 
                                 }
 
-//                                downlod(url, progressbar, fileDisplay, fileLocation, message)
+
                             } else {
                                 download(url, progressbar, fileDisplay, fileLocation, message)
                             }
                         }
 
-//                        download2(url,progressbar,fileLocation)
+
                     }
                 }
             }
@@ -4050,8 +4028,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         when (requestCode) {
             WRITE_EXTERNAL_STORAGE_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Permission granted, proceed with your code
-//                    downloadFile(mUrl)
+
 
                     Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show()
 
@@ -4081,7 +4058,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
     override fun onSocketConnect() {
         CoroutineScope(Dispatchers.Main).launch {
-//            showToast("Socket Connected")
+
             userStatusManager?.start()
             if (!isGroup){
                 CoroutineScope(Dispatchers.IO).launch {
@@ -4095,14 +4072,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onDirectReplyEvent(event: DirectReplyEvent) {
         // Handle the direct reply in your activity
-        // Update UI, perform actions, etc.
-//        Toast.makeText(this, "Direct Reply: ${event.message}", Toast.LENGTH_SHORT).show()
 
-//        val message = createMessage(event.message,event.chatId)
-//        CoroutineScope(Dispatchers.IO).launch {
-//            messageViewModel.insertMessage(message)
-//            dialogViewModel.updateLastMessageForThisChat(event.chatId,message)
-//        }
 
         if (event.chatId == chatId){
             val avatar = settings.getString("avatar", "avatar").toString()
@@ -4142,9 +4112,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             Log.d(TAG, "In This Chat attachment: ${message.attachments}")
 
 
-
-//            val messageEntity: MessageEntity = message.toMessageEntity()
-//            insertMessage(messageEntity)
 
             if (message.chat == chatId) {
                 val user = User(
@@ -4210,8 +4177,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 }
 
 
-//                showToast(message.content)
-
                 Log.d(TAG, "In This Chat : ${message.content}")
 
                 val createdAt = convertIso8601ToUnixTimestamp(message.createdAt)
@@ -4264,9 +4229,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     resetUnreadCount(dialog)
                 }
 
-//                dialog?.let { resetUnreadCount(it) }
-
-//                dialog?.let { resetUnreadCount(it) }
             }
         }
     }
@@ -4301,7 +4263,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 val user =
                     User("0", deliveredMessage.userName, deliveredMessage.user.avatar, true, Date())
 
-//            Log.d("MessageSent", "Current Message Id : ${currentMessage.id}")
 
                 val uiMessage = Message(
                     deliveredMessage.id,
@@ -4312,8 +4273,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                 withContext(Dispatchers.Main) {
                     uiMessage.status = "Delivered"
-//                    super.messagesAdapter?.modifyMessageStatus(uiMessage)
-//                    showToast("Message Delivered")
+
                     getAndUpdateMessages("Delivered")
                 }
             }
@@ -4359,14 +4319,12 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             delay(1000)
 
             if (deliveredMessage != null) {
-//                deliveredMessage.status = "Seen"
-//                messageViewModel.updateMessage(deliveredMessage)
+
 
                 val date = Date(deliveredMessage.createdAt)
                 val user =
                     User("0", deliveredMessage.userName, deliveredMessage.user.avatar, true, Date())
 
-//            Log.d("MessageSent", "Current Message Id : ${currentMessage.id}")
 
                 val uiMessage = Message(
                     deliveredMessage.id,
@@ -4377,8 +4335,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                 withContext(Dispatchers.Main) {
                     uiMessage.status = "Seen"
-//                    super.messagesAdapter?.modifyMessageStatus(uiMessage)
-//                    showToast("Message Delivered")
+
                     getAndUpdateMessages("Seen")
                 }
             }
@@ -4542,9 +4499,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
     @OptIn(UnstableApi::class)
     override fun onSupportNavigateUp(): Boolean {
-//        val upIntent = Intent(this, MainActivity::class.java)
-//        upIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-//        NavUtils.navigateUpTo(this, upIntent)
+
         userStatusManager?.stop()
         finish()
         return true
@@ -4594,18 +4549,15 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         val downloadProgress =
                             (bytesCopied.toFloat() / fileSize.toFloat() * 100).toInt()
                         runOnUiThread {
-                            //progressbar.visibility = View.VISIBLE
-//                        progressbar.progress = downloadProgress
-//                        progressCountTv.text = "$downloadProgress%"
+
                         }
                         outputStream.write(buffer, 0, bytes)
                         bytes = inputStream.read(buffer)
                     }
-                    // progressbar.visibility = View.GONE
-                    //progressCountTv.visibility = View.GONE
+
                     runOnUiThread {
                         // Update the UI components here
-//                    progressbar.visibility = View.GONE
+
 
                         coreChatSocketClient.sendDownLoadedEvent(myId, message.id)
                         Log.d("Download", "File Downloaded : $storageDirectory")
@@ -4616,13 +4568,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             FileType.IMAGE -> {
                                 if (downloadedFile.exists()) {
                                     CoroutineScope(Dispatchers.IO).launch {
-//                                        val msg =
-//                                            messageRepository.getMessageByMessageId(message.id)
-//                                        if (msg != null) {
-//                                            msg.imageUrl = downloadedFile.toString()
-//                                            Log.d("Download", "Message to update : $msg")
-//                                            messageRepository.updateMessage(msg)
-//                                        }
+
                                     }
                                 }
 
@@ -4660,13 +4606,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             FileType.VIDEO -> {
                                 if (downloadedFile.exists()) {
                                     CoroutineScope(Dispatchers.IO).launch {
-//                                        val msg =
-//                                            messageRepository.getMessageByMessageId(message.id)
-//                                        if (msg != null) {
-//                                            msg.videoUrl = downloadedFile.toString()
-//                                            Log.d("Download", "Message to update : $msg")
-//                                            messageRepository.updateMessage(msg)
-//                                        }
+
                                     }
                                 }
 
@@ -4679,23 +4619,11 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             FileType.DOCUMENT -> {
                                 if (downloadedFile.exists()) {
                                     CoroutineScope(Dispatchers.IO).launch {
-//                                        val msg =
-//                                            messageRepository.getMessageByMessageId(message.id)
-//                                        if (msg != null) {
-//                                            msg.docUrl = downloadedFile.toString()
-//                                            Log.d("Download", "Document Message to update : $msg")
-//                                            messageRepository.updateMessage(msg)
-//                                        }
+
                                     }
                                 }
 
-//                                message.setDocument(
-//                                    Message.Document(
-//                                        storageDirectory,
-//                                        getFileNameFromUrl(storageDirectory),
-//                                        formatFileSize(getFileSize(storageDirectory))
-//                                    )
-//                                )
+
 
                                 super.messagesAdapter?.update(message)
                             }
@@ -4712,31 +4640,15 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         } else if (fileExtension == "mp4") {
                             if (downloadedFile.exists()) {
                                 CoroutineScope(Dispatchers.IO).launch {
-//                                    val msg = messageRepository.getMessageByMessageId(message.id)
-//                                    if (msg != null) {
-//                                        msg.videoUrl = downloadedFile.toString()
-//                                        Log.d("Download", "Message to update : $msg")
-//                                        messageRepository.updateMessage(msg)
-//                                    }
+
+
                                 }
                             }
                         }
                     }
 
 
-//                val createdAt = getDateTimeStamp()
-//                val uniqueId = System.currentTimeMillis().toString()
-//                val saveDownloadPath = DownloadedFile(
-//                    chatId,
-//                    uniqueId,
-//                    directoryPath,
-//                    mUrl,
-//                    createdAt
-//                )
-//
-//                insertDownload(saveDownloadPath)
-                    //insertOfflinePath(saveLocalPath)
-//                Log.i("Download", "saved download path: $saveDownloadPath")
+
                     outputStream.close()
                     inputStream.close()
                 } else {
@@ -4809,7 +4721,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         val downloadProgress =
                             (bytesCopied.toFloat() / fileSize.toFloat() * 100).toInt()
                         runOnUiThread {
-                     
+
                             progressbar.progress = downloadProgress
 
                         }
