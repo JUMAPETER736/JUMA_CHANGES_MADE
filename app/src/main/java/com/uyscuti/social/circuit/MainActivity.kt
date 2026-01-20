@@ -1336,7 +1336,7 @@ class MainActivity : AppCompatActivity(),
         })
 
         binding.click.setOnClickListener {
-//            Log.d(TAG, "onCreate: toggle layout")
+
             toggleMotionLayoutVisibility()
 
         }
@@ -1383,7 +1383,7 @@ class MainActivity : AppCompatActivity(),
             binding.input.inputEditText.setText("")
             isReply = false
             commentsViewModel.resetLiveData()
-//            hideKeyboard()
+
             hideKeyboard(binding.input.inputEditText)
             deleteRecording()
             stopPlaying()
@@ -1392,12 +1392,10 @@ class MainActivity : AppCompatActivity(),
             stopRecordWaveRunnable()
             exoPlayer?.release()
 
-//            adapter?.removeDownloadListener()
-
 
             if (mediaRecorder != null) {
             }
-//            binding.
+
 
         } else {
             var currentState = binding.motionLayout.currentState
