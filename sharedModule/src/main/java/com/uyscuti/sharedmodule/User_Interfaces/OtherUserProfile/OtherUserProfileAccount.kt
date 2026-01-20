@@ -1520,6 +1520,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
             putExtra("full_name", fullName)
             putExtra("followers_count", followerCount)
             putExtra("tab_index", 0)
+            putExtra("is_my_followers", false)
         }
 
 

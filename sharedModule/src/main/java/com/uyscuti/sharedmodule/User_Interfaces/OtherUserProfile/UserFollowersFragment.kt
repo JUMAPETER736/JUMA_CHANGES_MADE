@@ -162,7 +162,7 @@ class UserFollowersFragment : AppCompatActivity() {
             onMoreOptionsClick = { user -> showMoreOptions(user) },
             localStorage = localStorage,
             retrofitInstance = retrofitInstance,
-            isMyFollowers = false
+            isMyFollowers = isMyFollowers
         )
 
 
@@ -854,6 +854,15 @@ class FollowersAdapter(
                 .into(holder.profileImage)
         } ?: holder.profileImage.setImageResource(R.drawable.flash21)
 
+        // ✅ ADD THIS CODE - Show/Hide more options button based on whether it's my followers
+        if (isMyFollowers) {
+            // This is MY followers list - show the more options button
+            holder.moreOptionsButton.visibility = View.VISIBLE
+        } else {
+            // This is someone else's followers list - hide the more options button
+            holder.moreOptionsButton.visibility = View.GONE
+        }
+
         // Update follow button appearance based on blocked status and following status
         when {
             follower.isBlocked -> {
@@ -901,9 +910,11 @@ class FollowersAdapter(
             }
         }
 
-        // More options button
+        // More options button - only clickable if visible
         holder.moreOptionsButton.setOnClickListener {
-            onMoreOptionsClick(follower)
+            if (isMyFollowers) {
+                onMoreOptionsClick(follower)
+            }
         }
     }
 

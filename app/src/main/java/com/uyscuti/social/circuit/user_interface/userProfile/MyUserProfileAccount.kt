@@ -654,6 +654,7 @@ class MyUserProfileAccount : AppCompatActivity() {
         }
     }
 
+
     private fun uploadProfileImage(uri: Uri) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -1141,6 +1142,7 @@ class MyUserProfileAccount : AppCompatActivity() {
             putExtra("full_name", fullName)
             putExtra("followers_count", followerCount)
             putExtra("tab_index", 0)
+            putExtra("is_my_followers", true)
         }
         startActivity(intent)
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
@@ -1610,7 +1612,7 @@ class MyUserProfileAccount : AppCompatActivity() {
                 2 -> {
 
                     // Favorites Fragment
-                      FavoriteFragment()
+                    FavoriteFragment()
 //                    MyUserFavoritesFragment().apply {
 //                        arguments = Bundle().apply {
 //                            putString("userId", userId)
