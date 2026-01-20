@@ -32,7 +32,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.FragmentActivity
@@ -46,7 +45,6 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.databinding.MyUserProfileAccountBinding
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -79,7 +77,6 @@ import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getAvatarUr
 import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getEmail
 import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getUserId
 import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getUsername
-import com.uyscuti.social.circuit.ui.fragments.feed.FavoriteFragment
 import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
 import com.uyscuti.social.network.api.response.otherusersprofile.Data
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
@@ -1596,13 +1593,13 @@ class MyUserProfileAccount : AppCompatActivity() {
                 0 -> {
 
                     // Posts Fragment
-                    MyUserPostsFragment.newInstance(userId, username)
+                    MyUserFeedFragment.newInstance(userId, username)
                 }
 
                 1 -> {
 
                     // Videos Fragment
-                    MyUserVideosOnlyFragment().apply {
+                    MyUserShortsOnlyFragment().apply {
                         arguments = Bundle().apply {
                             putString("userId", userId)
                             putString("username", username)
@@ -1613,7 +1610,6 @@ class MyUserProfileAccount : AppCompatActivity() {
                 2 -> {
 
                     // Favorites Fragment
-                    //FavoriteFragment()
                     MyUserFavoritesFragment().apply {
                         arguments = Bundle().apply {
                             putString("userId", userId)

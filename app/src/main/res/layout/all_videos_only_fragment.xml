@@ -9,7 +9,7 @@
         android:layout_height="match_parent"
         android:rowCount="3"
         android:columnCount="3"
-        android:padding="0dp"
+        android:padding="4dp"
         android:visibility="gone">
 
     </GridLayout>

@@ -34,7 +34,7 @@ private const val TAG = "MyUsersPostsFragment"
 
 
 @AndroidEntryPoint
-class MyUserPostsFragment : Fragment(), OnFeedClickListener {
+class MyUserFeedFragment : Fragment(), OnFeedClickListener {
 
     companion object {
         private const val ARG_USER_ID = "userId"
@@ -46,8 +46,8 @@ class MyUserPostsFragment : Fragment(), OnFeedClickListener {
         private const val INITIAL_LOAD_SIZE = 10
         private const val MAX_PAGES = 5
 
-        fun newInstance(userId: String, username: String): MyUserPostsFragment {
-            return MyUserPostsFragment().apply {
+        fun newInstance(userId: String, username: String): MyUserFeedFragment {
+            return MyUserFeedFragment().apply {
                 arguments = Bundle().apply {
                     putString(ARG_USER_ID, userId)
                     putString(ARG_USERNAME, username)

@@ -11,10 +11,8 @@ import androidx.media3.common.util.UnstableApi
 import com.uyscuti.social.circuit.R
 import kotlinx.coroutines.launch
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Outline
-import android.media.MediaMetadataRetriever
 import android.util.Log
 import android.view.Gravity
 import android.view.View
@@ -28,8 +26,6 @@ import android.widget.TextView
 import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.resource.bitmap.CenterCrop
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -37,11 +33,10 @@ import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.network.utils.LocalStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.net.URL
 
 private const val TAG = "My Videos Only Fragment"
 
-class MyUserVideosOnlyFragment : Fragment() {
+class MyUserShortsOnlyFragment : Fragment() {
 
     companion object {
         private const val ARG_USER_ID = "userId"
@@ -52,8 +47,8 @@ class MyUserVideosOnlyFragment : Fragment() {
         private const val CACHE_VALIDITY_MS = 5 * 60 * 1000L
         private const val MAX_PAGES = 10
 
-        fun newInstance(userId: String, username: String): MyUserVideosOnlyFragment {
-            return MyUserVideosOnlyFragment().apply {
+        fun newInstance(userId: String, username: String): MyUserShortsOnlyFragment {
+            return MyUserShortsOnlyFragment().apply {
                 arguments = Bundle().apply {
                     putString(ARG_USER_ID, userId)
                     putString(ARG_USERNAME, username)
@@ -393,12 +388,17 @@ class MyUserVideosOnlyFragment : Fragment() {
             populateGrid()
         }
 
+
+
         private fun populateGrid() {
             gridLayout.removeAllViews()
 
             val displayMetrics = context.resources.displayMetrics
             val screenWidth = displayMetrics.widthPixels
-            val itemSize = screenWidth / 3
+
+            // Account for margins (4dp on each side = 8dp total per item, 3 items = 24dp total)
+            val totalMargins = 8.dpToPx(context) * 3
+            val itemSize = (screenWidth - totalMargins) / 3
 
             posts.forEachIndexed { index, post ->
                 val container = createPostContainer(itemSize, post, index)
@@ -411,9 +411,20 @@ class MyUserVideosOnlyFragment : Fragment() {
                 layoutParams = GridLayout.LayoutParams().apply {
                     width = size
                     height = size
-                    setMargins(0, 0, 0, 0)
+                    // Add margins for gaps between items
+                    val margin = 4.dpToPx(context)
+                    setMargins(margin, margin, margin, margin)
                 }
                 setBackgroundColor(Color.parseColor("#1a1a1a"))
+
+                // Add rounded corners to the container
+                clipToOutline = true
+                outlineProvider = object : ViewOutlineProvider() {
+                    override fun getOutline(view: View, outline: Outline) {
+                        val cornerRadius = 8.dpToPx(context).toFloat()
+                        outline.setRoundRect(0, 0, view.width, view.height, cornerRadius)
+                    }
+                }
             }
 
             val imageView = ImageView(context).apply {
@@ -423,14 +434,10 @@ class MyUserVideosOnlyFragment : Fragment() {
                     FrameLayout.LayoutParams.MATCH_PARENT
                 )
                 scaleType = ImageView.ScaleType.CENTER_CROP
-                clipToOutline = true
-                outlineProvider = object : ViewOutlineProvider() {
-                    override fun getOutline(view: View, outline: Outline) {
-                        outline.setRect(0, 0, view.width, view.height)
-                    }
-                }
+                // Remove the clipToOutline from here since container handles it
             }
             container.addView(imageView)
+
 
             // Find the first video file
             val videoFileIndex = post.fileTypes?.indexOfFirst {

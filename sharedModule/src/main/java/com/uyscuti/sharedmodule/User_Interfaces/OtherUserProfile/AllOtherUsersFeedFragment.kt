@@ -9,14 +9,11 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.OptIn
 import androidx.appcompat.widget.AppCompatButton
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.gson.Gson
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
@@ -36,7 +33,7 @@ private const val TAG = "AllOtherUsersPostsFragment"
 
 
 @AndroidEntryPoint
-class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
+class AllOtherUsersFeedFragment : Fragment(), OnFeedClickListener {
 
     companion object {
         private const val ARG_USER_ID = "userId"
@@ -48,8 +45,8 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
         private const val INITIAL_LOAD_SIZE = 10
         private const val MAX_PAGES = 5
 
-        fun newInstance(userId: String, username: String): AllOtherUsersPostsFragment {
-            return AllOtherUsersPostsFragment().apply {
+        fun newInstance(userId: String, username: String): AllOtherUsersFeedFragment {
+            return AllOtherUsersFeedFragment().apply {
                 arguments = Bundle().apply {
                     putString(ARG_USER_ID, userId)
                     putString(ARG_USERNAME, username)

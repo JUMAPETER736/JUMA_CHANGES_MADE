@@ -62,7 +62,6 @@ import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import androidx.core.content.ContextCompat
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
-import com.uyscuti.social.network.api.response.follow_unfollow.FollowUnFollowResponse
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.AllOtherUsersFavoritesFragment
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.AllVideosOnlyFragment
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.UserFollowersFragment
@@ -72,11 +71,8 @@ import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.network.utils.LocalStorage
 import android.view.Gravity
 import android.widget.LinearLayout
-import com.google.gson.Gson
 import com.uyscuti.sharedmodule.MessagesActivity
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside
 import com.uyscuti.social.network.api.models.Avatar
-import com.uyscuti.social.network.api.response.posts.Post
 
 
 private const val TAG = "OtherUserProfileAccount"
@@ -1526,7 +1522,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
                 0 -> {
 
                     // Posts Fragment
-                    AllOtherUsersPostsFragment.newInstance(userId, username)
+                    AllOtherUsersFeedFragment.newInstance(userId, username)
                 }
 
                 1 -> {
