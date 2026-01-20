@@ -1731,6 +1731,738 @@ class SearchUserNameAdapter(
         }
     }
 
+
+    // LoadingViewHolder
+    private class LoadingViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val shimmer1: View? = itemView.findViewById(R.id.shimmer_view)
+        private val shimmer2: View? = itemView.findViewById(R.id.shimmer_view2)
+
+        fun showLoading() {
+            shimmer1?.visibility = View.VISIBLE
+            shimmer2?.visibility = View.VISIBLE
+        }
+    }
+
+    private class PeopleViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        private val avatar: ImageView = itemView.findViewById(R.id.avatar)
+        private val fullNameText: TextView = itemView.findViewById(R.id.full_name)
+        private val usernameText: TextView = itemView.findViewById(R.id.name)
+
+        fun bind(author: Author, listener: (Author) -> Unit, isRecentUser: Boolean = false) {
+            Glide.with(itemView.context)
+                .load(author.account.avatar.url)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .error(R.drawable.flash21)
+                .into(avatar)
+
+            // Build full name from first and last name
+            val fullName = buildString {
+                if (author.firstName.isNotEmpty()) append(author.firstName)
+                if (author.lastName.isNotEmpty()) {
+                    if (isNotEmpty()) append(" ")
+                    append(author.lastName)
+                }
+            }.trim()
+
+            // Display logic
+            if (fullName.isNotEmpty()) {
+                // Show full name and username
+                fullNameText.text = fullName
+                usernameText.text = "@${author.account.username}"
+                usernameText.visibility = View.VISIBLE
+            } else {
+                // If no full name (profile not loaded yet), show username only
+                fullNameText.text = "@${author.account.username}"
+                usernameText.visibility = View.GONE
+            }
+
+            itemView.setOnClickListener { listener(author) }
+            itemView.setOnLongClickListener { true }
+        }
+    }
+
+    // ShortsGridViewHolder for grid display
+    private class ShortsGridViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        private val videoThumbnail: ImageView = itemView.findViewById(R.id.videoThumbnail)
+        private val playIcon: ImageView = itemView.findViewById(R.id.playIcon)
+        private val viewsCount: TextView = itemView.findViewById(R.id.viewsCount)
+        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
+        private val durationBadge: TextView = itemView.findViewById(R.id.durationBadge)
+        private val authorAvatar: ImageView = itemView.findViewById(R.id.authorAvatar)
+        private val authorName: TextView = itemView.findViewById(R.id.authorName)
+        private val timePosted: TextView = itemView.findViewById(R.id.timePosted)
+
+        fun bind(post: Post, listener: (Post) -> Unit) {
+            // Load video thumbnail with rounded corners
+            val thumbnailUrl = post.thumbnail?.firstOrNull()?.thumbnailUrl ?: post.files?.firstOrNull()?.url
+
+            Glide.with(itemView.context)
+                .load(thumbnailUrl)
+                .centerCrop()
+                .placeholder(R.drawable.flash21)
+                .error(R.drawable.flash21)
+                .into(videoThumbnail)
+
+            // Load author avatar - perfectly circular
+            Glide.with(itemView.context)
+                .load(post.author.account.avatar.url)
+                .circleCrop()
+                .placeholder(R.drawable.flash21)
+                .error(R.drawable.flash21)
+                .into(authorAvatar)
+
+            // Set author name
+            val fullName = buildString {
+                if (post.author.firstName.isNotEmpty()) append(post.author.firstName)
+                if (post.author.lastName.isNotEmpty()) {
+                    if (isNotEmpty()) append(" ")
+                    append(post.author.lastName)
+                }
+            }.trim()
+
+            authorName.text = if (fullName.isNotEmpty()) fullName else "@${post.author.account.username}"
+
+            // Format views count (using comments as proxy for views)
+            viewsCount.text = formatCount(post.comments)
+
+            // Format likes count
+            likesCount.text = formatCount(post.likes)
+
+            // Calculate and display time posted
+            timePosted.text = getTimeAgo(post.createdAt)
+
+            // Load actual video duration from the video file
+            loadVideoDuration(post)
+
+            // Click listener
+            itemView.setOnClickListener { listener(post) }
+        }
+
+        private fun loadVideoDuration(post: Post) {
+            val videoFile = post.files?.firstOrNull {
+                it.url.endsWith(".mp4", ignoreCase = true)
+            }
+
+            if (videoFile != null) {
+                try {
+                    val retriever = MediaMetadataRetriever()
+                    retriever.setDataSource(videoFile.url, HashMap<String, String>())
+
+                    val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                    val durationMs = durationStr?.toLongOrNull() ?: 0L
+                    val durationSeconds = (durationMs / 1000).toInt()
+
+                    retriever.release()
+
+                    if (durationSeconds > 0) {
+                        durationBadge.text = formatDuration(durationSeconds)
+                        durationBadge.visibility = View.VISIBLE
+                    } else {
+                        durationBadge.visibility = View.GONE
+                    }
+                } catch (e: Exception) {
+                    Log.e("ShortsGrid", "Error loading video duration: ${e.message}")
+                    durationBadge.visibility = View.GONE
+                }
+            } else {
+                durationBadge.visibility = View.GONE
+            }
+        }
+
+        private fun formatCount(count: Int): String {
+            return when {
+                count >= 1_000_000 -> {
+                    val millions = count / 1_000_000.0
+                    String.format("%.1fM", millions).replace(".0M", "M")
+                }
+                count >= 1_000 -> {
+                    val thousands = count / 1_000.0
+                    String.format("%.1fK", thousands).replace(".0K", "K")
+                }
+                else -> count.toString()
+            }
+        }
+
+        private fun formatDuration(seconds: Int): String {
+            val hours = seconds / 3600
+            val minutes = (seconds % 3600) / 60
+            val secs = seconds % 60
+
+            return when {
+                hours > 0 -> String.format("%d:%02d:%02d", hours, minutes, secs)
+                minutes > 0 -> String.format("%d:%02d", minutes, secs)
+                else -> String.format("0:%02d", secs)
+            }
+        }
+
+        private fun getTimeAgo(createdAt: String): String {
+            return try {
+                val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+                sdf.timeZone = TimeZone.getTimeZone("UTC")
+                val date = sdf.parse(createdAt) ?: return ""
+
+                val now = System.currentTimeMillis()
+                val diff = now - date.time
+
+                val seconds = diff / 1000
+                val minutes = seconds / 60
+                val hours = minutes / 60
+                val days = hours / 24
+                val weeks = days / 7
+                val months = days / 30
+                val years = days / 365
+
+                when {
+                    years > 0 -> "${years}y"
+                    months > 0 -> "${months}mo"
+                    weeks > 0 -> "${weeks}w"
+                    days > 0 -> "${days}d"
+                    hours > 0 -> "${hours}h"
+                    minutes > 0 -> "${minutes}m"
+                    else -> "${seconds}s"
+                }
+            } catch (e: Exception) {
+                ""
+            }
+        }
+    }
+
+    inner class BusinessGridViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        private val businessImage: ImageView = itemView.findViewById(R.id.businessItemImage)
+        private val businessPrice: TextView = itemView.findViewById(R.id.businessItemPrice)
+        private val businessName: TextView = itemView.findViewById(R.id.businessItemName)
+        private val businessLocation: TextView = itemView.findViewById(R.id.businessItemLocation)
+        private val justListedBadge: TextView = itemView.findViewById(R.id.justListedBadge)
+
+        fun bind(post: Post, listener: (Post) -> Unit) {
+            // Load image
+            val firstImage = post.files?.firstOrNull()?.url
+            Glide.with(itemView.context)
+                .load(firstImage)
+                .centerCrop()
+                .placeholder(R.drawable.flash21)
+                .error(R.drawable.flash21)
+                .into(businessImage)
+
+            // Price
+            businessPrice.text = extractPrice(post)
+
+            // Name - use businessDetails if available
+            businessName.text = post.businessDetails?.itemName ?: post.content?.trim()?.take(60) ?: "Business Item"
+
+            // Location - from author's account
+            businessLocation.text = if (post.author.location.isNotBlank()) {
+                post.author.location
+            } else {
+                "Lilongwe, Malawi"
+            }
+
+            // Just listed badge
+            justListedBadge.visibility = if (isRecentlyListed(post.createdAt)) View.VISIBLE else View.GONE
+
+            // Click listener to open CatalogueDetailsActivity
+            itemView.setOnClickListener {
+                openCatalogueDetails(post)
+                listener(post)
+            }
+        }
+
+        @OptIn(UnstableApi::class)
+        private fun openCatalogueDetails(post: Post) {
+            val context = itemView.context
+
+            // Convert the Post to the businessposts.Post format for CatalogueDetailsActivity
+            val cataloguePost = com.uyscuti.social.network.api.response.business.response.post.Post(
+                _id = post._id,
+                __v = post.__v,
+
+                // Business details
+                itemName = post.businessDetails?.itemName ?: post.content?.trim()?.take(60) ?: "Business Item",
+                price = post.businessDetails?.price ?: extractPriceNumeric(post).toString(),
+                description = post.businessDetails?.description ?: post.content ?: "",
+                catalogue = post.businessDetails?.catalogue ?: "",
+                features = post.businessDetails?.features ?: emptyList(),
+
+                // Images
+                images = post.files?.mapNotNull { it.url } ?: emptyList(),
+
+                // Timestamps
+                createdAt = post.createdAt,
+                updatedAt = post.updatedAt,
+
+                // User details
+                userDetails = com.uyscuti.social.network.api.response.business.response.post.UserDetails(
+                    username = post.author.account.username,
+                    avatar = post.author.account.avatar.url,
+                    createdAt = post.author.createdAt,
+                    updatedAt = post.author.updatedAt
+                ),
+                owner = post.author._id,
+
+                // Interaction states
+                isLiked = post.isLiked,
+                isBookmarked = post.isBookmarked,
+                isFollowing = post.isFollowing,
+
+                // Metrics
+                likes = post.likes,
+                comments = post.comments,
+                bookmarkCount = post.bookmarkCount
+            )
+
+            val intent = Intent(context, CatalogueDetailsActivity::class.java).apply {
+                putExtra("catalogue", cataloguePost)
+                putExtra("position", 0)
+            }
+            context.startActivity(intent)
+        }
+
+        private fun extractPriceNumeric(post: Post): Double {
+            // First check businessDetails
+            post.businessDetails?.price?.let {
+                return it.toDoubleOrNull() ?: 0.0
+            }
+
+            // Otherwise parse from content
+            val content = post.content ?: return 0.0
+            val patterns = listOf(
+                """MWK\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
+                """K\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
+                """\$\s*(\d{1,3}(?:,\d{3})*)""".toRegex()
+            )
+
+            for (pattern in patterns) {
+                pattern.find(content)?.groupValues?.get(1)?.let {
+                    return it.replace(",", "").toDoubleOrNull() ?: 0.0
+                }
+            }
+
+            return 0.0
+        }
+
+        private fun extractPrice(post: Post): String {
+            // First check businessDetails
+            post.businessDetails?.price?.let {
+                return formatPrice(it)
+            }
+
+            // Otherwise parse from content
+            val content = post.content ?: return "Contact for price"
+            val patterns = listOf(
+                """MWK\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
+                """K\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
+                """\$\s*(\d{1,3}(?:,\d{3})*)""".toRegex()
+            )
+
+            for (pattern in patterns) {
+                pattern.find(content)?.groupValues?.get(1)?.let {
+                    return formatPrice(it.replace(",", ""))
+                }
+            }
+
+            return "Contact for price"
+        }
+
+        private fun formatPrice(price: String): String {
+            val numericPrice = price.toDoubleOrNull() ?: return "MWK$price"
+            return when {
+                numericPrice >= 1_000_000 -> "MWK${String.format("%.1fM", numericPrice / 1_000_000).replace(".0M", "M")}"
+                numericPrice >= 1_000 -> "MWK${String.format("%,.0f", numericPrice)}"
+                else -> "MWK${numericPrice.toInt()}"
+            }
+        }
+
+        private fun isRecentlyListed(createdAt: String): Boolean {
+            return try {
+                val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+                sdf.timeZone = TimeZone.getTimeZone("UTC")
+                val date = sdf.parse(createdAt) ?: return false
+                System.currentTimeMillis() - date.time < 24 * 60 * 60 * 1000
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
+
+    private class ChatViewHolder(private val itemView: View, private val localStorage: LocalStorage) : RecyclerView.ViewHolder(itemView) {
+
+        private val chatAvatar: ImageView = itemView.findViewById(R.id.chatAvatar)
+        private val fullNameText: TextView = itemView.findViewById(R.id.fullName)
+        private val usernameText: TextView = itemView.findViewById(R.id.userName)
+
+        // Original bind method for chat items
+        fun bind(dialogEntity: DialogEntity, onChatClicked: (DialogEntity) -> Unit) {
+
+            val myUserId = localStorage.getUserId()
+            val otherUser = dialogEntity.users.firstOrNull { it.id != myUserId }
+
+            if (otherUser != null) {
+                val parts = otherUser.name.split("|")
+                val fullName = parts.getOrNull(0)?.trim().orEmpty()
+                val username = parts.getOrNull(1)?.trim() ?: fullName
+
+                fullNameText.text = fullName.ifEmpty { username }
+                usernameText.text = "@$username"
+
+                Glide.with(itemView.context)
+                    .load(otherUser.avatar)
+                    .circleCrop()
+                    .placeholder(R.drawable.flash21)
+                    .error(R.drawable.flash21)
+                    .into(chatAvatar)
+            }
+
+            itemView.setOnClickListener {
+                MessagesActivity.open(
+                    context = itemView.context,
+                    dialogName = dialogEntity.dialogName,
+                    dialog = dialogEntity.toDialog(localStorage),
+                    temporally = false,
+                    productReference = ""
+                )
+            }
+        }
+
+        // NEW: Bind method for showing the searched contact at the top
+        fun bindContact(userEntity: UserEntity, onContactClicked: (UserEntity) -> Unit) {
+            val parts = userEntity.name.split("|")
+            val fullName = parts.getOrNull(0)?.trim().orEmpty()
+            val username = parts.getOrNull(1)?.trim() ?: fullName
+
+            fullNameText.text = fullName.ifEmpty { username }
+            usernameText.text = "@$username"
+
+            Glide.with(itemView.context)
+                .load(userEntity.avatar)
+                .circleCrop()
+                .placeholder(R.drawable.flash21)
+                .error(R.drawable.flash21)
+                .into(chatAvatar)
+
+            itemView.setOnClickListener {
+                onContactClicked(userEntity)
+            }
+        }
+
+        // NEW: Bind method for section headers (Messages, Groups, etc.)
+        fun bindSectionHeader(sectionTitle: String) {
+            // Use the same layout but style it as a header
+            chatAvatar.visibility = View.GONE
+            fullNameText.text = sectionTitle
+            fullNameText.textSize = 14f
+            fullNameText.setTextColor(itemView.context.getColor(android.R.color.darker_gray))
+            usernameText.visibility = View.GONE
+            itemView.setBackgroundColor(itemView.context.getColor(android.R.color.transparent))
+            itemView.isClickable = false
+            itemView.setPadding(16, 20, 16, 8)
+        }
+
+        // NEW: Bind method for chat/group where the person appears
+        fun bindChatWithPerson(dialogEntity: DialogEntity, searchedPersonName: String) {
+            val myUserId = localStorage.getUserId()
+
+            // Show the chat/group name
+            fullNameText.text = dialogEntity.dialogName
+
+            // Show last message or indication that person is in this chat
+            val lastMsg = dialogEntity.lastMessage?.text ?: "Chat with $searchedPersonName"
+            usernameText.text = lastMsg
+
+            // Load chat/group avatar
+            Glide.with(itemView.context)
+                .load(dialogEntity.dialogPhoto)
+                .circleCrop()
+                .placeholder(R.drawable.flash21)
+                .error(R.drawable.flash21)
+                .into(chatAvatar)
+
+            itemView.setOnClickListener {
+                MessagesActivity.open(
+                    context = itemView.context,
+                    dialogName = dialogEntity.dialogName,
+                    dialog = dialogEntity.toDialog(localStorage),
+                    temporally = false,
+                    productReference = ""
+                )
+            }
+        }
+
+        private fun DialogEntity.toDialog(
+            localStorage: LocalStorage
+        ): Dialog {
+
+            val myUserId = localStorage.getUserId()
+            val otherUser = users.firstOrNull { it.id != myUserId }
+
+            val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
+            otherUser?.let { usersList.add(it.toUser()) }
+
+            val message = lastMessage?.toMessage()
+            val dialogName = usersList.firstOrNull()?.name ?: this.dialogName
+
+            return Dialog(
+                this.id,
+                dialogName,
+                this.dialogPhoto,
+                usersList,
+                message,
+                this.unreadCount
+            )
+        }
+
+        private fun UserEntity.toUser(): com.uyscuti.sharedmodule.data.model.User {
+            val username = if (name.contains("|")) name.split("|")[1].trim() else name
+            return com.uyscuti.sharedmodule.data.model.User(
+                id,
+                username,
+                avatar,
+                online,
+                lastSeen
+            )
+        }
+
+        private fun MessageEntity.toMessage(): Message {
+            val username = if (user.name.contains("|")) user.name.split("|")[1].trim() else user.name
+            val msgUser = com.uyscuti.sharedmodule.data.model.User(
+                user.id,
+                username,
+                user.avatar,
+                user.online,
+                user.lastSeen
+            )
+            return Message(
+                id,
+                msgUser,
+                text,
+                Date(createdAt)
+            )
+        }
+    }
+
+    inner class BusinessViewHolder(itemView: View, private val viewModel: BusinessPostsViewModel) : RecyclerView.ViewHolder(itemView) {
+
+        private val binding = BusinessPostLayoutBinding.bind(itemView)
+
+        @OptIn(UnstableApi::class)
+        fun bind(post: Post) {
+            val author = post.author
+            val account = author.account
+
+            // Load avatar
+            Glide.with(itemView.context)
+                .load(account.avatar.url)
+                .circleCrop()
+                .placeholder(R.drawable.ic_person)
+                .error(R.drawable.ic_person)
+                .into(binding.ivUserAvatar)
+
+            // Full name
+            val fullName = "${author.firstName} ${author.lastName}".trim()
+            binding.tvUsername.text = fullName.ifEmpty { "@${account.username}" }
+
+            // Username handle below full name
+            if (binding.root.findViewById<TextView>(R.id.tv_user_handle) == null) {
+                // Dynamically add if not in XML
+                val tvHandle = TextView(itemView.context).apply {
+                    id = R.id.tv_user_handle
+                    text = "@${account.username}"
+                    setTextColor(ContextCompat.getColor(itemView.context, R.color.gray_second))
+                    textSize = 12f
+                }
+                (binding.tvUsername.parent as LinearLayout).addView(tvHandle, 1)
+            } else {
+                binding.root.findViewById<TextView>(R.id.tv_user_handle).text = "@${account.username}"
+            }
+
+            // Post time
+            binding.tvPostTime.text = getTimeAgo(post.createdAt)
+
+            // Catalogue info
+            binding.tvItemTitle.text = post.businessDetails?.itemName ?: post.content.take(50)
+            binding.tvDescription.text = post.businessDetails?.description ?: post.content
+            binding.tvItemPrice.text = "MWK ${post.businessDetails?.price ?: "0"}"
+
+            // Media section
+            val images = post.businessDetails?.images ?: post.files.mapNotNull { it.url }
+            binding.businessRecycler.layoutManager =
+                if (images.size <= 2) GridLayoutManager(itemView.context, images.size)
+                else StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+
+            binding.businessRecycler.adapter = BusinessMediaAdapter(images, itemView.context) { position ->
+                // Media click handler - open CatalogueDetailsActivity at specific image position
+                openCatalogueDetails(post, position)
+            }
+
+            binding.tvMediaCounter.visibility = if (images.size > 4) View.VISIBLE else View.GONE
+
+            // ------------------ BUTTON CLICKS ------------------
+
+            // Follow
+            binding.btnFollow.setOnClickListener {
+                CoroutineScope(Dispatchers.Main).launch {
+                    viewModel.followUnfollowBusinessPostOwner(author._id)
+                }
+            }
+
+            // Like
+            binding.llLike.setOnClickListener {
+                CoroutineScope(Dispatchers.Main).launch {
+                    viewModel.likeUnlikeBusinessPost(post._id)
+                }
+            }
+
+            // Comment
+            binding.llComment.setOnClickListener {
+                // Open comment UI / activity
+            }
+
+            // Bookmark
+            binding.llBookmark.setOnClickListener {
+                viewModel.bookmarkUnBookmarkBusinessPost(post._id)
+            }
+
+            // Repost / Offer
+            binding.sendOffer.setOnClickListener {
+                // Handle send offer logic
+            }
+
+            // Share
+            binding.llRepost.setOnClickListener {
+                // Handle share intent
+            }
+
+            // Whole item click
+            itemView.setOnClickListener {
+                openCatalogueDetails(post, 0)
+            }
+        }
+
+        @OptIn(UnstableApi::class)
+        private fun openCatalogueDetails(post: Post, position: Int = 0) {
+            val context = itemView.context
+
+            // Convert the Post to the businessposts.Post format for CatalogueDetailsActivity
+            val cataloguePost = com.uyscuti.social.network.api.response.business.response.post.Post(
+                _id = post._id,
+                __v = post.__v,
+
+                // Business details
+                itemName = post.businessDetails?.itemName ?: post.content?.trim()?.take(60) ?: "Business Item",
+                price = post.businessDetails?.price ?: extractPriceNumeric(post).toString(),
+                description = post.businessDetails?.description ?: post.content ?: "",
+                catalogue = post.businessDetails?.catalogue ?: "",
+                features = post.businessDetails?.features ?: emptyList(),
+
+                // Images
+                images = post.files?.mapNotNull { it.url } ?: emptyList(),
+
+                // Timestamps
+                createdAt = post.createdAt,
+                updatedAt = post.updatedAt,
+
+                // User details
+                userDetails = com.uyscuti.social.network.api.response.business.response.post.UserDetails(
+                    username = post.author.account.username,
+                    avatar = post.author.account.avatar.url,
+                    createdAt = post.author.createdAt,
+                    updatedAt = post.author.updatedAt
+                ),
+                owner = post.author._id,
+
+                // Interaction states
+                isLiked = post.isLiked,
+                isBookmarked = post.isBookmarked,
+                isFollowing = post.isFollowing,
+
+                // Metrics
+                likes = post.likes,
+                comments = post.comments,
+                bookmarkCount = post.bookmarkCount
+            )
+
+            val intent = Intent(context, CatalogueDetailsActivity::class.java).apply {
+                putExtra("catalogue", cataloguePost)
+                putExtra("position", position)
+            }
+            context.startActivity(intent)
+        }
+
+        private fun extractPriceNumeric(post: Post): Double {
+            // First check businessDetails
+            post.businessDetails?.price?.let {
+                return it.toDoubleOrNull() ?: 0.0
+            }
+
+            // Otherwise parse from content
+            val content = post.content ?: return 0.0
+            val patterns = listOf(
+                """MWK\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
+                """K\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
+                """\$\s*(\d{1,3}(?:,\d{3})*)""".toRegex()
+            )
+
+            for (pattern in patterns) {
+                pattern.find(content)?.groupValues?.get(1)?.let {
+                    return it.replace(",", "").toDoubleOrNull() ?: 0.0
+                }
+            }
+
+            return 0.0
+        }
+
+        private fun getTimeAgo(createdAt: String): String {
+            // Implement your time formatting here
+            return ""
+        }
+    }
+
+    inner class BusinessMediaAdapter(private val mediaUrls: List<String>, private val context: Context, private val onMediaClick: (position: Int) -> Unit) : RecyclerView.Adapter<BusinessMediaAdapter.MediaViewHolder>() {
+
+        inner class MediaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val imageView: ImageView = view.findViewById(R.id.mediaImageView)
+
+            init {
+                view.setOnClickListener {
+                    val pos = bindingAdapterPosition
+                    if (pos != RecyclerView.NO_POSITION) {
+                        onMediaClick(pos)
+                    }
+                }
+            }
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_business_media_simple, parent, false)
+            return MediaViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
+            Glide.with(context)
+                .load(mediaUrls[position])
+                .centerCrop()
+                .placeholder(R.drawable.flash21)
+                .error(R.drawable.flash21)
+                .into(holder.imageView)
+        }
+
+        override fun getItemCount(): Int = mediaUrls.size
+    }
+
+    inner class NoBusinessViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val messageText: TextView = itemView.findViewById(R.id.no_business_message)
+
+        @SuppressLint("SetTextI18n")
+        fun bind(username: String) {
+            messageText.text = "@$username does not have a Business Profile"
+        }
+    }
+
+
     inner class FeedTextOnyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
 
@@ -1885,6 +2617,8 @@ class SearchUserNameAdapter(
                     setupChildClickBubbling(data)
                     setupPostClickListeners(data)
 
+                    followButton.visibility = View.GONE
+
                 }
             }
 
@@ -1896,7 +2630,7 @@ class SearchUserNameAdapter(
             val feedOwnerUsername = data.author?.account?.username ?: return
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
-            // Check multiple sources for following status (by ID and username)
+            // Check if YOU are following THEM
             val cachedFollowingList = getCachedFollowingList()
             val cachedFollowingUsernames = getCachedFollowingUsernames()
 
@@ -1904,26 +2638,33 @@ class SearchUserNameAdapter(
                     cachedFollowingList.contains(feedOwnerId) ||
                     cachedFollowingUsernames.contains(feedOwnerUsername)
 
-            Log.d(TAG, "setupFollowButton: Checking user $feedOwnerId (@$feedOwnerUsername)")
-            Log.d(TAG, "  - Match by ID: ${followingUserIds.contains(feedOwnerId) || cachedFollowingList.contains(feedOwnerId)}")
-            Log.d(TAG, "  - Match by username: ${cachedFollowingUsernames.contains(feedOwnerUsername)}")
-
-            // Hide follow button if viewing own post OR already following
+            // Hide button if viewing own post OR already following them
             if (feedOwnerId == currentUserId || isFollowingUser || isUserFollowing) {
                 followButton.visibility = View.GONE
-                Log.d(TAG, "setupFollowButton: Hidden for user $feedOwnerId (@$feedOwnerUsername) - Following: true")
+                Log.d(TAG, "setupFollowButton: Hidden - Already following or own post")
                 return
             }
 
-            // Show follow button only for users we're NOT following
+            // Check if THEY follow YOU (are in YOUR followers list)
+            val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+
+            // Show button with appropriate text
             followButton.visibility = View.VISIBLE
-            followButton.text = "Follow"
+
+            if (theyFollowMe) {
+                // They follow you, but you don't follow them back → Show "Follow Back"
+                followButton.text = "Follow Back"
+                Log.d(TAG, "setupFollowButton: Showing 'Follow Back' for $feedOwnerId - They follow you")
+            } else {
+                // They don't follow you → Show "Follow"
+                followButton.text = "Follow"
+                Log.d(TAG, "setupFollowButton: Showing 'Follow' for $feedOwnerId - They don't follow you")
+            }
+
             followButton.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
                 com.uyscuti.sharedmodule.R.color.blueJeans
             )
-
-            Log.d(TAG, "setupFollowButton: Showing follow button for $feedOwnerId (@$feedOwnerUsername)")
 
             followButton.setOnClickListener {
                 handleFollowButtonClick(feedOwnerId, feedOwnerUsername)
@@ -2789,21 +3530,64 @@ class SearchUserNameAdapter(
 
         private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
             try {
-                Log.d(TAG, "Navigating to original post for post ID: ${data._id}")
+                Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
+
+                val firstName = data.author?.firstName ?: ""
+                val lastName = data.author?.lastName ?: ""
+                val displayName = when {
+                    firstName.isNotBlank() && lastName.isNotBlank() -> "$firstName $lastName"
+                    firstName.isNotBlank() -> firstName
+                    lastName.isNotBlank() -> lastName
+                    else -> data.author?.account?.username ?: "Unknown User"
+                }
+
                 val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
                     arguments = Bundle().apply {
-                        // Changed from putSerializable to putString with JSON
                         putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(data))
                         putString("post_id", data._id)
                         putInt("adapter_position", absoluteAdapterPosition)
-                        putString("navigation_source", "feed_text")
+                        putString("navigation_source", "feed_mixed_files")
                         putLong("navigation_timestamp", System.currentTimeMillis())
+
+                        putString("author_name", displayName)
+                        putString("author_username", data.author?.account?.username ?: "unknown_user")
+                        putString("author_profile_image_url", data.author?.account?.avatar?.url ?: "")
+                        putString("user_id", data.author?._id ?: "")
+
+                        Log.d(TAG, "Author Info - Name: $displayName, Username: ${data.author?.account?.username}, ID: ${data.author?._id}")
                     }
                 }
+
                 navigateToFragment(fragment, "original_post_without_repost")
+
             } catch (e: Exception) {
-                Log.e(TAG, "Error navigating to original post fragment: ${e.message}")
-                e.printStackTrace()
+                Log.e(TAG, "Error navigating to original post fragment: ${e.message}", e)
+            }
+        }
+
+        private fun navigateToFragment(fragment: Fragment, tag: String) {
+            try {
+                val activity = getActivityFromContext(itemView.context)
+                if (activity != null) {
+                    // ✅ USE android.R.id.content - it always exists in every activity
+                    activity.supportFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            com.uyscuti.sharedmodule.R.anim.slide_in_right,
+                            com.uyscuti.sharedmodule.R.anim.slide_out_left,
+                            com.uyscuti.sharedmodule.R.anim.slide_in_left,
+                            com.uyscuti.sharedmodule.R.anim.slide_out_right
+                        )
+                        .add(android.R.id.content, fragment)  // ✅ CHANGED from R.id.frame_layout
+                        .addToBackStack(tag)
+                        .commit()
+
+                    Log.d(TAG, "Successfully navigated to fragment: $tag")
+
+                } else {
+                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to fragment: $tag", e)
             }
         }
 
@@ -2814,39 +3598,6 @@ class SearchUserNameAdapter(
                 else -> null
             }
         }
-
-        private fun navigateToFragment(fragment: Fragment, tag: String) {
-            try {
-                val activity = getActivityFromContext(itemView.context)
-                if (activity != null) {
-                    val currentFragment = activity.supportFragmentManager.fragments.lastOrNull {
-                        it.isVisible && it.view != null
-                    }
-                    val fragmentManager = if (currentFragment != null &&
-                        currentFragment.childFragmentManager.fragments.isNotEmpty()) {
-                        currentFragment.childFragmentManager
-                    } else {
-                        activity.supportFragmentManager
-                    }
-                    fragmentManager.beginTransaction()
-                        .setCustomAnimations(
-                            com.uyscuti.sharedmodule.R.anim.slide_in_right,
-                            com.uyscuti.sharedmodule.R.anim.slide_out_left,
-                            com.uyscuti.sharedmodule.R.anim.slide_in_left,
-                            com.uyscuti.sharedmodule.R.anim.slide_out_right
-                        )
-                        .replace(com.uyscuti.sharedmodule.R.id.content, fragment)
-                        .addToBackStack(tag)
-                        .commit()
-                    Log.d(TAG, "Successfully navigated to fragment: $tag")
-                } else {
-                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error navigating to fragment: $tag", e)
-            }
-        }
-
 
 
         @OptIn(UnstableApi::class)
@@ -3133,6 +3884,110 @@ class SearchUserNameAdapter(
 
         }
 
+        private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
+            try {
+                Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
+
+                val firstName = data.author?.firstName ?: ""
+                val lastName = data.author?.lastName ?: ""
+                val displayName = when {
+                    firstName.isNotBlank() && lastName.isNotBlank() -> "$firstName $lastName"
+                    firstName.isNotBlank() -> firstName
+                    lastName.isNotBlank() -> lastName
+                    else -> data.author?.account?.username ?: "Unknown User"
+                }
+
+                val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
+                    arguments = Bundle().apply {
+                        putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(data))
+                        putString("post_id", data._id)
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "feed_mixed_files")
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+
+                        putString("author_name", displayName)
+                        putString("author_username", data.author?.account?.username ?: "unknown_user")
+                        putString("author_profile_image_url", data.author?.account?.avatar?.url ?: "")
+                        putString("user_id", data.author?._id ?: "")
+
+                        Log.d(TAG, "Author Info - Name: $displayName, Username: ${data.author?.account?.username}, ID: ${data.author?._id}")
+                    }
+                }
+
+                navigateToFragment(fragment, "original_post_without_repost")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to original post fragment: ${e.message}", e)
+            }
+        }
+
+        private fun navigateToFragment(fragment: Fragment, tag: String) {
+            try {
+                val activity = getActivityFromContext(itemView.context)
+                if (activity != null) {
+                    activity.supportFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            com.uyscuti.sharedmodule.R.anim.slide_in_right,
+                            com.uyscuti.sharedmodule.R.anim.slide_out_left,
+                            com.uyscuti.sharedmodule.R.anim.slide_in_left,
+                            com.uyscuti.sharedmodule.R.anim.slide_out_right
+                        )
+                        .replace(android.R.id.content, fragment, tag)
+                        .addToBackStack(tag)
+                        .commit()
+
+                    Log.d(TAG, "Successfully navigated to fragment: $tag")
+
+                } else {
+                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to fragment: $tag", e)
+            }
+        }
+
+        private fun navigateToTappedFilesInTheContainerView(
+            files: ArrayList<com.uyscuti.social.network.api.response.posts.File>,
+            mediaType: String,
+            selectedPosition: Int
+        ) {
+            try {
+                val fragment = Tapped_Files_In_The_Container_View_Fragment().apply {
+                    arguments = Bundle().apply {
+                        putString("files_data", Gson().toJson(files))
+                        putString("media_type", mediaType)
+                        putInt("selected_position", selectedPosition)
+                        putInt("total_files", files.size)
+                        putStringArray("file_urls", files.map { it.url }.toTypedArray())
+                        currentPost?.let { post ->
+                            putString("post_id", post._id)
+                            putString("post_data", Gson().toJson(post))
+                            putString("post_author_id", post.author?.account?._id)
+                            putString("post_author_username", post.author?.account?.username)
+                        }
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "feed_mixed_files")
+                        putString("media_source", mediaType)
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+                        putBoolean("can_download", true)
+                        putBoolean("can_share", true)
+                        putBoolean("show_engagement_data", true)
+                    }
+                }
+
+                val activity = itemView.context as? androidx.fragment.app.FragmentActivity
+                activity?.supportFragmentManager?.beginTransaction()?.apply {
+                    replace(android.R.id.content, fragment, "files_container_view")
+                    addToBackStack("files_container_view")
+                    commit()
+                } ?: run {
+                    Log.e(TAG, "Unable to get FragmentActivity for navigation")
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to files container fragment: ${e.message}", e)
+            }
+        }
 
         private fun setupFollowButton(feedOwnerId: String, feedOwnerUsername: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
@@ -3149,21 +4004,33 @@ class SearchUserNameAdapter(
             Log.d(TAG, "  - Match by ID: ${followingUserIds.contains(feedOwnerId) || cachedFollowingList.contains(feedOwnerId)}")
             Log.d(TAG, "  - Match by username: ${cachedFollowingUsernames.contains(feedOwnerUsername)}")
 
+            // Hide button if viewing own post OR already following them
             if (feedOwnerId == currentUserId || isFollowingUser || isUserFollowing) {
                 followButton.visibility = View.GONE
                 Log.d(TAG, "setupFollowButton: Hidden for user $feedOwnerId (@$feedOwnerUsername) - Following: true")
                 return
             }
 
-            // Show follow button only for users we're NOT following
+            // Check if THEY follow YOU (are in YOUR followers list)
+            val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+
+            // Show button with appropriate text
             followButton.visibility = View.VISIBLE
-            followButton.text = "Follow"
+
+            if (theyFollowMe) {
+                // They follow you, but you don't follow them back → Show "Follow Back"
+                followButton.text = "Follow Back"
+                Log.d(TAG, "setupFollowButton: Showing 'Follow Back' for $feedOwnerId (@$feedOwnerUsername) - They follow you")
+            } else {
+                // They don't follow you → Show "Follow"
+                followButton.text = "Follow"
+                Log.d(TAG, "setupFollowButton: Showing 'Follow' for $feedOwnerId (@$feedOwnerUsername) - They don't follow you")
+            }
+
             followButton.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
                 com.uyscuti.sharedmodule.R.color.blueJeans
             )
-
-            Log.d(TAG, "setupFollowButton: Showing follow button for $feedOwnerId (@$feedOwnerUsername)")
 
             followButton.setOnClickListener {
                 handleFollowButtonClick(feedOwnerId, feedOwnerUsername)
@@ -3171,7 +4038,7 @@ class SearchUserNameAdapter(
         }
 
         @SuppressLint("SetTextI18n")
-        private fun handleFollowButtonClick(feedOwnerId: String, username: String){
+        private fun handleFollowButtonClick(feedOwnerId: String, username: String) {
             YoYo.with(Techniques.Pulse)
                 .duration(300)
                 .playOn(followButton)
@@ -3193,8 +4060,11 @@ class SearchUserNameAdapter(
 
                 Log.d(TAG, "Now following user $feedOwnerId")
             } else {
-                // Show button
-                followButton.text = "Follow"
+                // Check if they follow you to determine button text
+                val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+
+                // Show button with appropriate text
+                followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
                 followButton.visibility = View.VISIBLE
 
                 // Remove from adapter's following list AND persistent storage
@@ -3328,80 +4198,6 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
-            try {
-                Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
-
-                // Extract author information from the Post
-                val firstName = data.author?.firstName ?: ""
-                val lastName = data.author?.lastName ?: ""
-                val displayName = when {
-                    firstName.isNotBlank() && lastName.isNotBlank() -> "$firstName $lastName"
-                    firstName.isNotBlank() -> firstName
-                    lastName.isNotBlank() -> lastName
-                    else -> data.author?.account?.username ?: "Unknown User"
-                }
-
-                val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
-                    arguments = Bundle().apply {
-                        // Post data
-                        putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(data))
-                        putString("post_id", data._id)
-                        putInt("adapter_position", absoluteAdapterPosition)
-                        putString("navigation_source", "feed_mixed_files")
-                        putLong("navigation_timestamp", System.currentTimeMillis())
-
-                        // ADD AUTHOR INFORMATION
-                        putString("author_name", displayName)
-                        putString("author_username", data.author?.account?.username ?: "unknown_user")
-                        putString("author_profile_image_url", data.author?.account?.avatar?.url ?: "")
-                        putString("user_id", data.author?._id ?: "")
-
-                        // Log for debugging
-                        Log.d(TAG, "Author Info - Name: $displayName, Username: ${data.author?.account?.username}, ID: ${data.author?._id}")
-                    }
-                }
-
-                navigateToFragment(fragment, "original_post_without_repost")
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error navigating to original post fragment: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-
-        private fun navigateToFragment(fragment: Fragment, tag: String) {
-            try {
-                val activity = getActivityFromContext(itemView.context)
-                if (activity != null) {
-                    val currentFragment = activity.supportFragmentManager.fragments.lastOrNull {
-                        it.isVisible && it.view != null
-                    }
-                    val fragmentManager = if (currentFragment != null &&
-                        currentFragment.childFragmentManager.fragments.isNotEmpty()) {
-                        currentFragment.childFragmentManager
-                    } else {
-                        activity.supportFragmentManager
-                    }
-
-                    fragmentManager.beginTransaction()
-                        .setCustomAnimations(
-                            com.uyscuti.sharedmodule.R.anim.slide_in_right,
-                            com.uyscuti.sharedmodule.R.anim.slide_out_left,
-
-                            )
-                        .replace(com.uyscuti.sharedmodule.R.id.content, fragment)
-                        .addToBackStack(tag)
-                        .commit()
-                    Log.d(TAG, "Successfully navigated to fragment: $tag")
-
-                } else {
-                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error navigating to fragment: $tag", e)
-            }
-        }
 
         private fun setupPostInfo(data: com.uyscuti.social.network.api.response.posts.Post) {
             // Date and time
@@ -3954,36 +4750,6 @@ class SearchUserNameAdapter(
 
                     repostPost.alpha = 0.8f
 
-                    // Use targetPostId for API call
-//                    val apiCall = if (data.isReposted) {
-//                        RetrofitClient.repostService.incrementRepost(targetPostId)
-//                    } else {
-//                        RetrofitClient.repostService.decrementRepost(targetPostId)
-//                    }
-
-//                    apiCall.enqueue(object : Callback<RepostResponse> {
-//                        override fun onResponse(call: Call<RepostResponse>, response: Response<RepostResponse>) {
-//                            repostPost.isEnabled = true
-//                            repostPost.alpha = 1f
-//                            if (response.isSuccessful) {
-//                                response.body()?.let { repostResponse ->
-//                                    if (abs(repostResponse.repostCount - totalMixedRePostCounts) > 1) {
-//
-//                                        totalMixedRePostCounts = repostResponse.repostCount
-//                                        updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
-//                                    }
-//                                }
-//                            }
-//                        }
-//
-//                        override fun onFailure(call: Call<RepostResponse>, t: Throwable) {
-//                            repostPost.isEnabled = true
-//                            repostPost.alpha = 1f
-//                            Log.e(TAG, "Repost network error", t)
-//                        }
-//                    })
-
-
                     feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
                 } catch (e: Exception) {
                     repostPost.isEnabled = true
@@ -4241,41 +5007,6 @@ class SearchUserNameAdapter(
             })
         }
 
-        private fun navigateToTappedFilesInTheContainerView(
-            files: ArrayList<com.uyscuti.social.network.api.response.posts.File>,
-            mediaType: String,
-            selectedPosition: Int
-        ) {
-            try {
-                val fragment = Tapped_Files_In_The_Container_View_Fragment().apply {
-                    arguments = Bundle().apply {
-                        putString("files_data", Gson().toJson(files))
-                        putString("media_type", mediaType)
-                        putInt("selected_position", selectedPosition)
-                        putInt("total_files", files.size)
-                        putStringArray("file_urls", files.map { it.url }.toTypedArray())
-                        currentPost?.let { post ->
-                            putString("post_id", post._id)
-                            putString("post_data", Gson().toJson(post))
-                            putString("post_author_id", post.author?.account?._id)
-                            putString("post_author_username", post.author?.account?.username)
-                        }
-                        putInt("adapter_position", absoluteAdapterPosition)
-                        putString("navigation_source", "feed_mixed_files")
-                        putString("media_source", mediaType)
-                        putLong("navigation_timestamp", System.currentTimeMillis())
-                        putBoolean("can_download", true)
-                        putBoolean("can_share", true)
-                        putBoolean("show_engagement_data", true)
-                    }
-                }
-                navigateToFragment(fragment, "files_container_view")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error navigating to files container fragment: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-
         private fun getActivityFromContext(context: Context): AppCompatActivity? {
             return when (context) {
                 is AppCompatActivity -> context
@@ -4286,6 +5017,7 @@ class SearchUserNameAdapter(
 
         private val com.uyscuti.social.network.api.response.posts.Post.safeRepostCount: Int
             get() =  0
+
 
 
 
@@ -4337,6 +5069,7 @@ class SearchUserNameAdapter(
                 imageView.setImageResource(com.uyscuti.sharedmodule.R.drawable.flash21)
             }
         }
+
 
     }
 
@@ -4468,12 +5201,12 @@ class SearchUserNameAdapter(
 
 
                     Log.d(TAG, "REPOST FOLLOW CHECK - Post ID: ${data._id}")
-                    Log.d(TAG, ">>> Account ID (for follow check): $feedReposterOwnerId")
-                    Log.d(TAG, ">>> Username (for follow check): @$feedReposterUsername")
-                    Log.d(TAG, ">>> Is following this account: $isFollowingUser")
-                    Log.d(TAG, ">>> Match in followingUserIds: ${followingUserIds.contains(feedReposterOwnerId)}")
-                    Log.d(TAG, ">>> Match in cachedList: ${cachedFollowingList.contains(feedReposterOwnerId)}")
-                    Log.d(TAG, ">>> Match by username: ${cachedFollowingUsernames.contains(feedReposterUsername)}")
+                    Log.d(TAG, "Account ID (for follow check): $feedReposterOwnerId")
+                    Log.d(TAG, "Username (for follow check): @$feedReposterUsername")
+                    Log.d(TAG, "Is following this account: $isFollowingUser")
+                    Log.d(TAG, "Match in followingUserIds: ${followingUserIds.contains(feedReposterOwnerId)}")
+                    Log.d(TAG, "Match in cachedList: ${cachedFollowingList.contains(feedReposterOwnerId)}")
+                    Log.d(TAG, "Match by username: ${cachedFollowingUsernames.contains(feedReposterUsername)}")
                     Log.d(TAG, "Following list (${followingUserIds.size} users): ${followingUserIds.joinToString(", ")}")
 
 
@@ -4514,18 +5247,200 @@ class SearchUserNameAdapter(
 
         }
 
+
+        private fun navigateToTappedFilesInTheContainerView(
+            files: List<Any>,
+            mediaType: String,
+            selectedPosition: Int
+        ) {
+            try {
+                val fragment = Tapped_Files_In_The_Container_View_Fragment().apply {
+                    arguments = Bundle().apply {
+                        putString("files_data", Gson().toJson(files))
+                        putString("media_type", mediaType)
+                        putInt("selected_position", selectedPosition)
+                        putInt("total_files", files.size)
+                        val fileUrls = when {
+                            files.first() is com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File -> {
+                                (files as List<com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File>).map { it.url }
+                            }
+                            files.first() is com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File -> {
+                                (files as List<com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File>).map { it.url }
+                            }
+                            else -> files.map { it.toString() }
+                        }
+                        putStringArray("file_urls", fileUrls.toTypedArray())
+                        currentPost?.let { post ->
+                            putString("post_id", post._id)
+                            putString("post_data", Gson().toJson(post))
+                            putString("post_author_id", post.repostedUser?._id)
+                            putString("post_author_username", post.repostedUser?.username)
+                        }
+                        if (mediaType.contains("original") || mediaType.contains("quoted")) {
+                            currentPost?.originalPost?.firstOrNull()?.let { originalPost ->
+                                putString("original_post_id", originalPost._id)
+                                putString("original_post_data", Gson().toJson(originalPost))
+                                originalPost.author?.let { author ->
+                                    putString("original_author_id", author._id)
+                                    putString("original_author_username", author.account.username)
+                                }
+                            }
+                        }
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "feed_reposted_post")
+                        putString("media_source", mediaType)
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+                        putBoolean("can_download", true)
+                        putBoolean("can_share", true)
+                        putBoolean("show_engagement_data", true)
+                    }
+                }
+                navigateToFragment(fragment, "files_container_view")
+            } catch (e: Exception) {
+                Log.e(tag, "Error navigating to files container fragment: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
+        private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
+            try {
+                Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
+
+                val firstName = data.author?.firstName ?: ""
+                val lastName = data.author?.lastName ?: ""
+                val displayName = when {
+                    firstName.isNotBlank() && lastName.isNotBlank() -> "$firstName $lastName"
+                    firstName.isNotBlank() -> firstName
+                    lastName.isNotBlank() -> lastName
+                    else -> data.author?.account?.username ?: "Unknown User"
+                }
+
+                val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
+                    arguments = Bundle().apply {
+                        putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(data))
+                        putString("post_id", data._id)
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "feed_mixed_files")
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+
+                        putString("author_name", displayName)
+                        putString("author_username", data.author?.account?.username ?: "unknown_user")
+                        putString("author_profile_image_url", data.author?.account?.avatar?.url ?: "")
+                        putString("user_id", data.author?._id ?: "")
+
+                        Log.d(TAG, "Author Info - Name: $displayName, Username: ${data.author?.account?.username}, ID: ${data.author?._id}")
+                    }
+                }
+
+                navigateToFragment(fragment, "original_post_without_repost")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to original post fragment: ${e.message}", e)
+            }
+        }
+
+        private fun navigateToFragment(fragment: Fragment, tag: String) {
+            try {
+                val activity = getActivityFromContext(itemView.context)
+                if (activity != null) {
+                    //  always exists in every activity
+                    activity.supportFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            com.uyscuti.sharedmodule.R.anim.slide_in_right,
+                            com.uyscuti.sharedmodule.R.anim.slide_out_left,
+                            com.uyscuti.sharedmodule.R.anim.slide_in_left,
+                            com.uyscuti.sharedmodule.R.anim.slide_out_right
+                        )
+                        .add(android.R.id.content, fragment, tag)
+                        .addToBackStack(tag)
+                        .commit()
+
+                    Log.d(TAG, "Successfully navigated to fragment: $tag")
+
+                } else {
+                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to fragment: $tag", e)
+            }
+        }
+
+        private fun navigateToOriginalPostWithRepostInside(originalPostData: com.uyscuti.social.network.api.response.posts.Post) {
+            try {
+                val fragment = Fragment_Original_Post_With_Repost_Inside.newInstance(originalPostData)
+                navigateToFragment(fragment, "repost_with_context")
+            } catch (e: Exception) {
+                Log.e(tag, "Error navigating to repost fragment: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
+        private fun navigateToEditPostToRepost(data: com.uyscuti.social.network.api.response.posts.Post) {
+            try {
+                val fragment = Fragment_Edit_Post_To_Repost(data).apply {
+                    arguments = Bundle().apply {
+                        putString("post_data", Gson().toJson(data))
+                        putString("post_id", data._id)
+                        data.originalPost.firstOrNull()?.let { originalPost ->
+                            putString("original_post_data", Gson().toJson(originalPost))
+                            putString("original_post_id", originalPost._id)
+                            putString("original_content", originalPost.content)
+                            putString("original_content_type", originalPost.contentType)
+                            putString("original_created_at", originalPost.createdAt)
+                            putString("original_author_id", originalPost.author._id)
+                            putString("original_author_username", originalPost.author.account.username)
+                            putString(
+                                "original_author_display_name",
+                                listOfNotNull(
+                                    originalPost.author.firstName.takeIf { it.isNotBlank() },
+                                    originalPost.author.lastName.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").trim().takeIf { it.isNotEmpty() }
+                                    ?: originalPost.author.account.username
+                            )
+                            putString("original_author_avatar", originalPost.author.account.avatar.url)
+                            if (originalPost.files.isNotEmpty()) {
+                                putString("original_files_data", Gson().toJson(originalPost.files))
+                                putInt("original_files_count", originalPost.files.size)
+                            }
+                        }
+                        val currentUser = LocalStorage.getInstance(itemView.context).getUser() as? com.uyscuti.sharedmodule.model.business.User
+                        currentUser?.let { user ->
+                            putString("current_user_id", user._id)
+                            putString("current_user_username", user.account?.username)
+                            putString(
+                                "current_user_avatar",
+                                when {
+                                    user.avatar is Avatar -> user.avatar.url
+                                    user.avatar is String -> user.avatar
+                                    else -> null
+                                }.toString()
+                            )
+                        }
+                        putString("repost_type", "quote_repost")
+                        putString("existing_comment", data.content)
+                        putBoolean("is_editing_existing_repost", data.isReposted)
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "repost_button_click")
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+                    }
+                }
+                navigateToFragment(fragment, "edit_post_to_repost")
+            } catch (e: Exception) {
+                Log.e(tag, "Error navigating to edit post fragment: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
         private fun setupFollowButton(accountId: String, username: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
             val cachedFollowingList = getCachedFollowingList()
-            val cachedFollowingUsernames =
-                getCachedFollowingUsernames()
+            val cachedFollowingUsernames = getCachedFollowingUsernames()
 
             // Check by BOTH ID and USERNAME
             val isUserFollowing = followingUserIds.contains(accountId) ||
                     cachedFollowingList.contains(accountId) ||
                     cachedFollowingUsernames.contains(username)
-
 
             Log.d(TAG, "SETUP FOLLOW BUTTON")
             Log.d(TAG, "Account ID to check: $accountId")
@@ -4543,7 +5458,7 @@ class SearchUserNameAdapter(
             if (shouldHideButton) {
                 followButton.visibility = View.GONE
                 Log.d(
-                    TAG, "✓✓✓ HIDING follow button - Reason: ${when {
+                    TAG, " HIDING follow button - Reason: ${when {
                         accountId == currentUserId -> "Own post"
                         cachedFollowingUsernames.contains(username) -> "Already following (by username: @$username)"
                         followingUserIds.contains(accountId) -> "Already following (by ID from followingUserIds)"
@@ -4555,16 +5470,26 @@ class SearchUserNameAdapter(
                 return
             }
 
-            // Show follow button
+            // Check if THEY follow YOU (are in YOUR followers list)
+            val theyFollowMe = FeedAdapter.isUserInMyFollowersList(accountId)
+
+            // Show button with appropriate text
             followButton.visibility = View.VISIBLE
-            followButton.text = "Follow"
+
+            if (theyFollowMe) {
+                // They follow you, but you don't follow them back → Show "Follow Back"
+                followButton.text = "Follow Back"
+                Log.d(TAG, "SHOWING 'Follow Back' button for account: $accountId (@$username) - They follow you")
+            } else {
+                // They don't follow you → Show "Follow"
+                followButton.text = "Follow"
+                Log.d(TAG, "SHOWING 'Follow' button for account: $accountId (@$username) - They don't follow you")
+            }
+
             followButton.backgroundTintList = ContextCompat.getColorStateList(
                 itemView.context,
                 com.uyscuti.sharedmodule.R.color.blueJeans
             )
-
-            Log.d(TAG, "SHOWING follow button for account: $accountId (@$username)")
-
 
             // Pass the ACCOUNT ID (not author ID) to handleFollowButtonClick
             followButton.setOnClickListener {
@@ -4576,12 +5501,10 @@ class SearchUserNameAdapter(
         private fun handleFollowButtonClick(accountId: String, username: String) {
             YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
 
-
             Log.d(TAG, "FOLLOW BUTTON CLICKED")
             Log.d(TAG, "Account ID to follow: $accountId")
             Log.d(TAG, "Username to follow: @$username")
             Log.d(TAG, "This ID will be added to following list")
-
 
             isFollowed = !isFollowed
             val followEntity = FollowUnFollowEntity(accountId, isFollowed)
@@ -4594,10 +5517,13 @@ class SearchUserNameAdapter(
                 (bindingAdapter as? FeedAdapter)?.addToFollowing(accountId, username)
                 FollowingManager(itemView.context).addToFollowing(accountId)
 
-                Log.d(TAG, "✓ Added account $accountId (@$username) to following list")
+                Log.d(TAG, "Added account $accountId (@$username) to following list")
             } else {
-                // Show button
-                followButton.text = "Follow"
+                // Check if they follow you to determine button text
+                val theyFollowMe = FeedAdapter.isUserInMyFollowersList(accountId)
+
+                // Show button with appropriate text
+                followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
                 followButton.visibility = View.VISIBLE
 
                 // Remove from following list
@@ -4635,7 +5561,7 @@ class SearchUserNameAdapter(
                     else -> repostedUser.username
                 }
                 userHandle = "@${repostedUser.username}"
-                Log.d(tag, "📍 Reposted by: $feedOwnerUsername (Account/Owner: $feedOwnerId, Username: @${repostedUser.username})")
+                Log.d(tag, "Reposted by: $feedOwnerUsername (Account/Owner: $feedOwnerId, Username: @${repostedUser.username})")
 
             } else if (data.originalPost != null && data.originalPost.isNotEmpty()) {
                 // Use author.owner (the account ID)
@@ -5753,180 +6679,12 @@ class SearchUserNameAdapter(
             }
         }
 
-        private fun navigateToOriginalPostWithRepostInside(originalPostData: com.uyscuti.social.network.api.response.posts.Post) {
-            try {
-                val fragment = Fragment_Original_Post_With_Repost_Inside.newInstance(originalPostData)
-                navigateToFragment(fragment, "repost_with_context")
-            } catch (e: Exception) {
-                Log.e(tag, "Error navigating to repost fragment: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-
-        private fun navigateToOriginalPostWithoutRepostInside(originalPostData: com.uyscuti.social.network.api.response.posts.Post) {
-
-            try {
-
-                val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
-                    arguments = Bundle().apply {
-
-                        putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(originalPostData))
-
-
-                        putSerializable(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, originalPostData)
-
-
-                        putString("post_data", Gson().toJson(originalPostData))
-                    }
-                }
-                navigateToFragment(fragment, "original_post_without_repost")
-            } catch (e: Exception) {
-                Log.e(tag, "Error navigating to original post fragment: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-
-        private fun navigateToTappedFilesInTheContainerView(
-            files: List<Any>,
-            mediaType: String,
-            selectedPosition: Int
-        ) {
-            try {
-                val fragment = Tapped_Files_In_The_Container_View_Fragment().apply {
-                    arguments = Bundle().apply {
-                        putString("files_data", Gson().toJson(files))
-                        putString("media_type", mediaType)
-                        putInt("selected_position", selectedPosition)
-                        putInt("total_files", files.size)
-                        val fileUrls = when {
-                            files.first() is com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File -> {
-                                (files as List<com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File>).map { it.url }
-                            }
-                            files.first() is com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File -> {
-                                (files as List<com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File>).map { it.url }
-                            }
-                            else -> files.map { it.toString() }
-                        }
-                        putStringArray("file_urls", fileUrls.toTypedArray())
-                        currentPost?.let { post ->
-                            putString("post_id", post._id)
-                            putString("post_data", Gson().toJson(post))
-                            putString("post_author_id", post.repostedUser?._id)
-                            putString("post_author_username", post.repostedUser?.username)
-                        }
-                        if (mediaType.contains("original") || mediaType.contains("quoted")) {
-                            currentPost?.originalPost?.firstOrNull()?.let { originalPost ->
-                                putString("original_post_id", originalPost._id)
-                                putString("original_post_data", Gson().toJson(originalPost))
-                                originalPost.author?.let { author ->
-                                    putString("original_author_id", author._id)
-                                    putString("original_author_username", author.account.username)
-                                }
-                            }
-                        }
-                        putInt("adapter_position", absoluteAdapterPosition)
-                        putString("navigation_source", "feed_reposted_post")
-                        putString("media_source", mediaType)
-                        putLong("navigation_timestamp", System.currentTimeMillis())
-                        putBoolean("can_download", true)
-                        putBoolean("can_share", true)
-                        putBoolean("show_engagement_data", true)
-                    }
-                }
-                navigateToFragment(fragment, "files_container_view")
-            } catch (e: Exception) {
-                Log.e(tag, "Error navigating to files container fragment: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-
-        private fun navigateToEditPostToRepost(data: com.uyscuti.social.network.api.response.posts.Post) {
-            try {
-                val fragment = Fragment_Edit_Post_To_Repost(data).apply {
-                    arguments = Bundle().apply {
-                        putString("post_data", Gson().toJson(data))
-                        putString("post_id", data._id)
-                        data.originalPost.firstOrNull()?.let { originalPost ->
-                            putString("original_post_data", Gson().toJson(originalPost))
-                            putString("original_post_id", originalPost._id)
-                            putString("original_content", originalPost.content)
-                            putString("original_content_type", originalPost.contentType)
-                            putString("original_created_at", originalPost.createdAt)
-                            putString("original_author_id", originalPost.author._id)
-                            putString("original_author_username", originalPost.author.account.username)
-                            putString(
-                                "original_author_display_name",
-                                listOfNotNull(
-                                    originalPost.author.firstName.takeIf { it.isNotBlank() },
-                                    originalPost.author.lastName.takeIf { it.isNotBlank() }
-                                ).joinToString(" ").trim().takeIf { it.isNotEmpty() }
-                                    ?: originalPost.author.account.username
-                            )
-                            putString("original_author_avatar", originalPost.author.account.avatar.url)
-                            if (originalPost.files.isNotEmpty()) {
-                                putString("original_files_data", Gson().toJson(originalPost.files))
-                                putInt("original_files_count", originalPost.files.size)
-                            }
-                        }
-                        val currentUser = LocalStorage.getInstance(itemView.context).getUser() as? com.uyscuti.sharedmodule.model.business.User
-                        currentUser?.let { user ->
-                            putString("current_user_id", user._id)
-                            putString("current_user_username", user.account?.username)
-                            putString(
-                                "current_user_avatar",
-                                when {
-                                    user.avatar is Avatar -> user.avatar.url
-                                    user.avatar is String -> user.avatar
-                                    else -> null
-                                }.toString()
-                            )
-                        }
-                        putString("repost_type", "quote_repost")
-                        putString("existing_comment", data.content)
-                        putBoolean("is_editing_existing_repost", data.isReposted)
-                        putInt("adapter_position", absoluteAdapterPosition)
-                        putString("navigation_source", "repost_button_click")
-                        putLong("navigation_timestamp", System.currentTimeMillis())
-                    }
-                }
-                navigateToFragment(fragment, "edit_post_to_repost")
-            } catch (e: Exception) {
-                Log.e(tag, "Error navigating to edit post fragment: ${e.message}")
-                e.printStackTrace()
-            }
-        }
 
         private fun getActivityFromContext(context: Context?): AppCompatActivity? {
             return when (context) {
                 is AppCompatActivity -> context
                 is ContextWrapper -> getActivityFromContext(context.baseContext)
                 else -> null
-            }
-        }
-
-        private fun navigateToFragment(fragment: Fragment, backStackName: String) {
-            val activity = getActivityFromContext(itemView.context)
-            if (activity != null) {
-                val currentFragment = activity.supportFragmentManager.fragments.lastOrNull {
-                    it.isVisible && it.view != null
-                }
-                val fragmentManager = if (currentFragment != null &&
-                    currentFragment.childFragmentManager.fragments.isNotEmpty()) {
-                    currentFragment.childFragmentManager
-                } else {
-                    activity.supportFragmentManager
-                }
-                fragmentManager.beginTransaction()
-                    .setCustomAnimations(
-                        com.uyscuti.sharedmodule.R.anim.slide_in_right,
-                        com.uyscuti.sharedmodule.R.anim.slide_out_left
-                    )
-                    .replace(com.uyscuti.sharedmodule.R.id.content, fragment)
-                    .addToBackStack(backStackName)
-                    .commit()
-                Log.d(tag, "Successfully navigated to $backStackName")
-            } else {
-                Log.e(tag, "Could not find AppCompatActivity from context")
             }
         }
 
@@ -6370,363 +7128,6 @@ class SearchUserNameAdapter(
 
     }
 
-
-    // LoadingViewHolder
-    private class LoadingViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val shimmer1: View? = itemView.findViewById(R.id.shimmer_view)
-        private val shimmer2: View? = itemView.findViewById(R.id.shimmer_view2)
-
-        fun showLoading() {
-            shimmer1?.visibility = View.VISIBLE
-            shimmer2?.visibility = View.VISIBLE
-        }
-    }
-
-    private class PeopleViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
-
-        private val avatar: ImageView = itemView.findViewById(R.id.avatar)
-        private val fullNameText: TextView = itemView.findViewById(R.id.full_name)
-        private val usernameText: TextView = itemView.findViewById(R.id.name)
-
-        fun bind(author: Author, listener: (Author) -> Unit, isRecentUser: Boolean = false) {
-            Glide.with(itemView.context)
-                .load(author.account.avatar.url)
-                .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                .placeholder(R.drawable.flash21)
-                .error(R.drawable.flash21)
-                .into(avatar)
-
-            // Build full name from first and last name
-            val fullName = buildString {
-                if (author.firstName.isNotEmpty()) append(author.firstName)
-                if (author.lastName.isNotEmpty()) {
-                    if (isNotEmpty()) append(" ")
-                    append(author.lastName)
-                }
-            }.trim()
-
-            // Display logic
-            if (fullName.isNotEmpty()) {
-                // Show full name and username
-                fullNameText.text = fullName
-                usernameText.text = "@${author.account.username}"
-                usernameText.visibility = View.VISIBLE
-            } else {
-                // If no full name (profile not loaded yet), show username only
-                fullNameText.text = "@${author.account.username}"
-                usernameText.visibility = View.GONE
-            }
-
-            itemView.setOnClickListener { listener(author) }
-            itemView.setOnLongClickListener { true }
-        }
-    }
-
-    // ShortsGridViewHolder for grid display
-    private class ShortsGridViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
-
-        private val videoThumbnail: ImageView = itemView.findViewById(R.id.videoThumbnail)
-        private val playIcon: ImageView = itemView.findViewById(R.id.playIcon)
-        private val viewsCount: TextView = itemView.findViewById(R.id.viewsCount)
-        private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
-        private val durationBadge: TextView = itemView.findViewById(R.id.durationBadge)
-        private val authorAvatar: ImageView = itemView.findViewById(R.id.authorAvatar)
-        private val authorName: TextView = itemView.findViewById(R.id.authorName)
-        private val timePosted: TextView = itemView.findViewById(R.id.timePosted)
-
-        fun bind(post: Post, listener: (Post) -> Unit) {
-            // Load video thumbnail with rounded corners
-            val thumbnailUrl = post.thumbnail?.firstOrNull()?.thumbnailUrl ?: post.files?.firstOrNull()?.url
-
-            Glide.with(itemView.context)
-                .load(thumbnailUrl)
-                .centerCrop()
-                .placeholder(R.drawable.flash21)
-                .error(R.drawable.flash21)
-                .into(videoThumbnail)
-
-            // Load author avatar - perfectly circular
-            Glide.with(itemView.context)
-                .load(post.author.account.avatar.url)
-                .circleCrop()
-                .placeholder(R.drawable.flash21)
-                .error(R.drawable.flash21)
-                .into(authorAvatar)
-
-            // Set author name
-            val fullName = buildString {
-                if (post.author.firstName.isNotEmpty()) append(post.author.firstName)
-                if (post.author.lastName.isNotEmpty()) {
-                    if (isNotEmpty()) append(" ")
-                    append(post.author.lastName)
-                }
-            }.trim()
-
-            authorName.text = if (fullName.isNotEmpty()) fullName else "@${post.author.account.username}"
-
-            // Format views count (using comments as proxy for views)
-            viewsCount.text = formatCount(post.comments)
-
-            // Format likes count
-            likesCount.text = formatCount(post.likes)
-
-            // Calculate and display time posted
-            timePosted.text = getTimeAgo(post.createdAt)
-
-            // Load actual video duration from the video file
-            loadVideoDuration(post)
-
-            // Click listener
-            itemView.setOnClickListener { listener(post) }
-        }
-
-        private fun loadVideoDuration(post: Post) {
-            val videoFile = post.files?.firstOrNull {
-                it.url.endsWith(".mp4", ignoreCase = true)
-            }
-
-            if (videoFile != null) {
-                try {
-                    val retriever = MediaMetadataRetriever()
-                    retriever.setDataSource(videoFile.url, HashMap<String, String>())
-
-                    val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                    val durationMs = durationStr?.toLongOrNull() ?: 0L
-                    val durationSeconds = (durationMs / 1000).toInt()
-
-                    retriever.release()
-
-                    if (durationSeconds > 0) {
-                        durationBadge.text = formatDuration(durationSeconds)
-                        durationBadge.visibility = View.VISIBLE
-                    } else {
-                        durationBadge.visibility = View.GONE
-                    }
-                } catch (e: Exception) {
-                    Log.e("ShortsGrid", "Error loading video duration: ${e.message}")
-                    durationBadge.visibility = View.GONE
-                }
-            } else {
-                durationBadge.visibility = View.GONE
-            }
-        }
-
-        private fun formatCount(count: Int): String {
-            return when {
-                count >= 1_000_000 -> {
-                    val millions = count / 1_000_000.0
-                    String.format("%.1fM", millions).replace(".0M", "M")
-                }
-                count >= 1_000 -> {
-                    val thousands = count / 1_000.0
-                    String.format("%.1fK", thousands).replace(".0K", "K")
-                }
-                else -> count.toString()
-            }
-        }
-
-        private fun formatDuration(seconds: Int): String {
-            val hours = seconds / 3600
-            val minutes = (seconds % 3600) / 60
-            val secs = seconds % 60
-
-            return when {
-                hours > 0 -> String.format("%d:%02d:%02d", hours, minutes, secs)
-                minutes > 0 -> String.format("%d:%02d", minutes, secs)
-                else -> String.format("0:%02d", secs)
-            }
-        }
-
-        private fun getTimeAgo(createdAt: String): String {
-            return try {
-                val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-                sdf.timeZone = TimeZone.getTimeZone("UTC")
-                val date = sdf.parse(createdAt) ?: return ""
-
-                val now = System.currentTimeMillis()
-                val diff = now - date.time
-
-                val seconds = diff / 1000
-                val minutes = seconds / 60
-                val hours = minutes / 60
-                val days = hours / 24
-                val weeks = days / 7
-                val months = days / 30
-                val years = days / 365
-
-                when {
-                    years > 0 -> "${years}y"
-                    months > 0 -> "${months}mo"
-                    weeks > 0 -> "${weeks}w"
-                    days > 0 -> "${days}d"
-                    hours > 0 -> "${hours}h"
-                    minutes > 0 -> "${minutes}m"
-                    else -> "${seconds}s"
-                }
-            } catch (e: Exception) {
-                ""
-            }
-        }
-    }
-
-    inner class BusinessGridViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
-
-        private val businessImage: ImageView = itemView.findViewById(R.id.businessItemImage)
-        private val businessPrice: TextView = itemView.findViewById(R.id.businessItemPrice)
-        private val businessName: TextView = itemView.findViewById(R.id.businessItemName)
-        private val businessLocation: TextView = itemView.findViewById(R.id.businessItemLocation)
-        private val justListedBadge: TextView = itemView.findViewById(R.id.justListedBadge)
-
-        fun bind(post: Post, listener: (Post) -> Unit) {
-            // Load image
-            val firstImage = post.files?.firstOrNull()?.url
-            Glide.with(itemView.context)
-                .load(firstImage)
-                .centerCrop()
-                .placeholder(R.drawable.flash21)
-                .error(R.drawable.flash21)
-                .into(businessImage)
-
-            // Price
-            businessPrice.text = extractPrice(post)
-
-            // Name - use businessDetails if available
-            businessName.text = post.businessDetails?.itemName ?: post.content?.trim()?.take(60) ?: "Business Item"
-
-            // Location - from author's account
-            businessLocation.text = if (post.author.location.isNotBlank()) {
-                post.author.location
-            } else {
-                "Lilongwe, Malawi"
-            }
-
-            // Just listed badge
-            justListedBadge.visibility = if (isRecentlyListed(post.createdAt)) View.VISIBLE else View.GONE
-
-            // Click listener to open CatalogueDetailsActivity
-            itemView.setOnClickListener {
-                openCatalogueDetails(post)
-                listener(post)
-            }
-        }
-
-        @OptIn(UnstableApi::class)
-        private fun openCatalogueDetails(post: Post) {
-            val context = itemView.context
-
-            // Convert the Post to the businessposts.Post format for CatalogueDetailsActivity
-            val cataloguePost = com.uyscuti.social.network.api.response.business.response.post.Post(
-                _id = post._id,
-                __v = post.__v,
-
-                // Business details
-                itemName = post.businessDetails?.itemName ?: post.content?.trim()?.take(60) ?: "Business Item",
-                price = post.businessDetails?.price ?: extractPriceNumeric(post).toString(),
-                description = post.businessDetails?.description ?: post.content ?: "",
-                catalogue = post.businessDetails?.catalogue ?: "",
-                features = post.businessDetails?.features ?: emptyList(),
-
-                // Images
-                images = post.files?.mapNotNull { it.url } ?: emptyList(),
-
-                // Timestamps
-                createdAt = post.createdAt,
-                updatedAt = post.updatedAt,
-
-                // User details
-                userDetails = com.uyscuti.social.network.api.response.business.response.post.UserDetails(
-                    username = post.author.account.username,
-                    avatar = post.author.account.avatar.url,
-                    createdAt = post.author.createdAt,
-                    updatedAt = post.author.updatedAt
-                ),
-                owner = post.author._id,
-
-                // Interaction states
-                isLiked = post.isLiked,
-                isBookmarked = post.isBookmarked,
-                isFollowing = post.isFollowing,
-
-                // Metrics
-                likes = post.likes,
-                comments = post.comments,
-                bookmarkCount = post.bookmarkCount
-            )
-
-            val intent = Intent(context, CatalogueDetailsActivity::class.java).apply {
-                putExtra("catalogue", cataloguePost)
-                putExtra("position", 0)
-            }
-            context.startActivity(intent)
-        }
-
-        private fun extractPriceNumeric(post: Post): Double {
-            // First check businessDetails
-            post.businessDetails?.price?.let {
-                return it.toDoubleOrNull() ?: 0.0
-            }
-
-            // Otherwise parse from content
-            val content = post.content ?: return 0.0
-            val patterns = listOf(
-                """MWK\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
-                """K\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
-                """\$\s*(\d{1,3}(?:,\d{3})*)""".toRegex()
-            )
-
-            for (pattern in patterns) {
-                pattern.find(content)?.groupValues?.get(1)?.let {
-                    return it.replace(",", "").toDoubleOrNull() ?: 0.0
-                }
-            }
-
-            return 0.0
-        }
-
-        private fun extractPrice(post: Post): String {
-            // First check businessDetails
-            post.businessDetails?.price?.let {
-                return formatPrice(it)
-            }
-
-            // Otherwise parse from content
-            val content = post.content ?: return "Contact for price"
-            val patterns = listOf(
-                """MWK\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
-                """K\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
-                """\$\s*(\d{1,3}(?:,\d{3})*)""".toRegex()
-            )
-
-            for (pattern in patterns) {
-                pattern.find(content)?.groupValues?.get(1)?.let {
-                    return formatPrice(it.replace(",", ""))
-                }
-            }
-
-            return "Contact for price"
-        }
-
-        private fun formatPrice(price: String): String {
-            val numericPrice = price.toDoubleOrNull() ?: return "MWK$price"
-            return when {
-                numericPrice >= 1_000_000 -> "MWK${String.format("%.1fM", numericPrice / 1_000_000).replace(".0M", "M")}"
-                numericPrice >= 1_000 -> "MWK${String.format("%,.0f", numericPrice)}"
-                else -> "MWK${numericPrice.toInt()}"
-            }
-        }
-
-        private fun isRecentlyListed(createdAt: String): Boolean {
-            return try {
-                val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-                sdf.timeZone = TimeZone.getTimeZone("UTC")
-                val date = sdf.parse(createdAt) ?: return false
-                System.currentTimeMillis() - date.time < 24 * 60 * 60 * 1000
-            } catch (e: Exception) {
-                false
-            }
-        }
-    }
-
     inner class FeedNewPostWithRepostInsideFilesPostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         val TAG = "FeedRepostedWithNewFilesPostViewHolder"
@@ -6864,16 +7265,16 @@ class SearchUserNameAdapter(
                             cachedFollowingList.contains(feedReposterOwnerId) ||
                             cachedFollowingUsernames.contains(feedReposterUsername)
 
-                    Log.d(TAG, "═══════════════════════════════════════")
+
                     Log.d(TAG, "REPOST FOLLOW CHECK - Post ID: ${data._id}")
-                    Log.d(TAG, ">>> Account ID (for follow check): $feedReposterOwnerId")
-                    Log.d(TAG, ">>> Username (for follow check): @$feedReposterUsername")
-                    Log.d(TAG, ">>> Is following this account: $isFollowingUser")
-                    Log.d(TAG, ">>> Match in followingUserIds: ${followingUserIds.contains(feedReposterOwnerId)}")
-                    Log.d(TAG, ">>> Match in cachedList: ${cachedFollowingList.contains(feedReposterOwnerId)}")
-                    Log.d(TAG, ">>> Match by username: ${cachedFollowingUsernames.contains(feedReposterUsername)}")
+                    Log.d(TAG, "Account ID (for follow check): $feedReposterOwnerId")
+                    Log.d(TAG, "Username (for follow check): @$feedReposterUsername")
+                    Log.d(TAG, "Is following this account: $isFollowingUser")
+                    Log.d(TAG, "Match in followingUserIds: ${followingUserIds.contains(feedReposterOwnerId)}")
+                    Log.d(TAG, "Match in cachedList: ${cachedFollowingList.contains(feedReposterOwnerId)}")
+                    Log.d(TAG, "Match by username: ${cachedFollowingUsernames.contains(feedReposterUsername)}")
                     Log.d(TAG, "Following list (${followingUserIds.size} users): ${followingUserIds.joinToString(", ")}")
-                    Log.d(TAG, "═══════════════════════════════════════")
+
 
                     totalMixedComments = data.comments
                     totalMixedLikesCounts = data.likes
@@ -8035,7 +8436,7 @@ class SearchUserNameAdapter(
                     cachedFollowingList.contains(accountId) ||
                     cachedFollowingUsernames.contains(username)
 
-            Log.d(TAG, "───────────────────────────────────────")
+
             Log.d(TAG, "SETUP FOLLOW BUTTON")
             Log.d(TAG, "Account ID to check: $accountId")
             Log.d(TAG, "Username to check: @$username")
@@ -8051,7 +8452,7 @@ class SearchUserNameAdapter(
 
             if (shouldHideButton) {
                 followButton.visibility = View.GONE
-                Log.d(TAG, "✓✓✓ HIDING follow button - Reason: ${when {
+                Log.d(TAG, " HIDING follow button - Reason: ${when {
                     accountId == currentUserId -> "Own post"
                     cachedFollowingUsernames.contains(username) -> "Already following (by username: @$username)"
                     followingUserIds.contains(accountId) -> "Already following (by ID from followingUserIds)"
@@ -8060,7 +8461,7 @@ class SearchUserNameAdapter(
                     isUserFollowing -> "Already following (local check)"
                     else -> "Unknown"
                 }}")
-                Log.d(TAG, "───────────────────────────────────────")
+
                 return
             }
 
@@ -8072,10 +8473,10 @@ class SearchUserNameAdapter(
                 com.uyscuti.sharedmodule.R.color.blueJeans
             )
 
-            Log.d(TAG, "✓✓✓ SHOWING follow button for account: $accountId (@$username)")
-            Log.d(TAG, "───────────────────────────────────────")
+            Log.d(TAG, " SHOWING follow button for account: $accountId (@$username)")
 
-            // ✅ CRITICAL: Pass the ACCOUNT ID (not author ID) to handleFollowButtonClick
+
+            //  Pass the ACCOUNT ID (not author ID) to handleFollowButtonClick
             followButton.setOnClickListener {
                 handleFollowButtonClick(accountId, username)  // Pass both ID and username
             }
@@ -8085,12 +8486,12 @@ class SearchUserNameAdapter(
         private fun handleFollowButtonClick(accountId: String, username: String) {
             YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
 
-            Log.d(TAG, "═══════════════════════════════════════")
+
             Log.d(TAG, "FOLLOW BUTTON CLICKED")
             Log.d(TAG, "Account ID to follow: $accountId")
             Log.d(TAG, "Username to follow: @$username")
             Log.d(TAG, "This ID will be added to following list")
-            Log.d(TAG, "═══════════════════════════════════════")
+
 
             isFollowed = !isFollowed
             val followEntity = FollowUnFollowEntity(accountId, isFollowed)
@@ -8103,7 +8504,7 @@ class SearchUserNameAdapter(
                 (bindingAdapter as? FeedAdapter)?.addToFollowing(accountId, username)
                 FollowingManager(itemView.context).addToFollowing(accountId)
 
-                Log.d(TAG, "✓ Added account $accountId (@$username) to following list")
+                Log.d(TAG, "Added account $accountId (@$username) to following list")
             } else {
                 // Show button
                 followButton.text = "Follow"
@@ -8113,7 +8514,7 @@ class SearchUserNameAdapter(
                 (bindingAdapter as? FeedAdapter)?.removeFromFollowing(accountId, username)
                 FollowingManager(itemView.context).removeFromFollowing(accountId)
 
-                Log.d(TAG, "✓ Removed account $accountId (@$username) from following list")
+                Log.d(TAG, "Removed account $accountId (@$username) from following list")
             }
 
             // Notify listener
@@ -8332,379 +8733,7 @@ class SearchUserNameAdapter(
 
     }
 
-    private class ChatViewHolder(private val itemView: View, private val localStorage: LocalStorage) : RecyclerView.ViewHolder(itemView) {
-
-        private val chatAvatar: ImageView = itemView.findViewById(R.id.chatAvatar)
-        private val fullNameText: TextView = itemView.findViewById(R.id.fullName)
-        private val usernameText: TextView = itemView.findViewById(R.id.userName)
-
-        // Original bind method for chat items
-        fun bind(dialogEntity: DialogEntity, onChatClicked: (DialogEntity) -> Unit) {
-
-            val myUserId = localStorage.getUserId()
-            val otherUser = dialogEntity.users.firstOrNull { it.id != myUserId }
-
-            if (otherUser != null) {
-                val parts = otherUser.name.split("|")
-                val fullName = parts.getOrNull(0)?.trim().orEmpty()
-                val username = parts.getOrNull(1)?.trim() ?: fullName
-
-                fullNameText.text = fullName.ifEmpty { username }
-                usernameText.text = "@$username"
-
-                Glide.with(itemView.context)
-                    .load(otherUser.avatar)
-                    .circleCrop()
-                    .placeholder(R.drawable.flash21)
-                    .error(R.drawable.flash21)
-                    .into(chatAvatar)
-            }
-
-            itemView.setOnClickListener {
-                MessagesActivity.open(
-                    context = itemView.context,
-                    dialogName = dialogEntity.dialogName,
-                    dialog = dialogEntity.toDialog(localStorage),
-                    temporally = false,
-                    productReference = ""
-                )
-            }
-        }
-
-        // NEW: Bind method for showing the searched contact at the top
-        fun bindContact(userEntity: UserEntity, onContactClicked: (UserEntity) -> Unit) {
-            val parts = userEntity.name.split("|")
-            val fullName = parts.getOrNull(0)?.trim().orEmpty()
-            val username = parts.getOrNull(1)?.trim() ?: fullName
-
-            fullNameText.text = fullName.ifEmpty { username }
-            usernameText.text = "@$username"
-
-            Glide.with(itemView.context)
-                .load(userEntity.avatar)
-                .circleCrop()
-                .placeholder(R.drawable.flash21)
-                .error(R.drawable.flash21)
-                .into(chatAvatar)
-
-            itemView.setOnClickListener {
-                onContactClicked(userEntity)
-            }
-        }
-
-        // NEW: Bind method for section headers (Messages, Groups, etc.)
-        fun bindSectionHeader(sectionTitle: String) {
-            // Use the same layout but style it as a header
-            chatAvatar.visibility = View.GONE
-            fullNameText.text = sectionTitle
-            fullNameText.textSize = 14f
-            fullNameText.setTextColor(itemView.context.getColor(android.R.color.darker_gray))
-            usernameText.visibility = View.GONE
-            itemView.setBackgroundColor(itemView.context.getColor(android.R.color.transparent))
-            itemView.isClickable = false
-            itemView.setPadding(16, 20, 16, 8)
-        }
-
-        // NEW: Bind method for chat/group where the person appears
-        fun bindChatWithPerson(dialogEntity: DialogEntity, searchedPersonName: String) {
-            val myUserId = localStorage.getUserId()
-
-            // Show the chat/group name
-            fullNameText.text = dialogEntity.dialogName
-
-            // Show last message or indication that person is in this chat
-            val lastMsg = dialogEntity.lastMessage?.text ?: "Chat with $searchedPersonName"
-            usernameText.text = lastMsg
-
-            // Load chat/group avatar
-            Glide.with(itemView.context)
-                .load(dialogEntity.dialogPhoto)
-                .circleCrop()
-                .placeholder(R.drawable.flash21)
-                .error(R.drawable.flash21)
-                .into(chatAvatar)
-
-            itemView.setOnClickListener {
-                MessagesActivity.open(
-                    context = itemView.context,
-                    dialogName = dialogEntity.dialogName,
-                    dialog = dialogEntity.toDialog(localStorage),
-                    temporally = false,
-                    productReference = ""
-                )
-            }
-        }
-
-        private fun DialogEntity.toDialog(
-            localStorage: LocalStorage
-        ): Dialog {
-
-            val myUserId = localStorage.getUserId()
-            val otherUser = users.firstOrNull { it.id != myUserId }
-
-            val usersList = ArrayList<com.uyscuti.sharedmodule.data.model.User>()
-            otherUser?.let { usersList.add(it.toUser()) }
-
-            val message = lastMessage?.toMessage()
-            val dialogName = usersList.firstOrNull()?.name ?: this.dialogName
-
-            return Dialog(
-                this.id,
-                dialogName,
-                this.dialogPhoto,
-                usersList,
-                message,
-                this.unreadCount
-            )
-        }
-
-        private fun UserEntity.toUser(): com.uyscuti.sharedmodule.data.model.User {
-            val username = if (name.contains("|")) name.split("|")[1].trim() else name
-            return com.uyscuti.sharedmodule.data.model.User(
-                id,
-                username,
-                avatar,
-                online,
-                lastSeen
-            )
-        }
-
-        private fun MessageEntity.toMessage(): Message {
-            val username = if (user.name.contains("|")) user.name.split("|")[1].trim() else user.name
-            val msgUser = com.uyscuti.sharedmodule.data.model.User(
-                user.id,
-                username,
-                user.avatar,
-                user.online,
-                user.lastSeen
-            )
-            return Message(
-                id,
-                msgUser,
-                text,
-                Date(createdAt)
-            )
-        }
-    }
-
-    inner class BusinessViewHolder(itemView: View, private val viewModel: BusinessPostsViewModel) : RecyclerView.ViewHolder(itemView) {
-
-        private val binding = BusinessPostLayoutBinding.bind(itemView)
-
-        @OptIn(UnstableApi::class)
-        fun bind(post: Post) {
-            val author = post.author
-            val account = author.account
-
-            // Load avatar
-            Glide.with(itemView.context)
-                .load(account.avatar.url)
-                .circleCrop()
-                .placeholder(R.drawable.ic_person)
-                .error(R.drawable.ic_person)
-                .into(binding.ivUserAvatar)
-
-            // Full name
-            val fullName = "${author.firstName} ${author.lastName}".trim()
-            binding.tvUsername.text = fullName.ifEmpty { "@${account.username}" }
-
-            // Username handle below full name
-            if (binding.root.findViewById<TextView>(R.id.tv_user_handle) == null) {
-                // Dynamically add if not in XML
-                val tvHandle = TextView(itemView.context).apply {
-                    id = R.id.tv_user_handle
-                    text = "@${account.username}"
-                    setTextColor(ContextCompat.getColor(itemView.context, R.color.gray_second))
-                    textSize = 12f
-                }
-                (binding.tvUsername.parent as LinearLayout).addView(tvHandle, 1)
-            } else {
-                binding.root.findViewById<TextView>(R.id.tv_user_handle).text = "@${account.username}"
-            }
-
-            // Post time
-            binding.tvPostTime.text = getTimeAgo(post.createdAt)
-
-            // Catalogue info
-            binding.tvItemTitle.text = post.businessDetails?.itemName ?: post.content.take(50)
-            binding.tvDescription.text = post.businessDetails?.description ?: post.content
-            binding.tvItemPrice.text = "MWK ${post.businessDetails?.price ?: "0"}"
-
-            // Media section
-            val images = post.businessDetails?.images ?: post.files.mapNotNull { it.url }
-            binding.businessRecycler.layoutManager =
-                if (images.size <= 2) GridLayoutManager(itemView.context, images.size)
-                else StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
-
-            binding.businessRecycler.adapter = BusinessMediaAdapter(images, itemView.context) { position ->
-                // Media click handler - open CatalogueDetailsActivity at specific image position
-                openCatalogueDetails(post, position)
-            }
-
-            binding.tvMediaCounter.visibility = if (images.size > 4) View.VISIBLE else View.GONE
-
-            // ------------------ BUTTON CLICKS ------------------
-
-            // Follow
-            binding.btnFollow.setOnClickListener {
-                CoroutineScope(Dispatchers.Main).launch {
-                    viewModel.followUnfollowBusinessPostOwner(author._id)
-                }
-            }
-
-            // Like
-            binding.llLike.setOnClickListener {
-                CoroutineScope(Dispatchers.Main).launch {
-                    viewModel.likeUnlikeBusinessPost(post._id)
-                }
-            }
-
-            // Comment
-            binding.llComment.setOnClickListener {
-                // Open comment UI / activity
-            }
-
-            // Bookmark
-            binding.llBookmark.setOnClickListener {
-                viewModel.bookmarkUnBookmarkBusinessPost(post._id)
-            }
-
-            // Repost / Offer
-            binding.sendOffer.setOnClickListener {
-                // Handle send offer logic
-            }
-
-            // Share
-            binding.llRepost.setOnClickListener {
-                // Handle share intent
-            }
-
-            // Whole item click
-            itemView.setOnClickListener {
-                openCatalogueDetails(post, 0)
-            }
-        }
-
-        @OptIn(UnstableApi::class)
-        private fun openCatalogueDetails(post: Post, position: Int = 0) {
-            val context = itemView.context
-
-            // Convert the Post to the businessposts.Post format for CatalogueDetailsActivity
-            val cataloguePost = com.uyscuti.social.network.api.response.business.response.post.Post(
-                _id = post._id,
-                __v = post.__v,
-
-                // Business details
-                itemName = post.businessDetails?.itemName ?: post.content?.trim()?.take(60) ?: "Business Item",
-                price = post.businessDetails?.price ?: extractPriceNumeric(post).toString(),
-                description = post.businessDetails?.description ?: post.content ?: "",
-                catalogue = post.businessDetails?.catalogue ?: "",
-                features = post.businessDetails?.features ?: emptyList(),
-
-                // Images
-                images = post.files?.mapNotNull { it.url } ?: emptyList(),
-
-                // Timestamps
-                createdAt = post.createdAt,
-                updatedAt = post.updatedAt,
-
-                // User details
-                userDetails = com.uyscuti.social.network.api.response.business.response.post.UserDetails(
-                    username = post.author.account.username,
-                    avatar = post.author.account.avatar.url,
-                    createdAt = post.author.createdAt,
-                    updatedAt = post.author.updatedAt
-                ),
-                owner = post.author._id,
-
-                // Interaction states
-                isLiked = post.isLiked,
-                isBookmarked = post.isBookmarked,
-                isFollowing = post.isFollowing,
-
-                // Metrics
-                likes = post.likes,
-                comments = post.comments,
-                bookmarkCount = post.bookmarkCount
-            )
-
-            val intent = Intent(context, CatalogueDetailsActivity::class.java).apply {
-                putExtra("catalogue", cataloguePost)
-                putExtra("position", position)
-            }
-            context.startActivity(intent)
-        }
-
-        private fun extractPriceNumeric(post: Post): Double {
-            // First check businessDetails
-            post.businessDetails?.price?.let {
-                return it.toDoubleOrNull() ?: 0.0
-            }
-
-            // Otherwise parse from content
-            val content = post.content ?: return 0.0
-            val patterns = listOf(
-                """MWK\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
-                """K\s*(\d{1,3}(?:,\d{3})*)""".toRegex(),
-                """\$\s*(\d{1,3}(?:,\d{3})*)""".toRegex()
-            )
-
-            for (pattern in patterns) {
-                pattern.find(content)?.groupValues?.get(1)?.let {
-                    return it.replace(",", "").toDoubleOrNull() ?: 0.0
-                }
-            }
-
-            return 0.0
-        }
-
-        private fun getTimeAgo(createdAt: String): String {
-            // Implement your time formatting here
-            return ""
-        }
-    }
-
-    inner class BusinessMediaAdapter(private val mediaUrls: List<String>, private val context: Context, private val onMediaClick: (position: Int) -> Unit) : RecyclerView.Adapter<BusinessMediaAdapter.MediaViewHolder>() {
-
-        inner class MediaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val imageView: ImageView = view.findViewById(R.id.mediaImageView)
-
-            init {
-                view.setOnClickListener {
-                    val pos = bindingAdapterPosition
-                    if (pos != RecyclerView.NO_POSITION) {
-                        onMediaClick(pos)
-                    }
-                }
-            }
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder {
-            val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_business_media_simple, parent, false)
-            return MediaViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
-            Glide.with(context)
-                .load(mediaUrls[position])
-                .centerCrop()
-                .placeholder(R.drawable.flash21)
-                .error(R.drawable.flash21)
-                .into(holder.imageView)
-        }
-
-        override fun getItemCount(): Int = mediaUrls.size
-    }
-
-    inner class NoBusinessViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val messageText: TextView = itemView.findViewById(R.id.no_business_message)
-
-        @SuppressLint("SetTextI18n")
-        fun bind(username: String) {
-            messageText.text = "@$username does not have a Business Profile"
-        }
-    }
+    
 }
 
 
