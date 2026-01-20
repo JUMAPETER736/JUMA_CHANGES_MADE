@@ -344,54 +344,6 @@ class OtherUserProfileAccount : AppCompatActivity() {
     }
 
 
-    fun openPostDetail(post: Post, position: Int) {
-        try {
-            Log.d("OtherUserProfileAccount", "Opening post detail for: ${post._id}")
-
-            val firstName = post.author?.firstName ?: ""
-            val lastName = post.author?.lastName ?: ""
-            val displayName = when {
-                firstName.isNotBlank() && lastName.isNotBlank() -> "$firstName $lastName"
-                firstName.isNotBlank() -> firstName
-                lastName.isNotBlank() -> lastName
-                else -> post.author?.account?.username ?: "Unknown User"
-            }
-
-            val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
-                arguments = Bundle().apply {
-                    putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(post))
-                    putString("post_id", post._id)
-                    putInt("adapter_position", position)
-                    putString("navigation_source", "other_user_profile")
-                    putLong("navigation_timestamp", System.currentTimeMillis())
-
-                    putString("author_name", displayName)
-                    putString("author_username", post.author?.account?.username ?: "unknown_user")
-                    putString("author_profile_image_url", post.author?.account?.avatar?.url ?: "")
-                    putString("user_id", post.author?._id ?: "")
-                }
-            }
-
-            // Use the activity's actual container - find your container ID
-            // Option 1: If you have a fragment container in your activity layout
-            supportFragmentManager.beginTransaction()
-                .setCustomAnimations(
-                    R.anim.slide_in_right,
-                    R.anim.slide_out_left,
-                    R.anim.slide_in_left,
-                    R.anim.slide_out_right
-                )
-                .add(android.R.id.content, fragment) // Use add instead of replace
-                .addToBackStack("post_detail")
-                .commit()
-
-            Log.d("OtherUserProfileAccount", "Successfully opened post detail")
-
-        } catch (e: Exception) {
-            Log.e("OtherUserProfileAccount", "Error opening post detail: ${e.message}", e)
-            Toast.makeText(this, "Unable to open post", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     private fun extractAndProcessProfile(profileData: Any) {
         try {

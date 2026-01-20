@@ -216,7 +216,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                     R.anim.slide_in_right,
                     R.anim.slide_out_left,
                 )
-                .replace(R.id.content, fragment)
+                .replace(android.R.id.content, fragment)
                 .addToBackStack("tapped_files_view")
                 .commit()
 
@@ -2106,7 +2106,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
 
         parentFragmentManager.beginTransaction()
-            .replace(R.id.content, fragment)
+            .replace(android.R.id.content, fragment)
             .addToBackStack("video_detail")
             .commit()
     }
