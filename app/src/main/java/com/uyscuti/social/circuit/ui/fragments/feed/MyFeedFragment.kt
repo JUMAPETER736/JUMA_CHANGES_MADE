@@ -37,7 +37,7 @@ import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import javax.inject.Inject
 
-// TODO: Rename parameter arguments, choose names that match
+
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
@@ -49,7 +49,7 @@ private const val ARG_PARAM2 = "param2"
 private const val TAG = "MyFeedFragment"
 @AndroidEntryPoint
 class MyFeedFragment : Fragment(), OnFeedClickListener {
-    // TODO: Rename and change types of parameters
+
     private var param1: String? = null
     private var param2: String? = null
 
@@ -98,37 +98,37 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
         myFeedAdapter.recyclerView = myFeedAdapterRecyclerView
         myFeedAdapterRecyclerView.itemAnimator = null
         myFeedAdapterRecyclerView.layoutManager = LinearLayoutManager(requireContext())
-//        allFeedAdapter.setDefaultRecyclerView(requireActivity(), allFeedAdapterRecyclerView.id)
+
         myFeedAdapter.setOnPaginationListener(object : com.uyscuti.sharedmodule.adapter.FeedPaginatedAdapter.OnPaginationListener {
             override fun onCurrentPage(page: Int) {
-//                Toast.makeText(requireContext(), "Page $page loaded!", Toast.LENGTH_SHORT).show()
+
                 Log.d(TAG, "currentPage: page number $page")
 
             }
             override fun onNextPage(page: Int) {
                 lifecycleScope.launch(Dispatchers.Main) {
-//                    loadMoreShorts(page)
+
                     Log.d(TAG, "onNextPage: page number $page")
                     getMyFeed(page)
-//                    allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
+
                 }
             }
 
             override fun onFinish() {
                 Log.d(TAG, "finished: page number")
 
-//                Toast.makeText(requireContext(), "finish", Toast.LENGTH_SHORT).show()
+
             }
         })
 
         lifecycleScope.launch(Dispatchers.Main)
         {
-//            Log.d(TAG, "onCreateView: ${getFeedViewModel.getAllFeedData()?.get(0)?.contentType}")
+
             Log.d(TAG, "onCreateView: ${getFeedViewModel.getMyFeedData()}")
             if (getFeedViewModel.getMyFeedData().isEmpty()) {
                 Log.d(TAG, "onCreateView: get all feed data is empty")
                 getMyFeed(myFeedAdapter.startPage)
-//                getFeedReposts(myFeedAdapter.startPage)
+
             } else {
                 Log.d(TAG, "onCreateView: get all feed data is not empty")
             }
@@ -138,10 +138,10 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
                 if (isDataAvailable) {
                     // Do something when isResuming is true
                     Log.d(TAG, "onCreateView: data is available")
-//                    allFeedAdapter.item
+
                     myFeedAdapter.submitItems(getFeedViewModel.getMyFeedData())
 
-//                    getFeedViewModel.setIsDataAvailable(false)
+
 
                 } else {
                     // Do something when isResuming is false
@@ -163,7 +163,7 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
          * @param param2 Parameter 2.
          * @return A new instance of fragment MyFeedFragment.
          */
-        // TODO: Rename and change types and number of parameters
+
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
             MyFeedFragment().apply {
@@ -379,7 +379,7 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
 
 
     override fun feedRepostFileClicked(position: Int, data: com.uyscuti.social.network.api.response.posts.OriginalPost) {
-        TODO("Not yet implemented")
+
     }
 
     override fun feedShareClicked(
