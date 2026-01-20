@@ -228,8 +228,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
     private var currentAudio: String? = null
 
-//    @Inject
-//    lateinit var localStorage: LocalStorage
 
     @Inject
     lateinit var mainRepository: MainRepository
@@ -1803,14 +1801,11 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         // Check if the date is today
         if (DateUtils.isToday(lastSeen.time)) {
             // Check if the time is within the last minute (considered "online")
-//            if (now.time - lastSeen.time < DateUtils.MINUTE_IN_MILLIS) {
-//                return "Online"
-//            } else {
+
             // Format the time for today
             val dateFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
             return "Last Seen Today at ${dateFormat.format(lastSeen)}"
-//            return ""
-//            }
+
         } else if (DateUtils.isToday(lastSeen.time + DateUtils.DAY_IN_MILLIS)) {
             // Format the time for yesterday
             val dateFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
@@ -2028,15 +2023,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     }
 
     private fun initEmoji() {
-//        messageEdit = findViewById(R.id.messageEdit)
-//        sendBtn = findViewById(R.id.sendBtn)
-//        pickImgBtn = findViewById(R.id.voiceNote)
-//        recyclerView = findViewById(R.id.recyclerView)
-//        emojiButton = findViewById(R.id.emoji)
-//        rootView = findViewById(R.id.rootView)
-//        chatAvatar = findViewById(R.id.chatAvatar)
-//        videoCall = findViewById(R.id.videoCall)
-//        voiceCall = findViewById(R.id.voiceCall)
+
 
         val emojiPopup = EmojiPopup(binding.container, binding.inputEditText)
 
@@ -2050,17 +2037,17 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     binding.inputEditText,
                     InputMethodManager.SHOW_IMPLICIT
                 )
-//                emojiButton.background = ContextCompat.getDrawable(this, R.drawable.baseline_insert_emoticon_24)
+
                 binding.emoji.background =
                     getResources().getDrawable(com.uyscuti.social.chatsuit.R.drawable.baseline_insert_emoticon_24)
             } else {
                 // Open the emoji keyboard
                 inputMethodManager.hideSoftInputFromWindow(binding.inputEditText.windowToken, 0)
                 emojiPopup.toggle() // Toggles visibility of the Popup.
-//                binding.emoji.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.baseline_keyboard_24))
+
                 binding.emoji.background =
                     getResources().getDrawable(com.uyscuti.social.chatsuit.R.drawable.baseline_keyboard_24)
-//                binding.emoji.background =  ResourcesCompat.getDrawable(, R.drawable.baseline_insert_emoticon_24, null)
+
             }
         }
 
@@ -2088,9 +2075,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         message.status = "Sending"
 
-//        super.messagesAdapter.addToStart(
-//            MessagesFixtures.getTextMessage(input.toString()), true
-//        )
+
 
         val userEntity = UserEntity(
             "0",
@@ -2120,30 +2105,10 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
         CoroutineScope(Dispatchers.IO).launch {
             insertMessage(textMessage)
-//            dialogViewModel.updateLastMessageForThisChat(chatId, textMessage)
+
             updateLastMessage(isGroup, chatId, textMessage)
 
 
-//            messageViewModel.getPendingMessages(chatId)
-
-//            withContext(NonCancellable) {
-//                when (val result = remoteMessageRepository.sendMessage(chatId, input.toString())) {
-//                    is Result.Success -> {
-//                        // Message sent successfully, update the UI as needed
-//                        withContext(Dispatchers.Main) {
-//                            showToast("Message sent successfully")
-//                            super.messagesAdapter.notifyMessageSent(message)
-//                        }
-//                    }
-//
-//                    is Result.Error -> {
-//                        // Handle the error
-//                        withContext(Dispatchers.Main) {
-//                            showToast("Message sending failed: ${result.exception.message}")
-//                        }
-//                    }
-//                }
-//            }
         }
 
         super.messagesAdapter?.addToStart(message, true)
