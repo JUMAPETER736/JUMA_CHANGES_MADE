@@ -798,10 +798,10 @@ class MainActivity : AppCompatActivity(),
                     val data = result.data
                     // Process the selected image data
                     val audioPath = data?.getStringExtra("audio_url")
-//                    val aUri = data?.getStringExtra("aUri")
+
                     val uriString = data?.getStringExtra("aUri")
                     val aUri = Uri.parse(uriString)
-//                    val vUri = Uri.parse(uriString)
+
                     if (audioPath != null) {
                         Log.d("AudioPicker", "File path: $audioPath")
                         Log.d("AudioPicker", "File path: $isReply")
@@ -809,10 +809,9 @@ class MainActivity : AppCompatActivity(),
                         val fileName = getFileNameFromLocalPath(audioPath)
                         val reverseDurationString = reverseFormattedDuration(durationString)
 
-//                        Log.d("AudioPicker", "File path: $audioPath")
                         Log.d("AudioPicker", "File name: $fileName")
                         Log.d("AudioPicker", "durationString: $durationString")
-//                        Log.d("AudioPicker", "reverseDurationString: $reverseDurationString")
+
                         val file = File(audioPath)
 
 
@@ -866,7 +865,6 @@ class MainActivity : AppCompatActivity(),
                                 val isCompressionSuccessful =
                                     compressor.compress(audioPath, outputFilePath.absolutePath)
 
-//                            val compressedFile = compressAudio(audioPath, outputFilePath.absolutePath)
                                 if (isCompressionSuccessful) {
                                     Log.d("AudioPicker", "AudioPicker: Compression successful ")
 
@@ -881,7 +879,7 @@ class MainActivity : AppCompatActivity(),
 
                                     val fileSizeInGB =
                                         fileSizeInMB / 1024 // Conversion from MB to GB
-//                            Log.d("VideoPicker", "File size: $fileSizeInGB GB")
+
                                     withContext(Dispatchers.Main) {
                                         if (!isReply) {
                                             uploadVnComment(
@@ -909,7 +907,7 @@ class MainActivity : AppCompatActivity(),
                                 }
                             }
                         } else {
-//                            Log.d(TAG, "onCreate: is reply $isReply")
+
                             if (isReply) {
                                 uploadReplyVnComment(
                                     audioPath,
@@ -966,7 +964,7 @@ class MainActivity : AppCompatActivity(),
                             Log.d("VideoPicker", "File size: $fileSizeInMB MB")
 
                             val fileSizeInGB = fileSizeInMB / 1024 // Conversion from MB to GB
-//                            Log.d("VideoPicker", "File size: $fileSizeInGB GB")
+
 
                             if (fileSizeInGB.toInt() == 1) {
                                 showToast(this, "File size too large")
@@ -998,7 +996,6 @@ class MainActivity : AppCompatActivity(),
                         }
 
 
-//                        toCompressUris
                     } else {
                         Log.d("PhotoPicker", "No media selected")
                     }
@@ -1019,13 +1016,11 @@ class MainActivity : AppCompatActivity(),
                         // You can use it as needed, for example, to send the image in a message.
                         Log.d("ChatActivityDocPath", "Selected Document path: $docPath")
 
-                        //val imagePathRef =
-                        //val fileRef = storageRef.child("files/$fileName")
+
                         // You can proceed to send the image or display it in your chat.
                         val docFileName =
                             "files/${System.currentTimeMillis()}.jpg" // Change the file name as needed
-//                        Log.d(TAG, "file name $docFileName")
-//                        Log.d(TAG, "image path $docPath")
+
 
                         val user = User("0", "You", "test", true, Date())
                         val messageId = "Doc_${Random.nextInt()}"
@@ -1043,10 +1038,10 @@ class MainActivity : AppCompatActivity(),
 
                             Log.d("Document File", "Document File Exists : $file")
                             val absolutePath = file.absolutePath
-//                            Log.d(TAG, "image absolute path $absolutePath")
+
                             val fileUri = Uri.fromFile(file)
                             val fileUrl = fileUri.toString()
-//                            Log.d(TAG, "image file url path $fileUrl")
+
 
                         }
 
