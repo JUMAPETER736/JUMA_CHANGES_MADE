@@ -35,7 +35,7 @@ import kotlinx.coroutines.withContext
 
 private const val TAG = "All Videos Only Fragment"
 
-class AllVideosOnlyFragment : Fragment() {
+class AllShortsOnlyFragment : Fragment() {
 
     private lateinit var apiService: IFlashapi
     private lateinit var gridLayout: GridLayout
@@ -67,8 +67,8 @@ class AllVideosOnlyFragment : Fragment() {
         // Cache duration: 5 minutes
         private const val CACHE_DURATION_MS = 5 * 60 * 1000L
 
-        fun newInstance(userId: String, username: String): AllVideosOnlyFragment {
-            return AllVideosOnlyFragment().apply {
+        fun newInstance(userId: String, username: String): AllShortsOnlyFragment {
+            return AllShortsOnlyFragment().apply {
                 arguments = Bundle().apply {
                     putString(ARG_USER_ID, userId)
                     putString(ARG_USERNAME, username)
@@ -567,7 +567,10 @@ class AllVideosOnlyFragment : Fragment() {
 
             val displayMetrics = context.resources.displayMetrics
             val screenWidth = displayMetrics.widthPixels
-            val itemSize = screenWidth / 3
+
+            // Account for margins (4dp on each side = 8dp total per item, 3 items = 24dp total)
+            val totalMargins = 8.dpToPx(context) * 3
+            val itemSize = (screenWidth - totalMargins) / 3
 
             posts.forEachIndexed { index, post ->
                 val container = createPostContainer(itemSize, post, index)
@@ -580,7 +583,19 @@ class AllVideosOnlyFragment : Fragment() {
                 layoutParams = GridLayout.LayoutParams().apply {
                     width = size
                     height = size
-                    setMargins(0, 0, 0, 0)
+                    // Add margins for gaps between items
+                    val margin = 2.dpToPx(context)
+                    setMargins(margin, margin, margin, margin)
+                }
+                setBackgroundColor(Color.parseColor("#1a1a1a"))
+
+                // Add rounded corners to the container
+                clipToOutline = true
+                outlineProvider = object : ViewOutlineProvider() {
+                    override fun getOutline(view: View, outline: Outline) {
+                        val cornerRadius = 8.dpToPx(context).toFloat()
+                        outline.setRoundRect(0, 0, view.width, view.height, cornerRadius)
+                    }
                 }
             }
 
@@ -591,14 +606,11 @@ class AllVideosOnlyFragment : Fragment() {
                     FrameLayout.LayoutParams.MATCH_PARENT
                 )
                 scaleType = ImageView.ScaleType.CENTER_CROP
-                clipToOutline = true
-                outlineProvider = object : ViewOutlineProvider() {
-                    override fun getOutline(view: View, outline: Outline) {
-                        outline.setRect(0, 0, view.width, view.height)
-                    }
-                }
+                // Remove the clipToOutline from here since container handles it
             }
             container.addView(imageView)
+
+            // ... rest of your code
 
             // Find the first video file
             val videoFileIndex = post.fileTypes?.indexOfFirst {

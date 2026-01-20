@@ -412,7 +412,7 @@ class MyUserShortsOnlyFragment : Fragment() {
                     width = size
                     height = size
                     // Add margins for gaps between items
-                    val margin = 4.dpToPx(context)
+                    val margin = 2.dpToPx(context)
                     setMargins(margin, margin, margin, margin)
                 }
                 setBackgroundColor(Color.parseColor("#1a1a1a"))

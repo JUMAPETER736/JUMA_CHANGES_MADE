@@ -63,7 +63,7 @@ import com.daimajia.androidanimations.library.YoYo
 import androidx.core.content.ContextCompat
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.AllOtherUsersFavoritesFragment
-import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.AllVideosOnlyFragment
+import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.AllShortsOnlyFragment
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.UserFollowersFragment
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.UserFollowingFragment
 import com.uyscuti.social.network.api.response.follow_unfollow.OtherUserDisplayFollowersModel
@@ -1528,7 +1528,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
                 1 -> {
 
                     // Videos Fragment
-                    AllVideosOnlyFragment().apply {
+                    AllShortsOnlyFragment().apply {
                         arguments = Bundle().apply {
                             putString("userId", userId)
                             putString("username", username)
