@@ -1,6 +1,7 @@
 package com.uyscuti.social.circuit.user_interface.userProfile
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -23,7 +24,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
-
 
 @AndroidEntryPoint
 class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
@@ -152,6 +152,10 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             try {
                 Log.d(TAG, "Loading bookmarked posts for user: $userId")
 
+                // Get current logged-in user ID from SharedPreferences or UserSession
+                val currentUserId = getCurrentUserId()
+                Log.d(TAG, "Current logged in user ID: $currentUserId")
+
                 // Load all pages and filter for bookmarked posts
                 var currentPage = 1
                 var hasMorePages = true
@@ -163,8 +167,9 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                     if (response.isSuccessful) {
                         val posts = response.body()?.data?.data?.posts ?: emptyList()
 
-                        // Filter for bookmarked posts only
+                        // Filter for posts bookmarked by the CURRENT USER viewing the app
                         val userBookmarkedPosts = posts.filter { post ->
+                            // Check if this post is bookmarked by the current logged-in user
                             post.isBookmarked == true
                         }.mapNotNull { validateAndFixPost(it) }
 
@@ -221,6 +226,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 withContext(Dispatchers.Main) {
                     if (allUserFavorites.isEmpty()) {
                         showEmptyState()
+                        Log.d(TAG, "No bookmarked posts found for current user")
                     }
                 }
 
@@ -231,6 +237,18 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 }
             }
         }
+    }
+
+    /**
+     * Get the current logged-in user's ID
+     * This should match how you store the logged-in user elsewhere in your app
+     */
+    private fun getCurrentUserId(): String? {
+        // Option 1: Using SharedPreferences
+        val sharedPreferences = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("user_id", null)
+
+
     }
 
     private suspend fun updateUI() {
