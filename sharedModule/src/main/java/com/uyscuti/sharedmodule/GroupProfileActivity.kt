@@ -55,11 +55,7 @@ class GroupProfileActivity : AppCompatActivity() {
 
         binding.groupInfo.text = info
 
-//        dialog?.users?.map { user ->
-//            if (user.id == groupAdminId) {
-//                binding.groupInfo.text = "Created by ${user.name} On $groupCreatedAt"
-//            }
-//        }
+//
 
         val tabsAdapter = GroupTabsAdapter(this, supportFragmentManager)
 
@@ -92,43 +88,7 @@ class GroupProfileActivity : AppCompatActivity() {
             onBackPressed()
         }
 
-//        // Set listener for tab selection
-//        tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-//            override fun onTabSelected(tab: TabLayout.Tab) {
-//                // Change the icon tint color for the selected tab
-//                tab.icon = getTintedDrawable(R.drawable.ic_tab_selected, Color.RED)
-//            }
 //
-//            override fun onTabUnselected(tab: TabLayout.Tab) {
-//                // Change the icon tint color for the unselected tab
-//                tab.icon = getTintedDrawable(R.drawable.ic_tab_unselected, Color.BLACK)
-//            }
-//
-//            override fun onTabReselected(tab: TabLayout.Tab) {
-//                // Handle tab reselection if needed
-//            }
-//        })
-//        tabs.setOnTabSelectedListener(
-//            object : TabLayout.ViewPagerOnTabSelectedListener(viewPager) {
-//                override fun onTabSelected(tab: TabLayout.Tab) {
-//                    super.onTabSelected(tab)
-//                    val tabIconColor = ContextCompat.getColor(this@GroupProfileActivity, R.color.tabSelectedIconColor)
-//                    tab.icon!!.setColorFilter(tabIconColor, PorterDuff.Mode.SRC_IN)
-//                }
-//
-//                override fun onTabUnselected(tab: TabLayout.Tab) {
-//                    super.onTabUnselected(tab)
-//                    val tabIconColor =
-//                        ContextCompat.getColor(context, R.color.tabUnselectedIconColor)
-//                    tab.icon!!.setColorFilter(tabIconColor, PorterDuff.Mode.SRC_IN)
-//                }
-//
-//                override fun onTabReselected(tab: TabLayout.Tab) {
-//                    super.onTabReselected(tab)
-//                }
-//            }
-//        )
-
         binding.callTextView.setOnClickListener {
             showCallTypeDialog()
         }

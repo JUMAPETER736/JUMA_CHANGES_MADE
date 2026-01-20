@@ -17,7 +17,7 @@ class GroupSettingsActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbar)
 
-//        binding.toolbar.setNavigationIcon(R.drawable.back_svgrepo_com)
+
 
         val navigationIcon = ContextCompat.getDrawable(this, R.drawable.baseline_arrow_back_ios_24)
 

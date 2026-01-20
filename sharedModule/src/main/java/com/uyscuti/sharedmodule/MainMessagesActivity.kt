@@ -60,9 +60,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
     private var TOTAL_MESSAGES_COUNT = 10
     private var first_messages_count = 0
 
-//    protected val senderId = "0"
-//    protected lateinit var imageLoader: ImageLoader
-//    protected lateinit var messagesAdapter: MessagesListAdapter<Message>
+
 
     private var firstLoad = true
 
@@ -91,9 +89,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
     private var selectedMessagesIds = ArrayList<String>()
 
-//    private var menu: Menu? = null
-//    private var selectionCount = 0
-//    private var lastLoadedDate: Date? = null
+
 
     private lateinit var chatId: String
     private lateinit var myId: String
@@ -106,12 +102,6 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//
-//        imageLoader = ImageLoader { imageView, url, _ ->
-//            Picasso.get().load(url).into(imageView)
-//        }
-
-//        messageRepository = MessageRepository(this,ChatDatabase.getInstance(this).messageDao(),re)
 
         groupDialogRepository = GroupDialogRepository(
             ChatDatabase.Companion.getInstance(this).groupDialogDao(),
@@ -122,17 +112,17 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
             try {
                 // Check if the URL is for a video file (you can adjust the list of video file extensions)
                 if (isVideoFile(url)) {
-//                    Log.d("Thumbnail", "The url is a video : $url")
+
 
                     if (url != null) {
                         if (imageView != null) {
-//                            loadVideoThumbnailP(this, url, imageView)
+
                             loadVideoThumbnail(this, url, imageView)
                         }
                     }
                 } else {
                     // It's not a video, load it as an image
-//                    Picasso.get().load(url).into(imageView)
+
 
                     if (imageView != null) {
                         if (url != null) {
@@ -147,7 +137,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
         }
         settings = getSharedPreferences(PREFS_NAME, 0)
 
-//        lastMessageId = dialog?.lastMessage?.id
+
 
         loadMessageList()
     }
@@ -162,10 +152,10 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
     override fun onStart() {
         super.onStart()
-//        messagesAdapter.addToStart(getTextMessage(), true)
+
 
         if (firstLoad) {
-//            loadFirstMessages()
+
             initMessages()
         }
     }
@@ -194,7 +184,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
 
                 // Check if the text is "None" and imageUrl is not null
                 val messageContent = if (message.imageUrl != null) {
-//                        user.id = "0"
+
                     Message(
                         message.id,
                         user,
@@ -205,7 +195,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 } else if (message.videoUrl != null) {
-//                        user.id = "0"
+
                     Message(
                         message.id,
                         user,
@@ -216,7 +206,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 } else if (message.audioUrl != null) {
-//                        user.id = "0"
+
                     Message(
                         message.id,
                         user,
@@ -233,7 +223,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 } else if (message.voiceUrl != null) {
-//                        user.id = "0"
+
                     Message(
                         message.id,
                         user,
@@ -244,7 +234,7 @@ abstract class MainMessagesActivity : AppCompatActivity(), MessagesListAdapter.S
                         setStatus(status)
                     }
                 } else if (message.docUrl != null) {
-//                        user.id = "0"
+
                     Message(
                         message.id,
                         user,
