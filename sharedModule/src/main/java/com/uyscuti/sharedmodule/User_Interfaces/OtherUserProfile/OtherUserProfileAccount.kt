@@ -72,6 +72,7 @@ import com.uyscuti.social.network.utils.LocalStorage
 import android.view.Gravity
 import android.widget.LinearLayout
 import com.uyscuti.sharedmodule.MessagesActivity
+import com.uyscuti.sharedmodule.fragments.OtherUserBusinessProfileFragment
 import com.uyscuti.social.network.api.models.Avatar
 
 

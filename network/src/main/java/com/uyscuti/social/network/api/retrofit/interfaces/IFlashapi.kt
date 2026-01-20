@@ -136,15 +136,6 @@ interface IFlashapi {
         @Query("offset") offset: Int
     ): Response<ChatsResponse>
 
-    @GET("chat-app/chats")
-    suspend fun getChats(
-        @Query("limit") limit: Int,
-        @Query("offset") offset: Int,
-        @Query("sort") sort: String = "-createdAt"
-    ): Response<ChatsResponse>
-
-    @GET("chat-app/chats")
-    suspend fun fetchChatItems(): String
 
     @GET("chat-app/chats/fetchChat/{chatId}")
     suspend fun fetchChat(@Path("chatId") chatId: String): Response<FetchChatResponse>
@@ -154,9 +145,6 @@ interface IFlashapi {
 
     @GET("chat-app/chats/users")
     suspend fun getOtherUsers(): Response<GetAvailableUsers>
-
-    @POST("chat-app/chats/users/search")
-    suspend fun searchUsers(@Body request: SearchUsersRequest): Response<UsersResponse>
 
     @GET("chat-app/chats/users/search")
     suspend fun searchUsers(@Query("query") query: String): Response<UsersResponse>
@@ -176,12 +164,6 @@ interface IFlashapi {
     @GET("chat-app/messages/{chatId}")
     suspend fun getMessages(@Path("chatId") chatId: String): Response<GetMessagesResponse>
 
-    @GET("chat-app/messages/{chatId}")
-    suspend fun getMessages(
-        @Path("chatId") chatId: String,
-        @Query("limit") limit: Int,
-        @Query("offset") offset: Int
-    ): Response<GetMessagesResponse>
 
     @POST("chat-app/messages/{chatId}")
     suspend fun sendMessage(@Path("chatId") chatId: String, @Body requestPost: SendMessageRequest): Response<SendMessageResponse>
@@ -232,17 +214,6 @@ interface IFlashapi {
         @Query("limit") limit: Int = 20
     ): Response<OtherUserFollowingResponse>
 
-    @GET("social-media/followers/my")
-    suspend fun getMyFollowers(
-        @Query("page") page: Int,
-        @Query("limit") limit: Int = 20
-    ): Response<UsersResponse>
-
-    @GET("social-media/following/my")
-    suspend fun getMyFollowing(
-        @Query("page") page: Int,
-        @Query("limit") limit: Int = 20
-    ): Response<UsersResponse>
 
     @DELETE("social-media/followers/{userId}")
     suspend fun removeFollower(@Path("userId") userId: String): Response<FollowUnFollowResponse>
@@ -250,14 +221,9 @@ interface IFlashapi {
     @DELETE("social-media/following/{userId}")
     suspend fun unfollowUser(@Path("userId") userId: String): Response<FollowUnFollowResponse>
 
-    @GET("social-media/following/status/{userId}")
-    suspend fun getOtherUsersFollowersAndFollowingStatus(
-        @Path("userId") userId: String
-    ): Response<OtherUsersFollowersAndFollowingResponse>
 
 
     // ==================== SOCIAL MEDIA - BLOCK/UNBLOCK ====================
-
 
 
     @POST("social-media/block/{userId}")
@@ -498,11 +464,6 @@ interface IFlashapi {
     @GET("feed/post/get/my")
     suspend fun getMyFeed(@Query("page") page: String): Response<AllFeedRepostsPost>
 
-    @GET("feed/post/get/u/{username}")
-    suspend fun getOtherUserFeed(
-        @Path("username") username: String,
-        @Query("page") page: String
-    ): Response<AllFeedRepostsPost>
 
     @POST("feed/post")
     suspend fun uploadTextFeed(@Body requestBody: FeedTextUploadRequestBody): Response<FeedUploadResponse>
@@ -605,6 +566,12 @@ interface IFlashapi {
 
     @GET("feed/bookmarks/")
     suspend fun getFavoriteFeed(@Query("page") page: String): Response<FeedFavoriteResponse>
+
+    @GET("feed/bookmarks")
+    suspend fun getBookmarkedPosts(
+        @Query("page") page: String,
+        @Query("limit") limit: String = "10"
+    ): Response<FeedResponse>
 
 
     // ==================== FEED - COMMENTS ====================

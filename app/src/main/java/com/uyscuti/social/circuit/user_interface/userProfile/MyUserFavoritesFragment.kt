@@ -16,6 +16,7 @@ import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.social.circuit.databinding.MyUserFavoritesFragmentBinding
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
+import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -24,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.collections.isNotEmpty
 
 @AndroidEntryPoint
 class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
@@ -150,32 +152,28 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Loading bookmarked posts for user: $userId")
+                Log.d(TAG, "Loading bookmarked posts for current user")
 
-                // Get current logged-in user ID from SharedPreferences or UserSession
-                val currentUserId = getCurrentUserId()
-                Log.d(TAG, "Current logged in user ID: $currentUserId")
-
-                // Load all pages and filter for bookmarked posts
                 var currentPage = 1
                 var hasMorePages = true
                 val bookmarkedPosts = mutableListOf<Post>()
 
+                // Use the dedicated bookmarks endpoint instead of filtering from getAllFeed
                 while (hasMorePages && currentPage <= MAX_PAGES) {
-                    val response = retrofitInstance.apiService.getAllFeed(currentPage.toString())
+                    val response = retrofitInstance.apiService.getBookmarkedPosts(
+                        page = currentPage.toString(),
+                        limit = "10"
+                    )
 
                     if (response.isSuccessful) {
-                        val posts = response.body()?.data?.data?.posts ?: emptyList()
+                        val responseBody = response.body()
+                        val posts = responseBody?.data?.data?.posts ?: emptyList()
 
-                        // Filter for posts bookmarked by the CURRENT USER viewing the app
-                        val userBookmarkedPosts = posts.filter { post ->
-                            // Check if this post is bookmarked by the current logged-in user
-                            post.isBookmarked == true
-                        }.mapNotNull { validateAndFixPost(it) }
+                        val validPosts = posts.mapNotNull { validateAndFixPost(it) }
 
-                        if (userBookmarkedPosts.isNotEmpty()) {
-                            bookmarkedPosts.addAll(userBookmarkedPosts)
-                            Log.d(TAG, "Found ${userBookmarkedPosts.size} bookmarked posts on page $currentPage")
+                        if (validPosts.isNotEmpty()) {
+                            bookmarkedPosts.addAll(validPosts)
+                            Log.d(TAG, "Found ${validPosts.size} bookmarked posts on page $currentPage")
                         }
 
                         // Show first batch immediately
@@ -192,7 +190,6 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                         }
 
                         // Check if there are more pages
-                        val responseBody = response.body()
                         hasMorePages = responseBody?.data?.data?.hasNextPage ?: false
                         val totalPages = responseBody?.data?.data?.totalPages ?: currentPage
 
@@ -226,7 +223,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 withContext(Dispatchers.Main) {
                     if (allUserFavorites.isEmpty()) {
                         showEmptyState()
-                        Log.d(TAG, "No bookmarked posts found for current user")
+                        Log.d(TAG, "No bookmarked posts found")
                     }
                 }
 
@@ -238,37 +235,10 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             }
         }
     }
-
-    /**
-     * Get the current logged-in user's ID
-     * This should match how you store the logged-in user elsewhere in your app
-     */
-    private fun getCurrentUserId(): String? {
-        // Option 1: Using SharedPreferences
-        val sharedPreferences = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        return sharedPreferences.getString("user_id", null)
-
-
-    }
-
-    private suspend fun updateUI() {
-        withContext(Dispatchers.Main) {
-            if (allUserFavorites.isEmpty()) {
-                showEmptyState()
-            } else {
-                feedAdapter.submitItems(allUserFavorites)
-                feedAdapter.initializeCommentCounts(allUserFavorites)
-                showContent()
-            }
-        }
-    }
-
     private fun validateAndFixPost(post: Post): Post? {
         try {
-            // Only process bookmarked posts
-            if (post.isBookmarked != true) {
-                return null
-            }
+            // All posts from bookmarks endpoint are already bookmarked
+            post.isBookmarked = true
 
             if (post.isReposted == true && !post.originalPost.isNullOrEmpty()) {
                 val originalPost = post.originalPost[0]
@@ -284,24 +254,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 post.shareCount = 0
 
                 if (post.contentType.isNullOrEmpty() || post.contentType == "mixed") {
-                    post.contentType = when {
-                        !originalPost.files.isNullOrEmpty() -> {
-                            when {
-                                originalPost.files.size > 1 -> "mixed_files"
-                                originalPost.fileTypes?.any { it.fileType == "video" } == true -> "videos"
-                                else -> "mixed_files"
-                            }
-                        }
-                        post.files.isNotEmpty() -> {
-                            when {
-                                post.files.size > 1 -> "mixed_files"
-                                post.fileTypes?.any { it.fileType == "video" } == true -> "videos"
-                                else -> "mixed_files"
-                            }
-                        }
-                        !originalPost.content.isNullOrEmpty() || !post.content.isNullOrEmpty() -> "text"
-                        else -> "text"
-                    }
+                    post.contentType = determineContentType(originalPost.files, post.files, originalPost.content, post.content)
                 }
 
             } else {
@@ -316,17 +269,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 post.shareCount = post.shareCount ?: 0
 
                 if (post.contentType.isNullOrEmpty()) {
-                    post.contentType = when {
-                        post.files.isNotEmpty() -> {
-                            when {
-                                post.files.size > 1 -> "mixed_files"
-                                post.fileTypes?.any { it.fileType == "video" } == true -> "videos"
-                                else -> "mixed_files"
-                            }
-                        }
-                        !post.content.isNullOrEmpty() -> "text"
-                        else -> "text"
-                    }
+                    post.contentType = determineContentType(post.files, emptyList(), post.content, null)
                 }
             }
 
@@ -336,6 +279,40 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             return null
         }
     }
+
+    private fun determineContentType(
+        primaryFiles: List<File>?,
+        secondaryFiles: List<File>,
+        primaryContent: String?,
+        secondaryContent: String?
+    ): String {
+        val files = primaryFiles ?: secondaryFiles
+        return when {
+            files.isNotEmpty() -> {
+                when {
+                    files.size > 1 -> "mixed_files"
+                    files.any { it.fileId == "video" } -> "videos"
+                    else -> "mixed_files"
+                }
+            }
+            !primaryContent.isNullOrEmpty() || !secondaryContent.isNullOrEmpty() -> "text"
+            else -> "text"
+        }
+    }
+
+
+    private suspend fun updateUI() {
+        withContext(Dispatchers.Main) {
+            if (allUserFavorites.isEmpty()) {
+                showEmptyState()
+            } else {
+                feedAdapter.submitItems(allUserFavorites)
+                feedAdapter.initializeCommentCounts(allUserFavorites)
+                showContent()
+            }
+        }
+    }
+
 
     private fun showLoading() {
         binding.progressBar.visibility = View.VISIBLE
