@@ -1803,6 +1803,111 @@ class FeedAdapter(
 
         }
 
+        private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
+            try {
+                Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
+
+                val firstName = data.author?.firstName ?: ""
+                val lastName = data.author?.lastName ?: ""
+                val displayName = when {
+                    firstName.isNotBlank() && lastName.isNotBlank() -> "$firstName $lastName"
+                    firstName.isNotBlank() -> firstName
+                    lastName.isNotBlank() -> lastName
+                    else -> data.author?.account?.username ?: "Unknown User"
+                }
+
+                val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
+                    arguments = Bundle().apply {
+                        putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(data))
+                        putString("post_id", data._id)
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "feed_mixed_files")
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+
+                        putString("author_name", displayName)
+                        putString("author_username", data.author?.account?.username ?: "unknown_user")
+                        putString("author_profile_image_url", data.author?.account?.avatar?.url ?: "")
+                        putString("user_id", data.author?._id ?: "")
+
+                        Log.d(TAG, "Author Info - Name: $displayName, Username: ${data.author?.account?.username}, ID: ${data.author?._id}")
+                    }
+                }
+
+                navigateToFragment(fragment, "original_post_without_repost")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to original post fragment: ${e.message}", e)
+            }
+        }
+
+        private fun navigateToFragment(fragment: Fragment, tag: String) {
+            try {
+                val activity = getActivityFromContext(itemView.context)
+                if (activity != null) {
+                    // ✅ USE android.R.id.content - it always exists in every activity
+                    activity.supportFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
+                        )
+                        .add(android.R.id.content, fragment)  // ✅ CHANGED from R.id.frame_layout
+                        .addToBackStack(tag)
+                        .commit()
+
+                    Log.d(TAG, "Successfully navigated to fragment: $tag")
+
+                } else {
+                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to fragment: $tag", e)
+            }
+        }
+
+        private fun navigateToTappedFilesInTheContainerView(
+            files: ArrayList<com.uyscuti.social.network.api.response.posts.File>,
+            mediaType: String,
+            selectedPosition: Int
+        ) {
+            try {
+                val fragment = Tapped_Files_In_The_Container_View_Fragment().apply {
+                    arguments = Bundle().apply {
+                        putString("files_data", Gson().toJson(files))
+                        putString("media_type", mediaType)
+                        putInt("selected_position", selectedPosition)
+                        putInt("total_files", files.size)
+                        putStringArray("file_urls", files.map { it.url }.toTypedArray())
+                        currentPost?.let { post ->
+                            putString("post_id", post._id)
+                            putString("post_data", Gson().toJson(post))
+                            putString("post_author_id", post.author?.account?._id)
+                            putString("post_author_username", post.author?.account?.username)
+                        }
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "feed_mixed_files")
+                        putString("media_source", mediaType)
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+                        putBoolean("can_download", true)
+                        putBoolean("can_share", true)
+                        putBoolean("show_engagement_data", true)
+                    }
+                }
+
+                val activity = itemView.context as? androidx.fragment.app.FragmentActivity
+                activity?.supportFragmentManager?.beginTransaction()?.apply {
+                    replace(android.R.id.content, fragment, "files_container_view")
+                    addToBackStack("files_container_view")
+                    commit()
+                } ?: run {
+                    Log.e(TAG, "Unable to get FragmentActivity for navigation")
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to files container fragment: ${e.message}", e)
+            }
+        }
 
         private fun setupFollowButton(feedOwnerId: String, feedOwnerUsername: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
@@ -2013,104 +2118,6 @@ class FeedAdapter(
             }
         }
 
-        private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
-            try {
-                Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
-
-                val firstName = data.author?.firstName ?: ""
-                val lastName = data.author?.lastName ?: ""
-                val displayName = when {
-                    firstName.isNotBlank() && lastName.isNotBlank() -> "$firstName $lastName"
-                    firstName.isNotBlank() -> firstName
-                    lastName.isNotBlank() -> lastName
-                    else -> data.author?.account?.username ?: "Unknown User"
-                }
-
-                val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
-                    arguments = Bundle().apply {
-                        putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(data))
-                        putString("post_id", data._id)
-                        putInt("adapter_position", absoluteAdapterPosition)
-                        putString("navigation_source", "feed_mixed_files")
-                        putLong("navigation_timestamp", System.currentTimeMillis())
-
-                        putString("author_name", displayName)
-                        putString("author_username", data.author?.account?.username ?: "unknown_user")
-                        putString("author_profile_image_url", data.author?.account?.avatar?.url ?: "")
-                        putString("user_id", data.author?._id ?: "")
-
-                        Log.d(TAG, "Author Info - Name: $displayName, Username: ${data.author?.account?.username}, ID: ${data.author?._id}")
-                    }
-                }
-
-                navigateToFragment(fragment, "original_post_without_repost")
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error navigating to original post fragment: ${e.message}", e)
-            }
-        }
-
-        private fun navigateToFragment(fragment: Fragment, tag: String) {
-            try {
-                val activity = getActivityFromContext(itemView.context)
-                if (activity != null) {
-                    // ✅ USE android.R.id.content - it always exists in every activity
-                    activity.supportFragmentManager.beginTransaction()
-                        .setCustomAnimations(
-                            R.anim.slide_in_right,
-                            R.anim.slide_out_left,
-                            R.anim.slide_in_left,
-                            R.anim.slide_out_right
-                        )
-                        .add(android.R.id.content, fragment)  // ✅ CHANGED from R.id.frame_layout
-                        .addToBackStack(tag)
-                        .commit()
-
-                    Log.d(TAG, "Successfully navigated to fragment: $tag")
-
-                } else {
-                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error navigating to fragment: $tag", e)
-            }
-        }
-
-        private fun navigateToTappedFilesInTheContainerView(
-            files: ArrayList<com.uyscuti.social.network.api.response.posts.File>,
-            mediaType: String,
-            selectedPosition: Int
-        ) {
-            try {
-                val fragment = Tapped_Files_In_The_Container_View_Fragment().apply {
-                    arguments = Bundle().apply {
-                        putString("files_data", Gson().toJson(files))
-                        putString("media_type", mediaType)
-                        putInt("selected_position", selectedPosition)
-                        putInt("total_files", files.size)
-                        putStringArray("file_urls", files.map { it.url }.toTypedArray())
-                        currentPost?.let { post ->
-                            putString("post_id", post._id)
-                            putString("post_data", Gson().toJson(post))
-                            putString("post_author_id", post.author?.account?._id)
-                            putString("post_author_username", post.author?.account?.username)
-                        }
-                        putInt("adapter_position", absoluteAdapterPosition)
-                        putString("navigation_source", "feed_mixed_files")
-                        putString("media_source", mediaType)
-                        putLong("navigation_timestamp", System.currentTimeMillis())
-                        putBoolean("can_download", true)
-                        putBoolean("can_share", true)
-                        putBoolean("show_engagement_data", true)
-                    }
-                }
-
-                navigateToFragment(fragment, "files_container_view")
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error navigating to files container fragment: ${e.message}", e)
-            }
-        }
 
         private fun setupPostInfo(data: com.uyscuti.social.network.api.response.posts.Post) {
             // Date and time
@@ -3158,6 +3165,189 @@ class FeedAdapter(
             }
 
 
+        }
+
+        private fun navigateToTappedFilesInTheContainerView(
+            files: List<Any>,
+            mediaType: String,
+            selectedPosition: Int
+        ) {
+            try {
+                val fragment = Tapped_Files_In_The_Container_View_Fragment().apply {
+                    arguments = Bundle().apply {
+                        putString("files_data", Gson().toJson(files))
+                        putString("media_type", mediaType)
+                        putInt("selected_position", selectedPosition)
+                        putInt("total_files", files.size)
+                        val fileUrls = when {
+                            files.first() is File -> {
+                                (files as List<File>).map { it.url }
+                            }
+                            files.first() is File -> {
+                                (files as List<File>).map { it.url }
+                            }
+                            else -> files.map { it.toString() }
+                        }
+                        putStringArray("file_urls", fileUrls.toTypedArray())
+                        currentPost?.let { post ->
+                            putString("post_id", post._id)
+                            putString("post_data", Gson().toJson(post))
+                            putString("post_author_id", post.repostedUser?._id)
+                            putString("post_author_username", post.repostedUser?.username)
+                        }
+                        if (mediaType.contains("original") || mediaType.contains("quoted")) {
+                            currentPost?.originalPost?.firstOrNull()?.let { originalPost ->
+                                putString("original_post_id", originalPost._id)
+                                putString("original_post_data", Gson().toJson(originalPost))
+                                originalPost.author?.let { author ->
+                                    putString("original_author_id", author._id)
+                                    putString("original_author_username", author.account.username)
+                                }
+                            }
+                        }
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "feed_reposted_post")
+                        putString("media_source", mediaType)
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+                        putBoolean("can_download", true)
+                        putBoolean("can_share", true)
+                        putBoolean("show_engagement_data", true)
+                    }
+                }
+                navigateToFragment(fragment, "files_container_view")
+            } catch (e: Exception) {
+                Log.e(tag, "Error navigating to files container fragment: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
+        private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
+            try {
+                Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
+
+                val firstName = data.author?.firstName ?: ""
+                val lastName = data.author?.lastName ?: ""
+                val displayName = when {
+                    firstName.isNotBlank() && lastName.isNotBlank() -> "$firstName $lastName"
+                    firstName.isNotBlank() -> firstName
+                    lastName.isNotBlank() -> lastName
+                    else -> data.author?.account?.username ?: "Unknown User"
+                }
+
+                val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
+                    arguments = Bundle().apply {
+                        putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(data))
+                        putString("post_id", data._id)
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "feed_mixed_files")
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+
+                        putString("author_name", displayName)
+                        putString("author_username", data.author?.account?.username ?: "unknown_user")
+                        putString("author_profile_image_url", data.author?.account?.avatar?.url ?: "")
+                        putString("user_id", data.author?._id ?: "")
+
+                        Log.d(TAG, "Author Info - Name: $displayName, Username: ${data.author?.account?.username}, ID: ${data.author?._id}")
+                    }
+                }
+
+                navigateToFragment(fragment, "original_post_without_repost")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to original post fragment: ${e.message}", e)
+            }
+        }
+
+        private fun navigateToFragment(fragment: Fragment, tag: String) {
+            try {
+                val activity = getActivityFromContext(itemView.context)
+                if (activity != null) {
+                    // always exists in every activity
+                    activity.supportFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
+                        )
+                        .add(android.R.id.content, fragment)
+                        .addToBackStack(tag)
+                        .commit()
+
+                    Log.d(TAG, "Successfully navigated to fragment: $tag")
+
+                } else {
+                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to fragment: $tag", e)
+            }
+        }
+
+        private fun navigateToOriginalPostWithRepostInside(originalPostData: com.uyscuti.social.network.api.response.posts.Post) {
+            try {
+                val fragment = Fragment_Original_Post_With_Repost_Inside.newInstance(originalPostData)
+                navigateToFragment(fragment, "repost_with_context")
+            } catch (e: Exception) {
+                Log.e(tag, "Error navigating to repost fragment: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
+        private fun navigateToEditPostToRepost(data: com.uyscuti.social.network.api.response.posts.Post) {
+            try {
+                val fragment = Fragment_Edit_Post_To_Repost(data).apply {
+                    arguments = Bundle().apply {
+                        putString("post_data", Gson().toJson(data))
+                        putString("post_id", data._id)
+                        data.originalPost.firstOrNull()?.let { originalPost ->
+                            putString("original_post_data", Gson().toJson(originalPost))
+                            putString("original_post_id", originalPost._id)
+                            putString("original_content", originalPost.content)
+                            putString("original_content_type", originalPost.contentType)
+                            putString("original_created_at", originalPost.createdAt)
+                            putString("original_author_id", originalPost.author._id)
+                            putString("original_author_username", originalPost.author.account.username)
+                            putString(
+                                "original_author_display_name",
+                                listOfNotNull(
+                                    originalPost.author.firstName.takeIf { it.isNotBlank() },
+                                    originalPost.author.lastName.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").trim().takeIf { it.isNotEmpty() }
+                                    ?: originalPost.author.account.username
+                            )
+                            putString("original_author_avatar", originalPost.author.account.avatar.url)
+                            if (originalPost.files.isNotEmpty()) {
+                                putString("original_files_data", Gson().toJson(originalPost.files))
+                                putInt("original_files_count", originalPost.files.size)
+                            }
+                        }
+                        val currentUser = LocalStorage.getInstance(itemView.context).getUser() as? com.uyscuti.sharedmodule.model.business.User
+                        currentUser?.let { user ->
+                            putString("current_user_id", user._id)
+                            putString("current_user_username", user.account?.username)
+                            putString(
+                                "current_user_avatar",
+                                when {
+                                    user.avatar is Avatar -> user.avatar.url
+                                    user.avatar is String -> user.avatar
+                                    else -> null
+                                }.toString()
+                            )
+                        }
+                        putString("repost_type", "quote_repost")
+                        putString("existing_comment", data.content)
+                        putBoolean("is_editing_existing_repost", data.isReposted)
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "repost_button_click")
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+                    }
+                }
+                navigateToFragment(fragment, "edit_post_to_repost")
+            } catch (e: Exception) {
+                Log.e(tag, "Error navigating to edit post fragment: ${e.message}")
+                e.printStackTrace()
+            }
         }
 
         private fun setupFollowButton(accountId: String, username: String) {
@@ -4408,180 +4598,12 @@ class FeedAdapter(
             }
         }
 
-        private fun navigateToOriginalPostWithRepostInside(originalPostData: com.uyscuti.social.network.api.response.posts.Post) {
-            try {
-                val fragment = Fragment_Original_Post_With_Repost_Inside.newInstance(originalPostData)
-                navigateToFragment(fragment, "repost_with_context")
-            } catch (e: Exception) {
-                Log.e(tag, "Error navigating to repost fragment: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-
-        private fun navigateToOriginalPostWithoutRepostInside(originalPostData: com.uyscuti.social.network.api.response.posts.Post) {
-
-            try {
-
-                val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
-                    arguments = Bundle().apply {
-
-                        putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(originalPostData))
-
-
-                        putSerializable(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, originalPostData)
-
-
-                        putString("post_data", Gson().toJson(originalPostData))
-                    }
-                }
-                navigateToFragment(fragment, "original_post_without_repost")
-            } catch (e: Exception) {
-                Log.e(tag, "Error navigating to original post fragment: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-
-        private fun navigateToTappedFilesInTheContainerView(
-            files: List<Any>,
-            mediaType: String,
-            selectedPosition: Int
-        ) {
-            try {
-                val fragment = Tapped_Files_In_The_Container_View_Fragment().apply {
-                    arguments = Bundle().apply {
-                        putString("files_data", Gson().toJson(files))
-                        putString("media_type", mediaType)
-                        putInt("selected_position", selectedPosition)
-                        putInt("total_files", files.size)
-                        val fileUrls = when {
-                            files.first() is File -> {
-                                (files as List<File>).map { it.url }
-                            }
-                            files.first() is File -> {
-                                (files as List<File>).map { it.url }
-                            }
-                            else -> files.map { it.toString() }
-                        }
-                        putStringArray("file_urls", fileUrls.toTypedArray())
-                        currentPost?.let { post ->
-                            putString("post_id", post._id)
-                            putString("post_data", Gson().toJson(post))
-                            putString("post_author_id", post.repostedUser?._id)
-                            putString("post_author_username", post.repostedUser?.username)
-                        }
-                        if (mediaType.contains("original") || mediaType.contains("quoted")) {
-                            currentPost?.originalPost?.firstOrNull()?.let { originalPost ->
-                                putString("original_post_id", originalPost._id)
-                                putString("original_post_data", Gson().toJson(originalPost))
-                                originalPost.author?.let { author ->
-                                    putString("original_author_id", author._id)
-                                    putString("original_author_username", author.account.username)
-                                }
-                            }
-                        }
-                        putInt("adapter_position", absoluteAdapterPosition)
-                        putString("navigation_source", "feed_reposted_post")
-                        putString("media_source", mediaType)
-                        putLong("navigation_timestamp", System.currentTimeMillis())
-                        putBoolean("can_download", true)
-                        putBoolean("can_share", true)
-                        putBoolean("show_engagement_data", true)
-                    }
-                }
-                navigateToFragment(fragment, "files_container_view")
-            } catch (e: Exception) {
-                Log.e(tag, "Error navigating to files container fragment: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-
-        private fun navigateToEditPostToRepost(data: com.uyscuti.social.network.api.response.posts.Post) {
-            try {
-                val fragment = Fragment_Edit_Post_To_Repost(data).apply {
-                    arguments = Bundle().apply {
-                        putString("post_data", Gson().toJson(data))
-                        putString("post_id", data._id)
-                        data.originalPost.firstOrNull()?.let { originalPost ->
-                            putString("original_post_data", Gson().toJson(originalPost))
-                            putString("original_post_id", originalPost._id)
-                            putString("original_content", originalPost.content)
-                            putString("original_content_type", originalPost.contentType)
-                            putString("original_created_at", originalPost.createdAt)
-                            putString("original_author_id", originalPost.author._id)
-                            putString("original_author_username", originalPost.author.account.username)
-                            putString(
-                                "original_author_display_name",
-                                listOfNotNull(
-                                    originalPost.author.firstName.takeIf { it.isNotBlank() },
-                                    originalPost.author.lastName.takeIf { it.isNotBlank() }
-                                ).joinToString(" ").trim().takeIf { it.isNotEmpty() }
-                                    ?: originalPost.author.account.username
-                            )
-                            putString("original_author_avatar", originalPost.author.account.avatar.url)
-                            if (originalPost.files.isNotEmpty()) {
-                                putString("original_files_data", Gson().toJson(originalPost.files))
-                                putInt("original_files_count", originalPost.files.size)
-                            }
-                        }
-                        val currentUser = LocalStorage.getInstance(itemView.context).getUser() as? com.uyscuti.sharedmodule.model.business.User
-                        currentUser?.let { user ->
-                            putString("current_user_id", user._id)
-                            putString("current_user_username", user.account?.username)
-                            putString(
-                                "current_user_avatar",
-                                when {
-                                    user.avatar is Avatar -> user.avatar.url
-                                    user.avatar is String -> user.avatar
-                                    else -> null
-                                }.toString()
-                            )
-                        }
-                        putString("repost_type", "quote_repost")
-                        putString("existing_comment", data.content)
-                        putBoolean("is_editing_existing_repost", data.isReposted)
-                        putInt("adapter_position", absoluteAdapterPosition)
-                        putString("navigation_source", "repost_button_click")
-                        putLong("navigation_timestamp", System.currentTimeMillis())
-                    }
-                }
-                navigateToFragment(fragment, "edit_post_to_repost")
-            } catch (e: Exception) {
-                Log.e(tag, "Error navigating to edit post fragment: ${e.message}")
-                e.printStackTrace()
-            }
-        }
 
         private fun getActivityFromContext(context: Context?): AppCompatActivity? {
             return when (context) {
                 is AppCompatActivity -> context
                 is ContextWrapper -> getActivityFromContext(context.baseContext)
                 else -> null
-            }
-        }
-
-        private fun navigateToFragment(fragment: Fragment, backStackName: String) {
-            val activity = getActivityFromContext(itemView.context)
-            if (activity != null) {
-                val currentFragment = activity.supportFragmentManager.fragments.lastOrNull {
-                    it.isVisible && it.view != null
-                }
-                val fragmentManager = if (currentFragment != null &&
-                    currentFragment.childFragmentManager.fragments.isNotEmpty()) {
-                    currentFragment.childFragmentManager
-                } else {
-                    activity.supportFragmentManager
-                }
-                fragmentManager.beginTransaction()
-                    .setCustomAnimations(
-                        R.anim.slide_in_right,
-                        R.anim.slide_out_left
-                    )
-                    .replace(R.id.frame_layout, fragment)
-                    .addToBackStack(backStackName)
-                    .commit()
-                Log.d(tag, "Successfully navigated to $backStackName")
-            } else {
-                Log.e(tag, "Could not find AppCompatActivity from context")
             }
         }
 
