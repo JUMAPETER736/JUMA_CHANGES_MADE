@@ -5259,10 +5259,7 @@ class UploadFeedActivity : AppCompatActivity(),
                     // Create a separate URI list for the adapter
                     val documentUris = documentsList.map { it.uri }.filterNotNull().toMutableList()
 
-//                    multipleDocsAdapter = MultipleFeedDocAdapter(
-//                        this,
-//                        documentUris,
-//                        this)
+
 
                     binding.viewPager.adapter = multipleDocsAdapter
                 }
@@ -5360,11 +5357,6 @@ class UploadFeedActivity : AppCompatActivity(),
             }
         }
 
-//        fun backFromShortsUpload() {
-//            binding.backButton.setOnClickListener {
-//                finish()
-//            }
-//        }
 
 
         fun onDestroy() {
