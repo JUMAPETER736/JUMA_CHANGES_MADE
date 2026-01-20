@@ -1449,21 +1449,64 @@ class FeedAdapter(
 
         private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
             try {
-                Log.d(TAG, "Navigating to original post for post ID: ${data._id}")
+                Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
+
+                val firstName = data.author?.firstName ?: ""
+                val lastName = data.author?.lastName ?: ""
+                val displayName = when {
+                    firstName.isNotBlank() && lastName.isNotBlank() -> "$firstName $lastName"
+                    firstName.isNotBlank() -> firstName
+                    lastName.isNotBlank() -> lastName
+                    else -> data.author?.account?.username ?: "Unknown User"
+                }
+
                 val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
                     arguments = Bundle().apply {
-                        // Changed from putSerializable to putString with JSON
                         putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(data))
                         putString("post_id", data._id)
                         putInt("adapter_position", absoluteAdapterPosition)
-                        putString("navigation_source", "feed_text")
+                        putString("navigation_source", "feed_mixed_files")
                         putLong("navigation_timestamp", System.currentTimeMillis())
+
+                        putString("author_name", displayName)
+                        putString("author_username", data.author?.account?.username ?: "unknown_user")
+                        putString("author_profile_image_url", data.author?.account?.avatar?.url ?: "")
+                        putString("user_id", data.author?._id ?: "")
+
+                        Log.d(TAG, "Author Info - Name: $displayName, Username: ${data.author?.account?.username}, ID: ${data.author?._id}")
                     }
                 }
+
                 navigateToFragment(fragment, "original_post_without_repost")
+
             } catch (e: Exception) {
-                Log.e(TAG, "Error navigating to original post fragment: ${e.message}")
-                e.printStackTrace()
+                Log.e(TAG, "Error navigating to original post fragment: ${e.message}", e)
+            }
+        }
+
+        private fun navigateToFragment(fragment: Fragment, tag: String) {
+            try {
+                val activity = getActivityFromContext(itemView.context)
+                if (activity != null) {
+                    // ✅ USE android.R.id.content - it always exists in every activity
+                    activity.supportFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
+                        )
+                        .add(android.R.id.content, fragment)  // ✅ CHANGED from R.id.frame_layout
+                        .addToBackStack(tag)
+                        .commit()
+
+                    Log.d(TAG, "Successfully navigated to fragment: $tag")
+
+                } else {
+                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to fragment: $tag", e)
             }
         }
 
@@ -1474,39 +1517,6 @@ class FeedAdapter(
                 else -> null
             }
         }
-
-        private fun navigateToFragment(fragment: Fragment, tag: String) {
-            try {
-                val activity = getActivityFromContext(itemView.context)
-                if (activity != null) {
-                    val currentFragment = activity.supportFragmentManager.fragments.lastOrNull {
-                        it.isVisible && it.view != null
-                    }
-                    val fragmentManager = if (currentFragment != null &&
-                        currentFragment.childFragmentManager.fragments.isNotEmpty()) {
-                        currentFragment.childFragmentManager
-                    } else {
-                        activity.supportFragmentManager
-                    }
-                    fragmentManager.beginTransaction()
-                        .setCustomAnimations(
-                            R.anim.slide_in_right,
-                            R.anim.slide_out_left,
-                            R.anim.slide_in_left,
-                            R.anim.slide_out_right
-                        )
-                        .replace(R.id.frame_layout, fragment)
-                        .addToBackStack(tag)
-                        .commit()
-                    Log.d(TAG, "Successfully navigated to fragment: $tag")
-                } else {
-                    Log.e(TAG, "Activity is null, cannot navigate to fragment: $tag")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error navigating to fragment: $tag", e)
-            }
-        }
-
 
 
         @OptIn(UnstableApi::class)
@@ -1793,6 +1803,7 @@ class FeedAdapter(
 
         }
 
+
         private fun setupFollowButton(feedOwnerId: String, feedOwnerUsername: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
@@ -2006,7 +2017,6 @@ class FeedAdapter(
             try {
                 Log.d(TAG, "Navigating to original Post for Post ID: ${data._id}")
 
-                // Extract author information from the Post
                 val firstName = data.author?.firstName ?: ""
                 val lastName = data.author?.lastName ?: ""
                 val displayName = when {
@@ -2018,20 +2028,17 @@ class FeedAdapter(
 
                 val fragment = Fragment_Original_Post_Without_Repost_Inside().apply {
                     arguments = Bundle().apply {
-                        // Post data
                         putString(Fragment_Original_Post_Without_Repost_Inside.ARG_ORIGINAL_POST, Gson().toJson(data))
                         putString("post_id", data._id)
                         putInt("adapter_position", absoluteAdapterPosition)
                         putString("navigation_source", "feed_mixed_files")
                         putLong("navigation_timestamp", System.currentTimeMillis())
 
-                        // ADD AUTHOR INFORMATION
                         putString("author_name", displayName)
                         putString("author_username", data.author?.account?.username ?: "unknown_user")
                         putString("author_profile_image_url", data.author?.account?.avatar?.url ?: "")
                         putString("user_id", data.author?._id ?: "")
 
-                        // Log for debugging
                         Log.d(TAG, "Author Info - Name: $displayName, Username: ${data.author?.account?.username}, ID: ${data.author?._id}")
                     }
                 }
@@ -2039,8 +2046,7 @@ class FeedAdapter(
                 navigateToFragment(fragment, "original_post_without_repost")
 
             } catch (e: Exception) {
-                Log.e(TAG, "Error navigating to original post fragment: ${e.message}")
-                e.printStackTrace()
+                Log.e(TAG, "Error navigating to original post fragment: ${e.message}", e)
             }
         }
 
@@ -2048,25 +2054,18 @@ class FeedAdapter(
             try {
                 val activity = getActivityFromContext(itemView.context)
                 if (activity != null) {
-                    val currentFragment = activity.supportFragmentManager.fragments.lastOrNull {
-                        it.isVisible && it.view != null
-                    }
-                    val fragmentManager = if (currentFragment != null &&
-                        currentFragment.childFragmentManager.fragments.isNotEmpty()) {
-                        currentFragment.childFragmentManager
-                    } else {
-                        activity.supportFragmentManager
-                    }
-
-                    fragmentManager.beginTransaction()
+                    // ✅ USE android.R.id.content - it always exists in every activity
+                    activity.supportFragmentManager.beginTransaction()
                         .setCustomAnimations(
                             R.anim.slide_in_right,
                             R.anim.slide_out_left,
-
-                            )
-                        .replace(R.id.frame_layout, fragment)
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
+                        )
+                        .add(android.R.id.content, fragment)  // ✅ CHANGED from R.id.frame_layout
                         .addToBackStack(tag)
                         .commit()
+
                     Log.d(TAG, "Successfully navigated to fragment: $tag")
 
                 } else {
@@ -2074,6 +2073,42 @@ class FeedAdapter(
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error navigating to fragment: $tag", e)
+            }
+        }
+
+        private fun navigateToTappedFilesInTheContainerView(
+            files: ArrayList<com.uyscuti.social.network.api.response.posts.File>,
+            mediaType: String,
+            selectedPosition: Int
+        ) {
+            try {
+                val fragment = Tapped_Files_In_The_Container_View_Fragment().apply {
+                    arguments = Bundle().apply {
+                        putString("files_data", Gson().toJson(files))
+                        putString("media_type", mediaType)
+                        putInt("selected_position", selectedPosition)
+                        putInt("total_files", files.size)
+                        putStringArray("file_urls", files.map { it.url }.toTypedArray())
+                        currentPost?.let { post ->
+                            putString("post_id", post._id)
+                            putString("post_data", Gson().toJson(post))
+                            putString("post_author_id", post.author?.account?._id)
+                            putString("post_author_username", post.author?.account?.username)
+                        }
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "feed_mixed_files")
+                        putString("media_source", mediaType)
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+                        putBoolean("can_download", true)
+                        putBoolean("can_share", true)
+                        putBoolean("show_engagement_data", true)
+                    }
+                }
+
+                navigateToFragment(fragment, "files_container_view")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error navigating to files container fragment: ${e.message}", e)
             }
         }
 
@@ -2883,41 +2918,6 @@ class FeedAdapter(
                         files as ArrayList<com.uyscuti.social.network.api.response.posts.File>, "mixed_files", currentIndex)
                 }
             })
-        }
-
-        private fun navigateToTappedFilesInTheContainerView(
-            files: ArrayList<com.uyscuti.social.network.api.response.posts.File>,
-            mediaType: String,
-            selectedPosition: Int
-        ) {
-            try {
-                val fragment = Tapped_Files_In_The_Container_View_Fragment().apply {
-                    arguments = Bundle().apply {
-                        putString("files_data", Gson().toJson(files))
-                        putString("media_type", mediaType)
-                        putInt("selected_position", selectedPosition)
-                        putInt("total_files", files.size)
-                        putStringArray("file_urls", files.map { it.url }.toTypedArray())
-                        currentPost?.let { post ->
-                            putString("post_id", post._id)
-                            putString("post_data", Gson().toJson(post))
-                            putString("post_author_id", post.author?.account?._id)
-                            putString("post_author_username", post.author?.account?.username)
-                        }
-                        putInt("adapter_position", absoluteAdapterPosition)
-                        putString("navigation_source", "feed_mixed_files")
-                        putString("media_source", mediaType)
-                        putLong("navigation_timestamp", System.currentTimeMillis())
-                        putBoolean("can_download", true)
-                        putBoolean("can_share", true)
-                        putBoolean("show_engagement_data", true)
-                    }
-                }
-                navigateToFragment(fragment, "files_container_view")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error navigating to files container fragment: ${e.message}")
-                e.printStackTrace()
-            }
         }
 
         private fun getActivityFromContext(context: Context): AppCompatActivity? {

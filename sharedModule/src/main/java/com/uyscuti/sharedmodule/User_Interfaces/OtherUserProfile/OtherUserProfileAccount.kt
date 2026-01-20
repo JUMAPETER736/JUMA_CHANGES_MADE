@@ -75,7 +75,6 @@ import android.widget.LinearLayout
 import com.google.gson.Gson
 import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside
-import com.uyscuti.social.circuit.user_interface.userProfile.AllOtherUsersPostsFragment
 import com.uyscuti.social.network.api.models.Avatar
 import com.uyscuti.social.network.api.response.posts.Post
 

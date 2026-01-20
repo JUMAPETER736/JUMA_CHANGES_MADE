@@ -1,4 +1,4 @@
-package com.uyscuti.social.circuit.user_interface.userProfile
+package com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile
 
 import android.annotation.SuppressLint
 import android.os.Bundle
@@ -9,11 +9,14 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.OptIn
 import androidx.appcompat.widget.AppCompatButton
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
@@ -30,6 +33,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 private const val TAG = "AllOtherUsersPostsFragment"
+
 
 @AndroidEntryPoint
 class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
@@ -142,14 +146,13 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
     }
 
     private fun setupRecyclerView() {
-        // ✅ PASS THE PARENT FRAGMENT MANAGER (from the activity)
         val parentActivity = requireActivity()
 
         feedAdapter = FeedAdapter(
             requireContext(),
             retrofitInstance,
             this,
-            fragmentManager = parentActivity.supportFragmentManager  // ✅ CHANGED: Use activity's fragment manager
+            fragmentManager = parentActivity.supportFragmentManager
         )
 
         recyclerView.apply {
@@ -398,65 +401,51 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
         feedAdapter.updatePosts(emptyList())
     }
 
-    // ✅ THESE METHODS ARE CALLED BY FeedAdapter - They don't need implementation here
-    // The FeedPostViewHolder handles everything internally
     override fun likeUnLikeFeed(position: Int, data: Post) {
-        // FeedPostViewHolder handles this internally with its own API calls
         Log.d(TAG, "Like clicked at position $position")
     }
 
     override fun feedCommentClicked(position: Int, data: Post) {
-        // FeedPostViewHolder handles this internally
         Log.d(TAG, "Comment clicked at position $position")
     }
 
     override fun feedFavoriteClick(position: Int, data: Post) {
-        // FeedPostViewHolder handles this internally with its own API calls
         Log.d(TAG, "Favorite clicked at position $position")
     }
 
     override fun moreOptionsClick(position: Int, data: Post) {
-        // FeedPostViewHolder handles this internally
         Log.d(TAG, "More options clicked at position $position")
     }
 
     override fun feedFileClicked(position: Int, data: Post) {
-        // FeedPostViewHolder handles navigation internally
         Log.d(TAG, "Feed file clicked at position $position")
     }
 
     override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
-        // FeedPostViewHolder handles this internally
         Log.d(TAG, "Repost file clicked at position $position")
     }
 
     override fun feedShareClicked(position: Int, data: Post) {
-        // FeedPostViewHolder handles this internally with its own bottom sheet
         Log.d(TAG, "Share clicked at position $position")
     }
 
     override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {
-        // FeedPostViewHolder handles this internally with its own API calls
         Log.d(TAG, "Follow button clicked for user ${followUnFollowEntity.userId}")
     }
 
     override fun feedRepostPost(position: Int, data: Post) {
-        // FeedPostViewHolder handles this internally with its own API calls
         Log.d(TAG, "Repost clicked at position $position")
     }
 
     override fun feedRepostPostClicked(position: Int, data: Post) {
-        // FeedPostViewHolder handles navigation internally
         Log.d(TAG, "Repost post clicked at position $position")
     }
 
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
-        // FeedPostViewHolder handles navigation internally
         Log.d(TAG, "Original post clicked: $originalPostId")
     }
 
     override fun onImageClick() {
-        // FeedPostViewHolder handles this internally
         Log.d(TAG, "Image clicked")
     }
 }
