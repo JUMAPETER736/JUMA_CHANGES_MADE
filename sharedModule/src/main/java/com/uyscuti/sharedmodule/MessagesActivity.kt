@@ -159,6 +159,7 @@ import kotlin.toString
 
 @AndroidEntryPoint
 class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
+
     MessageInput.EmojiListener, MessageInput.VoiceListener, MessageInput.AttachmentsListener,
     DateFormatter.Formatter, CoreChatSocketClient.ChatSocketEvents,
     MessagesListAdapter.MessageSentListener<Message>,
@@ -3379,7 +3380,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     )
                                 }
                             } else if (message.text == "None" && message.voiceUrl != null) {
-//                        user.id = "0"
+
                                 Message(
                                     message.id,
                                     user,
@@ -3389,7 +3390,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     setVoice(Message.Voice(message.voiceUrl!!, 10000))
                                 }
                             } else if (message.docUrl != null) {
-//                        user.id = "0"
+
                                 Message(
                                     message.id,
                                     user,
@@ -3490,7 +3491,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                     val newAttachmentFile = File(newFilePath)
 
-//            val encodedFilePath = URLDecoder.decode(filePath, "UTF-8")
                     val attachmentFile = File(decoded)
                     val fileBytes = attachmentFile.readBytes()
 
@@ -3521,11 +3521,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                 val responseData =
                                     response.body() // This will contain the response data from the server
                                 // Handle the response data as needed
-//                        Log.d(TAG, "file response data: $responseData")
-//                        val jsonResponse = response.body()?.toString()
-//                        Log.d(TAG, "Response JSON: $jsonResponse")
-//                        Log.d(TAG, "Response Status Code: ${response.code()}")
-//                        Log.d(TAG, "Response Headers: ${response.headers()}")
+
                                 CoroutineScope(Dispatchers.IO).launch {
                                     messageViewModel.updateMessageStatus(message)
                                 }
@@ -3549,7 +3545,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                 val messageContent = if (message.imageUrl != null) {
 
                                     Log.d("File Sent", "Image found ${message.imageUrl}")
-//                        user.id = "0"
+
                                     Message(
                                         message.id,
                                         user,
@@ -3560,7 +3556,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                                     }
                                 } else if (message.videoUrl != null) {
-//                        user.id = "0"
+
                                     Message(
                                         message.id,
                                         user,
@@ -3570,7 +3566,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                         setVideo(Message.Video(message.videoUrl!!))
                                     }
                                 } else if (message.audioUrl != null) {
-//                        user.id = "0"
+
                                     Message(
                                         message.id,
                                         user,
@@ -3586,7 +3582,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                         )
                                     }
                                 } else if (message.text == "None" && message.voiceUrl != null) {
-//                        user.id = "0"
+
                                     Message(
                                         message.id,
                                         user,
@@ -3596,7 +3592,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                         setVoice(Message.Voice(message.voiceUrl!!, 10000))
                                     }
                                 } else if (message.docUrl != null) {
-//                        user.id = "0"
+
                                     Message(
                                         message.id,
                                         user,
@@ -3624,7 +3620,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                                 runOnUiThread {
                                     showToast("File Sent")
-//                            messagesAdapter?.notifyMessageSent(messageContent )
+
                                     messageContent.status = "Sent"
                                     messagesAdapter?.notifyMessageSent(messageContent)
                                 }
@@ -3756,9 +3752,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 
-//                    val file = copyFileToInternalStorage(this, filePath, filePath)
 
-//                    Log.d("FileOperation", "Completed : $file")
                     val contentUri = try {
                         getFileUri(this@MessagesActivity, filePath)
                     } catch (e: Exception) {
@@ -3767,7 +3761,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                     val ul = getUriForFileByName(this, getFileNameFromUrl(filePath))
 
-//                    Log.d("FileOperation", "Content Found: $ul")
+
 
                     sendAttachmentContent(contentUri, currentMessage) { success ->
                         if (success) {
