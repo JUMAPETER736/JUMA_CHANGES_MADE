@@ -32,6 +32,7 @@ import javax.inject.Inject
 private const val TAG = "MyUsersPostsFragment"
 
 
+
 @AndroidEntryPoint
 class MyUserPostsFragment : Fragment(), OnFeedClickListener {
 
@@ -42,8 +43,8 @@ class MyUserPostsFragment : Fragment(), OnFeedClickListener {
         private val postsCache = mutableMapOf<String, MutableList<Post>>()
         private val cacheTimestamp = mutableMapOf<String, Long>()
         private const val CACHE_VALIDITY_MS = 5 * 60 * 1000L
-        private const val INITIAL_LOAD_SIZE = 10 // Show first 10 immediately
-        private const val MAX_PAGES = 5 // Reduced from 10
+        private const val INITIAL_LOAD_SIZE = 10
+        private const val MAX_PAGES = 5
 
         fun newInstance(userId: String, username: String): MyUserPostsFragment {
             return MyUserPostsFragment().apply {
@@ -60,7 +61,6 @@ class MyUserPostsFragment : Fragment(), OnFeedClickListener {
             cacheTimestamp.remove(cleanUsername)
         }
     }
-
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
@@ -87,7 +87,7 @@ class MyUserPostsFragment : Fragment(), OnFeedClickListener {
         }
 
         val localStorage = LocalStorage(requireContext())
-        val retrofitInstance = RetrofitInstance(localStorage, requireContext())
+        retrofitInstance = RetrofitInstance(localStorage, requireContext())
         apiService = retrofitInstance.apiService
     }
 
@@ -144,19 +144,22 @@ class MyUserPostsFragment : Fragment(), OnFeedClickListener {
     }
 
     private fun setupRecyclerView() {
+        // ✅ CHANGED: Use activity's fragment manager instead of childFragmentManager
+        val parentActivity = requireActivity()
+
         feedAdapter = FeedAdapter(
             requireContext(),
             retrofitInstance,
             this,
-            fragmentManager = childFragmentManager
+            fragmentManager = parentActivity.supportFragmentManager  // ✅ Use activity's fragment manager
         )
 
         recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = feedAdapter
             visibility = View.VISIBLE
-            setHasFixedSize(true) // Performance optimization
-            setItemViewCacheSize(20) // Cache more views
+            setHasFixedSize(true)
+            setItemViewCacheSize(20)
         }
 
         feedAdapter.recyclerView = recyclerView
@@ -173,13 +176,11 @@ class MyUserPostsFragment : Fragment(), OnFeedClickListener {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // Load first page immediately
                 val firstPageResponse = apiService.getAllFeed(page = "1")
 
                 if (firstPageResponse.isSuccessful) {
                     val firstPagePosts = firstPageResponse.body()?.data?.data?.posts ?: emptyList()
 
-                    // Filter and get first batch of user posts
                     val firstBatch = firstPagePosts
                         .mapNotNull { filterUserPost(it) }
                         .take(INITIAL_LOAD_SIZE)
@@ -188,7 +189,6 @@ class MyUserPostsFragment : Fragment(), OnFeedClickListener {
                     if (firstBatch.isNotEmpty()) {
                         allUserPosts.addAll(firstBatch)
 
-                        // Show first batch immediately
                         withContext(Dispatchers.Main) {
                             progressBar.visibility = View.GONE
                             feedAdapter.submitItems(firstBatch)
@@ -198,7 +198,6 @@ class MyUserPostsFragment : Fragment(), OnFeedClickListener {
                         }
                     }
 
-                    // Load remaining data in background
                     val remainingFirstPage = firstPagePosts
                         .mapNotNull { filterUserPost(it) }
                         .drop(INITIAL_LOAD_SIZE)
@@ -246,14 +245,12 @@ class MyUserPostsFragment : Fragment(), OnFeedClickListener {
 
     private suspend fun loadRemainingDataInBackground(remainingFirstPage: List<Post>) {
         try {
-            // Process remaining items from first page
             val remainingValidated = remainingFirstPage.mapNotNull { validateAndFixPost(it) }
             if (remainingValidated.isNotEmpty()) {
                 allUserPosts.addAll(remainingValidated)
                 updateUI()
             }
 
-            // Load additional pages
             var currentPage = 2
             var hasMorePages = true
 
@@ -286,7 +283,6 @@ class MyUserPostsFragment : Fragment(), OnFeedClickListener {
                 }
             }
 
-            // Cache final results
             postsCache[cleanUsername!!] = allUserPosts.toMutableList()
             cacheTimestamp[cleanUsername!!] = System.currentTimeMillis()
 
@@ -404,16 +400,52 @@ class MyUserPostsFragment : Fragment(), OnFeedClickListener {
         feedAdapter.updatePosts(emptyList())
     }
 
-    override fun likeUnLikeFeed(position: Int, data: Post) {}
-    override fun feedCommentClicked(position: Int, data: Post) {}
-    override fun feedFavoriteClick(position: Int, data: Post) {}
-    override fun moreOptionsClick(position: Int, data: Post) {}
-    override fun feedFileClicked(position: Int, data: Post) {}
-    override fun feedRepostFileClicked(position: Int, data: OriginalPost) {}
-    override fun feedShareClicked(position: Int, data: Post) {}
-    override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {}
-    override fun feedRepostPost(position: Int, data: Post) {}
-    override fun feedRepostPostClicked(position: Int, data: Post) {}
-    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {}
-    override fun onImageClick() {}
+    // ✅ These methods are just stubs - FeedPostViewHolder handles everything internally
+    override fun likeUnLikeFeed(position: Int, data: Post) {
+        Log.d(TAG, "Like clicked at position $position - handled by FeedPostViewHolder")
+    }
+
+    override fun feedCommentClicked(position: Int, data: Post) {
+        Log.d(TAG, "Comment clicked at position $position - handled by FeedPostViewHolder")
+    }
+
+    override fun feedFavoriteClick(position: Int, data: Post) {
+        Log.d(TAG, "Favorite clicked at position $position - handled by FeedPostViewHolder")
+    }
+
+    override fun moreOptionsClick(position: Int, data: Post) {
+        Log.d(TAG, "More options clicked at position $position - handled by FeedPostViewHolder")
+    }
+
+    override fun feedFileClicked(position: Int, data: Post) {
+        Log.d(TAG, "File clicked at position $position - handled by FeedPostViewHolder")
+    }
+
+    override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
+        Log.d(TAG, "Repost file clicked at position $position - handled by FeedPostViewHolder")
+    }
+
+    override fun feedShareClicked(position: Int, data: Post) {
+        Log.d(TAG, "Share clicked at position $position - handled by FeedPostViewHolder")
+    }
+
+    override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {
+        Log.d(TAG, "Follow clicked for user ${followUnFollowEntity.userId} - handled by FeedPostViewHolder")
+    }
+
+    override fun feedRepostPost(position: Int, data: Post) {
+        Log.d(TAG, "Repost clicked at position $position - handled by FeedPostViewHolder")
+    }
+
+    override fun feedRepostPostClicked(position: Int, data: Post) {
+        Log.d(TAG, "Repost post clicked at position $position - handled by FeedPostViewHolder")
+    }
+
+    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
+        Log.d(TAG, "Original post clicked: $originalPostId - handled by FeedPostViewHolder")
+    }
+
+    override fun onImageClick() {
+        Log.d(TAG, "Image clicked - handled by FeedPostViewHolder")
+    }
 }
