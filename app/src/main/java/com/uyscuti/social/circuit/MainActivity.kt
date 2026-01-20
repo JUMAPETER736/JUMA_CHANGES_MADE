@@ -437,7 +437,7 @@ class MainActivity : AppCompatActivity(),
 
     private var adapter: CommentsRecyclerViewAdapter? = null
     private var isReply = false
-//    val adapter = CommentsRecyclerViewAdapter
+
 
     private lateinit var postId: String
     private lateinit var commentId: String
@@ -469,7 +469,7 @@ class MainActivity : AppCompatActivity(),
     private val REQUEST_CODE_IMAGE_PICKER_CATALOGUE = 110
 
 
-// Location service for getting user location
+        // Location service for getting user location
          private lateinit var locationService: LocationService
          private var serviceBound = false
 
@@ -535,7 +535,7 @@ class MainActivity : AppCompatActivity(),
     private val playbackStateListener: Player.Listener = playbackStateListener()
 
     private var exoPlayer: ExoPlayer? = null
-//    private lateinit var mediaSource: MediaSource
+
 
     private val exoPlayerItems = ArrayList<ExoPlayerItem>()
     var customDialog: CustomAlertDialog? = null
@@ -650,7 +650,7 @@ class MainActivity : AppCompatActivity(),
 
 
         var navigateTo = intent.getStringExtra("fragment") ?: "shorts"
-// added code
+
         var userProfileFragment = intent.getStringExtra("UserProfileFragment")
         val title = intent.getStringExtra("title") ?: ""
 
@@ -711,7 +711,7 @@ class MainActivity : AppCompatActivity(),
         )
 
 
-// Ensure that the directory exists
+        // Ensure that the directory exists
         if (!storageDirectory.exists()) {
             storageDirectory.mkdirs()
         }
@@ -719,18 +719,17 @@ class MainActivity : AppCompatActivity(),
         Log.d("Download", "directory path - $storageDirectory")
 
 
-//        setUpTabs()
+
         setNavigationListener()
         getUserProfile()
 
 
-//        val menuItem: MenuItem = bottomNavigation.menu.findItem(R.id.profile)
         val profilePic = settings.getString("avatar", "").toString()
         val profilePic2 = settings.getString("profile_pic", "").toString()
 
         Log.d("ProfilePic", "Avatar path: $profilePic")
         Log.d("ProfilePic", "Avatar path2: $profilePic2")
-//        imageBadgeView = findViewById(R.id.ibv_icon4);
+
         item = NavigationItem(this@MainActivity, R.drawable.chat_round_svgrepo_com)
         item1 = NavigationItem(this@MainActivity, R.drawable.business_bag_svgrepo_com)
         item2 = NavigationItem(this@MainActivity, R.drawable.play_svgrepo_com)
@@ -779,14 +778,14 @@ class MainActivity : AppCompatActivity(),
         if (item2.isEnabled) {
             item2.drawableTint = Color.WHITE
         }
-// Call this function from your activity
+
+        // Call this function from your activity
         loadProfileImage(profilePic2)
 
 
 
         lifecycleScope.launch {
-//            getUserShorts()
-//            getUserShorts(1)
+
         }
 
 
