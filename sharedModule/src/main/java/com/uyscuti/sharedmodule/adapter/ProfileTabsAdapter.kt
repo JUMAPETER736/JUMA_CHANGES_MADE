@@ -17,7 +17,7 @@ import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.interfaces.feedinterfaces.OnShortThumbnailClickListener
 import com.uyscuti.sharedmodule.model.User
 import com.uyscuti.sharedmodule.ui.fragments.forshorts.OtherUsersShortsProfileFragment
-import com.uyscuti.sharedmodule.fragments.ProfileViewFragment
+import com.uyscuti.sharedmodule.fragments.MyUserBusinessProfileFragment
 import com.uyscuti.sharedmodule.ui.fragments.FragmentFactoryRegistry
 
 
@@ -60,7 +60,7 @@ class ProfileTabsAdapter(private val context: Context, fm: FragmentManager, priv
 
             }
             1 ->  FragmentFactoryRegistry.createFragment("profile", username!!) ?: EmptyFragment()
-            2 -> ProfileViewFragment.newInstance(user)
+            2 -> MyUserBusinessProfileFragment.newInstance(user)
 
 
             else -> throw IllegalArgumentException("Invalid tab position: $position")

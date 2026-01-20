@@ -11,7 +11,7 @@ import com.uyscuti.social.circuit.ui.fragments.feed.FavoriteFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.MyFeedFragment
 import com.uyscuti.social.circuit.R
 import com.uyscuti.sharedmodule.fragments.GroupPlaceholderFragment
-import com.uyscuti.sharedmodule.fragments.ProfileViewFragment
+import com.uyscuti.sharedmodule.fragments.MyUserBusinessProfileFragment
 import com.uyscuti.social.circuit.ui.fragments.user_profile_fragments.UserShortsFragment
 
 class UserProfileTabsAdapter(
@@ -37,7 +37,7 @@ class UserProfileTabsAdapter(
         addFragment(MyFeedFragment.newInstance("", ""), "group_placeholder_2_tag")
 
         addFragment(FavoriteFragment(), "group_placeholder_1_tag")
-        addFragment(ProfileViewFragment.newInstance(user), "group_placeholder_3_tag")
+        addFragment(MyUserBusinessProfileFragment.newInstance(user), "group_placeholder_3_tag")
         addFragment(GroupPlaceholderFragment.newInstance("", ""), "group_placeholder_4_tag")
     }
 

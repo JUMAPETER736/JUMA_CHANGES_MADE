@@ -56,7 +56,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.databinding.ActivityOtherUserProfileAccountBinding
-import com.uyscuti.sharedmodule.fragments.ProfileViewFragment
+import com.uyscuti.sharedmodule.fragments.MyUserBusinessProfileFragment
 import com.uyscuti.sharedmodule.model.User
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
@@ -1549,7 +1549,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
                 3 -> {
 
                     // Business Fragment
-                    ProfileViewFragment.newInstance(user)
+                    OtherUserBusinessProfileFragment.newInstance(user)
                 }
 
                 else -> throw IllegalStateException("Invalid position: $position")

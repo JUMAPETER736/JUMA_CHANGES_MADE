@@ -8,7 +8,7 @@ import android.view.WindowManager
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import com.uyscuti.sharedmodule.fragments.ProfileViewFragment
+import com.uyscuti.sharedmodule.fragments.MyUserBusinessProfileFragment
 import com.uyscuti.sharedmodule.model.User
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.ActivityViewMoreBusinessDetailsBinding
@@ -51,7 +51,7 @@ class ViewMoreBusinessDetails : AppCompatActivity() {
             userData.lastSeen
         )
 
-        val fragment = ProfileViewFragment.newInstance(user)
+        val fragment = MyUserBusinessProfileFragment.newInstance(user)
         callFragment(fragment)
 
 

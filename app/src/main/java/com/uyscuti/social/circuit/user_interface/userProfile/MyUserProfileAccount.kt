@@ -67,7 +67,7 @@ import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.uyscuti.sharedmodule.fragments.ProfileViewFragment
+import com.uyscuti.sharedmodule.fragments.MyUserBusinessProfileFragment
 import com.uyscuti.sharedmodule.model.User
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.UserFollowersFragment
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.UserFollowingFragment
@@ -1621,7 +1621,7 @@ class MyUserProfileAccount : AppCompatActivity() {
                 3 -> {
 
                     // Business Fragment
-                    ProfileViewFragment.newInstance(user)
+                    MyUserBusinessProfileFragment.newInstance(user)
 
                 }
 

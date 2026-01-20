@@ -25,7 +25,7 @@ import javax.inject.Inject
 
 
 @AndroidEntryPoint
-class ProfileViewFragment : Fragment() {
+class OtherUserBusinessProfileFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var profileViewAdapter: ProfileViewAdapter
@@ -36,8 +36,8 @@ class ProfileViewFragment : Fragment() {
     lateinit var retrofitInterface: RetrofitInstance
     private lateinit var user: User
     companion object {
-        fun newInstance(user: User): ProfileViewFragment {
-            val fragment = ProfileViewFragment()
+        fun newInstance(user: User): OtherUserBusinessProfileFragment {
+            val fragment = OtherUserBusinessProfileFragment()
             val args = Bundle()
             args.putSerializable("user", user)
 //            args.putParcelable("user", user)
