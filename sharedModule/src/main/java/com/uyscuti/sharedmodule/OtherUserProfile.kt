@@ -228,6 +228,7 @@ private const val PREFS_NAME = "LocalSettings"
 @UnstableApi
 @AndroidEntryPoint
 class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
+
     CommentsInput.InputListener, CommentsInput.EmojiListener, CommentsInput.VoiceListener,
     CommentsInput.GifListener,
     CommentsInput.AttachmentsListener, OnCommentsClickListener,
@@ -1910,9 +1911,8 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             listOfReplies.add(comment)
 
             Log.d(TAG, "onSubmit: comment $comment")
-//        adapter.submitItems(listOf(comment) )
-//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
-//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
+
+
 
             commentsAdapter!!.submitItem(comment, commentsAdapter!!.itemCount)
             updateUI(dataEmpty = false)
@@ -1952,24 +1952,25 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                             feed.comments = myFeedToComment!!.comments
                         }
                     }
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
+
                 }
                 if (favoriteFeedToComment != null) {
-//                    favoriteFeedToComment!!.comments += 1
+
+
 
                     feedViewModel.getAllFavoriteFeedData().forEach { feed ->
                         if (feed._id == postId) {
                             feed.comments = favoriteFeedToComment!!.comments
                         }
                     }
-//                        favoriteFeedToComment = feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                        Log.d(TAG, "onSubmit: total after feed count is ${favoriteFeedToComment?.comments}")
-//
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
+
 
                 }
                 if (feedToComment != null) {
-//                    feedToComment!!.comments += 1
+
+
 
                     feedViewModel.getAllFeedData().forEach { feed ->
                         if (feed._id == postId) {
