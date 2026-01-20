@@ -2271,6 +2271,7 @@ class FeedAdapter(
         }
 
         private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+
             Log.d(TAG, "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}, bookmarkCount=${totalMixedBookMarkCounts}")
             updateBookmarkButtonUI(data.isBookmarked ?: false)
             updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
