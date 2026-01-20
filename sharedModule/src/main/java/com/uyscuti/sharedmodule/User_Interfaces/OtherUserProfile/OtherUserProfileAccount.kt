@@ -1539,6 +1539,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
             putExtra("full_name", fullName)
             putExtra("following_count", followingCount)
             putExtra("tab_index", 0)
+            putExtra("is_my_following", false)
         }
 
         startActivity(intent)

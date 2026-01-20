@@ -1130,6 +1130,7 @@ class MyUserProfileAccount : AppCompatActivity() {
             putExtra("full_name", fullName)
             putExtra("following_count", followingCount)
             putExtra("tab_index", 0)
+            putExtra("is_my_following", true)
         }
         startActivity(intent)
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)

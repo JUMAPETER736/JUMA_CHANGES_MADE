@@ -503,7 +503,7 @@ class UserFollowersFragment : AppCompatActivity() {
         followersCount += change
         val formattedCount = formatCount(followersCount)
         val titleText = if (isMyFollowers) {
-            "My $formattedCount Followers"
+            "$formattedCount Followers"
         } else {
             "$formattedCount Followers"
         }
@@ -854,7 +854,7 @@ class FollowersAdapter(
                 .into(holder.profileImage)
         } ?: holder.profileImage.setImageResource(R.drawable.flash21)
 
-        // ✅ ADD THIS CODE - Show/Hide more options button based on whether it's my followers
+        // Show/Hide more options button based on whether it's my followers
         if (isMyFollowers) {
             // This is MY followers list - show the more options button
             holder.moreOptionsButton.visibility = View.VISIBLE

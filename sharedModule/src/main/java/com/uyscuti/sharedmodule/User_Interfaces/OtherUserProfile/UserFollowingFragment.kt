@@ -72,6 +72,7 @@ class UserFollowingFragment : AppCompatActivity() {
     private var username: String = ""
     private var fullName: String = ""
     private var followingCount: Int = 0
+    private var isMyFollowing: Boolean = false
 
     // Lists for following users
     private var followingList = mutableListOf<UserFollowingDisplayModel>()
@@ -103,10 +104,12 @@ class UserFollowingFragment : AppCompatActivity() {
     }
 
     private fun extractIntentData() {
+
         userId = intent.getStringExtra("user_id") ?: ""
         username = intent.getStringExtra("username") ?: ""
         fullName = intent.getStringExtra("full_name") ?: ""
         followingCount = intent.getIntExtra("following_count", 0)
+        isMyFollowing = intent.getBooleanExtra("is_my_following", false)
 
         Log.d(TAG, "User data - ID: $userId, Username: $username, Following: $followingCount")
     }
@@ -157,7 +160,8 @@ class UserFollowingFragment : AppCompatActivity() {
                 showMoreOptions(user)
             },
             retrofitInstance = retrofitInstance,
-            localStorage = localStorage  // ADD THIS LINE
+            localStorage = localStorage,
+            isMyFollowing = isMyFollowing
         )
 
         blockedAdapter = BlockedAdapter(
@@ -702,7 +706,8 @@ class FollowingAdapter(
     private val onUnfollowClick: (UserFollowingDisplayModel) -> Unit,
     private val onMoreOptionsClick: ((UserFollowingDisplayModel) -> Unit)? = null,
     private val retrofitInstance: RetrofitInstance,
-    private val localStorage: LocalStorage
+    private val localStorage: LocalStorage,
+    private val isMyFollowing: Boolean = false
 
 ) : RecyclerView.Adapter<FollowingAdapter.FollowingViewHolder>() {
 
@@ -786,12 +791,23 @@ class FollowingAdapter(
             openMessaging(holder.itemView.context, followingUser)
         }
 
+        //Show/Hide more options button based on whether it's my following
+        if (isMyFollowing) {
+            // This is MY following list - show the more options button
+            holder.moreOptionsButton.visibility = View.VISIBLE
+        } else {
+            // This is someone else's following list - hide the more options button
+            holder.moreOptionsButton.visibility = View.GONE
+        }
+
         // Optional elements
         setupOptionalElements(holder, followingUser)
 
-        // More options button
+        // More options button - only clickable if visible
         holder.moreOptionsButton.setOnClickListener {
-            onMoreOptionsClick?.invoke(followingUser)
+            if (isMyFollowing) {
+                onMoreOptionsClick?.invoke(followingUser)
+            }
         }
     }
 
