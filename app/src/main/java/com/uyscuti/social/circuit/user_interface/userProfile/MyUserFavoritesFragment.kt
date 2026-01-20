@@ -356,7 +356,9 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     // OnFeedClickListener implementations
     override fun likeUnLikeFeed(position: Int, data: Post) {}
+
     override fun feedCommentClicked(position: Int, data: Post) {}
+
     override fun feedFavoriteClick(position: Int, data: Post) {
         // When user unbookmarks, remove from list immediately
         if (data.isBookmarked == false) {
@@ -372,13 +374,20 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
     override fun moreOptionsClick(position: Int, data: Post) {}
+
     override fun feedFileClicked(position: Int, data: Post) {}
+
     override fun feedRepostFileClicked(position: Int, data: OriginalPost) {}
+
     override fun feedShareClicked(position: Int, data: Post) {}
+
     override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {}
     override fun feedRepostPost(position: Int, data: Post) {}
+
     override fun feedRepostPostClicked(position: Int, data: Post) {}
+
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {}
+    
     override fun onImageClick() {}
 
 
