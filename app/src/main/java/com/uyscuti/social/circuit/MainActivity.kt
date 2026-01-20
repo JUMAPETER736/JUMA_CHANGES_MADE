@@ -1155,20 +1155,13 @@ class MainActivity : AppCompatActivity(),
             }
         }
 
-        // Add the callback to the onBackPressedDispatcher
-//        onBackPressedDispatcher.addCallback(
-//            this, onBackPressedCallback
-//        )
+
         initializeCommentsBottomSheet()
 
-//        binding.deleteVN.setOnClickListener {
-//            binding.VNLayout.visibility = View.GONE
-//        }
         binding.VNLinearLayout.setOnClickListener {
             Log.d(TAG, "onCreate: vn linear layout touched")
         }
 
-//        audioRecorderClickListeners()
 
         if (binding.motionLayout.visibility == View.GONE) {
             binding.VNLayout.visibility = View.GONE
@@ -1201,11 +1194,7 @@ class MainActivity : AppCompatActivity(),
             binding.VNLayout.visibility = View.GONE
         }
         binding.sendVN.setOnClickListener {
-//            if (!wasPaused) {
-//                Log.d("SendVN", "When sending vn was paused was false")
-//                mixVN()
-//            }
-//            stopRecording()
+
 
             sending = true
             CoroutineScope(Dispatchers.Main).launch {
@@ -1221,12 +1210,12 @@ class MainActivity : AppCompatActivity(),
                 }
 
                 lifecycleScope.launch(Dispatchers.Main) {
-//                    timer.stop()
+
                     delay(500)
                     stopRecording()
                 }
 
-//                stopRecording() // Stop recording after mixVN finishes executing or immediately if wasPaused is true
+
             }
         }
 
