@@ -1613,13 +1613,13 @@ class MyUserProfileAccount : AppCompatActivity() {
                 2 -> {
 
                     // Favorites Fragment
-                    FavoriteFragment()
-//                    MyUserFavoritesFragment().apply {
-//                        arguments = Bundle().apply {
-//                            putString("userId", userId)
-//                            putString("username", username)
-//                        }
-//                    }
+                    //FavoriteFragment()
+                    MyUserFavoritesFragment().apply {
+                        arguments = Bundle().apply {
+                            putString("userId", userId)
+                            putString("username", username)
+                        }
+                    }
                 }
 
                 3 -> {

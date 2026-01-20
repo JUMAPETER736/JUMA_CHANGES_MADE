@@ -1,4 +1,4 @@
-package com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile
+package com.uyscuti.social.circuit.user_interface.userProfile
 
 import android.annotation.SuppressLint
 import android.os.Bundle
@@ -9,14 +9,11 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.OptIn
 import androidx.appcompat.widget.AppCompatButton
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.gson.Gson
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
@@ -34,7 +31,6 @@ import javax.inject.Inject
 
 private const val TAG = "AllOtherUsersPostsFragment"
 
-
 @AndroidEntryPoint
 class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
 
@@ -42,8 +38,11 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
         private const val ARG_USER_ID = "userId"
         private const val ARG_USERNAME = "username"
 
-        // Static cache shared across fragment instances
-        private val staticCache = mutableMapOf<String, Pair<List<Post>, Long>>()
+        private val postsCache = mutableMapOf<String, MutableList<Post>>()
+        private val cacheTimestamp = mutableMapOf<String, Long>()
+        private const val CACHE_VALIDITY_MS = 5 * 60 * 1000L
+        private const val INITIAL_LOAD_SIZE = 10
+        private const val MAX_PAGES = 5
 
         fun newInstance(userId: String, username: String): AllOtherUsersPostsFragment {
             return AllOtherUsersPostsFragment().apply {
@@ -53,10 +52,17 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
                 }
             }
         }
+
+        fun clearCache(username: String) {
+            val cleanUsername = username.trim().lowercase()
+            postsCache.remove(cleanUsername)
+            cacheTimestamp.remove(cleanUsername)
+        }
     }
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
+
     private lateinit var apiService: IFlashapi
     private lateinit var recyclerView: RecyclerView
     private lateinit var feedAdapter: FeedAdapter
@@ -68,16 +74,7 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
     private var cleanUsername: String? = null
 
     private val allUserPosts = mutableListOf<Post>()
-    private var cachedPosts: List<Post>? = null
-    private var cacheTimestamp: Long = 0L
-    private val CACHE_DURATION_MS = 5 * 60 * 1000L // 5 minutes
-
-    private var currentPage = 1
-    private var isLoading = false
-    private var hasMoreData = true
-    private var hasLoadedOnce = false
-    private val MAX_PAGES = 10
-    private val MAX_ITEMS = 50
+    private var isDataLoaded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,21 +84,9 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
             cleanUsername = username?.trim()?.lowercase()
         }
 
-        Log.d(TAG, "Fragment initialized - userId: $userId, username: $username")
-
+        val localStorage = LocalStorage(requireContext())
+        retrofitInstance = RetrofitInstance(localStorage, requireContext())
         apiService = retrofitInstance.apiService
-
-        // Load from static cache if available
-        userId?.let { id ->
-            staticCache[id]?.let { (posts, timestamp) ->
-                if ((System.currentTimeMillis() - timestamp) < CACHE_DURATION_MS) {
-                    cachedPosts = posts
-                    cacheTimestamp = timestamp
-                    hasLoadedOnce = true
-                    Log.d(TAG, "⚡ Loaded ${posts.size} posts from static cache!")
-                }
-            }
-        }
     }
 
     override fun onCreateView(
@@ -118,234 +103,360 @@ class AllOtherUsersPostsFragment : Fragment(), OnFeedClickListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         setupRecyclerView()
 
-        // If cache exists and valid, display instantly
-        if (cachedPosts != null && isCacheValid()) {
-            displayCachedData()
-            if ((System.currentTimeMillis() - cacheTimestamp) > (CACHE_DURATION_MS / 2)) {
-                refreshInBackground()
-            }
+        if (isCacheValid()) {
+            val cachedData = postsCache[cleanUsername] ?: mutableListOf()
+            allUserPosts.clear()
+            allUserPosts.addAll(cachedData)
+            isDataLoaded = true
+            displayCachedData(cachedData)
         } else {
-            resetAndLoadFresh()
+            allUserPosts.clear()
+            isDataLoaded = false
+            loadAllPostsOptimized()
+        }
+    }
+
+    private fun isCacheValid(): Boolean {
+        val cached = postsCache[cleanUsername]
+        val timestamp = cacheTimestamp[cleanUsername]
+
+        if (cached == null || timestamp == null) return false
+
+        val currentTime = System.currentTimeMillis()
+        return (currentTime - timestamp) < CACHE_VALIDITY_MS
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun displayCachedData(cachedPosts: List<Post>) {
+        if (cachedPosts.isEmpty()) {
+            showEmptyState()
+        } else {
+            feedAdapter.submitItems(cachedPosts)
+            feedAdapter.initializeCommentCounts(cachedPosts)
+            recyclerView.visibility = View.VISIBLE
+            emptyStateText.visibility = View.GONE
         }
     }
 
     private fun setupRecyclerView() {
-        // Use parentFragmentManager instead of childFragmentManager
+        // ✅ PASS THE PARENT FRAGMENT MANAGER (from the activity)
+        val parentActivity = requireActivity()
+
         feedAdapter = FeedAdapter(
             requireContext(),
             retrofitInstance,
             this,
-            fragmentManager = parentFragmentManager
+            fragmentManager = parentActivity.supportFragmentManager  // ✅ CHANGED: Use activity's fragment manager
         )
 
         recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = feedAdapter
+            visibility = View.VISIBLE
             setHasFixedSize(true)
             setItemViewCacheSize(20)
-            isNestedScrollingEnabled = true
-
-            // RecycledViewPool for better performance
-            val viewPool = RecyclerView.RecycledViewPool()
-            viewPool.setMaxRecycledViews(0, 15)
-            setRecycledViewPool(viewPool)
-
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
-                    val layoutManager = rv.layoutManager as LinearLayoutManager
-                    val visibleItemCount = layoutManager.childCount
-                    val totalItemCount = layoutManager.itemCount
-                    val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
-
-                    if (!isLoading && hasMoreData && hasLoadedOnce) {
-                        if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount - 5
-                            && firstVisibleItemPosition >= 0
-                        ) {
-                            loadPosts()
-                        }
-                    }
-                }
-            })
         }
 
-        // Assign RecyclerView to adapter safely after current transactions
-        recyclerView.post {
-            feedAdapter.recyclerView = recyclerView
-        }
+        feedAdapter.recyclerView = recyclerView
     }
 
+    @SuppressLint("SetTextI18n")
+    private fun loadAllPostsOptimized() {
+        if (isDataLoaded) return
 
-    private fun isCacheValid(): Boolean =
-        cachedPosts != null && (System.currentTimeMillis() - cacheTimestamp) < CACHE_DURATION_MS
-
-    private fun displayCachedData() {
+        isDataLoaded = true
+        progressBar.visibility = View.VISIBLE
+        emptyStateText.visibility = View.GONE
         allUserPosts.clear()
-        allUserPosts.addAll(cachedPosts!!)
-        feedAdapter.clear()
-        feedAdapter.submitItems(allUserPosts)
-        feedAdapter.initializeCommentCounts(allUserPosts)
-        if (allUserPosts.isEmpty()) showEmptyState() else showContent()
-        Log.d(TAG, "⚡ Displayed ${allUserPosts.size} cached posts instantly")
-    }
-
-    private fun resetAndLoadFresh() {
-        allUserPosts.clear()
-        currentPage = 1
-        isLoading = false
-        hasMoreData = true
-        loadPosts()
-    }
-
-    private fun loadPosts() {
-        if (isLoading || !hasMoreData || currentPage > MAX_PAGES || allUserPosts.size >= MAX_ITEMS) {
-            hasMoreData = false
-            hasLoadedOnce = true
-            return
-        }
-
-        isLoading = true
-        if (currentPage == 1) emptyStateText.visibility = View.GONE
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val response = apiService.getAllFeed(page = currentPage.toString())
-                if (response.isSuccessful) {
-                    val posts = response.body()?.data?.data?.posts ?: emptyList()
-                    val userPosts = posts.mapNotNull { post ->
-                        if (isPostByUser(post)) validateAndFixPost(post) else null
-                    }
+                val firstPageResponse = apiService.getAllFeed(page = "1")
 
-                    withContext(Dispatchers.Main) {
-                        if (userPosts.isNotEmpty()) {
-                            allUserPosts.addAll(userPosts)
-                            if (currentPage == 1) feedAdapter.clear()
-                            feedAdapter.submitItems(userPosts)
-                            feedAdapter.initializeCommentCounts(userPosts)
+                if (firstPageResponse.isSuccessful) {
+                    val firstPagePosts = firstPageResponse.body()?.data?.data?.posts ?: emptyList()
+
+                    val firstBatch = firstPagePosts
+                        .mapNotNull { filterUserPost(it) }
+                        .take(INITIAL_LOAD_SIZE)
+                        .mapNotNull { validateAndFixPost(it) }
+
+                    if (firstBatch.isNotEmpty()) {
+                        allUserPosts.addAll(firstBatch)
+
+                        withContext(Dispatchers.Main) {
+                            progressBar.visibility = View.GONE
+                            feedAdapter.submitItems(firstBatch)
+                            feedAdapter.initializeCommentCounts(firstBatch)
+                            recyclerView.visibility = View.VISIBLE
+                            emptyStateText.visibility = View.GONE
                         }
-
-                        val hasNextPage = response.body()?.data?.data?.hasNextPage ?: false
-                        hasMoreData = hasNextPage && currentPage < MAX_PAGES && allUserPosts.size < MAX_ITEMS
-                        hasLoadedOnce = true
-                        currentPage++
-
-                        cachedPosts = allUserPosts.toList()
-                        cacheTimestamp = System.currentTimeMillis()
-                        userId?.let { staticCache[it] = cachedPosts!! to cacheTimestamp }
-
-                        progressBar.visibility = View.GONE
-                        if (allUserPosts.isEmpty()) showEmptyState() else showContent()
                     }
+
+                    val remainingFirstPage = firstPagePosts
+                        .mapNotNull { filterUserPost(it) }
+                        .drop(INITIAL_LOAD_SIZE)
+
+                    loadRemainingDataInBackground(remainingFirstPage)
                 } else {
-                    withContext(Dispatchers.Main) { handleError("Failed to load: ${response.code()}") }
+                    withContext(Dispatchers.Main) {
+                        handleError("Failed to load posts")
+                    }
                 }
+
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) { handleError("Error: ${e.message}") }
-            } finally {
-                isLoading = false
+                Log.e(TAG, "Exception: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    handleError("Error: ${e.message}")
+                }
             }
         }
     }
 
-    private fun isPostByUser(post: Post): Boolean {
-        val matchesDirect = post.author?.owner == userId &&
-                post.author.account?.username?.trim()?.lowercase() == cleanUsername
+    private fun filterUserPost(post: Post): Post? {
+        val isDirectPost = post.author?.let { author ->
+            val matchesUserId = author.owner == userId
+            val apiUsername = author.account?.username?.trim()?.lowercase()
+            val matchesUsername = apiUsername == cleanUsername
+            val isValid = author.account != null
+            matchesUserId && matchesUsername && isValid
+        } ?: false
 
-        val matchesRepost = post.isReposted == true &&
+        val isRepostOfUserContent = post.isReposted == true &&
                 !post.originalPost.isNullOrEmpty() &&
-                post.originalPost[0].author?.owner == userId &&
-                post.originalPost[0].author.account?.username?.trim()?.lowercase() == cleanUsername
+                post.originalPost[0].author?.let { originalAuthor ->
+                    val matchesUserId = originalAuthor.owner == userId
+                    val apiUsername = originalAuthor.account?.username?.trim()?.lowercase()
+                    val matchesUsername = apiUsername == cleanUsername
+                    val isValid = originalAuthor.account != null
+                    matchesUserId && matchesUsername && isValid
+                } ?: false
 
-        return matchesDirect || matchesRepost
+        return when {
+            isDirectPost || isRepostOfUserContent -> post
+            else -> null
+        }
     }
 
-    private fun refreshInBackground() {
-        if (isLoading) return
-        lifecycleScope.launch(Dispatchers.IO) {
-            repeat(3) { page ->
-                val response = apiService.getAllFeed(page = (page + 1).toString())
+    private suspend fun loadRemainingDataInBackground(remainingFirstPage: List<Post>) {
+        try {
+            val remainingValidated = remainingFirstPage.mapNotNull { validateAndFixPost(it) }
+            if (remainingValidated.isNotEmpty()) {
+                allUserPosts.addAll(remainingValidated)
+                updateUI()
+            }
+
+            var currentPage = 2
+            var hasMorePages = true
+
+            while (hasMorePages && currentPage <= MAX_PAGES) {
+                val response = apiService.getAllFeed(page = currentPage.toString())
+
                 if (response.isSuccessful) {
-                    val posts = response.body()?.data?.data?.posts ?: emptyList()
-                    val userPosts = posts.mapNotNull { post -> if (isPostByUser(post)) validateAndFixPost(post) else null }
-                    if (userPosts.isNotEmpty()) allUserPosts.clear(); allUserPosts.addAll(userPosts)
+                    val responseBody = response.body()
+                    val posts = responseBody?.data?.data?.posts ?: emptyList()
+
+                    val userPosts = posts
+                        .mapNotNull { filterUserPost(it) }
+                        .mapNotNull { validateAndFixPost(it) }
+
+                    if (userPosts.isNotEmpty()) {
+                        allUserPosts.addAll(userPosts)
+                        updateUI()
+                    }
+
+                    val hasNextPage = responseBody?.data?.data?.hasNextPage ?: false
+                    val totalPages = responseBody?.data?.data?.totalPages ?: currentPage
+
+                    if (!hasNextPage || currentPage >= totalPages || allUserPosts.size >= 50) {
+                        hasMorePages = false
+                    } else {
+                        currentPage++
+                    }
+                } else {
+                    hasMorePages = false
                 }
             }
-            withContext(Dispatchers.Main) {
-                feedAdapter.clear()
+
+            postsCache[cleanUsername!!] = allUserPosts.toMutableList()
+            cacheTimestamp[cleanUsername!!] = System.currentTimeMillis()
+
+            Log.d(TAG, "FINISHED - Found ${allUserPosts.size} posts for @$username")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Background loading error: ${e.message}", e)
+        }
+    }
+
+    private suspend fun updateUI() {
+        withContext(Dispatchers.Main) {
+            if (allUserPosts.isEmpty()) {
+                showEmptyState()
+            } else {
                 feedAdapter.submitItems(allUserPosts)
                 feedAdapter.initializeCommentCounts(allUserPosts)
+                recyclerView.visibility = View.VISIBLE
+                emptyStateText.visibility = View.GONE
             }
         }
     }
 
     private fun validateAndFixPost(post: Post): Post? {
-        // Simplified validation
-        if (post.author?.account == null) return null
-        post.comments = post.comments ?: 0
-        post.likes = post.likes ?: 0
-        post.bookmarkCount = post.bookmarkCount ?: 0
-        post.repostCount = post.repostCount ?: 0
-        post.shareCount = post.shareCount ?: 0
-        post.contentType = post.contentType ?: "text"
-        return post
+        try {
+            if (post.isReposted == true && !post.originalPost.isNullOrEmpty()) {
+                val originalPost = post.originalPost[0]
+
+                if (originalPost.author?.account == null) {
+                    return null
+                }
+
+                post.comments = originalPost.commentCount ?: 0
+                post.likes = originalPost.likeCount ?: 0
+                post.bookmarkCount = originalPost.bookmarkCount ?: 0
+                post.repostCount = originalPost.repostCount ?: 0
+                post.shareCount = 0
+
+                if (post.contentType.isNullOrEmpty() || post.contentType == "mixed") {
+                    post.contentType = when {
+                        !originalPost.files.isNullOrEmpty() -> {
+                            when {
+                                originalPost.files.size > 1 -> "mixed_files"
+                                originalPost.fileTypes?.any { it.fileType == "video" } == true -> "videos"
+                                else -> "mixed_files"
+                            }
+                        }
+                        post.files.isNotEmpty() -> {
+                            when {
+                                post.files.size > 1 -> "mixed_files"
+                                post.fileTypes?.any { it.fileType == "video" } == true -> "videos"
+                                else -> "mixed_files"
+                            }
+                        }
+                        !originalPost.content.isNullOrEmpty() || !post.content.isNullOrEmpty() -> "text"
+                        else -> "text"
+                    }
+                }
+
+            } else {
+                if (post.author == null || post.author.account == null) {
+                    return null
+                }
+
+                post.comments = post.comments ?: 0
+                post.likes = post.likes ?: 0
+                post.bookmarkCount = post.bookmarkCount ?: 0
+                post.repostCount = post.repostCount ?: 0
+                post.shareCount = post.shareCount ?: 0
+
+                if (post.contentType.isNullOrEmpty()) {
+                    post.contentType = when {
+                        post.files.isNotEmpty() -> {
+                            when {
+                                post.files.size > 1 -> "mixed_files"
+                                post.fileTypes?.any { it.fileType == "video" } == true -> "videos"
+                                else -> "mixed_files"
+                            }
+                        }
+                        !post.content.isNullOrEmpty() -> "text"
+                        else -> "text"
+                    }
+                }
+            }
+
+            return post
+        } catch (e: Exception) {
+            Log.e(TAG, "Error validating post ${post._id}: ${e.message}", e)
+            return null
+        }
     }
 
-    private fun showContent() {
-        recyclerView.visibility = View.VISIBLE
-        emptyStateText.visibility = View.GONE
-    }
-
+    @SuppressLint("SetTextI18n")
     private fun showEmptyState() {
         recyclerView.visibility = View.GONE
-        emptyStateText.visibility = View.VISIBLE
-        emptyStateText.text = "@$username hasn't posted anything yet"
+        emptyStateText.apply {
+            visibility = View.VISIBLE
+            text = "@$username hasn't posted anything yet"
+        }
     }
 
     private fun handleError(message: String) {
-        isLoading = false
-        hasMoreData = false
-        hasLoadedOnce = true
+        isDataLoaded = false
         progressBar.visibility = View.GONE
+
         if (allUserPosts.isEmpty()) {
-            recyclerView.visibility = View.GONE
-            emptyStateText.text = message
-            emptyStateText.visibility = View.VISIBLE
+            showEmptyState()
         } else {
             Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
         }
     }
 
-    // ✅ Handle post click - delegate to parent activity or open as dialog
-    @OptIn(UnstableApi::class)
-    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
-        // This will be called from FeedAdapter when post is clicked
-        // Since we're in AllOtherUsersPostsFragment inside OtherUserProfileAccount,
-        // we need to let the activity handle the navigation
-
-        try {
-            val post = allUserPosts.getOrNull(position) ?: return
-            Log.d(TAG, "Post clicked at position $position, delegating to activity")
-
-            // Call a method on the parent activity to handle navigation
-            (activity as? OtherUserProfileAccount)?.openPostDetail(post, position)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error handling post click: ${e.message}", e)
-            Toast.makeText(requireContext(), "Unable to open post", Toast.LENGTH_SHORT).show()
-        }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        feedAdapter.updatePosts(emptyList())
     }
 
-    // OnFeedClickListener stubs
-    override fun likeUnLikeFeed(position: Int, data: Post) {}
-    override fun feedCommentClicked(position: Int, data: Post) {}
-    override fun feedFavoriteClick(position: Int, data: Post) {}
-    override fun moreOptionsClick(position: Int, data: Post) {}
-    override fun feedFileClicked(position: Int, data: Post) {}
-    override fun feedRepostFileClicked(position: Int, data: OriginalPost) {}
-    override fun feedShareClicked(position: Int, data: Post) {}
-    override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {}
-    override fun feedRepostPost(position: Int, data: Post) {}
-    override fun feedRepostPostClicked(position: Int, data: Post) {}
-    override fun onImageClick() {}
+    // ✅ THESE METHODS ARE CALLED BY FeedAdapter - They don't need implementation here
+    // The FeedPostViewHolder handles everything internally
+    override fun likeUnLikeFeed(position: Int, data: Post) {
+        // FeedPostViewHolder handles this internally with its own API calls
+        Log.d(TAG, "Like clicked at position $position")
+    }
+
+    override fun feedCommentClicked(position: Int, data: Post) {
+        // FeedPostViewHolder handles this internally
+        Log.d(TAG, "Comment clicked at position $position")
+    }
+
+    override fun feedFavoriteClick(position: Int, data: Post) {
+        // FeedPostViewHolder handles this internally with its own API calls
+        Log.d(TAG, "Favorite clicked at position $position")
+    }
+
+    override fun moreOptionsClick(position: Int, data: Post) {
+        // FeedPostViewHolder handles this internally
+        Log.d(TAG, "More options clicked at position $position")
+    }
+
+    override fun feedFileClicked(position: Int, data: Post) {
+        // FeedPostViewHolder handles navigation internally
+        Log.d(TAG, "Feed file clicked at position $position")
+    }
+
+    override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
+        // FeedPostViewHolder handles this internally
+        Log.d(TAG, "Repost file clicked at position $position")
+    }
+
+    override fun feedShareClicked(position: Int, data: Post) {
+        // FeedPostViewHolder handles this internally with its own bottom sheet
+        Log.d(TAG, "Share clicked at position $position")
+    }
+
+    override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {
+        // FeedPostViewHolder handles this internally with its own API calls
+        Log.d(TAG, "Follow button clicked for user ${followUnFollowEntity.userId}")
+    }
+
+    override fun feedRepostPost(position: Int, data: Post) {
+        // FeedPostViewHolder handles this internally with its own API calls
+        Log.d(TAG, "Repost clicked at position $position")
+    }
+
+    override fun feedRepostPostClicked(position: Int, data: Post) {
+        // FeedPostViewHolder handles navigation internally
+        Log.d(TAG, "Repost post clicked at position $position")
+    }
+
+    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
+        // FeedPostViewHolder handles navigation internally
+        Log.d(TAG, "Original post clicked: $originalPostId")
+    }
+
+    override fun onImageClick() {
+        // FeedPostViewHolder handles this internally
+        Log.d(TAG, "Image clicked")
+    }
 }
