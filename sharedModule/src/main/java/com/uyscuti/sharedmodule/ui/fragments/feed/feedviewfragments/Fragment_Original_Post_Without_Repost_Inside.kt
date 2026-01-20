@@ -1074,7 +1074,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         R.anim.slide_in_left,
                         R.anim.slide_out_right
                     )
-                    .replace(R.id.frame_layout, fragment)
+                    .replace(R.id.content, fragment)
                     .addToBackStack(tag)
                     .commit()
                 Log.d(TAG, "Successfully navigated to fragment: $tag")
@@ -2470,7 +2470,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
         val fragmentManager = (context as? FragmentActivity)?.supportFragmentManager
         fragmentManager?.beginTransaction()
-            ?.replace(R.id.frame_layout, fragment)
+            ?.replace(R.id.content, fragment)
             ?.setCustomAnimations(
                 R.anim.slide_in_right,
                 R.anim.slide_out_left,
@@ -3460,7 +3460,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         R.anim.slide_in_right,
                         R.anim.slide_out_left
                     )
-                    .replace(R.id.frame_layout, fragment)
+                    .replace(R.id.content, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
 
@@ -3861,7 +3861,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 fragment.arguments = bundle
                 activity.supportFragmentManager.beginTransaction()
                     .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left)
-                    .replace(R.id.frame_layout, fragment)
+                    .replace(R.id.content, fragment)
                     .addToBackStack("tapped_audio_files_view")
                     .commit()
                 Log.d(TAG, "Navigated to Tapped_Files_In_The_Container_View with ${files.size} audio files")
@@ -4195,7 +4195,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         R.anim.slide_in_right,
                         R.anim.slide_out_left,
                     )
-                    .replace(R.id.frame_layout, fragment)
+                    .replace(R.id.content, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
 
@@ -4483,7 +4483,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         R.anim.slide_in_right,
                         R.anim.slide_out_left
                     )
-                    .replace(R.id.frame_layout, fragment)
+                    .replace(R.id.content, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
                 Log.d(
@@ -4865,7 +4865,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         R.anim.slide_in_right,
                         R.anim.slide_out_left
                     )
-                    .replace(R.id.frame_layout, fragment)
+                    .replace(R.id.content, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
             }
@@ -5640,7 +5640,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         R.anim.slide_in_right,
                         R.anim.slide_out_left
                     )
-                    .replace(R.id.frame_layout, fragment)
+                    .replace(R.id.content, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
             }

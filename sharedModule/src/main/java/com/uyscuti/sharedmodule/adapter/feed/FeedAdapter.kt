@@ -1844,7 +1844,6 @@ class FeedAdapter(
             try {
                 val activity = getActivityFromContext(itemView.context)
                 if (activity != null) {
-                    // ✅ USE android.R.id.content - it always exists in every activity
                     activity.supportFragmentManager.beginTransaction()
                         .setCustomAnimations(
                             R.anim.slide_in_right,
@@ -1852,7 +1851,7 @@ class FeedAdapter(
                             R.anim.slide_in_left,
                             R.anim.slide_out_right
                         )
-                        .add(android.R.id.content, fragment)  // ✅ CHANGED from R.id.frame_layout
+                        .replace(android.R.id.content, fragment, tag)
                         .addToBackStack(tag)
                         .commit()
 
@@ -3167,6 +3166,7 @@ class FeedAdapter(
 
         }
 
+
         private fun navigateToTappedFilesInTheContainerView(
             files: List<Any>,
             mediaType: String,
@@ -3262,7 +3262,7 @@ class FeedAdapter(
             try {
                 val activity = getActivityFromContext(itemView.context)
                 if (activity != null) {
-                    // always exists in every activity
+                    //  always exists in every activity
                     activity.supportFragmentManager.beginTransaction()
                         .setCustomAnimations(
                             R.anim.slide_in_right,
@@ -3270,7 +3270,7 @@ class FeedAdapter(
                             R.anim.slide_in_left,
                             R.anim.slide_out_right
                         )
-                        .add(android.R.id.content, fragment)
+                        .add(android.R.id.content, fragment, tag)
                         .addToBackStack(tag)
                         .commit()
 
@@ -5762,7 +5762,7 @@ class FeedAdapter(
                             R.anim.slide_in_left,
                             R.anim.slide_out_right
                         )
-                        .replace(R.id.frame_layout, fragment)
+                        .replace(R.id.content, fragment)
                         .addToBackStack(tag)
                         .commit()
                     Log.d(TAG, "Successfully navigated to fragment: $tag")

@@ -2835,7 +2835,7 @@ class SearchUserNameAdapter(
                             com.uyscuti.sharedmodule.R.anim.slide_in_left,
                             com.uyscuti.sharedmodule.R.anim.slide_out_right
                         )
-                        .replace(com.uyscuti.sharedmodule.R.id.frame_layout, fragment)
+                        .replace(com.uyscuti.sharedmodule.R.id.content, fragment)
                         .addToBackStack(tag)
                         .commit()
                     Log.d(TAG, "Successfully navigated to fragment: $tag")
@@ -3390,7 +3390,7 @@ class SearchUserNameAdapter(
                             com.uyscuti.sharedmodule.R.anim.slide_out_left,
 
                             )
-                        .replace(com.uyscuti.sharedmodule.R.id.frame_layout, fragment)
+                        .replace(com.uyscuti.sharedmodule.R.id.content, fragment)
                         .addToBackStack(tag)
                         .commit()
                     Log.d(TAG, "Successfully navigated to fragment: $tag")
@@ -5921,7 +5921,7 @@ class SearchUserNameAdapter(
                         com.uyscuti.sharedmodule.R.anim.slide_in_right,
                         com.uyscuti.sharedmodule.R.anim.slide_out_left
                     )
-                    .replace(com.uyscuti.sharedmodule.R.id.frame_layout, fragment)
+                    .replace(com.uyscuti.sharedmodule.R.id.content, fragment)
                     .addToBackStack(backStackName)
                     .commit()
                 Log.d(tag, "Successfully navigated to $backStackName")
@@ -7442,7 +7442,7 @@ class SearchUserNameAdapter(
                             com.uyscuti.sharedmodule.R.anim.slide_in_left,
                             com.uyscuti.sharedmodule.R.anim.slide_out_right
                         )
-                        .replace(com.uyscuti.sharedmodule.R.id.frame_layout, fragment)
+                        .replace(com.uyscuti.sharedmodule.R.id.content, fragment)
                         .addToBackStack(tag)
                         .commit()
                     Log.d(TAG, "Successfully navigated to fragment: $tag")

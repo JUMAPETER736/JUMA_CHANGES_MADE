@@ -266,7 +266,7 @@ class FeedMixedFilesViewAdapter(
                         R.anim.slide_in_right,
                         R.anim.slide_out_left
                     )
-                    .replace(R.id.frame_layout, fragment)
+                    .replace(android.R.id.content, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
 
@@ -671,7 +671,7 @@ class FeedMixedFilesViewAdapter(
                         R.anim.slide_in_right,
                         R.anim.slide_out_left
                     )
-                    .replace(R.id.frame_layout, fragment)
+                    .replace(R.id.content, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
 
@@ -1196,7 +1196,7 @@ class FeedMixedFilesViewAdapter(
                         R.anim.slide_in_right,
                         R.anim.slide_out_left
                     )
-                    .replace(R.id.frame_layout, fragment)
+                    .replace(R.id.content, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
 
@@ -1608,7 +1608,7 @@ class FeedMixedFilesViewAdapter(
                         R.anim.slide_in_right,
                         R.anim.slide_out_left
                     )
-                    .replace(R.id.frame_layout, fragment)
+                    .replace(R.id.content, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
                 Log.d(
@@ -2146,7 +2146,7 @@ class FeedMixedFilesViewAdapter(
                         R.anim.slide_in_right,
                         R.anim.slide_out_left
                     )
-                    .replace(R.id.frame_layout, fragment)
+                    .replace(R.id.content, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
 
@@ -2825,7 +2825,7 @@ class FeedMixedFilesViewAdapter(
                         R.anim.slide_in_right,
                         R.anim.slide_out_left
                     )
-                    .replace(R.id.frame_layout, fragment)
+                    .replace(R.id.content, fragment)
                     .addToBackStack("tapped_files_view")
                     .commit()
             }
