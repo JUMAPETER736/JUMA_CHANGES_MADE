@@ -4809,15 +4809,13 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         val downloadProgress =
                             (bytesCopied.toFloat() / fileSize.toFloat() * 100).toInt()
                         runOnUiThread {
-                            //progressbar.visibility = View.VISIBLE
+                     
                             progressbar.progress = downloadProgress
-//                        progressCountTv.text = "$downloadProgress%"
+
                         }
                         outputStream.write(buffer, 0, bytes)
                         bytes = inputStream.read(buffer)
                     }
-                    // progressbar.visibility = View.GONE
-                    //progressCountTv.visibility = View.GONE
                     runOnUiThread {
                         // Update the UI components here
                         progressbar.visibility = View.GONE
@@ -4871,13 +4869,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     }
                                 }
 
-//                            message.setAudio(
-//                                Message.Audio(
-//                                    storageDirectory,
-//                                    getAudioDuration(storageDirectory),
-//                                    getFileNameFromUrl(storageDirectory)
-//                                )
-//                            )
 
                                 super.messagesAdapter?.update(message)
                             }
@@ -4921,13 +4912,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     }
                                 }
 
-//                            message.setDocument(
-//                                Message.Document(
-//                                    storageDirectory,
-//                                    getFileNameFromUrl(storageDirectory),
-//                                    formatFileSize(getFileSize(storageDirectory))
-//                                )
-//                            )
 
                                 super.messagesAdapter?.update(message)
                             }
@@ -4938,59 +4922,28 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         }
 
 
-//                    progressCountTv.visibility = View.GONE
-                        //videoHolder.progressCountTv.visibility = View.VISIBLE
                         val fileExtension = getFileExtension(mUrl)
                         if (fileExtension == "jpg" || fileExtension == "png" || fileExtension == "gif" || fileExtension == "jpeg") {
 
 
-//                        displayView.setOnClickListener {
-//                            val intent = Intent(
-//                                this@StyledMessagesActivity,
-//                                ViewImagesActivity::class.java
-//                            )
-//                            intent.putExtra("imageUrl", mUrl)
-//                            startActivity(intent)
-//                        }
+
                         } else if (fileExtension == "mp4") {
 
 
                             if (downloadedFile.exists()) {
                                 CoroutineScope(Dispatchers.IO).launch {
-//                                val msg = messageRepository.getMessageByMessageId(message.id)
-//                                if (msg != null) {
-//                                    msg.videoUrl = downloadedFile.toString()
-//                                    Log.d("Download", "Message to update : $msg")
-//                                    messageRepository.updateMessage(msg)
-//                                }
+
                                 }
 
                             }
                             displayView.setOnClickListener {
-//                            val intent = Intent(
-//                                this@ChatActivity,
-//                                PlayVideoActivity::class.java
-//                            )
-//                            intent.putExtra("videoPath", mUrl)
-//                            startActivity(intent)
+
                             }
                         }
                     }
 
 
-//                val createdAt = getDateTimeStamp()
-//                val uniqueId = System.currentTimeMillis().toString()
-//                val saveDownloadPath = DownloadedFile(
-//                    chatId,
-//                    uniqueId,
-//                    directoryPath,
-//                    mUrl,
-//                    createdAt
-//                )
-//
-//                insertDownload(saveDownloadPath)
-                    //insertOfflinePath(saveLocalPath)
-//                Log.i("Download", "saved download path: $saveDownloadPath")
+
                     outputStream.close()
                     inputStream.close()
                 } else {
@@ -5146,13 +5099,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     }
                                 }
 
-//                            message.setAudio(
-//                                Message.Audio(
-//                                    storageDirectory,
-//                                    getAudioDuration(storageDirectory),
-//                                    getFileNameFromUrl(storageDirectory)
-//                                )
-//                            )
+
 
                                 super.messagesAdapter?.update(message)
                             }
@@ -5196,13 +5143,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     }
                                 }
 
-//                            message.setDocument(
-//                                Message.Document(
-//                                    storageDirectory,
-//                                    getFileNameFromUrl(storageDirectory),
-//                                    formatFileSize(getFileSize(storageDirectory))
-//                                )
-//                            )
+
 
                                 super.messagesAdapter?.update(message)
                             }
@@ -5435,13 +5376,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     }
                                 }
 
-//                            message.setAudio(
-//                                Message.Audio(
-//                                    storageDirectory,
-//                                    getAudioDuration(storageDirectory),
-//                                    getFileNameFromUrl(storageDirectory)
-//                                )
-//                            )
+
 
                                 super.messagesAdapter?.update(message)
                             }
@@ -5485,13 +5420,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     }
                                 }
 
-//                            message.setDocument(
-//                                Message.Document(
-//                                    storageDirectory,
-//                                    getFileNameFromUrl(storageDirectory),
-//                                    formatFileSize(getFileSize(storageDirectory))
-//                                )
-//                            )
+
 
                                 super.messagesAdapter?.update(message)
                             }
@@ -5501,10 +5430,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             }
                         }
 
-                        // Update the UI components and handle different file types here
-                        // Example for updating the image URL in the message:
-                        // message.setImage(Message.Image(storageDirectory.toString()))
-                        // super.messagesAdapter?.update(message)
+
                     }
 
                     outputStream.close()
