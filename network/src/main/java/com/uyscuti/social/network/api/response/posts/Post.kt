@@ -43,7 +43,7 @@ data class Post(
     var isFavorited: Boolean? = null,
     val favorites: List<String>? = null,
 
-    val bookmarkId: String? = null,          
+    val bookmarkId: String? = null,
     val bookmarkedBy: String? = null,
     val bookmarkedAt: String? = null
 
