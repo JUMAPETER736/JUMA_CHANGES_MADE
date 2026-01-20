@@ -98,13 +98,7 @@ public class MessageHolders {
         this.inComingVideoConfig = new HolderConfig<>(DefaultIncomingVideoMessageViewHolder.class, R.layout.item_incoming_video_message);
     }
 
-    /**
-     * Sets both of custom view holder class and layout resource for incoming text message.
-     *
-     * @param holder holder class.
-     * @param layout layout resource.
-     * @return {@link MessageHolders} for subsequent configuration.
-     */
+
     public MessageHolders setIncomingTextConfig(
             @NonNull Class<? extends BaseMessageViewHolder<? extends IMessage>> holder,
             @LayoutRes int layout) {
@@ -1915,7 +1909,7 @@ public class MessageHolders {
         protected ProgressBar progressBar;
 
 
-//    protected View imageOverlay;
+
 
         @Deprecated
         public InComingAudioMessageViewHolder(View itemView) {
@@ -1941,44 +1935,17 @@ public class MessageHolders {
                 playAudio.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-//                    mediaClickListener.onMediaClick(message.getAudioUrl(),v,message);
-                        audioPlayListener.onAudioPlayClick(message.getAudio(), playAudio, audioDuration, audioSeekBar, message);
+                    audioPlayListener.onAudioPlayClick(message.getAudio(), playAudio, audioDuration, audioSeekBar, message);
                     }
                 });
             }
 
-//        if (downIcon != null){
-//            String url = message.getAudio();
-//            if (url != null ){
-//                if (url.startsWith("file:/") || url.startsWith("/storage/")){
-//                    downIcon.setVisibility(View.GONE);
-//
-//                    bubble.setOnClickListener(new View.OnClickListener() {
-//                        @Override
-//                        public void onClick(View v) {
-//                            downIcon.setVisibility(View.GONE);
-//                            downProgress.setVisibility(View.VISIBLE);
-//                            audioPlayListener.onAudioPlayClick(url,playAudio,audioDuration,audioSeekBar,message);
-//
-////                            downloadListener.onDownloadClick(url,title,progressBar,downIcon,downIcon,"Audio",message);
-//                        }
-//                    });
-//                } else {
-//                    downIcon.setVisibility(View.VISIBLE);
-//                    bubble.setOnClickListener(new View.OnClickListener() {
-//                        @Override
-//                        public void onClick(View v) {
-//                            audioPlayListener.onAudioPlayClick(url,playAudio,audioDuration,audioSeekBar,message);
-//                        }
-//                    });
-//                }
-//            }
-//        }
+
 
 
             if (audioDuration != null) {
                 long durationSeconds = 200;
-//            long durationSeconds = message.getAudioDuration();
+
                 long dueMinutes = durationSeconds / 60;
                 long dueSeconds = durationSeconds % 60;
                 String formattedDuration = String.format(Locale.getDefault(), "%02d:%02d", dueMinutes, dueSeconds);
@@ -2041,17 +2008,9 @@ public class MessageHolders {
             downProgress = itemView.findViewById(R.id.downProgress);
             progressBar = itemView.findViewById(R.id.progressBar);
 
-//        playAudio = itemView.findViewById(R.id.playVideo);
+
             bubble = itemView.findViewById(R.id.bubble);
 
-//        if (video instanceof RoundedImageView) {
-//            ((RoundedImageView) video).setCorners(
-//                    R.dimen.message_bubble_corners_radius,
-//                    R.dimen.message_bubble_corners_radius,
-//                    0,
-//                    R.dimen.message_bubble_corners_radius
-//            );
-//        }
         }
     }
 
@@ -2096,42 +2055,22 @@ public class MessageHolders {
                 bubble.setSelected(isSelected());
             }
 
-//            Log.d("AudioDoc", "Audio Found Title  " + message.getAudioTitle());
-//            Log.d("AudioDoc", "Audio Found Duration  " + message.getAudioDuration());
-//            Log.d("AudioDoc", "Audio Found Url  " + message.getAudio());
 
             if (audioDuration != null) {
                 long durationSeconds = 100;
-//                long durationSeconds = getCachedOrCalculateAudioDuration(Objects.requireNonNull(message.getAudio()));
+
                 audioDuration.setText("02:33");
-//                getAudioDuration(message.getAudio(), new OnAudioDuration(){
-//
-//                    @Override
-//                    public void onDuration(long duration) {
-//                        long dueMinutes = duration / 60;
-//                        long dueSeconds = duration % 60;
-//                        String formattedDuration = String.format(Locale.getDefault(), "%02d:%02d", dueMinutes, dueSeconds);
-//
-//                        audioDuration.post(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                if (audioDuration != null){
-//                                    audioDuration.setText(formattedDuration);
-//                                }
-//                            }
-//                        });
-//                    }
-//                });
+
 
             }
-            ;
+
 
 
             if (playAudio != null) {
                 playAudio.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-//                        mediaClickListener.onMediaClick(message.getAudioUrl(),v,message);
+
                         audioPlayListener.onAudioPlayClick(message.getAudio(), playAudio, audioDuration, audioSeekBar, message);
                     }
                 });
@@ -2143,12 +2082,7 @@ public class MessageHolders {
         }
 
         public static long getCachedOrCalculateAudioDuration(String audioFilePath) {
-//            SharedPreferences preferences = context.getSharedPreferences("audio_duration_cache", Context.MODE_PRIVATE);
 
-//            // Check if the cache contains the duration for the given audioFilePath
-//            if (preferences.contains(audioFilePath)) {
-//                return preferences.getLong(audioFilePath, 0);
-//            }
 
             if (audioFilePath.startsWith("file://") || audioFilePath.startsWith("/storage/")) {
                 // Create or obtain a reference to the SharedPreferences
@@ -2176,11 +2110,6 @@ public class MessageHolders {
                         Log.d("Audio Duration", "Execution Time: " + executionTime);
 
                         long duration = Long.parseLong(durationStr);
-
-//                        // Cache the duration for future use
-//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-//                            preferences.edit().putLong(audioFilePath, duration).apply();
-//                        }
 
                         return duration;
                     }
@@ -2244,19 +2173,12 @@ public class MessageHolders {
             bubble = itemView.findViewById(R.id.bubble);
             progressBar = itemView.findViewById(R.id.fileSendProgress);
 
-//        if (video instanceof RoundedImageView) {
-//            ((RoundedImageView) video).setCorners(
-//                    R.dimen.message_bubble_corners_radius,
-//                    R.dimen.message_bubble_corners_radius,
-//                    0,
-//                    R.dimen.message_bubble_corners_radius
-//            );
-//        }
+
         }
     }
 
 
-//    Default Video Holder
+
 
     public static class OutGoingVideoMessageViewHolder<MESSAGE extends MessageContentType.Image>
             extends BaseOutcomingMessageViewHolder<MESSAGE> {
