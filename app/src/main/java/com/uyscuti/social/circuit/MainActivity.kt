@@ -1593,7 +1593,7 @@ class MainActivity : AppCompatActivity(),
 
     private suspend fun loadMoreShorts(nextPage: Int) {
         // This function will be called when there are more shorts available
-//        getUserShorts(nextPage)
+
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -1628,7 +1628,7 @@ class MainActivity : AppCompatActivity(),
                     val drawable = BitmapDrawable(resources, resource)
                     item4.setDrawable(drawable)
                     Log.d("ProfilePic", "onResourceReady")
-//                    Log.d("BitmapSize", "Width: ${resource.width}, Height: ${resource.height}")
+
                 }
 
                 override fun onLoadCleared(placeholder: Drawable?) {
@@ -1644,60 +1644,6 @@ class MainActivity : AppCompatActivity(),
     }
 
 
-//    private suspend fun getUserShorts(currentPage: Int) {
-//        try {
-//            val response = retrofitInterface.apiService.myShorts(currentPage.toString())
-//
-//            if (response.isSuccessful) {
-//                val responseBody = response.body()
-//                Log.d("AllShorts", "Shorts List ${responseBody?.data}")
-//
-//
-//                val hasMoreShorts = responseBody!!.data.hasNextPage
-//                Log.d("AllShorts", "Has more shorts: $hasMoreShorts")
-//
-//                if (hasMoreShorts) {
-////                    loadMoreShorts()
-//                    loadMoreShorts(currentPage + 1)
-//
-//                    EventBus.getDefault().post(UserProfileShortsStartGet())
-//                }
-//                val shortsEntity = responseBody.data.posts.let { serverResponseToEntity(it) }
-//
-//// Now, insert yourEntity into the Room database
-//                lifecycleScope.launch(Dispatchers.IO) {
-//                    shortsViewModel.addUserProfileShorts(shortsEntity)
-//
-//                    for (entity in shortsEntity) {
-//                        // Access the list of images for each entity
-//                        val images = entity.images
-//
-//                        // Iterate through the list of images
-//                        for (image in images) {
-//                            // Access individual image properties or perform any desired actions
-//                            val imageUrl = image.url
-//                        }
-//                    }
-////                        startPreLoadingService()
-//                }
-//
-//            } else {
-//                Log.d("AllShorts", "Error: ${response.message()}")
-//                showToast(this, response.message())
-//            }
-//
-//        } catch (e: HttpException) {
-//            Log.d("AllShorts", "Http Exception ${e.message}")
-//            Toast.makeText(this, "Failed to connect try again...", Toast.LENGTH_SHORT).show()
-//        } catch (e: IOException) {
-//            Log.d("AllShorts", "IOException ${e.message}")
-//            Toast.makeText(
-//                this,
-//                "Failed to connect try again...",
-//                Toast.LENGTH_SHORT
-//            ).show()
-//        }
-//    }
 
     private fun serverResponseToEntity(serverResponse: List<Post>): List<UserShortsEntity> {
         return serverResponse.map { serverResponseItem ->
@@ -1890,7 +1836,7 @@ class MainActivity : AppCompatActivity(),
             Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
         val request = OneTimeWorkRequestBuilder<FlashWorker>()
-//            .setConstraints(constraints)
+
             .setInitialDelay(10, TimeUnit.SECONDS).setBackoffCriteria(
                 BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS
             ) // Customize backoff criteria
@@ -1926,18 +1872,6 @@ class MainActivity : AppCompatActivity(),
         )
     }
 
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    fun onDirectReplyEvent(event: DirectReplyEvent) {
-//        // Handle the direct reply in your activity
-//        // Update UI, perform actions, etc.
-////        Toast.makeText(this, "Direct Reply: ${event.message}", Toast.LENGTH_SHORT).show()
-//
-//        val message = createMessage(event.message,event.chatId)
-//        CoroutineScope(Dispatchers.IO).launch {
-//            messageViewModel.insertMessage(message)
-//            dialogViewModel.updateLastMessageForThisChat(event.chatId,message)
-//        }
-//    }
 
 
     private fun observerAction() {
@@ -1951,11 +1885,11 @@ class MainActivity : AppCompatActivity(),
                     actionMode?.title = "$count selected"
                 }
 
-//                binding.toolbar.visibility = View.GONE
+
             } else {
                 // No items selected, end the ActionMode if it's active
                 actionMode?.finish()
-//                binding.toolbar.visibility = View.VISIBLE
+
             }
         })
     }
@@ -1987,7 +1921,7 @@ class MainActivity : AppCompatActivity(),
             } else {
                 // No items selected, end the ActionMode if it's active
                 actionMode?.finish()
-//                binding.toolbar.visibility = View.VISIBLE
+
             }
         }
 
@@ -2001,8 +1935,7 @@ class MainActivity : AppCompatActivity(),
             override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
                 // Inflate the menu for the ActionMode
                 menuInflater.inflate(R.menu.contextual_action_bar, menu)
-//                val customView = layoutInflater.inflate(R.layout.custom_action_mode_layout, null)
-//                mode?.customView = customView
+
                 return true
             }
 
@@ -2039,7 +1972,7 @@ class MainActivity : AppCompatActivity(),
 
             override fun onDestroyActionMode(mode: ActionMode?) {
                 // ActionMode finished, reset the reference
-//                stop
+
                 actionMode = null
                 clear()
                 mainViewModel.resetSelectedDialogsCount()
@@ -2067,7 +2000,7 @@ class MainActivity : AppCompatActivity(),
         CoroutineScope(Dispatchers.IO).launch {
             if (dialogs.all { it.users.size > 1 }) {
                 // All dialogs have more than one user
-//                groupDialogViewModel.deleteGroups(dialogIds)
+
                 dialogIds.map {
                     messageViewModel.markDeleted(it)
                     val dialog = groupDialogViewModel.getGroupDialog(it)
@@ -2076,7 +2009,7 @@ class MainActivity : AppCompatActivity(),
                 }
             } else {
                 // At least one dialog does not have more than one user
-//                dialogViewModel.deleteDialogs(dialogIds)
+
                 dialogIds.map {
                     messageViewModel.deleteMessagesByChat(it)
                     dialogViewModel.setNullLastMessage(it)
@@ -2179,25 +2112,18 @@ class MainActivity : AppCompatActivity(),
 
     override fun onBackPressed() {
         val count = mainViewModel.selectedDialogsCount.value
-//        Log.d("MainCount", "Count :$count")
+
         if (mainViewModel.selectedDialogsCount.value == 0) {
             // If no dialogs are selected, call the default back button behavior
             super.onBackPressed()
         } else {
             // If there are selected dialogs, reset the selection in the ViewModel
-//            onBackListener?.onBackButtonPressed()
+
             clear()
             mainViewModel.resetSelectedDialogsCount()
         }
 
-//        if (!isBottomNavVisible) {
-//            // If Bottom Navigation is not visible, make it visible
-//            isBottomNavVisible = true
-//            binding.bottomNavigationView.animate().translationY(0f)
-//        } else {
-//            // Perform your regular onBackPressed logic here
-//            super.onBackPressed()
-//        }
+
     }
 
 
@@ -2225,8 +2151,7 @@ class MainActivity : AppCompatActivity(),
 
     private fun initializeCallService() {
         CoroutineScope(Dispatchers.IO).launch {
-//            val username = localStorage.getUsername()
-//            val userId = localStorage.getUserId()
+
             val username = settings.getString("username", "").toString()
             val userId = settings.getString("_id", "").toString()
 
@@ -2236,7 +2161,7 @@ class MainActivity : AppCompatActivity(),
             mainRepository.init(username)
             mainServiceRepository.startService(username)
             mainRepository.setUserName(username)
-//            mainRepository.setUserId(userId)
+
         }
     }
 
@@ -2251,10 +2176,7 @@ class MainActivity : AppCompatActivity(),
             LocalStorage.getInstance(this@MainActivity).clear()
             settings.edit { clear() }
             businessSettings.edit {clear()}
-//            lifecycleScope.launch(Dispatchers.IO) {
-//                shortsViewModel.deleteShorts()
-//
-//            }
+
             callViewModel.clearAll()
             messageViewModel.clearAll()
             dialogViewModel.clearAll()
@@ -2298,14 +2220,12 @@ class MainActivity : AppCompatActivity(),
                 return@launch
             } finally {
                 // Ensure the progress bar is hidden in case of an error
-//                withContext(Dispatchers.Main) {
-//                    dismissLoadingDialog()
-//                }
+
             }
 
             if (response.isSuccessful) {
                 val responseBody = response.body()
-//                Log.d("UserProfile", "User profile ${responseBody?.data}")
+
 
                 if (responseBody?.data != null) {
 
@@ -2337,7 +2257,7 @@ class MainActivity : AppCompatActivity(),
                     )
 
                     insertProfile(myProfile)
-//                    Log.d("ProfileLocal", "To localDb $myProfile")
+
 
                 } else {
                     Log.d("RetrofitActivity", "Response body or data is null")
@@ -2354,18 +2274,7 @@ class MainActivity : AppCompatActivity(),
 
     private fun setUpTabs() {
         // Initialize TabLayout
-//        val tabLayout: TabLayout = binding.tabLayout
-//
-//        // Initialize ViewPager
-//        val viewPager: ViewPager = findViewById(R.id.viewPager)
-//
-//        // Create an adapter for ViewPager to manage tab fragments
-//        val adapter = ChatPagerAdapter(supportFragmentManager)
-//        viewPager.adapter = adapter
-//
-//
-//        // Connect the TabLayout and ViewPager
-//        tabLayout.setupWithViewPager(viewPager)
+
     }
 
 
@@ -2390,7 +2299,7 @@ class MainActivity : AppCompatActivity(),
             item1.drawableTint = Color.BLACK
             item2.drawableTint = Color.BLACK
             item3.drawableTint = Color.BLACK
-//            item4.drawableTint = Color.BLACK
+
 
             when (pos) {
                 0 -> {
@@ -2425,19 +2334,14 @@ class MainActivity : AppCompatActivity(),
 
                 4 -> {
                     // Handle click on the third button
-//                    item4.drawableTint = Color.WHITE
-//                    item4.drawableTint = Color.WHITE
-//                    item4.
-//                    binding.bottomNavigationView.selected
-//                    item4.setBackgroundColor(R.drawable.shorts_follow_button_border)
-//                    item4.background
+
 
 
                     getNavigationController().navigate("R.id.profile", "Profile")
                     Log.d("bottomNavigation", "position $pos")
                 }
 
-                // ... add more cases for other positions
+
 
                 else -> {
                     // Handle unknown position
@@ -2465,7 +2369,7 @@ class MainActivity : AppCompatActivity(),
         }
 
        updateNotificationBadge(notificationViewModel.notificationCount.value ?: 0)
-       // updateNotificationBadge(3)
+
 
         return true
     }
@@ -2600,7 +2504,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun replaceFragment(fragment: Fragment, tag: String = "") {
-//        binding.bottomNavigationView.visibility = View.VISIBLE
+
         val fragmentManager = supportFragmentManager
         val fragmentTransaction = fragmentManager.beginTransaction()
         fragmentTransaction.replace(R.id.frame_layout, fragment, tag)
