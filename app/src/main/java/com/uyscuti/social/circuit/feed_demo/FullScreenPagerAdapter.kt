@@ -45,7 +45,7 @@ class FullScreenPagerAdapter(
         val documentIcon: ImageView = itemView.findViewById(R.id.documentIcon)
         val documentName: TextView = itemView.findViewById(R.id.documentName)
         val mediaControlsContainer: LinearLayout = itemView.findViewById(R.id.mediaControlsContainer)
-     //   val audioIcon: ImageView = itemView.findViewById(R.id.audioIcon)
+
         var container: RelativeLayout = itemView.findViewById(R.id.container)
     }
 
@@ -125,14 +125,7 @@ class FullScreenPagerAdapter(
         holder.mediaControlsContainer.visibility = View.VISIBLE
         holder.audioPlayerView.visibility = View.VISIBLE
 
-//        holder.audioIcon?.let { audioIcon ->
-//            audioIcon.setImageResource(FullScreenAudioIcon(mediaUrl))
-//            audioIcon.visibility = View.GONE
-//            // Center audio icon
-//            (audioIcon.layoutParams as RelativeLayout.LayoutParams).apply {
-//                addRule(RelativeLayout.CENTER_IN_PARENT)
-//            }
-//        }
+
 
         if (!players.containsKey(position)) {
             val player = ExoPlayer.Builder(context).build()
@@ -221,30 +214,6 @@ class FullScreenPagerAdapter(
         return player?.isPlaying ?: false
     }
 
-    fun setCurrentPosition(position: Int) {
-        if (position != currentPosition) {
-            // Pause previous player
-            players[currentPosition]?.playWhenReady = false
-            stopProgressUpdates(currentPosition)
-            // Update current position and start new player
-            currentPosition = position
-            players[currentPosition]?.playWhenReady = true
-            startProgressUpdates(currentPosition)
-        }
-    }
-
-    fun releasePlayer() {
-        progressHandlers.keys.toList().forEach { position ->
-            stopProgressUpdates(position)
-        }
-
-        players.values.forEach { player ->
-            player.stop()
-            player.release()
-        }
-        players.clear()
-    }
-
     override fun getItemCount(): Int = mediaUrls.size
 
     private fun hideAllViews(holder: ViewHolder) {
@@ -270,7 +239,7 @@ class FullScreenPagerAdapter(
         holder.documentContainer.visibility = View.VISIBLE
 
         val fileName = getFileNameFromUrl(mediaUrl)
-        val fileExtension = getFileExtension(mediaUrl)
+        getFileExtension(mediaUrl)
 
         holder.documentIcon.setImageBitmap(generateDocumentThumbnail(createLocalCopyOfDocument(Uri.parse(mediaUrl), fileName), determineDocumentType(getMimeType(mediaUrl), fileName)))
         holder.documentName.text = fileName
@@ -493,21 +462,6 @@ class FullScreenPagerAdapter(
         }
 
         return bitmap
-    }
-
-    private fun FullScreenAudioIcon(url: String): Int {
-        val extension = getFileExtension(url).lowercase()
-        return when (extension) {
-            "mp3" -> R.drawable.ic_audio_white_icon
-            "wav" -> R.drawable.ic_audio_white_icon
-            "flac" -> R.drawable.ic_audio_white_icon
-            "aac" -> R.drawable.ic_audio_white_icon
-            "ogg" -> R.drawable.ic_audio_white_icon
-            "wma" -> R.drawable.ic_audio_white_icon
-            "m4a" -> R.drawable.ic_audio_white_icon
-            "opus" -> R.drawable.ic_audio_white_icon
-            else -> R.drawable.ic_audio_white_icon
-        }
     }
 
 
