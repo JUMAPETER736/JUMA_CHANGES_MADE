@@ -7,8 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
-import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -22,11 +20,9 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -34,35 +30,21 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.TransitionInflater
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.social.circuit.adapter.UserListAdapter
 import com.uyscuti.social.circuit.adapter.feed.ShareFeedPostAdapter
-import com.uyscuti.social.circuit.ui.feedactivities.FeedVideoViewFragment
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedAudioViewFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostDocFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostImageFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostTextFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostVideoViewFragment
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedImageViewFragment
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedMultipleImageViewFragment
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedTextViewFragment
 import com.uyscuti.sharedmodule.ReportNotificationActivity2
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.sharedmodule.adapter.feed.feed.postFeedActivity.PostFeedActivity
-import com.uyscuti.sharedmodule.eventbus.AllFeedUpdateLike
 import com.uyscuti.sharedmodule.eventbus.FeedFavoriteClick
 import com.uyscuti.sharedmodule.eventbus.FeedFavoriteFollowUpdate
 import com.uyscuti.sharedmodule.eventbus.FeedLikeClick
 import com.uyscuti.sharedmodule.eventbus.FeedUploadResponseEvent
 import com.uyscuti.sharedmodule.eventbus.FromFavoriteFragmentFeedFavoriteClick
-import com.uyscuti.sharedmodule.eventbus.FromFavoriteFragmentFeedLikeClick
 import com.uyscuti.sharedmodule.eventbus.FromOtherUsersFeedFavoriteClick
 import com.uyscuti.sharedmodule.eventbus.HideFeedFloatingActionButton
 import com.uyscuti.sharedmodule.eventbus.ShowFeedFloatingActionButton
@@ -77,9 +59,6 @@ import com.uyscuti.sharedmodule.model.ShowAppBar
 import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.model.feed.SetAllFragmentScrollPosition
 import com.uyscuti.sharedmodule.presentation.DialogViewModel
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FeedDocumentViewFragment
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FeedMixedFilesViewFragment
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
 import com.uyscuti.sharedmodule.utils.removeDuplicateFollowers
@@ -91,7 +70,6 @@ import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.feed.FeedUploadRepository
 import com.uyscuti.social.circuit.ui.fragments.chat.FeedFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostAudioViewFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragmentsimport.FeedRepostMultipleImageFragment
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
@@ -109,7 +87,6 @@ import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.io.File
 import java.io.FileOutputStream
-import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
@@ -709,18 +686,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     }
 
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun likeFeedClick(event: FromFavoriteFragmentFeedLikeClick) {
-        Log.d(
-            TAG,
-            "likeFeedClick: event bus position " +
-                    "${event.position} isLiked ${event.data.isLiked} likes ${event.data.likes}"
-        )
-        val feedPosition = allFeedAdapter.getPositionById(event.data._id)
-        allFeedAdapter.updateItem(feedPosition, event.data)
-        getFeedViewModel.updateForAllFeedFragment(feedPosition, event.data)
-    }
-
     @SuppressLint("InflateParams", "MissingInflatedId", "ServiceCast")
     override fun moreOptionsClick(
         position: Int,
@@ -1030,19 +995,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    private fun showReportConfirmationDialog(feedId: String) {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("Report User")
-        builder.setMessage("Are you sure you want to report this user?")
-            .setPositiveButton("Yes") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .setNegativeButton("No") { dialog, _ ->
-                dialog.dismiss()
-            }
-
-    }
-
     private fun handleNotInterested(
         data: com.uyscuti.social.network.api.response.posts.Post) {
 
@@ -1061,42 +1013,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             "We'll show you less content like this",
             Toast.LENGTH_SHORT
         ).show()
-    }
-
-    @SuppressLint("InflateParams")
-    private fun showDeleteConfirmationDialog(feedId: String, position: Int) {
-        val inflater = LayoutInflater.from(requireContext())
-        val customTitleView: View = inflater.inflate(
-            R.layout.delete_title_custom_layout, null)
-        val builder = AlertDialog.Builder(requireContext())
-//        builder.setTitle("Delete Feed Confirmation")
-        builder.setCustomTitle(customTitleView)
-        builder.setMessage("Are you sure you want to delete this feed?")
-
-        // Positive Button
-        builder.setPositiveButton("Delete") { dialog, which ->
-//             Handle delete action
-
-            handleDeleteAction(feedId = feedId, position) { isSuccess, message ->
-                if (isSuccess) {
-                    Log.d(TAG, "handleDeleteAction $message")
-                    dialog.dismiss()
-                } else {
-                    dialog.dismiss()
-                    Log.e(TAG, "handleDeleteAction $message")
-                }
-            }
-            dialog.dismiss()
-        }
-
-        // Negative Button
-        builder.setNegativeButton("Cancel") { dialog, which ->
-            dialog.dismiss() // Dismiss the dialog
-        }
-
-        // Create and show the AlertDialog
-        val alertDialog = builder.create()
-        alertDialog.show()
     }
 
     private fun handleDeleteAction(
@@ -1313,14 +1229,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    // Replace fragment helper method
-    private fun replaceFragment(fragment: Fragment) {
-        val fragmentTransaction = parentFragmentManager.beginTransaction()
-        fragmentTransaction.replace(R.id.container, fragment)  // Replace with your container's ID
-        fragmentTransaction.addToBackStack(null)  // Optional, if you want to add it to the back stack
-        fragmentTransaction.commit()
-    }
-
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedFavoriteFollowUpdate(event: FeedFavoriteFollowUpdate) {
@@ -1432,93 +1340,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 "followButtonClicked: Inserted uniqueFollowList $uniqueFollowList"
             )
             delay(100)
-        }
-    }
-
-    private fun shareTextFeed(data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
-        val sendIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, data.content)
-            type = "text/plain"
-        }
-        // Verify that the Intent will resolve to an activity
-        if (sendIntent.resolveActivity(requireContext().packageManager) != null) {
-            // Start the activity to share the text
-            startActivity(Intent.createChooser(sendIntent, "Share via"))
-        }
-    }
-
-    private fun shareImageFeed(data: com.uyscuti.social.network.api.response.getfeedandresposts.Post) {
-        Glide.with(this).asBitmap().load(data.files[0].url).into(
-            object : CustomTarget<Bitmap?>() {
-                override fun onResourceReady(
-                    resource: Bitmap,
-                    transition: Transition<in Bitmap?>?
-                ) {
-                    bitmap = resource
-                }
-
-                override fun onLoadCleared(placeholder: Drawable?) {
-                }
-            }
-        )
-        if (bitmap != null) {
-            shareImage()
-        }
-    }
-
-    private fun shareImageFeed(data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
-        Glide.with(this).asBitmap().load(data.files[0].url).into(
-            object : CustomTarget<Bitmap?>() {
-                override fun onResourceReady(
-                    resource: Bitmap,
-                    transition: Transition<in Bitmap?>?
-                ) {
-                    bitmap = resource
-                    // Call shareImage() once the bitmap is ready
-                    shareImage()
-                }
-
-                override fun onLoadCleared(placeholder: Drawable?) {
-                    // Handle cleanup if needed
-                }
-            }
-        )
-    }
-
-    private fun shareImage() {
-        try {
-            val cachePath = File(requireActivity().cacheDir, "images")
-            cachePath.mkdir()
-            val stream = FileOutputStream("${cachePath}/sharable_image.png")
-            bitmap?.compress(Bitmap.CompressFormat.PNG, 100, stream)
-            stream.close()
-
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-
-        val imagePath = File(requireActivity().cacheDir, "images")
-        val newFile = File(imagePath, "sharable_image.png")
-        val contentUri = FileProvider.getUriForFile(
-            requireContext(),
-            "${requireActivity().applicationContext.packageName}.file provider",
-            newFile
-        )
-
-        if (contentUri != null) {
-            val shareIntent = Intent()
-            shareIntent.action = Intent.ACTION_SEND
-            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-            shareIntent.setDataAndType(
-                contentUri,
-                requireActivity().contentResolver.getType(contentUri)
-            )
-
-            shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri)
-            shareIntent.putExtra(Intent.EXTRA_TEXT, "This image is shared from flash")
-            startActivity(Intent.createChooser(shareIntent, "Share via"))
         }
     }
 
@@ -1707,35 +1528,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         allFeedAdapter.notifyDataSetChanged()
     }
 
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun feedAllFeedUpdateLike(event: AllFeedUpdateLike) {
-//        Log.d("AllFeedUpdateLike", "AllFeedUpdateLike: in all fragment")
-        Log.d(
-            "AllFeedUpdateLike",
-            "AllFeedUpdateLike: event bus position ${event.position} isLiked ${event.data.isLiked} likes ${event.data.likes}"
-        )
-
-        val feedPosition = allFeedAdapter.getPositionById(event.data._id)
-        allFeedAdapter.updateItem(feedPosition, event.data)
-        getFeedViewModel.updateForAllFeedFragment(feedPosition, event.data)
-
-        val isFavoriteFeedDataEmpty = getFeedViewModel.getAllFavoriteFeedData().isEmpty()
-        if (!isFavoriteFeedDataEmpty) {
-            val favoriteFeedData = getFeedViewModel.getAllFavoriteFeedData()
-            val feedToUpdate = favoriteFeedData.find { feed -> feed._id == event.data._id }
-            if (feedToUpdate != null) {
-                EventBus.getDefault().post(FeedLikeClick(event.position, event.data))
-                Log.d("likeUnLikeFeed", "likeUnLikeFeed: remove feed from favorite fragment")
-            } else {
-                Log.d("likeUnLikeFeed", "likeUnLikeFeed: add feed to favorite fragment")
-            }
-
-        } else {
-
-            Log.i("likeUnLikeFeed", "likeUnLikeFeed: my feed data is empty")
-        }
-    }
 
     override fun hideFloatingActionButton() {
 
