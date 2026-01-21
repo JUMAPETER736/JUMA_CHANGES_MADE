@@ -130,14 +130,14 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     private fun setupRecyclerView() {
-        // ✅ Use activity's fragment manager like MyUserFeedFragment
+        // Use activity's fragment manager like MyUserFeedFragment
         val parentActivity = requireActivity()
 
         feedAdapter = FeedAdapter(
             requireContext(),
             retrofitInstance,
             this,
-            fragmentManager = parentActivity.supportFragmentManager  // ✅ Use activity's fragment manager
+            fragmentManager = parentActivity.supportFragmentManager
         )
 
         binding.recyclerView.apply {
@@ -163,13 +163,13 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             try {
                 Log.d(TAG, "Loading bookmarked posts for current user")
 
-                // ✅ Load first page immediately
+                // Load first page immediately
                 val firstPageResponse = retrofitInstance.apiService.getFavoriteFeed(page = "1")
 
                 if (firstPageResponse.isSuccessful) {
                     val firstPagePosts = firstPageResponse.body()?.data?.bookmarkedPosts ?: emptyList()
 
-                    // ✅ Take first batch and show immediately
+                    // Take first batch and show immediately
                     val firstBatch = firstPagePosts
                         .take(INITIAL_LOAD_SIZE)
                         .mapNotNull { validateAndFixPost(it) }
@@ -185,12 +185,12 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                         }
                     }
 
-                    // ✅ Get remaining posts from first page
+                    // Get remaining posts from first page
                     val remainingFirstPage = firstPagePosts
                         .drop(INITIAL_LOAD_SIZE)
                         .mapNotNull { validateAndFixPost(it) }
 
-                    // ✅ Load remaining data in background
+                    // Load remaining data in background
                     loadRemainingDataInBackground(remainingFirstPage)
 
                 } else {
@@ -210,13 +210,13 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     private suspend fun loadRemainingDataInBackground(remainingFirstPage: List<Post>) {
         try {
-            // ✅ Add remaining posts from first page
+            // Add remaining posts from first page
             if (remainingFirstPage.isNotEmpty()) {
                 allUserFavorites.addAll(remainingFirstPage)
                 updateUI()
             }
 
-            // ✅ Load additional pages
+            // Load additional pages
             var currentPage = 2
             var hasMorePages = true
 
@@ -249,7 +249,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 }
             }
 
-            // ✅ Cache final results
+            // Cache final results
             if (allUserFavorites.isNotEmpty()) {
                 favoritesCache[userId!!] = allUserFavorites.toMutableList()
                 cacheTimestamp[userId!!] = System.currentTimeMillis()
@@ -281,7 +281,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     private fun validateAndFixPost(post: Post): Post? {
         try {
-            // ✅ All posts from bookmarks endpoint are already bookmarked
+            // All posts from bookmarks endpoint are already bookmarked
             post.isBookmarked = true
 
             if (post.isReposted == true && !post.originalPost.isNullOrEmpty()) {
