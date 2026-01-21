@@ -158,22 +158,26 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 var hasMorePages = true
                 val bookmarkedPosts = mutableListOf<Post>()
 
-                // Use the dedicated bookmarks endpoint instead of filtering from getAllFeed
                 while (hasMorePages && currentPage <= MAX_PAGES) {
-                    val response = retrofitInstance.apiService.getBookmarkedPosts(
-                        page = currentPage.toString(),
-                        limit = "10"
+                    // ✅ Use the correct endpoint
+                    val response = retrofitInstance.apiService.getFavoriteFeed(
+                        page = currentPage.toString()
                     )
 
                     if (response.isSuccessful) {
                         val responseBody = response.body()
-                        val posts = responseBody?.data?.data?.posts ?: emptyList()
+
+                        // ✅ Access the correct field
+                        val posts = responseBody?.data?.bookmarkedPosts ?: emptyList()
+
+                        Log.d(TAG, "Page $currentPage - Total bookmarks: ${responseBody?.data?.totalBookmarkedPosts}")
+                        Log.d(TAG, "Posts on this page: ${posts.size}")
 
                         val validPosts = posts.mapNotNull { validateAndFixPost(it) }
 
                         if (validPosts.isNotEmpty()) {
                             bookmarkedPosts.addAll(validPosts)
-                            Log.d(TAG, "Found ${validPosts.size} bookmarked posts on page $currentPage")
+                            Log.d(TAG, "Found ${validPosts.size} valid bookmarked posts on page $currentPage")
                         }
 
                         // Show first batch immediately
@@ -189,9 +193,9 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                             }
                         }
 
-                        // Check if there are more pages
-                        hasMorePages = responseBody?.data?.data?.hasNextPage ?: false
-                        val totalPages = responseBody?.data?.data?.totalPages ?: currentPage
+                        // ✅ Use correct pagination fields from FeedFavoriteResponse
+                        hasMorePages = responseBody?.data?.hasNextPage ?: false
+                        val totalPages = responseBody?.data?.totalPages ?: currentPage
 
                         if (!hasMorePages || currentPage >= totalPages) {
                             hasMorePages = false
@@ -200,6 +204,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                         }
                     } else {
                         Log.e(TAG, "Failed to load page $currentPage: ${response.code()}")
+                        Log.e(TAG, "Error body: ${response.errorBody()?.string()}")
                         hasMorePages = false
                     }
                 }
@@ -235,6 +240,8 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             }
         }
     }
+
+
     private fun validateAndFixPost(post: Post): Post? {
         try {
             // All posts from bookmarks endpoint are already bookmarked
