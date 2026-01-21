@@ -20,6 +20,7 @@ import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -68,6 +69,7 @@ class MyUserFavoritesFragment : Fragment() {
     lateinit var retrofitInstance: RetrofitInstance
 
     private lateinit var feedAdapter: FeedAdapter
+    private lateinit var localStorage: LocalStorage
 
     private val allUserFavorites = mutableListOf<Post>()
     private var isDataLoaded = false
@@ -92,19 +94,34 @@ class MyUserFavoritesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupLocalStorage()
         setupRecyclerView()
 
-        if (isCacheValid()) {
-            val cachedData = favoritesCache[userId] ?: mutableListOf()
-            allUserFavorites.clear()
-            allUserFavorites.addAll(cachedData)
-            isDataLoaded = true
-            displayCachedData(cachedData)
-        } else {
-            allUserFavorites.clear()
-            isDataLoaded = false
-            loadBookmarkedPostsOptimized()
+        // ✅ Load ALL lists in background FIRST (like main feed does)
+        lifecycleScope.launch(Dispatchers.IO) {
+            loadFollowingList()
+            loadFollowersList()
+            loadBlockedUsers()
+
+            // ✅ THEN load posts
+            withContext(Dispatchers.Main) {
+                if (isCacheValid()) {
+                    val cachedData = favoritesCache[userId] ?: mutableListOf()
+                    allUserFavorites.clear()
+                    allUserFavorites.addAll(cachedData)
+                    isDataLoaded = true
+                    displayCachedData(cachedData)
+                } else {
+                    allUserFavorites.clear()
+                    isDataLoaded = false
+                    loadBookmarkedPostsOptimized()
+                }
+            }
         }
+    }
+
+    private fun setupLocalStorage() {
+        localStorage = LocalStorage.getInstance(requireContext())
     }
 
     private fun isCacheValid(): Boolean {
@@ -133,7 +150,7 @@ class MyUserFavoritesFragment : Fragment() {
         feedAdapter = FeedAdapter(
             context = requireContext(),
             retrofitInterface = retrofitInstance,
-            feedClickListener = createNoOpListener(), // ✅ Pass empty listener
+            feedClickListener = createNoOpListener(),
             fragmentManager = requireActivity().supportFragmentManager
         )
 
@@ -215,6 +232,118 @@ class MyUserFavoritesFragment : Fragment() {
             override fun onImageClick() {
                 // ✅ FeedAdapter handles this
             }
+        }
+    }
+
+    // ✅ Load following list to hide Follow buttons and show correct user info
+    private suspend fun loadFollowingList() {
+        try {
+            val currentUserId = localStorage.getUserId()
+            val currentUsername = localStorage.getUsername()
+
+            Log.d(TAG, "Loading following list for user: $currentUsername")
+
+            // ✅ Use getOtherUserFollowing like main feed does
+            val response = retrofitInstance.apiService.getOtherUserFollowing(
+                username = currentUsername,
+                page = 1,
+                limit = 1000
+            )
+
+            if (response.isSuccessful && response.body() != null) {
+                val followingUsers = response.body()!!.data
+
+                val followingIds = mutableListOf<String>()
+                val followingUsernames = mutableListOf<String>()
+
+                followingUsers?.forEach { user ->
+                    val userId = user._id
+                    val username = user.username
+
+                    if (userId.isNotEmpty()) {
+                        followingIds.add(userId)
+                        followingUsernames.add(username)
+                        Log.d(TAG, "Following: @$username (ID: $userId)")
+                    }
+                }
+
+                withContext(Dispatchers.Main) {
+                    // ✅ Update FeedAdapter's following list
+                    feedAdapter.updateFollowingList(followingIds)
+                    feedAdapter.updateFollowingUsernames(followingUsernames)
+
+                    // ✅ Update global cache
+                    FeedAdapter.setCachedFollowingList(followingIds.toSet())
+
+                    Log.d(TAG, "✅ Following list loaded: ${followingIds.size} users")
+                    Log.d(TAG, "Following IDs: $followingIds")
+                    Log.d(TAG, "Following usernames: $followingUsernames")
+                }
+            } else {
+                Log.e(TAG, "Failed to load following list: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading following list: ${e.message}", e)
+        }
+    }
+
+    // ✅ Load followers list (like UserFollowersFragment does) to populate FeedAdapter cache
+    private suspend fun loadFollowersList() {
+        try {
+            val currentUsername = localStorage.getUsername()
+
+            Log.d(TAG, "Loading followers list for user: $currentUsername")
+
+            val response = retrofitInstance.apiService.getOtherUserFollowers(
+                username = currentUsername,
+                page = 1,
+                limit = 1000
+            )
+
+            if (response.isSuccessful && response.body() != null) {
+                val responseBody = response.body()!!
+                val followers = responseBody.data
+
+                // Extract follower IDs
+                val followerIds = followers.map { it._id }
+
+                withContext(Dispatchers.Main) {
+                    // ✅ Populate the FeedAdapter cache with YOUR followers
+                    FeedAdapter.setMyFollowersList(followerIds)
+                    Log.d(TAG, "✅ Followers list loaded: ${followerIds.size} followers")
+                    Log.d(TAG, "Populated my followers cache for Follow Back detection")
+                }
+            } else {
+                Log.e(TAG, "Failed to load followers list: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading followers list: ${e.message}", e)
+        }
+    }
+
+    // ✅ Load blocked users (like main feed does)
+    private suspend fun loadBlockedUsers() {
+        try {
+            Log.d(TAG, "Loading blocked users...")
+
+            val response = retrofitInstance.apiService.getAllBlockedUsers(page = 1, limit = 100)
+
+            if (response.isSuccessful && response.body() != null) {
+                val responseBody = response.body()!!
+
+                // Store blocked user IDs
+                val blockedUserIds = responseBody.data.blockedUsers.map { it.user._id }.toSet()
+
+                Log.d(TAG, "✅ Loaded ${blockedUserIds.size} blocked users")
+                Log.d(TAG, "Blocked user IDs: $blockedUserIds")
+
+                // TODO: If you need to filter out blocked users' posts, you can store this
+                // in a companion object or pass it to the adapter
+            } else {
+                Log.e(TAG, "Failed to load blocked users: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading blocked users: ${e.message}", e)
         }
     }
 
