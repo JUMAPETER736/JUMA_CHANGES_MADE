@@ -216,35 +216,36 @@ interface IFlashapi {
 
 
 
-    @POST("social-media/profile/{userId}/close-friends")
+    @POST("social-media/profile/close-friends/{userId}")
     suspend fun addToCloseFriends(@Path("userId") userId: String): Response<BaseResponse>
 
-    @DELETE("social-media/profile/{userId}/close-friends")
+    @DELETE("social-media/profile/close-friends/{userId}")
     suspend fun removeFromCloseFriends(@Path("userId") userId: String): Response<BaseResponse>
 
-    @POST("social-media/profile/{userId}/mute/posts")
+    @POST("social-media/profile/mute/posts/{userId}")
     suspend fun mutePosts(@Path("userId") userId: String): Response<BaseResponse>
 
-    @DELETE("social-media/profile/{userId}/mute/posts")
-    suspend fun unMutePosts(@Path("userId") userId: String): Response<BaseResponse>
+    @DELETE("social-media/profile/mute/posts/{userId}")
+    suspend fun unmutePosts(@Path("userId") userId: String): Response<BaseResponse>
 
-    @POST("social-media/profile/{userId}/mute/stories")
+    @POST("social-media/profile/mute/stories/{userId}")
     suspend fun muteStories(@Path("userId") userId: String): Response<BaseResponse>
 
-    @DELETE("social-media/profile/{userId}/mute/stories")
-    suspend fun unMuteStories(@Path("userId") userId: String): Response<BaseResponse>
+    @DELETE("social-media/profile/mute/stories/{userId}")
+    suspend fun unmuteStories(@Path("userId") userId: String): Response<BaseResponse>
 
-    @POST("social-media/profile/{userId}/favorites")
+    @POST("social-media/profile/favorites/{userId}")
     suspend fun addToFavorites(@Path("userId") userId: String): Response<BaseResponse>
 
-    @DELETE("social-media/profile/{userId}/favorites")
+    @DELETE("social-media/profile/favorites/{userId}")
     suspend fun removeFromFavorites(@Path("userId") userId: String): Response<BaseResponse>
 
-    @POST("social-media/profile/{userId}/restrict")
+    @POST("social-media/profile/restrict/{userId}")
     suspend fun restrictUser(@Path("userId") userId: String): Response<BaseResponse>
 
-    @DELETE("social-media/profile/{userId}/restrict")
-    suspend fun unRestrictUser(@Path("userId") userId: String): Response<BaseResponse>
+    @DELETE("social-media/profile/restrict/{userId}")
+    suspend fun unrestrictUser(@Path("userId") userId: String): Response<BaseResponse>
+
 
 
 
