@@ -130,7 +130,6 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     private fun setupRecyclerView() {
-        // Use activity's fragment manager like MyUserFeedFragment
         val parentActivity = requireActivity()
 
         feedAdapter = FeedAdapter(
@@ -163,13 +162,12 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             try {
                 Log.d(TAG, "Loading bookmarked posts for current user")
 
-                // Load first page immediately
                 val firstPageResponse = retrofitInstance.apiService.getFavoriteFeed(page = "1")
 
                 if (firstPageResponse.isSuccessful) {
                     val firstPagePosts = firstPageResponse.body()?.data?.bookmarkedPosts ?: emptyList()
 
-                    // Take first batch and show immediately
+                    // Process first batch
                     val firstBatch = firstPagePosts
                         .take(INITIAL_LOAD_SIZE)
                         .mapNotNull { validateAndFixPost(it) }
@@ -190,7 +188,6 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                         .drop(INITIAL_LOAD_SIZE)
                         .mapNotNull { validateAndFixPost(it) }
 
-                    // Load remaining data in background
                     loadRemainingDataInBackground(remainingFirstPage)
 
                 } else {
@@ -210,13 +207,11 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     private suspend fun loadRemainingDataInBackground(remainingFirstPage: List<Post>) {
         try {
-            // Add remaining posts from first page
             if (remainingFirstPage.isNotEmpty()) {
                 allUserFavorites.addAll(remainingFirstPage)
                 updateUI()
             }
 
-            // Load additional pages
             var currentPage = 2
             var hasMorePages = true
 
@@ -249,7 +244,6 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 }
             }
 
-            // Cache final results
             if (allUserFavorites.isNotEmpty()) {
                 favoritesCache[userId!!] = allUserFavorites.toMutableList()
                 cacheTimestamp[userId!!] = System.currentTimeMillis()
@@ -281,45 +275,75 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     private fun validateAndFixPost(post: Post): Post? {
         try {
-            // All posts from bookmarks endpoint are already bookmarked
+            // CRITICAL: Ensure post is bookmarked (this is from favorites endpoint)
             post.isBookmarked = true
 
+            // Handle reposted posts
             if (post.isReposted == true && !post.originalPost.isNullOrEmpty()) {
                 val originalPost = post.originalPost[0]
 
+                // Validate original post author
                 if (originalPost.author?.account == null) {
+                    Log.e(TAG, "Original post missing author/account for post ${post._id}")
                     return null
                 }
 
+                // Use original post's engagement metrics for reposts
                 post.comments = originalPost.commentCount ?: 0
                 post.likes = originalPost.likeCount ?: 0
                 post.bookmarkCount = originalPost.bookmarkCount ?: 0
                 post.repostCount = originalPost.repostCount ?: 0
-                post.shareCount = 0
+                post.shareCount = originalPost.shareCount ?: 0
 
+                // Ensure content type is set
                 if (post.contentType.isNullOrEmpty() || post.contentType == "mixed") {
-                    post.contentType = determineContentType(originalPost.files, post.files, originalPost.content, post.content)
+                    post.contentType = determineContentType(
+                        originalPost.files,
+                        post.files,
+                        originalPost.content,
+                        post.content
+                    )
                 }
 
             } else {
+                // Regular post - validate author
                 if (post.author == null || post.author.account == null) {
+                    Log.e(TAG, "Post missing author/account for post ${post._id}")
                     return null
                 }
 
+                // Ensure all engagement metrics have default values
                 post.comments = post.comments ?: 0
                 post.likes = post.likes ?: 0
                 post.bookmarkCount = post.bookmarkCount ?: 0
                 post.repostCount = post.repostCount ?: 0
                 post.shareCount = post.shareCount ?: 0
 
+                // Determine content type if not set
                 if (post.contentType.isNullOrEmpty()) {
-                    post.contentType = determineContentType(post.files, emptyList(), post.content, null)
+                    post.contentType = determineContentType(
+                        post.files,
+                        emptyList(),
+                        post.content,
+                        null
+                    )
                 }
             }
 
+            // Ensure isBusinessPost is set
+            if (post.isBusinessPost == null) {
+               // post.isBusinessPost = false
+            }
+
+            // Log successful validation
+            Log.d(TAG, "Validated post ${post._id}: contentType=${post.contentType}, " +
+                    "comments=${post.comments}, likes=${post.likes}, " +
+                    "bookmarks=${post.bookmarkCount}, isBookmarked=${post.isBookmarked}")
+
             return post
+
         } catch (e: Exception) {
-            Log.e(TAG, "Error validating Post ${post._id}: ${e.message}", e)
+            Log.e(TAG, "Error validating post ${post._id}: ${e.message}", e)
             return null
         }
     }
@@ -331,11 +355,26 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         secondaryContent: String?
     ): String {
         val files = primaryFiles ?: secondaryFiles
+
         return when {
             files.isNotEmpty() -> {
                 when {
                     files.size > 1 -> "mixed_files"
-                    files.any { it.fileId == "video" } -> "videos"
+                    files.any {
+                        val fileType = it.fileId?.contains("video", ignoreCase = true) ?: false
+                        fileType || it.url?.contains(".mp4", ignoreCase = true) ?: false
+                    } -> "video"
+                    files.any {
+                        val fileType = it.fileId?.contains("audio", ignoreCase = true) ?: false
+                        fileType || it.url?.contains(".mp3", ignoreCase = true) ?: false ||
+                                it.url?.contains(".ogg", ignoreCase = true) ?: false
+                    } -> "audio"
+                    files.any {
+                        val url = it.url ?: ""
+                        url.contains(".jpg", ignoreCase = true) ||
+                                url.contains(".png", ignoreCase = true) ||
+                                url.contains(".jpeg", ignoreCase = true)
+                    } -> "image"
                     else -> "mixed_files"
                 }
             }
@@ -384,7 +423,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         _binding = null
     }
 
-    // OnFeedClickListener implementations - These are just stubs, FeedPostViewHolder handles everything
+    // OnFeedClickListener implementations
     override fun likeUnLikeFeed(position: Int, data: Post) {
         Log.d(TAG, "Like clicked at position $position - handled by FeedPostViewHolder")
     }
@@ -394,18 +433,24 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     override fun feedFavoriteClick(position: Int, data: Post) {
-        Log.d(TAG, "Favorite clicked at position $position - handled by FeedPostViewHolder")
+        Log.d(TAG, "Favorite clicked at position $position")
 
         // When user unbookmarks, remove from list immediately
         if (data.isBookmarked == false) {
-            allUserFavorites.removeAt(position)
-            feedAdapter.submitItems(allUserFavorites)
+            if (position in allUserFavorites.indices) {
+                allUserFavorites.removeAt(position)
+                feedAdapter.submitItems(allUserFavorites)
 
-            // Update cache
-            favoritesCache[userId!!] = allUserFavorites.toMutableList()
+                // Update cache
+                userId?.let {
+                    favoritesCache[it] = allUserFavorites.toMutableList()
+                }
 
-            if (allUserFavorites.isEmpty()) {
-                showEmptyState()
+                if (allUserFavorites.isEmpty()) {
+                    showEmptyState()
+                }
+
+                Log.d(TAG, "Removed unbookmarked post at position $position")
             }
         }
     }
