@@ -297,85 +297,24 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     override fun feedFavoriteClick(position: Int, data: Post) {
-        // Get the item before making the API call
-        val itemToRemove = favoritesList.getOrNull(position) ?: return
-        if (itemToRemove._id != data._id) return
+        // Item was unbookmarked in the ViewHolder
+        // Now remove it from the favorites list
 
-        // Optimistically remove from UI immediately
-        favoritesList.removeAt(position)
-        feedAdapter.removeAt(position)
-        feedAdapter.notifyItemRemoved(position)
-        totalBookmarkedPosts--
+        val itemToRemove = favoritesList.getOrNull(position)
+        if (itemToRemove != null && itemToRemove._id == data._id) {
+            favoritesList.removeAt(position)
+            feedAdapter.notifyItemRemoved(position)
+            totalBookmarkedPosts--
 
-        val wasEmpty = favoritesList.isEmpty()
-        if (wasEmpty) {
-            showEmptyState()
-        }
-
-        // Make API call in background
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val response = apiService.favoriteFeed(data._id)
-
-                if (response.isSuccessful && response.body() != null) {
-                    val isBookmarked = response.body()!!.data.isBookmarked
-
-                    withContext(Dispatchers.Main) {
-                        if (!isBookmarked) {
-                            // Success - item was unbookmarked
-                            Toast.makeText(
-                                requireContext(),
-                                "Removed from favorites",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            // Unexpected: User rebookmarked - restore item
-                            favoritesList.add(position, itemToRemove)
-                            feedAdapter.insert(position, itemToRemove)
-                            feedAdapter.notifyItemInserted(position)
-                            totalBookmarkedPosts++
-                            if (wasEmpty) showContent()
-
-                            Toast.makeText(
-                                requireContext(),
-                                "Bookmarked",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-                } else {
-                    // API call failed - restore item
-                    withContext(Dispatchers.Main) {
-                        favoritesList.add(position, itemToRemove)
-                        feedAdapter.insert(position, itemToRemove)
-                        feedAdapter.notifyItemInserted(position)
-                        totalBookmarkedPosts++
-                        if (wasEmpty) showContent()
-
-                        Toast.makeText(
-                            requireContext(),
-                            "Failed to remove bookmark",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error toggling bookmark: ${e.message}", e)
-                // Error - restore item
-                withContext(Dispatchers.Main) {
-                    favoritesList.add(position, itemToRemove)
-                    feedAdapter.insert(position, itemToRemove)
-                    feedAdapter.notifyItemInserted(position)
-                    totalBookmarkedPosts++
-                    if (wasEmpty) showContent()
-
-                    Toast.makeText(
-                        requireContext(),
-                        "Error updating bookmark",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+            if (favoritesList.isEmpty()) {
+                showEmptyState()
             }
+
+            Toast.makeText(
+                requireContext(),
+                "Removed from favorites",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
