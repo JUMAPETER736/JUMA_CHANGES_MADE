@@ -20,6 +20,7 @@ import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,8 +40,6 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         private val favoritesCache = mutableMapOf<String, MutableList<Post>>()
         private val cacheTimestamp = mutableMapOf<String, Long>()
         private const val CACHE_VALIDITY_MS = 5 * 60 * 1000L
-        private const val INITIAL_LOAD_SIZE = 10
-        private const val MAX_PAGES = 5
 
         fun newInstance(userId: String, username: String): MyUserFavoritesFragment {
             return MyUserFavoritesFragment().apply {
@@ -79,6 +78,13 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             userId = it.getString(ARG_USER_ID)
             username = it.getString(ARG_USERNAME)
         }
+
+        // Get logged in user ID from LocalStorage if not provided
+        if (userId == null) {
+            userId = LocalStorage.getInstance(requireContext()).getUserId()
+        }
+
+        Log.d(TAG, "onCreate: userId = $userId")
     }
 
     override fun onCreateView(
@@ -100,9 +106,21 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             allUserFavorites.clear()
             allUserFavorites.addAll(cached)
             submitToAdapter(allUserFavorites)
-            showContent()
+            if (cached.isNotEmpty()) {
+                showContent()
+            } else {
+                showEmptyState()
+            }
         } else {
             loadBookmarkedPostsOptimized()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh data when returning to this fragment if cache is invalid
+        if (!isCacheValid()) {
+            refreshBookmarks()
         }
     }
 
@@ -110,6 +128,14 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         super.onDestroyView()
         binding.recyclerView.adapter = null
         _binding = null
+    }
+
+    private fun refreshBookmarks() {
+        Log.d(TAG, "Refreshing bookmarks")
+        isDataLoaded = false
+        clearCache(userId ?: "")
+        allUserFavorites.clear()
+        loadBookmarkedPostsOptimized()
     }
 
     // -------------------- RECYCLER --------------------
@@ -132,9 +158,25 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     private fun submitToAdapter(posts: List<Post>) {
-        if (!isAdded || _binding == null) return
-        feedAdapter.submitItems(posts)
-        feedAdapter.initializeCommentCounts(posts)
+        if (!isAdded || _binding == null) {
+            Log.w(TAG, "Fragment not attached, skipping adapter submission")
+            return
+        }
+
+        Log.d(TAG, "Submitting ${posts.size} posts to adapter")
+
+        try {
+            feedAdapter.submitItems(posts)
+            feedAdapter.initializeCommentCounts(posts)
+
+            // Notify adapter that data has changed
+            feedAdapter.notifyDataSetChanged()
+
+            Log.d(TAG, "Successfully submitted posts to adapter")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error submitting to adapter", e)
+            e.printStackTrace()
+        }
     }
 
     // -------------------- CACHE --------------------
@@ -155,32 +197,84 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
+                Log.d(TAG, "Fetching bookmarked posts for user: $userId")
                 val response = retrofitInstance.apiService.getFavoriteFeed(page = "1")
 
                 if (!response.isSuccessful) {
-                    withContext(Dispatchers.Main) { showEmptyState() }
+                    Log.e(TAG, "API call failed with code: ${response.code()}")
+                    withContext(Dispatchers.Main) {
+                        showEmptyState()
+                        isDataLoaded = false
+                    }
                     return@launch
                 }
 
-                val posts = response.body()?.data?.bookmarkedPosts.orEmpty()
-                    .mapNotNull { validateAndFixPost(it) }
+                val responseBody = response.body()
+                Log.d(TAG, "Response body: ${responseBody?.message}")
 
-                if (posts.isNotEmpty()) {
-                    allUserFavorites.addAll(posts)
-                    withContext(Dispatchers.Main) {
-                        submitToAdapter(allUserFavorites)
-                        showContent()
+                // Get posts from the bookmarkedPosts array
+                val bookmarkedPosts = responseBody?.data?.bookmarkedPosts.orEmpty()
+                Log.d(TAG, "Received ${bookmarkedPosts.size} bookmarked posts from server")
+
+                // Filter posts to only show the ones bookmarked by the current logged-in user
+                // Since bookmarkedBy field exists in the bookmarked posts response
+                val myBookmarkedPosts = bookmarkedPosts
+                    .filter { post ->
+                        val isMyBookmark = post.bookmarkedBy == userId
+                        Log.d(TAG, "Post ${post._id}: bookmarkedBy=${post.bookmarkedBy}, userId=$userId, isMyBookmark=$isMyBookmark")
+                        isMyBookmark
                     }
-                } else {
-                    withContext(Dispatchers.Main) { showEmptyState() }
+                    .mapNotNull { post ->
+                        val validatedPost = validateAndFixPost(post)
+                        if (validatedPost == null) {
+                            Log.w(TAG, "Post ${post._id} failed validation")
+                        }
+                        validatedPost
+                    }
+
+                Log.d(TAG, "Filtered to ${myBookmarkedPosts.size} posts for user $userId")
+
+                // Log details of filtered posts
+                myBookmarkedPosts.forEachIndexed { index, post ->
+                    Log.d(TAG, "Filtered Post $index:")
+                    Log.d(TAG, "  ID: ${post._id}")
+                    Log.d(TAG, "  Content: ${post.content}")
+                    Log.d(TAG, "  Files: ${post.files?.size ?: 0}")
+                    Log.d(TAG, "  Author: ${post.author?.account?.username}")
+                    Log.d(TAG, "  Avatar URL: ${post.author?.account?.avatar?.url}")
+                    Log.d(TAG, "  isBookmarked: ${post.isBookmarked}")
+                    post.files?.forEachIndexed { fileIndex, file ->
+                        Log.d(TAG, "    File $fileIndex: ${file.url}")
+                    }
                 }
 
-                favoritesCache[userId!!] = allUserFavorites.toMutableList()
-                cacheTimestamp[userId!!] = System.currentTimeMillis()
+                withContext(Dispatchers.Main) {
+                    if (myBookmarkedPosts.isNotEmpty()) {
+                        allUserFavorites.addAll(myBookmarkedPosts)
+                        Log.d(TAG, "Submitting ${allUserFavorites.size} posts to adapter")
+                        submitToAdapter(allUserFavorites)
+                        showContent()
+
+                        // Update cache
+                        userId?.let { uid ->
+                            favoritesCache[uid] = allUserFavorites.toMutableList()
+                            cacheTimestamp[uid] = System.currentTimeMillis()
+                            Log.d(TAG, "Cache updated for user $uid")
+                        }
+                    } else {
+                        Log.d(TAG, "No bookmarked posts found for user $userId, showing empty state")
+                        showEmptyState()
+                    }
+                    isDataLoaded = false
+                }
 
             } catch (e: Exception) {
-                Log.e(TAG, "Load error", e)
-                withContext(Dispatchers.Main) { showEmptyState() }
+                Log.e(TAG, "Load error: ${e.message}", e)
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    showEmptyState()
+                    isDataLoaded = false
+                }
             }
         }
     }
@@ -189,15 +283,98 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     private fun validateAndFixPost(post: Post): Post? {
         return try {
+            Log.d(TAG, "Validating post ${post._id}")
+
+            // Ensure the post is marked as bookmarked
             post.isBookmarked = true
+
+            // Initialize counts if null
             post.comments = post.comments ?: 0
             post.likes = post.likes ?: 0
             post.bookmarkCount = post.bookmarkCount ?: 0
             post.repostCount = post.repostCount ?: 0
             post.shareCount = post.shareCount ?: 0
 
-            if (post.author?.account == null) null else post
+            // Validate author exists
+            if (post.author?.account == null) {
+                Log.w(TAG, "Post ${post._id} has no author, skipping")
+                return null
+            }
+
+            // Ensure files list is not null
+            if (post.files == null) {
+                post.files = emptyList()
+                Log.d(TAG, "Post ${post._id}: files was null, set to empty list")
+            }
+
+            // Ensure fileTypes list is not null
+            if (post.fileTypes == null) {
+                post.fileTypes = emptyList()
+                Log.d(TAG, "Post ${post._id}: fileTypes was null, set to empty list")
+            }
+
+            // Ensure fileIds list is not null
+            if (post.fileIds == null) {
+                post.fileIds = emptyList()
+                Log.d(TAG, "Post ${post._id}: fileIds was null, set to empty list")
+            }
+
+            // Ensure duration list is not null
+            if (post.duration == null) {
+                post.duration = emptyList()
+            }
+
+            // Ensure tags list is not null
+            if (post.tags == null) {
+                post.tags = emptyList()
+            }
+
+            // Ensure originalPost list is not null
+            if (post.originalPost == null) {
+                post.originalPost = emptyList()
+            }
+
+            // Ensure thumbnail list is not null
+            if (post.thumbnail == null) {
+                post.thumbnail = emptyList()
+            }
+
+            // Ensure numberOfPages list is not null
+            if (post.numberOfPages == null) {
+                post.numberOfPages = emptyList()
+            }
+
+            // Ensure fileNames list is not null
+            if (post.fileNames == null) {
+                post.fileNames = emptyList()
+            }
+
+            // Ensure fileSizes list is not null
+            if (post.fileSizes == null) {
+                post.fileSizes = emptyList()
+            }
+
+            // Log complete post information for debugging
+            Log.d(TAG, "Post ${post._id} validated successfully:")
+            Log.d(TAG, "  Content: ${post.content}")
+            Log.d(TAG, "  ContentType: ${post.contentType}")
+            Log.d(TAG, "  Files: ${post.files?.size ?: 0}")
+            post.files?.forEachIndexed { index, file ->
+                Log.d(TAG, "    File $index: ${file.url}")
+            }
+            Log.d(TAG, "  FileTypes: ${post.fileTypes?.size ?: 0}")
+            Log.d(TAG, "  Author: ${post.author.account.username}")
+            Log.d(TAG, "  Author Name: ${post.author.firstName} ${post.author.lastName}")
+            Log.d(TAG, "  Avatar URL: ${post.author.account.avatar?.url}")
+            Log.d(TAG, "  Comments: ${post.comments}")
+            Log.d(TAG, "  Likes: ${post.likes}")
+            Log.d(TAG, "  Bookmarks: ${post.bookmarkCount}")
+            Log.d(TAG, "  isBookmarked: ${post.isBookmarked}")
+
+            post
         } catch (e: Exception) {
+            Log.e(TAG, "Error validating post ${post._id}", e)
+            e.printStackTrace()
             null
         }
     }
@@ -225,15 +402,21 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     // -------------------- FEED CALLBACKS --------------------
 
     override fun feedFavoriteClick(position: Int, data: Post) {
+        // When user unbookmarks, remove from list
         if (!data.isBookmarked && position in allUserFavorites.indices) {
+            Log.d(TAG, "Removing unbookmarked post at position $position")
             allUserFavorites.removeAt(position)
             submitToAdapter(allUserFavorites)
 
+            // Update cache
             userId?.let {
                 favoritesCache[it] = allUserFavorites.toMutableList()
             }
 
-            if (allUserFavorites.isEmpty()) showEmptyState()
+            // Show empty state if no more bookmarks
+            if (allUserFavorites.isEmpty()) {
+                showEmptyState()
+            }
         }
     }
 
