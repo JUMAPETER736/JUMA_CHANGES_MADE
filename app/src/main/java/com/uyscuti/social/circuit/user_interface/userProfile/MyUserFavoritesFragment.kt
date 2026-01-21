@@ -27,8 +27,10 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.collections.isNotEmpty
 
+
+
 @AndroidEntryPoint
-class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
+class MyUserFavoritesFragment : Fragment() {
 
     companion object {
         private const val TAG = "MyUserFavoritesFragment"
@@ -61,7 +63,6 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     private var userId: String? = null
     private var username: String? = null
-    private var cleanUsername: String? = null
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
@@ -76,7 +77,6 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         arguments?.let {
             userId = it.getString(ARG_USER_ID)
             username = it.getString(ARG_USERNAME)
-            cleanUsername = username?.trim()?.lowercase()
         }
     }
 
@@ -129,14 +129,12 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     private fun setupRecyclerView() {
-        // ✅ Use activity's fragment manager like MyUserFeedFragment
-        val parentActivity = requireActivity()
-
+        // ✅ Create adapter with NO listener - FeedAdapter handles everything internally
         feedAdapter = FeedAdapter(
-            requireContext(),
-            retrofitInstance,
-            this,
-            fragmentManager = parentActivity.supportFragmentManager  // ✅ Use activity's fragment manager
+            context = requireContext(),
+            retrofitInterface = retrofitInstance,
+            feedClickListener = createNoOpListener(), // ✅ Pass empty listener
+            fragmentManager = requireActivity().supportFragmentManager
         )
 
         binding.recyclerView.apply {
@@ -148,6 +146,76 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
 
         feedAdapter.recyclerView = binding.recyclerView
+    }
+
+    // ✅ Create a no-op listener - FeedAdapter handles all clicks internally
+    private fun createNoOpListener(): OnFeedClickListener {
+        return object : OnFeedClickListener {
+            override fun likeUnLikeFeed(position: Int, data: Post) {
+                // ✅ FeedAdapter handles this
+            }
+
+            override fun feedCommentClicked(position: Int, data: Post) {
+                // ✅ FeedAdapter handles this - opens comment fragment
+            }
+
+            override fun feedFavoriteClick(position: Int, data: Post) {
+                // ✅ Handle unbookmark in favorites list
+                if (data.isBookmarked == false) {
+                    // Remove from list when unbookmarked
+                    val positionToRemove = allUserFavorites.indexOfFirst { it._id == data._id }
+                    if (positionToRemove != -1) {
+                        allUserFavorites.removeAt(positionToRemove)
+                        feedAdapter.submitItems(allUserFavorites)
+
+                        // Update cache
+                        userId?.let {
+                            favoritesCache[it] = allUserFavorites.toMutableList()
+                        }
+
+                        if (allUserFavorites.isEmpty()) {
+                            showEmptyState()
+                        }
+                    }
+                }
+            }
+
+            override fun moreOptionsClick(position: Int, data: Post) {
+                // ✅ FeedAdapter handles this
+            }
+
+            override fun feedFileClicked(position: Int, data: Post) {
+                // ✅ FeedAdapter handles this
+            }
+
+            override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
+                // ✅ FeedAdapter handles this
+            }
+
+            override fun feedShareClicked(position: Int, data: Post) {
+                // ✅ FeedAdapter handles this
+            }
+
+            override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {
+                // ✅ FeedAdapter handles this
+            }
+
+            override fun feedRepostPost(position: Int, data: Post) {
+                // ✅ FeedAdapter handles this
+            }
+
+            override fun feedRepostPostClicked(position: Int, data: Post) {
+                // ✅ FeedAdapter handles this
+            }
+
+            override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
+                // ✅ FeedAdapter handles this
+            }
+
+            override fun onImageClick() {
+                // ✅ FeedAdapter handles this
+            }
+        }
     }
 
     @SuppressLint("SetTextI18n")
@@ -250,8 +318,10 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
             // ✅ Cache final results
             if (allUserFavorites.isNotEmpty()) {
-                favoritesCache[userId!!] = allUserFavorites.toMutableList()
-                cacheTimestamp[userId!!] = System.currentTimeMillis()
+                userId?.let {
+                    favoritesCache[it] = allUserFavorites.toMutableList()
+                    cacheTimestamp[it] = System.currentTimeMillis()
+                }
                 Log.d(TAG, "Cached ${allUserFavorites.size} bookmarked posts")
             }
 
@@ -381,67 +451,5 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         super.onDestroyView()
         feedAdapter.updatePosts(emptyList())
         _binding = null
-    }
-
-    // ✅ OnFeedClickListener implementations - These are just stubs, FeedPostViewHolder handles everything
-    override fun likeUnLikeFeed(position: Int, data: Post) {
-        Log.d(TAG, "Like clicked at position $position - handled by FeedPostViewHolder")
-    }
-
-    override fun feedCommentClicked(position: Int, data: Post) {
-        Log.d(TAG, "Comment clicked at position $position - handled by FeedPostViewHolder")
-    }
-
-    override fun feedFavoriteClick(position: Int, data: Post) {
-        Log.d(TAG, "Favorite clicked at position $position - handled by FeedPostViewHolder")
-
-        // ✅ When user unbookmarks, remove from list immediately
-        if (data.isBookmarked == false) {
-            allUserFavorites.removeAt(position)
-            feedAdapter.submitItems(allUserFavorites)
-
-            // Update cache
-            favoritesCache[userId!!] = allUserFavorites.toMutableList()
-
-            if (allUserFavorites.isEmpty()) {
-                showEmptyState()
-            }
-        }
-    }
-
-    override fun moreOptionsClick(position: Int, data: Post) {
-        Log.d(TAG, "More options clicked at position $position - handled by FeedPostViewHolder")
-    }
-
-    override fun feedFileClicked(position: Int, data: Post) {
-        Log.d(TAG, "File clicked at position $position - handled by FeedPostViewHolder")
-    }
-
-    override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
-        Log.d(TAG, "Repost file clicked at position $position - handled by FeedPostViewHolder")
-    }
-
-    override fun feedShareClicked(position: Int, data: Post) {
-        Log.d(TAG, "Share clicked at position $position - handled by FeedPostViewHolder")
-    }
-
-    override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {
-        Log.d(TAG, "Follow clicked for user ${followUnFollowEntity.userId} - handled by FeedPostViewHolder")
-    }
-
-    override fun feedRepostPost(position: Int, data: Post) {
-        Log.d(TAG, "Repost clicked at position $position - handled by FeedPostViewHolder")
-    }
-
-    override fun feedRepostPostClicked(position: Int, data: Post) {
-        Log.d(TAG, "Repost post clicked at position $position - handled by FeedPostViewHolder")
-    }
-
-    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
-        Log.d(TAG, "Original post clicked: $originalPostId - handled by FeedPostViewHolder")
-    }
-
-    override fun onImageClick() {
-        Log.d(TAG, "Image clicked - handled by FeedPostViewHolder")
     }
 }
