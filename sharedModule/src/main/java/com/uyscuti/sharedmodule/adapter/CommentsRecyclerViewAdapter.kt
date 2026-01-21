@@ -137,14 +137,14 @@ class CommentsRecyclerViewAdapter(
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(imageView)
 
-//            Log.d("")
+
             if (data.gifs != "") {
                 imageUrl = data.gifs
                 if (imageUrl.isNotEmpty()) {
                     Log.d(TAG, "Image url is not empty for holder")
                     Glide.with(context)
                         .load(data.gifs)
-//                        .apply(RequestOptions.bitmapTransform(CircleCrop()))
+
                         .placeholder(R.drawable.flash21)
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
                         .into(imageComment)
@@ -160,12 +160,12 @@ class CommentsRecyclerViewAdapter(
 
                 for (commentReply in data.replies) {
                     commentReply.__v = absoluteAdapterPosition
-//                    commentReply.
+
                 }
 
                 Log.d("ImageCommentRenderData", "data.replies ${data.replies}")
                 if (data.isReplyPlaying) {
-//                    mReplyPosition = mReplyPosition
+
                     replyCommentAdapter =
                         ReplyCommentAdapter(context, data, data.postId, mReplyPosition)
 
@@ -228,8 +228,7 @@ class CommentsRecyclerViewAdapter(
                         } else {
                             commentReplies.visibility = View.GONE
                         }
-//                        commentReplies.text =
-//                            if (replyCount == 1) "...View 1 reply" else "...View more replies"
+
                     } else {
                         commentReplies.text =
                             if (replyCount == 1) "...View 1 reply" else "...View $replyCount replies"
@@ -250,7 +249,7 @@ class CommentsRecyclerViewAdapter(
 
             hideCommentReplies.setOnClickListener {
                 data.isRepliesVisible = false
-//                data.pageNumber = 1
+
                 repliesRecyclerView.visibility = View.GONE
                 hideCommentReplies.visibility = View.GONE
                 commentReplies.visibility = View.VISIBLE
@@ -291,7 +290,7 @@ class CommentsRecyclerViewAdapter(
                 intent.putExtra("displayLikeButton", true)
                 intent.putExtra("position", absoluteAdapterPosition)
                 intent.putExtra("data", data)
-//                context.startActivity(intent)
+
                 (context as Activity).startActivityForResult(intent, R_CODE)
             }
             val inputString = data.content
@@ -300,7 +299,7 @@ class CommentsRecyclerViewAdapter(
             time.text = formatMongoTimestamp(data.createdAt)
 
             reply.setOnClickListener {
-//                Log.d(TAG, "render: comment to reply on position $absoluteAdapterPosition and id ${data._id}")
+
                 EventBus.getDefault().post(ToggleReplyToTextView(data, absoluteAdapterPosition))
                 onViewReplies.onReplyButtonClick(position, data)
             }
