@@ -226,13 +226,13 @@ interface IFlashapi {
     suspend fun mutePosts(@Path("userId") userId: String): Response<BaseResponse>
 
     @DELETE("social-media/profile/mute/posts/{userId}")
-    suspend fun unmutePosts(@Path("userId") userId: String): Response<BaseResponse>
+    suspend fun unMutePosts(@Path("userId") userId: String): Response<BaseResponse>
 
     @POST("social-media/profile/mute/stories/{userId}")
     suspend fun muteStories(@Path("userId") userId: String): Response<BaseResponse>
 
     @DELETE("social-media/profile/mute/stories/{userId}")
-    suspend fun unmuteStories(@Path("userId") userId: String): Response<BaseResponse>
+    suspend fun unMuteStories(@Path("userId") userId: String): Response<BaseResponse>
 
     @POST("social-media/profile/favorites/{userId}")
     suspend fun addToFavorites(@Path("userId") userId: String): Response<BaseResponse>
@@ -244,7 +244,7 @@ interface IFlashapi {
     suspend fun restrictUser(@Path("userId") userId: String): Response<BaseResponse>
 
     @DELETE("social-media/profile/restrict/{userId}")
-    suspend fun unrestrictUser(@Path("userId") userId: String): Response<BaseResponse>
+    suspend fun unRestrictUser(@Path("userId") userId: String): Response<BaseResponse>
 
 
 
