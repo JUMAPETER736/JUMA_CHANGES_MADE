@@ -567,12 +567,6 @@ interface IFlashapi {
     @GET("feed/bookmarks/")
     suspend fun getFavoriteFeed(@Query("page") page: String): Response<FeedFavoriteResponse>
 
-    @GET("feed/bookmarks")
-    suspend fun getBookmarkedPosts(
-        @Query("page") page: String,
-        @Query("limit") limit: String = "10"
-    ): Response<FeedResponse>
-
 
     // ==================== FEED - COMMENTS ====================
 
