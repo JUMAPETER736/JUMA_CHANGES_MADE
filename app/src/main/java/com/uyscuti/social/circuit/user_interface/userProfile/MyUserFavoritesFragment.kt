@@ -130,6 +130,7 @@ class MyUserFavoritesFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
+        // ✅ Just like MyUserFeedFragment - pass data, FeedAdapter handles everything
         val parentActivity = requireActivity()
 
         feedAdapter = FeedAdapter(
@@ -150,6 +151,7 @@ class MyUserFavoritesFragment : Fragment() {
         feedAdapter.recyclerView = binding.recyclerView
     }
 
+    // ✅ No-op listener - FeedAdapter handles everything internally
     private fun createNoOpListener(): OnFeedClickListener {
         return object : OnFeedClickListener {
             override fun likeUnLikeFeed(position: Int, data: Post) {
@@ -236,7 +238,7 @@ class MyUserFavoritesFragment : Fragment() {
                 if (firstPageResponse.isSuccessful) {
                     val firstPagePosts = firstPageResponse.body()?.data?.bookmarkedPosts ?: emptyList()
 
-                    // ✅ Backend now returns complete data - minimal validation needed
+                    // ✅ Take first batch and show immediately
                     val firstBatch = firstPagePosts
                         .take(INITIAL_LOAD_SIZE)
                         .mapNotNull { validateAndFixPost(it) }
@@ -348,41 +350,50 @@ class MyUserFavoritesFragment : Fragment() {
         }
     }
 
-    // ✅ SIMPLIFIED: Backend now returns complete author data
     private fun validateAndFixPost(post: Post): Post? {
         try {
-            // Ensure isBookmarked is set
+            // ✅ All posts from bookmarks endpoint are already bookmarked
             post.isBookmarked = true
 
-            // Basic null safety for counts
-            post.comments = post.comments ?: 0
-            post.likes = post.likes ?: 0
-            post.bookmarkCount = post.bookmarkCount ?: 0
-            post.repostCount = post.repostCount ?: 0
-            post.shareCount = post.shareCount ?: 0
-
-            // Set contentType if missing
-            if (post.contentType.isNullOrEmpty()) {
-                post.contentType = determineContentType(post.files, emptyList(), post.content, null)
-            }
-
-            // Handle reposted posts
             if (post.isReposted == true && !post.originalPost.isNullOrEmpty()) {
                 val originalPost = post.originalPost[0]
 
-                // Use original post metrics if available
-                post.comments = originalPost.commentCount ?: post.comments
-                post.likes = originalPost.likeCount ?: post.likes
-                post.bookmarkCount = originalPost.bookmarkCount ?: post.bookmarkCount
-                post.repostCount = originalPost.repostCount ?: post.repostCount
+                // ✅ STRICT validation - check for NULL IDs and usernames
+                if (originalPost.author?.account == null ||
+                    originalPost.author.account._id.isNullOrEmpty() ||
+                    originalPost.author.account.username.isNullOrEmpty()) {
+                    Log.w(TAG, "Skipping repost ${post._id} - missing original author data")
+                    return null
+                }
+
+                post.comments = originalPost.commentCount ?: 0
+                post.likes = originalPost.likeCount ?: 0
+                post.bookmarkCount = originalPost.bookmarkCount ?: 0
+                post.repostCount = originalPost.repostCount ?: 0
+                post.shareCount = 0
 
                 if (post.contentType.isNullOrEmpty() || post.contentType == "mixed") {
-                    post.contentType = determineContentType(
-                        originalPost.files,
-                        post.files,
-                        originalPost.content,
-                        post.content
-                    )
+                    post.contentType = determineContentType(originalPost.files, post.files, originalPost.content, post.content)
+                }
+
+            } else {
+                // ✅ STRICT validation - check for NULL IDs and usernames
+                if (post.author == null ||
+                    post.author.account == null ||
+                    post.author.account._id.isNullOrEmpty() ||
+                    post.author.account.username.isNullOrEmpty()) {
+                    Log.w(TAG, "Skipping post ${post._id} - missing author data (author: ${post.author}, account: ${post.author?.account}, id: ${post.author?.account?._id}, username: ${post.author?.account?.username})")
+                    return null
+                }
+
+                post.comments = post.comments ?: 0
+                post.likes = post.likes ?: 0
+                post.bookmarkCount = post.bookmarkCount ?: 0
+                post.repostCount = post.repostCount ?: 0
+                post.shareCount = post.shareCount ?: 0
+
+                if (post.contentType.isNullOrEmpty()) {
+                    post.contentType = determineContentType(post.files, emptyList(), post.content, null)
                 }
             }
 
