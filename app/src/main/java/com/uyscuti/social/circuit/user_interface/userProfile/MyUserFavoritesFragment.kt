@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
+import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.MyUserFavoritesFragmentBinding
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.posts.File
@@ -89,7 +90,6 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
         initializeApiService()
         setupRecyclerView()
-        setupSwipeRefresh()
         loadFavoritePosts()
     }
 
@@ -109,7 +109,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             fragmentManager = parentFragmentManager
         )
 
-        binding.favoritesRecyclerView.apply {
+        binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = feedAdapter
 
@@ -132,18 +132,6 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 }
             })
         }
-    }
-
-    private fun setupSwipeRefresh() {
-        binding.swipeRefreshLayout.setOnRefreshListener {
-            refreshFavorites()
-        }
-
-        binding.swipeRefreshLayout.setColorSchemeResources(
-            R.color.primary,
-            R.color.secondary,
-            R.color.accent
-        )
     }
 
     private fun loadFavoritePosts() {
@@ -177,7 +165,6 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                             feedAdapter.notifyDataSetChanged()
 
                             showContent()
-                            updateBookmarkCount()
                         }
 
                         isLoading = false
@@ -243,71 +230,10 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    private fun refreshFavorites() {
-        currentPage = 1
-        hasMorePages = true
-        isLoading = false
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val response = apiService.getFavoriteFeed(currentPage.toString())
-
-                if (response.isSuccessful && response.body() != null) {
-                    val data = response.body()!!.data
-                    val posts = data.bookmarkedPosts
-
-                    totalBookmarkedPosts = data.totalBookmarkedPosts
-                    hasMorePages = data.hasNextPage
-
-                    withContext(Dispatchers.Main) {
-                        favoritesList.clear()
-
-                        if (posts.isEmpty()) {
-                            showEmptyState()
-                        } else {
-                            favoritesList.addAll(posts)
-
-                            // Update adapter
-                            feedAdapter.clearItems()
-                            feedAdapter.addAll(favoritesList)
-                            feedAdapter.initializeCommentCounts(posts)
-                            feedAdapter.notifyDataSetChanged()
-
-                            showContent()
-                            updateBookmarkCount()
-                        }
-
-                        binding.swipeRefreshLayout.isRefreshing = false
-                    }
-                } else {
-                    withContext(Dispatchers.Main) {
-                        binding.swipeRefreshLayout.isRefreshing = false
-                        Toast.makeText(requireContext(), "Failed to refresh", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error refreshing favorites: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    binding.swipeRefreshLayout.isRefreshing = false
-                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
-    private fun updateBookmarkCount() {
-        binding.bookmarkCountText.text = when {
-            totalBookmarkedPosts == 0 -> "No bookmarks yet"
-            totalBookmarkedPosts == 1 -> "1 bookmark"
-            else -> "$totalBookmarkedPosts bookmarks"
-        }
-    }
-
     private fun showLoading() {
         binding.progressBar.visibility = View.VISIBLE
-        binding.favoritesRecyclerView.visibility = View.GONE
-        binding.emptyStateLayout.visibility = View.GONE
-        binding.errorLayout.visibility = View.GONE
+        binding.recyclerView.visibility = View.GONE
+        binding.emptyView.visibility = View.GONE
     }
 
     private fun hideLoading() {
@@ -315,32 +241,34 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     private fun showContent() {
-        binding.favoritesRecyclerView.visibility = View.VISIBLE
-        binding.emptyStateLayout.visibility = View.GONE
-        binding.errorLayout.visibility = View.GONE
+        binding.recyclerView.visibility = View.VISIBLE
+        binding.emptyView.visibility = View.GONE
         binding.progressBar.visibility = View.GONE
     }
 
     private fun showEmptyState() {
-        binding.emptyStateLayout.visibility = View.VISIBLE
-        binding.favoritesRecyclerView.visibility = View.GONE
-        binding.errorLayout.visibility = View.GONE
+        binding.emptyView.visibility = View.VISIBLE
+        binding.recyclerView.visibility = View.GONE
         binding.progressBar.visibility = View.GONE
+
+        // Set empty state icon
+        binding.emptyIcon.setImageResource(R.drawable.favorite_black)
     }
 
     private fun showError(message: String) {
-        binding.errorLayout.visibility = View.VISIBLE
-        binding.errorMessageText.text = message
-        binding.favoritesRecyclerView.visibility = View.GONE
-        binding.emptyStateLayout.visibility = View.GONE
+        binding.emptyView.visibility = View.VISIBLE
+        binding.recyclerView.visibility = View.GONE
         binding.progressBar.visibility = View.GONE
 
-        binding.retryButton.setOnClickListener {
-            loadFavoritePosts()
-        }
+        // Show error icon and message
+        binding.emptyIcon.setImageResource(android.R.drawable.stat_notify_error)
+        binding.emptyTitle.text = "Error Loading Favorites"
+        binding.emptyMessage.text = message
+
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
-    // OnFeedClickListener implementations - delegate to FeedAdapter's logic
+    // OnFeedClickListener implementations
     override fun likeUnLikeFeed(position: Int, data: Post) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -369,39 +297,78 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     override fun feedFavoriteClick(position: Int, data: Post) {
+        // Get the item before making the API call
+        val itemToRemove = favoritesList.getOrNull(position) ?: return
+        if (itemToRemove._id != data._id) return
+
+        // Optimistically remove from UI immediately
+        favoritesList.removeAt(position)
+        feedAdapter.removeAt(position)
+        feedAdapter.notifyItemRemoved(position)
+        totalBookmarkedPosts--
+
+        val wasEmpty = favoritesList.isEmpty()
+        if (wasEmpty) {
+            showEmptyState()
+        }
+
+        // Make API call in background
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val response = if (data.isBookmarked) {
-                    apiService.removeBookmark(data._id)
-                } else {
-                    apiService.bookmarkPost(data._id)
-                }
+                val response = apiService.favoriteFeed(data._id)
 
-                if (response.isSuccessful) {
+                if (response.isSuccessful && response.body() != null) {
+                    val isBookmarked = response.body()!!.data.isBookmarked
+
                     withContext(Dispatchers.Main) {
-                        // Remove from list if unbookmarked
-                        if (data.isBookmarked) {
-                            favoritesList.removeAt(position)
-                            feedAdapter.removeAt(position)
-                            feedAdapter.notifyItemRemoved(position)
-                            totalBookmarkedPosts--
-                            updateBookmarkCount()
-
-                            if (favoritesList.isEmpty()) {
-                                showEmptyState()
-                            }
-
+                        if (!isBookmarked) {
+                            // Success - item was unbookmarked
                             Toast.makeText(
                                 requireContext(),
                                 "Removed from favorites",
                                 Toast.LENGTH_SHORT
                             ).show()
+                        } else {
+                            // Unexpected: User rebookmarked - restore item
+                            favoritesList.add(position, itemToRemove)
+                            feedAdapter.insert(position, itemToRemove)
+                            feedAdapter.notifyItemInserted(position)
+                            totalBookmarkedPosts++
+                            if (wasEmpty) showContent()
+
+                            Toast.makeText(
+                                requireContext(),
+                                "Bookmarked",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
+                    }
+                } else {
+                    // API call failed - restore item
+                    withContext(Dispatchers.Main) {
+                        favoritesList.add(position, itemToRemove)
+                        feedAdapter.insert(position, itemToRemove)
+                        feedAdapter.notifyItemInserted(position)
+                        totalBookmarkedPosts++
+                        if (wasEmpty) showContent()
+
+                        Toast.makeText(
+                            requireContext(),
+                            "Failed to remove bookmark",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error toggling bookmark: ${e.message}", e)
+                // Error - restore item
                 withContext(Dispatchers.Main) {
+                    favoritesList.add(position, itemToRemove)
+                    feedAdapter.insert(position, itemToRemove)
+                    feedAdapter.notifyItemInserted(position)
+                    totalBookmarkedPosts++
+                    if (wasEmpty) showContent()
+
                     Toast.makeText(
                         requireContext(),
                         "Error updating bookmark",
@@ -435,7 +402,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         followUnFollowEntity: FollowUnFollowEntity,
         followButton: AppCompatButton
     ) {
-        Log.d(TAG, "Follow button clicked for user: ${followUnFollowEntity.username}")
+        Log.d(TAG, "Follow button clicked for user: ${followUnFollowEntity.userId}")
         // Handle follow/unfollow
     }
 

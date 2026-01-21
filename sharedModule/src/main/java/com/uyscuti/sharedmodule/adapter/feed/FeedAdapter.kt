@@ -142,9 +142,24 @@ class FeedAdapter(
         fun getCachedFollowingUsernames(): Set<String> = cachedFollowingUsernames.toSet()
         fun getCachedFollowingList(): Set<String> = cachedFollowingList.toSet()
 
+        fun addAll(newItems: List<Post>) {
+            items.addAll(newItems)
+        }
 
-        fun isUserBlocked(userId: String): Boolean {
-            return blockedUsersCache.contains(userId)
+        fun clear() {
+            items.clear()
+        }
+
+        fun removeAt(position: Int) {
+            if (position >= 0 && position < items.size) {
+                items.removeAt(position)
+            }
+        }
+
+        fun insert(position: Int, item: Post) {
+            if (position >= 0 && position <= items.size) {
+                items.add(position, item)
+            }
         }
 
         fun isUserInMyFollowersList(userId: String): Boolean {
