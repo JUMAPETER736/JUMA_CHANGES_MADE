@@ -397,11 +397,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
     }
 
-    fun forShow() {
-        Log.d("forShow", "forShow: is called")
-
-    }
-
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     fun getAllFeed(page: Int) {
 
@@ -471,12 +466,12 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             Log.d(TAG, "CLEARED old cached posts from adapter and ViewModel")
         }
 
-        Log.d(TAG, "═══════════════════════════════════════")
+
         Log.d(TAG, "SIMPLE FOLLOWING FEED RULE:")
         Log.d(TAG, "Following ${followingUserIds.size} users")
         Log.d(TAG, "ONLY show posts BY these ${followingUserIds.size} people")
         Log.d(TAG, "Don't care about reposts content - only WHO posted it")
-        Log.d(TAG, "═══════════════════════════════════════")
+
 
         while (uniqueAuthors.size < followingUserIds.size && pageNum <= maxPages) {
             try {
@@ -546,12 +541,12 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                 allFollowingPosts.addAll(filtered)
 
-                Log.d(TAG, "───────────────────────────────────────")
+
                 Log.d(TAG, "Page $pageNum Results:")
                 Log.d(TAG, "  Total posts: ${pagePosts.size}")
                 Log.d(TAG, "  Included: ${filtered.size}")
                 Log.d(TAG, "  Excluded: ${pagePosts.size - filtered.size}")
-                Log.d(TAG, "───────────────────────────────────────")
+
 
                 if (uniqueAuthors.size >= followingUserIds.size) break
                 pageNum++
@@ -566,11 +561,11 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             progressBar.visibility = View.GONE
             isLoading = false
 
-            Log.d(TAG, "═══════════════════════════════════════")
+
             Log.d(TAG, "LOADING COMPLETE:")
             Log.d(TAG, "Total posts: ${allFollowingPosts.size}")
             Log.d(TAG, "ALL posts are BY people you follow")
-            Log.d(TAG, "═══════════════════════════════════════")
+
 
             if (allFollowingPosts.isEmpty()) {
                 // Make sure adapter is empty
@@ -675,10 +670,10 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         val currentUserId = getUserId(requireContext())
         val allPosts = getFeedViewModel.getAllFeedData()
 
-        Log.d(TAG, "═══════════════════════════════════════")
+
         Log.d(TAG, "REFRESHING AFTER UNFOLLOW")
         Log.d(TAG, "Now following ${followingUserIds.size} users")
-        Log.d(TAG, "═══════════════════════════════════════")
+
 
         val filteredData = allPosts.mapNotNull { post ->
             try {
@@ -955,11 +950,11 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     fun onFollowEvent(event: ShortsFollowButtonClicked) {
         val followEntity = event.followUnFollowEntity
 
-        Log.d(TAG, "═══════════════════════════════════════")
+
         Log.d(TAG, "FOLLOW EVENT in FollowingFragment")
         Log.d(TAG, "User: ${followEntity.userId}")
         Log.d(TAG, "isFollowing: ${followEntity.isFollowing}")
-        Log.d(TAG, "═══════════════════════════════════════")
+
 
         if (followEntity.isFollowing) {
             // User followed someone new

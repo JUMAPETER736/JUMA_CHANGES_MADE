@@ -3543,7 +3543,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     val preferredSquareHeight = screenWidth / 2
                     layoutParams.height = getConstrainedHeight(context, preferredSquareHeight)
 
-                    // 🟢 Default spacing
+                    //  Default spacing
                     val isLeftColumn = (absoluteAdapterPosition % 2 == 0)
                     layoutParams.leftMargin = if (isLeftColumn) 0 else (spaceBetweenRows /2)
                     layoutParams.rightMargin = if (isLeftColumn) (spaceBetweenRows /2) else 0
@@ -3554,7 +3554,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                     itemView.layoutParams = layoutParams
 
-                    // 🟣 Show +X overlay only on 4th item
+                    //  Show +X overlay only on 4th item
                     if (absoluteAdapterPosition == 3) {
                         countTextView.visibility = View.VISIBLE
                         countTextView.text = "+${fileSize - 4}"
@@ -3588,7 +3588,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     val preferredSquareHeight = screenWidth / 2
                     layoutParams.height = getConstrainedHeight(context, preferredSquareHeight)
 
-                    // 🟢 Default spacing
+                    //  Default spacing
                     val isLeftColumn = (absoluteAdapterPosition % 2 == 0)
                     layoutParams.leftMargin = if (isLeftColumn) 0 else spaceBetweenRows
                     layoutParams.rightMargin = if (isLeftColumn) spaceBetweenRows else 0
@@ -3599,7 +3599,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                     itemView.layoutParams = layoutParams
 
-                    // 🟣 Show +X overlay only on 4th item
+                    //  Show +X overlay only on 4th item
                     if (absoluteAdapterPosition == 3) {
                         countTextView.visibility = View.VISIBLE
                         countTextView.text = "+${fileSize - 4}"
@@ -6227,8 +6227,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         super.onDetach()
 
     }
-
-
 
 
 
