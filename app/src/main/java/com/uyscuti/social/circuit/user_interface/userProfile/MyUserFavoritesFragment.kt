@@ -33,6 +33,7 @@ import kotlin.collections.isNotEmpty
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 
+
 @AndroidEntryPoint
 class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
@@ -77,7 +78,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     private val allUserFavorites = mutableListOf<Post>()
     private var isDataLoaded = false
 
-    // Follow management - same as FollowingFragment
+    // ✅ Follow management - same as FollowingFragment
     private var followingUserIds = mutableSetOf<String>()
     private var blockedUserIds = mutableSetOf<String>()
     private val followingUserMap = mutableMapOf<String, String>()
@@ -91,7 +92,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             cleanUsername = username?.trim()?.lowercase()
         }
 
-        // Register for EventBus (follow/unfollow events)
+        // ✅ Register for EventBus (follow/unfollow events)
         if (!EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().register(this)
         }
@@ -109,15 +110,20 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Load following list and blocked users in background
-        lifecycleScope.launch(Dispatchers.IO) {
-            loadFollowingUserIds()
-            loadMyFollowersList()
-            loadBlockedUsers()
-        }
-
         setupRecyclerView()
 
+        // ✅ Load following lists in background WITHOUT blocking bookmark loading
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                loadFollowingUserIds()
+                loadMyFollowersList()
+                loadBlockedUsers()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading follow lists: ${e.message}", e)
+            }
+        }
+
+        // ✅ Load bookmarks immediately - don't wait for following lists
         if (isCacheValid()) {
             val cachedData = favoritesCache[userId] ?: mutableListOf()
             allUserFavorites.clear()
@@ -149,7 +155,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             feedAdapter.submitItems(cachedPosts)
             feedAdapter.initializeCommentCounts(cachedPosts)
 
-            //Update following list in adapter
+            // ✅ Update following list in adapter
             feedAdapter.updateFollowingList(followingUserIds.toList())
             feedAdapter.updateFollowingUsernames(followingUserMap.values.toList())
 
@@ -188,54 +194,88 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Loading bookmarked posts for current user")
-
-                //Load following list first if not loaded
-                if (!hasLoadedFollowingList) {
-                    loadFollowingUserIds()
-                    delay(300)
-                }
+                Log.d(TAG, "═══════════════════════════════════════")
+                Log.d(TAG, "LOADING BOOKMARKED POSTS")
+                Log.d(TAG, "═══════════════════════════════════════")
 
                 val firstPageResponse = retrofitInstance.apiService.getFavoriteFeed(page = "1")
 
                 if (firstPageResponse.isSuccessful) {
                     val firstPagePosts = firstPageResponse.body()?.data?.bookmarkedPosts ?: emptyList()
 
+                    Log.d(TAG, "✅ API returned ${firstPagePosts.size} bookmarked posts on page 1")
+
                     val firstBatch = firstPagePosts
                         .take(INITIAL_LOAD_SIZE)
-                        .mapNotNull { validateAndFixPost(it) }
+                        .mapNotNull { post ->
+                            val validated = validateAndFixPost(post)
+                            if (validated == null) {
+                                Log.w(TAG, "⚠️ Post ${post._id} failed validation - SKIPPED")
+                            } else {
+                                Log.d(TAG, "✅ Post ${post._id} validated successfully")
+                            }
+                            validated
+                        }
+
+                    Log.d(TAG, "First batch: ${firstBatch.size} valid posts out of ${INITIAL_LOAD_SIZE} attempted")
 
                     if (firstBatch.isNotEmpty()) {
                         allUserFavorites.addAll(firstBatch)
 
                         withContext(Dispatchers.Main) {
                             hideLoading()
+                            Log.d(TAG, "📱 Submitting ${firstBatch.size} posts to adapter")
                             feedAdapter.submitItems(firstBatch)
                             feedAdapter.initializeCommentCounts(firstBatch)
 
-                            // Update following lists
-                            feedAdapter.updateFollowingList(followingUserIds.toList())
-                            feedAdapter.updateFollowingUsernames(followingUserMap.values.toList())
+                            // ✅ Update following lists (these might still be loading, that's OK)
+                            if (followingUserIds.isNotEmpty()) {
+                                feedAdapter.updateFollowingList(followingUserIds.toList())
+                                feedAdapter.updateFollowingUsernames(followingUserMap.values.toList())
+                                Log.d(TAG, "📋 Updated adapter with ${followingUserIds.size} following users")
+                            } else {
+                                Log.d(TAG, "⏳ Following list not loaded yet - will update when ready")
+                            }
 
                             showContent()
                         }
+                    } else {
+                        Log.w(TAG, "⚠️ No valid posts in first batch!")
+                        withContext(Dispatchers.Main) {
+                            hideLoading()
+                            showEmptyState()
+                        }
+                        return@launch
                     }
 
                     val remainingFirstPage = firstPagePosts
                         .drop(INITIAL_LOAD_SIZE)
-                        .mapNotNull { validateAndFixPost(it) }
+                        .mapNotNull { post ->
+                            val validated = validateAndFixPost(post)
+                            if (validated != null) {
+                                Log.d(TAG, "✅ Remaining post ${post._id} validated")
+                            }
+                            validated
+                        }
+
+                    Log.d(TAG, "Remaining on page 1: ${remainingFirstPage.size} valid posts")
 
                     loadRemainingDataInBackground(remainingFirstPage)
 
                 } else {
+                    Log.e(TAG, "❌ API call failed: ${firstPageResponse.code()}")
+                    Log.e(TAG, "Error body: ${firstPageResponse.errorBody()?.string()}")
                     withContext(Dispatchers.Main) {
-                        handleError("Failed to load bookmarks")
+                        hideLoading()
+                        handleError("Failed to load bookmarks: ${firstPageResponse.code()}")
                     }
                 }
 
             } catch (e: Exception) {
-                Log.e(TAG, "Exception loading bookmarked posts: ${e.message}", e)
+                Log.e(TAG, "❌ Exception loading bookmarked posts: ${e.message}", e)
+                e.printStackTrace()
                 withContext(Dispatchers.Main) {
+                    hideLoading()
                     handleError("Error loading bookmarks: ${e.message}")
                 }
             }
@@ -244,15 +284,23 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     private suspend fun loadRemainingDataInBackground(remainingFirstPage: List<Post>) {
         try {
+            Log.d(TAG, "═══════════════════════════════════════")
+            Log.d(TAG, "LOADING REMAINING PAGES")
+            Log.d(TAG, "═══════════════════════════════════════")
+
             if (remainingFirstPage.isNotEmpty()) {
+                Log.d(TAG, "Adding ${remainingFirstPage.size} remaining posts from page 1")
                 allUserFavorites.addAll(remainingFirstPage)
                 updateUI()
             }
 
             var currentPage = 2
             var hasMorePages = true
+            var totalLoaded = allUserFavorites.size
 
             while (hasMorePages && currentPage <= MAX_PAGES) {
+                Log.d(TAG, "Loading page $currentPage...")
+
                 val response = retrofitInstance.apiService.getFavoriteFeed(
                     page = currentPage.toString()
                 )
@@ -261,22 +309,38 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                     val responseBody = response.body()
                     val posts = responseBody?.data?.bookmarkedPosts ?: emptyList()
 
-                    val validPosts = posts.mapNotNull { validateAndFixPost(it) }
+                    Log.d(TAG, "Page $currentPage: API returned ${posts.size} posts")
+
+                    val validPosts = posts.mapNotNull { post ->
+                        val validated = validateAndFixPost(post)
+                        if (validated == null) {
+                            Log.w(TAG, "  ⚠️ Post ${post._id} failed validation")
+                        }
+                        validated
+                    }
+
+                    Log.d(TAG, "Page $currentPage: ${validPosts.size} valid posts")
 
                     if (validPosts.isNotEmpty()) {
                         allUserFavorites.addAll(validPosts)
+                        totalLoaded += validPosts.size
+                        Log.d(TAG, "Total loaded so far: $totalLoaded posts")
                         updateUI()
                     }
 
                     hasMorePages = responseBody?.data?.hasNextPage ?: false
                     val totalPages = responseBody?.data?.totalPages ?: currentPage
 
+                    Log.d(TAG, "Has more pages: $hasMorePages, Total pages: $totalPages")
+
                     if (!hasMorePages || currentPage >= totalPages) {
                         hasMorePages = false
                     } else {
                         currentPage++
+                        delay(200) // Small delay between pages
                     }
                 } else {
+                    Log.e(TAG, "Page $currentPage failed: ${response.code()}")
                     hasMorePages = false
                 }
             }
@@ -284,17 +348,23 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             if (allUserFavorites.isNotEmpty()) {
                 favoritesCache[userId!!] = allUserFavorites.toMutableList()
                 cacheTimestamp[userId!!] = System.currentTimeMillis()
-                Log.d(TAG, "Cached ${allUserFavorites.size} bookmarked posts")
+                Log.d(TAG, "✅ Cached ${allUserFavorites.size} bookmarked posts")
             }
 
             withContext(Dispatchers.Main) {
                 if (allUserFavorites.isEmpty()) {
+                    Log.w(TAG, "⚠️ No bookmarked posts found after loading all pages")
                     showEmptyState()
+                } else {
+                    Log.d(TAG, "✅ FINISHED: Total ${allUserFavorites.size} bookmarked posts loaded")
                 }
             }
 
+            Log.d(TAG, "═══════════════════════════════════════")
+
         } catch (e: Exception) {
-            Log.e(TAG, "Background loading error: ${e.message}", e)
+            Log.e(TAG, "❌ Background loading error: ${e.message}", e)
+            e.printStackTrace()
         }
     }
 
@@ -306,7 +376,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 feedAdapter.submitItems(allUserFavorites)
                 feedAdapter.initializeCommentCounts(allUserFavorites)
 
-                // Always update following lists when UI updates
+                // ✅ Always update following lists when UI updates
                 feedAdapter.updateFollowingList(followingUserIds.toList())
                 feedAdapter.updateFollowingUsernames(followingUserMap.values.toList())
 
@@ -315,7 +385,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    // Load following users - same as FollowingFragment
+    // ✅ Load following users - same as FollowingFragment
     private suspend fun loadFollowingUserIds() {
         try {
             Log.d(TAG, "Loading following list...")
@@ -378,7 +448,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    // Load my followers - same as FollowingFragment
+    // ✅ Load my followers - same as FollowingFragment
     private suspend fun loadMyFollowersList() {
         try {
             Log.d(TAG, "Loading MY followers list...")
@@ -420,7 +490,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    // Load blocked users - same as FollowingFragment
+    // ✅ Load blocked users - same as FollowingFragment
     private suspend fun loadBlockedUsers() {
         try {
             Log.d(TAG, "Loading blocked users...")
@@ -462,19 +532,19 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                     return null
                 }
 
-                // Ensure author has avatar data
+                // ✅ Ensure author has avatar data
                 if (originalPost.author.account.avatar == null) {
                     Log.w(TAG, "Original post ${originalPost._id} author has null avatar - using default")
                     // Don't skip, just log warning - ViewHolder will handle null avatar
                 }
 
-                // Validate username exists
+                // ✅ Validate username exists
                 if (originalPost.author.account.username.isNullOrBlank()) {
                     Log.w(TAG, "Original post ${originalPost._id} author has no username - SKIPPING")
                     return null
                 }
 
-                // Log author info for debugging
+                // ✅ Log author info for debugging
                 Log.d(TAG, "Original Post Author: @${originalPost.author.account.username}")
                 Log.d(TAG, "  Name: ${originalPost.author.firstName} ${originalPost.author.lastName}")
                 Log.d(TAG, "  Owner ID: ${originalPost.author.owner}")
@@ -491,7 +561,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 }
 
             } else {
-                // Validate main post author has complete data
+                // ✅ Validate main post author has complete data
                 if (post.author == null) {
                     Log.w(TAG, "Post ${post._id} has null author - SKIPPING")
                     return null
@@ -502,19 +572,19 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                     return null
                 }
 
-                // Ensure author has avatar data
+                // ✅ Ensure author has avatar data
                 if (post.author.account.avatar == null) {
                     Log.w(TAG, "Post ${post._id} author has null avatar - using default")
                     // Don't skip, just log warning
                 }
 
-                // Validate username exists
+                // ✅ Validate username exists
                 if (post.author.account.username.isNullOrBlank()) {
                     Log.w(TAG, "Post ${post._id} author has no username - SKIPPING")
                     return null
                 }
 
-                // Log author info for debugging
+                // ✅ Log author info for debugging
                 Log.d(TAG, "Post Author: @${post.author.account.username}")
                 Log.d(TAG, "  Name: ${post.author.firstName} ${post.author.lastName}")
                 Log.d(TAG, "  Account ID: ${post.author.account._id}")
@@ -531,7 +601,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 }
             }
 
-            // Final validation: ensure we have the essential author data for display
+            // ✅ Final validation: ensure we have the essential author data for display
             val hasValidAuthor = if (post.isReposted == true && !post.originalPost.isNullOrEmpty()) {
                 val origAuthor = post.originalPost[0].author
                 origAuthor != null &&
@@ -609,16 +679,16 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    //Listen for follow/unfollow events from other fragments
+    // ✅ Listen for follow/unfollow events from other fragments
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onFollowEvent(event: ShortsFollowButtonClicked) {
         val followEntity = event.followUnFollowEntity
 
-
+        Log.d(TAG, "═══════════════════════════════════════")
         Log.d(TAG, "FOLLOW EVENT in MyUserFavoritesFragment")
         Log.d(TAG, "User: ${followEntity.userId}")
         Log.d(TAG, "isFollowing: ${followEntity.isFollowing}")
-
+        Log.d(TAG, "═══════════════════════════════════════")
 
         if (followEntity.isFollowing) {
             // User followed someone new
@@ -632,7 +702,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             Log.d(TAG, "Removed user from following list. Total following: ${followingUserIds.size}")
         }
 
-        // Refresh adapter to update follow buttons
+        // ✅ Refresh adapter to update follow buttons
         feedAdapter.updateFollowingList(followingUserIds.toList())
         feedAdapter.notifyDataSetChanged()
     }
@@ -650,7 +720,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    // OnFeedClickListener implementations
+    // ✅ OnFeedClickListener implementations
     override fun likeUnLikeFeed(position: Int, data: Post) {
         Log.d(TAG, "Like clicked at position $position - handled by FeedPostViewHolder")
     }
@@ -683,7 +753,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     ) {
         Log.d(TAG, "Follow button clicked - handled by FeedPostViewHolder")
 
-        // Update local following list
+        // ✅ Update local following list
         if (followUnFollowEntity.isFollowing) {
             followingUserIds.add(followUnFollowEntity.userId)
             followButton.visibility = View.GONE
@@ -695,7 +765,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             Log.d(TAG, "Unfollowed user: ${followUnFollowEntity.userId}")
         }
 
-        //Update adapter's following list
+        // ✅ Update adapter's following list
         feedAdapter.updateFollowingList(followingUserIds.toList())
     }
 
