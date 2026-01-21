@@ -104,7 +104,6 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import kotlin.text.isNotEmpty
 import androidx.core.widget.NestedScrollView
-import kotlinx.coroutines.Job
 
 import android.graphics.Canvas
 import android.graphics.Color
@@ -114,7 +113,6 @@ import android.graphics.Typeface
 import android.os.ParcelFileDescriptor
 import android.view.LayoutInflater
 import com.uyscuti.sharedmodule.adapter.UriTypeAdapter
-import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.feed.MultipleImagesListener
 import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.DocumentListenerInterface
 import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.FeedVideoThumbnailAdapter
@@ -192,7 +190,6 @@ class UploadFeedActivity : AppCompatActivity(),
 
 
     private val LOCATION_PERMISSION_REQUEST_CODE = 1001
-    private val REQUEST_TOPICS_ACTIVITY = 1003
 
 
     private var videoUri: Uri? = null
@@ -203,6 +200,23 @@ class UploadFeedActivity : AppCompatActivity(),
     private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var imagePickLauncher: ActivityResultLauncher<Intent>
     private lateinit var documentPickerLauncher: ActivityResultLauncher<Intent>
+
+
+    private var audioDurationStringList: MutableList<String> = mutableListOf()
+    private var thumbnails: MutableList<Bitmap> = mutableListOf()
+    private var imagesList = mutableListOf<String>()
+    private var audiosList = mutableListOf<MultipleAudios>()
+    private var videosList = mutableListOf<FeedMultipleVideos>()
+    private var documentUriListToUpload: MutableList<String> = mutableListOf()
+    private var documentFileNamesToUpload: MutableList<String> = mutableListOf()
+    private var documentNumberOfPagesToUpload: MutableList<String> = mutableListOf()
+    private var documentTypesToUpload: MutableList<String> = mutableListOf()
+    private var documentThumbnailsToUpload: MutableList<String> = mutableListOf()
+    private var documentsList: MutableList<FeedMultipleDocumentsDataClass> = mutableListOf()
+    private var compressedImageFiles: MutableList<File> = mutableListOf()
+    private var videoUris: MutableList<Uri> = mutableListOf()
+    private var videoPaths: MutableList<String> = mutableListOf()
+
     private lateinit var feedUploadViewModel: FeedUploadViewModel
 
     // Full screen views
@@ -243,6 +257,7 @@ class UploadFeedActivity : AppCompatActivity(),
     private lateinit var draftButton: Button
     private lateinit var postButton: Button
     private lateinit var viewModel: FeedUploadViewModel
+
     // Add these properties to your class
     private lateinit var blinkingIconView: ImageView
     private val blinkingIconHandler = Handler(Looper.getMainLooper())
@@ -252,25 +267,14 @@ class UploadFeedActivity : AppCompatActivity(),
     val audioPathList: MutableList<String> = mutableListOf()
     var text = ""
     var fileType: String = ""
-    private var durationString = ""
-    private var audioDurationStringList: MutableList<String> = mutableListOf()
-    private var videoUris: MutableList<Uri> = mutableListOf()
-    private var videoPaths: MutableList<String> = mutableListOf()
+
+
     private var isThumbnailClicked = false
     private var thumbnail: Bitmap? = null
-    private var thumbnails: MutableList<Bitmap> = mutableListOf()
-    private var imagesList = mutableListOf<String>()
-    private var audiosList = mutableListOf<MultipleAudios>()
-    private var videosList = mutableListOf<FeedMultipleVideos>()
-    private var documentUriListToUpload: MutableList<String> = mutableListOf()
-    private var documentFileNamesToUpload: MutableList<String> = mutableListOf()
-    private var documentNumberOfPagesToUpload: MutableList<String> = mutableListOf()
-    private var documentTypesToUpload: MutableList<String> = mutableListOf()
-    private var documentThumbnailsToUpload: MutableList<String> = mutableListOf()
-    private var documentsList: MutableList<FeedMultipleDocumentsDataClass> = mutableListOf()
+
     private var permissionGranted = false
     private var compressedImageFile: File? = null
-    private var compressedImageFiles: MutableList<File> = mutableListOf()
+
     private var uploadWorkRequest: OneTimeWorkRequest? = null
     private var audioPath = ""
     private val toCompressUris = mutableListOf<Uri>()
@@ -299,13 +303,8 @@ class UploadFeedActivity : AppCompatActivity(),
     private lateinit var tagPeopleText: TextView
     private lateinit var topicsText: TextView
     private lateinit var locationText: TextView
-    private var shouldRestoreUIOnBack = false
     private val originalUIState = mutableMapOf<View, Int>()
-    private var videoCurrentPosition = 0
-    private var wasVideoPlaying = false
     private var isThumbnailSelected = false
-    private val thumbnailCache: MutableMap<String, Bitmap> = mutableMapOf()
-    private val thumbnailExtractionJobs: MutableMap<Int, Job> = mutableMapOf()
     private lateinit var fullScreenViewPager: ViewPager2
     private lateinit var fullScreenIndicator: CircleIndicator3
 

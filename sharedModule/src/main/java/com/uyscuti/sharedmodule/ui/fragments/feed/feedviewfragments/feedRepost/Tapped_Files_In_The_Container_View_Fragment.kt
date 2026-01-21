@@ -1249,7 +1249,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                 stopLoading()
                 loadUrl("about:blank")
             }
-            
+
 
         } catch (e: Exception) {
             Log.e(TAG, "Error cleaning up resources", e)
@@ -2240,63 +2240,6 @@ class PostContentFragment : Fragment() {
         }
     }
 
-    private fun startVideoPlayback(fileUrl: String) {
-
-        Log.d(TAG, "Starting video playback for: $fileUrl")
-
-        try {
-            val uri = if (fileUrl.startsWith("http")) {
-                Uri.parse(fileUrl)
-            } else {
-                val file = File(fileUrl)
-                if (file.exists()) Uri.fromFile(file) else Uri.parse(fileUrl)
-            }
-
-            videoView?.apply {
-                setZOrderMediaOverlay(true)
-                visibility = View.VISIBLE
-                setVideoURI(uri)
-                requestFocus()
-
-                setOnPreparedListener { mediaPlayer ->
-                    Log.d(TAG, "Video prepared - starting playback")
-                    videoProgressBar?.visibility = View.GONE
-                    mediaPlayer.isLooping = true
-
-                    // Start playing immediately
-                    start()
-                    playButton?.setImageResource(R.drawable.baseline_pause_black)
-                    videoPlayButton?.setColorFilter(Color.WHITE) // Keep white color
-                    videoThumbnailView?.visibility = View.GONE
-                }
-
-                setOnErrorListener { _, what, extra ->
-                    Log.e(TAG, "Video error: what=$what, extra=$extra")
-                    videoProgressBar?.visibility = View.GONE
-                    videoPlayButton?.setImageResource(R.drawable.baseline_block_24)
-                    videoPlayButton?.setColorFilter(Color.WHITE) // Keep white color
-                    true
-                }
-
-                setOnCompletionListener {
-                    Log.d(TAG, "Video completed")
-                    videoPlayButton?.setImageResource(R.drawable.play)
-                    videoPlayButton?.setColorFilter(Color.WHITE) // Keep white color
-                    videoThumbnailView?.visibility = View.VISIBLE
-                    visibility = View.GONE
-                }
-            }
-
-            videoProgressBar?.visibility = View.VISIBLE
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error starting video playback: ${e.message}")
-            videoProgressBar?.visibility = View.GONE
-            videoPlayButton?.setImageResource(R.drawable.baseline_block_24)
-            videoPlayButton?.setColorFilter(Color.WHITE) // Keep white color
-        }
-    }
-
     private fun generateVideoThumbnail(fileUrl: String, callback: (Bitmap?) -> Unit) {
         Thread {
             var retriever: MediaMetadataRetriever? = null
@@ -2452,7 +2395,7 @@ class PostContentFragment : Fragment() {
 
             if (isPlaying) {
                 // PAUSE AUDIO
-                Log.d("AudioWaveform", "⏸️ Screen tap - Pausing audio...")
+                Log.d("AudioWaveform", "Screen tap - Pausing audio...")
                 mediaPlayer?.pause()
                 isPlaying = false
                 stopProgressUpdates()
@@ -2468,7 +2411,7 @@ class PostContentFragment : Fragment() {
 
             } else {
                 // PLAY AUDIO
-                Log.d("AudioWaveform", "▶️ Screen tap - Starting audio...")
+                Log.d("AudioWaveform", "Screen tap - Starting audio...")
 
                 if (mediaPlayer?.currentPosition ?: 0 <= 0 && currentPosition > 0) {
                     mediaPlayer?.seekTo(currentPosition)
@@ -2494,7 +2437,7 @@ class PostContentFragment : Fragment() {
 
 
         } catch (e: Exception) {
-            Log.e("AudioWaveform", "❌ Error in screen tap audio control", e)
+            Log.e("AudioWaveform", "Error in screen tap audio control", e)
             showErrorState("Playback error")
         }
     }
@@ -3882,7 +3825,7 @@ class PostContentFragment : Fragment() {
         }.start()
     }
 
-//  CSV DOCUMENTS
+    //  CSV DOCUMENTS
 
     private fun loadCsvDocument(fileUrl: String, fileName: String) {
         setupDocumentContainer(fileName, DocumentType.CSV)
