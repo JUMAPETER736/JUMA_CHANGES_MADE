@@ -160,7 +160,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
                             // Update adapter with new posts
                             feedAdapter.clear()
-                            feedAdapter.addAll(favoritesList)
+
                             feedAdapter.initializeCommentCounts(posts)
                             feedAdapter.notifyDataSetChanged()
 
@@ -209,7 +209,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                         favoritesList.addAll(posts)
 
                         // Add new posts to adapter
-                        feedAdapter.addAll(posts)
+
                         feedAdapter.notifyItemRangeInserted(oldSize, posts.size)
 
                         isLoading = false
@@ -270,25 +270,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     // OnFeedClickListener implementations
     override fun likeUnLikeFeed(position: Int, data: Post) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val response = if (data.isLiked) {
-                    apiService.unlikePost(data._id)
-                } else {
-                    apiService.likePost(data._id)
-                }
-
-                if (response.isSuccessful) {
-                    withContext(Dispatchers.Main) {
-                        data.isLiked = !data.isLiked
-                        data.likes += if (data.isLiked) 1 else -1
-                        feedAdapter.notifyItemChanged(position)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error toggling like: ${e.message}", e)
-            }
-        }
+        Log.d(TAG, "likeUnLikeFeed clicked for post: ${data._id}")
     }
 
     override fun feedCommentClicked(position: Int, data: Post) {
