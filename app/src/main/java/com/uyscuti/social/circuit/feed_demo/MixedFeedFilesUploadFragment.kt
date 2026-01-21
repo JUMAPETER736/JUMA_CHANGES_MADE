@@ -28,7 +28,6 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.uyscuti.sharedmodule.AnyFileFullScreenActivity
 import com.uyscuti.sharedmodule.feed_demo.AnyFileMediaPagerAdapter
 import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
-import com.uyscuti.sharedmodule.model.feed.multiple_files.FeedMultipleVideos
 import com.uyscuti.sharedmodule.model.feed.multiple_files.MixedFeedUploadDataClass
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.FragmentMixedFeedFilesUploadBinding
@@ -483,12 +482,6 @@ class MixedFeedFilesUploadFragment : Fragment() {
         }
     }
 
-    fun setAllMediaItems(allItems: List<MixedFeedUploadDataClass>, position: Int) {
-        this.allMediaItems = allItems
-        this.currentPosition = position
-        Log.d(TAG, "setAllMediaItems: Set ${allItems.size} items, current position: $position")
-    }
-
     private fun bindData(data: MixedFeedUploadDataClass) {
         when (data.fileTypes) {
             "image" -> setupImageUI(data)
@@ -836,32 +829,6 @@ class MixedFeedFilesUploadFragment : Fragment() {
         }
     }
 
-    fun seekVideo(position: Long) {
-        if (isFullScreen && binding.videoView.visibility == View.VISIBLE) {
-            binding.videoView.seekTo(position.toInt())
-            Log.d(TAG, "seekVideo: VideoView seeked to $position")
-        } else {
-            videoMediaPlayer?.seekTo(position.toInt())
-            Log.d(TAG, "seekVideo: MediaPlayer seeked to $position")
-        }
-    }
-
-    fun getCurrentVideoPosition(): Long {
-        return if (isFullScreen && binding.videoView.visibility == View.VISIBLE) {
-            binding.videoView.currentPosition.toLong()
-        } else {
-            videoMediaPlayer?.currentPosition?.toLong() ?: 0L
-        }
-    }
-
-    fun getVideoDuration(): Long {
-        return if (isFullScreen && binding.videoView.visibility == View.VISIBLE) {
-            binding.videoView.duration.toLong()
-        } else {
-            videoMediaPlayer?.duration?.toLong() ?: 0L
-        }
-    }
-
     private fun generatePdfThumbnail(pdfPath: String, fileId: String?): File? {
         return try {
             val file = File(pdfPath)
@@ -989,92 +956,6 @@ class MixedFeedFilesUploadFragment : Fragment() {
         }
     }
 
-    private fun showInlineMedia(data: MixedFeedUploadDataClass) {
-        val mediaUrls = ArrayList<String>()
-        val videoThumbnails = ArrayList<String?>()
-
-        val itemsToProcess = if (allMediaItems.isNotEmpty()) allMediaItems else listOfNotNull(mixedFeedUploadDataClass)
-
-        itemsToProcess.forEachIndexed { index, item ->
-            when (item.fileTypes) {
-                "image" -> {
-                    item.images?.let { image ->
-                        val imagePath = image.compressedImagePath.takeIf { it.isNotEmpty() } ?: image.imagePath
-                        if (imagePath.isNotEmpty()) {
-                            mediaUrls.add(imagePath)
-                            videoThumbnails.add(null)
-                        } else {
-                            Log.w(TAG, "Showing Tapped Files In line Media: Empty image path for fileId=${item.fileId}")
-                        }
-                    }
-                }
-                "video" -> {
-                    item.videos?.let { video ->
-                        val videoPath = video.videoPath
-                        if (!videoPath.isNullOrEmpty()) {
-                            mediaUrls.add(videoPath)
-                            videoThumbnails.add(video.thumbnail?.toString())
-                        } else {
-                            Log.w(TAG, "Showing Tapped Files In line Media: Empty video path for fileId=${item.fileId}")
-                        }
-                    }
-                }
-                "audio" -> {
-                    item.audios?.let { audio ->
-                        val audioPath = audio.audioPath
-                        if (!audioPath.isNullOrEmpty()) {
-                            mediaUrls.add(audioPath)
-                            videoThumbnails.add(getAlbumArt(audioPath)?.toString())
-                        } else {
-                            Log.w(TAG, "Showing Tapped Files In line Media: Empty audio path for fileId=${item.fileId}")
-                        }
-                    }
-                }
-                "document" -> {
-                    item.documents?.let { document ->
-                        val docPath = document.pdfFilePath.takeIf { it.isNotEmpty() }
-                        if (docPath != null) {
-                            mediaUrls.add(docPath)
-                            if (document.documentThumbnailFilePath != null) {
-                                val tempFile = saveBitmapToTempFile(document.documentThumbnailFilePath!!, item.fileId)
-                                videoThumbnails.add(tempFile?.absolutePath)
-                            } else {
-                                videoThumbnails.add(null)
-                            }
-                        } else {
-                            Log.w(TAG, "Showing Tapped Files In line Media: Empty document path for fileId=${item.fileId}")
-                        }
-                    }
-                }
-                else -> {
-                    Log.w(TAG, "Showing Tapped Files In line Media: Unknown file type for fileId=${item.fileId}: ${item.fileTypes}")
-                }
-            }
-        }
-
-        if (mediaUrls.isNotEmpty()) {
-            binding.feedUploadImageView.visibility = View.GONE
-            binding.videoView.visibility = View.GONE
-            binding.audioIcon.visibility = View.GONE
-            binding.viewPager.visibility = View.VISIBLE
-
-            anyFileMediaPagerAdapter = AnyFileMediaPagerAdapter(
-                mediaUrls,
-                requireActivity(),
-                null,
-                getAllMediaUrls(),
-                currentPosition
-            )
-            binding.viewPager.adapter = anyFileMediaPagerAdapter
-            binding.viewPager.setCurrentItem(currentPosition.coerceIn(0, mediaUrls.size - 1), false)
-
-            Log.d(TAG, "Showing Tapped Files In line Media: Displaying ${mediaUrls.size} media items inline, starting at position $currentPosition")
-        } else {
-            Log.w(TAG, "Showing Tapped Files In line Media: No valid media URLs found")
-            setupDefaultUI()
-        }
-    }
-
     private fun saveBitmapToTempFile(bitmap: Bitmap, fileId: String?): File? {
         return try {
             val outputDir = requireContext().cacheDir
@@ -1087,51 +968,6 @@ class MixedFeedFilesUploadFragment : Fragment() {
             Log.e(TAG, "saveBitmapToTempFile: Error saving bitmap for fileId=$fileId", e)
             null
         }
-    }
-
-    private fun getAllMediaUrls(): ArrayList<String>? {
-        if (allMediaItems.isEmpty()) return null
-
-        val allUrls = ArrayList<String>()
-        allMediaItems.forEach { data ->
-            when (data.fileTypes) {
-                "image" -> {
-                    data.images?.let {
-                        val imagePath = it.compressedImagePath.takeIf { path -> path.isNotEmpty() } ?: it.imagePath
-                        if (imagePath.isNotEmpty()) allUrls.add(imagePath)
-                    }
-                }
-                "video" -> {
-                    data.videos?.let {
-                        if (!it.videoPath.isNullOrEmpty()) allUrls.add(it.videoPath)
-                    }
-                }
-                "audio" -> {
-                    data.audios?.let {
-                        if (!it.audioPath.isNullOrEmpty()) allUrls.add(it.audioPath)
-                    }
-                }
-                "document" -> {
-                    data.documents?.let {
-                        if (it.pdfFilePath.isNotEmpty()) allUrls.add(it.pdfFilePath)
-                    }
-                }
-            }
-        }
-        return allUrls
-    }
-
-    fun updateVideo(newVideo: FeedMultipleVideos) {
-        mixedFeedUploadDataClass?.let {
-            it.videos = newVideo
-            bindData(it)
-            Log.d(TAG, "updateVideo: Updated video data for fileId=${it.fileId}, thumbnail=${newVideo.thumbnail}")
-        }
-    }
-
-    fun setFeedTextViewFragmentInterface(listener: FeedTextViewFragmentInterface?) {
-        this.feedTextViewFragmentInterface = listener
-        Log.d(TAG, "setFeedTextViewFragmentInterface: Listener Setting...")
     }
 
     private fun getAlbumArt(audioPath: String): Uri? {
@@ -1163,29 +999,6 @@ class MixedFeedFilesUploadFragment : Fragment() {
     }
 
 
-
-    fun getCurrentAudioPosition(): Long {
-        return audioMediaPlayer?.currentPosition?.toLong() ?: 0L
-    }
-
-    fun getAudioDuration(): Long {
-        return audioMediaPlayer?.duration?.toLong() ?: run {
-            // Fallback: get duration from audio file
-            mixedFeedUploadDataClass?.audios?.let { audioData ->
-                try {
-                    val retriever = MediaMetadataRetriever()
-                    retriever.setDataSource(audioData.audioPath)
-                    val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
-                    retriever.release()
-                    duration
-                } catch (e: Exception) {
-                    Log.e(TAG, "getAudioDuration: Error getting duration", e)
-                    0L
-                }
-            } ?: 0L
-        }
-    }
-
     fun formatDuration(milliseconds: Long): String {
         val seconds = (milliseconds / 1000) % 60
         val minutes = (milliseconds / (1000 * 60)) % 60
@@ -1198,80 +1011,12 @@ class MixedFeedFilesUploadFragment : Fragment() {
         }
     }
 
-    fun getRemainingDuration(currentPosition: Long, totalDuration: Long): String {
-        val remaining = if (totalDuration > currentPosition) {
-            totalDuration - currentPosition
-        } else {
-            0L
-        }
-        return formatDuration(remaining)
-    }
-
-    fun setVideoLooping(shouldLoop: Boolean) {
-        videoMediaPlayer?.isLooping = shouldLoop
-        Log.d(TAG, "setVideoLooping: Set to $shouldLoop")
-    }
-
-    fun setAudioLooping(shouldLoop: Boolean) {
-        audioMediaPlayer?.isLooping = shouldLoop
-        Log.d(TAG, "setAudioLooping: Set to $shouldLoop")
-    }
-
-    fun playAudio() {
-        mixedFeedUploadDataClass?.audios?.audioPath?.let { audioPath ->
-            try {
-                if (audioMediaPlayer == null) {
-                    audioMediaPlayer = MediaPlayer().apply {
-                        setDataSource(audioPath)
-                        isLooping = true  // This is already there
-                        prepareAsync()
-                        setOnPreparedListener {
-                            start()
-                            isAudioPlaying = true
-                            Log.d(TAG, "playAudio: Started audio playback with looping enabled")
-                        }
-                        setOnCompletionListener { // Add this listener for auto-restart
-                            if (isLooping) {
-                                start() // Restart the audio
-                                Log.d(TAG, "playAudio: Auto-restarted audio after completion")
-                            } else {
-                                isAudioPlaying = false
-                                Log.d(TAG, "playAudio: Audio completed without loop")
-                            }
-                        }
-                        setOnErrorListener { _, what, extra ->
-                            Log.e(TAG, "playAudio: MediaPlayer error - what: $what, extra: $extra")
-                            false
-                        }
-                    }
-                } else {
-                    audioMediaPlayer?.start()
-                    isAudioPlaying = true
-                    Log.d(TAG, "playAudio: Resumed audio playback")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "playAudio: Error starting audio", e)
-            }
-        }
-    }
-
     fun pauseAudio() {
         audioMediaPlayer?.let {
             if (it.isPlaying) {
                 it.pause()
                 isAudioPlaying = false
                 Log.d(TAG, "pauseAudio: Paused audio playback")
-            }
-        }
-    }
-
-    fun seekAudio(position: Long) {
-        audioMediaPlayer?.let {
-            try {
-                it.seekTo(position.toInt())
-                Log.d(TAG, "seekAudio: Seeked to position $position")
-            } catch (e: Exception) {
-                Log.e(TAG, "seekAudio: Error seeking audio", e)
             }
         }
     }

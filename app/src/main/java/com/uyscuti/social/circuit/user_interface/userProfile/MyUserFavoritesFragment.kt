@@ -29,7 +29,6 @@ import javax.inject.Inject
 import kotlin.collections.isNotEmpty
 
 
-
 @AndroidEntryPoint
 class MyUserFavoritesFragment : Fragment() {
 
