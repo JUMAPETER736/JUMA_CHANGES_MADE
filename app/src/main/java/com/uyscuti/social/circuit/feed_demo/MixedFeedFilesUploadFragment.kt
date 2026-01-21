@@ -437,42 +437,6 @@ class MixedFeedFilesUploadFragment : Fragment() {
         }
     }
 
-    private fun onImageLoaded() {
-        // FIXED: Check if binding is still valid
-        if (_binding == null || !isAdded) {
-            Log.w(TAG, "onImageLoaded: Fragment not in valid state, skipping")
-            return
-        }
-
-        // Call this after image is loaded to set up proper scale limits
-        binding.feedUploadImageView.post {
-            // Double-check binding is still valid after post
-            if (_binding == null || !isAdded) {
-                Log.w(TAG, "onImageLoaded: Fragment not in valid state after post, skipping")
-                return@post
-            }
-
-            calculateMaxAllowedScale()
-
-            if (isFullScreen) {
-                // UPDATED: For fullscreen, start with fit-to-screen scale
-                // This ensures the image is fully visible with black bars if needed
-                scaleFactor = minScaleFactor
-                posX = 0f
-                posY = 0f
-                focusX = 0f
-                focusY = 0f
-                isZoomed = false // Start unzoomed
-
-                // Apply the transformation to ensure proper display
-                applyTransformation()
-                Log.d(TAG, "onImageLoaded: Fullscreen - set to fit-to-screen scale: $scaleFactor")
-            } else {
-                // For thumbnail view, reset to fit-to-screen
-                resetZoom()
-            }
-        }
-    }
     private fun applyTransformation() {
         // FIXED: Check if binding is still valid
         if (!isFullScreen || _binding == null || !isAdded) return
