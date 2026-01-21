@@ -70,7 +70,7 @@ class FollowingManager(private val context: Context) {
                 Log.d("FollowingManager", "Fetching following list from server for: $currentUsername")
 
                 while (hasMorePages) {
-                    val response = retrofitInstance?.apiService?.getOtherUserFollowing(
+                    val response = retrofitInstance?.apiService?.getUserFollowing(
                         username = currentUsername,
                         page = currentPage,
                         limit = 50

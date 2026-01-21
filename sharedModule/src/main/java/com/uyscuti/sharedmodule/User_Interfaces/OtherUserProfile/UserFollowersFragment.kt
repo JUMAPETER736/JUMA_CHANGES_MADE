@@ -27,7 +27,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
-import com.google.gson.JsonSyntaxException
 import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.R
 import android.content.res.ColorStateList
@@ -46,16 +45,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
-import retrofit2.HttpException
-import java.io.IOException
 import java.util.Date
 import androidx.core.graphics.toColorInt
-import kotlin.collections.addAll
-import kotlin.text.clear
 
 
 private const val TAG = "UserFollowersFragment"
@@ -398,7 +392,7 @@ class UserFollowersFragment : AppCompatActivity() {
                 loadBlockedUsers()
 
                 // Then load followers
-                val response = retrofitInstance.apiService.getOtherUserFollowers(username, currentPage, 20)
+                val response = retrofitInstance.apiService.getUserFollowers(username, currentPage, 20)
 
                 if (response.isSuccessful) {
                     val responseBody = response.body()
@@ -435,7 +429,7 @@ class UserFollowersFragment : AppCompatActivity() {
             try {
                 Log.d(TAG, "Loading more followers, page: $currentPage")
 
-                val response = retrofitInstance.apiService.getOtherUserFollowers(username, currentPage, 20)
+                val response = retrofitInstance.apiService.getUserFollowers(username, currentPage, 20)
 
                 if (response.isSuccessful) {
                     val responseBody = response.body()

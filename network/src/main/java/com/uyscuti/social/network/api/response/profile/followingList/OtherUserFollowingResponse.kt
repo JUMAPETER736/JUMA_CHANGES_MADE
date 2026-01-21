@@ -6,3 +6,11 @@ data class OtherUserFollowingResponse(
     val statusCode: Int,
     val success: Boolean
 )
+
+
+
+data class BaseResponse(
+    val success: Boolean,
+    val message: String,
+    val statusCode: Int
+)

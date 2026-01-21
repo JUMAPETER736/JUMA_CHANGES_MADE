@@ -8,23 +8,33 @@ import java.util.Locale
 import java.util.TimeZone
 
 data class UserFollowingDisplayModel(
+
     val _id: String,
     val avatar: ModelAvatar?,
     val email: String,
     val isEmailVerified: Boolean,
     val role: String,
+
     val username: String,
     val lastseen: Date,
     val bio: String = "",
     var isFollowing: Boolean = false,
     val firstName: String = "",
     val lastName: String = "",
+
     val isVerified: Boolean = false,
     val isOnline: Boolean = false,
     val hasActiveStory: Boolean = false,
     val mutualConnectionsCount: Int = 0,
     val isSuggested: Boolean = false,
-    var followingCount: Int = 0
+    var followingCount: Int = 0,
+
+    var isInCloseFriends: Boolean = false,
+    var isPostsMuted: Boolean = false,
+    var isStoriesMuted: Boolean = false,
+    var isFavorite: Boolean = false,
+    var isRestricted: Boolean = false
+
 ) {
     // Constructor from your existing User model
     constructor(user: User, isFollowing: Boolean = false) : this(
@@ -60,23 +70,32 @@ data class UserFollowingDisplayModel(
         // Factory method to create from API Data response (original)
         fun fromFollowingUser(data: Data): UserFollowingDisplayModel {
             return UserFollowingDisplayModel(
+
                 _id = data._id,
                 avatar = convertAvatar(data.avatar),
                 email = data.email,
                 isEmailVerified = data.isEmailVerified,
                 role = "user",
+
                 bio = data.bio,
                 username = data.username,
                 lastseen = parseDate(data.followedAt) ?: Date(),
                 isFollowing = true,
                 firstName = data.firstName.takeIf { it.isNotBlank() } ?: data.username.split("_").firstOrNull() ?: data.username,
                 lastName = data.lastName.takeIf { it.isNotBlank() } ?: data.username.split("_").drop(1).joinToString(" "),
+
                 isVerified = data.isEmailVerified,
                 isOnline = false,
                 hasActiveStory = false,
                 mutualConnectionsCount = 0,
                 isSuggested = false,
-                followingCount = 0
+                followingCount = 0,
+
+                isInCloseFriends = false,
+                isPostsMuted = false,
+                isStoriesMuted = false,
+                isFavorite = false,
+                isRestricted = false
             )
         }
 

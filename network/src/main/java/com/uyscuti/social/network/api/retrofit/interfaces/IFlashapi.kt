@@ -2,7 +2,6 @@ package com.uyscuti.social.network.api.retrofit.interfaces
 
 
 import com.uyscuti.social.network.api.response.business.response.background.BackgroundVideoResponse
-import com.uyscuti.social.network.api.response.business.response.catalogue.GetMyCatalogueResponse
 import com.uyscuti.social.network.api.response.business.response.create.CreateProfileResponse
 import com.uyscuti.social.network.api.response.business.response.livelocation.LiveLocationResponse
 import com.uyscuti.social.network.api.response.business.response.product.AddProductResponse
@@ -25,8 +24,6 @@ import com.uyscuti.social.network.api.request.login.LoginRequest
 import com.uyscuti.social.network.api.request.messages.SendMessageRequest
 import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
 import com.uyscuti.social.network.api.request.register.RegisterRequest
-import com.uyscuti.social.network.api.request.search.SearchUsersRequest
-import com.uyscuti.social.network.api.response.GeneralSearch.SearchShortsResponse
 import com.uyscuti.social.network.api.response.MainResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.AllFeedRepostsPost
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostRequest
@@ -34,7 +31,6 @@ import com.uyscuti.social.network.api.response.business.response.background.Back
 import com.uyscuti.social.network.api.response.business.response.businesslocation.AdvertisementResponse
 import com.uyscuti.social.network.api.response.business.response.businesslocation.BusinessLocationResponse
 import com.uyscuti.social.network.api.response.business.response.post.BusinessPost
-import com.uyscuti.social.network.api.response.business.response.post.ProductPost
 import com.uyscuti.social.network.api.response.business.response.post.comment.BusinessCommentResponse
 import com.uyscuti.social.network.api.response.business.response.post.comment.CommentsResponse
 import com.uyscuti.social.network.api.response.business.response.post.likes.LikeResponse
@@ -63,14 +59,12 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 import com.uyscuti.social.network.api.response.createchat.CreateChatResponse
 import com.uyscuti.social.network.api.response.favoritefeed.FeedFavoriteResponse
-import com.uyscuti.social.network.api.response.favoritefeed.GetFavoriteFeedResponse
 import com.uyscuti.social.network.api.response.favoriteshort.ShortsFavoriteResponse
 import com.uyscuti.social.network.api.response.feed.FeedUploadResponse
 import com.uyscuti.social.network.api.response.feed.deletefeed.DeleteFeedResponse
 import com.uyscuti.social.network.api.response.follow_unfollow.AllBlockedUsersResponse
 import com.uyscuti.social.network.api.response.follow_unfollow.BlockUnblockResponse
 import com.uyscuti.social.network.api.response.follow_unfollow.FollowUnFollowResponse
-import com.uyscuti.social.network.api.response.follow_unfollow.OtherUsersFollowersAndFollowingResponse
 import com.uyscuti.social.network.api.response.getCommentNotification.GetCommentNotification
 import com.uyscuti.social.network.api.response.getPageComment.GetPageCommentId
 import com.uyscuti.social.network.api.response.getUnifiedNotification.GetUnifiedNotifications
@@ -78,13 +72,11 @@ import com.uyscuti.social.network.api.response.getallshorts.GetAllShortsResponse
 import com.uyscuti.social.network.api.response.getallshorts.ResponseData
 import com.uyscuti.social.network.api.response.getfavoriteshorts.GetFavoriteShortsResponse
 import com.uyscuti.social.network.api.response.getmyprofile.GetMyProfile
-import com.uyscuti.social.network.api.response.getrepostsPostsoriginal.GetRepostsPostsOriginal
 import com.uyscuti.social.network.api.response.gif.GifResponse
 import com.uyscuti.social.network.api.response.gif.allgifs.AllGifsResponse
 import com.uyscuti.social.network.api.response.googleloginresponse.GoogleLoginResponse
 import com.uyscuti.social.network.api.response.lastseen.LastSeenResponse
 import com.uyscuti.social.network.api.response.likeunlikeshort.LikeUnLikeShortResponse
-import com.uyscuti.social.network.api.response.notification.GetMyNotifications
 import com.uyscuti.social.network.api.response.notification.ReadNotificationResponse
 import com.uyscuti.social.network.api.response.otherusersprofile.OtherUsersProfileResponse
 import com.uyscuti.social.network.api.response.otherusersprofileshorts.OtherUsersProfileShortsResponse
@@ -95,6 +87,7 @@ import com.uyscuti.social.network.api.response.userstatus.UserStatusResponse
 import com.uyscuti.social.network.api.response.getallshorts.ApiResponse
 import com.uyscuti.social.network.api.response.posts.FeedResponse
 import com.uyscuti.social.network.api.response.profile.followersList.UserOtherFollowersResponse
+import com.uyscuti.social.network.api.response.profile.followingList.BaseResponse
 import com.uyscuti.social.network.api.response.profile.followingList.OtherUserFollowingResponse
 import okhttp3.RequestBody
 import retrofit2.http.DELETE
@@ -201,14 +194,14 @@ interface IFlashapi {
     suspend fun followUnFollow(@Path("toBeFollowedUserId") toBeFollowedUserId: String): Response<FollowUnFollowResponse>
 
     @GET("social-media/profile/{username}/followers")
-    suspend fun getOtherUserFollowers(
+    suspend fun getUserFollowers(
         @Path("username") username: String,
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 20
     ): Response<UserOtherFollowersResponse>
 
     @GET("social-media/profile/{username}/following")
-    suspend fun getOtherUserFollowing(
+    suspend fun getUserFollowing(
         @Path("username") username: String,
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 20
@@ -220,6 +213,39 @@ interface IFlashapi {
 
     @DELETE("social-media/following/{userId}")
     suspend fun unfollowUser(@Path("userId") userId: String): Response<FollowUnFollowResponse>
+
+
+
+    @POST("social-media/profile/{userId}/close-friends")
+    suspend fun addToCloseFriends(@Path("userId") userId: String): Response<BaseResponse>
+
+    @DELETE("social-media/profile/{userId}/close-friends")
+    suspend fun removeFromCloseFriends(@Path("userId") userId: String): Response<BaseResponse>
+
+    @POST("social-media/profile/{userId}/mute/posts")
+    suspend fun mutePosts(@Path("userId") userId: String): Response<BaseResponse>
+
+    @DELETE("social-media/profile/{userId}/mute/posts")
+    suspend fun unMutePosts(@Path("userId") userId: String): Response<BaseResponse>
+
+    @POST("social-media/profile/{userId}/mute/stories")
+    suspend fun muteStories(@Path("userId") userId: String): Response<BaseResponse>
+
+    @DELETE("social-media/profile/{userId}/mute/stories")
+    suspend fun unMuteStories(@Path("userId") userId: String): Response<BaseResponse>
+
+    @POST("social-media/profile/{userId}/favorites")
+    suspend fun addToFavorites(@Path("userId") userId: String): Response<BaseResponse>
+
+    @DELETE("social-media/profile/{userId}/favorites")
+    suspend fun removeFromFavorites(@Path("userId") userId: String): Response<BaseResponse>
+
+    @POST("social-media/profile/{userId}/restrict")
+    suspend fun restrictUser(@Path("userId") userId: String): Response<BaseResponse>
+
+    @DELETE("social-media/profile/{userId}/restrict")
+    suspend fun unRestrictUser(@Path("userId") userId: String): Response<BaseResponse>
+
 
 
 

@@ -731,7 +731,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             }
 
             // Get YOUR followers (people who follow YOU)
-            val response = retrofitInstance.apiService.getOtherUserFollowers(
+            val response = retrofitInstance.apiService.getUserFollowers(
                 username = myUsername,
                 page = 1,
                 limit = 1000
@@ -773,7 +773,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 return
             }
 
-            val response = retrofitInstance.apiService.getOtherUserFollowing(
+            val response = retrofitInstance.apiService.getUserFollowing(
                 username = myUsername,
                 page = 1,
                 limit = 1000

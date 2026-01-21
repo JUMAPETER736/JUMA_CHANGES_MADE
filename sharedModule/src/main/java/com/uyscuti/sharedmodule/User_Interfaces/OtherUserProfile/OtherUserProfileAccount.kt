@@ -56,7 +56,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.databinding.ActivityOtherUserProfileAccountBinding
-import com.uyscuti.sharedmodule.fragments.MyUserBusinessProfileFragment
 import com.uyscuti.sharedmodule.model.User
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
@@ -573,7 +572,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
                 val currentUsername = localStorage.getUsername()
 
                 // Fetch the followers of the profile being viewed
-                val response = retrofitInstance.apiService.getOtherUserFollowers(username, 1, 50)
+                val response = retrofitInstance.apiService.getUserFollowers(username, 1, 50)
 
                 if (response.isSuccessful) {
                     val followers = response.body()?.data ?: emptyList()

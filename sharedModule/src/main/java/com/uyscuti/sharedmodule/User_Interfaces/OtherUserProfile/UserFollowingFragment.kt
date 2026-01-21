@@ -6,7 +6,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -19,39 +18,26 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatButton
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.daimajia.androidanimations.library.Techniques
-import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.gson.JsonSyntaxException
 import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
-import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.databinding.ActivityUserFollowingBinding
-import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
-import com.uyscuti.sharedmodule.utils.FollowingManager
-import com.uyscuti.social.core.common.data.room.entity.DialogEntity
-import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
-import com.uyscuti.social.core.common.data.room.entity.UserEntity
-import com.uyscuti.social.network.api.response.follow_unfollow.OtherUserDisplayFollowersModel
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.greenrobot.eventbus.EventBus
 import retrofit2.HttpException
 import java.io.IOException
 import java.util.Date
@@ -368,7 +354,7 @@ class UserFollowingFragment : AppCompatActivity() {
             try {
                 Log.d(TAG, "Loading following list for username: $username, page: $currentPage")
 
-                val response = retrofitInstance.apiService.getOtherUserFollowing(
+                val response = retrofitInstance.apiService.getUserFollowing(
                     username = username,
                     page = currentPage,
                     limit = 20
@@ -486,12 +472,13 @@ class UserFollowingFragment : AppCompatActivity() {
     }
 
     private fun showMoreOptions(user: UserFollowingDisplayModel) {
+        // Dynamic options based on current state
         val options = arrayOf(
-            "Add to Close Friends",
-            "Mute Posts",
-            "Mute Stories",
-            "Add to Favorites",
-            "Restrict User",
+            if (user.isInCloseFriends) "Remove from Close Friends" else "Add to Close Friends",
+            if (user.isPostsMuted) "Unmute Posts" else "Mute Posts",
+            if (user.isStoriesMuted) "Unmute Stories" else "Mute Stories",
+            if (user.isFavorite) "Remove from Favorites" else "Add to Favorites",
+            if (user.isRestricted) "Unrestrict User" else "Restrict User",
             "About This Account",
             "Share Profile",
             "Copy Profile Link",
@@ -517,46 +504,190 @@ class UserFollowingFragment : AppCompatActivity() {
             .show()
     }
 
+// REPLACE YOUR EXISTING FUNCTIONS WITH THESE:
 
     private fun addToCloseFriends(user: UserFollowingDisplayModel) {
-        // Add to close friends list
-        Toast.makeText(this, "Added @${user.username} to Close Friends", Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    if (user.isInCloseFriends) {
+                        retrofitInstance.apiService.removeFromCloseFriends(user._id)
+                    } else {
+                        retrofitInstance.apiService.addToCloseFriends(user._id)
+                    }
+                }
+
+                if (response.isSuccessful) {
+                    user.isInCloseFriends = !user.isInCloseFriends
+                    followingAdapter.notifyDataSetChanged()
+
+                    val message = if (user.isInCloseFriends) {
+                        "Added @${user.username} to Close Friends"
+                    } else {
+                        "Removed @${user.username} from Close Friends"
+                    }
+                    Toast.makeText(this@UserFollowingFragment, message, Toast.LENGTH_SHORT).show()
+                } else {
+                    showError("Failed to update close friends")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating close friends", e)
+                showError("Network error: ${e.message}")
+            }
+        }
     }
 
     private fun muteUserPosts(user: UserFollowingDisplayModel) {
-        // Mute posts but still follow
-        Toast.makeText(this, "Muted posts from @${user.username}", Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    if (user.isPostsMuted) {
+                        retrofitInstance.apiService.unMutePosts(user._id)
+                    } else {
+                        retrofitInstance.apiService.mutePosts(user._id)
+                    }
+                }
+
+                if (response.isSuccessful) {
+                    user.isPostsMuted = !user.isPostsMuted
+                    followingAdapter.notifyDataSetChanged()
+
+                    val message = if (user.isPostsMuted) {
+                        "Muted posts from @${user.username}"
+                    } else {
+                        "Unmuted posts from @${user.username}"
+                    }
+                    Toast.makeText(this@UserFollowingFragment, message, Toast.LENGTH_SHORT).show()
+                } else {
+                    showError("Failed to mute/unmute posts")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error muting posts", e)
+                showError("Network error: ${e.message}")
+            }
+        }
     }
 
     private fun muteUserStories(user: UserFollowingDisplayModel) {
-        // Mute stories specifically
-        Toast.makeText(this, "Muted stories from @${user.username}", Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    if (user.isStoriesMuted) {
+                        retrofitInstance.apiService.unMuteStories(user._id)
+                    } else {
+                        retrofitInstance.apiService.muteStories(user._id)
+                    }
+                }
+
+                if (response.isSuccessful) {
+                    user.isStoriesMuted = !user.isStoriesMuted
+                    followingAdapter.notifyDataSetChanged()
+
+                    val message = if (user.isStoriesMuted) {
+                        "Muted stories from @${user.username}"
+                    } else {
+                        "Unmuted stories from @${user.username}"
+                    }
+                    Toast.makeText(this@UserFollowingFragment, message, Toast.LENGTH_SHORT).show()
+                } else {
+                    showError("Failed to mute/unmute stories")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error muting stories", e)
+                showError("Network error: ${e.message}")
+            }
+        }
     }
 
     private fun addToFavorites(user: UserFollowingDisplayModel) {
-        // Add to favorites for priority content
-        Toast.makeText(this, "Added @${user.username} to Favorites", Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    if (user.isFavorite) {
+                        retrofitInstance.apiService.removeFromFavorites(user._id)
+                    } else {
+                        retrofitInstance.apiService.addToFavorites(user._id)
+                    }
+                }
+
+                if (response.isSuccessful) {
+                    user.isFavorite = !user.isFavorite
+                    followingAdapter.notifyDataSetChanged()
+
+                    val message = if (user.isFavorite) {
+                        "Added @${user.username} to Favorites"
+                    } else {
+                        "Removed @${user.username} from Favorites"
+                    }
+                    Toast.makeText(this@UserFollowingFragment, message, Toast.LENGTH_SHORT).show()
+                } else {
+                    showError("Failed to update favorites")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating favorites", e)
+                showError("Network error: ${e.message}")
+            }
+        }
     }
 
     private fun restrictUser(user: UserFollowingDisplayModel) {
-        // Restrict without blocking (limit their interaction)
+        val action = if (user.isRestricted) "Unrestrict" else "Restrict"
+        val message = if (user.isRestricted) {
+            "They will be able to see when you're online and if you've read their messages again."
+        } else {
+            "They won't be able to see when you're online or if you've read their messages."
+        }
+
         AlertDialog.Builder(this)
-            .setTitle("Restrict @${user.username}?")
-            .setMessage("They won't be able to see when you're online or if you've read their messages.")
-            .setPositiveButton("Restrict") { _, _ ->
-                Toast.makeText(this, "Restricted @${user.username}", Toast.LENGTH_SHORT).show()
+            .setTitle("$action @${user.username}?")
+            .setMessage(message)
+            .setPositiveButton(action) { _, _ ->
+                performRestrict(user)
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
+    private fun performRestrict(user: UserFollowingDisplayModel) {
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    if (user.isRestricted) {
+                        retrofitInstance.apiService.unRestrictUser(user._id)
+                    } else {
+                        retrofitInstance.apiService.restrictUser(user._id)
+                    }
+                }
+
+                if (response.isSuccessful) {
+                    user.isRestricted = !user.isRestricted
+                    followingAdapter.notifyDataSetChanged()
+
+                    val message = if (user.isRestricted) {
+                        "Restricted @${user.username}"
+                    } else {
+                        "Unrestricted @${user.username}"
+                    }
+                    Toast.makeText(this@UserFollowingFragment, message, Toast.LENGTH_SHORT).show()
+                } else {
+                    showError("Failed to restrict/unrestrict user")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error restricting user", e)
+                showError("Network error: ${e.message}")
+            }
+        }
+    }
+
+// KEEP THESE AS THEY ARE (no API calls needed):
+
     private fun showAccountInfo(user: UserFollowingDisplayModel) {
-        // Show account information
         val info = """
         Username: @${user.username}
         Full Name: ${user.fullName}
-        Verified: ${if (user.isVerified == true) "Yes" else "No"}
-        ${if (user.email != null) "Email: ${user.email}" else ""}
+        Email: ${user.email}
+        Verified: ${if (user.isVerified) "Yes" else "No"}
+        Bio: ${user.bio.ifEmpty { "No bio" }}
     """.trimIndent()
 
         AlertDialog.Builder(this)
@@ -569,14 +700,14 @@ class UserFollowingFragment : AppCompatActivity() {
     private fun shareProfile(user: UserFollowingDisplayModel) {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, "Check out @${user.username}'s profile!")
+            putExtra(Intent.EXTRA_TEXT, "Check out @${user.username}'s profile on Circuit!")
         }
         startActivity(Intent.createChooser(shareIntent, "Share profile via"))
     }
 
     private fun copyProfileLink(user: UserFollowingDisplayModel) {
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Profile Link", "https://yourapp.com/@${user.username}")
+        val clip = ClipData.newPlainText("Profile Link", "https://circuit.app/@${user.username}")
         clipboard.setPrimaryClip(clip)
         Toast.makeText(this, "Profile link copied", Toast.LENGTH_SHORT).show()
     }
