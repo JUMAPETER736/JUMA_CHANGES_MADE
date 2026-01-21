@@ -43,7 +43,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -2498,16 +2497,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         post?.let { postData ->
             if (postData.files.isNotEmpty()) {
                 val filesList = postData.files//.map { file ->
-//                    File(
-//                        _id = file._id?.ifBlank { "unknown_id" } ?: "unknown_id",
-//                        fileId = file.fileId?.ifBlank { "no_file_id" } ?: "no_file_id",
-//                        localPath = file.localPath?.ifBlank { "" } ?: "",
-//                        url = file.url?.ifBlank { "" } ?: "",
-//                        type = file.type?.ifBlank { "unknown_type" } ?: "unknown_type",
-//                        mimeType = file.mimeType?.ifBlank { "" } ?: "",
-//                        fileType = ""
-//                    )
-//                }
+
                 val fileIds = filesList.map { it.fileId }
                 navigateToTappedFilesFragment(requireContext(), 0, filesList, fileIds)
             }
@@ -2518,16 +2508,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         post?.let { postData ->
             if (postData.files.isNotEmpty()) {
                 val filesList = postData.files//.map { file ->
-//                    File(
-//                        _id = file._id,
-//                        fileId = (file.fileId?.ifBlank { "no_file_id" } ?: "no_file_id").toString(),
-//                        localPath = (file.localPath?.ifBlank { "" } ?: "").toString(),
-//                        url = file.url?.ifBlank { "" } ?: "",
-//                        type = file.type?.ifBlank { "unknown_type" } ?: "unknown_type",
-//                        mimeType = file.mimeType?.ifBlank { "" } ?: "",
-//                        fileType = ""
-//                    )
-//                }
+
                 val fileIds = filesList.map { it.fileId }
                 navigateToTappedFilesFragment(requireContext(), 0, filesList, fileIds)
             }
@@ -2541,120 +2522,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         Document,
         CombinationOfMultipleFiles,
         Unknown
-    }
-
-
-    private fun getMediaType(
-        file: File?,
-        fileTypes: List<FileType> = emptyList()
-    ): MediaType {
-        if (file == null) {
-            Log.d(TAG, "File is null, returning MediaType Unknown")
-            return MediaType.Unknown
-        }
-
-        Log.d(TAG, "File details: fileId=${file.fileId}, fileName=${file.url}, mimeType=${file.mimeType}")
-
-        // First check if we have fileTypes list and find matching fileType for this file
-        val matchingFileType = fileTypes.find { it.fileId == file.fileId }
-        matchingFileType?.let { fileTypeObj ->
-            when (fileTypeObj.fileType?.lowercase()) {
-                "video" -> {
-                    Log.d(TAG, "Detected video via fileTypes")
-                    return MediaType.Video
-                }
-                "pdf" -> {
-                    Log.d(TAG, "Detected pdf via fileTypes")
-                    return MediaType.Document
-                }
-                "image" -> {
-                    Log.d(TAG, "Detected image via fileTypes")
-                    return MediaType.Image
-                }
-                "audio" -> {
-                    Log.d(TAG, "Detected audio via fileTypes")
-                    return MediaType.Audio
-                }
-                "mixed_files" -> {
-                    Log.d(TAG, "Detected mixed_files via fileTypes")
-                    return MediaType.CombinationOfMultipleFiles
-                }
-            }
-        }
-
-        // Fallback to original fileType check
-        when (file.mimeType?.lowercase()) {
-            "video" -> {
-                Log.d(TAG, "Detected video via file fileType")
-                return MediaType.Video
-            }
-            "pdf" -> {
-                Log.d(TAG, "Detected pdf via file fileType")
-                return MediaType.Document
-            }
-            "image" -> {
-                Log.d(TAG, "Detected image via file fileType")
-                return MediaType.Image
-            }
-            "audio" -> {
-                Log.d(TAG, "Detected audio via file fileType")
-                return MediaType.Audio
-            }
-            "mixed_files" -> {
-                Log.d(TAG, "Detected mixed_files via file fileType")
-                return MediaType.CombinationOfMultipleFiles
-            }
-        }
-
-        // Check file extension
-        val extension = file.fileId?.substringAfterLast(".")?.lowercase()
-            ?: file.url?.substringAfterLast(".")?.substringBefore("?")?.lowercase()
-
-        when (extension) {
-            "mp4", "mpeg", "mpe", "mpg", "avi", "mov", "wmv", "flv", "webm", "mkv" -> {
-                Log.d(TAG, "Detected video via extension: $extension")
-                return MediaType.Video
-            }
-            "pdf", "pdg", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "odt", "csv" -> {
-                Log.d(TAG, "Detected document via extension: $extension")
-                return MediaType.Document
-            }
-            "jpg", "jpeg", "png", "gif", "bmp", "webp" -> {
-                Log.d(TAG, "Detected image via extension: $extension")
-                return MediaType.Image
-            }
-            "mp3", "wav", "ogg", "m4a", "aac", "flac" -> {
-                Log.d(TAG, "Detected audio via extension: $extension")
-                return MediaType.Audio
-            }
-        }
-
-        // Check MIME type
-        when {
-            file.mimeType?.startsWith("image/", ignoreCase = true) == true -> {
-                Log.d(TAG, "Detected image via mimeType: ${file.mimeType}")
-                return MediaType.Image
-            }
-            file.mimeType?.startsWith("video/", ignoreCase = true) == true -> {
-                Log.d(TAG, "Detected video via mimeType: ${file.mimeType}")
-                return MediaType.Video
-            }
-            file.mimeType?.startsWith("audio/", ignoreCase = true) == true -> {
-                Log.d(TAG, "Detected audio via mimeType: ${file.mimeType}")
-                return MediaType.Audio
-            }
-            file.mimeType?.startsWith("application/", ignoreCase = true) == true -> {
-                Log.d(TAG, "Detected document via mimeType: ${file.mimeType}")
-                return MediaType.Document
-            }
-            file.mimeType == "mixed_files" -> {
-                Log.d(TAG, "Detected mixed_files via mimeType")
-                return MediaType.CombinationOfMultipleFiles
-            }
-        }
-
-        Log.d(TAG, "No type detected, returning MediaType.Unknown")
-        return MediaType.Unknown
     }
 
 
@@ -2868,10 +2735,10 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                 Log.d("PostMediaHandler", "Setting up RecyclerView with ${files.size} files")
 
-                // CRITICAL FIX 1: Ensure RecyclerView is properly configured before layout manager
+                //  1: Ensure RecyclerView is properly configured before layout manager
                 recyclerView.visibility = View.VISIBLE
 
-                // CRITICAL FIX 2: Set proper layout parameters FIRST
+                //  2: Set proper layout parameters FIRST
                 val displayMetrics = recyclerView.context.resources.displayMetrics
                 val layoutParams = recyclerView.layoutParams ?: ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -2890,7 +2757,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                 Log.d("PostMediaHandler", "Set layout params - Width: ${layoutParams.width}, Height: ${layoutParams.height}")
 
-                // CRITICAL FIX 3: Set layout manager with proper span count
+                //  3: Set layout manager with proper span count
                 val fileCount = files.size
                 val layoutManager = when (fileCount) {
                     1 -> GridLayoutManager(recyclerView.context, 1)
@@ -2906,10 +2773,10 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                 recyclerView.layoutManager = layoutManager
 
-                // CRITICAL FIX 4: Clear any existing adapter to avoid conflicts
+                //  4: Clear any existing adapter to avoid conflicts
                 recyclerView.adapter = null
 
-                // CRITICAL FIX 5: Create MediaItems with proper validation
+                //  5: Create MediaItems with proper validation
                 val mediaItems = files.mapIndexed { index, file ->
                     val fileId = fileIds.getOrNull(index) ?: file.fileId
                     MediaItem(
@@ -2924,11 +2791,11 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                 Log.d("PostMediaHandler", "Created ${mediaItems.size} MediaItems")
 
-                // CRITICAL FIX 6: Set adapter and submit list
+                //  6: Set adapter and submit list
                 adapter.submitList(mediaItems)
                 recyclerView.adapter = adapter
 
-                // CRITICAL FIX 7: Force layout with multiple attempts
+                //  7: Force layout with multiple attempts
                 recyclerView.requestLayout()
 
                 // First check after immediate layout
@@ -3011,7 +2878,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     showAudioContainer()
                     setupCleanRecyclerView(mediaAdapter)
 
-                    // CRITICAL FIX: Force audio container to stay visible with delay
+                    // : Force audio container to stay visible with delay
                     multipleAudiosContainer?.postDelayed({
                         Log.d("PostMediaHandler", "Post-setup check - multipleAudiosContainer visibility: ${multipleAudiosContainer?.visibility}")
                         if (multipleAudiosContainer?.visibility != View.VISIBLE) {
@@ -3099,7 +2966,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             mixedFilesCardView?.visibility = View.VISIBLE
             originalFeedImage?.visibility = View.VISIBLE
 
-            // CRITICAL FIX: Use WRAP_CONTENT for RecyclerView to show all items
+            //  Use WRAP_CONTENT for RecyclerView to show all items
             recyclerViews?.let { rv ->
                 rv.visibility = View.VISIBLE
 
@@ -3132,19 +2999,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
         }
 
-
-        private fun getFileNameForFile(file: File, index: Int): String {
-            // Try to get filename from the fileNames list first
-            val fileName = post.originalPost.firstOrNull()?.fileNames?.find { it.fileId == file.fileId }?.fileName
-            if (!fileName.isNullOrEmpty()) {
-                return fileName
-            }
-
-            // Fallback to extracting from URL or using index
-            val url = file.url ?: file.localPath ?: ""
-            val extractedName = url.substringAfterLast("/").substringBefore(".")
-            return if (extractedName.isNotEmpty()) extractedName else "Audio ${index + 1}"
-        }
 
         private fun showVideoContainer() {
             Log.d("PostMediaHandler", "Showing Videos Only  Ccontainer")
