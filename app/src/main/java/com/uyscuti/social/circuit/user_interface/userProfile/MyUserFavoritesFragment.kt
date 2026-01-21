@@ -112,7 +112,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 showEmptyState()
             }
         } else {
-            loadBookmarkedPostsOptimized()
+            loadBookmarkedFeedPosts()
         }
     }
 
@@ -135,7 +135,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         isDataLoaded = false
         clearCache(userId ?: "")
         allUserFavorites.clear()
-        loadBookmarkedPostsOptimized()
+        loadBookmarkedFeedPosts()
     }
 
     // -------------------- RECYCLER --------------------
@@ -188,7 +188,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     // -------------------- NETWORK --------------------
 
-    private fun loadBookmarkedPostsOptimized() {
+    private fun loadBookmarkedFeedPosts() {
         if (isDataLoaded) return
 
         isDataLoaded = true
@@ -285,84 +285,30 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         return try {
             Log.d(TAG, "Validating post ${post._id}")
 
-            // Ensure the post is marked as bookmarked
-            post.isBookmarked = true
-
-            // Initialize counts if null
-            post.comments = post.comments ?: 0
-            post.likes = post.likes ?: 0
-            post.bookmarkCount = post.bookmarkCount ?: 0
-            post.repostCount = post.repostCount ?: 0
-            post.shareCount = post.shareCount ?: 0
-
-            // Validate author exists
-            if (post.author?.account == null) {
-                Log.w(TAG, "Post ${post._id} has no author, skipping")
+            // Validate author exists (this is a val field, we just check it)
+            if (post.author.account == null) {
+                Log.w(TAG, "Post ${post._id} has no author account, skipping")
                 return null
             }
 
-            // Ensure files list is not null
-            if (post.files == null) {
-                post.files = emptyList()
-                Log.d(TAG, "Post ${post._id}: files was null, set to empty list")
-            }
-
-            // Ensure fileTypes list is not null
-            if (post.fileTypes == null) {
-                post.fileTypes = emptyList()
-                Log.d(TAG, "Post ${post._id}: fileTypes was null, set to empty list")
-            }
-
-            // Ensure fileIds list is not null
-            if (post.fileIds == null) {
-                post.fileIds = emptyList()
-                Log.d(TAG, "Post ${post._id}: fileIds was null, set to empty list")
-            }
-
-            // Ensure duration list is not null
-            if (post.duration == null) {
-                post.duration = emptyList()
-            }
-
-            // Ensure tags list is not null
-            if (post.tags == null) {
-                post.tags = emptyList()
-            }
-
-            // Ensure originalPost list is not null
-            if (post.originalPost == null) {
-                post.originalPost = emptyList()
-            }
-
-            // Ensure thumbnail list is not null
-            if (post.thumbnail == null) {
-                post.thumbnail = emptyList()
-            }
-
-            // Ensure numberOfPages list is not null
-            if (post.numberOfPages == null) {
-                post.numberOfPages = emptyList()
-            }
-
-            // Ensure fileNames list is not null
-            if (post.fileNames == null) {
-                post.fileNames = emptyList()
-            }
-
-            // Ensure fileSizes list is not null
-            if (post.fileSizes == null) {
-                post.fileSizes = emptyList()
-            }
+            // Update mutable fields only
+            post.isBookmarked = true
+            post.comments = post.comments
+            post.likes = post.likes
+            post.bookmarkCount = post.bookmarkCount
+            post.repostCount = post.repostCount
+            post.shareCount = post.shareCount
 
             // Log complete post information for debugging
             Log.d(TAG, "Post ${post._id} validated successfully:")
             Log.d(TAG, "  Content: ${post.content}")
             Log.d(TAG, "  ContentType: ${post.contentType}")
-            Log.d(TAG, "  Files: ${post.files?.size ?: 0}")
-            post.files?.forEachIndexed { index, file ->
+            Log.d(TAG, "  Files: ${post.files.size}")
+            post.files.forEachIndexed { index, file ->
                 Log.d(TAG, "    File $index: ${file.url}")
             }
-            Log.d(TAG, "  FileTypes: ${post.fileTypes?.size ?: 0}")
+            Log.d(TAG, "  FileTypes: ${post.fileTypes.size}")
+            Log.d(TAG, "  FileIds: ${post.fileIds.size}")
             Log.d(TAG, "  Author: ${post.author.account.username}")
             Log.d(TAG, "  Author Name: ${post.author.firstName} ${post.author.lastName}")
             Log.d(TAG, "  Avatar URL: ${post.author.account.avatar?.url}")
@@ -370,6 +316,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             Log.d(TAG, "  Likes: ${post.likes}")
             Log.d(TAG, "  Bookmarks: ${post.bookmarkCount}")
             Log.d(TAG, "  isBookmarked: ${post.isBookmarked}")
+            Log.d(TAG, "  bookmarkedBy: ${post.bookmarkedBy}")
 
             post
         } catch (e: Exception) {
