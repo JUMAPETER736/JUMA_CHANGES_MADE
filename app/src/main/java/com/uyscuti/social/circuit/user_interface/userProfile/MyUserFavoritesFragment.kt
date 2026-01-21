@@ -358,7 +358,11 @@ class MyUserFavoritesFragment : Fragment() {
             if (post.isReposted == true && !post.originalPost.isNullOrEmpty()) {
                 val originalPost = post.originalPost[0]
 
-                if (originalPost.author?.account == null) {
+                // ✅ STRICT validation - check for NULL IDs and usernames
+                if (originalPost.author?.account == null ||
+                    originalPost.author.account._id.isNullOrEmpty() ||
+                    originalPost.author.account.username.isNullOrEmpty()) {
+                    Log.w(TAG, "Skipping repost ${post._id} - missing original author data")
                     return null
                 }
 
@@ -373,7 +377,12 @@ class MyUserFavoritesFragment : Fragment() {
                 }
 
             } else {
-                if (post.author == null || post.author.account == null) {
+                // ✅ STRICT validation - check for NULL IDs and usernames
+                if (post.author == null ||
+                    post.author.account == null ||
+                    post.author.account._id.isNullOrEmpty() ||
+                    post.author.account.username.isNullOrEmpty()) {
+                    Log.w(TAG, "Skipping post ${post._id} - missing author data (author: ${post.author}, account: ${post.author?.account}, id: ${post.author?.account?._id}, username: ${post.author?.account?.username})")
                     return null
                 }
 
