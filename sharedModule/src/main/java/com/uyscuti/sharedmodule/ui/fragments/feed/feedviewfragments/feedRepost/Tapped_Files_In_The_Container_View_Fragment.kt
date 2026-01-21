@@ -664,7 +664,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         return false
     }
 
-    //  FOLLOW BUTTON CLICK 
+    //  FOLLOW BUTTON CLICK
     private fun handleFollowButtonClick(followButton: Button, feedOwnerId: String, feedOwnerUsername: String) {
         try {
             YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
@@ -685,7 +685,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             FeedAdapter.setCachedFollowingList(followingUserIds)
             followingManager.addToFollowing(feedOwnerId)
 
-            Log.d(TAG, "✓ Following @$feedOwnerUsername - Button HIDDEN")
+            Log.d(TAG, "Following @$feedOwnerUsername - Button HIDDEN")
         } else {
             // UNFOLLOWED - Check if they follow you
             val theyFollowMe = checkIfUserFollowsBack(feedOwnerId, feedOwnerUsername)
@@ -705,7 +705,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         followUnfollowViewModel.followUnFollow(feedOwnerId)
     }
 
-    //  UPDATE FOLLOW BUTTON VISIBILITY 
+    //  UPDATE FOLLOW BUTTON VISIBILITY
     private fun updateFollowButtonVisibility() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
         val post = postList?.getOrNull(viewPager.currentItem)
@@ -717,11 +717,9 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         val currentUsername = localStorage.getUsername()?.trim()?.lowercase()
         val feedOwnerUsernameLower = feedOwnerUsername?.trim()?.lowercase()
 
-        Log.d(TAG, "═════════════════════════════════════════════")
         Log.d(TAG, "CHECKING FOLLOW BUTTON VISIBILITY")
         Log.d(TAG, "Current User: @$currentUsername (ID: $currentUserId)")
         Log.d(TAG, "Post Owner: @$feedOwnerUsernameLower (ID: $feedOwnerId)")
-        Log.d(TAG, "═════════════════════════════════════════════")
 
         // CASE 1: Own post (username match)
         if (!currentUsername.isNullOrEmpty() &&
@@ -729,7 +727,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             currentUsername == feedOwnerUsernameLower) {
             followButton.visibility = View.GONE
             Log.d(TAG, "RESULT: HIDE - Own post (username match)")
-            Log.d(TAG, "═════════════════════════════════════════════")
             return
         }
 
@@ -737,7 +734,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         if (feedOwnerId != null && feedOwnerId == currentUserId) {
             followButton.visibility = View.GONE
             Log.d(TAG, "RESULT: HIDE - Own post (ID match)")
-            Log.d(TAG, "═════════════════════════════════════════════")
             return
         }
 
@@ -745,7 +741,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         if (feedOwnerId == null) {
             followButton.visibility = View.GONE
             Log.d(TAG, "RESULT: HIDE - No feed owner ID")
-            Log.d(TAG, "═════════════════════════════════════════════")
             return
         }
 
@@ -754,7 +749,6 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         if (amIFollowingThem) {
             followButton.visibility = View.GONE
             Log.d(TAG, "RESULT: HIDE - I'm already following @$feedOwnerUsername")
-            Log.d(TAG, "═════════════════════════════════════════════")
             return
         }
 
@@ -772,10 +766,9 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             followButton.text = "Follow"
             Log.d(TAG, "RESULT: SHOW 'Follow' - No mutual following")
         }
-        Log.d(TAG, "═════════════════════════════════════════════")
     }
 
-    //  SETUP FOLLOW BUTTON 
+    //  SETUP FOLLOW BUTTON
     private fun setupFollowButton() {
         val followButton = view?.findViewById<Button>(R.id.followButton) ?: return
 
@@ -794,7 +787,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  LOAD FOLLOWING LIST 
+    //  LOAD FOLLOWING LIST
     private fun loadFollowingListFromCache() {
         try {
             val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
@@ -819,7 +812,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  FOLLOW OBSERVER 
+    //  FOLLOW OBSERVER
     private fun setupFollowObserver() {
         followUnfollowViewModel.followUnFollowObserver().observe(viewLifecycleOwner) { isFollowing ->
             if (!isAdded || view == null) return@observe
@@ -838,7 +831,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    //  PAGE CHANGE LISTENER 
+    //  PAGE CHANGE LISTENER
     private fun setupViewPagerPageChangeListener() {
         pageChangeCallback = object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
@@ -855,7 +848,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         viewPager.registerOnPageChangeCallback(pageChangeCallback)
     }
 
-    //  VALIDATION 
+    //  VALIDATION
     private fun isValidUserId(userId: String?): Boolean {
         if (userId.isNullOrEmpty()) return false
         if (userId.length != 24) return false
@@ -877,7 +870,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
         val firstFile = post.files?.firstOrNull()
         if (firstFile != null) {
-            // displayMediaPreview(firstFile)
+
         } else {
             Log.w(TAG, "No media file found for post $postId")
         }
@@ -1256,9 +1249,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                 stopLoading()
                 loadUrl("about:blank")
             }
-
-            // Remove any pending handlers/callbacks
-            // Add any other cleanup needed for your specific resources
+            
 
         } catch (e: Exception) {
             Log.e(TAG, "Error cleaning up resources", e)
