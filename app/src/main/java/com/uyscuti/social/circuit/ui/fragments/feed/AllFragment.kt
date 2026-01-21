@@ -158,19 +158,8 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
-    private var feedTextViewFragment: FeedTextViewFragment? = null
-    private var feedImageViewFragment: FeedImageViewFragment? = null
-    private var feedVideoViewFragment: FeedVideoViewFragment? = null
-    private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
-    private var feedDocsViewFragment: FeedDocumentViewFragment? = null
-    private var feedAudioViewFragment: FeedAudioViewFragment? = null
-    private var fragmentOriginalPostWithRepostInside: Fragment_Original_Post_With_Repost_Inside? = null
-    private var feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
-    private var feedRepostDocFragment: FeedRepostDocFragment? = null
-    private var feedRepostTextFragment: FeedRepostTextFragment? = null
-    private var feedRepostVideoViewFragment: FeedRepostVideoViewFragment? = null
-    private var feedRepostAudioViewFragment: FeedRepostAudioViewFragment? = null
-    private var feedRepostImageFragment: FeedRepostImageFragment? = null
+    private var followingUserIds = mutableSetOf<String>()
+    private var blockedUserIds = mutableSetOf<String>()
     private val feedShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
     private val dialogViewModel: DialogViewModel by activityViewModels()
     private var currentAdapterPosition = -1
@@ -434,6 +423,29 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 Log.e(TAG, "comment: ${e.message}")
                 e.printStackTrace()
             }
+        }
+    }
+
+    private suspend fun loadBlockedUsers() {
+        try {
+            Log.d(TAG, "Loading blocked users...")
+
+            val response = retrofitInstance.apiService.getAllBlockedUsers(page = 1, limit = 100)
+
+            if (response.isSuccessful && response.body() != null) {
+                val responseBody = response.body()!!
+
+                // Clear existing and add new blocked user IDs
+                blockedUserIds.clear()
+                blockedUserIds.addAll(responseBody.data.blockedUsers.map { it.user._id })
+
+                Log.d(TAG, "Loaded ${blockedUserIds.size} blocked users")
+                Log.d(TAG, "Blocked user IDs: $blockedUserIds")
+            } else {
+                Log.e(TAG, "Failed to load blocked users: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading blocked users: ${e.message}", e)
         }
     }
 
