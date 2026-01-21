@@ -14,7 +14,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
+import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
 import com.uyscuti.social.circuit.databinding.MyUserFavoritesFragmentBinding
+import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getUsername
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.OriginalPost
@@ -22,11 +24,14 @@ import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.greenrobot.eventbus.EventBus
 import javax.inject.Inject
 import kotlin.collections.isNotEmpty
-
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 
 @AndroidEntryPoint
 class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
@@ -72,7 +77,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     private val allUserFavorites = mutableListOf<Post>()
     private var isDataLoaded = false
 
-    // ✅ Follow management - same as FollowingFragment
+    // Follow management - same as FollowingFragment
     private var followingUserIds = mutableSetOf<String>()
     private var blockedUserIds = mutableSetOf<String>()
     private val followingUserMap = mutableMapOf<String, String>()
@@ -86,7 +91,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             cleanUsername = username?.trim()?.lowercase()
         }
 
-        // ✅ Register for EventBus (follow/unfollow events)
+        // Register for EventBus (follow/unfollow events)
         if (!EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().register(this)
         }
@@ -104,7 +109,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // ✅ Load following list and blocked users in background
+        // Load following list and blocked users in background
         lifecycleScope.launch(Dispatchers.IO) {
             loadFollowingUserIds()
             loadMyFollowersList()
@@ -144,7 +149,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             feedAdapter.submitItems(cachedPosts)
             feedAdapter.initializeCommentCounts(cachedPosts)
 
-            // ✅ Update following list in adapter
+            //Update following list in adapter
             feedAdapter.updateFollowingList(followingUserIds.toList())
             feedAdapter.updateFollowingUsernames(followingUserMap.values.toList())
 
@@ -185,7 +190,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             try {
                 Log.d(TAG, "Loading bookmarked posts for current user")
 
-                // ✅ Load following list first if not loaded
+                //Load following list first if not loaded
                 if (!hasLoadedFollowingList) {
                     loadFollowingUserIds()
                     delay(300)
@@ -208,7 +213,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                             feedAdapter.submitItems(firstBatch)
                             feedAdapter.initializeCommentCounts(firstBatch)
 
-                            // ✅ Update following lists
+                            // Update following lists
                             feedAdapter.updateFollowingList(followingUserIds.toList())
                             feedAdapter.updateFollowingUsernames(followingUserMap.values.toList())
 
@@ -301,7 +306,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 feedAdapter.submitItems(allUserFavorites)
                 feedAdapter.initializeCommentCounts(allUserFavorites)
 
-                // ✅ Always update following lists when UI updates
+                // Always update following lists when UI updates
                 feedAdapter.updateFollowingList(followingUserIds.toList())
                 feedAdapter.updateFollowingUsernames(followingUserMap.values.toList())
 
@@ -310,7 +315,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    // ✅ Load following users - same as FollowingFragment
+    // Load following users - same as FollowingFragment
     private suspend fun loadFollowingUserIds() {
         try {
             Log.d(TAG, "Loading following list...")
@@ -373,7 +378,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    // ✅ Load my followers - same as FollowingFragment
+    // Load my followers - same as FollowingFragment
     private suspend fun loadMyFollowersList() {
         try {
             Log.d(TAG, "Loading MY followers list...")
@@ -415,7 +420,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    // ✅ Load blocked users - same as FollowingFragment
+    // Load blocked users - same as FollowingFragment
     private suspend fun loadBlockedUsers() {
         try {
             Log.d(TAG, "Loading blocked users...")
@@ -457,19 +462,19 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                     return null
                 }
 
-                // ✅ Ensure author has avatar data
+                // Ensure author has avatar data
                 if (originalPost.author.account.avatar == null) {
                     Log.w(TAG, "Original post ${originalPost._id} author has null avatar - using default")
                     // Don't skip, just log warning - ViewHolder will handle null avatar
                 }
 
-                // ✅ Validate username exists
+                // Validate username exists
                 if (originalPost.author.account.username.isNullOrBlank()) {
                     Log.w(TAG, "Original post ${originalPost._id} author has no username - SKIPPING")
                     return null
                 }
 
-                // ✅ Log author info for debugging
+                // Log author info for debugging
                 Log.d(TAG, "Original Post Author: @${originalPost.author.account.username}")
                 Log.d(TAG, "  Name: ${originalPost.author.firstName} ${originalPost.author.lastName}")
                 Log.d(TAG, "  Owner ID: ${originalPost.author.owner}")
@@ -486,7 +491,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 }
 
             } else {
-                // ✅ Validate main post author has complete data
+                // Validate main post author has complete data
                 if (post.author == null) {
                     Log.w(TAG, "Post ${post._id} has null author - SKIPPING")
                     return null
@@ -497,19 +502,19 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                     return null
                 }
 
-                // ✅ Ensure author has avatar data
+                // Ensure author has avatar data
                 if (post.author.account.avatar == null) {
                     Log.w(TAG, "Post ${post._id} author has null avatar - using default")
                     // Don't skip, just log warning
                 }
 
-                // ✅ Validate username exists
+                // Validate username exists
                 if (post.author.account.username.isNullOrBlank()) {
                     Log.w(TAG, "Post ${post._id} author has no username - SKIPPING")
                     return null
                 }
 
-                // ✅ Log author info for debugging
+                // Log author info for debugging
                 Log.d(TAG, "Post Author: @${post.author.account.username}")
                 Log.d(TAG, "  Name: ${post.author.firstName} ${post.author.lastName}")
                 Log.d(TAG, "  Account ID: ${post.author.account._id}")
@@ -526,7 +531,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 }
             }
 
-            // ✅ Final validation: ensure we have the essential author data for display
+            // Final validation: ensure we have the essential author data for display
             val hasValidAuthor = if (post.isReposted == true && !post.originalPost.isNullOrEmpty()) {
                 val origAuthor = post.originalPost[0].author
                 origAuthor != null &&
@@ -604,16 +609,16 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    // ✅ Listen for follow/unfollow events from other fragments
+    //Listen for follow/unfollow events from other fragments
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onFollowEvent(event: ShortsFollowButtonClicked) {
         val followEntity = event.followUnFollowEntity
 
-        Log.d(TAG, "═══════════════════════════════════════")
+
         Log.d(TAG, "FOLLOW EVENT in MyUserFavoritesFragment")
         Log.d(TAG, "User: ${followEntity.userId}")
         Log.d(TAG, "isFollowing: ${followEntity.isFollowing}")
-        Log.d(TAG, "═══════════════════════════════════════")
+
 
         if (followEntity.isFollowing) {
             // User followed someone new
@@ -627,7 +632,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             Log.d(TAG, "Removed user from following list. Total following: ${followingUserIds.size}")
         }
 
-        // ✅ Refresh adapter to update follow buttons
+        // Refresh adapter to update follow buttons
         feedAdapter.updateFollowingList(followingUserIds.toList())
         feedAdapter.notifyDataSetChanged()
     }
@@ -645,7 +650,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    // ✅ OnFeedClickListener implementations
+    // OnFeedClickListener implementations
     override fun likeUnLikeFeed(position: Int, data: Post) {
         Log.d(TAG, "Like clicked at position $position - handled by FeedPostViewHolder")
     }
@@ -678,7 +683,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     ) {
         Log.d(TAG, "Follow button clicked - handled by FeedPostViewHolder")
 
-        // ✅ Update local following list
+        // Update local following list
         if (followUnFollowEntity.isFollowing) {
             followingUserIds.add(followUnFollowEntity.userId)
             followButton.visibility = View.GONE
@@ -690,7 +695,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             Log.d(TAG, "Unfollowed user: ${followUnFollowEntity.userId}")
         }
 
-        // ✅ Update adapter's following list
+        //Update adapter's following list
         feedAdapter.updateFollowingList(followingUserIds.toList())
     }
 
