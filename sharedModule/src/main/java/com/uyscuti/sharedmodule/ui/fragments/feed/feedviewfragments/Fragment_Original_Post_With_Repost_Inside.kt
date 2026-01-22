@@ -487,7 +487,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
     @SuppressLint("InflateParams", "MissingInflatedId", "ServiceCast")
-    override fun moreOptionsClick(
+    fun moreOptionsClick(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
@@ -681,7 +681,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                                         relationshipsViewModel.removeMutedPosts(userId)
                                         Toast.makeText(context, "Unmuted", Toast.LENGTH_SHORT).show()
                                         // Reload feed
-                                        getAllFeed(1)
+
                                     }
                                 }
                             }
@@ -747,7 +747,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                                     blockedUserIds.remove(userId)
                                     Toast.makeText(context, "User unblocked", Toast.LENGTH_SHORT).show()
                                     // Reload feed
-                                    getAllFeed(1)
+
                                 }
                             }
                         }
@@ -815,8 +815,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                         }
                     }.show()
 
-                    // Reload feed to potentially show the user's posts again
-                    getAllFeed(1)
+                    
                 } else {
                     Toast.makeText(
                         context,
@@ -911,7 +910,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         Log.d(
-            com.uyscuti.social.circuit.ui.fragments.feed.TAG,
+            TAG,
             "hideSinglePost: Hiding post at position: $position, PostId: ${data._id}")
         try {
             if (::allFeedAdapter.isInitialized) {
@@ -932,7 +931,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                         .start()
                 } else {
                     Log.w(
-                        com.uyscuti.social.circuit.ui.fragments.feed.TAG,
+                        TAG,
                         "ViewHolder at position $position is null, notifying removal directly"
                     )
                     allFeedAdapter.notifyItemRemoved(position) // Fallback for off-screen items
@@ -957,11 +956,13 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             }
 
         } catch (e: Exception) {
-            Log.e(com.uyscuti.social.circuit.ui.fragments.feed.TAG, "Error hiding post: ${e.message}")
+            Log.e(TAG, "Error hiding post: ${e.message}")
             Toast.makeText(requireContext(),
                 "Failed to hide post", Toast.LENGTH_SHORT).show()
         }
     }
+
+
 
     private fun handleMainPostClick() = showToast("Opening full post ...")
     private fun handleOriginalPostClick() = showToast("Opening original post...")
