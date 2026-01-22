@@ -27,13 +27,14 @@ data class Post(
     val numberOfPages: List<NumberOfPageX>,
     val originalPost: List<OriginalPost>,
     val repostedByUserId: String,
-    val repostedUser: RepostedUser,
+    val repostedUser: RepostedUser? = null,
     val repostedUsers: List<String>,
     val tags: List<Any?>,
     val thumbnail: List<ThumbnailX>,
     val updatedAt: String,
     var shareCount: Int,
     var repostCount: Int,
+
     // Business/Shop related fields
     val isBusinessPost: Boolean? = null,
     val category: String? = null,
@@ -45,9 +46,17 @@ data class Post(
 
     val bookmarkId: String? = null,
     val bookmarkedBy: String? = null,
-    val bookmarkedAt: String? = null
+    val bookmarkedAt: String? = null,
 
-): Serializable
+    // Privacy / relationship flags
+    var isInCloseFriends: Boolean? = null,
+    var isPostsMuted: Boolean? = null,
+    var isStoriesMuted: Boolean? = null,
+    var isRestricted: Boolean? = null,
+    var isFavorite: Boolean? = null,
+
+
+    ): Serializable
 
 
 data class BusinessPost(
