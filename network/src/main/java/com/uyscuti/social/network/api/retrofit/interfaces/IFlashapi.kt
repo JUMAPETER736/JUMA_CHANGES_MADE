@@ -216,11 +216,25 @@ interface IFlashapi {
 
 
 
+    // ==================== CLOSE FRIENDS ====================
+    @GET("social-media/profile/close-friends")
+    suspend fun getCloseFriends(): Response<CloseFriendsListResponse>
+
+    @GET("social-media/profile/close-friends/{userId}")
+    suspend fun checkCloseFriendStatus(@Path("userId") userId: String): Response<CloseFriendStatusResponse>
+
     @POST("social-media/profile/close-friends/{userId}")
     suspend fun addToCloseFriends(@Path("userId") userId: String): Response<BaseResponse>
 
     @DELETE("social-media/profile/close-friends/{userId}")
     suspend fun removeFromCloseFriends(@Path("userId") userId: String): Response<BaseResponse>
+
+    // ==================== MUTE POSTS ====================
+    @GET("social-media/profile/mute/posts")
+    suspend fun getMutedPostsUsers(): Response<MutedPostsListResponse>
+
+    @GET("social-media/profile/mute/posts/{userId}")
+    suspend fun checkMutedPostsStatus(@Path("userId") userId: String): Response<MutedPostsStatusResponse>
 
     @POST("social-media/profile/mute/posts/{userId}")
     suspend fun mutePosts(@Path("userId") userId: String): Response<BaseResponse>
@@ -228,11 +242,25 @@ interface IFlashapi {
     @DELETE("social-media/profile/mute/posts/{userId}")
     suspend fun unMutePosts(@Path("userId") userId: String): Response<BaseResponse>
 
+    // ==================== MUTE STORIES ====================
+    @GET("social-media/profile/mute/stories")
+    suspend fun getMutedStoriesUsers(): Response<MutedStoriesListResponse>
+
+    @GET("social-media/profile/mute/stories/{userId}")
+    suspend fun checkMutedStoriesStatus(@Path("userId") userId: String): Response<MutedStoriesStatusResponse>
+
     @POST("social-media/profile/mute/stories/{userId}")
     suspend fun muteStories(@Path("userId") userId: String): Response<BaseResponse>
 
     @DELETE("social-media/profile/mute/stories/{userId}")
     suspend fun unMuteStories(@Path("userId") userId: String): Response<BaseResponse>
+
+    // ==================== FAVORITES ====================
+    @GET("social-media/profile/favorites")
+    suspend fun getFavorites(): Response<FavoritesListResponse>
+
+    @GET("social-media/profile/favorites/{userId}")
+    suspend fun checkFavoriteStatus(@Path("userId") userId: String): Response<FavoriteStatusResponse>
 
     @POST("social-media/profile/favorites/{userId}")
     suspend fun addToFavorites(@Path("userId") userId: String): Response<BaseResponse>
@@ -240,11 +268,19 @@ interface IFlashapi {
     @DELETE("social-media/profile/favorites/{userId}")
     suspend fun removeFromFavorites(@Path("userId") userId: String): Response<BaseResponse>
 
+    // ==================== RESTRICT ====================
+    @GET("social-media/profile/restrict")
+    suspend fun getRestrictedUsers(): Response<RestrictedListResponse>
+
+    @GET("social-media/profile/restrict/{userId}")
+    suspend fun checkRestrictedStatus(@Path("userId") userId: String): Response<RestrictedStatusResponse>
+
     @POST("social-media/profile/restrict/{userId}")
     suspend fun restrictUser(@Path("userId") userId: String): Response<BaseResponse>
 
     @DELETE("social-media/profile/restrict/{userId}")
     suspend fun unRestrictUser(@Path("userId") userId: String): Response<BaseResponse>
+
 
 
 
