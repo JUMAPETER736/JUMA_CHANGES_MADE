@@ -83,11 +83,19 @@ import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import org.greenrobot.eventbus.EventBus
 import android.content.Intent
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.snackbar.Snackbar
+import com.uyscuti.sharedmodule.ReportNotificationActivity2
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FRAGMENT_ORIGINAL_POST_WITHOUT_REPOST
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
 import com.uyscuti.sharedmodule.utils.FollowingManager
 import com.uyscuti.sharedmodule.viewmodels.FollowUnfollowViewModel
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
@@ -1127,90 +1135,462 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         Toast.makeText(requireContext(), "Share options", Toast.LENGTH_SHORT).show()
     }
 
-    private fun showOptionsMenu(anchor: View) {
-        val context = requireContext()
-        val popup = PopupMenu(context, anchor, Gravity.END)
+    @SuppressLint("InflateParams", "MissingInflatedId", "ServiceCast")
+    fun moreOptionsClick(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        Log.d(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "moreOptionsClick: More options clicked")
+        val view: View = layoutInflater.inflate(R.layout.feed_more_options_layout, null)
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(view)
 
-        // Apply custom style and force show icons (optional)
-        try {
-            val fieldPopup = PopupMenu::class.java.getDeclaredField("mPopup")
-            fieldPopup.isAccessible = true
-            val menuPopupWindow = fieldPopup.get(popup)
+        // Get all views from XML
+        val downloadFiles: View = view.findViewById(R.id.downloadAction)
+        val followUnfollowLayout: View = view.findViewById(R.id.followAction)
+        val reportUser: View = view.findViewById(R.id.reportOptionLayout)
+        val hidePostLayout: View = view.findViewById(R.id.hidePostLayout)
+        val copyLink: View = view.findViewById(R.id.copyLinkLayout)
+        val muteOptionLayout: MaterialCardView = view.findViewById(R.id.muteOptionLayout)
+        val blockUserLayout: MaterialCardView = view.findViewById(R.id.blockUserLayout)
+        val quoteFeedLayout: View = view.findViewById(R.id.repostAction)
+        val shareAction: View = view.findViewById(R.id.shareAction)
+        val notInterested: View = view.findViewById(R.id.notInterestedLayout)
 
-            // You may need to handle this differently based on your target SDK
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        // Get the author ID and username
+        val authorId = data.author?.account?._id
+        val username = data.author?.account?.username ?: "User"
 
-        // Inflate the menu
-        popup.menuInflater.inflate(R.menu.post_options_menu, popup.menu)
+        // Update mute button text based on current state
+        if (authorId != null) {
+            // Find the nested LinearLayout inside muteOptionLayout
+            val muteCard = muteOptionLayout.getChildAt(0) as? LinearLayout
+            val muteTextContainer = muteCard?.getChildAt(1) as? LinearLayout
+            val muteStaticText = muteTextContainer?.getChildAt(0) as? TextView
+            val muteUsernameText = muteTextContainer?.getChildAt(1) as? TextView
 
-        // Set menu item click listener
-        popup.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.menu_report -> {
-                    handleReportPost()
-                    true
-                }
-                R.id.menu_block_user -> {
-                    handleBlockUser()
-                    true
-                }
-                R.id.menu_mute_user -> {
-                    handleMuteUser()
-                    true
-                }
-                R.id.menu_copy_link -> {
-                    handleCopyLink()
-                    true
-                }
-                R.id.menu_save_post -> {
-                    handleSavePost()
-                    true
-                }
-                R.id.menu_not_interested -> {
-                    handleNotInterested()
-                    true
-                }
-                else -> false
+            if (relationshipsViewModel.isPostsMuted(authorId)) {
+                muteStaticText?.text = "Unmute "
+                muteUsernameText?.text = username
+            } else {
+                muteStaticText?.text = "Mute "
+                muteUsernameText?.text = username
             }
         }
 
-        // Show the popup menu
-        popup.show()
+        // Update block button username text
+        val blockCard = blockUserLayout.getChildAt(0) as? LinearLayout
+        val blockContentLayout = blockCard?.getChildAt(1) as? LinearLayout
+        val blockDescriptionLayout = blockContentLayout?.getChildAt(1) as? LinearLayout
+        val usernameBlockText = blockDescriptionLayout?.findViewById<TextView>(R.id.usernameBlock)
+        usernameBlockText?.text = username
+
+        // Show the dialog
+        dialog.show()
+
+        // ==================== SHARE ACTION ====================
+        shareAction.setOnClickListener {
+            val shareIntent = Intent(Intent.ACTION_SEND)
+            shareIntent.type = "text/plain"
+            shareIntent.putExtra(Intent.EXTRA_TEXT, data.content)
+            startActivity(Intent.createChooser(shareIntent, "Share via"))
+            dialog.dismiss()
+        }
+
+        // ==================== DOWNLOAD ACTION ====================
+        downloadFiles.setOnClickListener {
+            Log.d("DownloadButton", "Data: $data")
+            if (data.files.isNotEmpty()) {
+                onDownloadClick(data.files[0].url, "FlashShorts")
+            } else {
+                Toast.makeText(context, "No files to download", Toast.LENGTH_SHORT).show()
+            }
+            dialog.dismiss()
+        }
+
+        // Hide download if text-only post
+        if (data.contentType == "text") {
+            downloadFiles.visibility = View.GONE
+        }
+
+        // ==================== MUTE ACTION ====================
+        muteOptionLayout.setOnClickListener {
+            Log.d("MuteButton", "Mute button clicked for user: $authorId")
+            dialog.dismiss()
+
+            authorId?.let { userId ->
+                handleMuteToggle(userId, position)
+            } ?: run {
+                Toast.makeText(context, "Cannot mute: User ID not found", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // ==================== BLOCK USER ACTION ====================
+        blockUserLayout.setOnClickListener {
+            Log.d("BlockButton", "Block button clicked for user: $authorId")
+            dialog.dismiss()
+
+            authorId?.let { userId ->
+                // Check if user is trying to block themselves
+
+                // Check if user is already blocked
+                if (blockedUserIds.contains(userId)) {
+                    // Unblock the user
+                    handleUnblockUser(userId, username)
+                } else {
+                    // Block the user
+                    showBlockConfirmationDialog(userId, username, position)
+                }
+            } ?: run {
+                Toast.makeText(context, "Cannot block: User ID not found", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // ==================== REPOST ACTION ====================
+        quoteFeedLayout.setOnClickListener {
+            val fragment = Fragment_Edit_Post_To_Repost(data)
+            val transaction = requireActivity().supportFragmentManager.beginTransaction()
+            transaction.replace(R.id.frame_layout, fragment)
+            transaction.addToBackStack(null)
+            transaction.commit()
+            dialog.dismiss()
+        }
+
+        // ==================== COPY LINK ACTION ====================
+        copyLink.setOnClickListener {
+            val postId = data._id
+            val linkToCopy = "https://circuitSocial.app/post/$postId"
+            val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Copied Link", linkToCopy)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(requireContext(), "Link copied to clipboard", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+
+        // ==================== NOT INTERESTED ACTION ====================
+        notInterested.setOnClickListener {
+            handleNotInterested(data)
+            dialog.dismiss()
+        }
+
+        // ==================== HIDE POST ACTION ====================
+        hidePostLayout.setOnClickListener {
+            Log.d(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "hidePostLayout: hide post clicked")
+            hideSinglePost(position, data)
+            dialog.dismiss()
+        }
+
+        // ==================== REPORT USER ACTION ====================
+        reportUser.setOnClickListener {
+            Log.d("reportUser", "Report button clicked")
+            val intent = Intent(requireActivity(), ReportNotificationActivity2::class.java)
+            startActivityForResult(intent, FRAGMENT_ORIGINAL_POST_WITHOUT_REPOST)
+            dialog.dismiss()
+        }
+
+        // Hide follow button (you can show it if needed based on relationship status)
+        followUnfollowLayout.visibility = View.GONE
     }
 
-    private fun handleReportPost() {
-        // Show report dialog or navigate to report screen
-        Toast.makeText(requireContext(), "Report post", Toast.LENGTH_SHORT).show()
+    // ==================== MUTE TOGGLE ====================
+    private fun handleMuteToggle(userId: String, position: Int) {
+        lifecycleScope.launch {
+            try {
+                if (relationshipsViewModel.isPostsMuted(userId)) {
+                    // Unmute
+                    val response = retrofitInstance.apiService.unMutePosts(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.removeMutedPosts(userId)
+                        Toast.makeText(context, "Posts unmuted", Toast.LENGTH_SHORT).show()
+                        // Refresh feed to show posts again
+                        allFeedAdapter.notifyDataSetChanged()
+                    }
+                } else {
+                    // Mute
+                    val response = retrofitInstance.apiService.mutePosts(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.addMutedPosts(userId)
+
+                        // Remove the post from the adapter
+                        allFeedAdapter.removeItem(position)
+                        allFeedAdapter.notifyItemRemoved(position)
+
+                        // Show Snackbar with Undo
+                        Snackbar.make(feedListView, "Posts from this user muted", Snackbar.LENGTH_LONG)
+                            .setAction("Undo") {
+                                // Unmute the user
+                                lifecycleScope.launch {
+                                    val undoResponse = retrofitInstance.apiService.unMutePosts(userId)
+                                    if (undoResponse.isSuccessful) {
+                                        relationshipsViewModel.removeMutedPosts(userId)
+                                        Toast.makeText(context, "Unmuted", Toast.LENGTH_SHORT).show()
+                                        // Reload feed
+
+                                    }
+                                }
+                            }
+                            .show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Error toggling mute: ${e.message}", e)
+                Toast.makeText(context, "Failed to update mute status", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
-    private fun handleBlockUser() {
-        // Show confirmation dialog and block user
-        Toast.makeText(requireContext(), "User blocked", Toast.LENGTH_SHORT).show()
+    // ==================== BLOCK USER CONFIRMATION ====================
+    private fun showBlockConfirmationDialog(userId: String, username: String, position: Int) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Block $username?")
+            .setMessage("You won't be able to see or contact $username. They won't be notified that you blocked them.")
+            .setPositiveButton("Block") { dialog, _ ->
+                handleBlockUser(userId, position)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
 
-    private fun handleMuteUser() {
-        // Show confirmation dialog and mute user
-        Toast.makeText(requireContext(), "User muted", Toast.LENGTH_SHORT).show()
+    // ==================== BLOCK USER ====================
+    private fun handleBlockUser(userId: String, position: Int) {
+        lifecycleScope.launch {
+            try {
+                val response = retrofitInstance.apiService.blockUser(userId)
+                if (response.isSuccessful) {
+                    // Add to blocked list
+                    blockedUserIds.add(userId)
+
+                    // Remove all posts from this user
+                    val itemsToRemove = mutableListOf<Int>()
+                    for (i in 0 until allFeedAdapter.itemCount) {
+                        val item = getFeedViewModel.getAllFeedData().getOrNull(i)
+                        val itemAuthorId = item?.author?.account?._id
+                        if (itemAuthorId == userId) {
+                            itemsToRemove.add(i)
+                        }
+                    }
+
+                    // Remove items in reverse order to maintain indices
+                    itemsToRemove.reversed().forEach { pos ->
+                        allFeedAdapter.removeItem(pos)
+                        getFeedViewModel.removeAllFeedFragment(pos)
+                    }
+
+                    allFeedAdapter.notifyDataSetChanged()
+                    Toast.makeText(context, "User blocked", Toast.LENGTH_SHORT).show()
+
+                    // Show Snackbar with Undo
+                    Snackbar.make(feedListView, "User blocked", Snackbar.LENGTH_LONG)
+                        .setAction("Undo") {
+                            lifecycleScope.launch {
+                                val unblockResponse = retrofitInstance.apiService.unBlockUser(userId)
+                                if (unblockResponse.isSuccessful) {
+                                    blockedUserIds.remove(userId)
+                                    Toast.makeText(context, "User unblocked", Toast.LENGTH_SHORT).show()
+                                    // Reload feed
+
+                                }
+                            }
+                        }
+                        .show()
+                }
+            } catch (e: Exception) {
+                Log.e(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Error blocking user: ${e.message}", e)
+                Toast.makeText(context, "Failed to block user", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
-    private fun handleCopyLink() {
-        // Copy post link to clipboard
-        val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Post Link", "https://example.com/post/123")
-        clipboard.setPrimaryClip(clip)
-        Toast.makeText(requireContext(), "Link copied to clipboard", Toast.LENGTH_SHORT).show()
+
+    // ==================== UNBLOCK USER ====================
+    private fun handleUnblockUser(userId: String, username: String) {
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    retrofitInstance.apiService.unBlockUser(userId)
+                }
+
+                if (response.isSuccessful) {
+                    // Remove from blocked list
+                    blockedUserIds.remove(userId)
+
+                    Toast.makeText(
+                        context,
+                        "Unblocked @$username",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    // Show Snackbar with option to undo
+                    Snackbar.make(
+                        feedListView,
+                        "User unblocked",
+                        Snackbar.LENGTH_LONG
+                    ).setAction("Undo") {
+                        // Re-block the user
+                        lifecycleScope.launch {
+                            try {
+                                val blockResponse = retrofitInstance.apiService.blockUser(userId)
+                                if (blockResponse.isSuccessful) {
+                                    blockedUserIds.add(userId)
+                                    Toast.makeText(
+                                        context,
+                                        "User blocked again",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            } catch (e: Exception) {
+                                Log.e(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Error re-blocking user: ${e.message}", e)
+                                Toast.makeText(
+                                    context,
+                                    "Failed to block user",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }.show()
+
+
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Failed to unblock user",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Log.e(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Error unblocking user: ${e.message}", e)
+                Toast.makeText(
+                    context,
+                    "Network error: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
-    private fun handleSavePost() {
-        // Save/unsave post
-        Toast.makeText(requireContext(), "Post saved", Toast.LENGTH_SHORT).show()
+
+    private fun handleNotInterested(
+        data: com.uyscuti.social.network.api.response.posts.Post) {
+
+        val sharedPrefs =
+            requireContext().getSharedPreferences("NotInterestedPosts", Context.MODE_PRIVATE)
+        with(sharedPrefs.edit()) {
+            putBoolean(data._id.toString(), true)
+            apply()
+        }
+
+
+
+        // Show confirmation
+        Toast.makeText(
+            requireContext(),
+            "We'll show you less content like this",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
-    private fun handleNotInterested() {
-        // Mark as not interested
-        Toast.makeText(requireContext(), "We'll show you fewer posts like this", Toast.LENGTH_SHORT).show()
+    fun onDownloadClick(url: String, fileLocation: String) {
+        Log.d(
+            "Download",
+            "OnDownload $url  \nto path : $fileLocation"
+        )
+
+        val permissions = arrayOf(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        )
+
+        if (ContextCompat.checkSelfPermission(
+                requireActivity(),
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+
+        } else {
+            // You have permission, proceed with your file operations
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+
+                // Check if the permission is not granted
+                if (ContextCompat.checkSelfPermission(
+                        requireContext(),
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    // Request the permission
+
+                } else {
+
+
+                }
+
+
+            } else {
+
+            }
+        }
+
+
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private fun hideSinglePost(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        Log.d(
+            Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "hideSinglePost: Hiding post at position: $position, PostId: ${data._id}")
+        try {
+            if (::allFeedAdapter.isInitialized) {
+
+//                feedListView.removeViewAt( position )
+                allFeedAdapter.removeItem(position)
+                allFeedAdapter.notifyItemRemoved(position)
+//                allFeedAdapter.notifyItemChanged(position)
+                // Optional: Add fade-out animation
+                val viewHolder = feedListView.findViewHolderForAdapterPosition(position)
+                if (viewHolder != null) {
+                    viewHolder.itemView.animate()
+                        .alpha(0f)
+                        .setDuration(300)
+                        .withEndAction {
+                            allFeedAdapter.notifyItemRemoved(position)
+                        }
+                        .start()
+                } else {
+                    Log.w(
+                        Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "ViewHolder at position $position is null, notifying removal directly"
+                    )
+                    allFeedAdapter.notifyItemRemoved(position) // Fallback for off-screen items
+                }
+                // Show Snackbar with Undo button
+                Snackbar.make(feedListView, "Post hidden", Snackbar.LENGTH_LONG)
+                    .setAction("Undo") {
+                        // Restore the post
+//                        favoriteFeedAdapter.restoreItem(position, data)
+                        allFeedAdapter.notifyItemInserted(position)
+                    }
+                    .show()
+                return
+            }
+
+            val sharedPrefs =
+                requireContext().getSharedPreferences(
+                    "HiddenPosts", Context.MODE_PRIVATE)
+            with(sharedPrefs.edit()) {
+                putBoolean(data._id, true)
+                apply()
+            }
+
+        } catch (e: Exception) {
+            Log.e(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Error hiding post: ${e.message}")
+            Toast.makeText(requireContext(),
+                "Failed to hide post", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun hideSystemBars() {
