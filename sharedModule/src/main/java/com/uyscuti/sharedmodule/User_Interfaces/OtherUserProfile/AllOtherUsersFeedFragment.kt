@@ -445,4 +445,5 @@ class AllOtherUsersFeedFragment : Fragment(), OnFeedClickListener {
     override fun onImageClick() {
         Log.d(TAG, "Image clicked")
     }
+
 }

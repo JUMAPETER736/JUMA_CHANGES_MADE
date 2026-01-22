@@ -334,7 +334,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         binding.recyclerView.visibility = View.GONE
         binding.emptyView.visibility = View.VISIBLE
     }
-    
+
 
     // Replace the stub methods in MyUserFeedFragment with these implementations:
 

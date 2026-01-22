@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-private const val TAG = "MyUsersPostsFragment"
+private const val TAG = "MyUsersFeedFragment"
 
 
 
@@ -71,6 +71,7 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
     private lateinit var feedAdapter: FeedAdapter
     private lateinit var progressBar: ProgressBar
     private lateinit var emptyStateText: TextView
+    private var allFragment: AllFragment? = null
 
     private var userId: String? = null
     private var username: String? = null
@@ -401,65 +402,76 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
         feedAdapter.updatePosts(emptyList())
     }
 
-    // Replace the stub methods in MyUserFeedFragment with these implementations:
+    // Add this helper method to find AllFragment
+    private fun getAllFragment(): AllFragment? {
+        // Try to get cached reference first
+        if (allFragment != null && allFragment?.isAdded == true) {
+            return allFragment
+        }
+
+        // Search through all fragments in the activity
+        val fragments = requireActivity().supportFragmentManager.fragments
+        allFragment = fragments.firstOrNull { it is AllFragment && it.isAdded } as? AllFragment
+
+        if (allFragment == null) {
+            Log.e(TAG, "AllFragment not found in fragment manager")
+        }
+
+        return allFragment
+    }
+
+// Replace all the stub methods with these implementations:
 
     override fun likeUnLikeFeed(position: Int, data: Post) {
         Log.d(TAG, "Like clicked at position $position - delegating to AllFragment")
 
-        // Get reference to AllFragment
-        val allFragment = requireActivity().supportFragmentManager.findFragmentByTag("AllFragment") as? AllFragment
-
-        if (allFragment != null) {
-            allFragment.likeUnLikeFeed(position, data)
-        } else {
+        getAllFragment()?.let { fragment ->
+            fragment.likeUnLikeFeed(position, data)
+        } ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate like action")
+            Toast.makeText(requireContext(), "Unable to process like action", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun feedCommentClicked(position: Int, data: Post) {
         Log.d(TAG, "Comment clicked at position $position - delegating to AllFragment")
 
-        val allFragment = requireActivity().supportFragmentManager.findFragmentByTag("AllFragment") as? AllFragment
-
-        if (allFragment != null) {
-            allFragment.feedCommentClicked(position, data)
-        } else {
+        getAllFragment()?.let { fragment ->
+            fragment.feedCommentClicked(position, data)
+        } ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate comment action")
+            Toast.makeText(requireContext(), "Unable to open comments", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun feedFavoriteClick(position: Int, data: Post) {
         Log.d(TAG, "Favorite clicked at position $position - delegating to AllFragment")
 
-        val allFragment = requireActivity().supportFragmentManager.findFragmentByTag("AllFragment") as? AllFragment
-
-        if (allFragment != null) {
-            allFragment.feedFavoriteClick(position, data)
-        } else {
+        getAllFragment()?.let { fragment ->
+            fragment.feedFavoriteClick(position, data)
+        } ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate favorite action")
+            Toast.makeText(requireContext(), "Unable to bookmark", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun moreOptionsClick(position: Int, data: Post) {
         Log.d(TAG, "More options clicked at position $position - delegating to AllFragment")
 
-        val allFragment = requireActivity().supportFragmentManager.findFragmentByTag("AllFragment") as? AllFragment
-
-        if (allFragment != null) {
-            allFragment.moreOptionsClick(position, data)
-        } else {
+        getAllFragment()?.let { fragment ->
+            fragment.moreOptionsClick(position, data)
+        } ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate more options action")
+            Toast.makeText(requireContext(), "Unable to show options", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun feedFileClicked(position: Int, data: Post) {
         Log.d(TAG, "File clicked at position $position - delegating to AllFragment")
 
-        val allFragment = requireActivity().supportFragmentManager.findFragmentByTag("AllFragment") as? AllFragment
-
-        if (allFragment != null) {
-            allFragment.feedFileClicked(position, data)
-        } else {
+        getAllFragment()?.let { fragment ->
+            fragment.feedFileClicked(position, data)
+        } ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate file click action")
         }
     }
@@ -467,11 +479,9 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
     override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
         Log.d(TAG, "Repost file clicked at position $position - delegating to AllFragment")
 
-        val allFragment = requireActivity().supportFragmentManager.findFragmentByTag("AllFragment") as? AllFragment
-
-        if (allFragment != null) {
-            allFragment.feedRepostFileClicked(position, data)
-        } else {
+        getAllFragment()?.let { fragment ->
+            fragment.feedRepostFileClicked(position, data)
+        } ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate repost file click action")
         }
     }
@@ -479,47 +489,42 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
     override fun feedShareClicked(position: Int, data: Post) {
         Log.d(TAG, "Share clicked at position $position - delegating to AllFragment")
 
-        val allFragment = requireActivity().supportFragmentManager.findFragmentByTag("AllFragment") as? AllFragment
-
-        if (allFragment != null) {
-            allFragment.feedShareClicked(position, data)
-        } else {
+        getAllFragment()?.let { fragment ->
+            fragment.feedShareClicked(position, data)
+        } ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate share action")
+            Toast.makeText(requireContext(), "Unable to share", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {
         Log.d(TAG, "Follow clicked for user ${followUnFollowEntity.userId} - delegating to AllFragment")
 
-        val allFragment = requireActivity().supportFragmentManager.findFragmentByTag("AllFragment") as? AllFragment
-
-        if (allFragment != null) {
-            allFragment.followButtonClicked(followUnFollowEntity, followButton)
-        } else {
+        getAllFragment()?.let { fragment ->
+            fragment.followButtonClicked(followUnFollowEntity, followButton)
+        } ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate follow action")
+            Toast.makeText(requireContext(), "Unable to follow/unfollow", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun feedRepostPost(position: Int, data: Post) {
         Log.d(TAG, "Repost clicked at position $position - delegating to AllFragment")
 
-        val allFragment = requireActivity().supportFragmentManager.findFragmentByTag("AllFragment") as? AllFragment
-
-        if (allFragment != null) {
-            allFragment.feedRepostPost(position, data)
-        } else {
+        getAllFragment()?.let { fragment ->
+            fragment.feedRepostPost(position, data)
+        } ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate repost action")
+            Toast.makeText(requireContext(), "Unable to repost", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun feedRepostPostClicked(position: Int, data: Post) {
         Log.d(TAG, "Repost post clicked at position $position - delegating to AllFragment")
 
-        val allFragment = requireActivity().supportFragmentManager.findFragmentByTag("AllFragment") as? AllFragment
-
-        if (allFragment != null) {
-            allFragment.feedRepostPostClicked(position, data)
-        } else {
+        getAllFragment()?.let { fragment ->
+            fragment.feedRepostPostClicked(position, data)
+        } ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate repost post click action")
         }
     }
@@ -527,11 +532,9 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
         Log.d(TAG, "Original post clicked: $originalPostId - delegating to AllFragment")
 
-        val allFragment = requireActivity().supportFragmentManager.findFragmentByTag("AllFragment") as? AllFragment
-
-        if (allFragment != null) {
-            allFragment.feedClickedToOriginalPost(position, originalPostId)
-        } else {
+        getAllFragment()?.let { fragment ->
+            fragment.feedClickedToOriginalPost(position, originalPostId)
+        } ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate original post click action")
         }
     }
@@ -539,11 +542,9 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
     override fun onImageClick() {
         Log.d(TAG, "Image clicked - delegating to AllFragment")
 
-        val allFragment = requireActivity().supportFragmentManager.findFragmentByTag("AllFragment") as? AllFragment
-
-        if (allFragment != null) {
-            allFragment.onImageClick()
-        } else {
+        getAllFragment()?.let { fragment ->
+            fragment.onImageClick()
+        } ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate image click action")
         }
     }
