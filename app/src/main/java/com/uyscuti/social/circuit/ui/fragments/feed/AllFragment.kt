@@ -147,6 +147,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
     private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
     private val shortsViewModel: GetShortsByUsernameViewModel by activityViewModels()
+    private val relationshipsViewModel: UserRelationshipsViewModel by activityViewModels()
 
     private lateinit var feedListView: RecyclerView
     private lateinit var allFeedAdapter: FeedAdapter

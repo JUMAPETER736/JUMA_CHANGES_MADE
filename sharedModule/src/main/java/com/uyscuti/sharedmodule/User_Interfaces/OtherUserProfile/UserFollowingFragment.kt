@@ -730,7 +730,7 @@ class UserFollowingFragment : AppCompatActivity() {
         Toast.makeText(this, "Profile link copied", Toast.LENGTH_SHORT).show()
     }
 
-    
+
     @OptIn(UnstableApi::class)
     private fun performUnBlockUser(user: UserFollowingDisplayModel) {
         lifecycleScope.launch {

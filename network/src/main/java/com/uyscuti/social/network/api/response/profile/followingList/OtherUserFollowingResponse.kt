@@ -33,13 +33,6 @@ data class UserDetails(
     val updatedAt: String
 )
 
-data class Avatar(
-    val url: String,
-    val localPath: String,
-    val _id: String
-)
-
-
 
 // Close Friends
 data class CloseFriendsListResponse(
