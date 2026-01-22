@@ -69,6 +69,8 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
         // Static cache: "myUserId_otherUserId" -> (favorites, timestamp)
         private val staticCache = mutableMapOf<String, Pair<List<Post>, Long>>()
+        internal val favoritesCache = mutableMapOf<String, MutableList<Post>>()
+        internal val cacheTimestamp = mutableMapOf<String, Long>()
 
         fun newInstance(userId: String, username: String): AllOtherUsersFavoritesFragment {
             return AllOtherUsersFavoritesFragment().apply {

@@ -27,6 +27,19 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class OtherUserBusinessProfileFragment : Fragment() {
 
+    companion object {
+
+        fun newInstance(user: User): OtherUserBusinessProfileFragment {
+            val fragment = OtherUserBusinessProfileFragment()
+            val args = Bundle()
+            args.putSerializable("user", user)
+
+            fragment.arguments = args
+            return fragment
+        }
+    }
+
+
     private lateinit var recyclerView: RecyclerView
     private lateinit var profileViewAdapter: ProfileViewAdapter
     private lateinit var businessProfileNotFound: TextView
@@ -35,29 +48,23 @@ class OtherUserBusinessProfileFragment : Fragment() {
     @Inject
     lateinit var retrofitInterface: RetrofitInstance
     private lateinit var user: User
-    companion object {
-        fun newInstance(user: User): OtherUserBusinessProfileFragment {
-            val fragment = OtherUserBusinessProfileFragment()
-            val args = Bundle()
-            args.putSerializable("user", user)
-//            args.putParcelable("user", user)
-            fragment.arguments = args
-            return fragment
-        }
-    }
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-//            user = it.getParcelable("user")!!
+
             user = it.getSerializable("user") as User
         }
     }
 
     override fun onCreateView(
+
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+
         // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.activity_profile_view, container, false)
 
@@ -74,9 +81,6 @@ class OtherUserBusinessProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-//        val userId = arguments?.getString("userId")
-//        val userName = arguments?.getString("userName")
-//        val avatar = arguments?.getString("userAvatar")
 
         Log.d("onViewCreated", "onViewCreated called")
         val userId = user._id
@@ -119,16 +123,13 @@ class OtherUserBusinessProfileFragment : Fragment() {
                         }
                     } else {
                         Log.e("ApiService", "Failed to get business profile: ${profileResponse.message()}")
-                        // Show toast message on main thread
-//                        Toast.makeText(requireContext(), "Failed to get business profile", Toast.LENGTH_SHORT).show()
+
                     }
                 }
             } catch (e: HttpException) {
                 Log.e("ApiService", "Failed to fetch data: ${e.message}", e)
                 // Show toast message on main thread
-//                withContext(Dispatchers.Main) {
-//                    Toast.makeText(requireContext(), "Failed to fetch data: ${e.message}", Toast.LENGTH_SHORT).show()
-//                }
+
             } catch (e: Throwable) {
                 Log.e("ApiService", "Network error: ${e.message}", e)
                 // Show toast message on main thread
@@ -174,17 +175,14 @@ class OtherUserBusinessProfileFragment : Fragment() {
                     }else
                     {
                         Log.e("ApiService", "Failed to get business catalogue: ${catalogueResponse.message()}")
-                        // Show toast message on main thread
-//                        Toast.makeText(requireContext(), "Failed to get business catalogue", Toast.LENGTH_SHORT).show()
+
 
                     }
                 }
             } catch (e: HttpException) {
                 Log.e("ApiService", "Failed to fetch data: ${e.message}", e)
                 // Show toast message on main thread
-//                withContext(Dispatchers.Main) {
-//                    Toast.makeText(requireContext(), "Failed to fetch data: ${e.message}", Toast.LENGTH_SHORT).show()
-//                }
+
             } catch (e: Throwable) {
                 Log.e("ApiService", "Network error: ${e.message}", e)
                 // Show toast message on main thread
