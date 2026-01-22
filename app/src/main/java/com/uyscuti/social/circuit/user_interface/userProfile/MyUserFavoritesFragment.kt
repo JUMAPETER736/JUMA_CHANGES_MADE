@@ -28,6 +28,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
+
+
 @AndroidEntryPoint
 class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
@@ -54,7 +56,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             cacheTimestamp.remove(userId)
         }
 
-        private fun emptyRepostedUser(): RepostedUser {
+        private         private fun emptyRepostedUser(): RepostedUser {
             return RepostedUser(
                 _id = "",
                 avatar = Avatar(
@@ -77,8 +79,6 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 username = ""
             )
         }
-
-
     }
 
     private var _binding: MyUserFavoritesFragmentBinding? = null
@@ -123,17 +123,20 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
         setupRecyclerView()
 
-        if (isCacheValid()) {
-            val cached = favoritesCache[userId] ?: emptyList()
+        // OPTIMIZATION: Show cached data IMMEDIATELY without checking validity
+        val cached = favoritesCache[userId]
+        if (!cached.isNullOrEmpty()) {
             allUserFavorites.clear()
             allUserFavorites.addAll(cached)
             submitToAdapter(allUserFavorites)
-            if (cached.isNotEmpty()) {
-                showContent()
-            } else {
-                showEmptyState()
+            showContent()
+
+            // Load fresh data in background only if cache is old
+            if (!isCacheValid()) {
+                loadBookmarkedFeedPosts()
             }
         } else {
+            // No cache - load data
             loadBookmarkedFeedPosts()
         }
     }
@@ -154,8 +157,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
     private fun refreshBookmarks() {
         Log.d(TAG, "Refreshing bookmarks")
         isDataLoaded = false
-        clearCache(userId ?: "")
-        allUserFavorites.clear()
+        // Don't clear cache - let old data show while loading new
         loadBookmarkedFeedPosts()
     }
 
@@ -171,28 +173,25 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = feedAdapter
             setHasFixedSize(true)
-            setItemViewCacheSize(20)
+            setItemViewCacheSize(30) // Increased from 20
+            // OPTIMIZATION: Add recycled view pool for better scrolling
+            recycledViewPool.setMaxRecycledViews(0, 30)
             visibility = View.GONE
         }
     }
 
     private fun submitToAdapter(posts: List<Post>) {
-        if (!isAdded || _binding == null) {
-            Log.w(TAG, "Fragment not attached, skipping adapter submission")
-            return
-        }
-
-        Log.d(TAG, "Submitting ${posts.size} posts to adapter")
+        if (!isAdded || _binding == null) return
 
         try {
             feedAdapter.submitItems(posts)
             feedAdapter.initializeCommentCounts(posts)
-            feedAdapter.notifyDataSetChanged()
-
-            Log.d(TAG, "Successfully submitted posts to adapter")
+            // OPTIMIZATION: Only notify if actually needed
+            if (feedAdapter.itemCount != posts.size) {
+                feedAdapter.notifyDataSetChanged()
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error submitting to adapter", e)
-            e.printStackTrace()
         }
     }
 
@@ -205,12 +204,19 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         if (isDataLoaded) return
 
         isDataLoaded = true
-        showLoading()
-        allUserFavorites.clear()
 
+        // Don't show loading immediately - let cache show first
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 Log.d(TAG, "Fetching bookmarked posts for user: $userId")
+
+                // Show loading only if we don't have cache
+                if (!isCacheValid()) {
+                    withContext(Dispatchers.Main) {
+                        showLoading()
+                    }
+                }
+
                 val response = retrofitInstance.apiService.getFavoriteFeed(page = "1")
 
                 if (!response.isSuccessful) {
@@ -230,11 +236,11 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
                 // Transform bookmarked posts to regular posts with proper field mapping
                 val transformedPosts = bookmarkedPosts
+                    .asSequence() // Use sequence for better performance
                     .filter { it.bookmarkedBy == userId }
                     .mapNotNull { bookmarkedPost ->
                         try {
-                            // Create a properly structured Post object
-                            val post = Post(
+                            Post(
                                 _id = bookmarkedPost._id,
                                 content = bookmarkedPost.content ?: "",
                                 duration = bookmarkedPost.duration,
@@ -245,12 +251,12 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                                 fileNames = bookmarkedPost.fileNames,
                                 fileTypes = bookmarkedPost.fileTypes,
                                 fileSizes = bookmarkedPost.fileSizes,
-                                files = bookmarkedPost.files, // This is critical!
+                                files = bookmarkedPost.files,
                                 fileIds = bookmarkedPost.fileIds,
                                 thumbnail = bookmarkedPost.thumbnail,
                                 author = bookmarkedPost.author,
                                 isReposted = bookmarkedPost.isReposted,
-                                repostedByUserId = bookmarkedPost.repostedByUserId,
+                                repostedByUserId = bookmarkedPost.repostedByUserId ?: "",
                                 repostedUsers = bookmarkedPost.repostedUsers,
                                 createdAt = bookmarkedPost.createdAt,
                                 updatedAt = bookmarkedPost.updatedAt,
@@ -259,7 +265,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                                 likes = bookmarkedPost.likes,
                                 isLiked = bookmarkedPost.isLiked,
                                 isFollowing = bookmarkedPost.isFollowing,
-                                isBookmarked = true, // Always true for bookmarked items
+                                isBookmarked = true,
                                 bookmarkCount = bookmarkedPost.bookmarkCount,
                                 isInCloseFriends = bookmarkedPost.isInCloseFriends,
                                 isPostsMuted = bookmarkedPost.isPostsMuted,
@@ -274,30 +280,16 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                                 repostedUser = bookmarkedPost.repostedUser ?: emptyRepostedUser(),
                                 isBusinessPost = false
                             )
-
-                            Log.d(TAG, "Transformed Post ${post._id}:")
-                            Log.d(TAG, "  - Content: ${post.content}")
-                            Log.d(TAG, "  - ContentType: ${post.contentType}")
-                            Log.d(TAG, "  - Files count: ${post.files.size}")
-                            Log.d(TAG, "  - FileIds count: ${post.fileIds.size}")
-                            Log.d(TAG, "  - FileTypes count: ${post.fileTypes.size}")
-                            Log.d(TAG, "  - isBookmarked: ${post.isBookmarked}")
-
-                            post.files.forEachIndexed { index, file ->
-                                Log.d(TAG, "  - File $index: ${file.url}")
-                            }
-
-                            post
                         } catch (e: Exception) {
-                            Log.e(TAG, "Error transforming bookmarked post ${bookmarkedPost._id}", e)
+                            Log.e(TAG, "Error transforming post ${bookmarkedPost._id}: ${e.message}")
                             null
                         }
                     }
-
-                Log.d(TAG, "Transformed ${transformedPosts.size} posts successfully")
+                    .toList()
 
                 withContext(Dispatchers.Main) {
                     if (transformedPosts.isNotEmpty()) {
+                        allUserFavorites.clear()
                         allUserFavorites.addAll(transformedPosts)
                         submitToAdapter(allUserFavorites)
                         showContent()
@@ -306,10 +298,8 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                         userId?.let { uid ->
                             favoritesCache[uid] = allUserFavorites.toMutableList()
                             cacheTimestamp[uid] = System.currentTimeMillis()
-                            Log.d(TAG, "Cache updated for user $uid with ${allUserFavorites.size} posts")
                         }
                     } else {
-                        Log.d(TAG, "No bookmarked posts found")
                         showEmptyState()
                     }
                     isDataLoaded = false
