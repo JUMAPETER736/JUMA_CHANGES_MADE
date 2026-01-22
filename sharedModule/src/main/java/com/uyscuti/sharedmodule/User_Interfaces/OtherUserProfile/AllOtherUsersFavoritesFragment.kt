@@ -9,12 +9,16 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.widget.AppCompatButton
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.sharedmodule.databinding.AllOtherUsersFavoritesFragmentBinding
+import com.uyscuti.sharedmodule.viewmodels.feed.FeedUploadViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.posts.Avatar
 import com.uyscuti.social.network.api.response.posts.CoverImage
@@ -28,12 +32,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.getValue
 
 @AndroidEntryPoint
 class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
     private var _binding: AllOtherUsersFavoritesFragmentBinding? = null
     private val binding get() = _binding!!
+
+    private val followingUserIds = mutableSetOf<String>()
+    private val relationshipsViewModel: UserRelationshipsViewModel by activityViewModels()
+    private lateinit var allFeedAdapter: FeedAdapter
+    private var blockedUserIds = mutableSetOf<String>()
+    private val getFeedViewModel: GetFeedViewModel by activityViewModels()
+    private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
+    private lateinit var feedListView: RecyclerView
 
     private var otherUserId: String? = null  // The profile being viewed
     private var username: String? = null
@@ -589,6 +602,8 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
             }
         }
     }
+
+
     override fun moreOptionsClick(position: Int, data: Post) {}
     override fun feedFileClicked(position: Int, data: Post) {}
     override fun feedRepostFileClicked(position: Int, data: OriginalPost) {}
@@ -601,4 +616,5 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
     override fun feedRepostPostClicked(position: Int, data: Post) {}
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {}
     override fun onImageClick() {}
+
 }

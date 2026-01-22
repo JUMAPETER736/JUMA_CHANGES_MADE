@@ -1453,39 +1453,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     }
 
 
-    private fun handleReportPost() {
-        // Show report dialog or navigate to report screen
-        Toast.makeText(requireContext(), "Report post", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun handleBlockUser() {
-        // Show confirmation dialog and block user
-        Toast.makeText(requireContext(), "User blocked", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun handleMuteUser() {
-        // Show confirmation dialog and mute user
-        Toast.makeText(requireContext(), "User muted", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun handleCopyLink() {
-        // Copy post link to clipboard
-        val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Post Link", "https://example.com/post/123")
-        clipboard.setPrimaryClip(clip)
-        Toast.makeText(requireContext(), "Link copied to clipboard", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun handleSavePost() {
-        // Save/unsave post
-        Toast.makeText(requireContext(), "Post saved", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun handleNotInterested() {
-        // Mark as not interested
-        Toast.makeText(requireContext(), "We'll show you fewer posts like this", Toast.LENGTH_SHORT).show()
-    }
-
     private fun navigateToFragment(fragment: Fragment, tag: String) {
         try {
             val activity = activity
