@@ -21,6 +21,7 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatButton
@@ -135,6 +136,30 @@ private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
 @AndroidEntryPoint
 class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterface,
     ToggleFeedFloatingActionButton {
+
+
+    companion object {
+
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment AllFragment.
+         */
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            AllFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+
+                }
+            }
+    }
+
     private var param1: String? = null
     private var param2: String? = null
     private var parentFragment: FeedFragment? = null // Reference to parent fragment
@@ -546,92 +571,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    // Add method to handle muting/unmuting
-    private fun handleMuteToggle(userId: String, position: Int) {
-        lifecycleScope.launch {
-            try {
-                if (relationshipsViewModel.isPostsMuted(userId)) {
-                    // Unmute
-                    val response = retrofitInstance.apiService.unMutePosts(userId)
-                    if (response.isSuccessful) {
-                        relationshipsViewModel.removeMutedPosts(userId)
-                        Toast.makeText(context, "Posts unmuted", Toast.LENGTH_SHORT).show()
-                        // Refresh feed to show posts again
-                        allFeedAdapter.notifyDataSetChanged()
-                    }
-                } else {
-                    // Mute
-                    val response = retrofitInstance.apiService.mutePosts(userId)
-                    if (response.isSuccessful) {
-                        relationshipsViewModel.addMutedPosts(userId)
-                        Toast.makeText(context, "Posts muted", Toast.LENGTH_SHORT).show()
-                        // Remove posts from this user
-                        hideSinglePost(position, allFeedAdapter.getItem(position))
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error toggling mute: ${e.message}", e)
-                Toast.makeText(context, "Failed to update mute status", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    // Add method to handle adding to close friends
-    private fun handleAddToCloseFriends(userId: String) {
-        lifecycleScope.launch {
-            try {
-                val response = retrofitInstance.apiService.addToCloseFriends(userId)
-                if (response.isSuccessful) {
-                    relationshipsViewModel.addCloseFriend(userId)
-                    Toast.makeText(context, "Added to close friends", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error adding to close friends: ${e.message}", e)
-                Toast.makeText(context, "Failed to add to close friends", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    // Add method to handle adding to favorites
-    private fun handleAddToFavorites(userId: String) {
-        lifecycleScope.launch {
-            try {
-                val response = retrofitInstance.apiService.addToFavorites(userId)
-                if (response.isSuccessful) {
-                    relationshipsViewModel.addFavorite(userId)
-                    Toast.makeText(context, "Added to favorites", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error adding to favorites: ${e.message}", e)
-                Toast.makeText(context, "Failed to add to favorites", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    // Add method to handle restricting user
-    private fun handleRestrictUser(userId: String) {
-        lifecycleScope.launch {
-            try {
-                if (relationshipsViewModel.isRestricted(userId)) {
-                    val response = retrofitInstance.apiService.unRestrictUser(userId)
-                    if (response.isSuccessful) {
-                        relationshipsViewModel.removeRestricted(userId)
-                        Toast.makeText(context, "User unrestricted", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    val response = retrofitInstance.apiService.restrictUser(userId)
-                    if (response.isSuccessful) {
-                        relationshipsViewModel.addRestricted(userId)
-                        Toast.makeText(context, "User restricted", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error toggling restrict: ${e.message}", e)
-                Toast.makeText(context, "Failed to update restrict status", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun successEvent(event: FeedUploadProgress) {
         progressBar.max = event.maxProgress
@@ -708,28 +647,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     }
 
-
-    companion object {
-
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment AllFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            AllFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-
-                }
-            }
-    }
 
 
     override fun likeUnLikeFeed(
@@ -910,20 +827,42 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         Log.d(TAG, "moreOptionsClick: More options clicked")
-        val view: View = layoutInflater.inflate(
-            R.layout.feed_more_options_layout, null)
+        val view: View = layoutInflater.inflate(R.layout.feed_more_options_layout, null)
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(view)
-        dialog.show()
+
+        // Get all views
         val downloadFiles: View = view.findViewById(R.id.downloadAction)
         val followUnfollowLayout: View = view.findViewById(R.id.followAction)
         val reportUser: View = view.findViewById(R.id.reportOptionLayout)
         val hidePostLayout: View = view.findViewById(R.id.hidePostLayout)
         val copyLink: View = view.findViewById(R.id.copyLinkLayout)
         val muteOptionLayout: View = view.findViewById(R.id.muteOptionLayout)
-        val QuoteFeedLayout: View = view.findViewById(R.id.repostAction)
+        val blockUserLayout: View = view.findViewById(R.id.blockUserLayout)
+        val quoteFeedLayout: View = view.findViewById(R.id.repostAction)
         val shareAction: View = view.findViewById(R.id.shareAction)
+        val notInterested: View = view.findViewById(R.id.notInterestedLayout)
 
+        // Get the author ID
+        val authorId = data.author?.account?._id
+        val username = data.author?.account?.username ?: "User"
+
+        // Update mute button text based on current state
+        if (authorId != null) {
+            val muteText = view.findViewById<TextView>(R.id.muteOptionLayout)
+                ?.findViewById<TextView>(android.R.id.text1)
+
+            if (relationshipsViewModel.isPostsMuted(authorId)) {
+                muteText?.text = "Unmute $username"
+            } else {
+                muteText?.text = "Mute $username"
+            }
+        }
+
+        // Show the dialog
+        dialog.show()
+
+        // ==================== SHARE ACTION ====================
         shareAction.setOnClickListener {
             val shareIntent = Intent(Intent.ACTION_SEND)
             shareIntent.type = "text/plain"
@@ -931,76 +870,392 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             startActivity(Intent.createChooser(shareIntent, "Share via"))
             dialog.dismiss()
         }
+
+        // ==================== DOWNLOAD ACTION ====================
         downloadFiles.setOnClickListener {
             Log.d("DownloadButton", "Data: $data")
-            onDownloadClick(data.files[0].url, "FlashShorts")
+            if (data.files.isNotEmpty()) {
+                onDownloadClick(data.files[0].url, "FlashShorts")
+            } else {
+                Toast.makeText(context, "No files to download", Toast.LENGTH_SHORT).show()
+            }
             dialog.dismiss()
         }
-        muteOptionLayout.setOnClickListener {
-            Log.d("MuteButton", "Data: $data")
-            Toast.makeText(context, "User muted", Toast.LENGTH_SHORT).show()
 
+        // Hide download if text-only post
+        if (data.contentType == "text") {
+            downloadFiles.visibility = View.GONE
         }
-        followUnfollowLayout.visibility = View.GONE
-        QuoteFeedLayout.setOnClickListener {
+
+        // ==================== MUTE ACTION ====================
+        muteOptionLayout.setOnClickListener {
+            Log.d("MuteButton", "Mute button clicked for user: $authorId")
+            dialog.dismiss()
+
+            authorId?.let { userId ->
+                handleMuteToggle(userId, position)
+            } ?: run {
+                Toast.makeText(context, "Cannot mute: User ID not found", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // ==================== BLOCK USER ACTION ====================
+        blockUserLayout.setOnClickListener {
+            Log.d("BlockButton", "Block button clicked for user: $authorId")
+            dialog.dismiss()
+
+            authorId?.let { userId ->
+                showBlockConfirmationDialog(userId, username, position)
+            } ?: run {
+                Toast.makeText(context, "Cannot block: User ID not found", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // ==================== REPOST ACTION ====================
+        quoteFeedLayout.setOnClickListener {
             val fragment = Fragment_Edit_Post_To_Repost(data)
-//            val fragment = NewRepostedPostFragment(data)
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
-            transaction.replace(
-                R.id.frame_layout, fragment) // Ensure fragment_container is correct
+            transaction.replace(R.id.frame_layout, fragment)
             transaction.addToBackStack(null)
             transaction.commit()
             dialog.dismiss()
-
         }
+
+        // ==================== COPY LINK ACTION ====================
         copyLink.setOnClickListener {
-            val postId = data._id // Adjust this based on your actual Post class property name
-            val linkToCopy =
-                "https:/circuitSocial.app/post/$postId" // Replace with your actual link
-            val clipboard =
-                requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val postId = data._id
+            val linkToCopy = "https://circuitSocial.app/post/$postId"
+            val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = android.content.ClipData.newPlainText("Copied Link", linkToCopy)
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(requireContext(),
-                "Link copied to clipboard/$postId", Toast.LENGTH_SHORT)
-                .show()
+            Toast.makeText(requireContext(), "Link copied to clipboard", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
         }
 
-        val notInterested: View = view.findViewById(R.id.notInterestedLayout)
+        // ==================== NOT INTERESTED ACTION ====================
         notInterested.setOnClickListener {
             handleNotInterested(data)
             dialog.dismiss()
         }
 
+        // ==================== HIDE POST ACTION ====================
         hidePostLayout.setOnClickListener {
             Log.d(TAG, "hidePostLayout: hide post clicked")
             hideSinglePost(position, data)
             dialog.dismiss()
-//          showDeleteConfirmationDialog(data._id, position)
-        }
-//        val makeAddFavorite: View = view.findViewById(R.id.makeFavoriteLayout)
-        val downloadOption: View = view.findViewById(R.id.downloadAction)
-        if (data.isBookmarked) {
-            data.isBookmarked = true
-        }
-        if (data.contentType == "text") {
-            downloadOption.visibility = View.GONE
         }
 
+        // ==================== REPORT USER ACTION ====================
         reportUser.setOnClickListener {
-            Log.d("reportUser", "has been clicked")
-            val intent = Intent(requireActivity(),
-                ReportNotificationActivity2::class.java)
+            Log.d("reportUser", "Report button clicked")
+            val intent = Intent(requireActivity(), ReportNotificationActivity2::class.java)
             startActivityForResult(intent, REQUEST_REPOST_FEED_ACTIVITY)
             dialog.dismiss()
         }
 
-        downloadOption.setOnClickListener {
-            Log.d(TAG, "Download option clicked for post: $data")
-            Toast.makeText(requireContext(), "download clicked",
-                Toast.LENGTH_SHORT).show()
+        // Hide follow button (you can show it if needed based on relationship status)
+        followUnfollowLayout.visibility = View.GONE
+    }
+
+    // ==================== MUTE TOGGLE ====================
+    private fun handleMuteToggle(userId: String, position: Int) {
+        lifecycleScope.launch {
+            try {
+                if (relationshipsViewModel.isPostsMuted(userId)) {
+                    // Unmute
+                    val response = retrofitInstance.apiService.unMutePosts(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.removeMutedPosts(userId)
+                        Toast.makeText(context, "Posts unmuted", Toast.LENGTH_SHORT).show()
+                        // Refresh feed to show posts again
+                        allFeedAdapter.notifyDataSetChanged()
+                    }
+                } else {
+                    // Mute
+                    val response = retrofitInstance.apiService.mutePosts(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.addMutedPosts(userId)
+
+                        // Remove the post from the adapter
+                        allFeedAdapter.removeItem(position)
+                        allFeedAdapter.notifyItemRemoved(position)
+
+                        // Show Snackbar with Undo
+                        Snackbar.make(feedListView, "Posts from this user muted", Snackbar.LENGTH_LONG)
+                            .setAction("Undo") {
+                                // Unmute the user
+                                lifecycleScope.launch {
+                                    val undoResponse = retrofitInstance.apiService.unMutePosts(userId)
+                                    if (undoResponse.isSuccessful) {
+                                        relationshipsViewModel.removeMutedPosts(userId)
+                                        Toast.makeText(context, "Unmuted", Toast.LENGTH_SHORT).show()
+                                        // Reload feed
+                                        getAllFeed(1)
+                                    }
+                                }
+                            }
+                            .show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error toggling mute: ${e.message}", e)
+                Toast.makeText(context, "Failed to update mute status", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // ==================== BLOCK USER CONFIRMATION ====================
+    private fun showBlockConfirmationDialog(userId: String, username: String, position: Int) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Block $username?")
+            .setMessage("You won't be able to see or contact $username. They won't be notified that you blocked them.")
+            .setPositiveButton("Block") { dialog, _ ->
+                handleBlockUser(userId, position)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    // ==================== BLOCK USER ====================
+    private fun handleBlockUser(userId: String, position: Int) {
+        lifecycleScope.launch {
+            try {
+                val response = retrofitInstance.apiService.blockUser(userId)
+                if (response.isSuccessful) {
+                    // Add to blocked list
+                    blockedUserIds.add(userId)
+
+                    // Remove all posts from this user
+                    val itemsToRemove = mutableListOf<Int>()
+                    for (i in 0 until allFeedAdapter.itemCount) {
+                        val item = getFeedViewModel.getAllFeedData().getOrNull(i)
+                        val itemAuthorId = item?.author?.account?._id
+                        if (itemAuthorId == userId) {
+                            itemsToRemove.add(i)
+                        }
+                    }
+
+                    // Remove items in reverse order to maintain indices
+                    itemsToRemove.reversed().forEach { pos ->
+                        allFeedAdapter.removeItem(pos)
+                        getFeedViewModel.removeAllFeedFragment(pos)
+                    }
+
+                    allFeedAdapter.notifyDataSetChanged()
+                    Toast.makeText(context, "User blocked", Toast.LENGTH_SHORT).show()
+
+                    // Show Snackbar with Undo
+                    Snackbar.make(feedListView, "User blocked", Snackbar.LENGTH_LONG)
+                        .setAction("Undo") {
+                            lifecycleScope.launch {
+                                val unblockResponse = retrofitInstance.apiService.unBlockUser(userId)
+                                if (unblockResponse.isSuccessful) {
+                                    blockedUserIds.remove(userId)
+                                    Toast.makeText(context, "User unblocked", Toast.LENGTH_SHORT).show()
+                                    // Reload feed
+                                    getAllFeed(1)
+                                }
+                            }
+                        }
+                        .show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error blocking user: ${e.message}", e)
+                Toast.makeText(context, "Failed to block user", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // ==================== ADD TO CLOSE FRIENDS ====================
+    private fun handleAddToCloseFriends(userId: String, username: String) {
+        lifecycleScope.launch {
+            try {
+                if (relationshipsViewModel.isCloseFriend(userId)) {
+                    // Remove from close friends
+                    val response = retrofitInstance.apiService.removeFromCloseFriends(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.removeCloseFriend(userId)
+                        Toast.makeText(context, "$username removed from close friends", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    // Add to close friends
+                    val response = retrofitInstance.apiService.addToCloseFriends(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.addCloseFriend(userId)
+                        Toast.makeText(context, "$username added to close friends", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error managing close friends: ${e.message}", e)
+                Toast.makeText(context, "Failed to update close friends", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // ==================== ADD TO FAVORITES ====================
+    private fun handleAddToFavorites(userId: String, username: String) {
+        lifecycleScope.launch {
+            try {
+                if (relationshipsViewModel.isFavorite(userId)) {
+                    // Remove from favorites
+                    val response = retrofitInstance.apiService.removeFromFavorites(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.removeFavorite(userId)
+                        Toast.makeText(context, "$username removed from favorites", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    // Add to favorites
+                    val response = retrofitInstance.apiService.addToFavorites(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.addFavorite(userId)
+                        Toast.makeText(context, "$username added to favorites", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error managing favorites: ${e.message}", e)
+                Toast.makeText(context, "Failed to update favorites", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // ==================== RESTRICT USER ====================
+    private fun handleRestrictUser(userId: String, username: String) {
+        lifecycleScope.launch {
+            try {
+                if (relationshipsViewModel.isRestricted(userId)) {
+                    // Unrestrict
+                    val response = retrofitInstance.apiService.unRestrictUser(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.removeRestricted(userId)
+                        Toast.makeText(context, "$username unrestricted", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    // Restrict
+                    val response = retrofitInstance.apiService.restrictUser(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.addRestricted(userId)
+                        Toast.makeText(context, "$username restricted", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error toggling restrict: ${e.message}", e)
+                Toast.makeText(context, "Failed to update restrict status", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // ==================== MUTE STORIES ====================
+    private fun handleMuteStories(userId: String, username: String) {
+        lifecycleScope.launch {
+            try {
+                if (relationshipsViewModel.isStoriesMuted(userId)) {
+                    // Unmute stories
+                    val response = retrofitInstance.apiService.unMuteStories(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.removeMutedStories(userId)
+                        Toast.makeText(context, "$username's stories unmuted", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    // Mute stories
+                    val response = retrofitInstance.apiService.muteStories(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.addMutedStories(userId)
+                        Toast.makeText(context, "$username's stories muted", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error toggling mute stories: ${e.message}", e)
+                Toast.makeText(context, "Failed to update mute stories status", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+
+    @SuppressLint("InflateParams")
+    private fun showUserRelationshipMenu(
+        userId: String,
+        username: String,
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        val view: View = layoutInflater.inflate(R.layout.user_relationship_menu_layout, null)
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(view)
+
+        // Get all relationship status
+        val isCloseFriend = relationshipsViewModel.isCloseFriend(userId)
+        val isPostsMuted = relationshipsViewModel.isPostsMuted(userId)
+        val isStoriesMuted = relationshipsViewModel.isStoriesMuted(userId)
+        val isFavorite = relationshipsViewModel.isFavorite(userId)
+        val isRestricted = relationshipsViewModel.isRestricted(userId)
+        val isBlocked = blockedUserIds.contains(userId)
+
+        // Update UI based on current status
+        val closeFriendButton: MaterialCardView = view.findViewById(R.id.closeFriendCard)
+        val mutePostsButton: MaterialCardView = view.findViewById(R.id.mutePostsCard)
+        val muteStoriesButton: MaterialCardView = view.findViewById(R.id.muteStoriesCard)
+        val favoriteButton: MaterialCardView = view.findViewById(R.id.favoriteCard)
+        val restrictButton: MaterialCardView = view.findViewById(R.id.restrictCard)
+        val blockButton: MaterialCardView = view.findViewById(R.id.blockCard)
+
+        val closeFriendText: TextView = view.findViewById(R.id.closeFriendText)
+        val mutePostsText: TextView = view.findViewById(R.id.mutePostsText)
+        val muteStoriesText: TextView = view.findViewById(R.id.muteStoriesText)
+        val favoriteText: TextView = view.findViewById(R.id.favoriteText)
+        val restrictText: TextView = view.findViewById(R.id.restrictText)
+        val blockText: TextView = view.findViewById(R.id.blockText)
+
+        // Update text based on status
+        closeFriendText.text = if (isCloseFriend) "Remove from Close Friends" else "Add to Close Friends"
+        mutePostsText.text = if (isPostsMuted) "Unmute Posts" else "Mute Posts"
+        muteStoriesText.text = if (isStoriesMuted) "Unmute Stories" else "Mute Stories"
+        favoriteText.text = if (isFavorite) "Remove from Favorites" else "Add to Favorites"
+        restrictText.text = if (isRestricted) "Unrestrict" else "Restrict"
+        blockText.text = if (isBlocked) "Unblock" else "Block"
+
+        dialog.show()
+
+        // Close Friends
+        closeFriendButton.setOnClickListener {
             dialog.dismiss()
+            handleAddToCloseFriends(userId, username)
+        }
+
+        // Mute Posts
+        mutePostsButton.setOnClickListener {
+            dialog.dismiss()
+            handleMuteToggle(userId, position)
+        }
+
+        // Mute Stories
+        muteStoriesButton.setOnClickListener {
+            dialog.dismiss()
+            handleMuteStories(userId, username)
+        }
+
+        // Favorites
+        favoriteButton.setOnClickListener {
+            dialog.dismiss()
+            handleAddToFavorites(userId, username)
+        }
+
+        // Restrict
+        restrictButton.setOnClickListener {
+            dialog.dismiss()
+            handleRestrictUser(userId, username)
+        }
+
+        // Block
+        blockButton.setOnClickListener {
+            dialog.dismiss()
+            if (isBlocked) {
+                handleUnblockUser(userId, username)
+            } else {
+                showBlockConfirmationDialog(userId, username, position)
+            }
         }
     }
 
