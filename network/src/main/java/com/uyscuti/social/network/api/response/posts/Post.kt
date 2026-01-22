@@ -27,7 +27,7 @@ data class Post(
     val numberOfPages: List<NumberOfPageX>,
     val originalPost: List<OriginalPost>,
     val repostedByUserId: String,
-    val repostedUser: RepostedUser? = null,
+    val repostedUser: RepostedUser,
     val repostedUsers: List<String>,
     val tags: List<Any?>,
     val thumbnail: List<ThumbnailX>,

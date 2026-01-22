@@ -15,8 +15,11 @@ import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.social.circuit.databinding.MyUserFavoritesFragmentBinding
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
+import com.uyscuti.social.network.api.response.posts.Avatar
+import com.uyscuti.social.network.api.response.posts.CoverImage
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
+import com.uyscuti.social.network.api.response.posts.RepostedUser
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
@@ -50,6 +53,32 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             favoritesCache.remove(userId)
             cacheTimestamp.remove(userId)
         }
+
+        private fun emptyRepostedUser(): RepostedUser {
+            return RepostedUser(
+                _id = "",
+                avatar = Avatar(
+                    _id = "",
+                    url = "",
+                    localPath = ""
+                ),
+                bio = "",
+                coverImage = CoverImage(
+                    _id = "",
+                    localPath = "",
+                    url = ""
+                ),
+                createdAt = "",
+                email = "",
+                firstName = "",
+                lastName = "",
+                owner = "",
+                updatedAt = "",
+                username = ""
+            )
+        }
+
+
     }
 
     private var _binding: MyUserFavoritesFragmentBinding? = null
@@ -242,7 +271,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                                 isLocal = false,
                                 repostCount = 0,
                                 shareCount = 0,
-                               repostedUser = null,
+                                repostedUser = bookmarkedPost.repostedUser ?: emptyRepostedUser(),
                                 isBusinessPost = false
                             )
 
