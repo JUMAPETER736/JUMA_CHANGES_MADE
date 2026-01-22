@@ -1097,7 +1097,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     }
 
     // ==================== GET CURRENT USER ID ====================
-// Helper method to get the current logged-in user's ID
+   // Helper method to get the current logged-in user's ID
     private fun getCurrentUserId(): String? {
         // Use UserStorageHelper from LoginActivity
         val userId = LoginActivity.UserStorageHelper.getUserId(requireContext())

@@ -16,8 +16,11 @@ import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.sharedmodule.databinding.AllOtherUsersFavoritesFragmentBinding
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
+import com.uyscuti.social.network.api.response.posts.Avatar
+import com.uyscuti.social.network.api.response.posts.CoverImage
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
+import com.uyscuti.social.network.api.response.posts.RepostedUser
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -60,12 +63,15 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
 
     companion object {
+
         private const val TAG = "AllUserFavoritesFragment"
         private const val ARG_USER_ID = "userId"
         private const val ARG_USERNAME = "username"
 
         // 🚀 SPEED: Static cache shared across instances
         private val staticCache = mutableMapOf<String, Pair<List<Post>, Long>>()
+        internal val favoritesCache = mutableMapOf<String, MutableList<Post>>()
+        internal val cacheTimestamp = mutableMapOf<String, Long>()
 
         fun newInstance(userId: String, username: String): AllOtherUsersFavoritesFragment {
             return AllOtherUsersFavoritesFragment().apply {
@@ -75,6 +81,37 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
                 }
             }
         }
+
+        internal fun emptyRepostedUser(): RepostedUser {
+            return RepostedUser(
+                _id = "",
+                avatar = Avatar(
+                    _id = "",
+                    url = "",
+                    localPath = ""
+                ),
+                bio = "",
+                coverImage = CoverImage(
+                    _id = "",
+                    localPath = "",
+                    url = ""
+                ),
+                createdAt = "",
+                email = "",
+                firstName = "",
+                lastName = "",
+                owner = "",
+                updatedAt = "",
+                username = ""
+            )
+        }
+
+    }
+
+
+    fun clearCache(userId: String) {
+        favoritesCache.remove(userId)
+        cacheTimestamp.remove(userId)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,7 +124,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
         Log.d(TAG, "Fragment initialized - userId: $userId, username: $username")
 
-        // 🚀 SPEED: Check static cache immediately
+        //Check static cache immediately
         userId?.let { id ->
             staticCache[id]?.let { (favorites, timestamp) ->
                 if ((System.currentTimeMillis() - timestamp) < CACHE_DURATION_MS) {

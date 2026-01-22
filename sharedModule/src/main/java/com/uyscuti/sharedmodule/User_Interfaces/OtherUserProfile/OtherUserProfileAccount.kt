@@ -73,6 +73,7 @@ import android.widget.LinearLayout
 import com.uyscuti.sharedmodule.MessagesActivity
 import com.uyscuti.sharedmodule.fragments.OtherUserBusinessProfileFragment
 import com.uyscuti.social.network.api.models.Avatar
+import com.uyscuti.social.network.api.response.posts.Post
 
 
 private const val TAG = "OtherUserProfileAccount"
@@ -134,7 +135,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
     private var joinDate: String = ""
     private var userLocation: String = ""
     private var userBio: String = ""
-
+    private var favoritesPreloaded = false
 
     private fun initializeApiService() {
         if (!::retrofitInstance.isInitialized) {
@@ -1223,7 +1224,91 @@ class OtherUserProfileAccount : AppCompatActivity() {
                 2 -> tab.setIcon(R.drawable.favorite_black)
                 3 -> tab.setIcon(R.drawable.business_bag_svgrepo_com)
             }
+
         }.attach()
+
+        // Pre-load favorites data
+        preloadOtherFavoritesData()
+    }
+
+    //The DATA Pre Loading
+    private fun preloadOtherFavoritesData() {
+        if (favoritesPreloaded) return
+        favoritesPreloaded = true
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Pre-loading favorites data in background...")
+
+                // Load favorites in background
+                val response = retrofitInstance.apiService.getFavoriteFeed(page = "1")
+
+                if (response.isSuccessful) {
+                    val bookmarkedPosts = response.body()?.data?.bookmarkedPosts.orEmpty()
+
+                    // Transform and cache the data
+                    val transformedPosts = bookmarkedPosts
+                        .asSequence()
+                        .filter { it.bookmarkedBy == userId }
+                        .mapNotNull { bookmarkedPost ->
+                            try {
+                                Post(
+                                    _id = bookmarkedPost._id,
+                                    content = bookmarkedPost.content ?: "",
+                                    duration = bookmarkedPost.duration,
+                                    feedShortsBusinessId = bookmarkedPost.feedShortsBusinessId,
+                                    tags = bookmarkedPost.tags,
+                                    contentType = bookmarkedPost.contentType,
+                                    numberOfPages = bookmarkedPost.numberOfPages,
+                                    fileNames = bookmarkedPost.fileNames,
+                                    fileTypes = bookmarkedPost.fileTypes,
+                                    fileSizes = bookmarkedPost.fileSizes,
+                                    files = bookmarkedPost.files,
+                                    fileIds = bookmarkedPost.fileIds,
+                                    thumbnail = bookmarkedPost.thumbnail,
+                                    author = bookmarkedPost.author,
+                                    isReposted = bookmarkedPost.isReposted,
+                                    repostedByUserId = bookmarkedPost.repostedByUserId ?: "",
+                                    repostedUsers = bookmarkedPost.repostedUsers,
+                                    createdAt = bookmarkedPost.createdAt,
+                                    updatedAt = bookmarkedPost.updatedAt,
+                                    __v = bookmarkedPost.__v,
+                                    comments = bookmarkedPost.comments,
+                                    likes = bookmarkedPost.likes,
+                                    isLiked = bookmarkedPost.isLiked,
+                                    isFollowing = bookmarkedPost.isFollowing,
+                                    isBookmarked = true,
+                                    bookmarkCount = bookmarkedPost.bookmarkCount,
+                                    isInCloseFriends = bookmarkedPost.isInCloseFriends,
+                                    isPostsMuted = bookmarkedPost.isPostsMuted,
+                                    isStoriesMuted = bookmarkedPost.isStoriesMuted,
+                                    isFavorite = bookmarkedPost.isFavorite,
+                                    isRestricted = bookmarkedPost.isRestricted,
+                                    originalPost = bookmarkedPost.originalPost,
+                                    isExpanded = false,
+                                    isLocal = false,
+                                    repostCount = 0,
+                                    shareCount = 0,
+                                    repostedUser = bookmarkedPost.repostedUser ?: AllOtherUsersFavoritesFragment.emptyRepostedUser(),
+                                    isBusinessPost = false
+                                )
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                        .toList()
+
+                    // Cache the data
+                    if (transformedPosts.isNotEmpty()) {
+                        AllOtherUsersFavoritesFragment.favoritesCache[userId] = transformedPosts.toMutableList()
+                        AllOtherUsersFavoritesFragment.cacheTimestamp[userId] = System.currentTimeMillis()
+                        Log.d(TAG, "✓ Pre-loaded ${transformedPosts.size} favorites")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error pre-loading favorites: ${e.message}")
+            }
+        }
     }
 
     private fun setupScrollBehavior() {
