@@ -38,8 +38,8 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         private const val ARG_USER_ID = "userId"
         private const val ARG_USERNAME = "username"
 
-        private val favoritesCache = mutableMapOf<String, MutableList<Post>>()
-        private val cacheTimestamp = mutableMapOf<String, Long>()
+        internal val favoritesCache = mutableMapOf<String, MutableList<Post>>()
+        internal val cacheTimestamp = mutableMapOf<String, Long>()
         private const val CACHE_VALIDITY_MS = 5 * 60 * 1000L
 
         fun newInstance(userId: String, username: String): MyUserFavoritesFragment {
@@ -56,7 +56,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
             cacheTimestamp.remove(userId)
         }
 
-        private         private fun emptyRepostedUser(): RepostedUser {
+        internal fun emptyRepostedUser(): RepostedUser {
             return RepostedUser(
                 _id = "",
                 avatar = Avatar(

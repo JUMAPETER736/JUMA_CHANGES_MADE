@@ -79,6 +79,7 @@ import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getUserId
 import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getUsername
 import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
 import com.uyscuti.social.network.api.response.otherusersprofile.Data
+import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.network.utils.LocalStorage
 import kotlinx.coroutines.async
@@ -119,6 +120,7 @@ class MyUserProfileAccount : AppCompatActivity() {
     val userProfileLiveData = MutableLiveData<Any>()
     val onErrorFeedBack = MutableLiveData<String>()
     private var currentPhotoUri: Uri? = null
+    private var favoritesPreloaded = false
 
     // User data variables
     internal var userId: String = ""
@@ -775,11 +777,11 @@ class MyUserProfileAccount : AppCompatActivity() {
         }
     }
 
+
     private fun setupTabLayout() {
         val adapter = MyUserProfilePagerAdapter(this, userId, username)
         binding.viewPager2.adapter = adapter
 
-        // Reduce offscreen page limit for faster initial load
         binding.viewPager2.offscreenPageLimit = 1
 
         TabLayoutMediator(binding.tabLayout, binding.viewPager2) { tab, position ->
@@ -791,6 +793,89 @@ class MyUserProfileAccount : AppCompatActivity() {
                 4 -> tab.setIcon(R.drawable.analytics_svgrepo_com)
             }
         }.attach()
+
+        // Pre-load favorites data
+        preloadMyFavoritesData()
+    }
+
+    //The DATA Pre Loading
+    private fun preloadMyFavoritesData() {
+        if (favoritesPreloaded) return
+        favoritesPreloaded = true
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "Pre-loading favorites data in background...")
+
+                // Load favorites in background
+                val response = retrofitInstance.apiService.getFavoriteFeed(page = "1")
+
+                if (response.isSuccessful) {
+                    val bookmarkedPosts = response.body()?.data?.bookmarkedPosts.orEmpty()
+
+                    // Transform and cache the data
+                    val transformedPosts = bookmarkedPosts
+                        .asSequence()
+                        .filter { it.bookmarkedBy == userId }
+                        .mapNotNull { bookmarkedPost ->
+                            try {
+                                Post(
+                                    _id = bookmarkedPost._id,
+                                    content = bookmarkedPost.content ?: "",
+                                    duration = bookmarkedPost.duration,
+                                    feedShortsBusinessId = bookmarkedPost.feedShortsBusinessId,
+                                    tags = bookmarkedPost.tags,
+                                    contentType = bookmarkedPost.contentType,
+                                    numberOfPages = bookmarkedPost.numberOfPages,
+                                    fileNames = bookmarkedPost.fileNames,
+                                    fileTypes = bookmarkedPost.fileTypes,
+                                    fileSizes = bookmarkedPost.fileSizes,
+                                    files = bookmarkedPost.files,
+                                    fileIds = bookmarkedPost.fileIds,
+                                    thumbnail = bookmarkedPost.thumbnail,
+                                    author = bookmarkedPost.author,
+                                    isReposted = bookmarkedPost.isReposted,
+                                    repostedByUserId = bookmarkedPost.repostedByUserId ?: "",
+                                    repostedUsers = bookmarkedPost.repostedUsers,
+                                    createdAt = bookmarkedPost.createdAt,
+                                    updatedAt = bookmarkedPost.updatedAt,
+                                    __v = bookmarkedPost.__v,
+                                    comments = bookmarkedPost.comments,
+                                    likes = bookmarkedPost.likes,
+                                    isLiked = bookmarkedPost.isLiked,
+                                    isFollowing = bookmarkedPost.isFollowing,
+                                    isBookmarked = true,
+                                    bookmarkCount = bookmarkedPost.bookmarkCount,
+                                    isInCloseFriends = bookmarkedPost.isInCloseFriends,
+                                    isPostsMuted = bookmarkedPost.isPostsMuted,
+                                    isStoriesMuted = bookmarkedPost.isStoriesMuted,
+                                    isFavorite = bookmarkedPost.isFavorite,
+                                    isRestricted = bookmarkedPost.isRestricted,
+                                    originalPost = bookmarkedPost.originalPost,
+                                    isExpanded = false,
+                                    isLocal = false,
+                                    repostCount = 0,
+                                    shareCount = 0,
+                                    repostedUser = bookmarkedPost.repostedUser ?: MyUserFavoritesFragment.emptyRepostedUser(),
+                                    isBusinessPost = false
+                                )
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                        .toList()
+
+                    // Cache the data
+                    if (transformedPosts.isNotEmpty()) {
+                        MyUserFavoritesFragment.favoritesCache[userId] = transformedPosts.toMutableList()
+                        MyUserFavoritesFragment.cacheTimestamp[userId] = System.currentTimeMillis()
+                        Log.d(TAG, "✓ Pre-loaded ${transformedPosts.size} favorites")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error pre-loading favorites: ${e.message}")
+            }
+        }
     }
 
     private fun initiateVoiceCall() {
