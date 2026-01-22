@@ -88,6 +88,7 @@ import com.uyscuti.sharedmodule.viewmodels.FollowUnfollowViewModel
 import com.uyscuti.sharedmodule.viewmodels.GetShortsByUsernameViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.FeedUploadViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.feed.FeedUploadRepository
 import com.uyscuti.social.circuit.ui.fragments.chat.FeedFragment
@@ -190,6 +191,8 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             param2 = it.getString(ARG_PARAM2)
         }
         EventBus.getDefault().register(this)
+
+        relationshipsViewModel.loadAllRelationships()
     }
 
     fun setPositionFromShorts(positionFromShorts: SetAllFragmentScrollPosition) {
@@ -392,8 +395,61 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             }
         }
         Log.d(TAG, "onCreateView: currentAdapterPosition $currentAdapterPosition")
+
+        observeRelationships()
+        Log.d(TAG, "Observing the Relationships the User have....")
     }
 
+    // Add this new method to observe relationships
+    private fun observeRelationships() {
+        // Observe loading state
+        lifecycleScope.launch {
+            relationshipsViewModel.isLoading.collect { isLoading ->
+                if (isLoading) {
+                    Log.d(TAG, "Loading relationships...")
+                } else {
+                    Log.d(TAG, "Relationships loaded")
+                }
+            }
+        }
+
+        // Observe close friends
+        lifecycleScope.launch {
+            relationshipsViewModel.closeFriendIds.collect { closeFriends ->
+                Log.d(TAG, "Close friends updated: ${closeFriends.size}")
+            }
+        }
+
+        // Observe muted posts
+        lifecycleScope.launch {
+            relationshipsViewModel.mutedPostsIds.collect { mutedPosts ->
+                Log.d(TAG, "Muted posts updated: ${mutedPosts.size}")
+            }
+        }
+
+        // Observe muted stories
+        lifecycleScope.launch {
+            relationshipsViewModel.mutedStoriesIds.collect { mutedStories ->
+                Log.d(TAG, "Muted stories updated: ${mutedStories.size}")
+            }
+        }
+
+        // Observe favorites
+        lifecycleScope.launch {
+            relationshipsViewModel.favoriteIds.collect { favorites ->
+                Log.d(TAG, "Favorites updated: ${favorites.size}")
+            }
+        }
+
+        // Observe restricted
+        lifecycleScope.launch {
+            relationshipsViewModel.restrictedIds.collect { restricted ->
+                Log.d(TAG, "Restricted users updated: ${restricted.size}")
+            }
+        }
+    }
+
+    // Update the getAllFeed method to filter based on relationships
     fun getAllFeed(page: Int) {
         val TAG = "AllFeedTag"
         Log.d(TAG, "getAllFeed: page number $page")
@@ -407,31 +463,61 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
                 val posts = responseBody!!.data.data.posts
 
-                // Filter out blocked users
+                // Filter out posts based on multiple criteria
                 val filteredPosts = posts.filter { post ->
                     val authorId = post.author?.account?._id
                     val reposterId = post.repostedUser?.owner
 
                     val posterId = reposterId ?: authorId
 
+                    // Check if user is blocked
                     val isBlocked = posterId?.let { blockedUserIds.contains(it) } ?: false
 
-                    if (isBlocked) {
-                        Log.d(TAG, "Filtering out post from blocked user: $posterId")
+                    // Check if posts are muted
+                    val isPostsMuted = posterId?.let {
+                        relationshipsViewModel.isPostsMuted(it)
+                    } ?: false
+
+                    // Check if user is restricted (optional: you may want to show restricted user posts differently)
+                    val isRestricted = posterId?.let {
+                        relationshipsViewModel.isRestricted(it)
+                    } ?: false
+
+                    // Filter logic
+                    val shouldFilter = isBlocked || isPostsMuted
+
+                    if (shouldFilter) {
+                        Log.d(TAG, "Filtering out post from user: $posterId " +
+                                "(blocked: $isBlocked, muted: $isPostsMuted, restricted: $isRestricted)")
                     }
 
-                    !isBlocked
+                    !shouldFilter
                 }
 
-                Log.d(TAG, "Original posts: ${posts.size}, After filtering: ${filteredPosts.size}")
+                // Optional: Sort posts to prioritize close friends and favorites
+                val sortedPosts = filteredPosts.sortedByDescending { post ->
+                    val authorId = post.author?.account?._id ?: return@sortedByDescending 0
+
+                    val isCloseFriend = relationshipsViewModel.isCloseFriend(authorId)
+                    val isFavorite = relationshipsViewModel.isFavorite(authorId)
+
+                    // Priority: close friends (3) > favorites (2) > regular (1)
+                    when {
+                        isCloseFriend -> 3
+                        isFavorite -> 2
+                        else -> 1
+                    }
+                }
+
+                Log.d(TAG, "Original posts: ${posts.size}, After filtering: ${filteredPosts.size}, After sorting: ${sortedPosts.size}")
 
                 withContext(Dispatchers.Main) {
-                    getFeedViewModel.addAllFeedData(filteredPosts.toMutableList())
+                    getFeedViewModel.addAllFeedData(sortedPosts.toMutableList())
                     allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "comment: $e")
-                Log.e(TAG, "comment: ${e.message}")
+                Log.e(TAG, "Error in getAllFeed: $e")
+                Log.e(TAG, "Error message: ${e.message}")
                 e.printStackTrace()
             }
         }
