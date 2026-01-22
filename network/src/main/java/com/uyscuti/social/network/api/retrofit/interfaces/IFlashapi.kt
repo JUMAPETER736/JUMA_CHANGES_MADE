@@ -88,7 +88,17 @@ import com.uyscuti.social.network.api.response.getallshorts.ApiResponse
 import com.uyscuti.social.network.api.response.posts.FeedResponse
 import com.uyscuti.social.network.api.response.profile.followersList.UserOtherFollowersResponse
 import com.uyscuti.social.network.api.response.profile.followingList.BaseResponse
+import com.uyscuti.social.network.api.response.profile.followingList.CloseFriendStatusResponse
+import com.uyscuti.social.network.api.response.profile.followingList.CloseFriendsListResponse
+import com.uyscuti.social.network.api.response.profile.followingList.FavoriteStatusResponse
+import com.uyscuti.social.network.api.response.profile.followingList.FavoritesListResponse
+import com.uyscuti.social.network.api.response.profile.followingList.MutedPostsListResponse
+import com.uyscuti.social.network.api.response.profile.followingList.MutedPostsStatusResponse
+import com.uyscuti.social.network.api.response.profile.followingList.MutedStoriesListResponse
+import com.uyscuti.social.network.api.response.profile.followingList.MutedStoriesStatusResponse
 import com.uyscuti.social.network.api.response.profile.followingList.OtherUserFollowingResponse
+import com.uyscuti.social.network.api.response.profile.followingList.RestrictedListResponse
+import com.uyscuti.social.network.api.response.profile.followingList.RestrictedStatusResponse
 import okhttp3.RequestBody
 import retrofit2.http.DELETE
 import retrofit2.http.PUT

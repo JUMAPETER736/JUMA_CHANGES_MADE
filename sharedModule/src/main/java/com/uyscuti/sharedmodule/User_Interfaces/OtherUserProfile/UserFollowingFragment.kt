@@ -471,6 +471,7 @@ class UserFollowingFragment : AppCompatActivity() {
             .show()
     }
 
+    // ==================== SHOW MORE OPTIONS DIALOG ====================
     private fun showMoreOptions(user: UserFollowingDisplayModel) {
         // Dynamic options based on current state
         val options = arrayOf(
@@ -504,20 +505,21 @@ class UserFollowingFragment : AppCompatActivity() {
             .show()
     }
 
-// REPLACE YOUR EXISTING FUNCTIONS WITH THESE:
-
+    // ==================== CLOSE FRIENDS ====================
     private fun addToCloseFriends(user: UserFollowingDisplayModel) {
         lifecycleScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
                     if (user.isInCloseFriends) {
+                        // DELETE /api/v1/social-media/profile/close-friends/:userId
                         retrofitInstance.apiService.removeFromCloseFriends(user._id)
                     } else {
+                        // POST /api/v1/social-media/profile/close-friends/:userId
                         retrofitInstance.apiService.addToCloseFriends(user._id)
                     }
                 }
 
-                if (response.isSuccessful) {
+                if (response.isSuccessful && response.body()?.success == true) {
                     user.isInCloseFriends = !user.isInCloseFriends
                     followingAdapter.notifyDataSetChanged()
 
@@ -528,7 +530,8 @@ class UserFollowingFragment : AppCompatActivity() {
                     }
                     Toast.makeText(this@UserFollowingFragment, message, Toast.LENGTH_SHORT).show()
                 } else {
-                    showError("Failed to update close friends")
+                    val errorMsg = response.body()?.message ?: "Failed to update close friends"
+                    showError(errorMsg)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating close friends", e)
@@ -537,18 +540,21 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
+    // ==================== MUTE POSTS ====================
     private fun muteUserPosts(user: UserFollowingDisplayModel) {
         lifecycleScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
                     if (user.isPostsMuted) {
+                        // DELETE /api/v1/social-media/profile/mute/posts/:userId
                         retrofitInstance.apiService.unMutePosts(user._id)
                     } else {
+                        // POST /api/v1/social-media/profile/mute/posts/:userId
                         retrofitInstance.apiService.mutePosts(user._id)
                     }
                 }
 
-                if (response.isSuccessful) {
+                if (response.isSuccessful && response.body()?.success == true) {
                     user.isPostsMuted = !user.isPostsMuted
                     followingAdapter.notifyDataSetChanged()
 
@@ -559,7 +565,8 @@ class UserFollowingFragment : AppCompatActivity() {
                     }
                     Toast.makeText(this@UserFollowingFragment, message, Toast.LENGTH_SHORT).show()
                 } else {
-                    showError("Failed to mute/unmute posts")
+                    val errorMsg = response.body()?.message ?: "Failed to mute/unmute posts"
+                    showError(errorMsg)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error muting posts", e)
@@ -568,18 +575,21 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
+    // ==================== MUTE STORIES ====================
     private fun muteUserStories(user: UserFollowingDisplayModel) {
         lifecycleScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
                     if (user.isStoriesMuted) {
+                        // DELETE /api/v1/social-media/profile/mute/stories/:userId
                         retrofitInstance.apiService.unMuteStories(user._id)
                     } else {
+                        // POST /api/v1/social-media/profile/mute/stories/:userId
                         retrofitInstance.apiService.muteStories(user._id)
                     }
                 }
 
-                if (response.isSuccessful) {
+                if (response.isSuccessful && response.body()?.success == true) {
                     user.isStoriesMuted = !user.isStoriesMuted
                     followingAdapter.notifyDataSetChanged()
 
@@ -590,7 +600,8 @@ class UserFollowingFragment : AppCompatActivity() {
                     }
                     Toast.makeText(this@UserFollowingFragment, message, Toast.LENGTH_SHORT).show()
                 } else {
-                    showError("Failed to mute/unmute stories")
+                    val errorMsg = response.body()?.message ?: "Failed to mute/unmute stories"
+                    showError(errorMsg)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error muting stories", e)
@@ -599,18 +610,21 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
+    // ==================== FAVORITES ====================
     private fun addToFavorites(user: UserFollowingDisplayModel) {
         lifecycleScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
                     if (user.isFavorite) {
+                        // DELETE /api/v1/social-media/profile/favorites/:userId
                         retrofitInstance.apiService.removeFromFavorites(user._id)
                     } else {
+                        // POST /api/v1/social-media/profile/favorites/:userId
                         retrofitInstance.apiService.addToFavorites(user._id)
                     }
                 }
 
-                if (response.isSuccessful) {
+                if (response.isSuccessful && response.body()?.success == true) {
                     user.isFavorite = !user.isFavorite
                     followingAdapter.notifyDataSetChanged()
 
@@ -621,7 +635,8 @@ class UserFollowingFragment : AppCompatActivity() {
                     }
                     Toast.makeText(this@UserFollowingFragment, message, Toast.LENGTH_SHORT).show()
                 } else {
-                    showError("Failed to update favorites")
+                    val errorMsg = response.body()?.message ?: "Failed to update favorites"
+                    showError(errorMsg)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating favorites", e)
@@ -630,6 +645,7 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
+    // ==================== RESTRICT USER ====================
     private fun restrictUser(user: UserFollowingDisplayModel) {
         val action = if (user.isRestricted) "Unrestrict" else "Restrict"
         val message = if (user.isRestricted) {
@@ -653,13 +669,15 @@ class UserFollowingFragment : AppCompatActivity() {
             try {
                 val response = withContext(Dispatchers.IO) {
                     if (user.isRestricted) {
+                        // DELETE /api/v1/social-media/profile/restrict/:userId
                         retrofitInstance.apiService.unRestrictUser(user._id)
                     } else {
+                        // POST /api/v1/social-media/profile/restrict/:userId
                         retrofitInstance.apiService.restrictUser(user._id)
                     }
                 }
 
-                if (response.isSuccessful) {
+                if (response.isSuccessful && response.body()?.success == true) {
                     user.isRestricted = !user.isRestricted
                     followingAdapter.notifyDataSetChanged()
 
@@ -670,7 +688,8 @@ class UserFollowingFragment : AppCompatActivity() {
                     }
                     Toast.makeText(this@UserFollowingFragment, message, Toast.LENGTH_SHORT).show()
                 } else {
-                    showError("Failed to restrict/unrestrict user")
+                    val errorMsg = response.body()?.message ?: "Failed to restrict/unrestrict user"
+                    showError(errorMsg)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error restricting user", e)
@@ -679,8 +698,7 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
-// KEEP THESE AS THEY ARE (no API calls needed):
-
+    // ==================== INFO & SHARING (NO API CALLS) ====================
     private fun showAccountInfo(user: UserFollowingDisplayModel) {
         val info = """
         Username: @${user.username}
@@ -712,6 +730,7 @@ class UserFollowingFragment : AppCompatActivity() {
         Toast.makeText(this, "Profile link copied", Toast.LENGTH_SHORT).show()
     }
 
+    
     @OptIn(UnstableApi::class)
     private fun performUnBlockUser(user: UserFollowingDisplayModel) {
         lifecycleScope.launch {
