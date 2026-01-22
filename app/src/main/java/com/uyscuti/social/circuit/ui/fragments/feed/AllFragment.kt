@@ -546,6 +546,92 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
+    // Add method to handle muting/unmuting
+    private fun handleMuteToggle(userId: String, position: Int) {
+        lifecycleScope.launch {
+            try {
+                if (relationshipsViewModel.isPostsMuted(userId)) {
+                    // Unmute
+                    val response = retrofitInstance.apiService.unMutePosts(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.removeMutedPosts(userId)
+                        Toast.makeText(context, "Posts unmuted", Toast.LENGTH_SHORT).show()
+                        // Refresh feed to show posts again
+                        allFeedAdapter.notifyDataSetChanged()
+                    }
+                } else {
+                    // Mute
+                    val response = retrofitInstance.apiService.mutePosts(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.addMutedPosts(userId)
+                        Toast.makeText(context, "Posts muted", Toast.LENGTH_SHORT).show()
+                        // Remove posts from this user
+                        hideSinglePost(position, allFeedAdapter.getItem(position))
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error toggling mute: ${e.message}", e)
+                Toast.makeText(context, "Failed to update mute status", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Add method to handle adding to close friends
+    private fun handleAddToCloseFriends(userId: String) {
+        lifecycleScope.launch {
+            try {
+                val response = retrofitInstance.apiService.addToCloseFriends(userId)
+                if (response.isSuccessful) {
+                    relationshipsViewModel.addCloseFriend(userId)
+                    Toast.makeText(context, "Added to close friends", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error adding to close friends: ${e.message}", e)
+                Toast.makeText(context, "Failed to add to close friends", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Add method to handle adding to favorites
+    private fun handleAddToFavorites(userId: String) {
+        lifecycleScope.launch {
+            try {
+                val response = retrofitInstance.apiService.addToFavorites(userId)
+                if (response.isSuccessful) {
+                    relationshipsViewModel.addFavorite(userId)
+                    Toast.makeText(context, "Added to favorites", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error adding to favorites: ${e.message}", e)
+                Toast.makeText(context, "Failed to add to favorites", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Add method to handle restricting user
+    private fun handleRestrictUser(userId: String) {
+        lifecycleScope.launch {
+            try {
+                if (relationshipsViewModel.isRestricted(userId)) {
+                    val response = retrofitInstance.apiService.unRestrictUser(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.removeRestricted(userId)
+                        Toast.makeText(context, "User unrestricted", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    val response = retrofitInstance.apiService.restrictUser(userId)
+                    if (response.isSuccessful) {
+                        relationshipsViewModel.addRestricted(userId)
+                        Toast.makeText(context, "User restricted", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error toggling restrict: ${e.message}", e)
+                Toast.makeText(context, "Failed to update restrict status", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun successEvent(event: FeedUploadProgress) {
         progressBar.max = event.maxProgress
