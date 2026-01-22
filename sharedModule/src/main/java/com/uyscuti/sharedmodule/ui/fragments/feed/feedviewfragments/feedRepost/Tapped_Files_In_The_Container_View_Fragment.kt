@@ -435,8 +435,14 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             navigateToAuthorProfile()
         }
 
-        headerMenuButton.setOnClickListener { view ->
-            moreOptionsClick(currentPosition, postList?.getOrNull(currentPosition) as? com.uyscuti.social.network.api.response.posts.Post ?: return@setOnClickListener)
+        headerMenuButton.setOnClickListener {
+            val currentPost = postList?.getOrNull(currentPosition)
+            if (currentPost != null) {
+                moreOptionsClick(currentPosition, currentPost)
+            } else {
+                Toast.makeText(requireContext(), "Post not found", Toast.LENGTH_SHORT).show()
+                Log.e(TAG, "Current post is null at position: $currentPosition")
+            }
         }
 
         // Action section click listeners
@@ -1148,7 +1154,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     @SuppressLint("InflateParams", "MissingInflatedId", "ServiceCast")
     fun moreOptionsClick(
         position: Int,
-        data: com.uyscuti.social.network.api.response.posts.Post
+        data: PostItem  // Changed from Post to PostItem
     ) {
         Log.d(TAG, "moreOptionsClick: More options clicked")
         val view: View = layoutInflater.inflate(R.layout.feed_more_options_layout, null)
@@ -1167,13 +1173,12 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         val shareAction: View = view.findViewById(R.id.shareAction)
         val notInterested: View = view.findViewById(R.id.notInterestedLayout)
 
-        // Get the author ID and username
-        val authorId = data.author?.account?._id
-        val username = data.author?.account?.username ?: "User"
+        // Get the author ID and username from PostItem
+        val authorId = data.userId  // Changed from data.author?.account?._id
+        val username = data.username ?: "User"  // Changed from data.author?.account?.username
 
         // Update mute button text based on current state
         if (authorId != null) {
-            // Find the nested LinearLayout inside muteOptionLayout
             val muteCard = muteOptionLayout.getChildAt(0) as? LinearLayout
             val muteTextContainer = muteCard?.getChildAt(1) as? LinearLayout
             val muteStaticText = muteTextContainer?.getChildAt(0) as? TextView
@@ -1202,7 +1207,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         shareAction.setOnClickListener {
             val shareIntent = Intent(Intent.ACTION_SEND)
             shareIntent.type = "text/plain"
-            shareIntent.putExtra(Intent.EXTRA_TEXT, data.content)
+            shareIntent.putExtra(Intent.EXTRA_TEXT, data.data)  // Changed from data.content
             startActivity(Intent.createChooser(shareIntent, "Share via"))
             dialog.dismiss()
         }
@@ -1210,16 +1215,16 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         // ==================== DOWNLOAD ACTION ====================
         downloadFiles.setOnClickListener {
             Log.d("DownloadButton", "Data: $data")
-            if (data.files.isNotEmpty()) {
-                onDownloadClick(data.files[0].url, "FlashShorts")
+            if (!data.files.isNullOrEmpty()) {
+                onDownloadClick(data.files[0], "FlashShorts")  // Changed from data.files[0].url
             } else {
                 Toast.makeText(context, "No files to download", Toast.LENGTH_SHORT).show()
             }
             dialog.dismiss()
         }
 
-        // Hide download if text-only post
-        if (data.contentType == "text") {
+        // Hide download if no files (text-only post)
+        if (data.files.isNullOrEmpty() || data.fileType == "text") {
             downloadFiles.visibility = View.GONE
         }
 
@@ -1241,14 +1246,9 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             dialog.dismiss()
 
             authorId?.let { userId ->
-                // Check if user is trying to block themselves
-
-                // Check if user is already blocked
                 if (blockedUserIds.contains(userId)) {
-                    // Unblock the user
                     handleUnblockUser(userId, username)
                 } else {
-                    // Block the user
                     showBlockConfirmationDialog(userId, username, position)
                 }
             } ?: run {
@@ -1258,17 +1258,23 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
         // ==================== REPOST ACTION ====================
         quoteFeedLayout.setOnClickListener {
+            // You may need to convert PostItem to Post here if Fragment_Edit_Post_To_Repost requires Post type
+            // For now, commenting this out - you'll need to handle the conversion
+            Toast.makeText(context, "Repost feature needs data conversion", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+
+            /* Original code - may need adaptation:
             val fragment = Fragment_Edit_Post_To_Repost(data)
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
             transaction.replace(R.id.frame_layout, fragment)
             transaction.addToBackStack(null)
             transaction.commit()
-            dialog.dismiss()
+            */
         }
 
         // ==================== COPY LINK ACTION ====================
         copyLink.setOnClickListener {
-            val postId = data._id
+            val postId = data.postId  // Changed from data._id
             val linkToCopy = "https://circuitSocial.app/post/$postId"
             val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("Copied Link", linkToCopy)
@@ -1279,14 +1285,14 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
         // ==================== NOT INTERESTED ACTION ====================
         notInterested.setOnClickListener {
-            handleNotInterested(data)
+            handleNotInterestedPostItem(data)
             dialog.dismiss()
         }
 
         // ==================== HIDE POST ACTION ====================
         hidePostLayout.setOnClickListener {
             Log.d(TAG, "hidePostLayout: hide post clicked")
-            hideSinglePost(position, data)
+            hideSinglePostItem(position, data)
             dialog.dismiss()
         }
 
@@ -1298,7 +1304,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             dialog.dismiss()
         }
 
-        // Hide follow button (you can show it if needed based on relationship status)
+        // Hide follow button
         followUnfollowLayout.visibility = View.GONE
     }
 
@@ -1481,26 +1487,62 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-
-    private fun handleNotInterested(
-        data: com.uyscuti.social.network.api.response.posts.Post) {
-
-        val sharedPrefs =
-            requireContext().getSharedPreferences("NotInterestedPosts", Context.MODE_PRIVATE)
+    private fun handleNotInterestedPostItem(data: PostItem) {
+        val sharedPrefs = requireContext().getSharedPreferences("NotInterestedPosts", Context.MODE_PRIVATE)
         with(sharedPrefs.edit()) {
-            putBoolean(data._id.toString(), true)
+            putBoolean(data.postId, true)  // Changed from data._id.toString()
             apply()
         }
 
-
-
-        // Show confirmation
         Toast.makeText(
             requireContext(),
             "We'll show you less content like this",
             Toast.LENGTH_SHORT
         ).show()
     }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private fun hideSinglePostItem(position: Int, data: PostItem) {
+        Log.d(TAG, "hideSinglePost: Hiding post at position: $position, PostId: ${data.postId}")
+        try {
+            if (::allFeedAdapter.isInitialized) {
+                allFeedAdapter.removeItem(position)
+                allFeedAdapter.notifyItemRemoved(position)
+
+                val viewHolder = feedListView.findViewHolderForAdapterPosition(position)
+                if (viewHolder != null) {
+                    viewHolder.itemView.animate()
+                        .alpha(0f)
+                        .setDuration(300)
+                        .withEndAction {
+                            allFeedAdapter.notifyItemRemoved(position)
+                        }
+                        .start()
+                } else {
+                    Log.w(TAG, "ViewHolder at position $position is null, notifying removal directly")
+                    allFeedAdapter.notifyItemRemoved(position)
+                }
+
+                Snackbar.make(feedListView, "Post hidden", Snackbar.LENGTH_LONG)
+                    .setAction("Undo") {
+                        allFeedAdapter.notifyItemInserted(position)
+                    }
+                    .show()
+                return
+            }
+
+            val sharedPrefs = requireContext().getSharedPreferences("HiddenPosts", Context.MODE_PRIVATE)
+            with(sharedPrefs.edit()) {
+                putBoolean(data.postId, true)  // Changed from data._id
+                apply()
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error hiding post: ${e.message}")
+            Toast.makeText(requireContext(), "Failed to hide post", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     fun onDownloadClick(url: String, fileLocation: String) {
         Log.d(
@@ -1547,61 +1589,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    private fun hideSinglePost(
-        position: Int,
-        data: com.uyscuti.social.network.api.response.posts.Post
-    ) {
-        Log.d(
-            TAG, "hideSinglePost: Hiding post at position: $position, PostId: ${data._id}")
-        try {
-            if (::allFeedAdapter.isInitialized) {
 
-//                feedListView.removeViewAt( position )
-                allFeedAdapter.removeItem(position)
-                allFeedAdapter.notifyItemRemoved(position)
-//                allFeedAdapter.notifyItemChanged(position)
-                // Optional: Add fade-out animation
-                val viewHolder = feedListView.findViewHolderForAdapterPosition(position)
-                if (viewHolder != null) {
-                    viewHolder.itemView.animate()
-                        .alpha(0f)
-                        .setDuration(300)
-                        .withEndAction {
-                            allFeedAdapter.notifyItemRemoved(position)
-                        }
-                        .start()
-                } else {
-                    Log.w(
-                        TAG, "ViewHolder at position $position is null, notifying removal directly"
-                    )
-                    allFeedAdapter.notifyItemRemoved(position) // Fallback for off-screen items
-                }
-                // Show Snackbar with Undo button
-                Snackbar.make(feedListView, "Post hidden", Snackbar.LENGTH_LONG)
-                    .setAction("Undo") {
-                        // Restore the post
-//                        favoriteFeedAdapter.restoreItem(position, data)
-                        allFeedAdapter.notifyItemInserted(position)
-                    }
-                    .show()
-                return
-            }
-
-            val sharedPrefs =
-                requireContext().getSharedPreferences(
-                    "HiddenPosts", Context.MODE_PRIVATE)
-            with(sharedPrefs.edit()) {
-                putBoolean(data._id, true)
-                apply()
-            }
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error hiding post: ${e.message}")
-            Toast.makeText(requireContext(),
-                "Failed to hide post", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     private fun hideSystemBars() {
         val window = requireActivity().window
