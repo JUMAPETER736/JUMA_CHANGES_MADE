@@ -2,22 +2,19 @@ package com.uyscuti.sharedmodule.viewmodels.feed
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-
+import javax.inject.Inject
 
 @HiltViewModel
 class UserRelationshipsViewModel @Inject constructor(
-    private val retrofitInstance: RetrofitInstance
+    private val repository: UserRelationshipsRepository // Using Repository now
 ) : ViewModel() {
 
     private val TAG = "UserRelationshipsVM"
@@ -89,7 +86,7 @@ class UserRelationshipsViewModel @Inject constructor(
      */
     private suspend fun loadCloseFriends() {
         try {
-            val response = retrofitInstance.apiService.getCloseFriends()
+            val response = repository.getCloseFriends() // Using repository
             if (response.isSuccessful && response.body() != null) {
                 val closeFriends = response.body()!!.data
                 _closeFriendIds.value = closeFriends.mapNotNull { it.user?._id }.toSet()
@@ -105,7 +102,7 @@ class UserRelationshipsViewModel @Inject constructor(
      */
     private suspend fun loadMutedPosts() {
         try {
-            val response = retrofitInstance.apiService.getMutedPostsUsers()
+            val response = repository.getMutedPostsUsers() // Using repository
             if (response.isSuccessful && response.body() != null) {
                 val mutedPosts = response.body()!!.data
                 _mutedPostsIds.value = mutedPosts.mapNotNull { it.user?._id }.toSet()
@@ -121,7 +118,7 @@ class UserRelationshipsViewModel @Inject constructor(
      */
     private suspend fun loadMutedStories() {
         try {
-            val response = retrofitInstance.apiService.getMutedStoriesUsers()
+            val response = repository.getMutedStoriesUsers() //  Using repository
             if (response.isSuccessful && response.body() != null) {
                 val mutedStories = response.body()!!.data
                 _mutedStoriesIds.value = mutedStories.mapNotNull { it.user?._id }.toSet()
@@ -137,7 +134,7 @@ class UserRelationshipsViewModel @Inject constructor(
      */
     private suspend fun loadFavorites() {
         try {
-            val response = retrofitInstance.apiService.getFavorites()
+            val response = repository.getFavorites() // Using repository
             if (response.isSuccessful && response.body() != null) {
                 val favorites = response.body()!!.data
                 _favoriteIds.value = favorites.mapNotNull { it.user?._id }.toSet()
@@ -153,7 +150,7 @@ class UserRelationshipsViewModel @Inject constructor(
      */
     private suspend fun loadRestricted() {
         try {
-            val response = retrofitInstance.apiService.getRestrictedUsers()
+            val response = repository.getRestrictedUsers() // Using repository
             if (response.isSuccessful && response.body() != null) {
                 val restricted = response.body()!!.data
                 _restrictedIds.value = restricted.mapNotNull { it.user?._id }.toSet()
