@@ -254,13 +254,7 @@ class LoginActivity : AppCompatActivity() {
 
         binding.googleBtn.setOnClickListener {
 
-            if (!binding.checkboxTermsConditions.isChecked) {
 
-                Toast.makeText(this, "Please accept terms and conditions to continue", Toast.LENGTH_SHORT).show()
-
-                return@setOnClickListener
-
-            }
 
             signInWithGoogle()
 
@@ -270,13 +264,7 @@ class LoginActivity : AppCompatActivity() {
 
         binding.btnFacebook.setOnClickListener {
 
-            if (!binding.checkboxTermsConditions.isChecked) {
 
-                Toast.makeText(this, "Please accept terms and conditions to continue", Toast.LENGTH_SHORT).show()
-
-                return@setOnClickListener
-
-            }
 
             signInWithFacebook()
 
@@ -300,19 +288,6 @@ class LoginActivity : AppCompatActivity() {
 
         }
 
-        // Terms and conditions checkbox
-
-        binding.checkboxTermsConditions.setOnCheckedChangeListener { _, isChecked ->
-
-            updateLoginButton()
-
-            if (isChecked) {
-
-                // You can add a dialog to show terms and conditions here
-
-            }
-
-        }
 
     }
 
@@ -1165,11 +1140,11 @@ class LoginActivity : AppCompatActivity() {
     private fun updateLoginButton() {
         val username = binding.usernameEditText.text.toString().trim()
         val password = binding.passwordEditText.text.toString().trim()
-        val isTermsAccepted = binding.checkboxTermsConditions.isChecked
+
 
         binding.loginButton.isEnabled = username.isNotEmpty() &&
-                password.isNotEmpty() &&
-                isTermsAccepted
+                password.isNotEmpty()
+
     }
 
     private fun showLoadingDialog() {
