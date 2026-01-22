@@ -9,13 +9,16 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.OptIn
 import androidx.appcompat.widget.AppCompatButton
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
+import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.ui.fragments.feed.AllFragment
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
@@ -433,15 +436,15 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedCommentClicked(position: Int, data: Post) {
-        Log.d(TAG, "Comment clicked at position $position - delegating to AllFragment")
+        Log.d(TAG, "Comment clicked at position $position - delegating to MainActivity")
 
-        getAllFragment()?.let { fragment ->
-            fragment.feedCommentClicked(position, data)
-        } ?: run {
-            Log.e(TAG, "AllFragment not found, cannot delegate comment action")
-            Toast.makeText(requireContext(), "Unable to open comments", Toast.LENGTH_SHORT).show()
-        }
+        (activity as? MainActivity)?.feedCommentClicked(position, data)
+            ?: run {
+                Log.e(TAG, "MainActivity not found, cannot open comments")
+                Toast.makeText(requireContext(), "Unable to open comments", Toast.LENGTH_SHORT).show()
+            }
     }
 
     override fun feedFavoriteClick(position: Int, data: Post) {

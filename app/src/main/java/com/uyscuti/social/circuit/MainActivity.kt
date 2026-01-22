@@ -8833,7 +8833,7 @@ class MainActivity : AppCompatActivity(),
 
     }
 
-    private fun feedCommentClicked(
+    internal fun feedCommentClicked(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
