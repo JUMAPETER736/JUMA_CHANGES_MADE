@@ -19,6 +19,7 @@ import com.uyscuti.sharedmodule.service.VideoPreLoadingService
 import com.uyscuti.social.circuit.RegisterActivity
 import com.uyscuti.sharedmodule.utils.Constants
 import com.uyscuti.sharedmodule.utils.removeDuplicateFollowers
+import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.core.common.data.room.database.ChatDatabase
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
@@ -53,6 +54,7 @@ class SplashScreen : AppCompatActivity() {
     private lateinit var dialogRepository: DialogRepository
     private lateinit var groupDialogRepository: GroupDialogRepository
     private lateinit var messageRepository: MessageRepository
+    private val relationshipsViewModel: UserRelationshipsViewModel by viewModels()
 
     private val TAG = "OnSplashScreen"
 
@@ -78,13 +80,19 @@ class SplashScreen : AppCompatActivity() {
     private val followShortsViewModel: FollowListItemViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash_screen)
+
         val settings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val splashScreenAlreadyShown = settings.getBoolean(SPLASH_SCREEN_ALREADY_SHOWN, false)
+
         logged = settings.getBoolean("logged", false)
         EventBus.getDefault().register(this)
 
+        if (isUserAuthenticated()) {
+            loadUserRelationships()
+        }
 
         dialogRepository = DialogRepository(
             ChatDatabase.Companion.getInstance(this).dialogDao(),
@@ -121,6 +129,33 @@ class SplashScreen : AppCompatActivity() {
 //            getAllShort3()
 //            loadMoreShorts()
 
+        }
+    }
+
+    // ADD THIS NEW METHOD - Load all user relationships
+    private fun loadUserRelationships() {
+        Log.d(TAG, "Loading user relationships in SplashScreen...")
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                relationshipsViewModel.loadAllRelationships()
+
+                withContext(Dispatchers.Main) {
+                    // Observe loading completion
+                    relationshipsViewModel.isLoading.collect { isLoading ->
+                        if (!isLoading) {
+                            Log.d(TAG, "Relationships loaded successfully")
+                            Log.d(TAG, "Close Friends: ${relationshipsViewModel.closeFriendIds.value.size}")
+                            Log.d(TAG, "Muted Posts: ${relationshipsViewModel.mutedPostsIds.value.size}")
+                            Log.d(TAG, "Muted Stories: ${relationshipsViewModel.mutedStoriesIds.value.size}")
+                            Log.d(TAG, "Favorites: ${relationshipsViewModel.favoriteIds.value.size}")
+                            Log.d(TAG, "Restricted: ${relationshipsViewModel.restrictedIds.value.size}")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading relationships: ${e.message}", e)
+            }
         }
     }
 
