@@ -10,7 +10,9 @@ import android.os.Bundle
 import android.text.InputType
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.core.widget.addTextChangedListener
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -26,6 +28,7 @@ import com.facebook.login.LoginResult
 import com.facebook.GraphRequest
 import com.facebook.FacebookSdk
 import com.facebook.appevents.AppEventsLogger
+import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.core.common.data.room.repository.DialogRepository
 import com.uyscuti.social.core.common.data.room.repository.GroupDialogRepository
 import com.uyscuti.social.core.common.data.room.repository.MessageRepository
@@ -91,6 +94,8 @@ class LoginActivity : AppCompatActivity() {
 
     lateinit var localStorage: LocalStorage
 
+    private val relationshipsViewModel: UserRelationshipsViewModel by viewModels()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -116,6 +121,284 @@ class LoginActivity : AppCompatActivity() {
 
         initFacebookSignIn()
 
+    }
+
+
+    // UPDATE the loginUser method - Add relationship loading after successful login
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun loginUser(password: String, username: String) {
+        val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkInfo = connectivityManager.activeNetworkInfo
+        val isConnected = networkInfo != null && networkInfo.isConnected
+
+        if (!isConnected) {
+            Toast.makeText(
+                this,
+                "No internet connection. Please connect to the internet and try again.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        showLoadingDialog()
+
+        GlobalScope.launch {
+            val response = try {
+                val data = LoginRequest(password, username)
+                retrofitInstance.apiService.loginUsers(data)
+            } catch (e: HttpException) {
+                Log.d("RetrofitActivity", "Http Exception ${e.message}")
+                runOnUiThread {
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "HTTP error. Please try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                return@launch
+            } catch (e: IOException) {
+                Log.d("RetrofitActivity", "IOException ${e.message}")
+                runOnUiThread {
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Network error. Please try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                return@launch
+            } finally {
+                withContext(Dispatchers.Main) {
+                    dismissLoadingDialog()
+                }
+            }
+
+            Log.d("Response", "- ${response.body().toString()}")
+            Log.d("Response", "message ${response.message()}")
+            Log.d("Response", "successful state ${response.isSuccessful}")
+
+            if (response.isSuccessful) {
+                val responseBody = response.body()
+                if (responseBody?.data != null) {
+                    val accessToken = responseBody.data.accessToken
+                    LocalStorage.getInstance(this@LoginActivity).setToken(accessToken)
+
+                    if (accessToken.isNotEmpty()) {
+                        withContext(Dispatchers.Main) {
+                            Log.d("RetrofitActivity", "Login Success")
+                            Log.d("RetrofitActivity", "Access Token: $accessToken")
+
+                            // ✅ SAVE USER DATA USING UserStorageHelper (persists forever)
+                            val saveSuccess = UserStorageHelper.saveUserData(this@LoginActivity, responseBody)
+                            if (saveSuccess) {
+                                Log.d("LOGIN", "✅ User data saved with UserStorageHelper")
+                            } else {
+                                Log.e("LOGIN", "❌ Failed to save user data with UserStorageHelper")
+                            }
+
+                            // Keep existing SharedPreferences for backward compatibility
+                            val editor = settings.edit()
+                            editor.putString("username", username)
+                            editor.putString("token", responseBody.data.accessToken)
+                            editor.putString("_id", responseBody.data.user._id)
+                            editor.putString("email", responseBody.data.user.email)
+                            editor.putString("profile_pic", responseBody.data.user.avatar.url)
+                            editor.putBoolean("logged", true)
+                            editor.apply()
+
+                            // Keep existing LocalStorage for backward compatibility
+                            localStorage.setUserId(responseBody.data.user._id)
+                            localStorage.setUser(responseBody.data.user.username)
+                            localStorage.setToken(responseBody.data.accessToken)
+                            localStorage.setUserName(username)
+
+                            // ✅ ADD THIS - Load relationships after successful login
+                            loadUserRelationshipsAfterLogin()
+
+                            dismissLoadingDialog()
+                            openMainActivity()
+                        }
+                    } else {
+                        Log.d("RetrofitActivity", "Access Token is empty or null")
+                    }
+                } else {
+                    Log.d("RetrofitActivity", "Response body or data is null")
+                }
+            } else {
+                runOnUiThread {
+                    Toast.makeText(this@LoginActivity, "Invalid Details", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    // UPDATE authenticateWithServer - Add relationship loading after Google login
+    private fun authenticateWithServer(idToken: String) {
+        val loginData = GoogleLoginRequest(idToken = idToken)
+        showLoadingDialog()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = retrofitInstance.apiService.googleLogin(loginData)
+                if (response.isSuccessful) {
+                    Log.d("GoogleLogin", "Google Login Success")
+                    Log.d("GoogleLogin", "Google Login response: ${response.body()}")
+
+                    val responseBody = response.body()
+                    if (responseBody?.user != null) {
+                        withContext(Dispatchers.Main) {
+                            // ✅ SAVE USER DATA USING UserStorageHelper
+                            val saveSuccess = UserStorageHelper.saveUserDataFromGoogle(this@LoginActivity, responseBody)
+                            if (saveSuccess) {
+                                Log.d("GOOGLE_LOGIN", "✅ User data saved with UserStorageHelper")
+                            } else {
+                                Log.e("GOOGLE_LOGIN", "❌ Failed to save user data with UserStorageHelper")
+                            }
+
+                            // Keep existing storage for backward compatibility
+                            val editor = settings.edit()
+                            editor.putString("username", responseBody.user!!.username)
+                            editor.putString("token", responseBody.accessToken)
+                            editor.putString("_id", responseBody.user!!._id)
+                            editor.putString("email", responseBody.user!!.email)
+                            editor.putString("profile_pic", responseBody.user!!.avatar?.url)
+                            editor.putBoolean("logged", true)
+                            editor.apply()
+
+                            localStorage.setUserId(responseBody.user!!._id)
+                            localStorage.setUser(responseBody.user!!.username)
+                            responseBody.accessToken?.let { localStorage.setToken(it) }
+                            localStorage.setUserName(responseBody.user!!.username)
+
+                            dismissLoadingDialog()
+                            Toast.makeText(this@LoginActivity, "Google Login Success", Toast.LENGTH_SHORT).show()
+
+                            // ✅ ADD THIS - Load relationships after Google login
+                            loadUserRelationshipsAfterLogin()
+
+                            showGoogleSuccess()
+                        }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        dismissLoadingDialog()
+                        Toast.makeText(this@LoginActivity, "Google Login Failed", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d("GoogleErr", "Google Login Failed: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    dismissLoadingDialog()
+                    Toast.makeText(this@LoginActivity, "Google Login Failed", Toast.LENGTH_SHORT).show()
+                }
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // UPDATE authenticateWithServerFacebook - Add relationship loading after Facebook login
+    private fun authenticateWithServerFacebook(
+        accessToken: String,
+        facebookId: String?,
+        name: String?,
+        email: String?,
+        pictureUrl: String?
+    ) {
+        val loginData = FacebookLoginRequest(
+            accessToken = accessToken,
+            facebookId = facebookId,
+            name = name,
+            email = email,
+            pictureUrl = pictureUrl
+        )
+
+        showLoadingDialog()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = retrofitInstance.apiService.facebookLogin(loginData)
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    Log.d("FacebookLogin", "Facebook Login Success")
+                    Log.d("FacebookLogin", "Facebook Login response: $responseBody")
+
+                    if (responseBody != null) {
+                        withContext(Dispatchers.Main) {
+                            // ✅ SAVE USER DATA USING UserStorageHelper (persists forever)
+                            val saveSuccess = UserStorageHelper.saveUserDataFromFacebook(this@LoginActivity, responseBody)
+                            if (saveSuccess) {
+                                Log.d("FACEBOOK_LOGIN", "✅ User data saved with UserStorageHelper")
+                            } else {
+                                Log.e("FACEBOOK_LOGIN", "❌ Failed to save user data with UserStorageHelper")
+                            }
+
+                            // Keep existing storage methods for backward compatibility
+                            val editor = settings.edit()
+                            // ... your existing Facebook storage code
+
+                            Toast.makeText(this@LoginActivity, "Facebook Login Success", Toast.LENGTH_SHORT).show()
+
+                            // ✅ ADD THIS - Load relationships after Facebook login
+                            loadUserRelationshipsAfterLogin()
+
+                            showFacebookSuccess()
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            dismissLoadingDialog()
+                            Toast.makeText(
+                                this@LoginActivity,
+                                "Facebook login failed - no response data",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        dismissLoadingDialog()
+                        Toast.makeText(
+                            this@LoginActivity,
+                            "Facebook login failed",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("FacebookErr", "Facebook Login Failed: ${e.message}")
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    dismissLoadingDialog()
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Network error during Facebook login",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    // ADD THIS NEW METHOD - Load relationships after login
+    private fun loadUserRelationshipsAfterLogin() {
+        Log.d("LoginActivity", "Loading user relationships after login...")
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                relationshipsViewModel.loadAllRelationships()
+
+                withContext(Dispatchers.Main) {
+                    // Wait briefly for relationships to load
+                    kotlinx.coroutines.delay(500)
+
+                    Log.d("LoginActivity", "✅ Relationships loading initiated")
+                    Log.d("LoginActivity", "Close Friends: ${relationshipsViewModel.closeFriendIds.value.size}")
+                    Log.d("LoginActivity", "Muted Posts: ${relationshipsViewModel.mutedPostsIds.value.size}")
+                    Log.d("LoginActivity", "Favorites: ${relationshipsViewModel.favoriteIds.value.size}")
+                }
+            } catch (e: Exception) {
+                Log.e("LoginActivity", "Error loading relationships: ${e.message}", e)
+                // Don't block login if relationships fail to load
+            }
+        }
     }
 
     private fun initFacebookSignIn() {
@@ -397,443 +680,8 @@ class LoginActivity : AppCompatActivity() {
 
         openMainActivity()
 
-
     }
 
-
-
-    @OptIn(DelicateCoroutinesApi::class)
-
-    private fun loginUser(password: String, username: String) {
-
-        val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        val networkInfo = connectivityManager.activeNetworkInfo
-
-        val isConnected = networkInfo != null && networkInfo.isConnected
-
-        if (!isConnected) {
-
-            Toast.makeText(
-
-                this,
-
-                "No internet connection. Please connect to the internet and try again.",
-
-                Toast.LENGTH_SHORT
-
-            ).show()
-
-            return
-
-        }
-
-        showLoadingDialog()
-
-        GlobalScope.launch {
-
-            val response = try {
-
-                val data = LoginRequest(password, username)
-
-                retrofitInstance.apiService.loginUsers(data)
-
-            } catch (e: HttpException) {
-
-                Log.d("RetrofitActivity", "Http Exception ${e.message}")
-
-                runOnUiThread {
-
-                    Toast.makeText(
-
-                        this@LoginActivity,
-
-                        "HTTP error. Please try again.",
-
-                        Toast.LENGTH_SHORT
-
-                    ).show()
-
-                }
-
-                return@launch
-
-            } catch (e: IOException) {
-
-                Log.d("RetrofitActivity", "IOException ${e.message}")
-
-                runOnUiThread {
-
-                    Toast.makeText(
-
-                        this@LoginActivity,
-
-                        "Network error. Please try again.",
-
-                        Toast.LENGTH_SHORT
-
-                    ).show()
-
-                }
-
-                return@launch
-
-            } finally {
-
-                withContext(Dispatchers.Main) {
-
-                    dismissLoadingDialog()
-
-                }
-
-            }
-
-            Log.d("Response", "- ${response.body().toString()}")
-
-            Log.d("Response", "message ${response.message()}")
-
-            Log.d("Response", "successful state ${response.isSuccessful}")
-
-            if (response.isSuccessful) {
-
-                val responseBody = response.body()
-
-                if (responseBody?.data != null) {
-
-                    val accessToken = responseBody.data.accessToken
-
-                    LocalStorage.getInstance(this@LoginActivity).setToken(accessToken)
-
-                    if (accessToken.isNotEmpty()) {
-
-                        withContext(Dispatchers.Main) {
-
-                            Log.d("RetrofitActivity", "Login Success")
-
-                            Log.d("RetrofitActivity", "Access Token: $accessToken")
-
-                            // ✅ SAVE USER DATA USING UserStorageHelper (persists forever)
-
-                            val saveSuccess = UserStorageHelper.saveUserData(this@LoginActivity, responseBody)
-
-                            if (saveSuccess) {
-
-                                Log.d("LOGIN", "✅ User data saved with UserStorageHelper")
-
-                            } else {
-
-                                Log.e("LOGIN", "❌ Failed to save user data with UserStorageHelper")
-
-                            }
-
-                            // Keep existing SharedPreferences for backward compatibility
-
-                            val editor = settings.edit()
-
-                            editor.putString("username", username)
-
-                            editor.putString("token", responseBody.data.accessToken)
-
-                            editor.putString("_id", responseBody.data.user._id)
-
-                            editor.putString("email", responseBody.data.user.email)
-
-                            editor.putString("profile_pic", responseBody.data.user.avatar.url)
-
-                            editor.putBoolean("logged", true)
-
-                            editor.apply()
-
-                            // Keep existing LocalStorage for backward compatibility
-
-                            localStorage.setUserId(responseBody.data.user._id)
-
-                            localStorage.setUser(responseBody.data.user.username)
-
-                            localStorage.setToken(responseBody.data.accessToken)
-
-                            localStorage.setUserName(username)
-
-                            dismissLoadingDialog()
-
-                            // showSuccess()
-
-                            openMainActivity()
-
-                        }
-
-                    } else {
-
-                        Log.d("RetrofitActivity", "Access Token is empty or null")
-
-                    }
-
-                } else {
-
-                    Log.d("RetrofitActivity", "Response body or data is null")
-
-                }
-
-            } else {
-
-                runOnUiThread {
-
-                    Toast.makeText(this@LoginActivity, "Invalid Details", Toast.LENGTH_LONG).show()
-
-                }
-
-            }
-
-        }
-
-    }
-
-    private fun authenticateWithServer(idToken: String) {
-
-        val loginData = GoogleLoginRequest(idToken = idToken)
-
-        showLoadingDialog()
-
-        CoroutineScope(Dispatchers.IO).launch {
-
-            try {
-
-                val response = retrofitInstance.apiService.googleLogin(loginData)
-
-                if (response.isSuccessful) {
-
-                    Log.d("GoogleLogin", "Google Login Success")
-
-                    Log.d("GoogleLogin", "Google Login response: ${response.body()}")
-
-                    val responseBody = response.body()
-
-                    if (responseBody?.user != null) {
-
-                        withContext(Dispatchers.Main) {
-
-                            // ✅ SAVE USER DATA USING UserStorageHelper
-
-                            val saveSuccess = UserStorageHelper.saveUserDataFromGoogle(this@LoginActivity, responseBody)
-
-                            if (saveSuccess) {
-
-                                Log.d("GOOGLE_LOGIN", "✅ User data saved with UserStorageHelper")
-
-                            } else {
-
-                                Log.e("GOOGLE_LOGIN", "❌ Failed to save user data with UserStorageHelper")
-
-                            }
-
-                            // Keep existing storage for backward compatibility
-
-                            val editor = settings.edit()
-
-                            editor.putString("username", responseBody.user!!.username)
-
-                            editor.putString("token", responseBody.accessToken)
-
-                            editor.putString("_id", responseBody.user!!._id)
-
-                            editor.putString("email", responseBody.user!!.email)
-
-                            editor.putString("profile_pic", responseBody.user!!.avatar?.url)
-
-                            editor.putBoolean("logged", true)
-
-                            editor.apply()
-
-                            localStorage.setUserId(responseBody.user!!._id)
-
-                            localStorage.setUser(responseBody.user!!.username)
-
-                            responseBody.accessToken?.let { localStorage.setToken(it) }
-
-                            localStorage.setUserName(responseBody.user!!.username)
-
-                            dismissLoadingDialog()
-
-                            Toast.makeText(this@LoginActivity, "Google Login Success", Toast.LENGTH_SHORT).show()
-
-                            showGoogleSuccess()
-
-                        }
-
-                    }
-
-                } else {
-
-                    withContext(Dispatchers.Main) {
-
-                        dismissLoadingDialog()
-
-                        Toast.makeText(this@LoginActivity, "Google Login Failed", Toast.LENGTH_SHORT).show()
-
-                    }
-
-                }
-
-            } catch (e: Exception) {
-
-                Log.d("GoogleErr", "Google Login Failed: ${e.message}")
-
-                withContext(Dispatchers.Main) {
-
-                    dismissLoadingDialog()
-
-                    Toast.makeText(this@LoginActivity, "Google Login Failed", Toast.LENGTH_SHORT).show()
-
-                }
-
-                e.printStackTrace()
-
-            }
-
-        }
-
-    }
-
-    private fun authenticateWithServerFacebook(
-
-        accessToken: String,
-
-        facebookId: String?,
-
-        name: String?,
-
-        email: String?,
-
-        pictureUrl: String?
-
-    ) {
-
-        val loginData = FacebookLoginRequest(
-
-            accessToken = accessToken,
-
-            facebookId = facebookId,
-
-            name = name,
-
-            email = email,
-
-            pictureUrl = pictureUrl
-
-        )
-
-        showLoadingDialog()
-
-        CoroutineScope(Dispatchers.IO).launch {
-
-            try {
-
-                val response = retrofitInstance.apiService.facebookLogin(loginData)
-
-                if (response.isSuccessful) {
-
-                    val responseBody = response.body()
-
-                    Log.d("FacebookLogin", "Facebook Login Success")
-
-                    Log.d("FacebookLogin", "Facebook Login response: $responseBody")
-
-                    if (responseBody != null) {
-
-                        withContext(Dispatchers.Main) {
-
-                            // ✅ SAVE USER DATA USING UserStorageHelper (persists forever)
-
-                            val saveSuccess = UserStorageHelper.saveUserDataFromFacebook(this@LoginActivity, responseBody)
-
-                            if (saveSuccess) {
-
-                                Log.d("FACEBOOK_LOGIN", "✅ User data saved with UserStorageHelper")
-
-                            } else {
-
-                                Log.e("FACEBOOK_LOGIN", "❌ Failed to save user data with UserStorageHelper")
-
-                            }
-
-                            // Keep existing storage methods for backward compatibility
-
-                            val editor = settings.edit()
-
-
-                            Toast.makeText(this@LoginActivity, "Facebook Login Success", Toast.LENGTH_SHORT).show()
-
-                            showFacebookSuccess()
-
-                        }
-
-                    } else {
-
-                        withContext(Dispatchers.Main) {
-
-                            dismissLoadingDialog()
-
-                            Toast.makeText(
-
-                                this@LoginActivity,
-
-                                "Facebook login failed - no response data",
-
-                                Toast.LENGTH_SHORT
-
-                            ).show()
-
-                        }
-
-                    }
-
-                } else {
-
-                    withContext(Dispatchers.Main) {
-
-                        dismissLoadingDialog()
-
-                        Toast.makeText(
-
-                            this@LoginActivity,
-
-                            "Facebook login failed",
-
-                            Toast.LENGTH_SHORT
-
-                        ).show()
-
-                    }
-
-                }
-
-            } catch (e: Exception) {
-
-                Log.e("FacebookErr", "Facebook Login Failed: ${e.message}")
-
-                e.printStackTrace()
-
-                withContext(Dispatchers.Main) {
-
-                    dismissLoadingDialog()
-
-                    Toast.makeText(
-
-                        this@LoginActivity,
-
-                        "Network error during Facebook login",
-
-                        Toast.LENGTH_SHORT
-
-                    ).show()
-
-                }
-
-            }
-
-        }
-
-    }
 
     // ✅ USER STORAGE HELPER - Persistent data storage
 
