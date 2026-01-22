@@ -583,11 +583,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
             authorId?.let { userId ->
                 // Check if user is trying to block themselves
-                val currentUserId = getCurrentUserId() // You need to implement this method
-                if (userId == currentUserId) {
-                    Toast.makeText(context, "You cannot block yourself", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
 
                 // Check if user is already blocked
                 if (blockedUserIds.contains(userId)) {
@@ -760,13 +755,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
-    // ==================== GET CURRENT USER ID ====================
-// Helper method to get the current logged-in user's ID
-    private fun getCurrentUserId(): String? {
-        // Use UserStorageHelper from LoginActivity
-        val userId = LoginActivity.UserStorageHelper.getUserId(requireContext())
-        return if (userId.isNotEmpty()) userId else null
-    }
 
     // ==================== UNBLOCK USER ====================
     private fun handleUnblockUser(userId: String, username: String) {
@@ -815,7 +803,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                         }
                     }.show()
 
-                    
+
                 } else {
                     Toast.makeText(
                         context,
@@ -872,7 +860,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             )
             != PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(requireActivity(), permissions, requestCode)
+
         } else {
             // You have permission, proceed with your file operations
 
@@ -885,19 +873,15 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                     ) != PackageManager.PERMISSION_GRANTED
                 ) {
                     // Request the permission
-                    ActivityCompat.requestPermissions(
-                        requireActivity(),
-                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                        WRITE_EXTERNAL_STORAGE_REQUEST_CODE
-                    )
+
                 } else {
 
-                    download(url, fileLocation)
+
                 }
 
 
             } else {
-                download(url, fileLocation)
+
             }
         }
 
