@@ -320,6 +320,7 @@ import com.uyscuti.sharedmodule.viewmodels.comments.ShortCommentReplyViewModel
 import com.uyscuti.sharedmodule.viewmodels.comments.ShortCommentsViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.FeedLiveDataViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.circuit.user_interface.UniversalSearchActivity
 import com.uyscuti.social.circuit.user_interface.userProfile.MyUserProfileAccount
 import com.uyscuti.social.core.service.LocationService
@@ -391,8 +392,9 @@ class MainActivity : AppCompatActivity(),
     private val messageViewModel: MessageViewModel by viewModels()
     private val dialogViewModel: DialogViewModel by viewModels()
     private val groupDialogViewModel: GroupDialogViewModel by viewModels()
+         private val relationshipsViewModel: UserRelationshipsViewModel by viewModels()
 
-    private val viewModel: UserProfileShortsViewModel by viewModels()
+         private val viewModel: UserProfileShortsViewModel by viewModels()
 
     private val mainViewModel: MainViewModel by viewModels()
 
@@ -2168,6 +2170,7 @@ class MainActivity : AppCompatActivity(),
         addGifComment()
         observeCommentRepliesToRefresh()
         observeMainCommentToRefresh()
+        loadUserRelationships()
         customDialog = CustomAlertDialog(this)
 
         customDialog?.setDialogCallback(this)
@@ -2273,8 +2276,45 @@ class MainActivity : AppCompatActivity(),
 
         onGoBack()
 
+
+
+
     }
 
+         private fun loadUserRelationships() {
+             // Check if user is logged in first
+             if (isUserLoggedIn()) {
+                 Log.d("MainActivity", "Loading user relationships...")
+                 relationshipsViewModel.loadAllRelationships()
+
+                 // Optionally observe loading state
+                 lifecycleScope.launch {
+                     relationshipsViewModel.isLoading.collect { isLoading ->
+                         if (isLoading) {
+                             Log.d("MainActivity", "Loading relationships...")
+                         } else {
+                             Log.d("MainActivity", "Relationships loaded successfully")
+                         }
+                     }
+                 }
+
+                 // Optionally show error
+                 lifecycleScope.launch {
+                     relationshipsViewModel.error.collect { error ->
+                         error?.let {
+                             Log.e("MainActivity", "Error loading relationships: $it")
+                             Toast.makeText(this@MainActivity, it, Toast.LENGTH_SHORT).show()
+                         }
+                     }
+                 }
+             }
+         }
+
+         private fun isUserLoggedIn(): Boolean {
+             // Add your logic to check if user is logged in
+             val sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+             return sharedPreferences.getString("authToken", null) != null
+         }
 
          private fun setupLocationObserver() {
              LocationService.currentLocation.observe(this) { location ->
