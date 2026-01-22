@@ -64,6 +64,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import android.widget.Toast
 import android.Manifest
+import android.R.attr.data
 import android.view.HapticFeedbackConstants
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
@@ -85,6 +86,7 @@ import org.greenrobot.eventbus.EventBus
 import android.content.Intent
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
+import androidx.recyclerview.widget.RecyclerView
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -93,11 +95,12 @@ import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.sharedmodule.ReportNotificationActivity2
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FRAGMENT_ORIGINAL_POST_WITHOUT_REPOST
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
 import com.uyscuti.sharedmodule.utils.FollowingManager
 import com.uyscuti.sharedmodule.viewmodels.FollowUnfollowViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.FeedUploadViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.utils.LocalStorage
 import kotlinx.coroutines.Dispatchers
@@ -112,7 +115,7 @@ private const val ARG_POST_DATA = "post_data"
 private const val ARG_POST_LIST = "post_list"
 private const val ARG_CURRENT_POSITION = "current_position"
 private const val TAG = "Tapped Files"
-
+private const val FRAGMENT_TAPPED_FILES = 1
 
 //  MAIN FRAGMENT CLASS
 class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
@@ -138,10 +141,10 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
 
-    private var followingUserIds: MutableSet<String> = mutableSetOf()
-    private val myFollowersUsernames = mutableSetOf<String>()
+
+
     private val followingManager by lazy { FollowingManager(requireContext()) }
-    private val followUnfollowViewModel: FollowUnfollowViewModel by activityViewModels()
+
 
 
     // Retrofit instance
@@ -220,6 +223,15 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     private var viewCount = 0
     private var shareCount = 0
 
+    private var followingUserIds = mutableSetOf<String>()
+    private val relationshipsViewModel: UserRelationshipsViewModel by activityViewModels()
+    private val myFollowersUsernames = mutableSetOf<String>()
+    private val followUnfollowViewModel: FollowUnfollowViewModel by activityViewModels()
+    private lateinit var allFeedAdapter: FeedAdapter
+    private var blockedUserIds = mutableSetOf<String>()
+    private val getFeedViewModel: GetFeedViewModel by activityViewModels()
+    private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
+    private lateinit var feedListView: RecyclerView
 
 
 //  LIFECYCLE METHODS
@@ -423,9 +435,8 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             navigateToAuthorProfile()
         }
 
-        // Menu button click listener
         headerMenuButton.setOnClickListener { view ->
-            showOptionsMenu(view)
+            moreOptionsClick(currentPosition, postList?.getOrNull(currentPosition) as? com.uyscuti.social.network.api.response.posts.Post ?: return@setOnClickListener)
         }
 
         // Action section click listeners
@@ -449,6 +460,8 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             handleShareClick()
         }
     }
+
+
 
     private fun loadAuthorDetails(post: PostItem) {
         val userId = post.userId
@@ -1127,20 +1140,17 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         // Show share options
         shareCount++
         shareCountText.text = formatCount(shareCount)
-        showShareOptions()
+
     }
 
-    private fun showShareOptions() {
-        // Create and show share intent or custom share dialog
-        Toast.makeText(requireContext(), "Share options", Toast.LENGTH_SHORT).show()
-    }
+
 
     @SuppressLint("InflateParams", "MissingInflatedId", "ServiceCast")
     fun moreOptionsClick(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        Log.d(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "moreOptionsClick: More options clicked")
+        Log.d(TAG, "moreOptionsClick: More options clicked")
         val view: View = layoutInflater.inflate(R.layout.feed_more_options_layout, null)
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(view)
@@ -1275,7 +1285,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
         // ==================== HIDE POST ACTION ====================
         hidePostLayout.setOnClickListener {
-            Log.d(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "hidePostLayout: hide post clicked")
+            Log.d(TAG, "hidePostLayout: hide post clicked")
             hideSinglePost(position, data)
             dialog.dismiss()
         }
@@ -1284,7 +1294,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         reportUser.setOnClickListener {
             Log.d("reportUser", "Report button clicked")
             val intent = Intent(requireActivity(), ReportNotificationActivity2::class.java)
-            startActivityForResult(intent, FRAGMENT_ORIGINAL_POST_WITHOUT_REPOST)
+            startActivityForResult(intent, FRAGMENT_TAPPED_FILES)
             dialog.dismiss()
         }
 
@@ -1333,7 +1343,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Error toggling mute: ${e.message}", e)
+                Log.e(TAG, "Error toggling mute: ${e.message}", e)
                 Toast.makeText(context, "Failed to update mute status", Toast.LENGTH_SHORT).show()
             }
         }
@@ -1398,7 +1408,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                         .show()
                 }
             } catch (e: Exception) {
-                Log.e(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Error blocking user: ${e.message}", e)
+                Log.e(TAG, "Error blocking user: ${e.message}", e)
                 Toast.makeText(context, "Failed to block user", Toast.LENGTH_SHORT).show()
             }
         }
@@ -1442,7 +1452,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                                     ).show()
                                 }
                             } catch (e: Exception) {
-                                Log.e(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Error re-blocking user: ${e.message}", e)
+                                Log.e(TAG, "Error re-blocking user: ${e.message}", e)
                                 Toast.makeText(
                                     context,
                                     "Failed to block user",
@@ -1461,7 +1471,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                     ).show()
                 }
             } catch (e: Exception) {
-                Log.e(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Error unblocking user: ${e.message}", e)
+                Log.e(TAG, "Error unblocking user: ${e.message}", e)
                 Toast.makeText(
                     context,
                     "Network error: ${e.message}",
@@ -1543,7 +1553,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         Log.d(
-            Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "hideSinglePost: Hiding post at position: $position, PostId: ${data._id}")
+            TAG, "hideSinglePost: Hiding post at position: $position, PostId: ${data._id}")
         try {
             if (::allFeedAdapter.isInitialized) {
 
@@ -1563,7 +1573,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
                         .start()
                 } else {
                     Log.w(
-                        Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "ViewHolder at position $position is null, notifying removal directly"
+                        TAG, "ViewHolder at position $position is null, notifying removal directly"
                     )
                     allFeedAdapter.notifyItemRemoved(position) // Fallback for off-screen items
                 }
@@ -1587,7 +1597,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             }
 
         } catch (e: Exception) {
-            Log.e(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Error hiding post: ${e.message}")
+            Log.e(TAG, "Error hiding post: ${e.message}")
             Toast.makeText(requireContext(),
                 "Failed to hide post", Toast.LENGTH_SHORT).show()
         }
