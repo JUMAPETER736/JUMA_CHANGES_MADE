@@ -85,7 +85,7 @@ import kotlin.getValue
 
 
 private const val TAG = "Fragment_Original_Post_With_Repost_Inside"
-private const val FRAGMENT_ORIGINAL_POST_WITH_REPOST = 1020
+private const val FRAGMENT_ORIGINAL_POST_WITH_REPOST = 1
 
 
 class Fragment_Original_Post_With_Repost_Inside() : Fragment() {

@@ -48,6 +48,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.GridLayoutManager
@@ -88,6 +89,9 @@ import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.F
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
 import com.uyscuti.sharedmodule.utils.FollowingManager
+import com.uyscuti.sharedmodule.viewmodels.feed.FeedUploadViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
+import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.response.posts.Duration
@@ -112,6 +116,7 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.comment.allcomments.Comment
+import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -119,7 +124,10 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import retrofit2.Response
+import kotlin.getValue
 
+
+private const val FRAGMENT_ORIGINAL_POST_WITHOUT_REPOST = 1
 
 class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFilesClickListener {
 
@@ -155,7 +163,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private var originalPost: OriginalPost? = null
     private var currentPost: Post? = null
     private var currentPosition: Int = 0
-    private var followingUserIds: Set<String> = emptySet()
+
 
     // Counters
 
@@ -207,6 +215,16 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private lateinit var shareCount: TextView
     private lateinit var followButton: AppCompatButton
     private var isFollowing = false
+
+    private val followingUserIds = mutableSetOf<String>()
+    private val relationshipsViewModel: UserRelationshipsViewModel by activityViewModels()
+    lateinit var retrofitInstance: RetrofitInstance
+    private lateinit var allFeedAdapter: FeedAdapter
+    private var blockedUserIds = mutableSetOf<String>()
+    private val getFeedViewModel: GetFeedViewModel by activityViewModels()
+    private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
+    private lateinit var feedListView: RecyclerView
+
 
 
     private val Post.safeRepostCount: Int
@@ -662,7 +680,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
 
         headerMenuButton.setOnClickListener { view ->
-            showOptionsMenu(view)
+            moreOptionsClick(currentPosition, data)
         }
 
         mixedFilesCardView.setOnClickListener {
@@ -812,7 +830,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        Log.d(com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.TAG, "moreOptionsClick: More options clicked")
+        Log.d(TAG, "moreOptionsClick: More options clicked")
         val view: View = layoutInflater.inflate(R.layout.feed_more_options_layout, null)
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(view)
@@ -947,7 +965,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
         // ==================== HIDE POST ACTION ====================
         hidePostLayout.setOnClickListener {
-            Log.d(com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.TAG, "hidePostLayout: hide post clicked")
+            Log.d(TAG, "hidePostLayout: hide post clicked")
             hideSinglePost(position, data)
             dialog.dismiss()
         }
@@ -956,7 +974,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         reportUser.setOnClickListener {
             Log.d("reportUser", "Report button clicked")
             val intent = Intent(requireActivity(), ReportNotificationActivity2::class.java)
-            startActivityForResult(intent, FRAGMENT_ORIGINAL_POST_WITH_REPOST)
+            startActivityForResult(intent, FRAGMENT_ORIGINAL_POST_WITHOUT_REPOST)
             dialog.dismiss()
         }
 
@@ -1005,7 +1023,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     }
                 }
             } catch (e: Exception) {
-                Log.e(com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.TAG, "Error toggling mute: ${e.message}", e)
+                Log.e(TAG, "Error toggling mute: ${e.message}", e)
                 Toast.makeText(context, "Failed to update mute status", Toast.LENGTH_SHORT).show()
             }
         }
@@ -1070,7 +1088,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         .show()
                 }
             } catch (e: Exception) {
-                Log.e(com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.TAG, "Error blocking user: ${e.message}", e)
+                Log.e(TAG, "Error blocking user: ${e.message}", e)
                 Toast.makeText(context, "Failed to block user", Toast.LENGTH_SHORT).show()
             }
         }
@@ -1114,7 +1132,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                                     ).show()
                                 }
                             } catch (e: Exception) {
-                                Log.e(com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.TAG, "Error re-blocking user: ${e.message}", e)
+                                Log.e(TAG, "Error re-blocking user: ${e.message}", e)
                                 Toast.makeText(
                                     context,
                                     "Failed to block user",
@@ -1133,7 +1151,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     ).show()
                 }
             } catch (e: Exception) {
-                Log.e(com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.TAG, "Error unblocking user: ${e.message}", e)
+                Log.e(TAG, "Error unblocking user: ${e.message}", e)
                 Toast.makeText(
                     context,
                     "Network error: ${e.message}",
@@ -1215,8 +1233,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         Log.d(
-            com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.TAG,
-            "hideSinglePost: Hiding post at position: $position, PostId: ${data._id}")
+            TAG, "hideSinglePost: Hiding post at position: $position, PostId: ${data._id}")
         try {
             if (::allFeedAdapter.isInitialized) {
 
@@ -1236,8 +1253,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         .start()
                 } else {
                     Log.w(
-                        com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.TAG,
-                        "ViewHolder at position $position is null, notifying removal directly"
+                           TAG, "ViewHolder at position $position is null, notifying removal directly"
                     )
                     allFeedAdapter.notifyItemRemoved(position) // Fallback for off-screen items
                 }
@@ -1261,7 +1277,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
 
         } catch (e: Exception) {
-            Log.e(com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.TAG, "Error hiding post: ${e.message}")
+            Log.e(TAG, "Error hiding post: ${e.message}")
             Toast.makeText(requireContext(),
                 "Failed to hide post", Toast.LENGTH_SHORT).show()
         }
