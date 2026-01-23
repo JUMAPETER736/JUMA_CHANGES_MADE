@@ -1,5 +1,15 @@
 package com.uyscuti.social.circuit.settings
 
+import android.os.Bundle
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toolbar
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.RecyclerView
+import com.uyscuti.social.circuit.R
+import com.uyscuti.social.network.api.response.profile.followingList.MutedPostsItem
+import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+
 class MutedPostsActivity : AppCompatActivity() {
 
     private lateinit var toolbar: Toolbar
