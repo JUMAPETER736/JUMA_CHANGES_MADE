@@ -1,5 +1,14 @@
 package com.uyscuti.social.circuit.settings
 
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
+import com.uyscuti.social.circuit.R
+
 class MutedUsersAdapter<T>(
     private val items: List<T>,
     private val buttonText: String,
