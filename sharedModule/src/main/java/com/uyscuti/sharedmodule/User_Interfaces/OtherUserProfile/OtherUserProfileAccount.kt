@@ -1270,12 +1270,8 @@ class OtherUserProfileAccount : AppCompatActivity() {
         // Set username
         usernameText.text = "@$username"
 
-        // Set profile image (you may need to load this with Glide/Picasso)
-        // Glide.with(this).load(userProfileImageUrl).into(profileImageView)
-        profileImageView.setImageResource(R.drawable.flash21) // Placeholder
+        profileImageView.setImageResource(R.drawable.flash21)
 
-        // Show verification badge if user is verified
-        // verificationBadge.visibility = if (isUserVerified) View.VISIBLE else View.GONE
 
         // Generate QR code
         val profileUrl = "https://app.com/profile/$userId"

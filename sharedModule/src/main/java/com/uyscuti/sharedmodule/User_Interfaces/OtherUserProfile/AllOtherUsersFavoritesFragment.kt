@@ -52,6 +52,10 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
         private const val ARG_USER_ID = "userId"
         private const val ARG_USERNAME = "username"
 
+        // Cache for preloading
+        internal val favoritesCache = mutableMapOf<String, MutableList<Post>>()
+        internal val cacheTimestamp = mutableMapOf<String, Long>()
+
         fun newInstance(userId: String, username: String): AllOtherUsersFavoritesFragment {
             return AllOtherUsersFavoritesFragment().apply {
                 arguments = Bundle().apply {
@@ -59,6 +63,27 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
                     putString(ARG_USERNAME, username)
                 }
             }
+        }
+
+        fun clearCache(userId: String) {
+            favoritesCache.remove(userId)
+            cacheTimestamp.remove(userId)
+        }
+
+        internal fun emptyRepostedUser(): RepostedUser {
+            return RepostedUser(
+                _id = "",
+                avatar = Avatar(_id = "", url = "", localPath = ""),
+                bio = "",
+                coverImage = CoverImage(_id = "", localPath = "", url = ""),
+                createdAt = "",
+                email = "",
+                firstName = "",
+                lastName = "",
+                owner = "",
+                updatedAt = "",
+                username = ""
+            )
         }
     }
 
@@ -221,22 +246,6 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    private fun emptyRepostedUser(): RepostedUser {
-        return RepostedUser(
-            _id = "",
-            avatar = Avatar(_id = "", url = "", localPath = ""),
-            bio = "",
-            coverImage = CoverImage(_id = "", localPath = "", url = ""),
-            createdAt = "",
-            email = "",
-            firstName = "",
-            lastName = "",
-            owner = "",
-            updatedAt = "",
-            username = ""
-        )
-    }
-
     private fun showLoading() {
         binding.progressBar.visibility = View.VISIBLE
         binding.recyclerView.visibility = View.GONE
@@ -271,46 +280,46 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     override fun feedCommentClicked(position: Int, data: Post) {
-       Log.e(TAG, " not found")
+         Log.e(TAG, " not found")
     }
 
     override fun feedFavoriteClick(position: Int, data: Post) {
-      Log.e(TAG, " not found")
+        Log.e(TAG, " not found")
     }
 
     override fun moreOptionsClick(position: Int, data: Post) {
-        Log.e(TAG, " not found")
+         Log.e(TAG, " not found")
     }
 
     override fun feedFileClicked(position: Int, data: Post) {
-       Log.e(TAG, " not found")
+         Log.e(TAG, " not found")
     }
 
     override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
-       Log.e(TAG, " not found")
+        Log.e(TAG, " not found")
     }
 
     override fun feedShareClicked(position: Int, data: Post) {
-      Log.e(TAG, " not found")
+        Log.e(TAG, " not found")
     }
 
     override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {
-       Log.e(TAG, " not found")
+         Log.e(TAG, " not found")
     }
 
     override fun feedRepostPost(position: Int, data: Post) {
-        Log.e(TAG, " not found")
+         Log.e(TAG, " not found")
     }
 
     override fun feedRepostPostClicked(position: Int, data: Post) {
-       Log.e(TAG, " not found")
+        Log.e(TAG, " not found")
     }
 
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
-      Log.e(TAG, " not found")
+        Log.e(TAG, " not found")
     }
 
     override fun onImageClick() {
-        Log.e(TAG, " not found")
+         Log.e(TAG, " not found")
     }
 }
