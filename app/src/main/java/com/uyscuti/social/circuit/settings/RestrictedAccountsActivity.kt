@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.RelationshipUsersAdapter
 import com.uyscuti.social.network.api.response.profile.followingList.RestrictedItem
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import kotlinx.coroutines.Dispatchers

@@ -332,13 +332,13 @@ class SettingsAdapter(
 
             // Set appropriate icon based on the setting type
             val iconRes = when (setting.title) {
-                "Blocked Users" -> R.drawable.ic_block // You'll need to add these drawables
-                "Muted Posts" -> R.drawable.ic_mute_posts
+                "Blocked Users" -> R.drawable.baseline_block_24
+                "Muted Posts" -> R.drawable.microphone_mute_svgrepo_com
                 "Muted Stories" -> R.drawable.ic_mute_stories
                 "Close Friends" -> R.drawable.ic_close_friends
                 "Favorites" -> R.drawable.ic_favorite
                 "Restricted Accounts" -> R.drawable.ic_restrict
-                "Hidden Posts" -> R.drawable.ic_hide
+                "Hidden Posts" -> R.drawable.hide_svgrepo_com
                 else -> R.drawable.google
             }
 

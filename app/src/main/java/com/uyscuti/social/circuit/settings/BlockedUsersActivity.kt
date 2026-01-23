@@ -29,7 +29,7 @@ class BlockedUsersActivity : AppCompatActivity() {
     private lateinit var emptyTextView: TextView
     private lateinit var adapter: BlockedUsersAdapter
     private val blockedUsersList = mutableListOf<BlockedUserItem>()
-    private val retrofitInstance = RetrofitInstance()
+    private val retrofitInstance = RetrofitInstance
 
     companion object {
         private const val TAG = "BlockedUsersActivity"
