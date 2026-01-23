@@ -1,5 +1,10 @@
 package com.uyscuti.social.circuit.settings
 
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import com.uyscuti.social.circuit.R
+
 class BlockedUsersAdapter(
     private val blockedUsers: List<BlockedUserItem>,
     private val onUnblockClick: (BlockedUserItem) -> Unit

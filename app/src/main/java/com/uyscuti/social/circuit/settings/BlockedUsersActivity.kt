@@ -15,9 +15,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.BlockedUsersAdapter
-import com.uyscuti.social.network.api.response.profile.followingList.BlockedUserItem
-import com.uyscuti.social.network.retrofit.RetrofitInstance
+import com.uyscuti.social.network.api.response.follow_unfollow.BlockedUserItem
+import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
