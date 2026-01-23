@@ -167,14 +167,17 @@
     </style>
 
     <string name="loading">Loading...</string>
-    <string name="no_bookmarks">No Bookmarks Icon</string>
+    <!-- Empty state strings -->
+    <string name="no_bookmarks">No bookmarks icon</string>
     <string name="no_bookmarks_title">No Bookmarks Yet</string>
-    <string name="no_bookmarks_message">You haven\'t added any favorites yet. Start exploring and bookmark your favorite posts!</string>
+    <string name="no_bookmarks_message">Posts you bookmark will appear here</string>
 
-
-    <string name="private_favorites_icon">Private Favorites Icon</string>
+    <!-- Privacy strings for favorites -->
+    <string name="private_favorites_icon">Private favorites icon</string>
     <string name="private_favorites_title">Favorites are Private</string>
-    <string name="private_favorites_message">This user has hidden their favorites from others.</string>
+    <string name="private_favorites_message">Only you can see your bookmarked posts</string>
+
+
 
 
 
