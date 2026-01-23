@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
+
 @AndroidEntryPoint
 class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
@@ -38,23 +39,18 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
     private var otherUserId: String? = null  // The profile being viewed
     private var username: String? = null
+    private var myUserId: String? = null  // The logged-in user
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
 
     private lateinit var feedAdapter: FeedAdapter
-
-    private val allFavorites = mutableListOf<Post>()
-    private var isDataLoaded = false
+    private lateinit var localStorage: LocalStorage
 
     companion object {
-        private const val TAG = "AllOtherUserFavoritesFragment"
+        private const val TAG = "OtherUserFavoritesFragment"
         private const val ARG_USER_ID = "userId"
         private const val ARG_USERNAME = "username"
-
-        internal val favoritesCache = mutableMapOf<String, MutableList<Post>>()
-        internal val cacheTimestamp = mutableMapOf<String, Long>()
-        private const val CACHE_VALIDITY_MS = 5 * 60 * 1000L
 
         fun newInstance(userId: String, username: String): AllOtherUsersFavoritesFragment {
             return AllOtherUsersFavoritesFragment().apply {
@@ -64,38 +60,22 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
                 }
             }
         }
-
-        fun clearCache(userId: String) {
-            favoritesCache.remove(userId)
-            cacheTimestamp.remove(userId)
-        }
-
-        internal fun emptyRepostedUser(): RepostedUser {
-            return RepostedUser(
-                _id = "",
-                avatar = Avatar(_id = "", url = "", localPath = ""),
-                bio = "",
-                coverImage = CoverImage(_id = "", localPath = "", url = ""),
-                createdAt = "",
-                email = "",
-                firstName = "",
-                lastName = "",
-                owner = "",
-                updatedAt = "",
-                username = ""
-            )
-        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        localStorage = LocalStorage.getInstance(requireContext())
+        myUserId = localStorage.getUserId()
 
         arguments?.let {
             otherUserId = it.getString(ARG_USER_ID)
             username = it.getString(ARG_USERNAME)
         }
 
-        Log.d(TAG, "onCreate: userId = $otherUserId, username = @$username")
+        Log.d(TAG, "onCreate: Viewing favorites")
+        Log.d(TAG, "  My ID: $myUserId")
+        Log.d(TAG, "  Other user ID: $otherUserId (@$username)")
     }
 
     override fun onCreateView(
@@ -110,43 +90,24 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupRecyclerView()
-
-        // Show cached data IMMEDIATELY without checking validity
-        val cached = favoritesCache[otherUserId]
-        if (!cached.isNullOrEmpty()) {
-            allFavorites.clear()
-            allFavorites.addAll(cached)
-            submitToAdapter(allFavorites)
-            showContent()
-
-            // Load fresh data in background only if cache is old
-            if (!isCacheValid()) {
-                loadBookmarkedFeedPosts()
-            }
+        // Check if viewing own profile
+        if (otherUserId == myUserId) {
+            // Viewing own favorites - load them
+            setupRecyclerView()
+            loadMyFavorites()
         } else {
-            // No cache - load data
-            loadBookmarkedFeedPosts()
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (!isCacheValid()) {
-            refreshBookmarks()
+            // Viewing someone else's favorites - show privacy message
+            Log.d(TAG, "🔒 Showing privacy message - favorites are private")
+            showPrivacyMessage()
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding.recyclerView.adapter = null
+        if (::feedAdapter.isInitialized) {
+            binding.recyclerView.adapter = null
+        }
         _binding = null
-    }
-
-    private fun refreshBookmarks() {
-        Log.d(TAG, "Refreshing bookmarks for @$username")
-        isDataLoaded = false
-        loadBookmarkedFeedPosts()
     }
 
     private fun setupRecyclerView() {
@@ -167,40 +128,12 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-    private fun submitToAdapter(posts: List<Post>) {
-        if (!isAdded || _binding == null) return
-
-        try {
-            feedAdapter.submitItems(posts)
-            feedAdapter.initializeCommentCounts(posts)
-            if (feedAdapter.itemCount != posts.size) {
-                feedAdapter.notifyDataSetChanged()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error submitting to adapter", e)
-        }
-    }
-
-    private fun isCacheValid(): Boolean {
-        val timestamp = cacheTimestamp[otherUserId] ?: return false
-        return System.currentTimeMillis() - timestamp < CACHE_VALIDITY_MS
-    }
-
-    private fun loadBookmarkedFeedPosts() {
-        if (isDataLoaded) return
-
-        isDataLoaded = true
+    private fun loadMyFavorites() {
+        showLoading()
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                Log.d(TAG, "📚 Fetching bookmarked posts for @$username (ID: $otherUserId)")
-
-                // Show loading only if we don't have cache
-                if (!isCacheValid()) {
-                    withContext(Dispatchers.Main) {
-                        showLoading()
-                    }
-                }
+                Log.d(TAG, "📚 Loading my own favorites")
 
                 val response = retrofitInstance.apiService.getFavoriteFeed(page = "1")
 
@@ -208,27 +141,17 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
                     Log.e(TAG, "API call failed with code: ${response.code()}")
                     withContext(Dispatchers.Main) {
                         showEmptyState()
-                        isDataLoaded = false
                     }
                     return@launch
                 }
 
                 val responseBody = response.body()
-                Log.d(TAG, "Response body: ${responseBody?.message}")
-
                 val bookmarkedPosts = responseBody?.data?.bookmarkedPosts.orEmpty()
-                Log.d(TAG, "Received ${bookmarkedPosts.size} total bookmarked posts from server")
+                Log.d(TAG, "Received ${bookmarkedPosts.size} bookmarked posts")
 
-                // Filter for posts bookmarked by the other user (same as MyUserFavoritesFragment)
                 val transformedPosts = bookmarkedPosts
                     .asSequence()
-                    .filter {
-                        val isBookmarkedByUser = it.bookmarkedBy == otherUserId
-                        if (isBookmarkedByUser) {
-                            Log.d(TAG, "✓ Found favorite: ${it._id} bookmarked by @$username")
-                        }
-                        isBookmarkedByUser
-                    }
+                    .filter { it.bookmarkedBy == myUserId }
                     .mapNotNull { bookmarkedPost ->
                         try {
                             Post(
@@ -278,60 +201,73 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
                     }
                     .toList()
 
-                Log.d(TAG, "📚 Found ${transformedPosts.size} favorites for @$username")
-
                 withContext(Dispatchers.Main) {
                     if (transformedPosts.isNotEmpty()) {
-                        allFavorites.clear()
-                        allFavorites.addAll(transformedPosts)
-                        submitToAdapter(allFavorites)
+                        feedAdapter.submitItems(transformedPosts)
+                        feedAdapter.initializeCommentCounts(transformedPosts)
                         showContent()
-
-                        // Update cache
-                        otherUserId?.let { uid ->
-                            favoritesCache[uid] = allFavorites.toMutableList()
-                            cacheTimestamp[uid] = System.currentTimeMillis()
-                            Log.d(TAG, "Cache updated - ${allFavorites.size} items stored")
-                        }
+                        Log.d(TAG, "Loaded ${transformedPosts.size} favorites")
                     } else {
                         showEmptyState()
-                        Log.d(TAG, "No favorites found for @$username")
                     }
-                    isDataLoaded = false
                 }
 
             } catch (e: Exception) {
                 Log.e(TAG, "Load error: ${e.message}", e)
-                e.printStackTrace()
                 withContext(Dispatchers.Main) {
                     showEmptyState()
-                    isDataLoaded = false
                 }
             }
         }
+    }
+
+    private fun emptyRepostedUser(): RepostedUser {
+        return RepostedUser(
+            _id = "",
+            avatar = Avatar(_id = "", url = "", localPath = ""),
+            bio = "",
+            coverImage = CoverImage(_id = "", localPath = "", url = ""),
+            createdAt = "",
+            email = "",
+            firstName = "",
+            lastName = "",
+            owner = "",
+            updatedAt = "",
+            username = ""
+        )
     }
 
     private fun showLoading() {
         binding.progressBar.visibility = View.VISIBLE
         binding.recyclerView.visibility = View.GONE
         binding.emptyView.visibility = View.GONE
+        binding.privacyView.visibility = View.GONE
     }
 
     private fun showContent() {
         binding.progressBar.visibility = View.GONE
         binding.recyclerView.visibility = View.VISIBLE
         binding.emptyView.visibility = View.GONE
+        binding.privacyView.visibility = View.GONE
     }
 
     private fun showEmptyState() {
         binding.progressBar.visibility = View.GONE
         binding.recyclerView.visibility = View.GONE
         binding.emptyView.visibility = View.VISIBLE
+        binding.privacyView.visibility = View.GONE
+    }
+
+    private fun showPrivacyMessage() {
+        binding.progressBar.visibility = View.GONE
+        binding.recyclerView.visibility = View.GONE
+        binding.emptyView.visibility = View.GONE
+        binding.privacyView.visibility = View.VISIBLE
     }
 
     // FeedAdapter callbacks - delegate to parent activity's
     override fun likeUnLikeFeed(position: Int, data: Post) {
-       Log.e(TAG, " not found")
+        Log.e(TAG, " not found")
     }
 
     override fun feedCommentClicked(position: Int, data: Post) {
@@ -339,7 +275,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     override fun feedFavoriteClick(position: Int, data: Post) {
-       Log.e(TAG, " not found")
+      Log.e(TAG, " not found")
     }
 
     override fun moreOptionsClick(position: Int, data: Post) {
@@ -347,34 +283,34 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     override fun feedFileClicked(position: Int, data: Post) {
-         Log.e(TAG, " not found")
+       Log.e(TAG, " not found")
     }
 
     override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
-         Log.e(TAG, " not found")
+       Log.e(TAG, " not found")
     }
 
     override fun feedShareClicked(position: Int, data: Post) {
-        Log.e(TAG, " not found")
+      Log.e(TAG, " not found")
     }
 
     override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {
-        Log.e(TAG, " not found")
+       Log.e(TAG, " not found")
     }
 
     override fun feedRepostPost(position: Int, data: Post) {
-         Log.e(TAG, " not found")
-    }
-
-    override fun feedRepostPostClicked(position: Int, data: Post) {
-         Log.e(TAG, " not found")
-    }
-
-    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
         Log.e(TAG, " not found")
     }
 
+    override fun feedRepostPostClicked(position: Int, data: Post) {
+       Log.e(TAG, " not found")
+    }
+
+    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
+      Log.e(TAG, " not found")
+    }
+
     override fun onImageClick() {
-         Log.e(TAG, " not found")
+        Log.e(TAG, " not found")
     }
 }
