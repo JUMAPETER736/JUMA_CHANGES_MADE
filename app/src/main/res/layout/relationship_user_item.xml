@@ -12,7 +12,7 @@
         android:id="@+id/userAvatar"
         android:layout_width="56dp"
         android:layout_height="56dp"
-        android:contentDescription="@string/user_avatar"
+        android:contentDescription="\@string/user_avatar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:src="@drawable/round_user" />
@@ -31,8 +31,8 @@
         android:ellipsize="end"
         app:layout_constraintStart_toEndOf="@id/userAvatar"
         app:layout_constraintTop_toTopOf="@id/userAvatar"
-        app:layout_constraintEnd_toStartOf="@id/actionButton"
-        tools:text="@username" />
+        app:layout_constraintEnd_toStartOf="\@id/actionButton"
+        tools:text="\@username" />
 
     <!-- Full Name -->
     <TextView
@@ -46,7 +46,7 @@
         android:ellipsize="end"
         app:layout_constraintStart_toStartOf="@id/usernameText"
         app:layout_constraintTop_toBottomOf="@id/usernameText"
-        app:layout_constraintEnd_toStartOf="@id/actionButton"
+        app:layout_constraintEnd_toStartOf="\@id/actionButton"
         tools:text="John Doe" />
 
     <!-- Added/Blocked/Muted Date -->
@@ -61,7 +61,7 @@
         android:ellipsize="end"
         app:layout_constraintStart_toStartOf="@id/usernameText"
         app:layout_constraintTop_toBottomOf="@id/fullNameText"
-        app:layout_constraintEnd_toStartOf="@id/actionButton"
+        app:layout_constraintEnd_toStartOf="\@id/actionButton"
         app:layout_constraintBottom_toBottomOf="@id/userAvatar"
         tools:text="Blocked 2 days ago" />
 
@@ -81,6 +81,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         tools:text="Unblock"
-        tools:textColor="@color/red_500" />
+        tools:textColor="@color/redBlocked" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

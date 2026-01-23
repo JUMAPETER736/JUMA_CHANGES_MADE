@@ -112,12 +112,12 @@ class RelationshipUsersAdapter(
 
             // Set action button text and color
             val (buttonText, buttonColor) = when (relationshipType) {
-                RelationshipType.BLOCKED -> "Unblock" to R.color.red_500
-                RelationshipType.MUTED_POSTS -> "Unmute" to R.color.red_500
-                RelationshipType.MUTED_STORIES -> "Unmute" to R.color.red_500
-                RelationshipType.CLOSE_FRIENDS -> "Remove" to R.color.red_500
-                RelationshipType.FAVORITES -> "Remove" to R.color.red_500
-                RelationshipType.RESTRICTED -> "Unrestrict" to R.color.red_500
+                RelationshipType.BLOCKED -> "Unblock" to R.color.redBlocked
+                RelationshipType.MUTED_POSTS -> "Unmute" to R.color.gray_dark_transparent
+                RelationshipType.MUTED_STORIES -> "Unmute" to R.color.app_secondary_variant
+                RelationshipType.CLOSE_FRIENDS -> "Remove" to R.color.redBlocked
+                RelationshipType.FAVORITES -> "Remove" to R.color.redBlocked
+                RelationshipType.RESTRICTED -> "Unrestrict" to R.color.dark_gray
             }
             actionButton.text = buttonText
             actionButton.setTextColor(context.getColor(buttonColor))
