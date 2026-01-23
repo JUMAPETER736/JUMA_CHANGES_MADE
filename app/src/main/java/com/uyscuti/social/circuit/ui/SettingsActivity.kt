@@ -18,10 +18,9 @@ import com.uyscuti.sharedmodule.model.SettingsModel
 class SettingsActivity : AppCompatActivity() {
     private lateinit var toolbar: Toolbar
     private lateinit var settings: SharedPreferences
-    private val PREFS_NAME = "LocalSettings" // Change this to a unique name for your app
+    private val PREFS_NAME = "LocalSettings"
     private lateinit var username: String
     private lateinit var avatar: String
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,7 +28,6 @@ class SettingsActivity : AppCompatActivity() {
 
         settings = getSharedPreferences(PREFS_NAME, 0)
         username = settings.getString("username", "").toString()
-
         avatar = settings.getString("avatar", "").toString()
 
         val avatarPath = settings.getString("avatar", "")
@@ -39,16 +37,17 @@ class SettingsActivity : AppCompatActivity() {
             BitmapFactory.decodeResource(resources, R.drawable.round_user)
         }
 
-
-
-        // Create a Bitmap from a resource, file, or any other source.
-        val lockBitmap: Bitmap? =  BitmapFactory.decodeResource(resources, R.drawable.google)
-        val userBitmap: Bitmap? =  BitmapFactory.decodeResource(resources, R.drawable.round_user)
+        // Create Bitmaps for icons
+        val lockBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google)
+        val userBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.round_user)
+        val blockBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google) // Change to ic_block
+        val muteBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google) // Change to ic_mute
+        val friendsBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google) // Change to ic_friends
+        val favoriteBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google) // Change to ic_favorite
+        val restrictBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google) // Change to ic_restrict
+        val hideBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google) // Change to ic_hide
 
         toolbar = findViewById(R.id.toolbar)
-
-//        findViewById<>()
-
         setSupportActionBar(toolbar)
 
         supportActionBar?.title = "Settings"
@@ -57,40 +56,99 @@ class SettingsActivity : AppCompatActivity() {
             onBackPressed()
         }
 
-        val settingsList = listOf<SettingsModel>(
+        val settingsList = listOf(
+            // User Profile
             SettingsModel(avatarBitmap, "Username", "Some Text"),
+
+            // Main Settings
             SettingsModel(lockBitmap, "Privacy", "Block contacts, Disappearing messages"),
             SettingsModel(lockBitmap, "Chats", "Theme, Wallpapers, Chat history"),
             SettingsModel(lockBitmap, "Notifications", "Message, group & call tones"),
             SettingsModel(lockBitmap, "Storage", "Network usage, auto-download"),
             SettingsModel(lockBitmap, "Help", "Help center, contact us, privacy policy"),
             SettingsModel(lockBitmap, "Invite", ""),
-        )
-        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
 
-//        recyclerView.setBackgroundColor(ContextCompat.getColor(this, R.color.recycler_view_background))
+            // ========== RELATIONSHIP MANAGEMENT SECTION ==========
+
+            // Blocked Users
+            SettingsModel(blockBitmap, "Blocked Users", "Manage blocked accounts"),
+
+            // Muted Posts
+            SettingsModel(muteBitmap, "Muted Posts", "Accounts whose posts you've muted"),
+
+            // Muted Stories
+            SettingsModel(muteBitmap, "Muted Stories", "Accounts whose stories you've muted"),
+
+            // Close Friends
+            SettingsModel(friendsBitmap, "Close Friends", "Manage your close friends list"),
+
+            // Favorites
+            SettingsModel(favoriteBitmap, "Favorites", "Accounts you've added to favorites"),
+
+            // Restricted Accounts
+            SettingsModel(restrictBitmap, "Restricted Accounts", "Manage restricted accounts"),
+
+            // Hidden Posts
+            SettingsModel(hideBitmap, "Hidden Posts", "Posts you've hidden from your feed")
+        )
+
+        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter =  SettingsAdapter(this,settingsList) {
+        recyclerView.adapter = SettingsAdapter(this, settingsList) {
             listItemClicked(it)
         }
-
-
     }
 
     private fun listItemClicked(selectedItem: SettingsModel) {
-        when(selectedItem.title){
+        when (selectedItem.title) {
             "Username" -> {
                 val intent = Intent(this@SettingsActivity, ViewImagesActivity::class.java)
                 startActivity(intent)
-//                EventBus.getDefault().post(GoToUserProfileFragment2())
-
-            }"Privacy" ->{
-
-                Toast.makeText(this, "privacy has been clicked", Toast.LENGTH_SHORT).show()
             }
 
-            "Notifications"->{
+            "Privacy" -> {
+                Toast.makeText(this, "Privacy has been clicked", Toast.LENGTH_SHORT).show()
+            }
+
+            "Notifications" -> {
                 val intent = Intent(this@SettingsActivity, NotificationsSettingsActivity::class.java)
+                startActivity(intent)
+            }
+
+            // ========== RELATIONSHIP MANAGEMENT CLICKS ==========
+
+            "Blocked Users" -> {
+                val intent = Intent(this@SettingsActivity, BlockedUsersActivity::class.java)
+                startActivity(intent)
+            }
+
+            "Muted Posts" -> {
+                val intent = Intent(this@SettingsActivity, MutedPostsActivity::class.java)
+                startActivity(intent)
+            }
+
+            "Muted Stories" -> {
+                val intent = Intent(this@SettingsActivity, MutedStoriesActivity::class.java)
+                startActivity(intent)
+            }
+
+            "Close Friends" -> {
+                val intent = Intent(this@SettingsActivity, CloseFriendsActivity::class.java)
+                startActivity(intent)
+            }
+
+            "Favorites" -> {
+                val intent = Intent(this@SettingsActivity, FavoritesActivity::class.java)
+                startActivity(intent)
+            }
+
+            "Restricted Accounts" -> {
+                val intent = Intent(this@SettingsActivity, RestrictedAccountsActivity::class.java)
+                startActivity(intent)
+            }
+
+            "Hidden Posts" -> {
+                val intent = Intent(this@SettingsActivity, HiddenPostsActivity::class.java)
                 startActivity(intent)
             }
         }
