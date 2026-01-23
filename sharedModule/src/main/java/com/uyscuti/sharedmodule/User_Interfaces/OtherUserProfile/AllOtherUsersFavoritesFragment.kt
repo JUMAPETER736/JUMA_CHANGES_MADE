@@ -158,7 +158,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                Log.d(TAG, "📚 Loading my own favorites")
+                Log.d(TAG, "Loading my own favorites")
 
                 val response = retrofitInstance.apiService.getFavoriteFeed(page = "1")
 
@@ -250,28 +250,28 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
         binding.progressBar.visibility = View.VISIBLE
         binding.recyclerView.visibility = View.GONE
         binding.emptyView.visibility = View.GONE
-        binding.privacyView.visibility = View.GONE
+        // binding.privacyView.visibility = View.GONE
     }
 
     private fun showContent() {
         binding.progressBar.visibility = View.GONE
         binding.recyclerView.visibility = View.VISIBLE
         binding.emptyView.visibility = View.GONE
-        binding.privacyView.visibility = View.GONE
+        // binding.privacyView.visibility = View.GONE
     }
 
     private fun showEmptyState() {
         binding.progressBar.visibility = View.GONE
         binding.recyclerView.visibility = View.GONE
         binding.emptyView.visibility = View.VISIBLE
-        binding.privacyView.visibility = View.GONE
+        // binding.privacyView.visibility = View.GONE
     }
 
     private fun showPrivacyMessage() {
         binding.progressBar.visibility = View.GONE
         binding.recyclerView.visibility = View.GONE
         binding.emptyView.visibility = View.GONE
-        binding.privacyView.visibility = View.VISIBLE
+        // binding.privacyView.visibility = View.VISIBLE
     }
 
     // FeedAdapter callbacks - delegate to parent activity's
