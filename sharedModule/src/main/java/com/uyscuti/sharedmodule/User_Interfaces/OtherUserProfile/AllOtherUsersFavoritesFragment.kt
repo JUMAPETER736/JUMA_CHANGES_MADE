@@ -280,7 +280,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     override fun feedCommentClicked(position: Int, data: Post) {
-         Log.e(TAG, " not found")
+        Log.e(TAG, " not found")
     }
 
     override fun feedFavoriteClick(position: Int, data: Post) {
@@ -288,11 +288,11 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     override fun moreOptionsClick(position: Int, data: Post) {
-         Log.e(TAG, " not found")
+        Log.e(TAG, " not found")
     }
 
     override fun feedFileClicked(position: Int, data: Post) {
-         Log.e(TAG, " not found")
+        Log.e(TAG, " not found")
     }
 
     override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
@@ -304,11 +304,11 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {
-         Log.e(TAG, " not found")
+        Log.e(TAG, " not found")
     }
 
     override fun feedRepostPost(position: Int, data: Post) {
-         Log.e(TAG, " not found")
+        Log.e(TAG, " not found")
     }
 
     override fun feedRepostPostClicked(position: Int, data: Post) {
@@ -320,6 +320,6 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
     }
 
     override fun onImageClick() {
-         Log.e(TAG, " not found")
+        Log.e(TAG, " not found")
     }
 }
