@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="16dp"
+    android:background="?attr/selectableItemBackground">
+
+    <!-- Author Avatar -->
+    <ImageView
+        android:id="@+id/authorAvatar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="\@string/user_avatar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:src="@drawable/round_user" />
+
+    <!-- Author Username -->
+    <TextView
+        android:id="@+id/authorUsername"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="8dp"
+        android:textColor="?android:textColorPrimary"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:layout_constraintStart_toEndOf="@id/authorAvatar"
+        app:layout_constraintTop_toTopOf="@id/authorAvatar"
+        app:layout_constraintEnd_toStartOf="@id/unhideButton"
+        tools:text="\@username" />
+
+    <!-- Post Content Preview -->
+    <TextView
+        android:id="@+id/postContent"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="?android:textColorSecondary"
+        android:textSize="14sp"
+        android:maxLines="3"
+        android:ellipsize="end"
+        app:layout_constraintStart_toStartOf="@id/authorUsername"
+        app:layout_constraintTop_toBottomOf="@id/authorUsername"
+        app:layout_constraintEnd_toStartOf="@id/unhideButton"
+        tools:text="This is the post content that was hidden from the feed. It can be multiple lines long and will be truncated at 3 lines maximum." />
+
+    <!-- Hidden Date -->
+    <TextView
+        android:id="@+id/hiddenAtText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="?android:textColorTertiary"
+        android:textSize="12sp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:layout_constraintStart_toStartOf="@id/authorUsername"
+        app:layout_constraintTop_toBottomOf="@id/postContent"
+        app:layout_constraintEnd_toStartOf="@id/unhideButton"
+        tools:text="Hidden on 2024-01-15" />
+
+    <!-- Unhide Button -->
+    <TextView
+        android:id="@+id/unhideButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Unhide"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/blueJeans"
+        android:background="?attr/selectableItemBackground"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
