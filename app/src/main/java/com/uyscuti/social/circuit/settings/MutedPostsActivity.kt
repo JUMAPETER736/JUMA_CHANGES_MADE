@@ -1,14 +1,24 @@
 package com.uyscuti.social.circuit.settings
 
 import android.os.Bundle
+import android.util.Log
+import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import android.widget.Toolbar
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.network.api.response.profile.followingList.MutedPostsItem
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MutedPostsActivity : AppCompatActivity() {
 
