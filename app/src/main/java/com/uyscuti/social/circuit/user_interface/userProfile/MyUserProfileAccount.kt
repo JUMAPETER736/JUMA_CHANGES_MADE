@@ -94,6 +94,7 @@ private const val CAMERA_PERMISSION_CODE = 100
 class MyUserProfileAccount : AppCompatActivity() {
 
     companion object {
+
         private const val EXTRA_USER = "extra_user"
         private const val EXTRA_USER_ID = "extra_user_id"
         private const val EXTRA_USER_NAME = "extra_user_name"

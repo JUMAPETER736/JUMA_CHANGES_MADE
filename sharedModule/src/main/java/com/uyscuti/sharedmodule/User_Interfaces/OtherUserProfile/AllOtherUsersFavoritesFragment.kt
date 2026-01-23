@@ -30,7 +30,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-
 @AndroidEntryPoint
 class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
@@ -39,38 +38,23 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
     private var otherUserId: String? = null  // The profile being viewed
     private var username: String? = null
-    private var cleanUsername: String? = null
-
-    private var myUserId: String? = null  // The logged-in user
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
 
     private lateinit var feedAdapter: FeedAdapter
-    private lateinit var localStorage: LocalStorage
 
-    private var currentPage = 1
-    private var isLoading = false
-    private var hasMoreData = true
     private val allFavorites = mutableListOf<Post>()
-    private var hasLoadedOnce = false
-
-    // Caching system
-    private var cachedFavorites: List<Post>? = null
-    private var cacheTimestamp: Long = 0L
-    private val CACHE_DURATION_MS = 5 * 60 * 1000L
-
-    // Pagination limits
-    private val MAX_PAGES = 10
-    private val MAX_ITEMS = 50
+    private var isDataLoaded = false
 
     companion object {
-        private const val TAG = "OtherUserFavoritesFragment"
+        private const val TAG = "AllOtherUserFavoritesFragment"
         private const val ARG_USER_ID = "userId"
         private const val ARG_USERNAME = "username"
 
-        // Static cache: "otherUserId" -> (favorites, timestamp)
-        private val staticCache = mutableMapOf<String, Pair<List<Post>, Long>>()
+        internal val favoritesCache = mutableMapOf<String, MutableList<Post>>()
+        internal val cacheTimestamp = mutableMapOf<String, Long>()
+        private const val CACHE_VALIDITY_MS = 5 * 60 * 1000L
 
         fun newInstance(userId: String, username: String): AllOtherUsersFavoritesFragment {
             return AllOtherUsersFavoritesFragment().apply {
@@ -81,35 +65,37 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
             }
         }
 
-        fun clearCache(otherUserId: String) {
-            staticCache.remove(otherUserId)
+        fun clearCache(userId: String) {
+            favoritesCache.remove(userId)
+            cacheTimestamp.remove(userId)
+        }
+
+        internal fun emptyRepostedUser(): RepostedUser {
+            return RepostedUser(
+                _id = "",
+                avatar = Avatar(_id = "", url = "", localPath = ""),
+                bio = "",
+                coverImage = CoverImage(_id = "", localPath = "", url = ""),
+                createdAt = "",
+                email = "",
+                firstName = "",
+                lastName = "",
+                owner = "",
+                updatedAt = "",
+                username = ""
+            )
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        localStorage = LocalStorage.getInstance(requireContext())
-        myUserId = localStorage.getUserId()
-
         arguments?.let {
             otherUserId = it.getString(ARG_USER_ID)
             username = it.getString(ARG_USERNAME)
-            cleanUsername = username?.trim()?.lowercase()
         }
 
-        Log.d(TAG, "📚 Loading favorites for @$username")
-        Log.d(TAG, "   User ID: $otherUserId")
-
-        // Check cache
-        staticCache[otherUserId]?.let { (favorites, timestamp) ->
-            if ((System.currentTimeMillis() - timestamp) < CACHE_DURATION_MS) {
-                cachedFavorites = favorites
-                cacheTimestamp = timestamp
-                hasLoadedOnce = true
-                Log.d(TAG, "⚡ Loaded ${favorites.size} favorites from cache!")
-            }
-        }
+        Log.d(TAG, "onCreate: userId = $otherUserId, username = @$username")
     }
 
     override fun onCreateView(
@@ -126,50 +112,41 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
         setupRecyclerView()
 
-        // Show cached data instantly if available
-        if (cachedFavorites != null && isCacheValid()) {
-            Log.d(TAG, "⚡ Displaying cached favorites instantly!")
-            displayCachedData()
+        // Show cached data IMMEDIATELY without checking validity
+        val cached = favoritesCache[otherUserId]
+        if (!cached.isNullOrEmpty()) {
+            allFavorites.clear()
+            allFavorites.addAll(cached)
+            submitToAdapter(allFavorites)
+            showContent()
 
-            // Background refresh if stale
-            if ((System.currentTimeMillis() - cacheTimestamp) > (CACHE_DURATION_MS / 2)) {
-                Log.d(TAG, "Refreshing stale cache in background")
-                refreshInBackground()
+            // Load fresh data in background only if cache is old
+            if (!isCacheValid()) {
+                loadBookmarkedFeedPosts()
             }
         } else {
-            // No cache, load fresh data
-            resetAndLoadFresh()
+            // No cache - load data
+            loadBookmarkedFeedPosts()
         }
     }
 
-    private fun isCacheValid(): Boolean {
-        return cachedFavorites != null &&
-                (System.currentTimeMillis() - cacheTimestamp) < CACHE_DURATION_MS
-    }
-
-    private fun displayCachedData() {
-        allFavorites.clear()
-        allFavorites.addAll(cachedFavorites!!)
-
-        feedAdapter.clear()
-        feedAdapter.submitItems(allFavorites)
-        feedAdapter.initializeCommentCounts(allFavorites)
-
-        if (allFavorites.isEmpty()) {
-            showEmptyState()
-        } else {
-            showContent()
+    override fun onResume() {
+        super.onResume()
+        if (!isCacheValid()) {
+            refreshBookmarks()
         }
-
-        Log.d(TAG, "⚡ Displayed ${allFavorites.size} favorites")
     }
 
-    private fun resetAndLoadFresh() {
-        allFavorites.clear()
-        currentPage = 1
-        isLoading = false
-        hasMoreData = true
-        loadFavorites()
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding.recyclerView.adapter = null
+        _binding = null
+    }
+
+    private fun refreshBookmarks() {
+        Log.d(TAG, "Refreshing bookmarks for @$username")
+        isDataLoaded = false
+        loadBookmarkedFeedPosts()
     }
 
     private fun setupRecyclerView() {
@@ -183,372 +160,221 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = feedAdapter
-            visibility = View.GONE
             setHasFixedSize(true)
-            setItemViewCacheSize(20)
-            isNestedScrollingEnabled = true
-
-            val viewPool = RecyclerView.RecycledViewPool()
-            viewPool.setMaxRecycledViews(0, 15)
-            setRecycledViewPool(viewPool)
-
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    super.onScrolled(recyclerView, dx, dy)
-
-                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                    val visibleItemCount = layoutManager.childCount
-                    val totalItemCount = layoutManager.itemCount
-                    val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
-
-                    if (!isLoading && hasMoreData && hasLoadedOnce) {
-                        if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount - 5 &&
-                            firstVisibleItemPosition >= 0) {
-                            loadFavorites()
-                        }
-                    }
-                }
-            })
-        }
-
-        feedAdapter.recyclerView = binding.recyclerView
-    }
-
-    private fun loadFavorites() {
-        if (isLoading || !hasMoreData || currentPage > MAX_PAGES ||
-            allFavorites.size >= MAX_ITEMS) {
-            if (currentPage > MAX_PAGES) {
-                Log.d(TAG, "Reached max pages ($MAX_PAGES)")
-            }
-            if (allFavorites.size >= MAX_ITEMS) {
-                Log.d(TAG, "Reached max items ($MAX_ITEMS)")
-            }
-            hasMoreData = false
-            hasLoadedOnce = true
-            return
-        }
-
-        isLoading = true
-        Log.d(TAG, "⚡ Loading favorites page $currentPage for @$username")
-
-        if (currentPage == 1) {
-            showLoading()
-            allFavorites.clear()
-        }
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                // Fetch all bookmarked posts
-                val response = retrofitInstance.apiService.getFavoriteFeed(page = currentPage.toString())
-
-                Log.d(TAG, "API Response - Success: ${response.isSuccessful}, Code: ${response.code()}")
-
-                if (response.isSuccessful) {
-                    val responseBody = response.body()
-                    val allBookmarkedPosts = responseBody?.data?.bookmarkedPosts ?: emptyList()
-
-                    Log.d(TAG, "Page $currentPage: Received ${allBookmarkedPosts.size} bookmarked posts")
-
-                    // Filter to show only posts bookmarked by the other user
-                    val userFavorites = allBookmarkedPosts.filter { post ->
-                        val bookmarkedByUserIds = post.bookmarkedByUserIds ?: emptyList()
-                        bookmarkedByUserIds.contains(otherUserId)
-                    }
-
-                    Log.d(TAG, "📚 Page $currentPage: Found ${userFavorites.size} favorites for @$username")
-
-                    withContext(Dispatchers.Main) {
-                        if (userFavorites.isNotEmpty()) {
-                            val validatedPosts = userFavorites.mapNotNull {
-                                validateAndFixPost(it)
-                            }
-
-                            if (validatedPosts.isNotEmpty()) {
-                                allFavorites.addAll(validatedPosts)
-
-                                if (currentPage == 1) {
-                                    feedAdapter.clear()
-                                }
-                                feedAdapter.submitItems(validatedPosts)
-                                feedAdapter.initializeCommentCounts(validatedPosts)
-
-                                Log.d(TAG, "Added ${validatedPosts.size} favorites. Total: ${allFavorites.size}")
-
-                                showContent()
-                            }
-                        }
-
-                        isLoading = false
-                    }
-
-                    // Check pagination
-                    val hasNextPage = responseBody?.data?.hasNextPage ?: false
-                    val totalPages = responseBody?.data?.totalPages ?: currentPage
-
-                    Log.d(TAG, "Pagination: hasNext=$hasNextPage, page=$currentPage/$totalPages")
-
-                    // Auto-load initial batch (3-5 pages)
-                    val shouldContinueInitialLoad = !hasLoadedOnce &&
-                            currentPage < 5 &&
-                            currentPage < MAX_PAGES &&
-                            allFavorites.size < MAX_ITEMS
-
-                    if (hasNextPage && currentPage < totalPages && shouldContinueInitialLoad) {
-                        currentPage++
-                        Log.d(TAG, "Auto-loading next page: $currentPage")
-                        withContext(Dispatchers.Main) {
-                            isLoading = false
-                            loadFavorites()
-                        }
-                    } else {
-                        hasMoreData = hasNextPage && currentPage < totalPages &&
-                                currentPage < MAX_PAGES &&
-                                allFavorites.size < MAX_ITEMS
-                        hasLoadedOnce = true
-
-                        if (hasNextPage && currentPage < totalPages) {
-                            currentPage++
-                        }
-
-                        withContext(Dispatchers.Main) {
-                            hideLoading()
-
-                            // Update cache
-                            cachedFavorites = allFavorites.toList()
-                            cacheTimestamp = System.currentTimeMillis()
-                            staticCache[otherUserId!!] = Pair(cachedFavorites!!, cacheTimestamp)
-
-                            if (allFavorites.isEmpty()) {
-                                showEmptyState()
-                            }
-
-                            Log.d(TAG, "FINISHED - Loaded $currentPage pages, ${allFavorites.size} favorites")
-                            Log.d(TAG, "Cache updated - ${cachedFavorites?.size} items stored")
-                        }
-                    }
-                } else {
-                    Log.e(TAG, "API error: ${response.code()}")
-                    withContext(Dispatchers.Main) {
-                        handleError("Failed to load: ${response.code()}")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Exception: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    handleError("Error: ${e.message}")
-                }
-            }
+            setItemViewCacheSize(30)
+            recycledViewPool.setMaxRecycledViews(0, 30)
+            visibility = View.GONE
         }
     }
 
-    private fun refreshInBackground() {
-        if (isLoading) return
+    private fun submitToAdapter(posts: List<Post>) {
+        if (!isAdded || _binding == null) return
 
-        Log.d(TAG, "Starting background refresh of favorites")
-        isLoading = true
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val allRefreshedFavorites = mutableListOf<Post>()
-                var page = 1
-
-                // Load up to 3 pages in background
-                while (page <= 3 && page <= MAX_PAGES) {
-                    val response = retrofitInstance.apiService.getFavoriteFeed(page = page.toString())
-
-                    if (response.isSuccessful) {
-                        val allBookmarkedPosts = response.body()?.data?.bookmarkedPosts ?: emptyList()
-
-                        val userFavorites = allBookmarkedPosts.filter { post ->
-                            val bookmarkedByUserIds = post.bookmarkedByUserIds ?: emptyList()
-                            bookmarkedByUserIds.contains(otherUserId)
-                        }.mapNotNull { validateAndFixPost(it) }
-
-                        allRefreshedFavorites.addAll(userFavorites)
-
-                        val hasNextPage = response.body()?.data?.hasNextPage ?: false
-                        if (!hasNextPage) break
-                    } else {
-                        break
-                    }
-                    page++
-                }
-
-                withContext(Dispatchers.Main) {
-                    if (allRefreshedFavorites.isNotEmpty()) {
-                        // Update cache silently
-                        cachedFavorites = allRefreshedFavorites
-                        cacheTimestamp = System.currentTimeMillis()
-                        staticCache[otherUserId!!] = Pair(cachedFavorites!!, cacheTimestamp)
-
-                        // Update UI if data changed significantly
-                        if (allRefreshedFavorites.size != allFavorites.size) {
-                            allFavorites.clear()
-                            allFavorites.addAll(allRefreshedFavorites)
-                            feedAdapter.clear()
-                            feedAdapter.submitItems(allFavorites)
-                            feedAdapter.initializeCommentCounts(allFavorites)
-                            Log.d(TAG, "Background refresh completed - UI updated")
-                        } else {
-                            Log.d(TAG, "Background refresh completed - no changes")
-                        }
-                    }
-                    isLoading = false
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Background refresh failed (silent)", e)
-                isLoading = false
-            }
-        }
-    }
-
-    private fun validateAndFixPost(post: Post): Post? {
         try {
-            if (post.isReposted == true && !post.originalPost.isNullOrEmpty()) {
-                val originalPost = post.originalPost[0]
+            feedAdapter.submitItems(posts)
+            feedAdapter.initializeCommentCounts(posts)
+            if (feedAdapter.itemCount != posts.size) {
+                feedAdapter.notifyDataSetChanged()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error submitting to adapter", e)
+        }
+    }
 
-                if (originalPost.author?.account == null) {
-                    Log.w(TAG, "Skipping repost ${post._id}: null Original Author")
-                    return null
-                }
+    private fun isCacheValid(): Boolean {
+        val timestamp = cacheTimestamp[otherUserId] ?: return false
+        return System.currentTimeMillis() - timestamp < CACHE_VALIDITY_MS
+    }
 
-                post.comments = originalPost.commentCount ?: 0
-                post.likes = originalPost.likeCount ?: 0
-                post.bookmarkCount = originalPost.bookmarkCount ?: 0
-                post.repostCount = originalPost.repostCount ?: 0
-                post.shareCount = 0
+    private fun loadBookmarkedFeedPosts() {
+        if (isDataLoaded) return
 
-                if (post.contentType.isNullOrEmpty() || post.contentType == "mixed") {
-                    post.contentType = when {
-                        !originalPost.files.isNullOrEmpty() -> {
-                            when {
-                                originalPost.files.size > 1 -> "mixed_files"
-                                originalPost.fileTypes?.any { it.fileType == "video" } == true -> "videos"
-                                else -> "mixed_files"
-                            }
-                        }
-                        post.files.isNotEmpty() -> {
-                            when {
-                                post.files.size > 1 -> "mixed_files"
-                                post.fileTypes?.any { it.fileType == "video" } == true -> "videos"
-                                else -> "mixed_files"
-                            }
-                        }
-                        !originalPost.content.isNullOrEmpty() || !post.content.isNullOrEmpty() -> "text"
-                        else -> "text"
+        isDataLoaded = true
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                Log.d(TAG, "📚 Fetching bookmarked posts for @$username (ID: $otherUserId)")
+
+                // Show loading only if we don't have cache
+                if (!isCacheValid()) {
+                    withContext(Dispatchers.Main) {
+                        showLoading()
                     }
                 }
-            } else {
-                if (post.author == null || post.author.account == null) {
-                    Log.w(TAG, "Skipping Post ${post._id}: null Author/Account")
-                    return null
+
+                val response = retrofitInstance.apiService.getFavoriteFeed(page = "1")
+
+                if (!response.isSuccessful) {
+                    Log.e(TAG, "API call failed with code: ${response.code()}")
+                    withContext(Dispatchers.Main) {
+                        showEmptyState()
+                        isDataLoaded = false
+                    }
+                    return@launch
                 }
 
-                if (post.comments == null) post.comments = 0
-                if (post.likes == null) post.likes = 0
-                if (post.bookmarkCount == null) post.bookmarkCount = 0
-                if (post.repostCount == null) post.repostCount = 0
-                if (post.shareCount == null) post.shareCount = 0
+                val responseBody = response.body()
+                Log.d(TAG, "Response body: ${responseBody?.message}")
 
-                if (post.contentType.isNullOrEmpty()) {
-                    post.contentType = when {
-                        post.files.isNotEmpty() -> {
-                            when {
-                                post.files.size > 1 -> "mixed_files"
-                                post.fileTypes?.any { it.fileType == "video" } == true -> "videos"
-                                else -> "mixed_files"
-                            }
+                val bookmarkedPosts = responseBody?.data?.bookmarkedPosts.orEmpty()
+                Log.d(TAG, "Received ${bookmarkedPosts.size} total bookmarked posts from server")
+
+                // Filter for posts bookmarked by the other user (same as MyUserFavoritesFragment)
+                val transformedPosts = bookmarkedPosts
+                    .asSequence()
+                    .filter {
+                        val isBookmarkedByUser = it.bookmarkedBy == otherUserId
+                        if (isBookmarkedByUser) {
+                            Log.d(TAG, "✓ Found favorite: ${it._id} bookmarked by @$username")
                         }
-                        !post.content.isNullOrEmpty() -> "text"
-                        else -> "text"
+                        isBookmarkedByUser
                     }
+                    .mapNotNull { bookmarkedPost ->
+                        try {
+                            Post(
+                                _id = bookmarkedPost._id,
+                                content = bookmarkedPost.content ?: "",
+                                duration = bookmarkedPost.duration,
+                                feedShortsBusinessId = bookmarkedPost.feedShortsBusinessId,
+                                tags = bookmarkedPost.tags,
+                                contentType = bookmarkedPost.contentType,
+                                numberOfPages = bookmarkedPost.numberOfPages,
+                                fileNames = bookmarkedPost.fileNames,
+                                fileTypes = bookmarkedPost.fileTypes,
+                                fileSizes = bookmarkedPost.fileSizes,
+                                files = bookmarkedPost.files,
+                                fileIds = bookmarkedPost.fileIds,
+                                thumbnail = bookmarkedPost.thumbnail,
+                                author = bookmarkedPost.author,
+                                isReposted = bookmarkedPost.isReposted,
+                                repostedByUserId = bookmarkedPost.repostedByUserId ?: "",
+                                repostedUsers = bookmarkedPost.repostedUsers,
+                                createdAt = bookmarkedPost.createdAt,
+                                updatedAt = bookmarkedPost.updatedAt,
+                                __v = bookmarkedPost.__v,
+                                comments = bookmarkedPost.comments,
+                                likes = bookmarkedPost.likes,
+                                isLiked = bookmarkedPost.isLiked,
+                                isFollowing = bookmarkedPost.isFollowing,
+                                isBookmarked = true,
+                                bookmarkCount = bookmarkedPost.bookmarkCount,
+                                isInCloseFriends = bookmarkedPost.isInCloseFriends,
+                                isPostsMuted = bookmarkedPost.isPostsMuted,
+                                isStoriesMuted = bookmarkedPost.isStoriesMuted,
+                                isFavorite = bookmarkedPost.isFavorite,
+                                isRestricted = bookmarkedPost.isRestricted,
+                                originalPost = bookmarkedPost.originalPost,
+                                isExpanded = false,
+                                isLocal = false,
+                                repostCount = 0,
+                                shareCount = 0,
+                                repostedUser = bookmarkedPost.repostedUser ?: emptyRepostedUser(),
+                                isBusinessPost = false
+                            )
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error transforming post ${bookmarkedPost._id}: ${e.message}")
+                            null
+                        }
+                    }
+                    .toList()
+
+                Log.d(TAG, "📚 Found ${transformedPosts.size} favorites for @$username")
+
+                withContext(Dispatchers.Main) {
+                    if (transformedPosts.isNotEmpty()) {
+                        allFavorites.clear()
+                        allFavorites.addAll(transformedPosts)
+                        submitToAdapter(allFavorites)
+                        showContent()
+
+                        // Update cache
+                        otherUserId?.let { uid ->
+                            favoritesCache[uid] = allFavorites.toMutableList()
+                            cacheTimestamp[uid] = System.currentTimeMillis()
+                            Log.d(TAG, "Cache updated - ${allFavorites.size} items stored")
+                        }
+                    } else {
+                        showEmptyState()
+                        Log.d(TAG, "No favorites found for @$username")
+                    }
+                    isDataLoaded = false
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Load error: ${e.message}", e)
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    showEmptyState()
+                    isDataLoaded = false
                 }
             }
-
-            // Mark as bookmarked (by the other user)
-            post.isBookmarked = true
-
-            return post
-        } catch (e: Exception) {
-            Log.e(TAG, "Error validating Post ${post._id}: ${e.message}", e)
-            return null
         }
     }
 
     private fun showLoading() {
         binding.progressBar.visibility = View.VISIBLE
-        binding.emptyView.visibility = View.GONE
         binding.recyclerView.visibility = View.GONE
-    }
-
-    private fun hideLoading() {
-        binding.progressBar.visibility = View.GONE
+        binding.emptyView.visibility = View.GONE
     }
 
     private fun showContent() {
-        binding.emptyView.visibility = View.GONE
-        binding.recyclerView.visibility = View.VISIBLE
         binding.progressBar.visibility = View.GONE
+        binding.recyclerView.visibility = View.VISIBLE
+        binding.emptyView.visibility = View.GONE
     }
 
     private fun showEmptyState() {
-        binding.emptyView.visibility = View.VISIBLE
-        binding.recyclerView.visibility = View.GONE
         binding.progressBar.visibility = View.GONE
-        hasMoreData = false
+        binding.recyclerView.visibility = View.GONE
+        binding.emptyView.visibility = View.VISIBLE
     }
 
-    private fun handleError(message: String) {
-        isLoading = false
-        hasMoreData = false
-        hasLoadedOnce = true
-        hideLoading()
-
-        if (allFavorites.isEmpty()) {
-            showEmptyState()
-        } else {
-            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-        }
+    // FeedAdapter callbacks - delegate to parent activity's
+    override fun likeUnLikeFeed(position: Int, data: Post) {
+       Log.e(TAG, " not found")
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        binding.recyclerView.adapter = null
-        _binding = null
+    override fun feedCommentClicked(position: Int, data: Post) {
+       Log.e(TAG, " not found")
     }
 
-    // FeedAdapter callbacks
-    override fun likeUnLikeFeed(position: Int, data: Post) {}
-    override fun feedCommentClicked(position: Int, data: Post) {}
     override fun feedFavoriteClick(position: Int, data: Post) {
-        // When unbookmarked, remove from list
-        if (!data.isBookmarked && position in allFavorites.indices) {
-            Log.d(TAG, "Removing unbookmarked post at position $position")
-            allFavorites.removeAt(position)
-            feedAdapter.submitItems(allFavorites)
-            feedAdapter.notifyItemRemoved(position)
-
-            // Update cache
-            cachedFavorites = allFavorites.toList()
-            cacheTimestamp = System.currentTimeMillis()
-            staticCache[otherUserId!!] = Pair(cachedFavorites!!, cacheTimestamp)
-
-            if (allFavorites.isEmpty()) {
-                showEmptyState()
-            }
-        }
+       Log.e(TAG, " not found")
     }
 
-    override fun moreOptionsClick(position: Int, data: Post) {}
-    override fun feedFileClicked(position: Int, data: Post) {}
-    override fun feedRepostFileClicked(position: Int, data: OriginalPost) {}
-    override fun feedShareClicked(position: Int, data: Post) {}
-    override fun followButtonClicked(
-        followUnFollowEntity: FollowUnFollowEntity,
-        followButton: AppCompatButton
-    ) {}
-    override fun feedRepostPost(position: Int, data: Post) {}
-    override fun feedRepostPostClicked(position: Int, data: Post) {}
-    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {}
-    override fun onImageClick() {}
+    override fun moreOptionsClick(position: Int, data: Post) {
+        Log.e(TAG, " not found")
+    }
+
+    override fun feedFileClicked(position: Int, data: Post) {
+         Log.e(TAG, " not found")
+    }
+
+    override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
+         Log.e(TAG, " not found")
+    }
+
+    override fun feedShareClicked(position: Int, data: Post) {
+        Log.e(TAG, " not found")
+    }
+
+    override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {
+        Log.e(TAG, " not found")
+    }
+
+    override fun feedRepostPost(position: Int, data: Post) {
+         Log.e(TAG, " not found")
+    }
+
+    override fun feedRepostPostClicked(position: Int, data: Post) {
+         Log.e(TAG, " not found")
+    }
+
+    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
+        Log.e(TAG, " not found")
+    }
+
+    override fun onImageClick() {
+         Log.e(TAG, " not found")
+    }
 }

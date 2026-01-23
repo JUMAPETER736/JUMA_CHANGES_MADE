@@ -35,6 +35,7 @@ import javax.inject.Inject
 class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     companion object {
+
         private const val TAG = "MyUserFavoritesFragment"
         private const val ARG_USER_ID = "userId"
         private const val ARG_USERNAME = "username"

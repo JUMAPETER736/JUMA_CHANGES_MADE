@@ -43,6 +43,7 @@ private const val TAG = "MyUsersFeedFragment"
 class MyUserFeedFragment : Fragment(), OnFeedClickListener {
 
     companion object {
+
         private const val ARG_USER_ID = "userId"
         private const val ARG_USERNAME = "username"
 
