@@ -306,7 +306,7 @@
             android:name="com.uyscuti.sharedmodule.OtherUserProfile"
             android:exported="false" />
         <activity
-            android:name=".ui.SettingsActivity"
+            android:name=".settings.SettingsActivity"
             android:exported="false"
             android:theme="@style/Base.Theme.FlashDesign" />
         <activity

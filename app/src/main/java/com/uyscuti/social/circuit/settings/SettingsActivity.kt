@@ -1,19 +1,19 @@
-package com.uyscuti.social.circuit.ui
+package com.uyscuti.social.circuit.settings
 
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.adapter.SettingsAdapter
 import com.uyscuti.sharedmodule.media.ViewImagesActivity
 import com.uyscuti.sharedmodule.model.SettingsModel
+import com.uyscuti.social.circuit.R
+import com.uyscuti.social.circuit.ui.NotificationsSettingsActivity
 
 class SettingsActivity : AppCompatActivity() {
     private lateinit var toolbar: Toolbar
@@ -111,7 +111,8 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             "Notifications" -> {
-                val intent = Intent(this@SettingsActivity, NotificationsSettingsActivity::class.java)
+                val intent =
+                    Intent(this@SettingsActivity, NotificationsSettingsActivity::class.java)
                 startActivity(intent)
             }
 

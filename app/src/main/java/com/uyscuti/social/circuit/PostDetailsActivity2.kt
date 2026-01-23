@@ -102,7 +102,7 @@ import com.uyscuti.sharedmodule.presentation.GroupDialogViewModel
 import com.uyscuti.sharedmodule.presentation.MessageViewModel
 import com.uyscuti.sharedmodule.service.VideoPreLoadingService
 import com.uyscuti.social.circuit.ui.LoginActivity
-import com.uyscuti.social.circuit.ui.SettingsActivity
+import com.uyscuti.social.circuit.settings.SettingsActivity
 import com.uyscuti.sharedmodule.shorts.UniqueIdGenerator
 import com.uyscuti.sharedmodule.shorts.getFileSize
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper

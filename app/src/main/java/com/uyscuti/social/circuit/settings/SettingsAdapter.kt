@@ -1,4 +1,4 @@
-package com.uyscuti.social.circuit.adapter
+package com.uyscuti.social.circuit.settings
 
 import android.content.Context
 import android.content.SharedPreferences

@@ -70,7 +70,7 @@ import com.uyscuti.social.circuit.presentation.GroupDialogViewModel
 import com.uyscuti.social.circuit.presentation.MainViewModel
 import com.uyscuti.social.circuit.presentation.MessageViewModel
 import com.uyscuti.social.circuit.ui.LoginActivity
-import com.uyscuti.social.circuit.ui.SettingsActivity
+import com.uyscuti.social.circuit.settings.SettingsActivity
 import com.uyscuti.social.circuit.ui.fragments.ChatFragment
 import com.uyscuti.social.circuit.ui.fragments.FeedFragment
 import com.uyscuti.social.circuit.ui.fragments.NotificationsFragment
