@@ -32,7 +32,7 @@
         <ImageView
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:src="@drawable/favorite_svgrepo_com__1_"
+            android:src="@android:drawable/star_big_off"
             android:contentDescription="@string/no_bookmarks"
             android:alpha="0.5" />
 
@@ -40,7 +40,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="No Favorites Yet"
+            android:text="@string/no_bookmarks_title"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@android:color/black" />
@@ -50,12 +50,12 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:text="Posts you bookmark will appear here"
+            android:text="@string/no_bookmarks_message"
             android:textColor="@android:color/darker_gray"
             android:textSize="14sp" />
     </LinearLayout>
 
-    <!-- Privacy view for other users' favorites -->
+    <!-- Privacy view for other users' favorites - THIS IS THE MISSING VIEW! -->
     <LinearLayout
         android:id="@+id/privacyView"
         android:layout_width="match_parent"
@@ -68,15 +68,15 @@
         <ImageView
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:src="@drawable/ic_lock"
-            android:contentDescription="@string/private_favorites_message"
+            android:src="@android:drawable/ic_lock_lock"
+            android:contentDescription="@string/private_favorites_icon"
             android:alpha="0.5" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Favorites are Private"
+            android:text="@string/private_favorites_title"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@android:color/black" />
@@ -86,7 +86,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:text="Only this user can see their favorites"
+            android:text="@string/private_favorites_message"
             android:textColor="@android:color/darker_gray"
             android:textSize="14sp" />
     </LinearLayout>
