@@ -333,7 +333,7 @@ class SettingsAdapter(
             // Set appropriate icon based on the setting type
             val iconRes = when (setting.title) {
                 "Blocked Users" -> R.drawable.baseline_block_24
-                "Muted Posts" -> R.drawable.microphone_mute_svgrepo_com
+                "Muted Posts" -> R.drawable.ic_mute_post
                 "Muted Stories" -> R.drawable.ic_mute_stories
                 "Close Friends" -> R.drawable.ic_close_friends
                 "Favorites" -> R.drawable.ic_favorite
