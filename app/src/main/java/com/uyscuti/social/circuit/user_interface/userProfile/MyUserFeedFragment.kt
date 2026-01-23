@@ -9,13 +9,17 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.OptIn
 import androidx.appcompat.widget.AppCompatButton
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
+import com.uyscuti.sharedmodule.model.FeedCommentClicked
+import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.ui.fragments.feed.AllFragment
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
@@ -28,6 +32,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.greenrobot.eventbus.EventBus
 import javax.inject.Inject
 
 private const val TAG = "MyUsersFeedFragment"
@@ -65,6 +70,11 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
+
+    @OptIn(UnstableApi::class)
+    private fun getMainActivity(): MainActivity? {
+        return activity as? MainActivity
+    }
 
     private lateinit var apiService: IFlashapi
     private lateinit var recyclerView: RecyclerView
@@ -434,14 +444,10 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
     }
 
     override fun feedCommentClicked(position: Int, data: Post) {
-        Log.d(TAG, "Comment clicked at position $position - delegating to AllFragment")
+        Log.d(TAG, "Comment clicked at position $position - posting EventBus event")
 
-        getAllFragment()?.let { fragment ->
-            fragment.feedCommentClicked(position, data)
-        } ?: run {
-            Log.e(TAG, "AllFragment not found, cannot delegate comment action")
-            Toast.makeText(requireContext(), "Unable to open comments", Toast.LENGTH_SHORT).show()
-        }
+        // Post the event that MainActivity is listening for
+        EventBus.getDefault().post(FeedCommentClicked(position, data))
     }
 
     override fun feedFavoriteClick(position: Int, data: Post) {
