@@ -166,5 +166,16 @@
         <item name="android:background">@android:color/transparent</item>
     </style>
 
+    <string name="loading">Loading...</string>
+    <string name="no_bookmarks">No Bookmarks Icon</string>
+    <string name="no_bookmarks_title">No Bookmarks Yet</string>
+    <string name="no_bookmarks_message">You haven\'t added any favorites yet. Start exploring and bookmark your favorite posts!</string>
+
+
+    <string name="private_favorites_icon">Private Favorites Icon</string>
+    <string name="private_favorites_title">Favorites are Private</string>
+    <string name="private_favorites_message">This user has hidden their favorites from others.</string>
+
+
 
 </resources>

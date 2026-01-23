@@ -16,9 +16,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.sharedmodule.databinding.AllOtherUsersFavoritesFragmentBinding
-import com.uyscuti.sharedmodule.viewmodels.feed.FeedUploadViewModel
-import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
-import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.posts.Avatar
 import com.uyscuti.social.network.api.response.posts.CoverImage
@@ -32,7 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import kotlin.getValue
+
 
 @AndroidEntryPoint
 class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
@@ -40,13 +37,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
     private var _binding: AllOtherUsersFavoritesFragmentBinding? = null
     private val binding get() = _binding!!
 
-    private val followingUserIds = mutableSetOf<String>()
-    private val relationshipsViewModel: UserRelationshipsViewModel by activityViewModels()
-    private lateinit var allFeedAdapter: FeedAdapter
-    private var blockedUserIds = mutableSetOf<String>()
-    private val getFeedViewModel: GetFeedViewModel by activityViewModels()
-    private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
-    private lateinit var feedListView: RecyclerView
+
 
     private var otherUserId: String? = null  // The profile being viewed
     private var username: String? = null
@@ -158,7 +149,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
             // Background refresh if stale
             if ((System.currentTimeMillis() - cacheTimestamp) > (CACHE_DURATION_MS / 2)) {
-                Log.d(TAG, "🔄 Refreshing stale cache in background")
+                Log.d(TAG, "Refreshing stale cache in background")
                 refreshInBackground()
             }
         } else {
@@ -243,10 +234,10 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
         if (isLoading || !hasMoreData || currentPage > MAX_PAGES ||
             allMutualFavorites.size >= MAX_ITEMS) {
             if (currentPage > MAX_PAGES) {
-                Log.d(TAG, "⚠️ Reached max pages ($MAX_PAGES)")
+                Log.d(TAG, "Reached max pages ($MAX_PAGES)")
             }
             if (allMutualFavorites.size >= MAX_ITEMS) {
-                Log.d(TAG, "⚠️ Reached max items ($MAX_ITEMS)")
+                Log.d(TAG, "Reached max items ($MAX_ITEMS)")
             }
             hasMoreData = false
             hasLoadedOnce = true
@@ -263,7 +254,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // Fetch all bookmarked posts (includes bookmarkedBy field)
+                // Fetch all bookmarked posts (now includes bookmarkedByUserIds array)
                 val response = retrofitInstance.apiService.getFavoriteFeed(page = currentPage.toString())
 
                 Log.d(TAG, "API Response - Success: ${response.isSuccessful}, Code: ${response.code()}")
@@ -274,28 +265,20 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
                     Log.d(TAG, "Page $currentPage: Received ${allBookmarkedPosts.size} total bookmarked posts")
 
-                    // CRITICAL: Find posts bookmarked by BOTH users
-                    // Group posts by _id to see who bookmarked them
-                    val postBookmarkers = mutableMapOf<String, MutableSet<String>>()
-                    val postData = mutableMapOf<String, Post>()
+                    //  Use bookmarkedByUserIds array from each post
+                    val mutualFavorites = allBookmarkedPosts.filter { post ->
+                        val bookmarkedByUserIds = post.bookmarkedByUserIds ?: emptyList()
 
-                    allBookmarkedPosts.forEach { post ->
-                        val postId = post._id
-                        val bookmarkedBy = post.bookmarkedBy ?: ""
+                        // Check if BOTH users are in the bookmarkedByUserIds array
+                        val hasBothUsers = bookmarkedByUserIds.contains(myUserId) &&
+                                bookmarkedByUserIds.contains(otherUserId)
 
-                        if (bookmarkedBy.isNotEmpty()) {
-                            postBookmarkers.getOrPut(postId) { mutableSetOf() }.add(bookmarkedBy)
-                            postData[postId] = post
+                        if (hasBothUsers) {
+                            Log.d(TAG, "Mutual favorite found: ${post._id}")
+                            Log.d(TAG, "   Bookmarked by ${bookmarkedByUserIds.size} users: $bookmarkedByUserIds")
                         }
-                    }
 
-                    // Find posts where BOTH myUserId and otherUserId appear as bookmarkers
-                    val mutualPostIds = postBookmarkers.filter { (_, bookmarkers) ->
-                        bookmarkers.contains(myUserId) && bookmarkers.contains(otherUserId)
-                    }.keys
-
-                    val mutualFavorites = mutualPostIds.mapNotNull { postId ->
-                        postData[postId]
+                        hasBothUsers
                     }
 
                     Log.d(TAG, "🎯 Page $currentPage: Found ${mutualFavorites.size} MUTUAL favorites")
@@ -316,7 +299,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
                                 feedAdapter.submitItems(validatedPosts)
                                 feedAdapter.initializeCommentCounts(validatedPosts)
 
-                                Log.d(TAG, "✅ Added ${validatedPosts.size} mutual favorites. Total: ${allMutualFavorites.size}")
+                                Log.d(TAG, "Added ${validatedPosts.size} mutual favorites. Total: ${allMutualFavorites.size}")
 
                                 showContent()
                             }
@@ -339,7 +322,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
 
                     if (hasNextPage && currentPage < totalPages && shouldContinueInitialLoad) {
                         currentPage++
-                        Log.d(TAG, "🔄 Auto-loading next page: $currentPage")
+                        Log.d(TAG, "Auto-loading next page: $currentPage")
                         withContext(Dispatchers.Main) {
                             isLoading = false
                             loadMutualFavorites()
@@ -367,7 +350,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
                                 showEmptyState()
                             }
 
-                            Log.d(TAG, "✅ FINISHED - Loaded $currentPage pages, ${allMutualFavorites.size} mutual favorites")
+                            Log.d(TAG, "FINISHED - Loaded $currentPage pages, ${allMutualFavorites.size} mutual favorites")
                             Log.d(TAG, "Cache updated - ${cachedFavorites?.size} items stored")
                         }
                     }
@@ -389,7 +372,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
     private fun refreshInBackground() {
         if (isLoading) return
 
-        Log.d(TAG, "🔄 Starting background refresh of mutual favorites")
+        Log.d(TAG, "Starting background refresh of mutual favorites")
         isLoading = true
 
         lifecycleScope.launch(Dispatchers.IO) {
@@ -404,27 +387,12 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
                     if (response.isSuccessful) {
                         val allBookmarkedPosts = response.body()?.data?.bookmarkedPosts ?: emptyList()
 
-                        // Find mutual favorites
-                        val postBookmarkers = mutableMapOf<String, MutableSet<String>>()
-                        val postData = mutableMapOf<String, Post>()
-
-                        allBookmarkedPosts.forEach { post ->
-                            val postId = post._id
-                            val bookmarkedBy = post.bookmarkedBy ?: ""
-
-                            if (bookmarkedBy.isNotEmpty()) {
-                                postBookmarkers.getOrPut(postId) { mutableSetOf() }.add(bookmarkedBy)
-                                postData[postId] = post
-                            }
-                        }
-
-                        val mutualPostIds = postBookmarkers.filter { (_, bookmarkers) ->
-                            bookmarkers.contains(myUserId) && bookmarkers.contains(otherUserId)
-                        }.keys
-
-                        val mutualFavorites = mutualPostIds.mapNotNull { postId ->
-                            postData[postId]?.let { validateAndFixPost(it) }
-                        }
+                        // Use bookmarkedByUserIds array
+                        val mutualFavorites = allBookmarkedPosts.filter { post ->
+                            val bookmarkedByUserIds = post.bookmarkedByUserIds ?: emptyList()
+                            bookmarkedByUserIds.contains(myUserId) &&
+                                    bookmarkedByUserIds.contains(otherUserId)
+                        }.mapNotNull { validateAndFixPost(it) }
 
                         allRefreshedMutuals.addAll(mutualFavorites)
 
@@ -451,9 +419,9 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
                             feedAdapter.clear()
                             feedAdapter.submitItems(allMutualFavorites)
                             feedAdapter.initializeCommentCounts(allMutualFavorites)
-                            Log.d(TAG, "✅ Background refresh completed - UI updated")
+                            Log.d(TAG, "Background refresh completed - UI updated")
                         } else {
-                            Log.d(TAG, "✅ Background refresh completed - no changes")
+                            Log.d(TAG, "Background refresh completed - no changes")
                         }
                     }
                     isLoading = false
@@ -603,7 +571,6 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
-
     override fun moreOptionsClick(position: Int, data: Post) {}
     override fun feedFileClicked(position: Int, data: Post) {}
     override fun feedRepostFileClicked(position: Int, data: OriginalPost) {}
@@ -616,5 +583,4 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
     override fun feedRepostPostClicked(position: Int, data: Post) {}
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {}
     override fun onImageClick() {}
-
 }

@@ -47,6 +47,7 @@ data class Post(
     val bookmarkId: String? = null,
     val bookmarkedBy: String? = null,
     val bookmarkedAt: String? = null,
+    val bookmarkedByUserIds: List<String>? = null,
 
     // Privacy / relationship flags
     var isInCloseFriends: Boolean? = null,
