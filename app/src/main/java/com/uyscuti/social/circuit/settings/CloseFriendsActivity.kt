@@ -19,14 +19,12 @@ import com.uyscuti.social.network.utils.LocalStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 class CloseFriendsActivity : AppCompatActivity() {
 
     private val retrofitInstance: RetrofitInstance by lazy {
         RetrofitInstance(LocalStorage(this), this)
     }
-
 
     private lateinit var toolbar: Toolbar
     private lateinit var recyclerView: RecyclerView
@@ -58,9 +56,12 @@ class CloseFriendsActivity : AppCompatActivity() {
 
     private fun setupToolbar() {
         setSupportActionBar(toolbar)
-        supportActionBar?.title = "Close Friends"
+        supportActionBar?.apply {
+            title = "Close Friends"
+            setDisplayHomeAsUpEnabled(true)
+        }
         toolbar.setNavigationIcon(R.drawable.baseline_arrow_back_ios_24)
-        toolbar.setNavigationOnClickListener { onBackPressed() }
+        toolbar.setNavigationOnClickListener { finish() }
     }
 
     private fun setupRecyclerView() {
@@ -69,8 +70,11 @@ class CloseFriendsActivity : AppCompatActivity() {
             relationshipType = RelationshipUsersAdapter.RelationshipType.CLOSE_FRIENDS,
             onActionClick = { userId, item -> showRemoveDialog(userId, item) }
         )
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = adapter
+        recyclerView.apply {
+            layoutManager = LinearLayoutManager(this@CloseFriendsActivity)
+            adapter = this@CloseFriendsActivity.adapter
+            setHasFixedSize(true)
+        }
     }
 
     private fun loadCloseFriends() {
@@ -83,22 +87,25 @@ class CloseFriendsActivity : AppCompatActivity() {
                 }
 
                 if (response.isSuccessful && response.body()?.success == true) {
-                    val items = response.body()?.data?.map { closeFriendItem ->
-                        UserRelationshipItem(
-                            userId = closeFriendItem.user?._id ?: "",
-                            username = closeFriendItem.user?.username ?: "",
-                            email = closeFriendItem.user?.email,
-                            firstName = closeFriendItem.user?.firstName,
-                            lastName = closeFriendItem.user?.lastName,
-                            avatar = closeFriendItem.user?.avatar?.let {
-                                com.uyscuti.social.network.api.response.posts.Avatar(
-                                    _id = it._id,
-                                    localPath = it.localPath,
-                                    url = it.url
-                                )
-                            },
-                            actionDate = closeFriendItem.addedAt
-                        )
+                    val items = response.body()?.data?.mapNotNull { closeFriendItem ->
+                        // Only add items with valid user data
+                        closeFriendItem.user?.let { user ->
+                            UserRelationshipItem(
+                                userId = user._id ?: return@mapNotNull null,
+                                username = user.username ?: return@mapNotNull null,
+                                email = user.email,
+                                firstName = user.firstName,
+                                lastName = user.lastName,
+                                avatar = user.avatar?.let {
+                                    com.uyscuti.social.network.api.response.posts.Avatar(
+                                        _id = it._id,
+                                        localPath = it.localPath,
+                                        url = it.url
+                                    )
+                                },
+                                actionDate = closeFriendItem.addedAt ?: ""
+                            )
+                        }
                     } ?: emptyList()
 
                     closeFriendsList.clear()
@@ -106,11 +113,12 @@ class CloseFriendsActivity : AppCompatActivity() {
                     adapter.updateList(closeFriendsList)
                     showEmptyState(closeFriendsList.isEmpty())
                 } else {
-                    Toast.makeText(this@CloseFriendsActivity, "Failed to load", Toast.LENGTH_SHORT).show()
+                    val errorMessage = response.body()?.message ?: "Failed to load close friends"
+                    showError(errorMessage)
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error: ${e.message}", e)
-                Toast.makeText(this@CloseFriendsActivity, "Network error", Toast.LENGTH_SHORT).show()
+                Log.e(TAG, "Error loading close friends: ${e.message}", e)
+                showError("Network error. Please check your connection.")
             } finally {
                 showLoading(false)
             }
@@ -120,12 +128,13 @@ class CloseFriendsActivity : AppCompatActivity() {
     private fun showRemoveDialog(userId: String, item: UserRelationshipItem) {
         AlertDialog.Builder(this)
             .setTitle("Remove @${item.username} from close friends?")
-            .setMessage("They won't be notified.")
+            .setMessage("They won't be notified that you removed them from your close friends list.")
             .setPositiveButton("Remove") { dialog, _ ->
                 removeFromCloseFriends(userId, item)
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+            .setCancelable(true)
             .show()
     }
 
@@ -143,13 +152,20 @@ class CloseFriendsActivity : AppCompatActivity() {
                         adapter.removeItem(position)
                         showEmptyState(closeFriendsList.isEmpty())
 
-                        Snackbar.make(recyclerView, "Removed from close friends", Snackbar.LENGTH_LONG)
-                            .setAction("Undo") { addBackToCloseFriends(userId, item, position) }
-                            .show()
+                        Snackbar.make(
+                            recyclerView,
+                            "@${item.username} removed from close friends",
+                            Snackbar.LENGTH_LONG
+                        ).setAction("Undo") {
+                            addBackToCloseFriends(userId, item, position)
+                        }.show()
                     }
+                } else {
+                    showError("Failed to remove from close friends")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error: ${e.message}", e)
+                Log.e(TAG, "Error removing from close friends: ${e.message}", e)
+                showError("Failed to remove. Please try again.")
             }
         }
     }
@@ -162,12 +178,23 @@ class CloseFriendsActivity : AppCompatActivity() {
                 }
 
                 if (response.isSuccessful) {
-                    closeFriendsList.add(position, item)
+                    // Insert at the original position
+                    val insertPosition = position.coerceAtMost(closeFriendsList.size)
+                    closeFriendsList.add(insertPosition, item)
                     adapter.updateList(closeFriendsList)
                     showEmptyState(closeFriendsList.isEmpty())
+
+                    Toast.makeText(
+                        this@CloseFriendsActivity,
+                        "@${item.username} added back to close friends",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    showError("Failed to add back to close friends")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error: ${e.message}", e)
+                Log.e(TAG, "Error adding back to close friends: ${e.message}", e)
+                showError("Failed to undo. Please try again.")
             }
         }
     }
@@ -175,11 +202,26 @@ class CloseFriendsActivity : AppCompatActivity() {
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
         recyclerView.visibility = if (show) View.GONE else View.VISIBLE
+        emptyTextView.visibility = View.GONE
     }
 
     private fun showEmptyState(isEmpty: Boolean) {
-        emptyTextView.visibility = if (isEmpty) View.VISIBLE else View.GONE
-        emptyTextView.text = "No close friends"
-        recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
+        if (isEmpty) {
+            emptyTextView.visibility = View.VISIBLE
+            emptyTextView.text = "No close friends yet"
+            recyclerView.visibility = View.GONE
+        } else {
+            emptyTextView.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+        }
+    }
+
+    private fun showError(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 }
