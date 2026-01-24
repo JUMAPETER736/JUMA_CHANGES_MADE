@@ -1,10 +1,10 @@
 package com.uyscuti.social.circuit.settings
 
 import android.content.Context
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -13,17 +13,17 @@ import com.bumptech.glide.load.resource.bitmap.CircleCrop
 import com.bumptech.glide.request.RequestOptions
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.network.api.response.posts.Avatar
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 /**
  * Adapter for displaying relationship-based user lists
  * Used for: Blocked Users, Muted Posts, Muted Stories, Close Friends, Favorites, Restricted
  */
 class RelationshipUsersAdapter(
-
     private val context: Context,
     private val relationshipType: RelationshipType,
     private val onActionClick: (String, UserRelationshipItem) -> Unit
-
 ) : RecyclerView.Adapter<RelationshipUsersAdapter.UserViewHolder>() {
 
     private var userList = mutableListOf<UserRelationshipItem>()
@@ -64,55 +64,47 @@ class RelationshipUsersAdapter(
     }
 
     inner class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val avatar: ImageView = itemView.findViewById(R.id.userAvatar)
-        private val username: TextView = itemView.findViewById(R.id.usernameText)
-        private val fullName: TextView = itemView.findViewById(R.id.fullNameText)
-        private val actionButton: TextView = itemView.findViewById(R.id.actionButton)
-        private val addedAtText: TextView = itemView.findViewById(R.id.addedAtText)
-
-        init {
-            val selectableItemBackground = TypedValue()
-            itemView.context.theme.resolveAttribute(
-                android.R.attr.selectableItemBackground,
-                selectableItemBackground,
-                true
-            )
-            itemView.setBackgroundResource(selectableItemBackground.resourceId)
-        }
+        private val avatarImageView: ImageView = itemView.findViewById(R.id.avatarImageView)
+        private val fullNameTextView: TextView = itemView.findViewById(R.id.fullNameTextView)
+        private val usernameTextView: TextView = itemView.findViewById(R.id.usernameTextView)
+        private val dateTextView: TextView = itemView.findViewById(R.id.dateTextView)
+        private val actionButton: Button = itemView.findViewById(R.id.actionButton)
 
         fun bind(item: UserRelationshipItem) {
-            // Set username
-            username.text = "@${item.username}"
+            // Load avatar
+            val avatarUrl = item.avatar?.url
+            Glide.with(avatarImageView.context)
+                .load(avatarUrl)
+                .apply(RequestOptions.bitmapTransform(CircleCrop()))
+                .placeholder(R.drawable.flash21)
+                .error(R.drawable.flash21)
+                .into(avatarImageView)
 
-            // Set full name
+            // Set full name (or username as fallback)
             val fullName = buildString {
                 item.firstName?.let { append(it) }
                 if (item.firstName != null && item.lastName != null) append(" ")
                 item.lastName?.let { append(it) }
             }
-            this.fullName.text = fullName.ifEmpty { item.username }
 
-            // Load avatar
-            val avatarUrl = item.avatar?.url
-            Glide.with(avatar.context)
-                .load(avatarUrl)
-                .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                .placeholder(R.drawable.round_user)
-                .error(R.drawable.round_user)
-                .into(avatar)
+            fullNameTextView.text = fullName.ifEmpty { item.username }
 
-            // Set added/action date text
-            val dateText = when (relationshipType) {
-                RelationshipType.BLOCKED -> "Blocked ${item.actionDate}"
-                RelationshipType.MUTED_POSTS -> "Muted ${item.actionDate}"
-                RelationshipType.MUTED_STORIES -> "Muted ${item.actionDate}"
-                RelationshipType.CLOSE_FRIENDS -> "Added ${item.actionDate}"
-                RelationshipType.FAVORITES -> "Added ${item.actionDate}"
-                RelationshipType.RESTRICTED -> "Restricted ${item.actionDate}"
+            // Set username
+            usernameTextView.text = "@${item.username}"
+
+            // Format and set date
+            val formattedDate = formatDate(item.actionDate)
+            val datePrefix = when (relationshipType) {
+                RelationshipType.BLOCKED -> "Blocked"
+                RelationshipType.MUTED_POSTS -> "Muted"
+                RelationshipType.MUTED_STORIES -> "Muted"
+                RelationshipType.CLOSE_FRIENDS -> "Added"
+                RelationshipType.FAVORITES -> "Added"
+                RelationshipType.RESTRICTED -> "Restricted"
             }
-            addedAtText.text = dateText
+            dateTextView.text = "$datePrefix $formattedDate"
 
-            // Set action button text and color
+            // Set action button text and styling
             val (buttonText, buttonColor) = when (relationshipType) {
                 RelationshipType.BLOCKED -> "Unblock" to R.color.redBlocked
                 RelationshipType.MUTED_POSTS -> "Unmute" to R.color.gray_dark_transparent
@@ -121,20 +113,35 @@ class RelationshipUsersAdapter(
                 RelationshipType.FAVORITES -> "Remove" to R.color.redBlocked
                 RelationshipType.RESTRICTED -> "Unrestrict" to R.color.dark_gray
             }
+
             actionButton.text = buttonText
             actionButton.setTextColor(context.getColor(buttonColor))
 
-            // Set click listener
+            // Set click listeners
             actionButton.setOnClickListener {
                 onActionClick(item.userId, item)
             }
 
-            // Navigate to profile on item click
             itemView.setOnClickListener {
                 // TODO: Navigate to user profile
                 // val intent = Intent(context, UserProfileActivity::class.java)
                 // intent.putExtra("userId", item.userId)
                 // context.startActivity(intent)
+            }
+        }
+
+        private fun formatDate(dateString: String): String {
+            return try {
+                // Parse the ISO date string
+                val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+                val date = isoFormat.parse(dateString)
+
+                // Format to "24 January 2026"
+                val displayFormat = SimpleDateFormat("d MMMM yyyy", Locale.getDefault())
+                date?.let { displayFormat.format(it) } ?: dateString
+            } catch (e: Exception) {
+                // If parsing fails, return as is
+                dateString
             }
         }
     }
@@ -150,5 +157,5 @@ data class UserRelationshipItem(
     val firstName: String? = null,
     val lastName: String? = null,
     val avatar: Avatar? = null,
-    val actionDate: String // blockedAt, mutedAt, addedAt, restrictedAt
+    val actionDate: String // blockedAt, mutedAt, addedAt, restrictedAt (ISO date string)
 )
