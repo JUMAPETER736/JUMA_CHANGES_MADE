@@ -1,15 +1,16 @@
 package com.uyscuti.social.circuit.settings
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -18,9 +19,12 @@ import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.social.circuit.R
+import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
+import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -32,20 +36,20 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     private lateinit var toolbar: Toolbar
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
-    private lateinit var emptyStateLayout: LinearLayout
     private lateinit var emptyStateTextView: TextView
     private lateinit var feedAdapter: FeedAdapter
     private lateinit var sharedPrefs: SharedPreferences
     private lateinit var retrofitInstance: RetrofitInstance
 
-    private val TAG = "HiddenFeedPostsActivity"
+    private val TAG = "HiddenPostsActivity"
     private val hiddenPosts = mutableListOf<Post>()
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_hidden_posts)
 
-        // Initialize RetrofitInstance with LocalStorage
+        // Initialize RetrofitInstance properly
         val localStorage = LocalStorage.getInstance(this)
         retrofitInstance = RetrofitInstance(localStorage, this)
 
@@ -53,7 +57,6 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         toolbar = findViewById(R.id.toolbar)
         recyclerView = findViewById(R.id.hiddenPostsRecyclerView)
         progressBar = findViewById(R.id.progressBar)
-        emptyStateLayout = findViewById(R.id.emptyStateLayout)
         emptyStateTextView = findViewById(R.id.emptyStateTextView)
 
         setSupportActionBar(toolbar)
@@ -97,16 +100,13 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                 // Fetch all posts from the feed and filter hidden ones
                 hiddenPosts.clear()
 
-                // Fetch from feed API
+                // Fetch from feed and filter
                 val response = withContext(Dispatchers.IO) {
                     retrofitInstance.apiService.getAllFeed("1")
                 }
 
                 if (response.isSuccessful && response.body() != null) {
-                    val responseBody = response.body()!!
-                    val allPosts = responseBody.data.data.posts
-
-                    Log.d(TAG, "Fetched ${allPosts.size} posts from page 1")
+                    val allPosts = response.body()!!.data.data.posts
 
                     // Filter only the hidden posts
                     val foundHiddenPosts = allPosts.filter { post ->
@@ -117,10 +117,9 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                     Log.d(TAG, "Found ${foundHiddenPosts.size} hidden posts from page 1")
 
                     // If we need more pages to find all hidden posts
-                    if (foundHiddenPosts.size < hiddenPostIds.size && responseBody.data.data.hasNextPage) {
-                        val totalPages = responseBody.data.data.totalPages.coerceAtMost(5) // Max 5 pages
-
-                        for (page in 2..totalPages) {
+                    if (foundHiddenPosts.size < hiddenPostIds.size) {
+                        // Try fetching more pages
+                        for (page in 2..5) { // Check up to 5 pages
                             val pageResponse = withContext(Dispatchers.IO) {
                                 retrofitInstance.apiService.getAllFeed(page.toString())
                             }
@@ -130,53 +129,33 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                                 val pageHiddenPosts = pagePosts.filter { post ->
                                     hiddenPostIds.contains(post._id) && !hiddenPosts.any { it._id == post._id }
                                 }
+                                hiddenPosts.addAll(pageHiddenPosts)
+                                Log.d(TAG, "Found ${pageHiddenPosts.size} more hidden posts from page $page")
 
-                                if (pageHiddenPosts.isNotEmpty()) {
-                                    hiddenPosts.addAll(pageHiddenPosts)
-                                    Log.d(TAG, "Found ${pageHiddenPosts.size} more hidden posts from page $page")
-                                }
-
-                                // Stop if we found all hidden posts
                                 if (hiddenPosts.size >= hiddenPostIds.size) break
                             }
                         }
                     }
-
-                    // Sort by hidden date (most recent first)
-                    hiddenPosts.sortByDescending { post ->
-                        sharedPrefs.getLong("${post._id}_timestamp", 0L)
-                    }
-
-                    // Update adapter
-                    feedAdapter.submitItems(hiddenPosts.toMutableList())
-
-                    showEmptyState(hiddenPosts.isEmpty())
-                    showLoading(false)
-
-                    Log.d(TAG, "Successfully loaded ${hiddenPosts.size} out of ${hiddenPostIds.size} hidden posts")
-
-                    // Warn if some posts couldn't be found
-                    if (hiddenPosts.size < hiddenPostIds.size) {
-                        val missingCount = hiddenPostIds.size - hiddenPosts.size
-                        Log.w(TAG, "Warning: $missingCount hidden posts were not found in the feed")
-                    }
-
-                } else {
-                    Log.e(TAG, "Failed to fetch feed: ${response.code()} - ${response.message()}")
-                    Toast.makeText(
-                        this@HiddenFeedPostsActivity,
-                        "Failed to load posts",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    showEmptyState(true)
-                    showLoading(false)
                 }
+
+                // Sort by hidden date (most recent first)
+                hiddenPosts.sortByDescending { post ->
+                    sharedPrefs.getLong("${post._id}_timestamp", 0L)
+                }
+
+                // Update adapter
+                feedAdapter.submitItems(hiddenPosts.toMutableList())
+
+                showEmptyState(hiddenPosts.isEmpty())
+                showLoading(false)
+
+                Log.d(TAG, "Successfully loaded ${hiddenPosts.size} hidden posts")
 
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading hidden posts: ${e.message}", e)
                 Toast.makeText(
                     this@HiddenFeedPostsActivity,
-                    "Error: ${e.message}",
+                    "Failed to load hidden posts: ${e.message}",
                     Toast.LENGTH_SHORT
                 ).show()
                 showLoading(false)
@@ -188,61 +167,65 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
         recyclerView.visibility = if (show) View.GONE else View.VISIBLE
-        emptyStateLayout.visibility = View.GONE
+        emptyStateTextView.visibility = View.GONE
     }
 
     private fun showEmptyState(show: Boolean) {
-        emptyStateLayout.visibility = if (show) View.VISIBLE else View.GONE
+        emptyStateTextView.visibility = if (show) View.VISIBLE else View.GONE
         recyclerView.visibility = if (show) View.GONE else View.VISIBLE
-        progressBar.visibility = View.GONE
     }
 
     // ==================== OnFeedClickListener IMPLEMENTATION ====================
 
-    fun onLikeClick(position: Int, data: Post) {
+    override fun likeUnLikeFeed(position: Int, data: Post) {
         Toast.makeText(this, "Unhide the post to like it", Toast.LENGTH_SHORT).show()
     }
 
-    fun onCommentClick(position: Int, data: Post) {
+    override fun feedCommentClicked(position: Int, data: Post) {
         Toast.makeText(this, "Unhide the post to comment", Toast.LENGTH_SHORT).show()
     }
 
-    fun onRepostClick(position: Int, data: Post) {
-        Toast.makeText(this, "Unhide the post to repost", Toast.LENGTH_SHORT).show()
-    }
-
-    fun onShareClick(position: Int, data: Post) {
-        Toast.makeText(this, "Unhide the post to share", Toast.LENGTH_SHORT).show()
-    }
-
-    fun onBookmarkClick(position: Int, data: Post) {
+    override fun feedFavoriteClick(position: Int, data: Post) {
         Toast.makeText(this, "Unhide the post to bookmark", Toast.LENGTH_SHORT).show()
     }
 
     override fun moreOptionsClick(position: Int, data: Post) {
-        // Show custom dialog with only "Unhide" option
         showUnhideDialog(position, data)
     }
 
-    fun profileImageClicked(position: Int, data: Post) {
-        Toast.makeText(this, "Unhide the post to view profile", Toast.LENGTH_SHORT).show()
+    override fun feedFileClicked(position: Int, data: Post) {
+        Toast.makeText(this, "Unhide the post to view media", Toast.LENGTH_SHORT).show()
     }
 
-    fun onFeedItemClick(position: Int, data: Post) {
-        // Show unhide option when post is clicked
-        showUnhideDialog(position, data)
+    override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
+        Toast.makeText(this, "Unhide the post to view", Toast.LENGTH_SHORT).show()
     }
 
-    fun onFeedLongClick(position: Int, data: Post) {
-        showUnhideDialog(position, data)
+    override fun feedShareClicked(position: Int, data: Post) {
+        Toast.makeText(this, "Unhide the post to share", Toast.LENGTH_SHORT).show()
     }
 
-    fun onMuteClick(position: Int, data: Post) {
-        // Not applicable for hidden posts
+    override fun followButtonClicked(
+        followUnFollowEntity: FollowUnFollowEntity,
+        followButton: AppCompatButton
+    ) {
+        Toast.makeText(this, "Unhide the post to follow users", Toast.LENGTH_SHORT).show()
     }
 
-    fun onItemLongPressed(position: Int, data: Post) {
-        showUnhideDialog(position, data)
+    override fun feedRepostPost(position: Int, data: Post) {
+        Toast.makeText(this, "Unhide the post to repost", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun feedRepostPostClicked(position: Int, data: Post) {
+        Toast.makeText(this, "Unhide the post to view repost", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
+        Toast.makeText(this, "Unhide the post to view original", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onImageClick() {
+        Toast.makeText(this, "Unhide the post to view images", Toast.LENGTH_SHORT).show()
     }
 
     // ==================== UNHIDE FUNCTIONALITY ====================
@@ -250,7 +233,7 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     private fun showUnhideDialog(position: Int, data: Post) {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Unhide Post")
-            .setMessage("Do you want to unhide this post? It will appear in your feed again.")
+            .setMessage("Do you want to unhide this post and show it in your feed again?")
             .setPositiveButton("Unhide") { dialog, _ ->
                 handleUnhidePost(position, data)
                 dialog.dismiss()
@@ -322,7 +305,7 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "onResume: Reloading hidden posts")
-        // Reload when returning to this screen in case posts were unhidden elsewhere
+        // Reload when returning to this screen
         loadHiddenPosts()
     }
 }

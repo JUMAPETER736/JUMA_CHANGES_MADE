@@ -161,6 +161,11 @@ class SettingsActivity : AppCompatActivity() {
                 val intent = Intent(this@SettingsActivity, RestrictedAccountsActivity::class.java)
                 startActivity(intent)
             }
+
+            "Hidden Posts" -> {
+                val intent = Intent(this@SettingsActivity, HiddenFeedPostsActivity::class.java)
+                startActivity(intent)
+            }
         }
     }
 }
