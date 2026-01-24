@@ -42,7 +42,7 @@ class RestrictedAccountsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_muted_posts)
+        setContentView(R.layout.activity_restricted_accounts)
 
         initializeViews()
         setupToolbar()
