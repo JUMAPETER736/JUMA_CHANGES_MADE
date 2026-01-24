@@ -1,186 +1,174 @@
 package com.uyscuti.social.circuit.settings
 
-import android.content.Context
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
-import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
-import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.network.api.response.posts.Post
+import com.uyscuti.social.network.api.response.profile.followingList.RestrictedItem
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
+class RestrictedAccountsActivity : AppCompatActivity() {
 
+    private val retrofitInstance: RetrofitInstance by lazy {
+        RetrofitInstance(LocalStorage(this), this)
+    }
 
-class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
 
     private lateinit var toolbar: Toolbar
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
-    private lateinit var emptyStateLayout: LinearLayout
-    private lateinit var emptyStateTextView: TextView
-    private lateinit var feedAdapter: FeedAdapter
-    private lateinit var sharedPrefs: SharedPreferences
-    private lateinit var retrofitInstance: RetrofitInstance
+    private lateinit var emptyTextView: TextView
+    private lateinit var adapter: RelationshipUsersAdapter
+    private val restrictedList = mutableListOf<UserRelationshipItem>()
 
-    private val TAG = "HiddenFeedPostsActivity"
-    private val hiddenPosts = mutableListOf<Post>()
+    companion object {
+        private const val TAG = "RestrictedAccountsActivity"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_hidden_posts)
+        setContentView(R.layout.activity_restricted_accounts)
 
-        // Initialize RetrofitInstance with LocalStorage
-        val localStorage = LocalStorage.getInstance(this)
-        retrofitInstance = RetrofitInstance(localStorage, this)
-
-        // Initialize views
-        toolbar = findViewById(R.id.toolbar)
-        recyclerView = findViewById(R.id.hiddenPostsRecyclerView)
-        progressBar = findViewById(R.id.progressBar)
-        emptyStateLayout = findViewById(R.id.emptyStateLayout)
-        emptyStateTextView = findViewById(R.id.emptyStateTextView)
-
-        setSupportActionBar(toolbar)
-        supportActionBar?.title = "Hidden Posts"
-        toolbar.setNavigationIcon(R.drawable.baseline_arrow_back_ios_24)
-        toolbar.setNavigationOnClickListener { onBackPressed() }
-
-        sharedPrefs = getSharedPreferences("HiddenPosts", Context.MODE_PRIVATE)
-
-        // Setup RecyclerView with FeedAdapter
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        feedAdapter = FeedAdapter(
-            context = this,
-            retrofitInterface = retrofitInstance,
-            feedClickListener = this,
-            fragmentManager = supportFragmentManager
-        )
-        recyclerView.adapter = feedAdapter
-
-        loadHiddenPosts()
+        initializeViews()
+        setupToolbar()
+        setupRecyclerView()
+        loadRestrictedAccounts()
     }
 
-    private fun loadHiddenPosts() {
+    private fun initializeViews() {
+        toolbar = findViewById(R.id.toolbar)
+        recyclerView = findViewById(R.id.recyclerView)
+        progressBar = findViewById(R.id.progressBar)
+        emptyTextView = findViewById(R.id.emptyTextView)
+    }
+
+    private fun setupToolbar() {
+        setSupportActionBar(toolbar)
+        supportActionBar?.title = "Restricted Accounts"
+        toolbar.setNavigationIcon(R.drawable.baseline_arrow_back_ios_24)
+        toolbar.setNavigationOnClickListener { onBackPressed() }
+    }
+
+    private fun setupRecyclerView() {
+        adapter = RelationshipUsersAdapter(
+            context = this,
+            relationshipType = RelationshipUsersAdapter.RelationshipType.RESTRICTED,
+            onActionClick = { userId, item -> showUnrestrictDialog(userId, item) }
+        )
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = adapter
+    }
+
+    private fun loadRestrictedAccounts() {
+        showLoading(true)
+
         lifecycleScope.launch {
             try {
-                showLoading(true)
-
-                // Get all hidden post IDs from SharedPreferences
-                val hiddenPostIds = sharedPrefs.all.keys
-                    .filter { !it.endsWith("_timestamp") }
-                    .toList()
-
-                Log.d(TAG, "Found ${hiddenPostIds.size} hidden post IDs: $hiddenPostIds")
-
-                if (hiddenPostIds.isEmpty()) {
-                    showEmptyState(true)
-                    showLoading(false)
-                    return@launch
-                }
-
-                // Fetch all posts from the feed and filter hidden ones
-                hiddenPosts.clear()
-
-                // Fetch from feed API
                 val response = withContext(Dispatchers.IO) {
-                    retrofitInstance.apiService.getAllFeed("1")
+                    retrofitInstance.apiService.getRestrictedUsers()
                 }
 
-                if (response.isSuccessful && response.body() != null) {
-                    val responseBody = response.body()!!
-                    val allPosts = responseBody.data.data.posts
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val items = response.body()?.data?.map { restrictedItem ->
+                        UserRelationshipItem(
+                            userId = restrictedItem.user?._id ?: "",
+                            username = restrictedItem.user?.username ?: "",
+                            email = restrictedItem.user?.email,
+                            firstName = restrictedItem.user?.firstName,
+                            lastName = restrictedItem.user?.lastName,
+                            avatar = restrictedItem.user?.avatar?.let {
+                                com.uyscuti.social.network.api.response.posts.Avatar(
+                                    _id = it._id,
+                                    localPath = it.localPath,
+                                    url = it.url
+                                )
+                            },
+                            actionDate = restrictedItem.restrictedAt
+                        )
+                    } ?: emptyList()
 
-                    Log.d(TAG, "Fetched ${allPosts.size} posts from page 1")
-
-                    // Filter only the hidden posts
-                    val foundHiddenPosts = allPosts.filter { post ->
-                        hiddenPostIds.contains(post._id)
-                    }
-
-                    hiddenPosts.addAll(foundHiddenPosts)
-                    Log.d(TAG, "Found ${foundHiddenPosts.size} hidden posts from page 1")
-
-                    // If we need more pages to find all hidden posts
-                    if (foundHiddenPosts.size < hiddenPostIds.size && responseBody.data.data.hasNextPage) {
-                        val totalPages = responseBody.data.data.totalPages.coerceAtMost(5) // Max 5 pages
-
-                        for (page in 2..totalPages) {
-                            val pageResponse = withContext(Dispatchers.IO) {
-                                retrofitInstance.apiService.getAllFeed(page.toString())
-                            }
-
-                            if (pageResponse.isSuccessful && pageResponse.body() != null) {
-                                val pagePosts = pageResponse.body()!!.data.data.posts
-                                val pageHiddenPosts = pagePosts.filter { post ->
-                                    hiddenPostIds.contains(post._id) && !hiddenPosts.any { it._id == post._id }
-                                }
-
-                                if (pageHiddenPosts.isNotEmpty()) {
-                                    hiddenPosts.addAll(pageHiddenPosts)
-                                    Log.d(TAG, "Found ${pageHiddenPosts.size} more hidden posts from page $page")
-                                }
-
-                                // Stop if we found all hidden posts
-                                if (hiddenPosts.size >= hiddenPostIds.size) break
-                            }
-                        }
-                    }
-
-                    // Sort by hidden date (most recent first)
-                    hiddenPosts.sortByDescending { post ->
-                        sharedPrefs.getLong("${post._id}_timestamp", 0L)
-                    }
-
-                    // Update adapter
-                    feedAdapter.submitItems(hiddenPosts.toMutableList())
-
-                    showEmptyState(hiddenPosts.isEmpty())
-                    showLoading(false)
-
-                    Log.d(TAG, "Successfully loaded ${hiddenPosts.size} out of ${hiddenPostIds.size} hidden posts")
-
-                    // Warn if some posts couldn't be found
-                    if (hiddenPosts.size < hiddenPostIds.size) {
-                        val missingCount = hiddenPostIds.size - hiddenPosts.size
-                        Log.w(TAG, "Warning: $missingCount hidden posts were not found in the feed")
-                    }
-
+                    restrictedList.clear()
+                    restrictedList.addAll(items)
+                    adapter.updateList(restrictedList)
+                    showEmptyState(restrictedList.isEmpty())
                 } else {
-                    Log.e(TAG, "Failed to fetch feed: ${response.code()} - ${response.message()}")
-                    Toast.makeText(
-                        this@HiddenFeedPostsActivity,
-                        "Failed to load posts",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    showEmptyState(true)
-                    showLoading(false)
+                    Toast.makeText(this@RestrictedAccountsActivity, "Failed to load", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error: ${e.message}", e)
+                Toast.makeText(this@RestrictedAccountsActivity, "Network error", Toast.LENGTH_SHORT).show()
+            } finally {
+                showLoading(false)
+            }
+        }
+    }
+
+    private fun showUnrestrictDialog(userId: String, item: UserRelationshipItem) {
+        AlertDialog.Builder(this)
+            .setTitle("Unrestrict @${item.username}?")
+            .setMessage("This account will be able to see when you're active and when you've read their messages.")
+            .setPositiveButton("Unrestrict") { dialog, _ ->
+                unrestrictUser(userId, item)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
+    private fun unrestrictUser(userId: String, item: UserRelationshipItem) {
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    retrofitInstance.apiService.unRestrictUser(userId)
                 }
 
+                if (response.isSuccessful) {
+                    val position = restrictedList.indexOf(item)
+                    if (position != -1) {
+                        restrictedList.removeAt(position)
+                        adapter.removeItem(position)
+                        showEmptyState(restrictedList.isEmpty())
+
+                        Snackbar.make(recyclerView, "Unrestricted", Snackbar.LENGTH_LONG)
+                            .setAction("Undo") { restrictUserAgain(userId, item, position) }
+                            .show()
+                    }
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading hidden posts: ${e.message}", e)
-                Toast.makeText(
-                    this@HiddenFeedPostsActivity,
-                    "Error: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-                showLoading(false)
-                showEmptyState(true)
+                Log.e(TAG, "Error: ${e.message}", e)
+            }
+        }
+    }
+
+    private fun restrictUserAgain(userId: String, item: UserRelationshipItem, position: Int) {
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    retrofitInstance.apiService.restrictUser(userId)
+                }
+
+                if (response.isSuccessful) {
+                    restrictedList.add(position, item)
+                    adapter.updateList(restrictedList)
+                    showEmptyState(restrictedList.isEmpty())
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error: ${e.message}", e)
             }
         }
     }
@@ -188,141 +176,11 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
         recyclerView.visibility = if (show) View.GONE else View.VISIBLE
-        emptyStateLayout.visibility = View.GONE
     }
 
-    private fun showEmptyState(show: Boolean) {
-        emptyStateLayout.visibility = if (show) View.VISIBLE else View.GONE
-        recyclerView.visibility = if (show) View.GONE else View.VISIBLE
-        progressBar.visibility = View.GONE
-    }
-
-    // ==================== OnFeedClickListener IMPLEMENTATION ====================
-
-    fun onLikeClick(position: Int, data: Post) {
-        Toast.makeText(this, "Unhide the post to like it", Toast.LENGTH_SHORT).show()
-    }
-
-    fun onCommentClick(position: Int, data: Post) {
-        Toast.makeText(this, "Unhide the post to comment", Toast.LENGTH_SHORT).show()
-    }
-
-    fun onRepostClick(position: Int, data: Post) {
-        Toast.makeText(this, "Unhide the post to repost", Toast.LENGTH_SHORT).show()
-    }
-
-    fun onShareClick(position: Int, data: Post) {
-        Toast.makeText(this, "Unhide the post to share", Toast.LENGTH_SHORT).show()
-    }
-
-    fun onBookmarkClick(position: Int, data: Post) {
-        Toast.makeText(this, "Unhide the post to bookmark", Toast.LENGTH_SHORT).show()
-    }
-
-    override fun moreOptionsClick(position: Int, data: Post) {
-        // Show custom dialog with only "Unhide" option
-        showUnhideDialog(position, data)
-    }
-
-    fun profileImageClicked(position: Int, data: Post) {
-        Toast.makeText(this, "Unhide the post to view profile", Toast.LENGTH_SHORT).show()
-    }
-
-    fun onFeedItemClick(position: Int, data: Post) {
-        // Show unhide option when post is clicked
-        showUnhideDialog(position, data)
-    }
-
-    fun onFeedLongClick(position: Int, data: Post) {
-        showUnhideDialog(position, data)
-    }
-
-    fun onMuteClick(position: Int, data: Post) {
-        // Not applicable for hidden posts
-    }
-
-    fun onItemLongPressed(position: Int, data: Post) {
-        showUnhideDialog(position, data)
-    }
-
-    // ==================== UNHIDE FUNCTIONALITY ====================
-
-    private fun showUnhideDialog(position: Int, data: Post) {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Unhide Post")
-            .setMessage("Do you want to unhide this post? It will appear in your feed again.")
-            .setPositiveButton("Unhide") { dialog, _ ->
-                handleUnhidePost(position, data)
-                dialog.dismiss()
-            }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
-    }
-
-    private fun handleUnhidePost(position: Int, data: Post) {
-        val postId = data._id
-
-        Log.d(TAG, "Unhiding post: $postId at position: $position")
-
-        // Remove from SharedPreferences
-        with(sharedPrefs.edit()) {
-            remove(postId)
-            remove("${postId}_timestamp")
-            apply()
-        }
-
-        // Remove from FeedAdapter cache
-        FeedAdapter.removeFromHiddenPostsCache(postId)
-
-        // Remove from list and adapter
-        if (position >= 0 && position < hiddenPosts.size) {
-            val removedPost = hiddenPosts.removeAt(position)
-            feedAdapter.removeItem(position)
-            feedAdapter.notifyItemRemoved(position)
-            feedAdapter.notifyItemRangeChanged(position, hiddenPosts.size)
-
-            Log.d(TAG, "Removed post from list. Remaining: ${hiddenPosts.size}")
-
-            // Show snackbar with undo option
-            Snackbar.make(
-                recyclerView,
-                "Post unhidden",
-                Snackbar.LENGTH_LONG
-            ).setAction("Undo") {
-                // Re-hide the post
-                with(sharedPrefs.edit()) {
-                    putBoolean(postId, true)
-                    putLong("${postId}_timestamp", System.currentTimeMillis())
-                    apply()
-                }
-                FeedAdapter.addToHiddenPostsCache(postId)
-
-                Log.d(TAG, "Undo: Re-hiding post $postId")
-
-                // Add back to list
-                hiddenPosts.add(position, removedPost)
-                feedAdapter.submitItems(hiddenPosts.toMutableList())
-                feedAdapter.notifyItemInserted(position)
-
-                showEmptyState(false)
-
-                Toast.makeText(this, "Post hidden again", Toast.LENGTH_SHORT).show()
-            }.show()
-        }
-
-        // Check if list is now empty
-        if (hiddenPosts.isEmpty()) {
-            showEmptyState(true)
-            Log.d(TAG, "No more hidden posts")
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Log.d(TAG, "onResume: Reloading hidden posts")
-        // Reload when returning to this screen in case posts were unhidden elsewhere
-        loadHiddenPosts()
+    private fun showEmptyState(isEmpty: Boolean) {
+        emptyTextView.visibility = if (isEmpty) View.VISIBLE else View.GONE
+        emptyTextView.text = "No restricted accounts"
+        recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
     }
 }
