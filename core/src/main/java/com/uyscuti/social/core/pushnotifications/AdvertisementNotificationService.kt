@@ -79,21 +79,13 @@ class AdvertisementNotificationService: Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
-        // CRITICAL: Call startForeground() IMMEDIATELY, before any other logic
+        // CRITICAL: Call startForeground() IMMEDIATELY - no conditions before this
         if (!isForegroundStarted) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-                // If no permission, stop immediately
-                stopSelf()
-                return START_NOT_STICKY
-            }
-
-            // Start foreground IMMEDIATELY - must be called within 5-10 seconds of startForegroundService()
             val notification = createForegroundNotification()
             startForeground(foregroundNotificationId, notification)
             isForegroundStarted = true
 
-            // Schedule stopping the foreground state (but keep service running)
+            // Schedule stopping the foreground state after starting
             handler.postDelayed({
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     stopForeground(STOP_FOREGROUND_REMOVE)
@@ -101,8 +93,15 @@ class AdvertisementNotificationService: Service() {
                     @Suppress("DEPRECATION")
                     stopForeground(true)
                 }
-                // Don't call stopSelf() here - let the service continue for notifications
-            }, 3000) // Give it 3 seconds instead of 1
+            }, 3000)
+        }
+
+        // NOW check permissions for actual notification work
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED) {
+            // Can't show notifications, but service is already in foreground state
+            stopSelf()
+            return START_NOT_STICKY
         }
 
         // Process the intent to show notifications

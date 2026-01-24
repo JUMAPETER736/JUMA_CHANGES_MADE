@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <!-- For Android 12 and below -->
 
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- ========================================================================================
+         PERMISSIONS - Grouped by Category
+         ======================================================================================== -->
 
+    <!-- Storage Permissions (Android 12 and below) -->
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"
@@ -12,39 +14,59 @@
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"
-        tools:replace="android:maxSdkVersion" /> <!-- For Android 11+ (if you need all files access) -->
+        tools:replace="android:maxSdkVersion" />
     <uses-permission
         android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
-        tools:ignore="ScopedStorage" /> <!-- For Android 13+ -->
+        tools:ignore="ScopedStorage" />
+
+    <!-- Media Permissions (Android 13+) -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+
+    <!-- Network Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Notification Permissions -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Location Permissions -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- Foreground Service Permissions -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+
+    <!-- Audio Permissions -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!-- ========================================================================================
+         QUERIES - External App Package Visibility
+         ======================================================================================== -->
+
+    <!-- Image Picker Query -->
     <queries>
         <intent>
             <action android:name="android.intent.action.GET_CONTENT" />
-
             <data android:mimeType="image/*" />
         </intent>
     </queries>
+
+    <!-- Video Picker Query -->
     <queries>
         <intent>
             <action android:name="android.intent.action.GET_CONTENT" />
-
             <data android:mimeType="video/*" />
         </intent>
     </queries>
-    <queries>
 
+    <!-- Social Media Apps Query -->
+    <queries>
         <!-- WhatsApp -->
         <package android:name="com.whatsapp" />
         <package android:name="com.whatsapp.w4b" />
@@ -66,6 +88,10 @@
         <package android:name="org.thunderdog.challegram" />
     </queries>
 
+    <!-- ========================================================================================
+         APPLICATION
+         ======================================================================================== -->
+
     <application
         android:name=".MainApplication"
         android:allowBackup="true"
@@ -80,9 +106,10 @@
         android:theme="@style/Theme.FlashDesign"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
-        <activity
-            android:name=".user_interface.userProfile.MyUserProfileAccount"
-            android:exported="false" />
+
+        <!-- ====================================================================================
+             METADATA - Facebook SDK Configuration
+             ==================================================================================== -->
 
         <meta-data
             android:name="com.facebook.sdk.ApplicationId"
@@ -91,25 +118,168 @@
             android:name="com.facebook.sdk.ClientToken"
             android:value="@string/facebook_client_token" />
 
-        <activity
-            android:name=".ui.Password_Reset_Success"
-            android:exported="false" />
+        <!-- ====================================================================================
+             ACTIVITIES - Main & Core Activities
+             ==================================================================================== -->
 
-        <activity android:name="com.uyscuti.social.call.ui.CallActivity"
-            android:exported="false"/>
+        <!-- Splash Screen - App Entry Point -->
+        <activity
+            android:name=".SplashScreen"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Main Activity -->
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="navigation|orientation"
+            android:exported="true"
+            android:theme="@style/AppThemeWithLightStatusBar"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- ====================================================================================
+             ACTIVITIES - Authentication
+             ==================================================================================== -->
 
         <activity
-            android:name=".ui.Create_New_Password"
+            android:name=".ui.LoginActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.Verification_Code"
+            android:name=".RegisterActivity"
+            android:exported="false" />
+        <activity
+            android:name=".GoogleOAuth"
             android:exported="false" />
         <activity
             android:name=".ui.Forgot_Password"
             android:exported="false" />
         <activity
-            android:name=".user_interface.UniversalSearchActivity"
+            android:name=".ui.Verification_Code"
             android:exported="false" />
+        <activity
+            android:name=".ui.Create_New_Password"
+            android:exported="false" />
+        <activity
+            android:name=".ui.Password_Reset_Success"
+            android:exported="false" />
+
+        <!-- ====================================================================================
+             ACTIVITIES - User Profile & Settings
+             ==================================================================================== -->
+
+        <activity
+            android:name=".ui.UserProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".user_interface.userProfile.MyUserProfileAccount"
+            android:exported="false" />
+        <activity
+            android:name="com.uyscuti.sharedmodule.ui.UserProfileEditActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.uyscuti.sharedmodule.OtherUserProfile"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.OtherUserProfile.UserFollowersFragment"
+            android:exported="false" />
+        <activity
+            android:name=".User_Interface.OtherUserProfile.UserFollowingFragment"
+            android:exported="false" />
+
+        <!-- Settings -->
+        <activity
+            android:name=".settings.SettingsActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+        <activity
+            android:name=".ui.PrivacySettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.NotificationsSettingsActivity"
+            android:exported="false" />
+
+        <!-- Relationship Management Activities -->
+        <activity
+            android:name="com.uyscuti.social.circuit.settings.BlockedUsersActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+        <activity
+            android:name="com.uyscuti.social.circuit.settings.MutedPostsActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+        <activity
+            android:name="com.uyscuti.social.circuit.settings.MutedStoriesActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+        <activity
+            android:name="com.uyscuti.social.circuit.settings.CloseFriendsActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+        <activity
+            android:name="com.uyscuti.social.circuit.settings.FavoritesActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+        <activity
+            android:name="com.uyscuti.social.circuit.settings.RestrictedAccountsActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+
+        <!-- ====================================================================================
+             ACTIVITIES - Messaging & Chat
+             ==================================================================================== -->
+
+        <activity
+            android:name="com.uyscuti.sharedmodule.MessagesActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+        <activity
+            android:name=".ui.CreateChatActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+        <activity
+            android:name=".ui.CreateUserChat"
+            android:exported="false" />
+        <activity
+            android:name=".ui.CreateGroupChat"
+            android:exported="false" />
+        <activity
+            android:name=".ui.CreateGroupActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.ConfirmGroupActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.uyscuti.sharedmodule.GroupProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.uyscuti.sharedmodule.GroupSettingsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_group_settings"
+            android:theme="@style/Theme.FlashDesign" />
+
+        <!-- ====================================================================================
+             ACTIVITIES - Calls
+             ==================================================================================== -->
+
+        <activity
+            android:name="com.uyscuti.social.call.ui.CallActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MakeCallActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+        <activity
+            android:name=".CallInfoActivity"
+            android:theme="@style/Base.Theme.FlashDesign" />
+
+        <!-- ====================================================================================
+             ACTIVITIES - Business & Advertisements
+             ==================================================================================== -->
+
+        <!-- Business Profile & Details -->
         <activity
             android:name=".business.ViewMoreBusinessDetails"
             android:exported="true"
@@ -117,29 +287,13 @@
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
-
             <intent-filter>
                 <action android:name="com.uyscuti.social.circuit.OPEN_VIEW_MORE" />
-
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 
-        <activity android:name=".User_Interface.OtherUserProfile.UserFollowersFragment"
-            android:exported="false"
-            />
-
-        <activity android:name=".User_Interface.OtherUserProfile.UserFollowingFragment"
-            android:exported="false"
-            />
-
-        <activity
-            android:name="com.uyscuti.sharedmodule.RepostBusinessPost"
-            android:exported="false" />
-        <activity
-            android:name=".NotificationActivity"
-            android:exported="false"
-            android:theme="@style/Theme.FlashDesign" />
+        <!-- Business Categories & Catalogues -->
         <activity
             android:name="com.uyscuti.social.business.CategoryActivity"
             android:exported="false" />
@@ -149,115 +303,91 @@
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
-
             <intent-filter>
                 <action android:name="com.uyscuti.social.circuit.OPEN_Catalogue_Details" />
-
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.PrivacySettingsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.NotificationsSettingsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".PostDetailsActivity2"
-            android:exported="false" />
-        <activity
-            android:name="com.uyscuti.sharedmodule.adapter.feed.feed.postFeedActivity.PostFeedActivity"
-            android:exported="false" />
-        <activity
-            android:name="com.uyscuti.sharedmodule.FullSellerActivity"
-            android:exported="false" />
-        <activity
-            android:name="com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.RepostingPostActivity"
-            android:exported="false" />
-        <activity
-            android:name="com.uyscuti.sharedmodule.ReportNotificationActivity2"
-            android:exported="false" />
-        <activity
             android:name="com.uyscuti.social.business.retro.CreateCatalogueActivity"
             android:exported="false" />
         <activity
-            android:name="com.uyscuti.sharedmodule.FullScreenImageActivity"
+            android:name="com.uyscuti.social.business.EditCatalogueActivity"
             android:exported="false" />
+
+        <!-- Business Image Viewing -->
         <activity
             android:name="com.uyscuti.social.business.retro.ImageViewActivity"
             android:exported="true">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
-
             <intent-filter>
                 <action android:name="com.uyscuti.social.circuit.ImageViewActivity" />
-
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity
-            android:name="com.uyscuti.social.business.EditCatalogueActivity"
-            android:exported="false" />
-        <activity
-            android:name="com.uyscuti.sharedmodule.ui.SearchShortActivity"
-            android:exported="false" /> <!-- <activity -->
-        <!-- android:name=".ui.feedactivities.RepostPostActivity" -->
-        <!-- android:exported="false" /> -->
-        <activity
-            android:name="com.uyscuti.sharedmodule.uploads.feed_uploads.FeedSelectVideoActivity"
-            android:exported="false" />
-        <activity
-            android:name="com.uyscuti.sharedmodule.uploads.feed_uploads.FeedAudioActivity"
-            android:exported="false" />
+
+        <!-- ====================================================================================
+             ACTIVITIES - Feed & Posts
+             ==================================================================================== -->
+
         <activity
             android:name="com.uyscuti.sharedmodule.UploadFeedActivity"
             android:exported="false" />
         <activity
-            android:name="com.uyscuti.sharedmodule.ui.GifActivity"
+            android:name="com.uyscuti.sharedmodule.adapter.feed.feed.postFeedActivity.PostFeedActivity"
             android:exported="false" />
         <activity
-            android:name="com.uyscuti.sharedmodule.media.CommentVideoPlayerActivity"
+            android:name=".PostDetailsActivity2"
             android:exported="false" />
         <activity
-            android:name="com.uyscuti.sharedmodule.media.PlayCommentVideoActivity"
+            android:name="com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.RepostingPostActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.uyscuti.sharedmodule.RepostBusinessPost"
+            android:exported="false" />
+        <activity
+            android:name="com.uyscuti.sharedmodule.FullSellerActivity"
+            android:exported="false" />
+
+        <!-- ====================================================================================
+             ACTIVITIES - Shorts & Videos
+             ==================================================================================== -->
+
+        <activity
+            android:name="com.uyscuti.sharedmodule.shorts.UploadShortsActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.uyscuti.sharedmodule.shorts.TopicsActivity"
             android:exported="false" />
         <activity
             android:name="com.uyscuti.sharedmodule.shorts.UserProfileShortsPlayerActivity"
             android:exported="false"
             android:theme="@style/DarkTheme" />
         <activity
-            android:name="com.uyscuti.sharedmodule.shorts.TopicsActivity"
+            android:name="com.uyscuti.sharedmodule.ui.SearchShortActivity"
+            android:exported="false" />
+
+        <!-- ====================================================================================
+             ACTIVITIES - Media Upload & Selection
+             ==================================================================================== -->
+
+        <!-- Image & Video Selection -->
+        <activity
+            android:name="com.uyscuti.sharedmodule.uploads.ImagesActivity"
             android:exported="false" />
         <activity
-            android:name="com.uyscuti.sharedmodule.shorts.UploadShortsActivity"
+            android:name="com.uyscuti.sharedmodule.uploads.VideosActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.CreateGroupChat"
-            android:exported="false" />
-        <activity
-            android:name=".ui.CreateUserChat"
-            android:exported="false" />
-        <activity
-            android:name=".GoogleOAuth"
-            android:exported="false" />
-        <activity
-            android:name="com.uyscuti.sharedmodule.uploads.adapter.Docs"
+            android:name="com.uyscuti.sharedmodule.uploads.feed_uploads.FeedSelectVideoActivity"
             android:exported="false" />
         <activity
             android:name="com.uyscuti.sharedmodule.ui.ChoosePhoto"
             android:exported="false" />
-        <activity
-            android:name="com.uyscuti.sharedmodule.media.PlayVideoActivity"
-            android:exported="false"
-            android:theme="@style/DarkTheme" />
-        <activity
-            android:name="com.uyscuti.sharedmodule.media.ViewImagesActivity"
-            android:exported="false"
-            android:theme="@style/DarkTheme" />
-        <activity
-            android:name=".ui.ConfirmGroupActivity"
-            android:exported="false" />
+
+        <!-- Camera & Recording -->
         <activity
             android:name="com.uyscuti.sharedmodule.uploads.CameraActivity"
             android:exported="false"
@@ -266,116 +396,75 @@
             android:name="com.uyscuti.sharedmodule.uploads.AudioActivity"
             android:exported="false" />
         <activity
-            android:name="com.uyscuti.sharedmodule.uploads.LocationActivity"
+            android:name="com.uyscuti.sharedmodule.uploads.feed_uploads.FeedAudioActivity"
             android:exported="false" />
+
+        <!-- Documents & Location -->
         <activity
             android:name="com.uyscuti.sharedmodule.uploads.DocumentsActivity"
             android:exported="false" />
         <activity
-            android:name="com.uyscuti.sharedmodule.uploads.VideosActivity"
+            android:name="com.uyscuti.sharedmodule.uploads.adapter.Docs"
             android:exported="false" />
         <activity
-            android:name="com.uyscuti.sharedmodule.uploads.ImagesActivity"
+            android:name="com.uyscuti.sharedmodule.uploads.LocationActivity"
             android:exported="false" />
+
+        <!-- ====================================================================================
+             ACTIVITIES - Media Viewing & Playback
+             ==================================================================================== -->
+
+        <!-- Image Viewing -->
         <activity
-            android:name=".MakeCallActivity"
+            android:name="com.uyscuti.sharedmodule.media.ViewImagesActivity"
             android:exported="false"
-            android:theme="@style/Base.Theme.FlashDesign" />
+            android:theme="@style/DarkTheme" />
         <activity
-            android:name=".ui.CreateGroupActivity"
+            android:name="com.uyscuti.sharedmodule.FullScreenImageActivity"
             android:exported="false" />
+
+        <!-- Video Playback -->
         <activity
-            android:name=".ui.CreateChatActivity"
+            android:name="com.uyscuti.sharedmodule.media.PlayVideoActivity"
             android:exported="false"
-            android:theme="@style/Base.Theme.FlashDesign" />
+            android:theme="@style/DarkTheme" />
         <activity
-            android:name="com.uyscuti.sharedmodule.ui.UserProfileEditActivity"
+            android:name="com.uyscuti.sharedmodule.media.PlayCommentVideoActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.UserProfileActivity"
+            android:name="com.uyscuti.sharedmodule.media.CommentVideoPlayerActivity"
             android:exported="false" />
+
+        <!-- GIF Support -->
         <activity
-            android:name="com.uyscuti.sharedmodule.GroupSettingsActivity"
+            android:name="com.uyscuti.sharedmodule.ui.GifActivity"
+            android:exported="false" />
+
+        <!-- ====================================================================================
+             ACTIVITIES - Notifications & Reports
+             ==================================================================================== -->
+
+        <activity
+            android:name=".NotificationActivity"
             android:exported="false"
-            android:label="@string/title_activity_group_settings"
             android:theme="@style/Theme.FlashDesign" />
         <activity
-            android:name="com.uyscuti.sharedmodule.GroupProfileActivity"
-            android:exported="false" />
-        <activity
-            android:name="com.uyscuti.sharedmodule.OtherUserProfile"
+            android:name="com.uyscuti.sharedmodule.ReportNotificationActivity2"
             android:exported="false" />
 
-
-
-
-
-        <activity
-            android:name=".settings.SettingsActivity"
-            android:exported="false"
-            android:theme="@style/Base.Theme.FlashDesign" />
-
-        <!-- Relationship Management Activities -->
-        <activity
-            android:name="com.uyscuti.social.circuit.settings.BlockedUsersActivity"
-            android:exported="false"
-            android:theme="@style/Base.Theme.FlashDesign" />
+        <!-- ====================================================================================
+             ACTIVITIES - Search
+             ==================================================================================== -->
 
         <activity
-            android:name="com.uyscuti.social.circuit.settings.MutedPostsActivity"
-            android:exported="false"
-            android:theme="@style/Base.Theme.FlashDesign" />
-
-        <activity
-            android:name="com.uyscuti.social.circuit.settings.MutedStoriesActivity"
-            android:exported="false"
-            android:theme="@style/Base.Theme.FlashDesign" />
-
-        <activity
-            android:name="com.uyscuti.social.circuit.settings.CloseFriendsActivity"
-            android:exported="false"
-            android:theme="@style/Base.Theme.FlashDesign" />
-
-        <activity
-            android:name="com.uyscuti.social.circuit.settings.FavoritesActivity"
-            android:exported="false"
-            android:theme="@style/Base.Theme.FlashDesign" />
-
-        <activity
-            android:name="com.uyscuti.social.circuit.settings.RestrictedAccountsActivity"
-            android:exported="false"
-            android:theme="@style/Base.Theme.FlashDesign" />
-
-
-        <activity
-            android:name="com.uyscuti.sharedmodule.MessagesActivity"
-            android:exported="false"
-            android:theme="@style/Base.Theme.FlashDesign" />
-        <activity
-            android:name=".RegisterActivity"
+            android:name=".user_interface.UniversalSearchActivity"
             android:exported="false" />
-        <activity
-            android:name=".ui.LoginActivity"
-            android:exported="false" />
-        <activity
-            android:name=".SplashScreen"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".CallInfoActivity"
-            android:theme="@style/Base.Theme.FlashDesign" />
-        <activity
-            android:name=".MainActivity"
-            android:configChanges="navigation|orientation"
-            android:exported="true"
-            android:theme="@style/AppThemeWithLightStatusBar"
-            android:windowSoftInputMode="adjustResize" />
+        <!-- ====================================================================================
+             FILE PROVIDERS
+             ==================================================================================== -->
 
+        <!-- Main File Provider -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.uyscuti.social.circuit.provider"
@@ -384,7 +473,9 @@
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths" />
-        </provider> <!-- <provider -->
+        </provider>
+
+        <!-- Secondary File Provider -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.uyscuti.social.circuit.fileprovider"
@@ -393,20 +484,60 @@
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/filepaths" />
-        </provider> <!-- If you want to disable android.startup completely. -->
+        </provider>
+
+        <!-- Disable AndroidX Startup -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
-            tools:node="remove" /> <!-- android:name="androidx.startup.InitializationProvider" -->
-        <!-- android:authorities="${applicationId}.androidx-startup" -->
-        <!-- android:exported="false" -->
-        <!-- tools:node="merge"> -->
-        <!-- &lt;!&ndash; If you are using androidx.startup to initialize other components &ndash;&gt; -->
-        <!-- <meta-data -->
-        <!-- android:name="androidx.work.impl.WorkManagerInitializer" -->
-        <!-- android:value="androidx.startup" -->
-        <!-- tools:node="remove" /> -->
-        <!-- </provider> -->
+            tools:node="remove" />
+
+        <!-- ====================================================================================
+             SERVICES
+             ==================================================================================== -->
+
+        <!-- Network & Socket Services -->
+        <service
+            android:name="com.uyscuti.sharedmodule.callbacks.NetworkConnectivityService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+        <service
+            android:name="com.uyscuti.sharedmodule.callbacks.SocketJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <!-- Notification Services -->
+        <service
+            android:name="com.uyscuti.social.core.pushnotifications.socket.chatsocket.ChatNotificationService"
+            android:exported="false" />
+        <service
+            android:name="com.uyscuti.social.core.pushnotifications.socket.chatsocket.social.SocialNotificationService"
+            android:exported="false" />
+
+        <!-- Advertisement Notification Service
+             CRITICAL: Requires specialUse foreground service type for Android 14+ (targetSDK 35)
+             This service displays location-based business advertisement notifications -->
+        <service
+            android:name="com.uyscuti.social.core.pushnotifications.AdvertisementNotificationService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            tools:ignore="ForegroundServicePermission" />
+
+        <!-- Location Service -->
+        <service
+            android:name="com.uyscuti.social.core.service.LocationService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- Video Preloading Service -->
+        <service
+            android:name="com.uyscuti.sharedmodule.service.VideoPreLoadingService"
+            android:exported="false" />
+
+        <!-- ====================================================================================
+             BROADCAST RECEIVERS
+             ==================================================================================== -->
+
+        <!-- Connectivity Receiver -->
         <receiver
             android:name=".receiver.ConnectivityReceiver"
             android:enabled="true"
@@ -418,23 +549,8 @@
             </intent-filter>
         </receiver>
 
-        <service
-            android:name="com.uyscuti.sharedmodule.callbacks.NetworkConnectivityService"
-            android:foregroundServiceType="dataSync"
-            android:exported="false"/>
-        <service
-            android:name="com.uyscuti.sharedmodule.callbacks.SocketJobService"
-            android:permission="android.permission.BIND_JOB_SERVICE" />
-        <service android:name="com.uyscuti.sharedmodule.service.VideoPreLoadingService" />
-        <service android:name="com.uyscuti.social.core.pushnotifications.socket.chatsocket.ChatNotificationService" />
-        <service android:name="com.uyscuti.social.core.pushnotifications.socket.chatsocket.social.SocialNotificationService" />
-        <service
-            android:name="com.uyscuti.social.core.service.LocationService"
-            android:exported="false"
-            android:foregroundServiceType="location" />
-        <service
-            android:name="com.uyscuti.social.core.pushnotifications.AdvertisementNotificationService"
-            android:exported="false" /> <!-- Broadcast Receiver for notification actions -->
+        <!-- Business Notification Receiver
+             Handles actions from advertisement notifications (View More, Dismiss) -->
         <receiver
             android:name="com.uyscuti.social.core.broadcastreceiver.BusinessNotificationReceiver"
             android:enabled="true"
@@ -444,6 +560,7 @@
                 <action android:name="com.uyscuti.social.circuit.DISMISS_BUSINESS_AD" />
             </intent-filter>
         </receiver>
+
     </application>
 
 </manifest>
