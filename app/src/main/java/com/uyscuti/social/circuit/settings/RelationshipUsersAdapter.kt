@@ -107,11 +107,11 @@ class RelationshipUsersAdapter(
             // Set action button text and styling
             val (buttonText, buttonColor, textColor) = when (relationshipType) {
                 RelationshipType.BLOCKED -> Triple("Unblock", R.color.redBlocked, android.R.color.white)
-                RelationshipType.MUTED_POSTS -> Triple("Unmute", R.color.gray_dark_transparent, android.R.color.white)
-                RelationshipType.MUTED_STORIES -> Triple("Unmute", R.color.app_secondary_variant, android.R.color.white)
+                RelationshipType.MUTED_POSTS -> Triple("Unmute", R.color.blueJeans, android.R.color.white)
+                RelationshipType.MUTED_STORIES -> Triple("Unmute", R.color.blueJeans, android.R.color.white)
                 RelationshipType.CLOSE_FRIENDS -> Triple("Remove", R.color.redBlocked, android.R.color.white)
                 RelationshipType.FAVORITES -> Triple("Remove", R.color.redBlocked, android.R.color.white)
-                RelationshipType.RESTRICTED -> Triple("Unrestrict", R.color.dark_gray, android.R.color.white)
+                RelationshipType.RESTRICTED -> Triple("Unrestrict", R.color.blueJeans, android.R.color.white)
             }
 
             actionButton.text = buttonText
