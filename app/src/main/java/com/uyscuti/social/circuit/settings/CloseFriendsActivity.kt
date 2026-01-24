@@ -39,7 +39,7 @@ class CloseFriendsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_close_friends)  // Changed from activity_muted_posts
+        setContentView(R.layout.activity_close_friends)
 
         initializeViews()
         setupToolbar()
