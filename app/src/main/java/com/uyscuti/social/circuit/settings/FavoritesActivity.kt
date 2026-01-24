@@ -19,14 +19,12 @@ import com.uyscuti.social.network.utils.LocalStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 class FavoritesActivity : AppCompatActivity() {
 
     private val retrofitInstance: RetrofitInstance by lazy {
         RetrofitInstance(LocalStorage(this), this)
     }
-
 
     private lateinit var toolbar: Toolbar
     private lateinit var recyclerView: RecyclerView
@@ -58,9 +56,12 @@ class FavoritesActivity : AppCompatActivity() {
 
     private fun setupToolbar() {
         setSupportActionBar(toolbar)
-        supportActionBar?.title = "Favorites"
+        supportActionBar?.apply {
+            title = "Favorites"
+            setDisplayHomeAsUpEnabled(true)
+        }
         toolbar.setNavigationIcon(R.drawable.baseline_arrow_back_ios_24)
-        toolbar.setNavigationOnClickListener { onBackPressed() }
+        toolbar.setNavigationOnClickListener { finish() }
     }
 
     private fun setupRecyclerView() {
@@ -69,8 +70,11 @@ class FavoritesActivity : AppCompatActivity() {
             relationshipType = RelationshipUsersAdapter.RelationshipType.FAVORITES,
             onActionClick = { userId, item -> showRemoveDialog(userId, item) }
         )
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = adapter
+        recyclerView.apply {
+            layoutManager = LinearLayoutManager(this@FavoritesActivity)
+            adapter = this@FavoritesActivity.adapter
+            setHasFixedSize(true)
+        }
     }
 
     private fun loadFavorites() {
@@ -83,22 +87,25 @@ class FavoritesActivity : AppCompatActivity() {
                 }
 
                 if (response.isSuccessful && response.body()?.success == true) {
-                    val items = response.body()?.data?.map { favoriteItem ->
-                        UserRelationshipItem(
-                            userId = favoriteItem.user?._id ?: "",
-                            username = favoriteItem.user?.username ?: "",
-                            email = favoriteItem.user?.email,
-                            firstName = favoriteItem.user?.firstName,
-                            lastName = favoriteItem.user?.lastName,
-                            avatar = favoriteItem.user?.avatar?.let {
-                                com.uyscuti.social.network.api.response.posts.Avatar(
-                                    _id = it._id,
-                                    localPath = it.localPath,
-                                    url = it.url
-                                )
-                            },
-                            actionDate = favoriteItem.addedAt
-                        )
+                    val items = response.body()?.data?.mapNotNull { favoriteItem ->
+                        // Only add items with valid user data
+                        favoriteItem.user?.let { user ->
+                            UserRelationshipItem(
+                                userId = user._id ?: return@mapNotNull null,
+                                username = user.username ?: return@mapNotNull null,
+                                email = user.email,
+                                firstName = user.firstName,
+                                lastName = user.lastName,
+                                avatar = user.avatar?.let {
+                                    com.uyscuti.social.network.api.response.posts.Avatar(
+                                        _id = it._id,
+                                        localPath = it.localPath,
+                                        url = it.url
+                                    )
+                                },
+                                actionDate = favoriteItem.addedAt ?: ""
+                            )
+                        }
                     } ?: emptyList()
 
                     favoritesList.clear()
@@ -106,11 +113,12 @@ class FavoritesActivity : AppCompatActivity() {
                     adapter.updateList(favoritesList)
                     showEmptyState(favoritesList.isEmpty())
                 } else {
-                    Toast.makeText(this@FavoritesActivity, "Failed to load", Toast.LENGTH_SHORT).show()
+                    val errorMessage = response.body()?.message ?: "Failed to load favorites"
+                    showError(errorMessage)
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error: ${e.message}", e)
-                Toast.makeText(this@FavoritesActivity, "Network error", Toast.LENGTH_SHORT).show()
+                Log.e(TAG, "Error loading favorites: ${e.message}", e)
+                showError("Network error. Please check your connection.")
             } finally {
                 showLoading(false)
             }
@@ -120,11 +128,13 @@ class FavoritesActivity : AppCompatActivity() {
     private fun showRemoveDialog(userId: String, item: UserRelationshipItem) {
         AlertDialog.Builder(this)
             .setTitle("Remove @${item.username} from favorites?")
+            .setMessage("Posts from this account will no longer appear higher in your feed.")
             .setPositiveButton("Remove") { dialog, _ ->
                 removeFromFavorites(userId, item)
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+            .setCancelable(true)
             .show()
     }
 
@@ -142,13 +152,20 @@ class FavoritesActivity : AppCompatActivity() {
                         adapter.removeItem(position)
                         showEmptyState(favoritesList.isEmpty())
 
-                        Snackbar.make(recyclerView, "Removed from favorites", Snackbar.LENGTH_LONG)
-                            .setAction("Undo") { addBackToFavorites(userId, item, position) }
-                            .show()
+                        Snackbar.make(
+                            recyclerView,
+                            "@${item.username} removed from favorites",
+                            Snackbar.LENGTH_LONG
+                        ).setAction("Undo") {
+                            addBackToFavorites(userId, item, position)
+                        }.show()
                     }
+                } else {
+                    showError("Failed to remove from favorites")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error: ${e.message}", e)
+                Log.e(TAG, "Error removing from favorites: ${e.message}", e)
+                showError("Failed to remove. Please try again.")
             }
         }
     }
@@ -161,12 +178,23 @@ class FavoritesActivity : AppCompatActivity() {
                 }
 
                 if (response.isSuccessful) {
-                    favoritesList.add(position, item)
+                    // Insert at the original position
+                    val insertPosition = position.coerceAtMost(favoritesList.size)
+                    favoritesList.add(insertPosition, item)
                     adapter.updateList(favoritesList)
                     showEmptyState(favoritesList.isEmpty())
+
+                    Toast.makeText(
+                        this@FavoritesActivity,
+                        "@${item.username} added back to favorites",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    showError("Failed to add back to favorites")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error: ${e.message}", e)
+                Log.e(TAG, "Error adding back to favorites: ${e.message}", e)
+                showError("Failed to undo. Please try again.")
             }
         }
     }
@@ -174,11 +202,26 @@ class FavoritesActivity : AppCompatActivity() {
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
         recyclerView.visibility = if (show) View.GONE else View.VISIBLE
+        emptyTextView.visibility = View.GONE
     }
 
     private fun showEmptyState(isEmpty: Boolean) {
-        emptyTextView.visibility = if (isEmpty) View.VISIBLE else View.GONE
-        emptyTextView.text = "No favorites"
-        recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
+        if (isEmpty) {
+            emptyTextView.visibility = View.VISIBLE
+            emptyTextView.text = "No favorites yet"
+            recyclerView.visibility = View.GONE
+        } else {
+            emptyTextView.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+        }
+    }
+
+    private fun showError(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 }
