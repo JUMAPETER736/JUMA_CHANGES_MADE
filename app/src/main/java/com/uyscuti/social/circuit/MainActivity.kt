@@ -2697,7 +2697,12 @@ class MainActivity : AppCompatActivity(),
 
          override fun onStart() {
              super.onStart()
-             EventBus.getDefault().register(this)
+
+             // Delay EventBus registration to avoid immediate event delivery during lifecycle transition
+             lifecycleScope.launch {
+                 delay(100) // Wait for fragment transactions to complete
+                 EventBus.getDefault().register(this@MainActivity)
+             }
          }
 
     private fun loadProfileImage(profilePic: String) {
