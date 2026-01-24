@@ -305,10 +305,48 @@
         <activity
             android:name="com.uyscuti.sharedmodule.OtherUserProfile"
             android:exported="false" />
+
+
+
+
+
         <activity
             android:name=".settings.SettingsActivity"
             android:exported="false"
             android:theme="@style/Base.Theme.FlashDesign" />
+
+        <!-- Relationship Management Activities -->
+        <activity
+            android:name="com.uyscuti.social.circuit.settings.BlockedUsersActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+
+        <activity
+            android:name="com.uyscuti.social.circuit.settings.MutedPostsActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+
+        <activity
+            android:name="com.uyscuti.social.circuit.settings.MutedStoriesActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+
+        <activity
+            android:name="com.uyscuti.social.circuit.settings.CloseFriendsActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+
+        <activity
+            android:name="com.uyscuti.social.circuit.settings.FavoritesActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+
+        <activity
+            android:name="com.uyscuti.social.circuit.settings.RestrictedAccountsActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign" />
+
+
         <activity
             android:name="com.uyscuti.sharedmodule.MessagesActivity"
             android:exported="false"

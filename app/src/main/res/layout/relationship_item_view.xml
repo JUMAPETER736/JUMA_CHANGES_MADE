@@ -32,7 +32,7 @@
         android:ellipsize="end"
         app:layout_constraintStart_toEndOf="@id/settingsImageView"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toStartOf="\@id/arrowIcon"
+        app:layout_constraintEnd_toStartOf="@id/arrowIcon"
         tools:text="Blocked Users" />
 
     <!-- Subtitle Text -->
@@ -47,7 +47,7 @@
         android:ellipsize="end"
         app:layout_constraintStart_toStartOf="@id/titleTextView"
         app:layout_constraintTop_toBottomOf="@id/titleTextView"
-        app:layout_constraintEnd_toStartOf="\@id/arrowIcon"
+        app:layout_constraintEnd_toStartOf="@id/arrowIcon"
         app:layout_constraintBottom_toBottomOf="parent"
         tools:text="Manage blocked accounts" />
 
@@ -57,7 +57,6 @@
         android:layout_width="20dp"
         android:layout_height="20dp"
         android:src="@drawable/baseline_arrow_forward_ios_24"
-        android:contentDescription="\@string/navigate_forward"
         app:tint="?android:textColorTertiary"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
