@@ -124,7 +124,7 @@ class RelationshipUsersAdapter(
             }
 
             itemView.setOnClickListener {
-          
+
                 // val intent = Intent(context, UserProfileActivity::class.java)
                 // intent.putExtra("userId", item.userId)
                 // context.startActivity(intent)

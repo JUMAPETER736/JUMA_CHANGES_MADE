@@ -6,6 +6,7 @@
     android:layout_height="wrap_content"
     android:padding="16dp">
 
+
     <!-- Avatar -->
     <ImageView
         android:id="@+id/avatarImageView"
