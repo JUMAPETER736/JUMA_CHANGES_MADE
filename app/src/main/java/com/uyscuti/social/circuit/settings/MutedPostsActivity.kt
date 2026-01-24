@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -31,7 +32,7 @@ class MutedPostsActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
     private lateinit var emptyTextView: TextView
-    private lateinit var adapter: MutedUsersAdapter
+    private lateinit var adapter: RelationshipUsersAdapter
     private val mutedUsersList = mutableListOf<UserRelationshipItem>()
 
     @Inject
@@ -48,7 +49,7 @@ class MutedPostsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_muted_stories)
+        setContentView(R.layout.activity_muted_posts)
 
         // Initialize RetrofitInstance with injected dependencies
         retrofitInstance = RetrofitInstance(localStorage, this)
@@ -83,8 +84,9 @@ class MutedPostsActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        adapter = MutedUsersAdapter(
+        adapter = RelationshipUsersAdapter(
             context = this,
+            relationshipType = RelationshipUsersAdapter.RelationshipType.MUTED_POSTS,
             onActionClick = { userId, item -> showUnmuteDialog(userId, item) }
         )
         recyclerView.apply {
@@ -132,7 +134,7 @@ class MutedPostsActivity : AppCompatActivity() {
 
                     // Update FeedAdapter cache with all muted user IDs
                     val mutedUserIds = items.map { it.userId }.toSet()
-                    com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.setMutedPostsUsers(mutedUserIds)
+                    FeedAdapter.setMutedPostsUsers(mutedUserIds)
                 } else {
                     val errorMessage = response.body()?.message ?: "Failed to load muted users"
                     showError(errorMessage)
