@@ -163,7 +163,6 @@ class SettingsAdapter(
         private val title: TextView = itemView.findViewById(R.id.titleTextView)
         private val subTitle: TextView = itemView.findViewById(R.id.subtitleTextView)
         private val image: ImageView = itemView.findViewById(R.id.settingsImageView)
-        private val avatar = settings.getString("avatar", "avatar")
 
         init {
             val selectableItemBackground = TypedValue()
@@ -172,9 +171,25 @@ class SettingsAdapter(
         }
 
         fun bind(setting: SettingsModel, clickListener: (SettingsModel) -> Unit) {
-            title.text = settings.getString("username", "login")
-            subTitle.text = setting.subTitle
-            subTitle.visibility = View.GONE
+            // Get user data from SharedPreferences
+            val avatar = settings.getString("avatar", null)
+            val firstName = settings.getString("firstName", null)
+            val lastName = settings.getString("lastName", null)
+            val username = settings.getString("username", "login")
+
+            // Build full name
+            val fullName = buildString {
+                if (!firstName.isNullOrEmpty()) append(firstName)
+                if (!firstName.isNullOrEmpty() && !lastName.isNullOrEmpty()) append(" ")
+                if (!lastName.isNullOrEmpty()) append(lastName)
+            }
+
+            // Set full name (or username if no full name available)
+            title.text = fullName.ifEmpty { username }
+
+            // Set username with @ prefix
+            subTitle.text = "@$username"
+            subTitle.visibility = View.VISIBLE
 
             Glide.with(image.context)
                 .load(avatar)

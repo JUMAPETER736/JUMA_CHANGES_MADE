@@ -142,6 +142,58 @@ class FeedAdapter(
         fun getCachedFollowingUsernames(): Set<String> = cachedFollowingUsernames.toSet()
         fun getCachedFollowingList(): Set<String> = cachedFollowingList.toSet()
 
+        private val mutedPostsUsersCache = mutableSetOf<String>()
+        private val hiddenPostsCache = mutableSetOf<String>()
+
+        fun setMutedPostsUsers(userIds: Set<String>) {
+            mutedPostsUsersCache.clear()
+            mutedPostsUsersCache.addAll(userIds)
+            Log.d("FeedAdapter", "Muted posts cache updated with ${userIds.size} users")
+        }
+
+        fun addToMutedPostsCache(userId: String) {
+            mutedPostsUsersCache.add(userId)
+            Log.d("FeedAdapter", "Added $userId to muted posts cache (Total: ${mutedPostsUsersCache.size})")
+        }
+
+        fun removeFromMutedPostsCache(userId: String) {
+            mutedPostsUsersCache.remove(userId)
+            Log.d("FeedAdapter", "Removed $userId from muted posts cache (Total: ${mutedPostsUsersCache.size})")
+        }
+
+        fun isUserPostsMuted(userId: String): Boolean {
+            return mutedPostsUsersCache.contains(userId)
+        }
+
+        fun getMutedPostsUsers(): Set<String> {
+            return mutedPostsUsersCache.toSet()
+        }
+
+        // ==================== HIDDEN POSTS METHODS ====================
+
+        fun setHiddenPosts(postIds: Set<String>) {
+            hiddenPostsCache.clear()
+            hiddenPostsCache.addAll(postIds)
+            Log.d("FeedAdapter", "Hidden posts cache updated with ${postIds.size} posts")
+        }
+
+        fun addToHiddenPostsCache(postId: String) {
+            hiddenPostsCache.add(postId)
+            Log.d("FeedAdapter", "Added $postId to hidden posts cache (Total: ${hiddenPostsCache.size})")
+        }
+
+        fun removeFromHiddenPostsCache(postId: String) {
+            hiddenPostsCache.remove(postId)
+            Log.d("FeedAdapter", "Removed $postId from hidden posts cache (Total: ${hiddenPostsCache.size})")
+        }
+
+        fun isPostHidden(postId: String): Boolean {
+            return hiddenPostsCache.contains(postId)
+        }
+
+        fun getHiddenPosts(): Set<String> {
+            return hiddenPostsCache.toSet()
+        }
 
         fun isUserBlocked(userId: String): Boolean {
             return blockedUsersCache.contains(userId)

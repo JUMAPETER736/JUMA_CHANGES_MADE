@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -13,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
+import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
@@ -37,6 +39,9 @@ class MutedPostsActivity : AppCompatActivity() {
 
     private lateinit var retrofitInstance: RetrofitInstance
 
+    // Add ViewModel
+    private val relationshipsViewModel: UserRelationshipsViewModel by viewModels()
+
     companion object {
         private const val TAG = "MutedPostsActivity"
     }
@@ -51,6 +56,12 @@ class MutedPostsActivity : AppCompatActivity() {
         initializeViews()
         setupToolbar()
         setupRecyclerView()
+        loadMutedUsers()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Reload data when activity comes back into view
         loadMutedUsers()
     }
 
@@ -97,8 +108,8 @@ class MutedPostsActivity : AppCompatActivity() {
                         // Only add items with valid user data
                         mutedPostsItem.user?.let { user ->
                             UserRelationshipItem(
-                                userId = user._id ?: return@mapNotNull null,
-                                username = user.username ?: return@mapNotNull null,
+                                userId = user._id,
+                                username = user.username,
                                 email = user.email,
                                 firstName = user.firstName,
                                 lastName = user.lastName,
@@ -109,7 +120,7 @@ class MutedPostsActivity : AppCompatActivity() {
                                         url = it.url
                                     )
                                 },
-                                actionDate = mutedPostsItem.mutedAt ?: ""
+                                actionDate = mutedPostsItem.mutedAt
                             )
                         }
                     } ?: emptyList()
@@ -118,6 +129,10 @@ class MutedPostsActivity : AppCompatActivity() {
                     mutedUsersList.addAll(items)
                     adapter.updateList(mutedUsersList)
                     showEmptyState(mutedUsersList.isEmpty())
+
+                    // Update FeedAdapter cache with all muted user IDs
+                    val mutedUserIds = items.map { it.userId }.toSet()
+                    com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.setMutedPostsUsers(mutedUserIds)
                 } else {
                     val errorMessage = response.body()?.message ?: "Failed to load muted users"
                     showError(errorMessage)
@@ -158,6 +173,12 @@ class MutedPostsActivity : AppCompatActivity() {
                         adapter.removeItem(position)
                         showEmptyState(mutedUsersList.isEmpty())
 
+                        // Update ViewModel
+                        relationshipsViewModel.removeMutedPosts(userId)
+
+                        // Update FeedAdapter cache
+                        com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.removeFromMutedPostsCache(userId)
+
                         Snackbar.make(
                             recyclerView,
                             "@${item.username} posts unmuted",
@@ -189,6 +210,12 @@ class MutedPostsActivity : AppCompatActivity() {
                     mutedUsersList.add(insertPosition, item)
                     adapter.updateList(mutedUsersList)
                     showEmptyState(mutedUsersList.isEmpty())
+
+                    // Update ViewModel
+                    relationshipsViewModel.addMutedPosts(userId)
+
+                    // Update FeedAdapter cache
+                    com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.addToMutedPostsCache(userId)
 
                     Toast.makeText(
                         this@MutedPostsActivity,

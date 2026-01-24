@@ -185,6 +185,8 @@ class UserRelationshipsViewModel @Inject constructor(
         _mutedPostsIds.value = _mutedPostsIds.value - userId
     }
 
+
+
     fun addMutedStories(userId: String) {
         _mutedStoriesIds.value = _mutedStoriesIds.value + userId
     }

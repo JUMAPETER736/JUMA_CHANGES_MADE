@@ -92,6 +92,7 @@ import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.feed.FeedUploadRepository
+import com.uyscuti.social.circuit.settings.MutedPostsActivity
 import com.uyscuti.social.circuit.ui.LoginActivity
 import com.uyscuti.social.circuit.ui.fragments.chat.FeedFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostAudioViewFragment
@@ -988,45 +989,45 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     private fun handleMuteToggle(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
-                if (relationshipsViewModel.isPostsMuted(userId)) {
-                    // Unmute
-                    val response = retrofitInstance.apiService.unMutePosts(userId)
-                    if (response.isSuccessful) {
-                        relationshipsViewModel.removeMutedPosts(userId)
-                        Toast.makeText(context, "Posts unmuted", Toast.LENGTH_SHORT).show()
-                        // Refresh feed to show posts again
-                        allFeedAdapter.notifyDataSetChanged()
+                // Check current mute status from ViewModel
+                val isMuted = relationshipsViewModel.isPostsMuted(userId)
+
+                val response = if (isMuted) {
+                    withContext(Dispatchers.IO) {
+                        retrofitInstance.apiService.unMutePosts(userId)
                     }
                 } else {
-                    // Mute
-                    val response = retrofitInstance.apiService.mutePosts(userId)
-                    if (response.isSuccessful) {
-                        relationshipsViewModel.addMutedPosts(userId)
-
-                        // Remove the post from the adapter
-                        allFeedAdapter.removeItem(position)
-                        allFeedAdapter.notifyItemRemoved(position)
-
-                        // Show Snackbar with Undo
-                        Snackbar.make(feedListView, "Posts from this user muted", Snackbar.LENGTH_LONG)
-                            .setAction("Undo") {
-                                // Unmute the user
-                                lifecycleScope.launch {
-                                    val undoResponse = retrofitInstance.apiService.unMutePosts(userId)
-                                    if (undoResponse.isSuccessful) {
-                                        relationshipsViewModel.removeMutedPosts(userId)
-                                        Toast.makeText(context, "Unmuted", Toast.LENGTH_SHORT).show()
-                                        // Reload feed
-                                        getAllFeed(1)
-                                    }
-                                }
-                            }
-                            .show()
+                    withContext(Dispatchers.IO) {
+                        retrofitInstance.apiService.mutePosts(userId)
                     }
                 }
+
+                if (response.isSuccessful) {
+                    // Update ViewModel
+                    if (isMuted) {
+                        relationshipsViewModel.removeMutedPosts(userId)
+                        com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.removeFromMutedPostsCache(userId)
+                    } else {
+                        relationshipsViewModel.addMutedPosts(userId)
+                        com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.addToMutedPostsCache(userId)
+                    }
+
+                    // Refresh the feed to hide/show posts
+                    allFeedAdapter.notifyDataSetChanged()
+
+                    val message = if (isMuted) {
+                        "Posts unmuted"
+                    } else {
+                        "Posts muted. You won't see posts from this user"
+                    }
+
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Failed to update mute status", Toast.LENGTH_SHORT).show()
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Error toggling mute: ${e.message}", e)
-                Toast.makeText(context, "Failed to update mute status", Toast.LENGTH_SHORT).show()
+                Log.e("MuteToggle", "Error: ${e.message}", e)
+                Toast.makeText(context, "Network error", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -1328,55 +1329,43 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        Log.d(TAG,
-            "hideSinglePost: Hiding post at position: $position, PostId: ${data._id}")
+        Log.d(TAG, "hideSinglePost: Hiding post at position: $position, PostId: ${data._id}")
         try {
             if (::allFeedAdapter.isInitialized) {
+                // Add to FeedAdapter cache
+                com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.addToHiddenPostsCache(data._id)
 
-//                feedListView.removeViewAt( position )
                 allFeedAdapter.removeItem(position)
                 allFeedAdapter.notifyItemRemoved(position)
-//                allFeedAdapter.notifyItemChanged(position)
-                // Optional: Add fade-out animation
-                val viewHolder = feedListView.findViewHolderForAdapterPosition(position)
-                if (viewHolder != null) {
-                    viewHolder.itemView.animate()
-                        .alpha(0f)
-                        .setDuration(300)
-                        .withEndAction {
-                            allFeedAdapter.notifyItemRemoved(position)
-                        }
-                        .start()
-                } else {
-                    Log.w(
-                        TAG,
-                        "ViewHolder at position $position is null, notifying removal directly"
-                    )
-                    allFeedAdapter.notifyItemRemoved(position) // Fallback for off-screen items
+
+                // Save to SharedPreferences
+                val sharedPrefs = requireContext().getSharedPreferences("HiddenPosts", Context.MODE_PRIVATE)
+                with(sharedPrefs.edit()) {
+                    putBoolean(data._id, true)
+                    apply()
                 }
+
                 // Show Snackbar with Undo button
                 Snackbar.make(feedListView, "Post hidden", Snackbar.LENGTH_LONG)
                     .setAction("Undo") {
+                        // Remove from cache
+                        com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.removeFromHiddenPostsCache(data._id)
+
+                        // Remove from SharedPreferences
+                        with(sharedPrefs.edit()) {
+                            remove(data._id)
+                            apply()
+                        }
+
                         // Restore the post
-//                        favoriteFeedAdapter.restoreItem(position, data)
                         allFeedAdapter.notifyItemInserted(position)
                     }
                     .show()
                 return
             }
-
-            val sharedPrefs =
-                requireContext().getSharedPreferences(
-                    "HiddenPosts", Context.MODE_PRIVATE)
-            with(sharedPrefs.edit()) {
-                putBoolean(data._id, true)
-                apply()
-            }
-
         } catch (e: Exception) {
             Log.e(TAG, "Error hiding post: ${e.message}")
-            Toast.makeText(requireContext(),
-                "Failed to hide post", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Failed to hide post", Toast.LENGTH_SHORT).show()
         }
     }
 
