@@ -105,17 +105,18 @@ class RelationshipUsersAdapter(
             dateTextView.text = "$datePrefix $formattedDate"
 
             // Set action button text and styling
-            val (buttonText, buttonColor) = when (relationshipType) {
-                RelationshipType.BLOCKED -> "Unblock" to R.color.redBlocked
-                RelationshipType.MUTED_POSTS -> "Unmute" to R.color.gray_dark_transparent
-                RelationshipType.MUTED_STORIES -> "Unmute" to R.color.app_secondary_variant
-                RelationshipType.CLOSE_FRIENDS -> "Remove" to R.color.redBlocked
-                RelationshipType.FAVORITES -> "Remove" to R.color.redBlocked
-                RelationshipType.RESTRICTED -> "Unrestrict" to R.color.dark_gray
+            val (buttonText, buttonColor, textColor) = when (relationshipType) {
+                RelationshipType.BLOCKED -> Triple("Unblock", R.color.redBlocked, android.R.color.white)
+                RelationshipType.MUTED_POSTS -> Triple("Unmute", R.color.gray_dark_transparent, android.R.color.white)
+                RelationshipType.MUTED_STORIES -> Triple("Unmute", R.color.app_secondary_variant, android.R.color.white)
+                RelationshipType.CLOSE_FRIENDS -> Triple("Remove", R.color.redBlocked, android.R.color.white)
+                RelationshipType.FAVORITES -> Triple("Remove", R.color.redBlocked, android.R.color.white)
+                RelationshipType.RESTRICTED -> Triple("Unrestrict", R.color.dark_gray, android.R.color.white)
             }
 
             actionButton.text = buttonText
-            actionButton.setTextColor(context.getColor(buttonColor))
+            actionButton.setTextColor(context.getColor(textColor))
+            actionButton.backgroundTintList = android.content.res.ColorStateList.valueOf(context.getColor(buttonColor))
 
             // Set click listeners
             actionButton.setOnClickListener {
@@ -123,7 +124,7 @@ class RelationshipUsersAdapter(
             }
 
             itemView.setOnClickListener {
-                // TODO: Navigate to user profile
+          
                 // val intent = Intent(context, UserProfileActivity::class.java)
                 // intent.putExtra("userId", item.userId)
                 // context.startActivity(intent)
@@ -134,14 +135,25 @@ class RelationshipUsersAdapter(
             return try {
                 // Parse the ISO date string
                 val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+                isoFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
                 val date = isoFormat.parse(dateString)
 
-                // Format to "24 January 2026"
-                val displayFormat = SimpleDateFormat("d MMMM yyyy", Locale.getDefault())
+                // Format to "24 Jan 2026" (shorter format)
+                val displayFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
                 date?.let { displayFormat.format(it) } ?: dateString
             } catch (e: Exception) {
-                // If parsing fails, return as is
-                dateString
+                // If parsing fails, try alternate format without milliseconds
+                try {
+                    val alternateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
+                    alternateFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    val date = alternateFormat.parse(dateString)
+
+                    val displayFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
+                    date?.let { displayFormat.format(it) } ?: dateString
+                } catch (e2: Exception) {
+                    // If all parsing fails, return as is
+                    dateString
+                }
             }
         }
     }
