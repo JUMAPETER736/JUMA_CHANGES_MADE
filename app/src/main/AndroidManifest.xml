@@ -227,6 +227,11 @@
             android:exported="false"
             android:theme="@style/Base.Theme.FlashDesign" />
 
+        <activity
+            android:name="com.uyscuti.social.circuit.settings.HiddenFeedPostsActivity"
+            android:exported="false"
+            android:theme="@style/Base.Theme.FlashDesign"/>
+
         <!-- ====================================================================================
              ACTIVITIES - Messaging & Chat
              ==================================================================================== -->

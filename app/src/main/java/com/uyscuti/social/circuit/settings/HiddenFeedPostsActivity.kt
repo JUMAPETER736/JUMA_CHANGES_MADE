@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -36,7 +37,7 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     private lateinit var toolbar: Toolbar
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
-    private lateinit var emptyStateTextView: TextView
+    private lateinit var emptyStateLayout: LinearLayout
     private lateinit var feedAdapter: FeedAdapter
     private lateinit var sharedPrefs: SharedPreferences
     private lateinit var retrofitInstance: RetrofitInstance
@@ -57,7 +58,7 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         toolbar = findViewById(R.id.toolbar)
         recyclerView = findViewById(R.id.hiddenPostsRecyclerView)
         progressBar = findViewById(R.id.progressBar)
-        emptyStateTextView = findViewById(R.id.emptyStateTextView)
+        emptyStateLayout = findViewById(R.id.emptyStateLayout) // Changed
 
         setSupportActionBar(toolbar)
         supportActionBar?.title = "Hidden Posts"
@@ -167,11 +168,11 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
         recyclerView.visibility = if (show) View.GONE else View.VISIBLE
-        emptyStateTextView.visibility = View.GONE
+        emptyStateLayout.visibility = View.GONE // Changed
     }
 
     private fun showEmptyState(show: Boolean) {
-        emptyStateTextView.visibility = if (show) View.VISIBLE else View.GONE
+        emptyStateLayout.visibility = if (show) View.VISIBLE else View.GONE // Changed
         recyclerView.visibility = if (show) View.GONE else View.VISIBLE
     }
 
