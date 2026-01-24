@@ -122,7 +122,7 @@ class AdvertisementNotificationService: Service() {
 
         return START_STICKY
     }
-    
+
     @SuppressLint("ObsoleteSdkInt")
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

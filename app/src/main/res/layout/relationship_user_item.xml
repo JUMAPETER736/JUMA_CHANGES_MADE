@@ -7,18 +7,20 @@
     android:padding="16dp"
     android:background="?attr/selectableItemBackground">
 
-    <!-- User Avatar -->
+    <!-- Avatar -->
     <ImageView
-        android:id="@+id/userAvatar"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
+        android:id="@+id/avatarImageView"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@drawable/flash21"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:src="@drawable/round_user" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:ignore="MissingClass" />
 
-    <!-- Username -->
+    <!-- Full Name -->
     <TextView
-        android:id="@+id/usernameText"
+        android:id="@+id/fullNameTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
@@ -28,14 +30,14 @@
         android:textStyle="bold"
         android:maxLines="1"
         android:ellipsize="end"
-        app:layout_constraintStart_toEndOf="@id/userAvatar"
-        app:layout_constraintTop_toTopOf="@id/userAvatar"
-        app:layout_constraintEnd_toStartOf="@id/actionButton"
-        tools:text="\@username" />
+        tools:text="John Doe"
+        app:layout_constraintStart_toEndOf="@id/avatarImageView"
+        app:layout_constraintTop_toTopOf="@id/avatarImageView"
+        app:layout_constraintEnd_toStartOf="@id/actionButton" />
 
-    <!-- Full Name -->
+    <!-- Username -->
     <TextView
-        android:id="@+id/fullNameText"
+        android:id="@+id/usernameTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
@@ -43,14 +45,14 @@
         android:textSize="14sp"
         android:maxLines="1"
         android:ellipsize="end"
-        app:layout_constraintStart_toStartOf="@id/usernameText"
-        app:layout_constraintTop_toBottomOf="@id/usernameText"
-        app:layout_constraintEnd_toStartOf="@id/actionButton"
-        tools:text="John Doe" />
+        tools:text="\@johndoe"
+        app:layout_constraintStart_toStartOf="@id/fullNameTextView"
+        app:layout_constraintTop_toBottomOf="@id/fullNameTextView"
+        app:layout_constraintEnd_toStartOf="@id/actionButton" />
 
-    <!-- Added/Blocked/Muted Date -->
+    <!-- Date -->
     <TextView
-        android:id="@+id/addedAtText"
+        android:id="@+id/dateTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
@@ -58,28 +60,22 @@
         android:textSize="12sp"
         android:maxLines="1"
         android:ellipsize="end"
-        app:layout_constraintStart_toStartOf="@id/usernameText"
-        app:layout_constraintTop_toBottomOf="@id/fullNameText"
+        tools:text="Restricted 24 January 2026"
+        app:layout_constraintStart_toStartOf="@id/fullNameTextView"
+        app:layout_constraintTop_toBottomOf="@id/usernameTextView"
         app:layout_constraintEnd_toStartOf="@id/actionButton"
-        app:layout_constraintBottom_toBottomOf="@id/userAvatar"
-        tools:text="Blocked 2 days ago" />
+        app:layout_constraintBottom_toBottomOf="@id/avatarImageView" />
 
-    <!-- Action Button (Unblock, Unmute, Remove) -->
-    <TextView
+    <!-- Action Button -->
+    <Button
         android:id="@+id/actionButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingStart="16dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="8dp"
+        android:minWidth="100dp"
+        android:text="Unrestrict"
         android:textSize="14sp"
-        android:textStyle="bold"
-        android:background="?attr/selectableItemBackground"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        tools:text="Unblock"
-        tools:textColor="@color/redBlocked" />
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
