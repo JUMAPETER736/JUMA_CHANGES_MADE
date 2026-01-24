@@ -40,7 +40,7 @@
             tools:ignore="MissingConstraints">
 
             <TextView
-                android:id="@+id/titleTextView"
+                android:id="@+id/fullNameTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"
@@ -52,7 +52,7 @@
                 android:ellipsize="end" />
 
             <TextView
-                android:id="@+id/subtitleTextView"
+                android:id="@+id/userNameTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"

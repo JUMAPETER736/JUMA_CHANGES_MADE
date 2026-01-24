@@ -14,9 +14,11 @@ import com.uyscuti.sharedmodule.media.ViewImagesActivity
 import com.uyscuti.sharedmodule.model.SettingsModel
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.ui.NotificationsSettingsActivity
-import kotlin.jvm.java
+
+
 
 class SettingsActivity : AppCompatActivity() {
+
     private lateinit var toolbar: Toolbar
     private lateinit var settings: SharedPreferences
     private val PREFS_NAME = "LocalSettings"
@@ -28,8 +30,25 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
 
         settings = getSharedPreferences(PREFS_NAME, 0)
-        username = settings.getString("username", "").toString()
-        avatar = settings.getString("avatar", "").toString()
+
+        // Use the correct lowercase keys!
+        username = settings.getString("username", "login") ?: "login"
+        avatar = settings.getString("avatar", "") ?: ""
+
+        // Option 1: Use the existing full_name key
+        val fullName = settings.getString("full_name", "") ?: ""
+
+        // Option 2: Use firstname and lastname (lowercase!)
+        val firstName = settings.getString("firstname", "") ?: ""
+        val lastName = settings.getString("lastname", "") ?: ""
+
+        // DEBUG: Print what's in SharedPreferences
+        android.util.Log.d("SettingsActivity", "=== SharedPreferences Debug ===")
+        android.util.Log.d("SettingsActivity", "full_name: '$fullName'")
+        android.util.Log.d("SettingsActivity", "firstname: '$firstName'")
+        android.util.Log.d("SettingsActivity", "lastname: '$lastName'")
+        android.util.Log.d("SettingsActivity", "username: '$username'")
+        android.util.Log.d("SettingsActivity", "avatar: '$avatar'")
 
         val avatarPath = settings.getString("avatar", "")
         val avatarBitmap: Bitmap? = if (avatarPath!!.isNotEmpty()) {
@@ -41,12 +60,12 @@ class SettingsActivity : AppCompatActivity() {
         // Create Bitmaps for icons
         val lockBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google)
         val userBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.round_user)
-        val blockBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google) // Change to ic_block
-        val muteBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google) // Change to ic_mute
-        val friendsBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google) // Change to ic_friends
-        val favoriteBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google) // Change to ic_favorite
-        val restrictBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google) // Change to ic_restrict
-        val hideBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google) // Change to ic_hide
+        val blockBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google)
+        val muteBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google)
+        val friendsBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google)
+        val favoriteBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google)
+        val restrictBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google)
+        val hideBitmap: Bitmap? = BitmapFactory.decodeResource(resources, R.drawable.google)
 
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -58,8 +77,16 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         val settingsList = listOf(
-            // User Profile
-            SettingsModel(avatarBitmap, "Username", "Some Text"),
+            // User Profile - WITH CORRECT KEYS
+            SettingsModel(
+                imageBitmap = avatarBitmap,
+                title = "Username",
+                subTitle = null,
+                firstName = firstName,      // Now using "firstname" (lowercase)
+                lastName = lastName,        // Now using "lastname" (lowercase)
+                username = username,
+                avatarUrl = avatar
+            ),
 
             // Main Settings
             SettingsModel(lockBitmap, "Privacy", "Block contacts, Disappearing messages"),
@@ -70,26 +97,12 @@ class SettingsActivity : AppCompatActivity() {
             SettingsModel(lockBitmap, "Invite", ""),
 
             // ========== RELATIONSHIP MANAGEMENT SECTION ==========
-
-            // Blocked Users
             SettingsModel(blockBitmap, "Blocked Users", "Manage blocked accounts"),
-
-            // Muted Posts
             SettingsModel(muteBitmap, "Muted Posts", "Accounts whose posts you've muted"),
-
-            // Muted Stories
             SettingsModel(muteBitmap, "Muted Stories", "Accounts whose stories you've muted"),
-
-            // Close Friends
             SettingsModel(friendsBitmap, "Close Friends", "Manage your close friends list"),
-
-            // Favorites
             SettingsModel(favoriteBitmap, "Favorites", "Accounts you've added to favorites"),
-
-            // Restricted Accounts
             SettingsModel(restrictBitmap, "Restricted Accounts", "Manage restricted accounts"),
-
-            // Hidden Posts
             SettingsModel(hideBitmap, "Hidden Posts", "Posts you've hidden from your feed")
         )
 
@@ -148,9 +161,6 @@ class SettingsActivity : AppCompatActivity() {
                 val intent = Intent(this@SettingsActivity, RestrictedAccountsActivity::class.java)
                 startActivity(intent)
             }
-
-
         }
     }
-
 }

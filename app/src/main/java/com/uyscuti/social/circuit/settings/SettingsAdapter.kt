@@ -160,8 +160,8 @@ class SettingsAdapter(
     // ==================== EXISTING VIEW HOLDERS ====================
 
     inner class FirstItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val title: TextView = itemView.findViewById(R.id.titleTextView)
-        private val subTitle: TextView = itemView.findViewById(R.id.subtitleTextView)
+        private val userFullName: TextView = itemView.findViewById(R.id.fullNameTextView)
+        private val userName: TextView = itemView.findViewById(R.id.userNameTextView)
         private val image: ImageView = itemView.findViewById(R.id.settingsImageView)
 
         init {
@@ -171,35 +171,43 @@ class SettingsAdapter(
         }
 
         fun bind(setting: SettingsModel, clickListener: (SettingsModel) -> Unit) {
-            // Get user data from SharedPreferences
-            val avatar = settings.getString("avatar", null)
-            val firstName = settings.getString("firstName", null)
-            val lastName = settings.getString("lastName", null)
-            val username = settings.getString("username", "login")
+            // Get data from SettingsModel first, fallback to SharedPreferences with LOWERCASE keys
+            val firstName = setting.firstName ?: settings.getString("firstname", "") ?: ""
+            val lastName = setting.lastName ?: settings.getString("lastname", "") ?: ""
+            val username = setting.username ?: settings.getString("username", "login") ?: "login"
+            val avatarUrl = setting.avatarUrl ?: settings.getString("avatar", null)
 
             // Build full name
             val fullName = buildString {
-                if (!firstName.isNullOrEmpty()) append(firstName)
-                if (!firstName.isNullOrEmpty() && !lastName.isNullOrEmpty()) append(" ")
-                if (!lastName.isNullOrEmpty()) append(lastName)
-            }
+                if (firstName.isNotEmpty()) {
+                    append(firstName)
+                }
+                if (firstName.isNotEmpty() && lastName.isNotEmpty()) {
+                    append(" ")
+                }
+                if (lastName.isNotEmpty()) {
+                    append(lastName)
+                }
+            }.trim()
 
-            // Set full name (or username if no full name available)
-            title.text = fullName.ifEmpty { username }
+            // Set full name as title (or username if no full name available)
+            userFullName.text = if (fullName.isNotEmpty()) fullName else username
 
-            // Set username with @ prefix
-            subTitle.text = "@$username"
-            subTitle.visibility = View.VISIBLE
+            // Set username with @ prefix as subtitle
+            userName.text = "@$username"
+            userName.visibility = View.VISIBLE
 
+            // Load avatar
             Glide.with(image.context)
-                .load(avatar)
+                .load(avatarUrl)
                 .apply(RequestOptions.bitmapTransform(CircleCrop()))
-                .apply(RequestOptions.placeholderOf(R.drawable.google))
-                .error(setting.imageBitmap)
+                .placeholder(R.drawable.google)
+                .error(R.drawable.google)
                 .into(image)
 
             itemView.setOnClickListener { clickListener(setting) }
         }
+
     }
 
     inner class PrivacyItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
