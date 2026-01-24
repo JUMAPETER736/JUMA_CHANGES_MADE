@@ -79,40 +79,50 @@ class AdvertisementNotificationService: Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
-        if(!isForegroundStarted) {
-
+        // CRITICAL: Call startForeground() IMMEDIATELY, before any other logic
+        if (!isForegroundStarted) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) {
+                // If no permission, stop immediately
                 stopSelf()
-                return START_NOT_STICKY // Can't show notification, permissions need to be requested from Activity
+                return START_NOT_STICKY
             }
 
-            startForegroundService()
+            // Start foreground IMMEDIATELY - must be called within 5-10 seconds of startForegroundService()
+            val notification = createForegroundNotification()
+            startForeground(foregroundNotificationId, notification)
             isForegroundStarted = true
 
+            // Schedule stopping the foreground state (but keep service running)
             handler.postDelayed({
-                stopForeground(true)
-                stopSelf()
-            }, 1 * 1000)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                } else {
+                    @Suppress("DEPRECATION")
+                    stopForeground(true)
+                }
+                // Don't call stopSelf() here - let the service continue for notifications
+            }, 3000) // Give it 3 seconds instead of 1
         }
 
+        // Process the intent to show notifications
         intent?.let { cm ->
             when (cm.action) {
                 BUSINESS_LOCATION_ADVERTISEMENT -> {
-                    val adsNotification = cm.getSerializableExtra("adsNotification") as AdsNotification
-                    showBusinessNotification(adsNotification)
+                    val adsNotification = cm.getSerializableExtra("adsNotification") as? AdsNotification
+                    adsNotification?.let { showBusinessNotification(it) }
                 }
                 BILLBOARD_LOCATION_ADVERTISEMENT -> {
-                    val adsBillboard = cm.getSerializableExtra("adsBillboard") as BillboardAdvertisement
-                    showBillboardNotification(applicationContext, adsBillboard)
+                    val adsBillboard = cm.getSerializableExtra("adsBillboard") as? BillboardAdvertisement
+                    adsBillboard?.let { showBillboardNotification(applicationContext, it) }
                 }
                 else -> {}
             }
         }
 
-
         return START_STICKY
     }
+    
     @SuppressLint("ObsoleteSdkInt")
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
