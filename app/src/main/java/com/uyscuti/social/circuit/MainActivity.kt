@@ -321,6 +321,7 @@ import com.uyscuti.social.circuit.user_interface.UniversalSearchActivity
 import com.uyscuti.social.circuit.user_interface.userProfile.MyUserProfileAccount
 import com.uyscuti.social.core.service.LocationService
 import com.uyscuti.social.core.util.LocationServiceUtil
+import java.lang.Math.sqrt
 
 private const val TAG = "MainActivity"
 
@@ -1150,7 +1151,141 @@ class MainActivity : AppCompatActivity(),
              }
          }
 
-         
+         private fun mixVoiceNote() {
+             val TAG = "mixVN"
+             try {
+                 wasPaused = true
+                 Log.d(TAG, "pauseRecording: outputFile: $outputVnFile")
+
+                 val audioMixer = AudioMixer(outputVnFile)
+                 for (input in recordedAudioFiles) {
+                     val ai = GeneralAudioInput(input)
+                     audioMixer.addDataSource(ai)
+                 }
+                 audioMixer.mixingType = AudioMixer.MixingType.SEQUENTIAL
+
+                 audioMixer.setProcessingListener(object : AudioMixer.ProcessingListener {
+                     override fun onProgress(progress: Double) {}
+
+                     override fun onEnd() {
+                         runOnUiThread {
+                             audioMixer.release()
+                             mixingCompleted = true
+                             val file = File(outputVnFile)
+                             Log.d(TAG, "onEnd: output vn file exists ${file.exists()}")
+                             Log.d(TAG, "onEnd: media muxed success")
+
+                             binding.waveformScrollView.visibility = View.VISIBLE
+                             binding.waveDotsContainer.visibility = View.VISIBLE
+                             binding.wave.visibility = View.GONE
+
+                             binding.playVnAudioBtn.setOnClickListener {
+                                 Log.d("playVnAudioBtn", "onEnd: play vn button clicked")
+                                 when {
+                                     !isAudioVNPlaying -> {
+                                         Log.d("playVnAudioBtn", "play vn")
+                                         startPlaying(outputVnFile)
+                                     }
+                                     else -> {
+                                         Log.d("playVnAudioBtn", "pause VN")
+                                         vnRecordAudioPlaying = true
+                                         val currentProgress = player?.currentPosition ?: vnRecordProgress
+                                         vnRecordProgress = currentProgress
+                                         pauseVn(currentProgress)
+                                     }
+                                 }
+                             }
+                         }
+                     }
+                 })
+
+                 try {
+                     audioMixer.start()
+                     audioMixer.processAsync()
+                 } catch (e: IOException) {
+                     audioMixer.release()
+                     e.printStackTrace()
+                     Log.d(TAG, "pauseRecording: exception 1 $e")
+                     Log.d(TAG, "pauseRecording: exception 1 ${e.message}")
+                 }
+             } catch (e: Exception) {
+                 e.printStackTrace()
+                 Log.d(TAG, "pauseRecording: exception 2 $e")
+                 Log.d(TAG, "pauseRecording: exception 2 ${e.message}")
+             }
+         }
+
+         private fun listenToAudio() {
+             try {
+                 val minBufferSize = AudioRecord.getMinBufferSize(
+                     44100,
+                     android.media.AudioFormat.CHANNEL_IN_MONO,
+                     android.media.AudioFormat.ENCODING_PCM_16BIT
+                 )
+
+                 if (ActivityCompat.checkSelfPermission(
+                         this,
+                         Manifest.permission.RECORD_AUDIO
+                     ) != PackageManager.PERMISSION_GRANTED
+                 ) {
+                     ActivityCompat.requestPermissions(
+                         this,
+                         arrayOf(Manifest.permission.RECORD_AUDIO),
+                         REQUEST_RECORD_AUDIO_PERMISSION
+                     )
+                     return
+                 }
+
+                 audioRecord = AudioRecord(
+                     MediaRecorder.AudioSource.MIC,
+                     44100,
+                     android.media.AudioFormat.CHANNEL_IN_MONO,
+                     android.media.AudioFormat.ENCODING_PCM_16BIT,
+                     minBufferSize * 2
+                 )
+
+                 audioRecord?.startRecording()
+                 val buffer = ShortArray(minBufferSize)
+
+                 while (isListeningToAudio && isRecording) {
+                     val readSize = audioRecord?.read(buffer, 0, minBufferSize) ?: 0
+
+                     if (readSize > 0) {
+                         // Calculate RMS (Root Mean Square) for better amplitude detection
+                         var sum = 0.0
+                         for (i in 0 until readSize) {
+                             sum += (buffer[i].toDouble() * buffer[i].toDouble())
+                         }
+                         val rms = sqrt(sum / readSize)
+
+                         // Normalize amplitude to 0-1 range (adjust 5000.0 for sensitivity)
+                         val normalizedAmplitude = (rms / 5000.0).coerceIn(0.0, 1.0).toFloat()
+
+                         runOnUiThread {
+                             if (normalizedAmplitude > 0.05f) { // Sound detected threshold
+                                 // Map amplitude to height multiplier (0.3 to 2.5)
+                                 val heightMultiplier = 0.3f + (normalizedAmplitude * 2.2f)
+                                 addWaveBarForSound(heightMultiplier)
+                             } else { // No sound or very quiet
+                                 addIdleDottedBarAtEnd()
+                             }
+                             scrollToRight()
+                         }
+                     }
+
+                     Thread.sleep(50) // Update every 50ms for smooth animation
+                 }
+
+                 audioRecord?.release()
+                 audioRecord = null
+             } catch (e: Exception) {
+                 Log.e("ListenToAudio", "Error: ${e.message}")
+                 e.printStackTrace()
+             }
+         }
+
+
+
 
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
