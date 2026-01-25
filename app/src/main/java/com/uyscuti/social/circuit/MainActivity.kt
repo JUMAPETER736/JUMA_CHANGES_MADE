@@ -1375,6 +1375,24 @@ class MainActivity : AppCompatActivity(),
              return (screenWidth / totalBarWidth) + 5 // Add extra for smooth scrolling
          }
 
+         private fun scrollToRight() {
+             binding.waveformScrollView.post {
+                 val maxScroll = (binding.waveDotsContainer.width - binding.waveformScrollView.width).coerceAtLeast(0)
+                 if (maxScroll > 0) {
+                     binding.waveformScrollView.smoothScrollTo(maxScroll, 0)
+                 }
+             }
+         }
+
+         private fun clearWaveform() {
+             waveBars.forEach { bar ->
+                 (bar.tag as? ObjectAnimator)?.cancel()
+             }
+             binding.waveDotsContainer.removeAllViews()
+             waveBars.clear()
+         }
+         
+
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
         Manifest.permission.RECORD_AUDIO,
