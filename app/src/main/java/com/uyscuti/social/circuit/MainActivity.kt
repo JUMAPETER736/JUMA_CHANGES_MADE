@@ -1526,7 +1526,34 @@ class MainActivity : AppCompatActivity(),
              }
          }
 
-         
+         private fun stopRecordWaveRunnable() {
+             try {
+                 waveHandler.removeCallbacks(onRecordWaveRunnable)
+                 isOnRecordDurationOnPause = true
+             } catch (e: Exception) {
+                 e.printStackTrace()
+             }
+         }
+
+         private fun deleteVn() {
+             recordedAudioFiles.clear()
+             val isDeleted = deleteFiles(recordedAudioFiles)
+             val outputVnFileList = mutableListOf<String>().apply { add(outputVnFile) }
+             val deleteMixVn = deleteFiles(outputVnFileList)
+             if (isDeleted) {
+                 Log.d(TAG, "File record deleted successfully")
+             } else {
+                 println("Failed to delete file.")
+             }
+
+             if (deleteMixVn) {
+                 Log.d(TAG, "File mix vn deleted successfully")
+             } else {
+                 println("Failed to delete file.")
+             }
+         }
+
+
 
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
