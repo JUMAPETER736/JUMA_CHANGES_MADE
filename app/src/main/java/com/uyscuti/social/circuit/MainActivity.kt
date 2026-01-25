@@ -474,7 +474,7 @@ class MainActivity : AppCompatActivity(),
     private val REQUEST_CODE_IMAGE_PICKER = 100
     private val REQUEST_CODE_VIDEO_PICKER = 158
     private val REQUEST_CODE_IMAGE_PICKER_CATALOGUE = 110
-
+         private val REQUEST_RECORD_AUDIO_PERMISSION = 200
 
         // Location service for getting user location
          private lateinit var locationService: LocationService
@@ -516,6 +516,7 @@ class MainActivity : AppCompatActivity(),
          private var isListeningToAudio = false
          private var playbackTimerRunnable: Runnable? = null
          private var voiceNoteState = VoiceNoteState.IDLE
+         private var audioRecord: AudioRecord? = null
 
          // WAVEFORM VISUALIZATION
 
@@ -5274,108 +5275,9 @@ class MainActivity : AppCompatActivity(),
     var vnRecordProgress = 0
 
     @SuppressLint("DefaultLocale")
-    private fun inflateWave(outputVN: String) {
 
-
-
-        val TAG = "inflateWave"
-        Log.d("playVnAudioBtn", "inflateWave: outputvn $outputVN")
-
-        val audioFile = File(outputVN)
-        binding.wave.visibility = View.VISIBLE
-        binding.playerTimerTv.visibility = View.VISIBLE
-        Log.d(TAG, "render: does not start with http")
-
-        val file = File(outputVN)
-
-        Log.d(TAG, "render: file $outputVN exists: ${file.exists()}")
-        val locaAudioDuration = AudioDurationHelper.getLocalAudioDuration(outputVN)
-
-        if (locaAudioDuration != null) {
-
-            // Duration is available, do something with it
-
-            val minutes = (locaAudioDuration / 1000) / 60
-            val seconds = (locaAudioDuration / 1000) % 60
-
-            binding.thirdTimerTv.text = String.format("%02d:%02d", minutes, seconds)
-        } else {
-            // File does not exist or error retrieving duration
-
-            Log.e(TAG, "render: failed to retrieve audio duration")
-
-        }
-
-
-        CoroutineScope(Dispatchers.IO).launch {
-            WaveFormExtractor.getSampleFrom(applicationContext, outputVN) {
-
-                CoroutineScope(Dispatchers.Main).launch {
-
-
-                    if (locaAudioDuration != null) {
-                        binding.wave.maxProgress = locaAudioDuration.toFloat()
-                    }
-                    binding.wave.setSampleFrom(it)
-
-                    binding.wave.onProgressChanged = object : SeekBarOnProgressChanged {
-                        override fun onProgressChanged(
-                            waveformSeekBar: WaveformSeekBar,
-                            progress: Float,
-                            fromUser: Boolean
-                        ) {
-
-                            binding.secondTimerTv.text = String.format(
-                                "%s",
-                                TrimVideoUtils.stringForTime(progress)
-                            )
-
-
-
-                            if (fromUser) {
-                                if (vnRecordAudioPlaying) {
-                                    pauseVn(progress = progress.toInt())
-                                } else {
-                                    vnRecordProgress = progress.toInt()
-                                    Log.d("FromUser", "Scroll to this $progress")
-                                }
-
-                            }
-                        }
-
-                        override fun onRelease(event: MotionEvent?, progress: Float) {
-                            if (outputVN.isNotEmpty()) {
-
-                                if (vnRecordAudioPlaying) {
-                                    Log.d(
-                                        "onRelease",
-                                        "vnRecordAudioPlaying $isAudioVNPlaying progress $progress"
-                                    )
-                                    vnRecordProgress = progress.toInt()
-                                    startPlaying(outputVN)
-                                } else {
-                                    Log.d("onRelease", "Start playing from this progress $progress")
-                                    vnRecordProgress = progress.toInt()
-                                }
-
-                            } else {
-                                Log.d("onRelease", "output vn is empty")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-
-    }
 
     private val READ_EXTERNAL_STORAGE_REQUEST_CODE = 101 // Any integer value
-
-    private fun checkStoragePermission() {
-
-    }
-
 
 
     private fun playAudioFile(audioFile: String) {
@@ -5941,80 +5843,6 @@ class MainActivity : AppCompatActivity(),
 
 
     private var mixingCompleted = false // Define a flag to track if mixing is completed
-
-    private fun mixVN() {
-        val TAG = "mixVN"
-        try {
-            wasPaused = true
-            Log.d(TAG, "pauseRecording: outputFile: $outputVnFile")
-
-            val audioMixer = AudioMixer(outputVnFile)
-
-            for (input in recordedAudioFiles) {
-                val ai = GeneralAudioInput(input)
-                audioMixer.addDataSource(ai)
-            }
-            audioMixer.mixingType = AudioMixer.MixingType.SEQUENTIAL
-
-            audioMixer.setProcessingListener(object : AudioMixer.ProcessingListener {
-                override fun onProgress(progress: Double) {
-                    // Not used in this example, but you can handle progress updates if needed
-                }
-
-                override fun onEnd() {
-                    runOnUiThread {
-                        audioMixer.release()
-                        mixingCompleted = true // Set the flag to indicate mixing is completed
-                        // Additional code as needed
-                        val file = File(outputVnFile)
-                        Log.d(TAG, "onEnd: output vn file exists ${file.exists()}")
-                        Log.d(TAG, "onEnd: media muxed success")
-
-                        inflateWave(outputVnFile)
-
-                        binding.playVnAudioBtn.setOnClickListener {
-                            Log.d("playVnAudioBtn", "onEnd: play vn button clicked")
-                            when {
-                                !isAudioVNPlaying -> {
-                                    binding.playVnAudioBtn.setImageResource(R.drawable.baseline_pause_black)
-                                    Log.d(
-                                        "playVnAudioBtn",
-                                        "play vn"
-                                    )
-                                    startPlaying(outputVnFile)
-                                }
-
-                                else -> {
-                                    Log.d(
-                                        "playVnAudioBtn",
-                                        "pause VN"
-                                    )
-                                    binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-                                    vnRecordAudioPlaying = true
-                                    pauseVn(vnRecordProgress)
-                                }
-                            }
-                        }
-                    }
-                }
-            })
-
-            try {
-                audioMixer.start()
-                audioMixer.processAsync()
-            } catch (e: IOException) {
-                audioMixer.release()
-                e.printStackTrace()
-                Log.d(TAG, "pauseRecording: exception 1 $e")
-                Log.d(TAG, "pauseRecording: exception 1 ${e.message}")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.d(TAG, "pauseRecording: exception 2 $e")
-            Log.d(TAG, "pauseRecording: exception 2 ${e.message}")
-        }
-    }
-
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun cleanCache(event: CleanCache) {
