@@ -1650,6 +1650,7 @@ class MainActivity : AppCompatActivity(),
              onBackPressedDispatcher.addCallback(this, callback)
          }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     @OptIn(UnstableApi::class)
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
