@@ -319,9 +319,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/VNLayout"
-        android:visibility="gone"
-        >
-<!--        android:background="#808080"-->
+        android:visibility="gone">
+
 
 
         <androidx.cardview.widget.CardView
