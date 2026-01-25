@@ -1466,6 +1466,41 @@ class MainActivity : AppCompatActivity(),
              vnRecordProgress = 0
          }
 
+         private fun addIdleDottedBar() {
+             val bar = View(this).apply {
+                 val dotSize = dpToPx(5)
+                 layoutParams = LinearLayout.LayoutParams(
+                     dotSize,
+                     dotSize
+                 ).apply {
+                     marginEnd = dpToPx(3) // 3dp spacing
+                     gravity = android.view.Gravity.CENTER_VERTICAL
+                 }
+                 background = GradientDrawable().apply {
+                     shape = GradientDrawable.OVAL
+                     setColor(Color.parseColor("#2563EB"))
+                 }
+                 scaleY = 1.0f
+                 tag = "idle_dot"
+             }
+
+             binding.waveDotsContainer.addView(bar)
+             waveBars.add(bar)
+             waveBarCount++
+
+             // Remove old bars from the START (left side) if too many
+             if (waveBars.size > maxWaveBars) {
+                 binding.waveDotsContainer.removeViewAt(0)
+                 waveBars.removeAt(0)
+             }
+         }
+
+         private fun updateRecordWaveProgress(progress: Float) {
+             CoroutineScope(Dispatchers.Main).launch {
+                 binding.wave.progress = progress
+                 Log.d("updateWaveProgress", "updateWaveProgress: $progress")
+             }
+         }
 
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
