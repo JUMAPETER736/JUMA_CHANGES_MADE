@@ -843,6 +843,50 @@ class MainActivity : AppCompatActivity(),
              }
          }
 
+         private fun stopPlaybackTimerRunnable() {
+             playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
+             playbackTimerRunnable = null
+         }
+
+         private fun updateVoiceNoteUserInterfaceState(newState: VoiceNoteState) {
+             voiceNoteState = newState
+
+             when (newState) {
+                 VoiceNoteState.RECORDING -> {
+                     binding.recordingTimerTv.visibility = View.VISIBLE
+                     binding.playVNRecorded.visibility = View.GONE
+                     binding.waveformScrollView.visibility = View.VISIBLE
+                     binding.waveDotsContainer.visibility = View.VISIBLE
+                 }
+
+                 VoiceNoteState.PLAYING -> {
+                     binding.recordingTimerTv.visibility = View.GONE
+                     binding.playVNRecorded.visibility = View.VISIBLE
+                     binding.playVnAudioBtn.setImageResource(R.drawable.baseline_pause_black)
+                     binding.waveformScrollView.visibility = View.VISIBLE
+                     binding.waveDotsContainer.visibility = View.VISIBLE
+                 }
+
+                 VoiceNoteState.PAUSED -> {
+                     binding.recordingTimerTv.visibility = View.GONE
+                     binding.playVNRecorded.visibility = View.VISIBLE
+                     binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+                     binding.waveformScrollView.visibility = View.VISIBLE
+                     binding.waveDotsContainer.visibility = View.VISIBLE
+
+                     // Scroll to left to show full waveform when paused
+                     binding.waveformScrollView.post {
+                         binding.waveformScrollView.scrollTo(0, 0)
+                     }
+                 }
+
+                 VoiceNoteState.IDLE -> {
+                     binding.recordingLayout.visibility = View.GONE
+                     clearWaveform()
+                 }
+             }
+         }
+
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
         Manifest.permission.RECORD_AUDIO,
