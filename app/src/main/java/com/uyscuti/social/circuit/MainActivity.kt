@@ -4216,16 +4216,52 @@ class MainActivity : AppCompatActivity(),
     }
 
 
-    override fun onTimerTick(duration: String) {
-        binding.timerTv.text = duration
+         @SuppressLint("DefaultLocale")
+         override fun onTimerTick(duration: String) {
+             // During recording, show increasing time in MM:SS format
+             runOnUiThread {
+                 val parts = duration.split(":")
+                 val formatted = if (parts.size >= 2) {
+                     String.format("%02d:%02d",
+                         parts[0].toIntOrNull() ?: 0,
+                         parts[1].toIntOrNull() ?: 0)
+                 } else {
+                     "00:00"
+                 }
+                 binding.recordingTimerTv.text = formatted
+                 if (voiceNoteState == VoiceNoteState.PAUSED) {
+                     binding.pausedTimerTv.text = formatted
+                 }
+             }
+         }
 
-        var amplitude = mediaRecorder!!.maxAmplitude.toFloat()
-        amplitude = if (amplitude > 0) amplitude else 130f
+         @SuppressLint("DefaultLocale")
+         private fun pauseVn(progress: Int) {
+             val scrollAnimator = binding.waveformScrollView.tag as? ValueAnimator
+             scrollAnimator?.cancel()
 
+             player?.pause()
+             player?.seekTo(progress)
 
-        binding.waveForm.addAmplitude(amplitude)
+             isAudioVNPlaying = false
+             isAudioVNPaused = true
 
-    }
+             stopPlaybackTimerRunnable()
+
+             // Stop animations but keep waveforms visible
+             waveBars.forEach { bar ->
+                 (bar.tag as? ObjectAnimator)?.cancel()
+                 val storedHeight = bar.tag as? Float ?: 1.0f
+                 bar.scaleY = storedHeight
+             }
+
+             // Show current playback position
+             val currentMinutes = (progress / 1000) / 60
+             val currentSeconds = (progress / 1000) % 60
+             binding.pausedTimerTv.text = String.format("%02d:%02d", currentMinutes, currentSeconds)
+
+             updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
+         }
 
     var vnRecordAudioPlaying = false
     var vnRecordProgress = 0
