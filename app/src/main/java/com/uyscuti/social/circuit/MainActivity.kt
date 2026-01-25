@@ -1349,7 +1349,31 @@ class MainActivity : AppCompatActivity(),
              }
          }
 
+         private fun initializeDottedWaveform() {
+             binding.waveDotsContainer.removeAllViews()
+             waveBars.clear()
 
+             val barsToFill = calculateBarsNeededForFullWidth()
+             repeat(barsToFill) {
+                 addIdleDottedBarAtEnd()
+             }
+
+             // Scroll to right after initialization
+             binding.waveformScrollView.post {
+                 val maxScroll = (binding.waveDotsContainer.width - binding.waveformScrollView.width).coerceAtLeast(0)
+                 if (maxScroll > 0) {
+                     binding.waveformScrollView.scrollTo(maxScroll, 0)
+                 }
+             }
+         }
+
+         private fun calculateBarsNeededForFullWidth(): Int {
+             val screenWidth = resources.displayMetrics.widthPixels
+             val barWidth = dpToPx(4)
+             val barMargin = dpToPx(6)
+             val totalBarWidth = barWidth + barMargin
+             return (screenWidth / totalBarWidth) + 5 // Add extra for smooth scrolling
+         }
 
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
