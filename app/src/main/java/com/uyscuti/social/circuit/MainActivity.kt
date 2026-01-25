@@ -672,7 +672,94 @@ class MainActivity : AppCompatActivity(),
              }
          }
 
-         
+         @RequiresApi(Build.VERSION_CODES.R)
+         private fun pauseRecording() {
+             if (isRecording && !isPaused) {
+                 try {
+                     isListeningToAudio = false
+
+                     // Calculate elapsed time before stopping
+                     val currentTime = System.currentTimeMillis()
+                     recordingElapsedTime += (currentTime - recordingStartTime)
+
+                     mediaRecorder?.let { recorder ->
+                         try {
+                             recorder.stop()
+                             recorder.release()
+                         } catch (e: Exception) {
+                             Log.e("pauseRecording", "Error: $e")
+                         }
+                     }
+                     mediaRecorder = null
+                 } catch (e: Exception) {
+                     Log.d("pauseRecording", "Error: $e")
+                     e.printStackTrace()
+                 }
+
+                 isPaused = true
+
+                 // Stop the recording timer
+                 timerHandler.removeCallbacksAndMessages(null)
+
+                 // Update both timers to show the current recorded duration
+                 runOnUiThread {
+                     val seconds = (recordingElapsedTime / 1000) % 60
+                     val minutes = (recordingElapsedTime / 1000) / 60
+                     val formatted = String.format("%02d:%02d", minutes, seconds)
+                     binding.recordingTimerTv.text = formatted
+                     binding.pausedTimerTv.text = formatted
+                 }
+
+                 updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
+                 binding.recordVN.setImageResource(R.drawable.mic_2)
+
+                 Log.d("pauseRecording", "Recordings: ${recordedAudioFiles.size}")
+                 mixVoiceNote()
+             }
+         }
+
+         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+         private fun resumeRecording() {
+             if (isPaused) {
+                 // Create new recording file for this segment
+                 outputFile = getOutputFilePath("rec")
+
+                 mediaRecorder = MediaRecorder().apply {
+                     setAudioSource(MediaRecorder.AudioSource.MIC)
+                     setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                     setOutputFile(outputFile)
+                     setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                     setAudioEncodingBitRate(128000)
+                     setAudioSamplingRate(44100)
+                     prepare()
+                     start()
+                 }
+
+                 isPaused = false
+                 isListeningToAudio = true
+                 isRecording = true
+
+                 // Resume timer from where it left off
+                 recordingStartTime = System.currentTimeMillis()
+                 updateRecordingTimer()
+
+                 binding.playVNRecorded.visibility = View.GONE
+                 binding.recordingTimerTv.visibility = View.VISIBLE
+
+                 binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+                 binding.recordVN.setImageResource(R.drawable.baseline_pause_white_24)
+
+                 updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
+
+                 recordedAudioFiles.add(outputFile)
+
+                 // Resume audio listening
+                 Thread {
+                     listenToAudio()
+                 }.start()
+             }
+         }
+
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
         Manifest.permission.RECORD_AUDIO,
