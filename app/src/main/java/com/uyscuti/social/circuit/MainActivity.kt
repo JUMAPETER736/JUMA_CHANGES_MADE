@@ -56,6 +56,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresExtension
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
@@ -933,6 +934,223 @@ class MainActivity : AppCompatActivity(),
 
              updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
          }
+
+         @SuppressLint("DefaultLocale")
+         private fun stopPlayingOnCompletion() {
+             val scrollAnimator = binding.waveformScrollView.tag as? ValueAnimator
+             scrollAnimator?.cancel()
+
+             val totalDuration = player?.duration ?: 0
+
+             player?.release()
+             player = null
+
+             isAudioVNPlaying = false
+             isAudioVNPaused = false
+             vnRecordAudioPlaying = false
+
+             stopPlaybackTimerRunnable()
+             stopWaveDotsAnimation()
+
+             // Return to paused state showing total duration and PLAY icon
+             updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
+
+             binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+
+             val totalMinutes = (totalDuration / 1000) / 60
+             val totalSeconds = (totalDuration / 1000) % 60
+             binding.pausedTimerTv.text = String.format("%02d:%02d", totalMinutes, totalSeconds)
+
+             vnRecordProgress = 0
+
+             // Scroll back to start
+             binding.waveformScrollView.post {
+                 binding.waveformScrollView.scrollTo(0, 0)
+             }
+         }
+
+         @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
+         private fun stopRecordingVoiceNote() {
+             val TAG = "StopRecording"
+             try {
+
+
+
+                 // Stop media recorder
+                 if (mediaRecorder != null) {
+                     mediaRecorder?.apply {
+                         stop()
+                         release()
+                     }
+                     mediaRecorder = null
+                 }
+
+                 isRecording = false
+                 isPaused = false
+                 stopWaveDotsAnimation()
+                 binding.recordingLayout.visibility = View.GONE
+                 binding.recordingTimerTv?.text = "00:00"
+                 binding.recordVN?.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
+                 binding.sendVN?.setBackgroundResource(R.drawable.ic_ripple_disabled)
+                 binding.sendVN?.isClickable = false
+                 timer.stop()
+
+                 if (player?.isPlaying == true) {
+                     stopPlaying()
+                 }
+
+                 Log.d(TAG, "stopRecording: recorded files size ${recordedAudioFiles.size}")
+
+                 // Select appropriate audio file
+                 val audioFilePath = if (mixingCompleted && File(outputVnFile).exists()) {
+                     Log.d(TAG, "Using mixed audio file: $outputVnFile")
+                     outputVnFile
+                 } else {
+                     Log.d(TAG, "Using single recording file: $outputFile")
+                     outputFile
+                 }
+
+                 val file = File(audioFilePath)
+                 if (!file.exists()) {
+                     Log.e(TAG, "Audio file not found: $audioFilePath")
+                     Toast.makeText(this, "Voice note file not found", Toast.LENGTH_SHORT).show()
+                     return
+                 }
+
+                 // Get duration and filename
+                 val durationString = getFormattedDuration(audioFilePath)
+                 val fileName = file.name
+
+                 Log.d(TAG, "Voice note prepared - File: $fileName, Duration: $durationString, Path: $audioFilePath")
+
+                 // Check file size and compress if needed
+                 val fileSizeInBytes = file.length()
+                 val fileSizeInKB = fileSizeInBytes / 1024
+                 val fileSizeInMB = fileSizeInKB / 1024
+
+                 Log.d(TAG, "Voice note file size: $fileSizeInKB KB, $fileSizeInMB MB")
+
+                 if (fileSizeInMB > 2) {
+                     Log.d(TAG, "Voice note needs compression")
+                     val outputFileName = "compressed_audio_${System.currentTimeMillis()}.mp3"
+                     val outputFilePath = File(cacheDir, outputFileName)
+
+                     lifecycleScope.launch(Dispatchers.IO) {
+                         // First, add to UI and Room DB with original file
+                         withContext(Dispatchers.Main) {
+                             if (!isReply) {
+                                 Log.d(TAG, "Uploading VN comment (will be compressed)")
+                                 uploadVnComment(
+                                     vnToUpload = audioFilePath,
+                                     fileName = fileName,
+                                     durationString = durationString,
+                                     fileType = "vnAudio",
+                                     update = false,
+                                     placeholder = false
+                                 )
+                             } else {
+                                 Log.d(TAG, "Uploading reply VN comment (will be compressed)")
+                                 uploadReplyVnComment(
+                                     audioFilePath,
+                                     fileName,
+                                     durationString,
+                                     fileType = "vnAudio",
+                                     update = false,
+                                     placeholder = false
+                                 )
+                             }
+                         }
+
+                         // Compress audio in background
+                         val compressor = FFMPEG_AudioCompressor()
+                         val isCompressionSuccessful = compressor.compress(audioFilePath, outputFilePath.absolutePath)
+
+                         if (isCompressionSuccessful) {
+                             Log.d(TAG, "Voice note compression successful")
+                             val compressedSizeInBytes = outputFilePath.length()
+                             val compressedSizeInKB = compressedSizeInBytes / 1024
+                             val compressedSizeInMB = compressedSizeInKB / 1024
+                             Log.d(TAG, "Compressed file size: $compressedSizeInKB KB, $compressedSizeInMB MB")
+
+                             // Update with compressed file
+                             withContext(Dispatchers.Main) {
+                                 if (!isReply) {
+                                     uploadVnComment(
+                                         vnToUpload = outputFilePath.absolutePath,
+                                         fileName = fileName,
+                                         durationString = durationString,
+                                         fileType = "vnAudio",
+                                         update = true,
+                                         placeholder = false
+                                     )
+                                 } else {
+                                     uploadReplyVnComment(
+                                         outputFilePath.absolutePath,
+                                         fileName,
+                                         durationString,
+                                         fileType = "vnAudio",
+                                         update = true,
+                                         placeholder = false
+                                     )
+                                 }
+
+                                 // NOW trigger the actual upload to server after compression
+                                 addCommentVN()
+                             }
+                         } else {
+                             Log.e(TAG, "Voice note compression failed - using original file")
+                             withContext(Dispatchers.Main) {
+                                 // Trigger upload with original file
+                                 addCommentVN()
+                             }
+                         }
+                     }
+                 } else {
+                     // File is small enough, upload directly
+                     Log.d(TAG, "Voice note doesn't need compression, uploading directly")
+                     if (isReply) {
+                         uploadReplyVnComment(
+                             audioFilePath,
+                             fileName,
+                             durationString,
+                             "vnAudio",
+                             update = false,
+                             placeholder = false
+                         )
+                     } else {
+                         uploadVnComment(
+                             audioFilePath,
+                             fileName,
+                             durationString,
+                             "vnAudio",
+                             update = false,
+                             placeholder = false
+                         )
+                     }
+
+                     // Trigger the actual upload to server
+                     addCommentVN()
+                 }
+
+                 // Hide VN recording UI, keep comment section visible
+                 binding.VNLayout.visibility = View.GONE
+
+                 // Clean up recording state
+                 wasPaused = false
+                 mixingCompleted = false
+                 recordedAudioFiles.clear()
+                 sending = false
+
+                 Log.d(TAG, "Voice note comment processing completed")
+
+             } catch (e: Exception) {
+                 Log.e(TAG, "Error in stopRecording: ${e.message}", e)
+                 Toast.makeText(this, "", Toast.LENGTH_SHORT).show()
+                 sending = false
+             }
+         }
+
+         
 
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
