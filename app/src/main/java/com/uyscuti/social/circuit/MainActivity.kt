@@ -5839,38 +5839,7 @@ class MainActivity : AppCompatActivity(),
     var isOnRecordDurationOnPause = false
 
 
-    private fun startRecordWaveRunnable() {
-        try {
-            Log.d(
-                "isDurationOnPause",
-                " in comment audio start wave isDurationOnPause is $isOnRecordDurationOnPause"
-            )
 
-            waveHandler.removeCallbacks(onRecordWaveRunnable)
-            waveHandler.post(onRecordWaveRunnable)
-            isOnRecordDurationOnPause = false
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun stopWaveRunnable() {
-        try {
-            waveHandler.removeCallbacks(waveRunnable)
-            isDurationOnPause = true
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun stopRecordWaveRunnable() {
-        try {
-            waveHandler.removeCallbacks(onRecordWaveRunnable)
-            isOnRecordDurationOnPause = true
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun startRecording() {
