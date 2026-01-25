@@ -42,7 +42,9 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AnimationUtils
+import android.view.animation.LinearInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
@@ -1391,7 +1393,55 @@ class MainActivity : AppCompatActivity(),
              binding.waveDotsContainer.removeAllViews()
              waveBars.clear()
          }
-         
+
+         private fun dpToPx(dp: Int): Int {
+             return (dp * resources.displayMetrics.density).toInt()
+         }
+
+         private fun animatePlaybackWaves() {
+             val duration = player?.duration?.toLong() ?: 0L
+             if (duration > 0) {
+                 // Animate existing waveforms during playback
+                 waveBars.forEachIndexed { index, bar ->
+                     val storedHeight = bar.tag as? Float ?: 1.0f
+                     val heights = floatArrayOf(
+                         storedHeight * 0.8f,
+                         storedHeight * 1.0f,
+                         storedHeight * 0.9f,
+                         storedHeight * 1.1f,
+                         storedHeight * 0.8f
+                     )
+                     val animator = ObjectAnimator.ofFloat(bar, "scaleY", *heights).apply {
+                         this.duration = 800 + (index * 20L)
+                         repeatCount = ObjectAnimator.INFINITE
+                         repeatMode = ObjectAnimator.RESTART
+                         interpolator = AccelerateDecelerateInterpolator()
+                     }
+                     animator.start()
+                     bar.tag = animator
+                 }
+
+                 // Scroll animation from right to left
+                 binding.waveformScrollView.post {
+                     val maxScroll = (binding.waveDotsContainer.width - binding.waveformScrollView.width).coerceAtLeast(0)
+                     if (maxScroll > 0) {
+                         val scrollAnimator = ValueAnimator.ofInt(maxScroll, 0).apply {
+                             this.duration = duration
+                             interpolator = LinearInterpolator()
+                             addUpdateListener { animation ->
+                                 if (isAudioVNPlaying) {
+                                     val scrollX = animation.animatedValue as Int
+                                     binding.waveformScrollView.scrollTo(scrollX, 0)
+                                 }
+                             }
+                         }
+                         scrollAnimator.start()
+                         binding.waveformScrollView.tag = scrollAnimator
+                     }
+                 }
+             }
+         }
+
 
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
