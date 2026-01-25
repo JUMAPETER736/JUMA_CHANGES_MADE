@@ -2254,13 +2254,13 @@ class MainActivity : AppCompatActivity(),
                     }
                     mediaRecorder = null
                     Log.d("SendVN", "When sending vn was paused was false")
-                    mixVN() // Execute mixVN asynchronously
+                    mixVoiceNote()
                 }
 
                 lifecycleScope.launch(Dispatchers.Main) {
 
                     delay(500)
-                    stopRecording()
+                    stopRecordingVoiceNote()
                 }
 
 
@@ -2270,6 +2270,8 @@ class MainActivity : AppCompatActivity(),
         onGoBack()
 
     }
+
+
          private fun setupLocationObserver() {
              LocationService.currentLocation.observe(this) { location ->
                  location?.let {
@@ -3843,20 +3845,22 @@ class MainActivity : AppCompatActivity(),
 //        if(mediaRecorder?.)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    override fun onDestroy() {
-//        job?.cancel()
-        super.onDestroy()
-//        timeFormatter.stopUpdatingCurrentTime()
-        stopPlaying()
-        stopRecording()
-        commentAudioStop()
-        stopWaveRunnable()
-        stopRecordWaveRunnable()
-        MediaLoader.getInstance(this).destroy()
-        exoPlayer?.removeListener(playbackStateListener)
+         @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
+         override fun onDestroy() {
+             super.onDestroy()
+             timerHandler.removeCallbacksAndMessages(null)
+             playbackTimerRunnable = null
+             stopPlaying()
+             commentAudioStop()
+             stopWaveRunnable()
+             stopRecordWaveRunnable()
+             MediaLoader.getInstance(this).destroy()
+             exoPlayer?.removeListener(playbackStateListener)
 
-    }
+             if (::outputFile.isInitialized || isRecording) {
+                 stopRecordingVoiceNote()
+             }
+         }
 
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -5743,98 +5747,6 @@ class MainActivity : AppCompatActivity(),
     var isDurationOnPause = false
     var isOnRecordDurationOnPause = false
 
-
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun stopRecording() {
-
-        val TAG = "StopRecording"
-        try {
-
-            if (mediaRecorder != null) {
-                mediaRecorder?.apply {
-                    stop()
-                    release()
-                }
-                mediaRecorder = null
-            }
-            isRecording = false
-            isPaused = false
-
-            binding.timerTv.text = "00:00.00"
-
-            binding.recordVN.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
-
-            binding.sendVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
-            binding.sendVN.isClickable = false
-
-            amplitudes = binding.waveForm.clear()
-            amps = 0
-            timer.stop()
-            if (player?.isPlaying == true) {
-                stopPlaying()
-            }
-            binding.VNLayout.visibility = View.GONE
-
-            // Add any UI changes or notifications indicating recording has stopped
-
-            Log.d(TAG, "stopRecording: isReply is $isReply")
-            binding.replyToLayout.visibility = View.GONE
-
-            val file = File(outputVnFile)
-            val file2 = File(outputFile)
-            Log.d(TAG, "vn file exists outputVnFile: $outputVnFile")
-            Log.d(TAG, "vn file2 exists: $outputFile")
-            Log.d(TAG, "vn file exists: ${file.exists()}")
-            Log.d(TAG, "vn file2 exists: ${file2.exists()}")
-
-            if (!isReply) {
-                Log.d("firstTimeSendVn", "firstTimeSendVn: ${recordedAudioFiles.size}")
-
-                if (recordedAudioFiles.size != 1) {
-                    val durationString = getFormattedDuration(outputVnFile)
-                    val fileName = getFileNameFromLocalPath(outputVnFile)
-                    Log.d("AudioPicker", "File path: $outputVnFile")
-                    Log.d("AudioPicker", "File name: $fileName")
-                    Log.d("AudioPicker", "durationString: $durationString")
-                    uploadVnComment(outputVnFile, fileName, durationString, "vnAudio")
-
-                } else {
-                    val durationString = getFormattedDuration(outputFile)
-                    val fileName = getFileNameFromLocalPath(outputFile)
-                    Log.d("AudioPicker", "File path: $outputFile")
-                    Log.d("AudioPicker", "File name: $fileName")
-                    Log.d("AudioPicker", "durationString: $durationString")
-                    uploadVnComment(outputFile, fileName, durationString, "vnAudio")
-                }
-            } else {
-                Log.d("firstTimeSendVn", "firstTimeSendVn: ${recordedAudioFiles.size}")
-                if (recordedAudioFiles.size != 1) {
-                    val durationString = getFormattedDuration(outputVnFile)
-                    val reverseDurationString = reverseFormattedDuration(durationString)
-                    val fileName = getFileNameFromLocalPath(outputVnFile)
-                    Log.d("AudioPicker", "File path: $outputVnFile")
-                    Log.d("AudioPicker", "File name: $fileName")
-                    Log.d("AudioPicker", "durationString: $durationString")
-                    Log.d("AudioPicker", "reverseDurationString: $reverseDurationString")
-                    uploadReplyVnComment(outputVnFile, fileName, durationString, "vnAudio")
-
-                } else {
-                    val durationString = getFormattedDuration(outputFile)
-                    val fileName = getFileNameFromLocalPath(outputFile)
-                    Log.d("AudioPicker", "File path: $outputFile")
-                    Log.d("AudioPicker", "File name: $fileName")
-                    Log.d("AudioPicker", "durationString: $durationString")
-                    uploadReplyVnComment(outputFile, fileName, durationString, "vnAudio")
-                }
-            }
-
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            // Handle exceptions as needed
-        }
-    }
 
     var wasPaused = false
     var sending = false
