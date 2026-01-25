@@ -3016,28 +3016,19 @@ class MainActivity : AppCompatActivity(),
         return true
     }
 
-    //    @RequiresApi(Build.VERSION_CODES.S)
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    override fun onAddVoiceNote() {
+         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+         override fun onAddVoiceNote() {
 
-        val TAG = "onAddVoiceNote"
-        Log.d(TAG, "onAddVoiceNote: start VN clicked")
-        binding.VNLayout.visibility = View.VISIBLE
-        binding.playAudioLayout.visibility = View.GONE
-        binding.waveForm.visibility = View.VISIBLE
-        binding.timerTv.visibility = View.VISIBLE
-        startRecording()
-        EventBus.getDefault().post(PauseShort(true))
+             val TAG = "onAddVoiceNote"
+             Log.d(TAG, "onAddVoiceNote: start VN clicked")
+             binding.VNLayout.visibility = View.VISIBLE
+             binding.playVNRecorded.visibility = View.GONE
 
-//        binding.VNLayout.setOnTouchListener()
-//        isVnRecording = if (!isVnRecording) {
-//            startRecording()
-//            true
-//        } else {
-//            stopRecording()
-//            false
-//        }
-    }
+             startRecording()
+             EventBus.getDefault().post(PauseShort(true))
+
+
+         }
 
     // Function to hide the keyboard
     private fun hideKeyboard(view: View) {
