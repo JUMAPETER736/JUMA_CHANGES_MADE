@@ -177,7 +177,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     private lateinit var feedUploadRepository: FeedUploadRepository
     private var positionFromShorts: SetAllFragmentScrollPosition? = null
     private var feedRepostMultipleImageFragment: FeedRepostMultipleImageFragment? = null
-
+    private var blockedUserIds = mutableSetOf<String>()
     private var isFragmentOpen = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -207,6 +207,12 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     @SuppressLint("NotifyDataSetChanged")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            loadBlockedUsers()
+        }
+
+
         var isScrollingDown = false
         feedUploadRepository = FeedUploadRepository()
         feedListView = view.findViewById(R.id.rv)
@@ -389,51 +395,67 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     fun getAllFeed(page: Int) {
         val TAG = "AllFeedTag"
-        Log.d(
-            TAG,
-            "getAllFeed: page number $page"
-        )
+        Log.d(TAG, "getAllFeed: page number $page")
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = retrofitInstance.apiService.getAllFeed(
-                    page.toString()
-                )
+                val response = retrofitInstance.apiService.getAllFeed(page.toString())
                 val responseBody = response.body()
-                Log.d(TAG, "Feed Feed getAllFeed feed: response  nse $response")
-                Log.d(TAG, "Feed Feed getAllFeed feed: response message ${response.message()}")
-                Log.d(
-                    TAG,
-                    "Feed Feed getAllFeed feed: response message error body ${response.errorBody()}"
-                )
-                Log.d(TAG, "Feed Feed getAllFeed feed: response body $responseBody")
 
+                Log.d(TAG, "Feed Feed getAllFeed feed: response $response")
 
+                val posts = responseBody!!.data.data.posts
 
-                Log.d(
-                    "AllFeedTag",
-                    "Feed Feed getAllFeed feed: response body message ${responseBody!!.message}"
-                )
-                val data = responseBody.data
-                // Safely access the 4th element if it exists
-                val posts = responseBody.data.data.posts
-                if (posts.size > 4) {
-                    Log.d(TAG, "Feed Feed getAllFeed feed: response body data ${posts[4]}")
-                } else {
-                    Log.d(TAG, "Feed Feed getAllFeed feed: Not enough posts, size=${posts.size}")
+                // Filter out blocked users
+                val filteredPosts = posts.filter { post ->
+                    val authorId = post.author?.account?._id
+                    val reposterId = post.repostedUser?.owner
+
+                    val posterId = reposterId ?: authorId
+
+                    val isBlocked = posterId?.let { blockedUserIds.contains(it) } ?: false
+
+                    if (isBlocked) {
+                        Log.d(TAG, "Filtering out post from blocked user: $posterId")
+                    }
+
+                    !isBlocked
                 }
-                Log.d(TAG, "Feed Feed getAllFeed feed: response body data ${data.data.posts.size}")
+
+                Log.d(TAG, "Original posts: ${posts.size}, After filtering: ${filteredPosts.size}")
+
                 withContext(Dispatchers.Main) {
-                    getFeedViewModel.addAllFeedData(data.data.posts.toMutableList())
+                    getFeedViewModel.addAllFeedData(filteredPosts.toMutableList())
                     allFeedAdapter.submitItems(getFeedViewModel.getAllFeedData())
-                    val posts = getFeedViewModel.getAllFeedData()
-                    Log.d(TAG, "getAllFeed: posts :$posts")
-                    allFeedAdapter.submitItems(posts)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "comment: $e")
                 Log.e(TAG, "comment: ${e.message}")
                 e.printStackTrace()
             }
+        }
+    }
+
+    private suspend fun loadBlockedUsers() {
+        try {
+            Log.d(TAG, "Loading blocked users...")
+
+            val response = retrofitInstance.apiService.getAllBlockedUsers(page = 1, limit = 100)
+
+            if (response.isSuccessful && response.body() != null) {
+                val responseBody = response.body()!!
+
+                // Clear existing and add new blocked user IDs
+                blockedUserIds.clear()
+                blockedUserIds.addAll(responseBody.data.blockedUsers.map { it.user._id })
+
+                Log.d(TAG, "Loaded ${blockedUserIds.size} blocked users")
+                Log.d(TAG, "Blocked user IDs: $blockedUserIds")
+            } else {
+                Log.e(TAG, "Failed to load blocked users: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading blocked users: ${e.message}", e)
         }
     }
 
