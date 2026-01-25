@@ -5374,77 +5374,6 @@ class MainActivity : AppCompatActivity(),
     }
 
 
-    private fun startPlaying(vnAudio: String) {
-        binding.playVnAudioBtn.setImageResource(R.drawable.baseline_pause_white_24)
-        EventBus.getDefault().post(PauseShort(true))
-
-        isAudioVNPlaying = true
-        vnRecordAudioPlaying = true
-
-        isOnRecordDurationOnPause = false
-        startRecordWaveRunnable()
-        if (isAudioVNPaused) {
-
-            Log.d("startPlaying", "(isAudioVNPaused)->vnRecordProgress $vnRecordProgress")
-
-            if (vnRecordProgress != 0) {
-                player?.seekTo(vnRecordProgress)
-            }
-            player?.start()
-        } else {
-
-            player = MediaPlayer().apply {
-                try {
-                    setDataSource(vnAudio)
-
-                    prepare()
-                    Log.d("startPlaying", "vnRecordProgress $vnRecordProgress")
-                    if (vnRecordProgress != 0) {
-                        player?.seekTo(vnRecordProgress)
-                    }
-                    start()
-                    setOnCompletionListener {
-                        // Playback completed, restart playback
-                        isAudioVNPaused = false
-                        stopPlaying()
-                    }
-                } catch (e: IOException) {
-                    Log.e("MediaRecorder", "prepare() failed")
-                }
-            }
-
-        }
-    }
-
-    private fun pauseVn(progress: Int) {
-        Log.d("pauseVn", "vnRecordProgress $vnRecordProgress..... progress $progress")
-
-        player?.pause()
-        player?.seekTo(progress)
-        isAudioVNPlaying = false
-        isAudioVNPaused = true
-        isOnRecordDurationOnPause = true
-
-
-        binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-    }
-
-    private fun stopPlaying() {
-        binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-        player?.release()
-        player = null
-        isAudioVNPlaying = false
-        vnRecordAudioPlaying = false
-        isOnRecordDurationOnPause = false
-        stopRecordWaveRunnable()
-        binding.wave.progress = 0F
-        vnRecordProgress = 0
-    }
-
-    private fun resumePlaying() {
-
-    }
-
 
     private fun playAudioFile(audioFile: String) {
         val TAG = "pauseRecording"
@@ -5858,7 +5787,6 @@ class MainActivity : AppCompatActivity(),
              Log.d(TAG, "commentAudioSeekBar: position $wavePosition ")
          }
 
-    private var currentHandler: Handler? = null
     private fun initializeSeekBar(exoPlayer: ExoPlayer) {
         audioSeekBar.max = exoPlayer.duration.toInt()
 
@@ -5910,31 +5838,6 @@ class MainActivity : AppCompatActivity(),
     var isDurationOnPause = false
     var isOnRecordDurationOnPause = false
 
-    private fun updateRecordWaveProgress(progress: Float) {
-
-        CoroutineScope(Dispatchers.Main).launch {
-            binding.wave.progress = progress
-
-            Log.d("updateWaveProgress", "updateWaveProgress: $progress")
-        }
-    }
-
-
-    private fun startWaveRunnable() {
-        try {
-            Log.d(
-                "isDurationOnPause",
-                " in comment audio start wave isDurationOnPause is $isDurationOnPause"
-            )
-
-            Log.d("StartWave", "Start waves")
-            waveHandler.removeCallbacks(waveRunnable)
-            waveHandler.post(waveRunnable)
-            isDurationOnPause = false
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
 
     private fun startRecordWaveRunnable() {
         try {
