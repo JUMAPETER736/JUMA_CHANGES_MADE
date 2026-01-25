@@ -247,7 +247,7 @@ class UserFollowingFragment : AppCompatActivity() {
             Toast.makeText(this, "Unable to open profile", Toast.LENGTH_SHORT).show()
         }
     }
-    
+
 
     private fun filterOutCurrentUser(followingUsers: List<UserFollowingDisplayModel>): List<UserFollowingDisplayModel> {
         val currentUserId = localStorage.getUserId()
