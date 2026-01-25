@@ -1442,6 +1442,30 @@ class MainActivity : AppCompatActivity(),
              }
          }
 
+         private fun stopWaveDotsAnimation() {
+             waveBars.forEach { bar ->
+                 (bar.tag as? ObjectAnimator)?.cancel()
+             }
+         }
+
+         private fun stopPlaying() {
+             val scrollAnimator = binding.waveformScrollView.tag as? ValueAnimator
+             scrollAnimator?.cancel()
+
+             binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+             player?.release()
+             player = null
+             isAudioVNPlaying = false
+             vnRecordAudioPlaying = false
+             isOnRecordDurationOnPause = false
+
+             stopWaveDotsAnimation()
+             updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
+
+             stopPlaybackTimerRunnable()
+             vnRecordProgress = 0
+         }
+
 
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
