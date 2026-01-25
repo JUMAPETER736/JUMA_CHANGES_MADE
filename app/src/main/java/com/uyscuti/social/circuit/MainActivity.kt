@@ -760,6 +760,89 @@ class MainActivity : AppCompatActivity(),
              }
          }
 
+         private fun startPlaying(vnAudio: String) {
+             EventBus.getDefault().post(PauseShort(true))
+             isAudioVNPlaying = true
+             vnRecordAudioPlaying = true
+
+             updateVoiceNoteUserInterfaceState(VoiceNoteState.PLAYING)
+
+             isOnRecordDurationOnPause = false
+
+             if (isAudioVNPaused) {
+                 if (vnRecordProgress != 0) {
+                     player?.seekTo(vnRecordProgress)
+                 }
+                 player?.start()
+             } else {
+                 player = MediaPlayer().apply {
+                     try {
+                         setDataSource(vnAudio)
+                         prepare()
+                         totalRecordedDuration = duration.toLong()
+                         if (vnRecordProgress != 0) {
+                             seekTo(vnRecordProgress)
+                         }
+                         start()
+                         setOnCompletionListener {
+                             isAudioVNPaused = false
+                             isAudioVNPlaying = false
+                             stopPlayingOnCompletion()
+                         }
+                     } catch (e: IOException) {
+                         Log.e("MediaRecorder", "prepare() failed")
+                     }
+                 }
+             }
+
+             animatePlaybackWaves()
+             updatePlaybackTimer() // This will now work correctly
+         }
+
+         private fun deleteRecording() {
+             val TAG = "Recording"
+             try {
+                 isListeningToAudio = false
+
+                 // Stop all timers
+                 timerHandler.removeCallbacksAndMessages(null)
+                 playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
+
+                 mediaRecorder?.apply {
+                     try {
+                         stop()
+                         release()
+                     } catch (e: Exception) {
+                         Log.e(TAG, "Error stopping recorder: $e")
+                     }
+                 }
+                 mediaRecorder = null
+
+                 isRecording = false
+                 isPaused = false
+                 isAudioVNPlaying = false
+
+                 // Reset timer variables
+                 recordingStartTime = 0L
+                 recordingElapsedTime = 0L
+
+                 binding.recordVN.setImageResource(R.drawable.mic_2)
+                 binding.sendVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
+                 binding.sendVN.isClickable = false
+
+                 updateVoiceNoteUserInterfaceState(VoiceNoteState.IDLE)
+
+                 binding.recordingTimerTv.text = "00:00"
+                 binding.pausedTimerTv.text = "00:00"
+
+                 Log.d(TAG, "Recordings deleted: ${recordedAudioFiles.size}")
+                 deleteVn()
+             } catch (e: Exception) {
+                 e.printStackTrace()
+                 Log.e(TAG, "Error deleting recording: $e")
+             }
+         }
+
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
         Manifest.permission.RECORD_AUDIO,
