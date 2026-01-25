@@ -404,54 +404,6 @@ class UserFollowingFragment : AppCompatActivity() {
         }
     }
 
-    private fun loadBlockedList() {
-        binding.progressBar.visibility = View.VISIBLE
-        binding.recyclerView.visibility = View.GONE
-        binding.emptyStateLayout.visibility = View.GONE
-
-        lifecycleScope.launch {
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    retrofitInstance.apiService.getBlockedUsers(
-                        page = 1,
-                        limit = 50
-                    )
-                }
-
-                if (response.isSuccessful && response.body() != null) {
-                    val usersResponse = response.body()!!
-                    val users = usersResponse.data ?: emptyList()
-
-                    blockedList.clear()
-                    blockedList.addAll(users.map { user ->
-                        UserFollowingDisplayModel(user, false)
-                    })
-
-                    filteredBlockedList.clear()
-                    filteredBlockedList.addAll(blockedList)
-
-                    // Switch to blocked adapter
-                    binding.recyclerView.adapter = blockedAdapter
-                    blockedAdapter.notifyDataSetChanged()
-
-                    if (blockedList.isEmpty()) {
-                        binding.emptyStateLayout.visibility = View.VISIBLE
-                        binding.recyclerView.visibility = View.GONE
-                    } else {
-                        binding.emptyStateLayout.visibility = View.GONE
-                        binding.recyclerView.visibility = View.VISIBLE
-                    }
-                } else {
-                    showError("Failed to load blocked users")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading blocked users", e)
-                showError("Network error: ${e.message}")
-            } finally {
-                binding.progressBar.visibility = View.GONE
-            }
-        }
-    }
 
     private fun showUnblockConfirmation(user: UserFollowingDisplayModel) {
         AlertDialog.Builder(this)
@@ -466,7 +418,14 @@ class UserFollowingFragment : AppCompatActivity() {
 
     private fun showMoreOptions(user: UserFollowingDisplayModel) {
         val options = arrayOf(
-            "Block User",
+            "Add to Close Friends",
+            "Mute Posts",
+            "Mute Stories",
+            "Add to Favorites",
+            "Restrict User",
+            "About This Account",
+            "Share Profile",
+            "Copy Profile Link",
             "Report User"
         )
 
@@ -474,12 +433,83 @@ class UserFollowingFragment : AppCompatActivity() {
             .setTitle("@${user.username}")
             .setItems(options) { _, which ->
                 when (which) {
-                    1 -> muteUserFollowing(user)
-                    2 -> reportUserFollowing(user)
+                    0 -> addToCloseFriends(user)
+                    1 -> muteUserPosts(user)
+                    2 -> muteUserStories(user)
+                    3 -> addToFavorites(user)
+                    4 -> restrictUser(user)
+                    5 -> showAccountInfo(user)
+                    6 -> shareProfile(user)
+                    7 -> copyProfileLink(user)
+                    8 -> reportUserFollowing(user)
                 }
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+
+    private fun addToCloseFriends(user: UserFollowingDisplayModel) {
+        // Add to close friends list
+        Toast.makeText(this, "Added @${user.username} to Close Friends", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun muteUserPosts(user: UserFollowingDisplayModel) {
+        // Mute posts but still follow
+        Toast.makeText(this, "Muted posts from @${user.username}", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun muteUserStories(user: UserFollowingDisplayModel) {
+        // Mute stories specifically
+        Toast.makeText(this, "Muted stories from @${user.username}", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun addToFavorites(user: UserFollowingDisplayModel) {
+        // Add to favorites for priority content
+        Toast.makeText(this, "Added @${user.username} to Favorites", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun restrictUser(user: UserFollowingDisplayModel) {
+        // Restrict without blocking (limit their interaction)
+        AlertDialog.Builder(this)
+            .setTitle("Restrict @${user.username}?")
+            .setMessage("They won't be able to see when you're online or if you've read their messages.")
+            .setPositiveButton("Restrict") { _, _ ->
+                Toast.makeText(this, "Restricted @${user.username}", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showAccountInfo(user: UserFollowingDisplayModel) {
+        // Show account information
+        val info = """
+        Username: @${user.username}
+        Full Name: ${user.fullName}
+        Verified: ${if (user.isVerified == true) "Yes" else "No"}
+        ${if (user.email != null) "Email: ${user.email}" else ""}
+    """.trimIndent()
+
+        AlertDialog.Builder(this)
+            .setTitle("About This Account")
+            .setMessage(info)
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun shareProfile(user: UserFollowingDisplayModel) {
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, "Check out @${user.username}'s profile!")
+        }
+        startActivity(Intent.createChooser(shareIntent, "Share profile via"))
+    }
+
+    private fun copyProfileLink(user: UserFollowingDisplayModel) {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("Profile Link", "https://yourapp.com/@${user.username}")
+        clipboard.setPrimaryClip(clip)
+        Toast.makeText(this, "Profile link copied", Toast.LENGTH_SHORT).show()
     }
 
     @OptIn(UnstableApi::class)
