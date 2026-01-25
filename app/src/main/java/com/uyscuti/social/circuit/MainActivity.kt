@@ -588,7 +588,92 @@ class MainActivity : AppCompatActivity(),
 
 
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+         @SuppressLint("DefaultLocale")
+         private fun updatePlaybackTimer() {
+             // Remove any existing callbacks first
+             playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
+
+             playbackTimerRunnable = object : Runnable {
+                 override fun run() {
+                     if (isAudioVNPlaying && player != null) {
+                         try {
+                             val currentPosition = player?.currentPosition ?: 0
+                             val currentMinutes = (currentPosition / 1000) / 60
+                             val currentSeconds = (currentPosition / 1000) % 60
+                             binding.pausedTimerTv.text = String.format("%02d:%02d", currentMinutes, currentSeconds)
+                             timerHandler.postDelayed(this, 100)
+                         } catch (e: Exception) {
+                             Log.e("PlaybackTimer", "Error updating timer: ${e.message}")
+                         }
+                     }
+                 }
+             }
+             timerHandler.post(playbackTimerRunnable!!)
+         }
+
+         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+         private fun startRecording() {
+             if (!permissionGranted) {
+                 ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
+                 return
+             }
+             try {
+                 if (player?.isPlaying == true) {
+                     stopPlaying()
+                 }
+
+                 outputFile = getOutputFilePath("rec")
+                 outputVnFile = getOutputFilePath("mix")
+                 wasPaused = false
+
+                 mediaRecorder = MediaRecorder().apply {
+                     setAudioSource(MediaRecorder.AudioSource.MIC)
+                     setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                     setOutputFile(outputFile)
+                     setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                     setAudioEncodingBitRate(128000)
+                     setAudioSamplingRate(44100)
+                     prepare()
+                     start()
+                 }
+
+                 isRecording = true
+                 isPaused = false
+                 isListeningToAudio = true
+
+                 // Reset and start timer
+                 recordingStartTime = System.currentTimeMillis()
+                 recordingElapsedTime = 0L
+                 updateRecordingTimer() // Start the timer
+
+                 binding.recordVN.setImageResource(R.drawable.baseline_pause_white_24)
+                 binding.sendVN.setBackgroundResource(R.drawable.ic_ripple)
+                 binding.deleteVN.setBackgroundResource(R.drawable.ic_ripple)
+
+                 binding.recordingLayout.visibility = View.VISIBLE
+                 updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
+
+                 binding.deleteVN.isClickable = true
+                 binding.sendVN.isClickable = true
+                 recordedAudioFiles.add(outputFile)
+
+                 // Initialize waveform with dots
+                 initializeDottedWaveform()
+
+                 // Start audio listening in background thread
+                 Thread {
+                     listenToAudio()
+                 }.start()
+
+                 Log.d("VNFile", outputFile)
+             } catch (e: Exception) {
+                 Log.d("VNFile", "Failed to record: ${e.message}")
+                 e.printStackTrace()
+             }
+         }
+
+         
+         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -4984,12 +5069,11 @@ class MainActivity : AppCompatActivity(),
         currentHandler = handler
     }
 
-    private val waveHandler = Handler()
+
 
     var isDurationOnPause = false
     var isOnRecordDurationOnPause = false
-    var waveProgress = 0f
-    var seekBarProgress = 0f
+
     private fun updateRecordWaveProgress(progress: Float) {
 
         CoroutineScope(Dispatchers.Main).launch {
@@ -4999,42 +5083,6 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
-    private val waveRunnable = object : Runnable {
-        override fun run() {
-
-            if (!isDurationOnPause) {
-                val currentPosition = exoPlayer?.currentPosition?.toFloat()!!
-
-                waveProgress = currentPosition
-                if (isReplyVnPlaying) {
-                    adapter!!.updateReplyWaveProgress(currentPosition, audioFormWave)
-                } else {
-                    adapter!!.updateWaveProgress(currentPosition, wavePosition)
-                }
-                audioDurationTVCount.text = String.format(
-                    "%s",
-                    TrimVideoUtils.stringForTime(currentPosition)
-                )
-            }
-            waveHandler.postDelayed(this, 20)
-        }
-    }
-    private val onRecordWaveRunnable = object : Runnable {
-        override fun run() {
-
-            try {
-                if (!isOnRecordDurationOnPause) {
-                    val currentPosition = player?.currentPosition?.toFloat()!!
-                    updateRecordWaveProgress(currentPosition)
-                }
-                waveHandler.postDelayed(this, 20)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.d("Exception", "run: ${e.message}")
-            }
-
-        }
-    }
 
     private fun startWaveRunnable() {
         try {
