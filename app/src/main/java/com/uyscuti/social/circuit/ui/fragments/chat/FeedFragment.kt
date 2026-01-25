@@ -1441,8 +1441,8 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
         sendVN!!.setOnClickListener {
             CoroutineScope(Dispatchers.Main).launch {
-                Log.d(com.uyscuti.social.circuit.ui.fragments.TAG, "sendVN: recorded files size ${recordedAudioFiles.size}")
-                Log.d(com.uyscuti.social.circuit.ui.fragments.TAG, "sendVN: wasPaused $wasPaused")
+                Log.d(TAG, "sendVN: recorded files size ${recordedAudioFiles.size}")
+                Log.d(TAG, "sendVN: wasPaused $wasPaused")
 
                 if (!wasPaused) {
 
