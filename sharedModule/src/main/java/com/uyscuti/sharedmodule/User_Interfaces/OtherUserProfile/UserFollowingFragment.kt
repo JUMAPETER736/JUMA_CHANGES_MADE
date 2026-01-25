@@ -2,6 +2,8 @@ package com.uyscuti.social.circuit.User_Interface.OtherUserProfile
 
 import UserFollowingDisplayModel
 import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -179,6 +181,73 @@ class UserFollowingFragment : AppCompatActivity() {
             adapter = followingAdapter
         }
     }
+
+    @OptIn(UnstableApi::class)
+    private fun navigateToOtherUserProfile(user: UserFollowingDisplayModel) {
+        try {
+            Log.d(TAG, "Opening profile for user: ${user.username}")
+
+            // Create a complete OtherUsersProfile object matching the exact data class
+            val otherUsersProfile = OtherUsersProfile(
+                name = user.fullName,
+                username = user.username,
+                profilePic = user.avatar?.url ?: "",  // Changed from profilePicUrl
+                userId = user.id,
+                bio = user.bio,
+                isVerified = user.isVerified ?: false,
+                linkInBio = null,
+                isCreator = false,
+                isTrending = false,
+                isFollowing = user.isFollowing,
+                isPrivate = false,
+                followersCount = 0L,
+                followingCount = 0L,
+                postsCount = 0L,
+                shortsCount = 0L,
+                videosCount = 0L,
+                isOnline = user.isOnline ?: false,
+                lastSeen = user.lastseen,
+                joinedDate = Date(),
+                location = null,
+                website = null,
+                email = user.email,
+                phoneNumber = null,
+                dateOfBirth = null,
+                gender = null,
+                accountType = user.role ?: "user",
+                isBlocked = false,
+                isMuted = false,
+                badgeType = null,
+                level = 1,
+                reputation = 0L,
+                coverPhoto = null,
+                theme = null,
+                language = null,
+                timezone = null,
+                notificationsEnabled = true,
+                privacySettings = null,
+                socialLinks = null,
+                achievements = null,
+                interests = null,
+                categories = null
+            )
+
+            // Open the OtherUserProfileAccount activity using the static method
+            OtherUserProfileAccount.open(
+                context = this,
+                user = otherUsersProfile,
+                dialogPhoto = user.avatar?.url,
+                dialogId = user.id
+            )
+
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error navigating to profile", e)
+            Toast.makeText(this, "Unable to open profile", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
 
     private fun filterOutCurrentUser(followingUsers: List<UserFollowingDisplayModel>): List<UserFollowingDisplayModel> {
         val currentUserId = localStorage.getUserId()
@@ -510,118 +579,6 @@ class UserFollowingFragment : AppCompatActivity() {
         val clip = ClipData.newPlainText("Profile Link", "https://yourapp.com/@${user.username}")
         clipboard.setPrimaryClip(clip)
         Toast.makeText(this, "Profile link copied", Toast.LENGTH_SHORT).show()
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun navigateToOtherUserProfile(user: UserFollowingDisplayModel) {
-        try {
-            Log.d(TAG, "Opening profile for user: ${user.username}")
-
-            // Create a complete OtherUsersProfile object matching the exact data class
-            val otherUsersProfile = OtherUsersProfile(
-                name = user.fullName,
-                username = user.username,
-                profilePic = user.avatar?.url ?: "",  // Changed from profilePicUrl
-                userId = user.id,
-                bio = user.bio,
-                isVerified = user.isVerified ?: false,
-                linkInBio = null,
-                isCreator = false,
-                isTrending = false,
-                isFollowing = user.isFollowing,
-                isPrivate = false,
-                followersCount = 0L,
-                followingCount = 0L,
-                postsCount = 0L,
-                shortsCount = 0L,
-                videosCount = 0L,
-                isOnline = user.isOnline ?: false,
-                lastSeen = user.lastseen,
-                joinedDate = Date(),
-                location = null,
-                website = null,
-                email = user.email,
-                phoneNumber = null,
-                dateOfBirth = null,
-                gender = null,
-                accountType = user.role ?: "user",
-                isBlocked = false,
-                isMuted = false,
-                badgeType = null,
-                level = 1,
-                reputation = 0L,
-                coverPhoto = null,
-                theme = null,
-                language = null,
-                timezone = null,
-                notificationsEnabled = true,
-                privacySettings = null,
-                socialLinks = null,
-                achievements = null,
-                interests = null,
-                categories = null
-            )
-
-            // Open the OtherUserProfileAccount activity using the static method
-            OtherUserProfileAccount.open(
-                context = this,
-                user = otherUsersProfile,
-                dialogPhoto = user.avatar?.url,
-                dialogId = user.id
-            )
-
-            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error navigating to profile", e)
-            Toast.makeText(this, "Unable to open profile", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun muteUserFollowing(user: UserFollowingDisplayModel) {
-        AlertDialog.Builder(this)
-            .setTitle("Are you sure to Mute @${user.username}?")
-            .setMessage("This user will no longer be able to see your content or contact you.")
-            .setPositiveButton("Block") { _, _ ->
-                performBlockUser(user)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun performBlockUser(user: UserFollowingDisplayModel) {
-        lifecycleScope.launch {
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    retrofitInstance.apiService.blockUser(user.id)
-                }
-
-                if (response.isSuccessful) {
-                    followingList.removeAll { it.id == user.id }
-                    filteredFollowingList.removeAll { it.id == user.id }
-                    followingAdapter.notifyDataSetChanged()
-
-                    Toast.makeText(
-                        this@UserFollowingFragment,
-                        "Blocked @${user.username}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    if (filteredFollowingList.isEmpty()) {
-                        binding.emptyStateLayout.visibility = View.VISIBLE
-                        binding.recyclerView.visibility = View.GONE
-                    }
-
-                    updateFollowingCount(-1)
-                } else {
-                    showError("Failed to block user")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error blocking user", e)
-                showError("Network error: ${e.message}")
-            }
-        }
     }
 
     @OptIn(UnstableApi::class)
