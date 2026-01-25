@@ -18,6 +18,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.location.LocationManager
 import android.media.AudioRecord
 import android.media.MediaPlayer
@@ -1284,6 +1285,69 @@ class MainActivity : AppCompatActivity(),
              }
          }
 
+         private fun addWaveBarForSound(heightMultiplier: Float) {
+             val bar = View(this).apply {
+                 layoutParams = LinearLayout.LayoutParams(
+                     dpToPx(4), // 4dp width
+                     dpToPx(48) // 48dp max height
+                 ).apply {
+                     marginEnd = dpToPx(6) // 6dp spacing between bars
+                     gravity = android.view.Gravity.CENTER_VERTICAL
+                 }
+                 background = GradientDrawable().apply {
+                     shape = GradientDrawable.RECTANGLE
+                     setColor(Color.parseColor("#2563EB")) // Blue color
+                     cornerRadius = dpToPx(2).toFloat() // Rounded corners
+                 }
+                 // Apply height multiplier with clamping
+                 scaleY = heightMultiplier.coerceIn(0.2f, 2.5f)
+                 alpha = 1.0f
+                 tag = heightMultiplier // Store original height
+             }
+
+             binding.waveDotsContainer.addView(bar)
+             waveBars.add(bar)
+
+             // Remove old bars from START (left side) if exceeding limit
+             if (waveBars.size > maxWaveBars) {
+                 binding.waveDotsContainer.removeViewAt(0)
+                 waveBars.removeAt(0)
+             }
+
+             scrollToRight()
+         }
+
+         private fun addIdleDottedBarAtEnd() {
+             val bar = View(this).apply {
+                 val dotSize = dpToPx(5) // 5dp circular dot
+                 layoutParams = LinearLayout.LayoutParams(
+                     dotSize,
+                     dotSize
+                 ).apply {
+                     marginEnd = dpToPx(3) // 3dp spacing between dots
+                     gravity = android.view.Gravity.CENTER_VERTICAL
+                 }
+
+                 // Create circular dot with blue color
+                 background = GradientDrawable().apply {
+                     shape = GradientDrawable.OVAL
+                     setColor(Color.parseColor("#2563EB")) // Same blue as bars
+                 }
+
+                 scaleY = 1.0f
+                 alpha = 1.0f
+                 tag = "idle_dot" // Mark as idle dot
+             }
+
+             binding.waveDotsContainer.addView(bar)
+             waveBars.add(bar)
+
+             // Remove old bars from START (left side) if exceeding limit
+             if (waveBars.size > maxWaveBars) {
+                 binding.waveDotsContainer.removeViewAt(0)
+                 waveBars.removeAt(0)
+             }
+         }
 
 
 
