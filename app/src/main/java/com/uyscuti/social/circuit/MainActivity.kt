@@ -3,6 +3,8 @@ package com.uyscuti.social.circuit
 
 
 import android.Manifest
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -504,6 +506,87 @@ class MainActivity : AppCompatActivity(),
     private var isVnResuming = false
 
     private lateinit var timer: Timer
+
+
+
+         // WAVEFORM VISUALIZATION
+
+         private val waveBars = mutableListOf<View>()
+         private var waveBarCount = 0
+         private val maxWaveBars = 100
+         private var waveProgress = 0f
+         private var seekBarProgress = 0f
+         private val waveHandler = Handler()
+
+
+         // TIMERS & HANDLERS
+
+         private lateinit var timer: Timer
+         private var currentHandler: Handler? = null
+         private val timerHandler = Handler(Looper.getMainLooper())
+
+         private val waveRunnable = object : Runnable {
+             override fun run() {
+                 if (!isDurationOnPause) {
+                     val currentPosition = exoPlayer?.currentPosition?.toFloat()!!
+                     waveProgress = currentPosition
+                     if (isReplyVnPlaying) {
+                         adapter!!.updateReplyWaveProgress(currentPosition, audioFormWave)
+                     } else {
+                         adapter!!.updateWaveProgress(currentPosition, wavePosition)
+                     }
+                     audioDurationTVCount.text = String.format(
+                         "%s",
+                         TrimVideoUtils.stringForTime(currentPosition)
+                     )
+                 }
+                 waveHandler.postDelayed(this, 20)
+             }
+         }
+
+         private val onRecordWaveRunnable = object : Runnable {
+             override fun run() {
+                 try {
+                     if (!isOnRecordDurationOnPause) {
+                         val currentPosition = player?.currentPosition?.toFloat()!!
+                         updateRecordWaveProgress(currentPosition)
+                     }
+                     waveHandler.postDelayed(this, 20)
+                 } catch (e: Exception) {
+                     e.printStackTrace()
+                     Log.d("Exception", "run: ${e.message}")
+                 }
+             }
+         }
+
+         internal enum class VoiceNoteState {
+             IDLE,
+             RECORDING,
+             PLAYING,
+             PAUSED
+         }
+
+         @SuppressLint("DefaultLocale")
+         private fun updateRecordingTimer() {
+             timerHandler.post(object : Runnable {
+                 override fun run() {
+                     if (isRecording && !isPaused) {
+                         val currentTime = System.currentTimeMillis()
+                         val elapsed = recordingElapsedTime + (currentTime - recordingStartTime)
+
+                         val seconds = (elapsed / 1000) % 60
+                         val minutes = (elapsed / 1000) / 60
+
+                         val formatted = String.format("%02d:%02d", minutes, seconds)
+                         binding.recordingTimerTv.text = formatted
+
+                         timerHandler.postDelayed(this, 100) // Update every 100ms
+                     }
+                 }
+             })
+         }
+
+
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
