@@ -1502,6 +1502,32 @@ class MainActivity : AppCompatActivity(),
              }
          }
 
+         private fun startWaveRunnable() {
+             try {
+                 Log.d(
+                     "isDurationOnPause",
+                     " in comment audio start wave isDurationOnPause is $isDurationOnPause"
+                 )
+                 Log.d("StartWave", "Start waves")
+                 waveHandler.removeCallbacks(waveRunnable)
+                 waveHandler.post(waveRunnable)
+                 isDurationOnPause = false
+             } catch (e: Exception) {
+                 e.printStackTrace()
+             }
+         }
+
+         private fun stopWaveRunnable() {
+             try {
+                 waveHandler.removeCallbacks(waveRunnable)
+                 isDurationOnPause = true
+             } catch (e: Exception) {
+                 e.printStackTrace()
+             }
+         }
+
+         
+
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val permissions = arrayOf(
         Manifest.permission.RECORD_AUDIO,
