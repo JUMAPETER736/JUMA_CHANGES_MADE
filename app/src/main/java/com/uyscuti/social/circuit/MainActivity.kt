@@ -510,9 +510,12 @@ class MainActivity : AppCompatActivity(),
 
     private var isVnResuming = false
 
-    private lateinit var timer: Timer
-
-
+         private var recordingStartTime = 0L
+         private var recordingElapsedTime = 0L
+         private var totalRecordedDuration = 0L
+         private var isListeningToAudio = false
+         private var playbackTimerRunnable: Runnable? = null
+         private var voiceNoteState = VoiceNoteState.IDLE
 
          // WAVEFORM VISUALIZATION
 
@@ -6011,7 +6014,7 @@ class MainActivity : AppCompatActivity(),
             Log.d(TAG, "pauseRecording: exception 2 ${e.message}")
         }
     }
-         
+
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun cleanCache(event: CleanCache) {
