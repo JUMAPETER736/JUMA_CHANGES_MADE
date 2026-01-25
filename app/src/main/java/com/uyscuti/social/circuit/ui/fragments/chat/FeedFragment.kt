@@ -1362,27 +1362,26 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun showVNDialog() {
         val dialog = BottomSheetDialog(requireContext())
-
         dialog.setContentView(R.layout.vn_record_layout)
+
+        // Views that exist in the layout
         deleteVN = dialog.findViewById(R.id.deleteVN)!!
         recordVN = dialog.findViewById<ImageView>(R.id.recordVN)!!
         playVnAudioBtn = dialog.findViewById<ImageView>(R.id.playVnAudioBtn)!!
         sendVN = dialog.findViewById<ImageView>(R.id.sendVN)!!
-
         timerTv = dialog.findViewById<TextView>(R.id.timerTv)!!
-        playerTimerTv = dialog.findViewById(R.id.playerTimerTv)!!
         secondTimerTv = dialog.findViewById<TextView>(R.id.secondTimerTv)!!
-        thirdTimerTv = dialog.findViewById<TextView>(R.id.thirdTimerTv)!!
-
-        waveForm = dialog.findViewById<WaveFormView>(R.id.waveForm)!!
         wave = dialog.findViewById<WaveformSeekBar>(R.id.wave)!!
 
-        playAudioLayout = dialog.findViewById<LinearLayout>(R.id.playAudioLayout)!!
+        // Use the correct ID from the layout
+        playAudioLayout = dialog.findViewById<LinearLayout>(R.id.playVNRecorded)!!
 
         val dialogView = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
         dialogView?.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.slide_up))
 
         val selectableItemBackground = TypedValue()
+
+        // Apply ripple effect only to views that exist
         deleteVN!!.context?.theme?.resolveAttribute(
             android.R.attr.selectableItemBackground, selectableItemBackground, true
         )
@@ -1392,23 +1391,13 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         playVnAudioBtn.context?.theme?.resolveAttribute(
             android.R.attr.selectableItemBackground, selectableItemBackground, true
         )
-
         sendVN!!.context?.theme?.resolveAttribute(
             android.R.attr.selectableItemBackground, selectableItemBackground, true
         )
         timerTv!!.context?.theme?.resolveAttribute(
             android.R.attr.selectableItemBackground, selectableItemBackground, true
         )
-        playerTimerTv!!.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
         secondTimerTv!!.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        thirdTimerTv!!.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        waveForm!!.context?.theme?.resolveAttribute(
             android.R.attr.selectableItemBackground, selectableItemBackground, true
         )
         wave!!.context?.theme?.resolveAttribute(
@@ -1417,7 +1406,9 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         playAudioLayout!!.context?.theme?.resolveAttribute(
             android.R.attr.selectableItemBackground, selectableItemBackground, true
         )
+
         startRecording()
+
         deleteVN!!.setOnClickListener {
             if (mediaRecorder != null) {
                 Log.d(TAG, "onCreate: media recorder not null")
@@ -1430,12 +1421,12 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             }
             dialog.dismiss()
         }
+
         recordVN!!.setOnClickListener {
             when {
                 isPaused -> resumeRecording()
                 isRecording -> pauseRecording()
                 else -> Log.d("recordVN", "onCreate: else in vn record btn on click")
-                //                else->startRecording()
             }
         }
 
@@ -1445,7 +1436,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
                 Log.d(TAG, "sendVN: wasPaused $wasPaused")
 
                 if (!wasPaused) {
-
                     timer.stop()
                     mediaRecorder?.apply {
                         stop()
@@ -1453,16 +1443,12 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
                     }
                     mediaRecorder = null
                     Log.d("SendVN", "When sending vn was paused was false")
-                    // Execute mixVN asynchronously
                     mixVN()
                 }
                 lifecycleScope.launch(Dispatchers.Main) {
-
                     delay(500)
                     stopRecording()
                 }
-
-                // Stop recording after mixVN finishes executing or immediately if wasPaused is true
             }
             dialog.dismiss()
         }

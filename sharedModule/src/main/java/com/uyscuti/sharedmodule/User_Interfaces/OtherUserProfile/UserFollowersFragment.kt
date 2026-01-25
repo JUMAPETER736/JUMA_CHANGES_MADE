@@ -140,11 +140,8 @@ class UserFollowersFragment : AppCompatActivity() {
         supportActionBar?.setDisplayShowTitleEnabled(false)
 
         val formattedCount = formatCount(followersCount)
-        val titleText = if (isMyFollowers) {
-            "My $formattedCount Followers"
-        } else {
-            "$formattedCount Followers"
-        }
+
+        val titleText = "$formattedCount Followers"
         binding.toolbarTitle.text = titleText
 
         binding.toolbar.setNavigationOnClickListener {
@@ -609,15 +606,40 @@ class UserFollowersFragment : AppCompatActivity() {
 
     private fun showMoreOptions(user: OtherUserDisplayFollowersModel) {
         if (isMyFollowers) {
+            // For my followers, show a dialog with options
             AlertDialog.Builder(this)
-                .setTitle("Remove follower?")
-                .setMessage("${user.username} will no longer be able to see your posts.")
-                .setPositiveButton("Remove") { _, _ ->
-                    performRemoveFollower(user)
+                .setTitle("Options")
+                .setItems(arrayOf("Remove Follower", "Block User")) { _, which ->
+                    when (which) {
+                        0 -> {
+                            // Remove follower
+                            AlertDialog.Builder(this)
+                                .setTitle("Remove follower?")
+                                .setMessage("${user.username} will no longer be able to see your posts.")
+                                .setPositiveButton("Remove") { _, _ ->
+                                    performRemoveFollower(user)
+                                }
+                                .setNegativeButton("Cancel", null)
+                                .show()
+                        }
+                        1 -> {
+                            // Block user
+                            if (blockedUserIds.contains(user.id)) {
+                                Toast.makeText(
+                                    this,
+                                    "${user.username} is already blocked",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                blockFollower(user)
+                            }
+                        }
+                    }
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
         } else {
+            // For other users' followers
             AlertDialog.Builder(this)
                 .setTitle("Options")
                 .setItems(arrayOf("View Profile", "Block User")) { _, which ->
@@ -625,23 +647,21 @@ class UserFollowersFragment : AppCompatActivity() {
                         0 -> reportFollower(user)
                         1 -> {
                             if (blockedUserIds.contains(user.id)) {
-                                // Already blocked
                                 Toast.makeText(
                                     this,
                                     "${user.username} is already blocked",
                                     Toast.LENGTH_SHORT
                                 ).show()
-                                Log.d(TAG, "User ${user.username} already blocked")
                             } else {
                                 blockFollower(user)
                             }
                         }
                     }
                 }
+                .setNegativeButton("Cancel", null)
                 .show()
         }
     }
-
 
     private fun reportFollower(user: OtherUserDisplayFollowersModel) {
         Log.d(TAG, "Report user: ${user.username}")

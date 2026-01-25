@@ -518,6 +518,103 @@ class MainActivity : AppCompatActivity(),
          private var voiceNoteState = VoiceNoteState.IDLE
          private var audioRecord: AudioRecord? = null
 
+  
+
+         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private val permissions = arrayOf(
+        Manifest.permission.RECORD_AUDIO,
+        Manifest.permission.READ_EXTERNAL_STORAGE,
+        Manifest.permission.READ_MEDIA_IMAGES,
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION,
+        Manifest.permission.ACCESS_BACKGROUND_LOCATION
+    )
+    private var permissionGranted = false
+    private var permissionGranted2 = false
+    private var permissionGranted3 = false
+
+    //    private var playButton: PlayButton? = null
+    private var player: MediaPlayer? = null
+
+    // Define a list to store the paths of recorded audio files
+    private val recordedAudioFiles = mutableListOf<String>()
+
+    private lateinit var amplitudes: ArrayList<Float>
+    private var outputVnFile: String = ""
+
+    private lateinit var httpDataSourceFactory: HttpDataSource.Factory
+    private lateinit var defaultDataSourceFactory: DefaultDataSourceFactory
+    private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
+
+    private val simpleCache: SimpleCache = FlashApplication.cache
+    private val playbackStateListener: Player.Listener = playbackStateListener()
+
+    private var exoPlayer: ExoPlayer? = null
+
+
+    private val exoPlayerItems = ArrayList<ExoPlayerItem>()
+    var customDialog: CustomAlertDialog? = null
+
+
+    private val notificationViewModel: com.uyscuti.social.business.viewmodel.notificationViewModel.NotificationViewModel by viewModels()
+
+    private lateinit var notificationBadge: TextView
+
+    private lateinit var notificationIcon: ImageView
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private val getDocumentContent =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                result.data?.data?.let { uri ->
+                    // Handle the selected document URI
+                    handleDocumentUri(uri)
+                }
+            }
+        }
+
+         private val locationStatusReceiver = object : BroadcastReceiver() {
+             @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+             override fun onReceive(context: Context?, intent: Intent?) {
+                 if (intent?.action == LocationManager.PROVIDERS_CHANGED_ACTION) {
+                     // Update UI when location service status changes
+                     val locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
+                     val isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                     val isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+                     val isLocationEnabled = isGpsEnabled || isNetworkEnabled
+
+                     if(isLocationEnabled) {
+                         startLocationTracking()
+                     } else {
+                         stopLocationTracking()
+                     }
+                 }
+             }
+         }
+
+
+    private var lastFragmentId: String? = null
+
+         private fun onGoBack() {
+             val callback = object : OnBackPressedCallback(true) {
+
+                 override fun handleOnBackPressed() {
+                     if (binding.motionLayout.isVisible) {
+                         toggleMotionLayoutVisibility()
+                     } else {
+                         isEnabled = false
+                         onBackPressedDispatcher.onBackPressed()
+                     }
+                 }
+             }
+
+             onBackPressedDispatcher.addCallback(this, callback)
+         }
+
+
+
+
+
          // WAVEFORM VISUALIZATION
 
          private val waveBars = mutableListOf<View>()
@@ -594,8 +691,6 @@ class MainActivity : AppCompatActivity(),
                  }
              })
          }
-
-
 
          @SuppressLint("DefaultLocale")
          private fun updatePlaybackTimer() {
@@ -1557,98 +1652,6 @@ class MainActivity : AppCompatActivity(),
              }
          }
 
-
-
-         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private val permissions = arrayOf(
-        Manifest.permission.RECORD_AUDIO,
-        Manifest.permission.READ_EXTERNAL_STORAGE,
-        Manifest.permission.READ_MEDIA_IMAGES,
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.ACCESS_COARSE_LOCATION,
-        Manifest.permission.ACCESS_BACKGROUND_LOCATION
-    )
-    private var permissionGranted = false
-    private var permissionGranted2 = false
-    private var permissionGranted3 = false
-
-    //    private var playButton: PlayButton? = null
-    private var player: MediaPlayer? = null
-
-    // Define a list to store the paths of recorded audio files
-    private val recordedAudioFiles = mutableListOf<String>()
-
-    private lateinit var amplitudes: ArrayList<Float>
-    private var outputVnFile: String = ""
-
-    private lateinit var httpDataSourceFactory: HttpDataSource.Factory
-    private lateinit var defaultDataSourceFactory: DefaultDataSourceFactory
-    private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
-
-    private val simpleCache: SimpleCache = FlashApplication.cache
-    private val playbackStateListener: Player.Listener = playbackStateListener()
-
-    private var exoPlayer: ExoPlayer? = null
-
-
-    private val exoPlayerItems = ArrayList<ExoPlayerItem>()
-    var customDialog: CustomAlertDialog? = null
-
-
-    private val notificationViewModel: com.uyscuti.social.business.viewmodel.notificationViewModel.NotificationViewModel by viewModels()
-
-    private lateinit var notificationBadge: TextView
-
-    private lateinit var notificationIcon: ImageView
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private val getDocumentContent =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                result.data?.data?.let { uri ->
-                    // Handle the selected document URI
-                    handleDocumentUri(uri)
-                }
-            }
-        }
-
-         private val locationStatusReceiver = object : BroadcastReceiver() {
-             @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-             override fun onReceive(context: Context?, intent: Intent?) {
-                 if (intent?.action == LocationManager.PROVIDERS_CHANGED_ACTION) {
-                     // Update UI when location service status changes
-                     val locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
-                     val isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-                     val isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-                     val isLocationEnabled = isGpsEnabled || isNetworkEnabled
-
-                     if(isLocationEnabled) {
-                         startLocationTracking()
-                     } else {
-                         stopLocationTracking()
-                     }
-                 }
-             }
-         }
-
-
-    private var lastFragmentId: String? = null
-
-         private fun onGoBack() {
-             val callback = object : OnBackPressedCallback(true) {
-
-                 override fun handleOnBackPressed() {
-                     if (binding.motionLayout.isVisible) {
-                         toggleMotionLayoutVisibility()
-                     } else {
-                         isEnabled = false
-                         onBackPressedDispatcher.onBackPressed()
-                     }
-                 }
-             }
-
-             onBackPressedDispatcher.addCallback(this, callback)
-         }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     @OptIn(UnstableApi::class)
