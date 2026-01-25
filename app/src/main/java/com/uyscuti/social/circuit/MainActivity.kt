@@ -5935,40 +5935,7 @@ class MainActivity : AppCompatActivity(),
     var sending = false
     var firstTimeSendVn = false
 
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun pauseRecording() {
-        val TAG = "pauseRecording"
 
-        if (isRecording && !isPaused) {
-
-            try {
-                mediaRecorder?.apply {
-                    stop()
-                    release()
-                }
-                mediaRecorder = null
-            } catch (e: Exception) {
-                Log.d(TAG, " failed to stop media recorder: $e")
-                e.printStackTrace()
-            }
-
-
-            isPaused = true
-            timer.pause() // Pause the recording timer
-            binding.timerTv.visibility = View.INVISIBLE
-            binding.waveForm.visibility = View.GONE
-            binding.playAudioLayout.visibility = View.VISIBLE
-            binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-            binding.recordVN.setImageResource(R.drawable.mic_2)
-
-
-            Log.d(TAG, "pauseRecording: list of recordings  size: ${recordedAudioFiles.size}")
-            Log.d(TAG, "pauseRecording: list of recordings $recordedAudioFiles")
-
-            mixVN()
-
-        }
-    }
 
     private var mixingCompleted = false // Define a flag to track if mixing is completed
 
@@ -6044,66 +6011,7 @@ class MainActivity : AppCompatActivity(),
             Log.d(TAG, "pauseRecording: exception 2 ${e.message}")
         }
     }
-
-    // Check if mixing is completed and return true
-    fun isMixingCompleted(): Boolean {
-        return mixingCompleted
-    }
-
-    private fun deleteRecording() {
-
-        val TAG = "Recording"
-
-        try {
-            mediaRecorder?.apply {
-                stop()
-                release()
-            }
-            mediaRecorder = null
-            isRecording = false
-            isPaused = false
-            isAudioVNPlaying = false
-
-            binding.timerTv.text = "00:00.00"
-
-            binding.recordVN.setImageResource(R.drawable.mic_2)
-
-
-            binding.sendVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
-            binding.sendVN.isClickable = false
-
-            amplitudes = binding.waveForm.clear()
-            amps = 0
-            timer.stop()
-            Log.d("TAG", "deleteRecording: recorded files size ${recordedAudioFiles.size}")
-            deleteVn()
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            // Handle exceptions as needed
-        }
-    }
-
-    private fun deleteVn() {
-        recordedAudioFiles.clear()
-
-        val isDeleted = deleteFiles(recordedAudioFiles)
-        var outputVnFileList = mutableListOf<String>()
-        outputVnFileList.add(outputVnFile)
-        val deleteMixVn = deleteFiles(outputVnFileList)
-        if (isDeleted) {
-            Log.d(TAG, "File record deleted successfully")
-        } else {
-            println("Failed to delete file.")
-        }
-
-        if (deleteMixVn) {
-            Log.d(TAG, "File mix vn deleted successfully")
-        } else {
-            println("Failed to delete file.")
-        }
-
-    }
+         
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun cleanCache(event: CleanCache) {
