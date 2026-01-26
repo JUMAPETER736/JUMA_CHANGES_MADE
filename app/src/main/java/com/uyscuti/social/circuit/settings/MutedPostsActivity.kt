@@ -86,26 +86,64 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         loadMutedPosts()
     }
 
+    // FIXED showLoading method - Don't hide emptyStateLayout here
+    private fun showLoading(show: Boolean) {
+        Log.d(TAG, "showLoading called with: $show")
+
+        progressBar.visibility = if (show) View.VISIBLE else View.GONE
+
+        if (show) {
+            // When loading, hide both recyclerView and emptyStateLayout
+            recyclerView.visibility = View.GONE
+            emptyStateLayout.visibility = View.GONE
+        }
+        // When not loading, don't change recyclerView or emptyStateLayout visibility
+        // Let showEmptyState handle that
+
+        Log.d(TAG, "Loading state - progressBar: ${progressBar.visibility}, recyclerView: ${recyclerView.visibility}, emptyStateLayout: ${emptyStateLayout.visibility}")
+    }
+
+    // FIXED showEmptyState method
+    private fun showEmptyState(show: Boolean) {
+        Log.d(TAG, "showEmptyState called with: $show")
+        Log.d(TAG, "emptyStateLayout visibility before: ${emptyStateLayout.visibility}")
+        Log.d(TAG, "recyclerView visibility before: ${recyclerView.visibility}")
+        Log.d(TAG, "mutedPosts size: ${mutedPosts.size}")
+
+        if (show) {
+            emptyStateLayout.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+            progressBar.visibility = View.GONE
+        } else {
+            emptyStateLayout.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+            progressBar.visibility = View.GONE
+        }
+
+        Log.d(TAG, "emptyStateLayout visibility after: ${emptyStateLayout.visibility}")
+        Log.d(TAG, "recyclerView visibility after: ${recyclerView.visibility}")
+    }
+
+    // UPDATED loadMutedPosts - correct order of calls
     private fun loadMutedPosts() {
         lifecycleScope.launch {
             try {
                 showLoading(true)
 
-                // Get ALL muted user IDs from ALL three sources (same as feed filtering)
                 val mutedUserIds = getMutedUserIds()
-
                 Log.d(TAG, "Found ${mutedUserIds.size} muted user IDs: $mutedUserIds")
 
                 if (mutedUserIds.isEmpty()) {
-                    showEmptyState(true)
-                    showLoading(false)
+                    mutedPosts.clear()
+                    feedAdapter.submitItems(mutableListOf())
+                    showEmptyState(true)  // Call this AFTER showLoading(false)
+                    Log.d(TAG, "No muted users found - showing empty state")
                     return@launch
                 }
 
                 // Fetch all posts from the feed and filter muted ones
                 mutedPosts.clear()
 
-                // Fetch from feed and filter
                 val response = withContext(Dispatchers.IO) {
                     retrofitInstance.apiService.getAllFeed("1")
                 }
@@ -113,9 +151,8 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                 if (response.isSuccessful && response.body() != null) {
                     val allPosts = response.body()!!.data.data.posts
 
-                    // ===== CRITICAL: Use the correct field post.author?.account?._id =====
                     val foundMutedPosts = allPosts.filter { post ->
-                        val authorId = post.author?.account?._id  // ← CORRECT FIELD!
+                        val authorId = post.author?.account?._id
                         val reposterId = post.repostedUser?.owner
                         val posterId = reposterId ?: authorId
 
@@ -131,10 +168,9 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                     mutedPosts.addAll(foundMutedPosts)
                     Log.d(TAG, "Found ${foundMutedPosts.size} muted posts from page 1")
 
-                    // If we need more pages to find more muted posts
+                    // If we need more pages
                     if (foundMutedPosts.isNotEmpty()) {
-                        // Try fetching more pages
-                        for (page in 2..5) { // Check up to 5 pages
+                        for (page in 2..5) {
                             val pageResponse = withContext(Dispatchers.IO) {
                                 retrofitInstance.apiService.getAllFeed(page.toString())
                             }
@@ -143,36 +179,34 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                                 val pagePosts = pageResponse.body()!!.data.data.posts
 
                                 val pageMutedPosts = pagePosts.filter { post ->
-                                    val authorId = post.author?.account?._id  // ← CORRECT FIELD!
+                                    val authorId = post.author?.account?._id
                                     val reposterId = post.repostedUser?.owner
                                     val posterId = reposterId ?: authorId
 
                                     val isMuted = posterId?.let { mutedUserIds.contains(it) } ?: false
 
-                                    // Avoid duplicates
                                     isMuted && !mutedPosts.any { it._id == post._id }
                                 }
 
                                 mutedPosts.addAll(pageMutedPosts)
                                 Log.d(TAG, "Found ${pageMutedPosts.size} more muted posts from page $page")
 
-                                // Stop if no more posts found
                                 if (pageMutedPosts.isEmpty()) break
                             }
                         }
                     }
                 }
 
-                // Sort by most recent (you can customize this)
+                // Sort by most recent
                 mutedPosts.sortByDescending { post ->
-                    post.createdAt // Or any other timestamp field
+                    post.createdAt
                 }
 
                 // Update adapter
                 feedAdapter.submitItems(mutedPosts.toMutableList())
 
+                // Show empty state or recycler view based on posts count
                 showEmptyState(mutedPosts.isEmpty())
-                showLoading(false)
 
                 Log.d(TAG, "Successfully loaded ${mutedPosts.size} muted posts")
 
@@ -183,7 +217,6 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                     "Failed to load muted posts: ${e.message}",
                     Toast.LENGTH_SHORT
                 ).show()
-                showLoading(false)
                 showEmptyState(true)
             }
         }
@@ -206,32 +239,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
 
         return allMutedIds
     }
-
-
-    private fun showEmptyState(show: Boolean) {
-        Log.d(TAG, "showEmptyState called with: $show")
-        Log.d(TAG, "emptyStateLayout visibility before: ${emptyStateLayout.visibility}")
-        Log.d(TAG, "recyclerView visibility before: ${recyclerView.visibility}")
-        Log.d(TAG, "mutedPosts size: ${mutedPosts.size}")
-
-        emptyStateLayout.visibility = if (show) View.VISIBLE else View.GONE
-        recyclerView.visibility = if (show) View.GONE else View.VISIBLE
-
-        Log.d(TAG, "emptyStateLayout visibility after: ${emptyStateLayout.visibility}")
-        Log.d(TAG, "recyclerView visibility after: ${recyclerView.visibility}")
-    }
-
-    private fun showLoading(show: Boolean) {
-        Log.d(TAG, "showLoading called with: $show")
-
-        progressBar.visibility = if (show) View.VISIBLE else View.GONE
-        recyclerView.visibility = if (show) View.GONE else View.VISIBLE
-        emptyStateLayout.visibility = View.GONE
-
-        Log.d(TAG, "Loading state - progressBar: ${progressBar.visibility}, recyclerView: ${recyclerView.visibility}, emptyStateLayout: ${emptyStateLayout.visibility}")
-    }
-
-
+    
 
     // ==================== OnFeedClickListener IMPLEMENTATION ====================
 
