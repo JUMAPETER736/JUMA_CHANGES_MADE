@@ -1039,11 +1039,11 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                             // Try ALL possible ways to get the author ID
                             val authorId1 = post.author?.account?._id
                             val authorId2 = post.author?._id
-                            val ownerId = post.owner
+                            val ownerId = post.author
                             val reposterId = post.repostedUser?.owner
                             val reposterId2 = post.repostedUser?._id
-                            val userId1 = post.user?._id
-                            val userId2 = post.userId
+                            val userId1 = post.author?._id
+                            val userId2 = post._id
 
                             // Log EVERYTHING for debugging
                             Log.d(TAG, """
