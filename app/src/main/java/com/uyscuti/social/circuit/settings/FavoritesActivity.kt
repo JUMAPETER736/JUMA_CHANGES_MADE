@@ -201,8 +201,14 @@ class FavoritesActivity : AppCompatActivity() {
 
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
-        recyclerView.visibility = if (show) View.GONE else View.VISIBLE
-        emptyStateLayout.visibility = View.GONE
+
+        if (show) {
+            // When loading, hide both recyclerView and emptyStateLayout
+            recyclerView.visibility = View.GONE
+            emptyStateLayout.visibility = View.GONE
+        }
+        // When not loading, don't change recyclerView or emptyStateLayout visibility
+        // Let showEmptyState handle that
     }
 
     private fun showEmptyState(isEmpty: Boolean) {
