@@ -208,7 +208,7 @@ class CloseFriendsActivity : AppCompatActivity() {
     private fun showEmptyState(isEmpty: Boolean) {
         if (isEmpty) {
             emptyTextView.visibility = View.VISIBLE
-            emptyTextView.text = "No close friends yet"
+            emptyTextView.text = "No close friends yet\n\n👥\n\nAdd close friends to share exclusive stories and posts with people you're closest to"
             recyclerView.visibility = View.GONE
         } else {
             emptyTextView.visibility = View.GONE

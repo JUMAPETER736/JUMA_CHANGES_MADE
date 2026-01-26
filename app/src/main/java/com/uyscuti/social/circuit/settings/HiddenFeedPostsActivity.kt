@@ -263,7 +263,7 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         // Reload when returning to this screen
         loadHiddenPosts()
     }
-    
+
     // ==================== OnFeedClickListener IMPLEMENTATION ====================
 
     override fun likeUnLikeFeed(position: Int, data: Post) {
