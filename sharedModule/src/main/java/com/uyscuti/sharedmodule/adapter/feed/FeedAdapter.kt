@@ -136,7 +136,7 @@ class FeedAdapter(
         private val cachedFollowingUsernames = mutableSetOf<String>()
         private val cachedFollowersUsernames = mutableSetOf<String>()
         private val myFollowersCache = mutableSetOf<String>()
-        private val blockedUsersCache = mutableSetOf<String>()
+
 
         fun getCachedFollowersUsernames(): Set<String> = cachedFollowersUsernames.toSet()
         fun getCachedFollowingUsernames(): Set<String> = cachedFollowingUsernames.toSet()
@@ -146,12 +146,9 @@ class FeedAdapter(
         private val hiddenPostsCache = mutableSetOf<String>()
 
 
-        // ==================== HIDDEN POSTS METHODS ====================
+        //  HIDDEN POSTS METHODS 
 
-        fun clearMutedPostsCache() {
-            mutedPostsUsersCache.clear()
-            Log.d("FeedAdapter", "Muted posts cache cleared")
-        }
+
 
         fun addToMutedPostsCache(userId: String) {
             mutedPostsUsersCache.add(userId)
@@ -162,11 +159,6 @@ class FeedAdapter(
             return mutedPostsUsersCache.contains(userId)
         }
 
-        fun setMutedPostsUsers(userIds: Set<String>) {
-            mutedPostsUsersCache.clear()
-            mutedPostsUsersCache.addAll(userIds)
-            Log.d("FeedAdapter", "Muted posts cache updated with ${userIds.size} users")
-        }
 
         fun removeFromMutedPostsCache(userId: String) {
             mutedPostsUsersCache.remove(userId)
