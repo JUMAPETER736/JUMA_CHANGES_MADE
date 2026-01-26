@@ -3,6 +3,7 @@ package com.uyscuti.social.circuit.settings
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -32,7 +33,7 @@ class RestrictedAccountsActivity : AppCompatActivity() {
     private lateinit var toolbar: Toolbar
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
-    private lateinit var emptyTextView: TextView
+    private lateinit var emptyStateLayout: LinearLayout
     private lateinit var adapter: RelationshipUsersAdapter
     private val restrictedList = mutableListOf<UserRelationshipItem>()
 
@@ -54,7 +55,7 @@ class RestrictedAccountsActivity : AppCompatActivity() {
         toolbar = findViewById(R.id.toolbar)
         recyclerView = findViewById(R.id.recyclerView)
         progressBar = findViewById(R.id.progressBar)
-        emptyTextView = findViewById(R.id.emptyTextView)
+        emptyStateLayout = findViewById(R.id.emptyStateLayout)
     }
 
     private fun setupToolbar() {
@@ -178,39 +179,26 @@ class RestrictedAccountsActivity : AppCompatActivity() {
     }
 
     private fun showLoading(show: Boolean) {
-        Log.d(TAG, "showLoading called with: $show")
-
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
 
         if (show) {
-            // When loading, hide both recyclerView and emptyTextView
             recyclerView.visibility = View.GONE
-            emptyTextView.visibility = View.GONE
+            emptyStateLayout.visibility = View.GONE  // Changed from emptyTextView
         }
-        // When not loading, don't change recyclerView or emptyTextView visibility
-        // Let showEmptyState handle that
-
-        Log.d(TAG, "Loading state - progressBar: ${progressBar.visibility}, recyclerView: ${recyclerView.visibility}, emptyTextView: ${emptyTextView.visibility}")
     }
 
     private fun showEmptyState(isEmpty: Boolean) {
         Log.d(TAG, "showEmptyState called with: $isEmpty")
-        Log.d(TAG, "emptyTextView visibility before: ${emptyTextView.visibility}")
-        Log.d(TAG, "recyclerView visibility before: ${recyclerView.visibility}")
-        Log.d(TAG, "restrictedList size: ${restrictedList.size}")
 
         if (isEmpty) {
-            emptyTextView.visibility = View.VISIBLE
-            emptyTextView.text = "No restricted accounts\n\n🚫\n\nRestricted accounts won't be able to see when you're active or when you've read their messages"
+            emptyStateLayout.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
             progressBar.visibility = View.GONE
         } else {
-            emptyTextView.visibility = View.GONE
+            emptyStateLayout.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
             progressBar.visibility = View.GONE
         }
-
-        Log.d(TAG, "emptyTextView visibility after: ${emptyTextView.visibility}")
-        Log.d(TAG, "recyclerView visibility after: ${recyclerView.visibility}")
     }
+
 }
