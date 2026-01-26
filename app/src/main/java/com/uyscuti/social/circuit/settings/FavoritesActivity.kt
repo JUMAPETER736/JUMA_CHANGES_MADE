@@ -208,7 +208,7 @@ class FavoritesActivity : AppCompatActivity() {
     private fun showEmptyState(isEmpty: Boolean) {
         if (isEmpty) {
             emptyTextView.visibility = View.VISIBLE
-            emptyTextView.text = "No favorites yet"
+            emptyTextView.text = "No favorites yet\n\n⭐\n\nAdd people to favorites to see their posts higher in your feed"
             recyclerView.visibility = View.GONE
         } else {
             emptyTextView.visibility = View.GONE
