@@ -360,7 +360,7 @@ class SettingsAdapter(
                 "Muted Stories" -> R.drawable.ic_mute_stories
                 "Close Friends" -> R.drawable.ic_close_friends
                 "Favorites" -> R.drawable.ic_favorite
-                "Restricted Accounts" -> R.drawable.ic_restrict
+                "Restricted Accounts" -> R.drawable.ic_off_person
                 "Hidden Posts" -> R.drawable.hide_svgrepo_com
                 else -> R.drawable.google
             }
