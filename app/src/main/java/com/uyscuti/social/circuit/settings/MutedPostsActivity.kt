@@ -207,16 +207,31 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         return allMutedIds
     }
 
+
+    private fun showEmptyState(show: Boolean) {
+        Log.d(TAG, "showEmptyState called with: $show")
+        Log.d(TAG, "emptyStateLayout visibility before: ${emptyStateLayout.visibility}")
+        Log.d(TAG, "recyclerView visibility before: ${recyclerView.visibility}")
+        Log.d(TAG, "mutedPosts size: ${mutedPosts.size}")
+
+        emptyStateLayout.visibility = if (show) View.VISIBLE else View.GONE
+        recyclerView.visibility = if (show) View.GONE else View.VISIBLE
+
+        Log.d(TAG, "emptyStateLayout visibility after: ${emptyStateLayout.visibility}")
+        Log.d(TAG, "recyclerView visibility after: ${recyclerView.visibility}")
+    }
+
     private fun showLoading(show: Boolean) {
+        Log.d(TAG, "showLoading called with: $show")
+
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
         recyclerView.visibility = if (show) View.GONE else View.VISIBLE
         emptyStateLayout.visibility = View.GONE
+
+        Log.d(TAG, "Loading state - progressBar: ${progressBar.visibility}, recyclerView: ${recyclerView.visibility}, emptyStateLayout: ${emptyStateLayout.visibility}")
     }
 
-    private fun showEmptyState(show: Boolean) {
-        emptyStateLayout.visibility = if (show) View.VISIBLE else View.GONE
-        recyclerView.visibility = if (show) View.GONE else View.VISIBLE
-    }
+
 
     // ==================== OnFeedClickListener IMPLEMENTATION ====================
 
