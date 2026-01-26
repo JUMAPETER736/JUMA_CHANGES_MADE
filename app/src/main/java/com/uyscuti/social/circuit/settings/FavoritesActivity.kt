@@ -207,8 +207,7 @@ class FavoritesActivity : AppCompatActivity() {
             recyclerView.visibility = View.GONE
             emptyStateLayout.visibility = View.GONE
         }
-        // When not loading, don't change recyclerView or emptyStateLayout visibility
-        // Let showEmptyState handle that
+
     }
 
     private fun showEmptyState(isEmpty: Boolean) {

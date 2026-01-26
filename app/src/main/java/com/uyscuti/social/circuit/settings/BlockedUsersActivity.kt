@@ -212,8 +212,13 @@ class BlockedUsersActivity : AppCompatActivity() {
 
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
-        recyclerView.visibility = if (show) View.GONE else View.VISIBLE
-        emptyTextView.visibility = View.GONE
+
+        if (show) {
+            // When loading, hide both recyclerView and emptyTextView
+            recyclerView.visibility = View.GONE
+            emptyTextView.visibility = View.GONE
+        }
+
     }
 
     private fun showEmptyState(isEmpty: Boolean) {
@@ -221,9 +226,11 @@ class BlockedUsersActivity : AppCompatActivity() {
             emptyTextView.visibility = View.VISIBLE
             emptyTextView.text = "No blocked users"
             recyclerView.visibility = View.GONE
+            progressBar.visibility = View.GONE  // Make sure progress bar is hidden
         } else {
             emptyTextView.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
+            progressBar.visibility = View.GONE  // Make sure progress bar is hidden
         }
     }
 
