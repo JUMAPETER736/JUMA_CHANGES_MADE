@@ -80,10 +80,10 @@ class CloseFriendsActivity : AppCompatActivity() {
     }
 
     private fun loadCloseFriends() {
-        showLoading(true)
-
         lifecycleScope.launch {
             try {
+                showLoading(true)
+
                 val response = withContext(Dispatchers.IO) {
                     retrofitInstance.apiService.getCloseFriends()
                 }
@@ -113,16 +113,20 @@ class CloseFriendsActivity : AppCompatActivity() {
                     closeFriendsList.clear()
                     closeFriendsList.addAll(items)
                     adapter.updateList(closeFriendsList)
+
+                    // Show empty state AFTER showLoading completes
                     showEmptyState(closeFriendsList.isEmpty())
+
+                    Log.d(TAG, "Successfully loaded ${closeFriendsList.size} close friends")
                 } else {
                     val errorMessage = response.body()?.message ?: "Failed to load close friends"
                     showError(errorMessage)
+                    showEmptyState(true)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading close friends: ${e.message}", e)
                 showError("Network error. Please check your connection.")
-            } finally {
-                showLoading(false)
+                showEmptyState(true)
             }
         }
     }
@@ -202,19 +206,39 @@ class CloseFriendsActivity : AppCompatActivity() {
     }
 
     private fun showLoading(show: Boolean) {
+        Log.d(TAG, "showLoading called with: $show")
+
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
-        recyclerView.visibility = if (show) View.GONE else View.VISIBLE
-        emptyStateLayout.visibility = View.GONE
+
+        if (show) {
+            // When loading, hide both recyclerView and emptyStateLayout
+            recyclerView.visibility = View.GONE
+            emptyStateLayout.visibility = View.GONE
+        }
+        // When not loading, don't change recyclerView or emptyStateLayout visibility
+        // Let showEmptyState handle that
+
+        Log.d(TAG, "Loading state - progressBar: ${progressBar.visibility}, recyclerView: ${recyclerView.visibility}, emptyStateLayout: ${emptyStateLayout.visibility}")
     }
 
     private fun showEmptyState(isEmpty: Boolean) {
+        Log.d(TAG, "showEmptyState called with: $isEmpty")
+        Log.d(TAG, "emptyStateLayout visibility before: ${emptyStateLayout.visibility}")
+        Log.d(TAG, "recyclerView visibility before: ${recyclerView.visibility}")
+        Log.d(TAG, "closeFriendsList size: ${closeFriendsList.size}")
+
         if (isEmpty) {
             emptyStateLayout.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
+            progressBar.visibility = View.GONE
         } else {
             emptyStateLayout.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
+            progressBar.visibility = View.GONE
         }
+
+        Log.d(TAG, "emptyStateLayout visibility after: ${emptyStateLayout.visibility}")
+        Log.d(TAG, "recyclerView visibility after: ${recyclerView.visibility}")
     }
 
     private fun showError(message: String) {
