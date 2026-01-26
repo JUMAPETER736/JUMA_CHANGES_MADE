@@ -991,12 +991,16 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         followUnfollowLayout.visibility = View.GONE
     }
 
-    // ==================== MUTE TOGGLE ====================
+    // ==================== MUTE TOGGLE (COMPLETE FIX) ====================
     private fun handleMuteToggle(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
-                // Check current mute status from ViewModel
-                val isMuted = relationshipsViewModel.isPostsMuted(userId)
+                // Check current mute status from ALL sources
+                val isMuted = relationshipsViewModel.isPostsMuted(userId) ||
+                        FeedAdapter.isUserPostsMuted(userId) ||
+                        isUserPostsMutedInPrefs(userId)
+
+                Log.d(TAG, "handleMuteToggle: userId=$userId, currentlyMuted=$isMuted")
 
                 val response = if (isMuted) {
                     withContext(Dispatchers.IO) {
@@ -1009,30 +1013,111 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 }
 
                 if (response.isSuccessful) {
-                    // Update ViewModel
+                    Log.d(TAG, "API call successful. Updating ALL caches and UI...")
+
+                    // Update ALL THREE caches (just like hide posts)
                     if (isMuted) {
                         relationshipsViewModel.removeMutedPosts(userId)
-                        com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.removeFromMutedPostsCache(userId)
+                        FeedAdapter.removeFromMutedPostsCache(userId)
+                        saveUserMutedToPrefs(userId, false) // ← Save to SharedPreferences
                     } else {
                         relationshipsViewModel.addMutedPosts(userId)
-                        com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.addToMutedPostsCache(userId)
+                        FeedAdapter.addToMutedPostsCache(userId)
+                        saveUserMutedToPrefs(userId, true) // ← Save to SharedPreferences
                     }
 
-                    // Refresh the feed to hide/show posts
-                    allFeedAdapter.notifyDataSetChanged()
+                    // ===== CRITICAL: Remove posts from UI immediately when muting =====
+                    if (!isMuted) {
+                        // We just muted - remove all posts from this user RIGHT NOW
+                        val currentPosts = getFeedViewModel.getAllFeedData()
+                        Log.d(TAG, "Current feed has ${currentPosts.size} posts")
 
-                    val message = if (isMuted) {
-                        "Posts unmuted"
+                        val positionsToRemove = mutableListOf<Int>()
+
+                        // Find ALL posts from this user (including reposts)
+                        currentPosts.forEachIndexed { index, post ->
+                            val authorId = post.author?.account?._id
+                            val reposterId = post.repostedUser?.owner
+                            val posterId = reposterId ?: authorId
+
+                            if (posterId == userId) {
+                                positionsToRemove.add(index)
+                                Log.d(TAG, "Found post at position $index from muted user")
+                            }
+                        }
+
+                        Log.d(TAG, "Found ${positionsToRemove.size} posts to remove from user $userId")
+
+                        if (positionsToRemove.isNotEmpty()) {
+                            // Remove in reverse order to maintain indices
+                            positionsToRemove.reversed().forEach { index ->
+                                currentPosts.removeAt(index)
+                            }
+
+                            Log.d(TAG, "After removal: ${currentPosts.size} posts remain")
+
+                            // Update adapter - this makes the posts disappear
+                            allFeedAdapter.submitItems(currentPosts)
+
+                            // Notify adapter about removals
+                            positionsToRemove.reversed().forEach { index ->
+                                allFeedAdapter.notifyItemRemoved(index)
+                            }
+
+                            // Update range
+                            if (positionsToRemove.isNotEmpty()) {
+                                val firstRemoved = positionsToRemove.minOrNull() ?: 0
+                                allFeedAdapter.notifyItemRangeChanged(firstRemoved, currentPosts.size)
+                            }
+
+                            Log.d(TAG, "UI updated - removed ${positionsToRemove.size} posts")
+                        } else {
+                            Log.d(TAG, "No posts from this user found in current feed")
+                        }
+
+                        // Show Snackbar with Undo (just like hide posts)
+                        Snackbar.make(feedListView, "Posts muted", Snackbar.LENGTH_LONG)
+                            .setAction("Undo") {
+                                // Undo mute
+                                lifecycleScope.launch {
+                                    try {
+                                        val unmuteResponse = withContext(Dispatchers.IO) {
+                                            retrofitInstance.apiService.unMutePosts(userId)
+                                        }
+                                        if (unmuteResponse.isSuccessful) {
+                                            relationshipsViewModel.removeMutedPosts(userId)
+                                            FeedAdapter.removeFromMutedPostsCache(userId)
+                                            saveUserMutedToPrefs(userId, false)
+                                            Toast.makeText(context, "Unmuted", Toast.LENGTH_SHORT).show()
+
+                                            // Refresh feed to show posts again
+                                            getFeedViewModel.clearAllFeedData()
+                                            allFeedAdapter.submitItems(mutableListOf())
+                                            getAllFeed(1)
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error undoing mute: ${e.message}")
+                                    }
+                                }
+                            }
+                            .show()
+
                     } else {
-                        "Posts muted. You won't see posts from this user"
+                        // We just unmuted - refresh feed to show their posts
+                        Toast.makeText(context, "Posts unmuted. Refreshing feed...", Toast.LENGTH_SHORT).show()
+
+                        // Refresh the entire feed
+                        getFeedViewModel.clearAllFeedData()
+                        allFeedAdapter.submitItems(mutableListOf())
+                        getAllFeed(1)
                     }
 
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 } else {
+                    Log.e(TAG, "API call failed with code: ${response.code()}")
                     Toast.makeText(context, "Failed to update mute status", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Log.e("MuteToggle", "Error: ${e.message}", e)
+                Log.e(TAG, "Error in handleMuteToggle: ${e.message}", e)
                 Toast.makeText(context, "Network error", Toast.LENGTH_SHORT).show()
             }
         }
