@@ -180,7 +180,10 @@ class RestrictedAccountsActivity : AppCompatActivity() {
 
     private fun showEmptyState(isEmpty: Boolean) {
         emptyTextView.visibility = if (isEmpty) View.VISIBLE else View.GONE
-        emptyTextView.text = "No restricted accounts"
+        if (isEmpty) {
+            emptyTextView.text = "No restricted accounts\n\n🚫\n\nRestricted accounts won't be able to see when you're active or when you've read their messages"
+        }
         recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
     }
+    
 }
