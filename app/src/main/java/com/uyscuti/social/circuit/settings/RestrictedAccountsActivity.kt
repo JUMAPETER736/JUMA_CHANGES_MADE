@@ -185,5 +185,5 @@ class RestrictedAccountsActivity : AppCompatActivity() {
         }
         recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
     }
-    
+
 }
