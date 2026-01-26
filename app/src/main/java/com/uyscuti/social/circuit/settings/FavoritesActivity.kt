@@ -3,8 +3,8 @@ package com.uyscuti.social.circuit.settings
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.ProgressBar
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -29,7 +29,7 @@ class FavoritesActivity : AppCompatActivity() {
     private lateinit var toolbar: Toolbar
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
-    private lateinit var emptyTextView: TextView
+    private lateinit var emptyStateLayout: LinearLayout
     private lateinit var adapter: RelationshipUsersAdapter
     private val favoritesList = mutableListOf<UserRelationshipItem>()
 
@@ -51,7 +51,7 @@ class FavoritesActivity : AppCompatActivity() {
         toolbar = findViewById(R.id.toolbar)
         recyclerView = findViewById(R.id.recyclerView)
         progressBar = findViewById(R.id.progressBar)
-        emptyTextView = findViewById(R.id.emptyTextView)
+        emptyStateLayout = findViewById(R.id.emptyStateLayout)
     }
 
     private fun setupToolbar() {
@@ -202,16 +202,15 @@ class FavoritesActivity : AppCompatActivity() {
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
         recyclerView.visibility = if (show) View.GONE else View.VISIBLE
-        emptyTextView.visibility = View.GONE
+        emptyStateLayout.visibility = View.GONE
     }
 
     private fun showEmptyState(isEmpty: Boolean) {
         if (isEmpty) {
-            emptyTextView.visibility = View.VISIBLE
-            emptyTextView.text = "No favorites yet\n\n⭐\n\nAdd people to favorites to see their posts higher in your feed"
+            emptyStateLayout.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
         } else {
-            emptyTextView.visibility = View.GONE
+            emptyStateLayout.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
         }
     }
