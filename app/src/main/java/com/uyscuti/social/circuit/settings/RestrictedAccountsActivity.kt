@@ -75,10 +75,10 @@ class RestrictedAccountsActivity : AppCompatActivity() {
     }
 
     private fun loadRestrictedAccounts() {
-        showLoading(true)
-
         lifecycleScope.launch {
             try {
+                showLoading(true)
+
                 val response = withContext(Dispatchers.IO) {
                     retrofitInstance.apiService.getRestrictedUsers()
                 }
@@ -105,15 +105,19 @@ class RestrictedAccountsActivity : AppCompatActivity() {
                     restrictedList.clear()
                     restrictedList.addAll(items)
                     adapter.updateList(restrictedList)
+
+                    // Show empty state AFTER showLoading completes
                     showEmptyState(restrictedList.isEmpty())
+
+                    Log.d(TAG, "Successfully loaded ${restrictedList.size} restricted accounts")
                 } else {
                     Toast.makeText(this@RestrictedAccountsActivity, "Failed to load", Toast.LENGTH_SHORT).show()
+                    showEmptyState(true)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error: ${e.message}", e)
                 Toast.makeText(this@RestrictedAccountsActivity, "Network error", Toast.LENGTH_SHORT).show()
-            } finally {
-                showLoading(false)
+                showEmptyState(true)
             }
         }
     }
@@ -174,16 +178,39 @@ class RestrictedAccountsActivity : AppCompatActivity() {
     }
 
     private fun showLoading(show: Boolean) {
+        Log.d(TAG, "showLoading called with: $show")
+
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
-        recyclerView.visibility = if (show) View.GONE else View.VISIBLE
+
+        if (show) {
+            // When loading, hide both recyclerView and emptyTextView
+            recyclerView.visibility = View.GONE
+            emptyTextView.visibility = View.GONE
+        }
+        // When not loading, don't change recyclerView or emptyTextView visibility
+        // Let showEmptyState handle that
+
+        Log.d(TAG, "Loading state - progressBar: ${progressBar.visibility}, recyclerView: ${recyclerView.visibility}, emptyTextView: ${emptyTextView.visibility}")
     }
 
     private fun showEmptyState(isEmpty: Boolean) {
-        emptyTextView.visibility = if (isEmpty) View.VISIBLE else View.GONE
-        if (isEmpty) {
-            emptyTextView.text = "No restricted accounts\n\n🚫\n\nRestricted accounts won't be able to see when you're active or when you've read their messages"
-        }
-        recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
-    }
+        Log.d(TAG, "showEmptyState called with: $isEmpty")
+        Log.d(TAG, "emptyTextView visibility before: ${emptyTextView.visibility}")
+        Log.d(TAG, "recyclerView visibility before: ${recyclerView.visibility}")
+        Log.d(TAG, "restrictedList size: ${restrictedList.size}")
 
+        if (isEmpty) {
+            emptyTextView.visibility = View.VISIBLE
+            emptyTextView.text = "No restricted accounts\n\n🚫\n\nRestricted accounts won't be able to see when you're active or when you've read their messages"
+            recyclerView.visibility = View.GONE
+            progressBar.visibility = View.GONE
+        } else {
+            emptyTextView.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+            progressBar.visibility = View.GONE
+        }
+
+        Log.d(TAG, "emptyTextView visibility after: ${emptyTextView.visibility}")
+        Log.d(TAG, "recyclerView visibility after: ${recyclerView.visibility}")
+    }
 }
