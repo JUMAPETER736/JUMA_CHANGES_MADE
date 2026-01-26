@@ -17,7 +17,7 @@ class UserRelationshipsViewModel @Inject constructor(
     private val repository: UserRelationshipsRepository // Using Repository now
 ) : ViewModel() {
 
-    private val TAG = "UserRelationshipsVM"
+    private val TAG = "UserRelationshipsViewModel"
 
     // Close Friends
     private val _closeFriendIds = MutableStateFlow<Set<String>>(emptySet())
