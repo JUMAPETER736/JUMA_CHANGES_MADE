@@ -86,7 +86,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         loadMutedPosts()
     }
 
-    // FIXED showLoading method - Don't hide emptyStateLayout here
+    //  showLoading method - Don't hide emptyStateLayout here
     private fun showLoading(show: Boolean) {
         Log.d(TAG, "showLoading called with: $show")
 
@@ -103,7 +103,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         Log.d(TAG, "Loading state - progressBar: ${progressBar.visibility}, recyclerView: ${recyclerView.visibility}, emptyStateLayout: ${emptyStateLayout.visibility}")
     }
 
-    // FIXED showEmptyState method
+    //  showEmptyState method
     private fun showEmptyState(show: Boolean) {
         Log.d(TAG, "showEmptyState called with: $show")
         Log.d(TAG, "emptyStateLayout visibility before: ${emptyStateLayout.visibility}")
@@ -222,7 +222,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         }
     }
 
-    // ===== Get muted user IDs from ALL three sources (same as feed filtering) =====
+    //  Get muted user IDs from ALL three sources (same as feed filtering)
     private fun getMutedUserIds(): Set<String> {
         val allMutedIds = mutableSetOf<String>()
 
@@ -239,9 +239,9 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
 
         return allMutedIds
     }
-    
 
-    // ==================== OnFeedClickListener IMPLEMENTATION ====================
+
+    //  OnFeedClickListener IMPLEMENTATION
 
     override fun likeUnLikeFeed(position: Int, data: Post) {
         Toast.makeText(this, "Unmute the user to interact with their posts", Toast.LENGTH_SHORT).show()
@@ -294,7 +294,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         Toast.makeText(this, "Unmute the user to view images", Toast.LENGTH_SHORT).show()
     }
 
-    // ==================== UNMUTE FUNCTIONALITY ====================
+    //  UNMUTE FUNCTIONALITY
 
     private fun showUnmuteDialog(position: Int, data: Post) {
         val userId = data.author?.account?._id ?: return
