@@ -991,7 +991,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         followUnfollowLayout.visibility = View.GONE
     }
 
-    // ==================== MUTE TOGGLE (COMPLETE FIX) ====================
+    // ==================== ENHANCED DEBUG VERSION ====================
     private fun handleMuteToggle(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
@@ -1015,34 +1015,58 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 if (response.isSuccessful) {
                     Log.d(TAG, "API call successful. Updating ALL caches and UI...")
 
-                    // Update ALL THREE caches (just like hide posts)
+                    // Update ALL THREE caches
                     if (isMuted) {
                         relationshipsViewModel.removeMutedPosts(userId)
                         FeedAdapter.removeFromMutedPostsCache(userId)
-                        saveUserMutedToPrefs(userId, false) // ← Save to SharedPreferences
+                        saveUserMutedToPrefs(userId, false)
                     } else {
                         relationshipsViewModel.addMutedPosts(userId)
                         FeedAdapter.addToMutedPostsCache(userId)
-                        saveUserMutedToPrefs(userId, true) // ← Save to SharedPreferences
+                        saveUserMutedToPrefs(userId, true)
                     }
 
-                    // ===== CRITICAL: Remove posts from UI immediately when muting =====
+                    // ===== ENHANCED DEBUG: Find ALL possible author IDs =====
                     if (!isMuted) {
-                        // We just muted - remove all posts from this user RIGHT NOW
                         val currentPosts = getFeedViewModel.getAllFeedData()
                         Log.d(TAG, "Current feed has ${currentPosts.size} posts")
+                        Log.d(TAG, "Looking for posts from userId: $userId")
 
                         val positionsToRemove = mutableListOf<Int>()
 
-                        // Find ALL posts from this user (including reposts)
+                        // DETAILED LOGGING for each post
                         currentPosts.forEachIndexed { index, post ->
-                            val authorId = post.author?.account?._id
+                            // Try ALL possible ways to get the author ID
+                            val authorId1 = post.author?.account?._id
+                            val authorId2 = post.author?._id
+                            val ownerId = post.owner
                             val reposterId = post.repostedUser?.owner
-                            val posterId = reposterId ?: authorId
+                            val reposterId2 = post.repostedUser?._id
+                            val userId1 = post.user?._id
+                            val userId2 = post.userId
 
-                            if (posterId == userId) {
+                            // Log EVERYTHING for debugging
+                            Log.d(TAG, """
+                            Post #$index structure:
+                            - post.author?.account?._id = $authorId1
+                            - post.author?._id = $authorId2
+                            - post.owner = $ownerId
+                            - post.repostedUser?.owner = $reposterId
+                            - post.repostedUser?._id = $reposterId2
+                            - post.user?._id = $userId1
+                            - post.userId = $userId2
+                        """.trimIndent())
+
+                            // Check ALL possible matches
+                            val allPossibleIds = listOf(
+                                authorId1, authorId2, ownerId,
+                                reposterId, reposterId2,
+                                userId1, userId2
+                            ).filterNotNull()
+
+                            if (allPossibleIds.contains(userId)) {
                                 positionsToRemove.add(index)
-                                Log.d(TAG, "Found post at position $index from muted user")
+                                Log.d(TAG, "✓ MATCH FOUND at position $index!")
                             }
                         }
 
@@ -1056,7 +1080,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
                             Log.d(TAG, "After removal: ${currentPosts.size} posts remain")
 
-                            // Update adapter - this makes the posts disappear
+                            // Update adapter
                             allFeedAdapter.submitItems(currentPosts)
 
                             // Notify adapter about removals
@@ -1072,13 +1096,12 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
                             Log.d(TAG, "UI updated - removed ${positionsToRemove.size} posts")
                         } else {
-                            Log.d(TAG, "No posts from this user found in current feed")
+                            Log.d(TAG, "⚠️ NO POSTS FOUND! Check the logs above to see the actual post structure")
                         }
 
-                        // Show Snackbar with Undo (just like hide posts)
+                        // Show Snackbar with Undo
                         Snackbar.make(feedListView, "Posts muted", Snackbar.LENGTH_LONG)
                             .setAction("Undo") {
-                                // Undo mute
                                 lifecycleScope.launch {
                                     try {
                                         val unmuteResponse = withContext(Dispatchers.IO) {
@@ -1090,7 +1113,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                                             saveUserMutedToPrefs(userId, false)
                                             Toast.makeText(context, "Unmuted", Toast.LENGTH_SHORT).show()
 
-                                            // Refresh feed to show posts again
+                                            // Refresh feed
                                             getFeedViewModel.clearAllFeedData()
                                             allFeedAdapter.submitItems(mutableListOf())
                                             getAllFeed(1)
@@ -1103,10 +1126,9 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                             .show()
 
                     } else {
-                        // We just unmuted - refresh feed to show their posts
+                        // Unmuted - refresh feed
                         Toast.makeText(context, "Posts unmuted. Refreshing feed...", Toast.LENGTH_SHORT).show()
 
-                        // Refresh the entire feed
                         getFeedViewModel.clearAllFeedData()
                         allFeedAdapter.submitItems(mutableListOf())
                         getAllFeed(1)
