@@ -80,6 +80,8 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         loadHiddenPosts()
     }
 
+    // ==================== REPLACE ONLY THESE METHODS IN HiddenFeedPostsActivity ====================
+
     private fun loadHiddenPosts() {
         lifecycleScope.launch {
             try {
@@ -93,8 +95,13 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                 Log.d(TAG, "Found ${hiddenPostIds.size} hidden post IDs: $hiddenPostIds")
 
                 if (hiddenPostIds.isEmpty()) {
-                    showEmptyState(true)
+                    // Clear the list and adapter first
+                    hiddenPosts.clear()
+                    feedAdapter.submitItems(mutableListOf())
+
                     showLoading(false)
+                    showEmptyState(true)
+                    Log.d(TAG, "No hidden posts found - showing empty state")
                     return@launch
                 }
 
@@ -147,10 +154,15 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                 // Update adapter
                 feedAdapter.submitItems(hiddenPosts.toMutableList())
 
-                showEmptyState(hiddenPosts.isEmpty())
+                // Always check if empty after loading
                 showLoading(false)
-
-                Log.d(TAG, "Successfully loaded ${hiddenPosts.size} hidden posts")
+                if (hiddenPosts.isEmpty()) {
+                    showEmptyState(true)
+                    Log.d(TAG, "No hidden posts found after searching - showing empty state")
+                } else {
+                    showEmptyState(false)
+                    Log.d(TAG, "Successfully loaded ${hiddenPosts.size} hidden posts")
+                }
 
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading hidden posts: ${e.message}", e)
@@ -168,14 +180,90 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
         recyclerView.visibility = if (show) View.GONE else View.VISIBLE
-        emptyStateLayout.visibility = View.GONE // Changed
+        emptyStateLayout.visibility = View.GONE
+
+        Log.d(TAG, "showLoading: $show")
     }
 
     private fun showEmptyState(show: Boolean) {
-        emptyStateLayout.visibility = if (show) View.VISIBLE else View.GONE // Changed
+        emptyStateLayout.visibility = if (show) View.VISIBLE else View.GONE
         recyclerView.visibility = if (show) View.GONE else View.VISIBLE
+        progressBar.visibility = View.GONE
+
+        Log.d(TAG, "showEmptyState: $show (hiddenPosts size: ${hiddenPosts.size})")
     }
 
+    private fun handleUnhidePost(position: Int, data: Post) {
+        val postId = data._id
+
+        Log.d(TAG, "Unhiding post: $postId at position: $position")
+
+        // Remove from SharedPreferences
+        with(sharedPrefs.edit()) {
+            remove(postId)
+            remove("${postId}_timestamp")
+            apply()
+        }
+
+        // Remove from FeedAdapter cache
+        FeedAdapter.removeFromHiddenPostsCache(postId)
+
+        // Remove from list and adapter
+        if (position >= 0 && position < hiddenPosts.size) {
+            val removedPost = hiddenPosts.removeAt(position)
+            feedAdapter.submitItems(hiddenPosts.toMutableList())
+            feedAdapter.notifyItemRemoved(position)
+            feedAdapter.notifyItemRangeChanged(position, hiddenPosts.size)
+
+            Log.d(TAG, "Removed post from list. Remaining: ${hiddenPosts.size}")
+
+            // Check if list is now empty BEFORE showing Snackbar
+            if (hiddenPosts.isEmpty()) {
+                showEmptyState(true)
+                Log.d(TAG, "No more hidden posts - showing empty state")
+            }
+
+            // Show snackbar with undo option
+            Snackbar.make(
+                recyclerView,
+                "Post unhidden",
+                Snackbar.LENGTH_LONG
+            ).setAction("Undo") {
+                // Re-hide the post
+                with(sharedPrefs.edit()) {
+                    putBoolean(postId, true)
+                    putLong("${postId}_timestamp", System.currentTimeMillis())
+                    apply()
+                }
+                FeedAdapter.addToHiddenPostsCache(postId)
+
+                Log.d(TAG, "Undo: Re-hiding post $postId")
+
+                // Add back to list
+                hiddenPosts.add(position, removedPost)
+                feedAdapter.submitItems(hiddenPosts.toMutableList())
+                feedAdapter.notifyItemInserted(position)
+
+                // Hide empty state since we have posts again
+                showEmptyState(false)
+
+                Toast.makeText(this, "Post hidden again", Toast.LENGTH_SHORT).show()
+            }.show()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d(TAG, "onResume: Reloading hidden posts")
+
+        // Clear everything before reload
+        hiddenPosts.clear()
+        feedAdapter.submitItems(mutableListOf())
+
+        // Reload when returning to this screen
+        loadHiddenPosts()
+    }
+    
     // ==================== OnFeedClickListener IMPLEMENTATION ====================
 
     override fun likeUnLikeFeed(position: Int, data: Post) {
@@ -245,68 +333,7 @@ class HiddenFeedPostsActivity : AppCompatActivity(), OnFeedClickListener {
             .show()
     }
 
-    private fun handleUnhidePost(position: Int, data: Post) {
-        val postId = data._id
 
-        Log.d(TAG, "Unhiding post: $postId at position: $position")
 
-        // Remove from SharedPreferences
-        with(sharedPrefs.edit()) {
-            remove(postId)
-            remove("${postId}_timestamp")
-            apply()
-        }
 
-        // Remove from FeedAdapter cache
-        FeedAdapter.removeFromHiddenPostsCache(postId)
-
-        // Remove from list and adapter
-        if (position >= 0 && position < hiddenPosts.size) {
-            val removedPost = hiddenPosts.removeAt(position)
-            feedAdapter.removeItem(position)
-            feedAdapter.notifyItemRemoved(position)
-            feedAdapter.notifyItemRangeChanged(position, hiddenPosts.size)
-
-            Log.d(TAG, "Removed post from list. Remaining: ${hiddenPosts.size}")
-
-            // Show snackbar with undo option
-            Snackbar.make(
-                recyclerView,
-                "Post unhidden",
-                Snackbar.LENGTH_LONG
-            ).setAction("Undo") {
-                // Re-hide the post
-                with(sharedPrefs.edit()) {
-                    putBoolean(postId, true)
-                    putLong("${postId}_timestamp", System.currentTimeMillis())
-                    apply()
-                }
-                FeedAdapter.addToHiddenPostsCache(postId)
-
-                Log.d(TAG, "Undo: Re-hiding post $postId")
-
-                // Add back to list
-                hiddenPosts.add(position, removedPost)
-                feedAdapter.submitItems(hiddenPosts.toMutableList())
-                feedAdapter.notifyItemInserted(position)
-
-                showEmptyState(false)
-
-                Toast.makeText(this, "Post hidden again", Toast.LENGTH_SHORT).show()
-            }.show()
-        }
-
-        // Check if list is now empty
-        if (hiddenPosts.isEmpty()) {
-            showEmptyState(true)
-            Log.d(TAG, "No more hidden posts")
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Log.d(TAG, "onResume: Reloading hidden posts")
-        // Reload when returning to this screen
-        loadHiddenPosts()
-    }
 }
