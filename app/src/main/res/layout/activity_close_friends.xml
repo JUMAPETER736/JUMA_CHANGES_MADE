@@ -50,7 +50,7 @@
                 android:layout_height="80dp"
                 android:layout_marginBottom="16dp"
                 android:src="@drawable/ic_people_outline"
-                android:contentDescription="@string/close_friends_icon"
+                android:contentDescription="Close friends icon"
                 app:tint="@android:color/black"
                 android:alpha="0.6" />
 
