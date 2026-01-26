@@ -84,6 +84,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     }
 
     private fun loadMutedPosts() {
+
         lifecycleScope.launch {
             try {
                 showLoading(true)

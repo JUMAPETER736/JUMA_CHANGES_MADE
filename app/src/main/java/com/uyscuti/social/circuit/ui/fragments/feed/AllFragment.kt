@@ -551,6 +551,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     }
 
     private suspend fun loadBlockedUsers() {
+
         try {
             Log.d(TAG, "Loading blocked users...")
 
