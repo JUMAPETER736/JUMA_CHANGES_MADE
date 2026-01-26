@@ -425,6 +425,9 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
         observeRelationships()
         Log.d(TAG, "Observing the Relationships the User have....")
+
+        loadMutedPostsFromPrefs()
+        Log.d(TAG, "Loaded muted posts from SharedPreferences")
     }
 
     // Add this new method to observe relationships
