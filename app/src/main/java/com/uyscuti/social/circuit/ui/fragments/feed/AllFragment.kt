@@ -1370,6 +1370,39 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
+    // Add these helper methods after loadBlockedUsers()
+    private fun isUserPostsMutedInPrefs(userId: String): Boolean {
+        val sharedPrefs = requireContext().getSharedPreferences("MutedPosts", Context.MODE_PRIVATE)
+        return sharedPrefs.getBoolean(userId, false)
+    }
+
+    private fun saveUserMutedToPrefs(userId: String, isMuted: Boolean) {
+        val sharedPrefs = requireContext().getSharedPreferences("MutedPosts", Context.MODE_PRIVATE)
+        with(sharedPrefs.edit()) {
+            if (isMuted) {
+                putBoolean(userId, true)
+            } else {
+                remove(userId)
+            }
+            apply()
+        }
+        Log.d(TAG, "Saved muted state for user $userId: $isMuted")
+    }
+
+    private fun loadMutedPostsFromPrefs() {
+        val sharedPrefs = requireContext().getSharedPreferences("MutedPosts", Context.MODE_PRIVATE)
+        val allEntries = sharedPrefs.all
+
+        allEntries.forEach { (userId, isMuted) ->
+            if (isMuted == true) {
+                FeedAdapter.addToMutedPostsCache(userId)
+                relationshipsViewModel.addMutedPosts(userId)
+                Log.d(TAG, "Loaded muted user from prefs: $userId")
+            }
+        }
+        Log.d(TAG, "Loaded ${allEntries.size} muted users from SharedPreferences")
+    }
+
     private fun showReportConfirmationDialog(feedId: String) {
         val builder = AlertDialog.Builder(requireContext())
         builder.setTitle("Report User")
