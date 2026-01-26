@@ -503,12 +503,14 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                     // Check if user is blocked
                     val isBlocked = posterId?.let { blockedUserIds.contains(it) } ?: false
 
-                    // Check if posts are muted
+                    // Check if posts are muted - CHECK ALL THREE SOURCES (just like hide posts)
                     val isPostsMuted = posterId?.let {
-                        relationshipsViewModel.isPostsMuted(it)
+                        relationshipsViewModel.isPostsMuted(it) ||
+                                FeedAdapter.isUserPostsMuted(it) ||
+                                isUserPostsMutedInPrefs(it)  // ← CRITICAL: Check SharedPreferences
                     } ?: false
 
-                    // Check if user is restricted (optional: you may want to show restricted user posts differently)
+                    // Check if user is restricted (optional)
                     val isRestricted = posterId?.let {
                         relationshipsViewModel.isRestricted(it)
                     } ?: false
