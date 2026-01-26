@@ -146,7 +146,7 @@ class FeedAdapter(
         private val hiddenPostsCache = mutableSetOf<String>()
 
 
-        //  HIDDEN POSTS METHODS 
+        //  HIDDEN POSTS METHODS
 
 
 

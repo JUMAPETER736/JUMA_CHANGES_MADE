@@ -328,15 +328,18 @@ class UserFollowingFragment : AppCompatActivity() {
 
     private fun filterList(query: String) {
         filteredFollowingList.clear()
+
         if (query.isEmpty()) {
             filteredFollowingList.addAll(followingList)
         } else {
             val filteredList = followingList.filter { user ->
-                user.username.contains(query, ignoreCase = true) ||
-                        user.fullName.contains(query, ignoreCase = true)
+                user.firstName.contains(query, ignoreCase = true) ||
+                        user.lastName.contains(query, ignoreCase = true) ||
+                        user.username.contains(query, ignoreCase = true)
             }
             filteredFollowingList.addAll(filteredList)
         }
+
         followingAdapter.notifyDataSetChanged()
 
         // Show/hide empty view
