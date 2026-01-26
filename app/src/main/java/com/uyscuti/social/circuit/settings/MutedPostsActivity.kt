@@ -84,12 +84,11 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     }
 
     private fun loadMutedPosts() {
-
         lifecycleScope.launch {
             try {
                 showLoading(true)
 
-                // First, get the list of muted users
+                // Get the list of muted users
                 val mutedUsersResponse = withContext(Dispatchers.IO) {
                     retrofitInstance.apiService.getMutedPostsUsers()
                 }
@@ -97,11 +96,11 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                 if (mutedUsersResponse.isSuccessful && mutedUsersResponse.body()?.success == true) {
                     // Extract muted user IDs
                     mutedUserIds.clear()
-                    mutedUsersResponse.body()?.data?.forEach { mutedPostsItem ->
+                    mutedUsersResponse.body()!!.data.forEach { mutedPostsItem ->
                         mutedPostsItem.user?._id?.let { mutedUserIds.add(it) }
                     }
 
-                    Log.d(TAG, "Found ${mutedUserIds.size} muted users: $mutedUserIds")
+                    Log.d(TAG, "Found ${mutedUserIds.size} muted user IDs: $mutedUserIds")
 
                     if (mutedUserIds.isEmpty()) {
                         showEmptyState(true)
@@ -109,65 +108,53 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                         return@launch
                     }
 
-                    // IMPORTANT: Temporarily clear the muted cache so getAllFeed returns all posts
+                    mutedPosts.clear()
+
+                    // ===== CRITICAL: Temporarily disable muted posts filtering =====
                     val originalMutedUsers = FeedAdapter.getMutedPostsUsers().toSet()
                     FeedAdapter.clearMutedPostsCache()
 
-                    // Fetch all posts from the feed and filter posts from muted users
-                    mutedPosts.clear()
+                    try {
+                        // Search through multiple pages to find muted posts
+                        for (page in 1..20) {
+                            val response = withContext(Dispatchers.IO) {
+                                retrofitInstance.apiService.getAllFeed(page.toString())
+                            }
 
-                    // Fetch from feed and filter
-                    val response = withContext(Dispatchers.IO) {
-                        retrofitInstance.apiService.getAllFeed("1")
-                    }
+                            if (response.isSuccessful && response.body() != null) {
+                                val allPosts = response.body()!!.data.data.posts
 
-                    if (response.isSuccessful && response.body() != null) {
-                        val allPosts = response.body()!!.data.data.posts
+                                Log.d(TAG, "Page $page: Received ${allPosts.size} posts")
 
-                        // Filter posts from muted users
-                        val foundMutedPosts = allPosts.filter { post ->
-                            mutedUserIds.contains(post.author._id)
-                        }
+                                // Filter for posts from muted users
+                                val foundMutedPosts = allPosts.filter { post ->
+                                    val authorId = post.author?._id ?: post.author?.account?._id
+                                    val isMuted = mutedUserIds.contains(authorId)
 
-                        mutedPosts.addAll(foundMutedPosts)
-                        Log.d(TAG, "Found ${foundMutedPosts.size} muted posts from page 1")
-
-                        // If we need more pages to find all muted posts
-                        if (foundMutedPosts.size < 10 && mutedUserIds.size > 1) {
-                            // Try fetching more pages
-                            for (page in 2..5) { // Check up to 5 pages
-                                val pageResponse = withContext(Dispatchers.IO) {
-                                    retrofitInstance.apiService.getAllFeed(page.toString())
-                                }
-
-                                if (pageResponse.isSuccessful && pageResponse.body() != null) {
-                                    val pagePosts = pageResponse.body()!!.data.data.posts
-                                    val pageMutedPosts = pagePosts.filter { post ->
-                                        mutedUserIds.contains(post.author._id) &&
-                                                !mutedPosts.any { it._id == post._id }
+                                    if (isMuted) {
+                                        Log.d(TAG, "Found muted post: ${post._id} from user $authorId")
                                     }
-                                    mutedPosts.addAll(pageMutedPosts)
-                                    Log.d(TAG, "Found ${pageMutedPosts.size} more muted posts from page $page")
+
+                                    isMuted && !mutedPosts.any { it._id == post._id }
                                 }
+
+                                mutedPosts.addAll(foundMutedPosts)
+                                Log.d(TAG, "Page $page: Found ${foundMutedPosts.size} muted posts (Total: ${mutedPosts.size})")
+
+                                // Stop if we found enough posts or reached end of feed
+                                if (allPosts.isEmpty() || mutedPosts.size >= 50) {
+                                    break
+                                }
+                            } else {
+                                break
                             }
                         }
+                    } finally {
+                        // ===== CRITICAL: Restore the muted cache =====
+                        FeedAdapter.setMutedPostsUsers(originalMutedUsers)
                     }
 
-                    // IMPORTANT: Restore the muted cache
-                    FeedAdapter.setMutedPostsUsers(originalMutedUsers)
-
-                    // Sort by post creation date (most recent first)
-                    mutedPosts.sortByDescending { it.createdAt }
-
-                    // Update adapter
-                    feedAdapter.submitItems(mutedPosts.toMutableList())
-
-                    showEmptyState(mutedPosts.isEmpty())
-                    showLoading(false)
-
-                    Log.d(TAG, "Successfully loaded ${mutedPosts.size} muted posts from ${mutedUserIds.size} users")
-
-                    // Sort by post creation date (most recent first)
+                    // Sort by creation date (most recent first)
                     mutedPosts.sortByDescending { it.createdAt }
 
                     // Update adapter
