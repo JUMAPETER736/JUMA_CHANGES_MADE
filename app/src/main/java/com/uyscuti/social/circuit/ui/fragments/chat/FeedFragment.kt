@@ -721,6 +721,35 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun successEvent(event: HideFeedFloatingActionButton) {
+        Log.d("HideFeedFloatingActionButton", "successEvent: HideFeedFloatingActionButton ")
+
+
+                fileFloatingActionButton.visibility = View.GONE
+                vnFloatingActionButton.visibility = View.GONE
+                fabAction.visibility = View.GONE
+                tabLayout.visibility = View.VISIBLE
+                val params = viewPager2.layoutParams as ViewGroup.MarginLayoutParams
+                val newMarginBottomPx =
+                    resources.getDimensionPixelSize(R.dimen.feed_new_margin_bottom) // Replace with your desired margin in pixels
+                params.bottomMargin = newMarginBottomPx
+                viewPager2.layoutParams = params
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun successEvent(event: ShowFeedFloatingActionButton) {
+
+        fabAction.visibility = View.VISIBLE
+        tabLayout.visibility = View.VISIBLE
+        vnFloatingActionButton.visibility = View.GONE
+        val params = viewPager2.layoutParams as ViewGroup.MarginLayoutParams
+        val newMarginBottomPx =
+            resources.getDimensionPixelSize(R.dimen.feed_reset_margin_bottom)
+        // Replace with your desired margin in pixels
+        params.bottomMargin = newMarginBottomPx
+        viewPager2.layoutParams = params
+    }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun showVNDialog() {
@@ -737,33 +766,34 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         wave = dialog.findViewById<WaveformSeekBar>(R.id.wave)!!
         playAudioLayout = dialog.findViewById<LinearLayout>(R.id.playVNRecorded)!!
 
-        // Initialize the waveform container for live recording visualization
+        // Get the waveform container from layout
         val waveDotsContainer = dialog.findViewById<LinearLayout>(R.id.waveDotsContainer)!!
 
-        // Create WaveFormView programmatically and add to container
-      
+        // Create and add WaveFormView for live recording visualization
         waveForm = WaveFormView(requireContext(), null).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT
             )
         }
-
         waveDotsContainer.removeAllViews()
         waveDotsContainer.addView(waveForm)
 
-        // Set initial visibility states
+        // Set initial visibility - CRITICAL for showing timer and waveform during recording
         timerTv!!.visibility = View.VISIBLE
+        timerTv!!.text = "00:00.00"
         playAudioLayout!!.visibility = View.GONE
         wave!!.visibility = View.GONE
         waveForm!!.visibility = View.VISIBLE
+
+        Log.d(TAG, "showVNDialog: Views initialized - timerTv visible: ${timerTv!!.visibility == View.VISIBLE}")
+        Log.d(TAG, "showVNDialog: waveForm visible: ${waveForm!!.visibility == View.VISIBLE}")
 
         val dialogView = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
         dialogView?.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.slide_up))
 
         val selectableItemBackground = TypedValue()
 
-        // Apply ripple effect
         deleteVN!!.context?.theme?.resolveAttribute(
             android.R.attr.selectableItemBackground, selectableItemBackground, true
         )
@@ -777,6 +807,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             android.R.attr.selectableItemBackground, selectableItemBackground, true
         )
 
+        // Start recording AFTER all views are initialized
         startRecording()
 
         deleteVN!!.setOnClickListener {
@@ -793,6 +824,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
 
         recordVN!!.setOnClickListener {
+            Log.d(TAG, "recordVN clicked - isPaused: $isPaused, isRecording: $isRecording")
             when {
                 isPaused -> resumeRecording()
                 isRecording -> pauseRecording()
@@ -823,38 +855,18 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             dialog.dismiss()
         }
 
+        dialog.setOnDismissListener {
+            // Clean up when dialog is dismissed
+            if (isRecording && !isPaused) {
+                try {
+                    timer.stop()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error stopping timer: ${e.message}")
+                }
+            }
+        }
+
         dialog.show()
-    }
-
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun successEvent(event: HideFeedFloatingActionButton) {
-        Log.d("HideFeedFloatingActionButton", "successEvent: HideFeedFloatingActionButton ")
-
-
-                fileFloatingActionButton.visibility = View.GONE
-                vnFloatingActionButton.visibility = View.GONE
-                fabAction.visibility = View.GONE
-                tabLayout.visibility = View.VISIBLE
-                val params = viewPager2.layoutParams as ViewGroup.MarginLayoutParams
-                val newMarginBottomPx =
-                    resources.getDimensionPixelSize(R.dimen.feed_new_margin_bottom) // Replace with your desired margin in pixels
-                params.bottomMargin = newMarginBottomPx
-                viewPager2.layoutParams = params
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun successEvent(event: ShowFeedFloatingActionButton) {
-
-        fabAction.visibility = View.VISIBLE
-        tabLayout.visibility = View.VISIBLE
-        vnFloatingActionButton.visibility = View.GONE
-        val params = viewPager2.layoutParams as ViewGroup.MarginLayoutParams
-        val newMarginBottomPx =
-            resources.getDimensionPixelSize(R.dimen.feed_reset_margin_bottom)
-        // Replace with your desired margin in pixels
-        params.bottomMargin = newMarginBottomPx
-        viewPager2.layoutParams = params
     }
 
 
@@ -968,7 +980,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
 
-
     private val waveHandler = Handler(Looper.getMainLooper())
 
     private val onRecordWaveRunnable = object : Runnable {
@@ -1064,13 +1075,34 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
     override fun onTimerTick(duration: String) {
-        timerTv!!.text = duration
+        try {
+            Log.d("onTimerTick", "Timer tick: $duration")
 
-        var amplitude = mediaRecorder!!.maxAmplitude.toFloat()
-        amplitude = if (amplitude > 0) amplitude else 130f
-//        Log.d("onTimerTick", "onTimerTick: media recorder amplitude: ${mediaRecorder?.maxAmplitude}")
-        waveForm!!.addAmplitude(amplitude)
+            // Update timer text
+            timerTv?.text = duration
 
+            // Get and add amplitude to waveform
+            mediaRecorder?.let { recorder ->
+                try {
+                    var amplitude = recorder.maxAmplitude.toFloat()
+                    amplitude = if (amplitude > 0) amplitude else 130f
+                    Log.d("onTimerTick", "Amplitude: $amplitude")
+
+                    waveForm?.let {
+                        it.addAmplitude(amplitude)
+                        Log.d("onTimerTick", "Amplitude added to waveform")
+                    } ?: Log.e("onTimerTick", "waveForm is null!")
+
+                } catch (e: Exception) {
+                    Log.e("onTimerTick", "Error getting amplitude: ${e.message}")
+                    e.printStackTrace()
+                }
+            } ?: Log.e("onTimerTick", "mediaRecorder is null!")
+
+        } catch (e: Exception) {
+            Log.e("onTimerTick", "Error in onTimerTick: ${e.message}")
+            e.printStackTrace()
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
