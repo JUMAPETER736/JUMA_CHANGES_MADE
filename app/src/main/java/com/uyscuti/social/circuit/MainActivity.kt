@@ -510,6 +510,8 @@ class MainActivity : AppCompatActivity(),
     private var isAudioVNPlaying = false
     private var isAudioVNPaused = false
 
+
+
     private var isVnResuming = false
 
          private var recordingStartTime = 0L
@@ -719,10 +721,14 @@ class MainActivity : AppCompatActivity(),
 
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
          private fun startRecording() {
+             Log.d("VoiceNote", "Start Recording called")
+
              if (!permissionGranted) {
+                 Log.e("VoiceNote", "No permission!")
                  ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
                  return
              }
+
              try {
                  if (player?.isPlaying == true) {
                      stopPlaying()
@@ -750,30 +756,37 @@ class MainActivity : AppCompatActivity(),
                  // Reset and start timer
                  recordingStartTime = System.currentTimeMillis()
                  recordingElapsedTime = 0L
+
+                 Log.d("VoiceNote", "Starting timer...")
                  updateRecordingTimer() // Start the timer
 
+                 // Update UI
                  binding.recordVN.setImageResource(R.drawable.baseline_pause_white_24)
                  binding.sendVN.setBackgroundResource(R.drawable.ic_ripple)
                  binding.deleteVN.setBackgroundResource(R.drawable.ic_ripple)
-
-                 binding.recordingLayout.visibility = View.VISIBLE
-                 updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
-
                  binding.deleteVN.isClickable = true
                  binding.sendVN.isClickable = true
+
+                 // Show the entire VN layout, not just recordingLayout
+                 binding.VNLayout.visibility = View.VISIBLE  
+
+                 updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
+
                  recordedAudioFiles.add(outputFile)
 
                  // Initialize waveform with dots
+                 Log.d("VoiceNote", "📊 Initializing waveform...")
                  initializeDottedWaveform()
 
                  // Start audio listening in background thread
                  Thread {
+                     Log.d("VoiceNote", "🎵 Starting audio listening thread...")
                      listenToAudio()
                  }.start()
 
-                 Log.d("VNFile", outputFile)
+                 Log.d("VNFile", "✅ Recording started: $outputFile")
              } catch (e: Exception) {
-                 Log.d("VNFile", "Failed to record: ${e.message}")
+                 Log.e("VNFile", "❌ Failed to record: ${e.message}", e)
                  e.printStackTrace()
              }
          }
@@ -2248,6 +2261,7 @@ class MainActivity : AppCompatActivity(),
             }
             binding.VNLayout.visibility = View.GONE
         }
+
         binding.sendVN.setOnClickListener {
 
 
@@ -2271,6 +2285,29 @@ class MainActivity : AppCompatActivity(),
                 }
 
 
+            }
+        }
+
+
+        binding.recordVN.setOnClickListener {
+            Log.d("VoiceNote", "🎤 Record button clicked - isPaused: $isPaused, isRecording: $isRecording")
+
+            when {
+                isPaused -> {
+                    Log.d("VoiceNote", "▶️ Resuming recording")
+                    resumeRecording()
+                }
+                isRecording -> {
+                    Log.d("VoiceNote", "⏸️ Pausing recording")
+                    pauseRecording()
+                }
+                else -> {
+                    Log.d("VoiceNote", "🎙️ Starting new recording")
+                    // Show VN layout and start recording
+                    binding.VNLayout.visibility = View.VISIBLE  // Changed from VNLayout
+                    binding.motionLayout.visibility = View.VISIBLE  // Show comment sheet if needed
+                    startRecording()
+                }
             }
         }
 
