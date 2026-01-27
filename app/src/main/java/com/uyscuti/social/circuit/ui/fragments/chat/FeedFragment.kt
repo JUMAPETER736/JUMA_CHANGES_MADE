@@ -180,7 +180,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         )
     }
 
-
     private var deleteVN: ImageView? = null
     private var recordVN: ImageView? = null
     private lateinit var playVnAudioBtn: ImageView
@@ -189,11 +188,14 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     private var timerTv: TextView? = null
     private var playerTimerTv: LinearLayout? = null
     private var secondTimerTv: TextView? = null
-    private var thirdTimerTv: TextView? = null
+
 
     private var waveForm: WaveFormView? = null
     private var wave: WaveformSeekBar? = null
     private var playAudioLayout: LinearLayout? = null
+
+
+
 
     private var wifiAnimation: AnimationDrawable? = null
 
