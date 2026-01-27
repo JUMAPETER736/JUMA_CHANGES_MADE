@@ -1,6 +1,9 @@
 package com.uyscuti.social.circuit.ui.fragments.chat
 
 import android.Manifest
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
@@ -22,8 +25,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
+import android.view.animation.LinearInterpolator
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.OptIn
@@ -74,19 +79,21 @@ import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.ui.fragments.feed.AllFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.FavoriteFragment
 import com.uyscuti.sharedmodule.UploadFeedActivity
+import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.social.circuit.adapter.FragmentPageAdapter
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.Account
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.Author
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.Avatar
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.CoverImage
-import com.uyscuti.social.network.api.response.getfeedandresposts.Duration
-import com.uyscuti.social.network.api.response.getfeedandresposts.File
-import com.uyscuti.social.network.api.response.getfeedandresposts.FileName
-import com.uyscuti.social.network.api.response.getfeedandresposts.FileType
-import com.uyscuti.social.network.api.response.getfeedandresposts.NumberOfPage
-import com.uyscuti.social.network.api.response.getfeedandresposts.Thumbnail
+import com.uyscuti.social.network.api.response.posts.Account
+import com.uyscuti.social.network.api.response.posts.Author
+import com.uyscuti.social.network.api.response.posts.Avatar
+import com.uyscuti.social.network.api.response.posts.CoverImage
+import com.uyscuti.social.network.api.response.posts.Duration
+import com.uyscuti.social.network.api.response.posts.FileName
+import com.uyscuti.social.network.api.response.posts.FileType
+import com.uyscuti.social.network.api.response.posts.NumberOfPageX
+import com.uyscuti.social.network.api.response.posts.Post
+import com.uyscuti.social.network.api.response.posts.RepostedUser
+import com.uyscuti.social.network.api.response.posts.ThumbnailX
 import com.uyscuti.social.network.utils.LocalStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -98,6 +105,7 @@ import org.greenrobot.eventbus.ThreadMode
 import java.io.IOException
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+import java.io.File
 
 
 private const val ARG_PARAM1 = "param1"
@@ -110,9 +118,34 @@ private const val REQUEST_UPLOAD_FEED_ACTIVITY = 1010
 class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
 
+    companion object {
+
+        private const val FEED_POST_POSITION_FROM_SHORTS = "feed_post_position_from_shorts"
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+
+        fun feedPostFromShorts(feedPostPositionFromShorts: Int = -1): FeedFragment {
+            val feedFragment = FeedFragment()
+
+            val args = Bundle()
+            feedPostPositionFromShorts.let {
+                args.putInt(FEED_POST_POSITION_FROM_SHORTS, it)
+            }
+            feedFragment.arguments = args
+            return feedFragment
+        }
+    }
+
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
+    private lateinit var uploadSeekBar: SeekBar
     private val feedMultipleImageViewFragment : FeedMultipleImageViewFragment? = null
     private lateinit var tabLayout: TabLayout
     private lateinit var viewPager2: ViewPager2
@@ -148,28 +181,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
 
-    private var clicked = false
-
-    private var isPaused = false
-    private var isRecording = false
-    private lateinit var outputFile: String
-    private var mediaRecorder: MediaRecorder? = null
-    private lateinit var amplitudes: ArrayList<Float>
-    private var player: MediaPlayer? = null
-    private val recordedAudioFiles = mutableListOf<String>()
-    private var outputVnFile: String = ""
-    private var isAudioVNPlaying = false
-    private var isAudioVNPaused = false
-
-    private var isVnResuming = false
-
-    private lateinit var timer: Timer
-    private var amps = 0
-
-    var vnRecordAudioPlaying = false
-    var vnRecordProgress = 0
-    var isOnRecordDurationOnPause = false
-    private var wasPaused = false
     private var deleteVN: ImageView? = null
     private var recordVN: ImageView? = null
     private lateinit var playVnAudioBtn: ImageView
@@ -195,6 +206,42 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     private lateinit var settings: SharedPreferences
     private val PREFS_NAME = "LocalSettings"
 
+
+
+    // UPLOAD STATE & PROGRESS
+
+    private var progressAnimator: ValueAnimator? = null
+    private var isUploadInProgress = false
+
+
+    // AUDIO RECORDING & PLAYBACK
+
+    private var mediaRecorder: MediaRecorder? = null
+    private var player: MediaPlayer? = null
+    private lateinit var outputFile: String
+    private var outputVnFile: String = ""
+    private val recordedAudioFiles = mutableListOf<String>()
+    private lateinit var amplitudes: ArrayList<Float>
+    private lateinit var timer: Timer
+    private var amps = 0
+
+
+    // AUDIO STATE FLAGS
+
+    private var isRecording = false
+    private var isPaused = false
+    private var isAudioVNPlaying = false
+    private var isAudioVNPaused = false
+    private var isVnResuming = false
+    private var vnRecordAudioPlaying = false
+    private var isOnRecordDurationOnPause = false
+    private var wasPaused = false
+
+
+    // GENERAL STATE FLAGS
+
+    private var clicked = false
+    private var vnRecordProgress = 0
     private var feedPostPositionFromShorts = -1
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -435,312 +482,102 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_UPLOAD_FEED_ACTIVITY && resultCode == Activity.RESULT_OK) {
+            startUploadAnimation()
+            val mixedFilesData = data?.getStringExtra("mixedFiles")
+            val caption = data?.getStringExtra("caption")
+            val tags = data?.getStringExtra("tags")
+            val contentType = data?.getStringExtra("contentType")
+            val dataList = mixedFilesData?.let { deserializeFeedUploadDataList(it) } ?: mutableListOf()
 
-        if (requestCode == REQUEST_UPLOAD_FEED_ACTIVITY) {
-            if (resultCode == Activity.RESULT_OK) {
+            val filesList = ArrayList<com.uyscuti.social.network.api.response.posts.File>()
+            val fileTypes: MutableList<com.uyscuti.social.network.api.response.posts.FileType> = mutableListOf()
+            val duration: MutableList<com.uyscuti.social.network.api.response.posts.Duration> = mutableListOf()
+            val fileIds: MutableList<String> = mutableListOf()
+            val thumbnail: MutableList<ThumbnailX> = mutableListOf()
+            val numberOfPages: MutableList<NumberOfPageX> = mutableListOf()
+            val fileName: MutableList<com.uyscuti.social.network.api.response.posts.FileName> = mutableListOf()
 
+            val profilePic2 = settings.getString("profile_pic", "").toString()
+            val userId = settings.getString("_id", "").toString()
 
-                val mixedFilesData = data?.getStringExtra("mixedFiles")
-                val caption = data?.getStringExtra("caption")
-                val tags = data?.getStringExtra("tags")
-                val contentType = data?.getStringExtra("contentType")
-                val dataList =
-                    mixedFilesData?.let { deserializeFeedUploadDataList(it) } ?: mutableListOf()
-                Log.d("onActivityResult", "onActivityResult: mixed files data $mixedFilesData")
-                Log.d("onActivityResult", "onActivityResult: caption $caption")
-                Log.d("onActivityResult", "onActivityResult: tags $tags")
+            val avatar = Avatar(_id = "", localPath = "", url = "")
+            val account = Account(
+                _id = "", avatar = avatar, createdAt = "", email = "", updatedAt = "",
+                username = LocalStorage.getInstance(requireContext()).getUsername()
+            )
+            val author = Author(
+                _id = userId, account = account, firstName = "", lastName = "", bio = "",
+                countryCode = "", createdAt = "", __v = 0, dob = "", owner = "", location = "",
+                updatedAt = "", phoneNumber = "", coverImage = CoverImage(_id = "", localPath = "", url = profilePic2)
+            )
+            val mongoDbTimeStamp = generateMongoDBTimestamp()
 
-                val filesList = ArrayList<File>()
-
-                val fileTypes: MutableList<FileType> =
-                    mutableListOf()
-                val duration: MutableList<Duration> =
-                    mutableListOf()
-                val fileIds: MutableList<String> = mutableListOf()
-                val thumbnail: MutableList<Thumbnail> = mutableListOf()
-                val numberOfPages: MutableList<NumberOfPage> = mutableListOf()
-                val fileName: MutableList<FileName> = mutableListOf()
-
-                val fileThumbnail: Bitmap? = null
-
-                val profilePic2 = settings.getString("profile_pic", "").toString()
-                val userId = settings.getString("_id", "").toString()
-                val avatar = Avatar(
-                    _id = "",
-                    localPath = "",
-                    url = "",
-                    type = ""
-                )
-                val account =
-
-                    Account(
-                        _id = "",
-                        avatar = avatar,
-                        createdAt = "",
-                        email = "",
-                        updatedAt = "",
-                        LocalStorage.Companion.getInstance(requireContext()).getUsername()
-                    )
-                val author = Author(
-                    _id = userId,
-                    account = account,
-                    firstName = "",
-                    lastName = "",
-                    bio = "",
-                    countryCode = "",
-                    createdAt = "",
-                    __v = 0,
-                    dob = "",
-                    owner = "",
-                    location = "",
-                    updatedAt = "",
-                    phoneNumber = "",
-                    avatar = null,
-                    coverImage = CoverImage(
-                        _id = "",
-                        localPath = "",
-                        url = profilePic2
-                    ),
-                    username = "unknown"
-                )
-                val mongoDbTimeStamp = generateMongoDBTimestamp()
-
-                dataList.forEach {
-
-                    fileIds.add(it.fileId)
-                    fileTypes.add(
-                        FileType(
-                            it.fileId,
-                            it.fileTypes
+            dataList.forEach {
+                fileIds.add(it.fileId)
+                fileTypes.add(FileType(it.fileId, it.fileTypes))
+                if (it.documents != null) {
+                    filesList.add(
+                        com.uyscuti.social.network.api.response.posts.File(
+                            _id = "", fileId = it.fileId, url = it.documents!!.pdfFilePath,
+                            localPath = it.documents!!.uri.toString(), mimeType = null
                         )
                     )
-
-
-                    Log.d("onActivityResult", "onActivityResult: $it")
-
-                    if (it.documents != null) {
-                        filesList.add(
-                            File(
-                                _id = "",
-                                fileId = it.fileId,
-                                url = it.documents!!.pdfFilePath,
-                                localPath = it.documents!!.uri.toString()
-                            )
+                    numberOfPages.add(NumberOfPageX(fileId = it.fileId, numberOfPage = "1"))
+                    fileName.add(FileName(fileId = it.fileId, fileName = it.documents!!.filename))
+                    thumbnail.add(
+                        ThumbnailX(_id = "", thumbnailUrl = it.documents!!.pdfFilePath,
+                            thumbnailLocalPath = it.documents!!.pdfFilePath, fileId = it.fileId)
+                    )
+                } else if (it.images != null) {
+                    
+                    filesList.add(
+                        com.uyscuti.social.network.api.response.posts.File(
+                            _id = "", fileId = it.fileId, url = it.images!!.imagePath,
+                            localPath = it.images!!.compressedImagePath, mimeType = null
                         )
-                        numberOfPages.add(
-                            NumberOfPage(
-//                                fileId = it.fileId,
-//                                numberOfPages = it.documents!!.numberOfPages
-                            )
+                    )
+                } else if (it.videos != null) {
+                    filesList.add(
+                        com.uyscuti.social.network.api.response.posts.File(
+                            _id = "", fileId = it.fileId, url = it.videos!!.videoPath,
+                            localPath = it.videos!!.videoUri, mimeType = null
                         )
-
-                        fileName.add(
-                            FileName(
-                                fileId = it.fileId,
-                                fileName = it.documents!!.filename
-                            )
+                    )
+                    thumbnail.add(
+                        ThumbnailX(_id = "", thumbnailUrl = it.videos!!.videoPath,
+                            thumbnailLocalPath = it.videos!!.videoUri, fileId = it.fileId)
+                    )
+                    duration.add(Duration(it.fileId, it.videos!!.videoDuration))
+                } else if (it.audios != null) {
+                    filesList.add(
+                        com.uyscuti.social.network.api.response.posts.File(
+                            _id = "", fileId = it.fileId, url = it.audios!!.audioPath,
+                            localPath = it.audios!!.audioPath, mimeType = null
                         )
-                        thumbnail.add(
-                            Thumbnail(
-                                _id = "",
-                                thumbnailUrl = it.documents!!.pdfFilePath,
-                                thumbnailLocalPath = it.documents!!.pdfFilePath,
-                                fileId = it.fileId,
-//                                fileThumbnail = it.documents!!.documentThumbnailFilePath
-                            )
-                        )
-
-                    } else if (it.images != null) {
-                        filesList.add(
-                            File(
-                                _id = "",
-                                fileId = it.fileId,
-                                url = it.images!!.imagePath,
-                                localPath = it.images!!.compressedImagePath
-                            )
-                        )
-                    } else if (it.videos != null) {
-                        filesList.add(
-                            File(
-                                _id = "",
-                                fileId = it.fileId,
-                                url = it.videos!!.videoPath,
-                                localPath = it.videos!!.videoUri
-                            )
-                        )
-
-                        thumbnail.add(
-                            Thumbnail(
-                                _id = "",
-                                thumbnailUrl = it.videos!!.videoPath,
-                                thumbnailLocalPath = it.videos!!.videoUri,
-                                fileId = it.fileId
-                            )
-                        )
-                        duration.add(
-                            Duration(
-                                it.fileId, it.videos!!.videoDuration
-                            )
-                        )
-
-                    } else if (it.audios != null) {
-                        filesList.add(
-                            File(
-                                _id = "",
-                                fileId = it.fileId,
-                                url = it.audios!!.audioPath,
-                                localPath = it.audios!!.audioPath
-
-
-                            )
-                        )
-                        duration.add(
-                            Duration(
-                                it.fileId, it.audios!!.duration
-                            )
-                        )
-                    }
+                    )
+                    duration.add(Duration(it.fileId, it.audios!!.duration))
                 }
-
-//                val post = com.uyscuti.social.network.api.response.posts.Post(
-//                    __v = 1,
-//                    _id = "",
-//                    author = author,
-//                    comments = 0,
-//                    content = caption ?: "",
-//                    contentType = contentType ?: "",
-//                    createdAt = mongoDbTimeStamp,
-//                    duration = listOf(),
-//                    feedShortsBusinessId = "",
-//                    fileIds = mutableListOf(),
-//                    fileNames = mutableListOf(),
-//                    fileSizes = mutableListOf(),
-//                    fileTypes = mutableListOf(),
-//                    files = mutableListOf(),
-//                    isFollowing = false,
-//                    isBookmarked = false,
-//                    isReposted = false,
-//                    likes = 0,
-//                    numberOfPages = mutableListOf(),
-//                    originalPost = mutableListOf(),
-//                    repostedByUserId = "",
-//                    repostedUsers = mutableListOf(),
-//                    tags = mutableListOf(),
-//                    thumbnail = mutableListOf(),
-//                    updatedAt = mongoDbTimeStamp,
-//                    isExpanded = false,
-//                    isLocal = false,
-//                    isLiked = false,
-//                    bookmarkCount = 0,
-//                    shareCount = 0,
-//                    commentCount = 0,
-//                    repostCount = 0,
-//                    isShared = false,
-//                    url = "",
-//                    type = "",
-//
-//                    repostedUser = RepostedUser(
-//                        _id = "",
-//                        avatar = Avatar(
-//                            _id = " ",
-//                            localPath = " ",
-//                            url = " ",
-//                            type = ""
-//                        ),
-//                        createdAt = "",
-//                        email = "",
-//                        updatedAt = "",
-//                        username = "",
-//                        url = "",
-//                        type = ""
-//                    ),
-//                    )
-
-
-              //  Log.d("PostObject", "Post Object: $post")
-
-               // getFeedViewModel.addSingleAllFeedData(post)
-
-            } else {
-                // Handle other result codes if needed
             }
+
+            val post = Post(
+                __v = 1, _id = "", author = author, bookmarkCount = 0, comments = 0,
+                content = caption ?: "", contentType = contentType ?: "", createdAt = mongoDbTimeStamp,
+                duration = duration, feedShortsBusinessId = "", fileIds = fileIds, fileNames = fileName,
+                fileSizes = listOf(), fileTypes = fileTypes, files = filesList, isBookmarked = false,
+                isExpanded = false, isFollowing = false, isLiked = false, isLocal = true,
+                isReposted = false, likes = 0, numberOfPages = numberOfPages, originalPost = listOf(),
+                repostedByUserId = "", repostedUser = RepostedUser(
+                    _id = "", avatar = Avatar(_id = "", localPath = "", url = ""), bio = "",
+                    coverImage = CoverImage(_id = "", localPath = "", url = ""), createdAt = "",
+                    email = "", firstName = "", lastName = "", owner = "", updatedAt = "", username = ""
+                ), repostedUsers = listOf(), tags = listOf(), thumbnail = thumbnail,
+                updatedAt = mongoDbTimeStamp, shareCount = 0, repostCount = 0
+            )
+            getFeedViewModel.addSingleAllFeedData(post)
         }
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun stopRecording() {
-
-//        val TAG = "StopRecording"
-        try {
-
-            if (mediaRecorder != null) {
-                mediaRecorder?.apply {
-                    stop()
-                    release()
-                }
-                mediaRecorder = null
-            }
-            isRecording = false
-            isPaused = false
-            wasPaused = false
-            timerTv!!.text = "00:00.00"
-
-            recordVN!!.setImageResource(R.drawable.ic_mic_on)
-
-            sendVN!!.setBackgroundResource(R.drawable.ic_ripple_disabled)
-            sendVN!!.isClickable = false
-
-            amplitudes = waveForm!!.clear()
-            amps = 0
-            timer.stop()
-            if (player?.isPlaying == true) {
-                stopPlaying()
-            }
-//           VNLayout.visibility = View.GONE
-
-            val file = java.io.File(outputVnFile)
-            val file2 = java.io.File(outputFile)
-            Log.d(TAG, "stopRecording: recorded files size ${recordedAudioFiles.size}")
-
-            var fileName = ""
-            var durationString = ""
-
-            if (recordedAudioFiles.size != 1) {
-                durationString = AudioDurationHelper.getFormattedDuration(outputVnFile)
-                fileName = getFileNameFromLocalPath(outputVnFile)
-                Log.d("AudioPicker", "File path: $outputVnFile")
-                Log.d("AudioPicker", "File name: $fileName")
-                Log.d("AudioPicker", "durationString: $durationString")
-                val intent = Intent(requireActivity(), UploadFeedActivity::class.java)
-                intent.putExtra("vnFilePath", outputVnFile)
-                intent.putExtra("vnFileName", fileName)
-                intent.putExtra("vnDurationString", durationString)
-                startActivityForResult(intent, REQUEST_UPLOAD_FEED_ACTIVITY)
-            } else {
-                durationString = AudioDurationHelper.getFormattedDuration(outputFile)
-                fileName = getFileNameFromLocalPath(outputFile)
-                Log.d("AudioPicker", "File path: $outputFile")
-                Log.d("AudioPicker", "File name: $fileName")
-                Log.d("AudioPicker", "durationString: $durationString")
-                val intent = Intent(requireActivity(), UploadFeedActivity::class.java)
-                intent.putExtra("vnFilePath", outputFile)
-                intent.putExtra("vnDurationString", durationString)
-                intent.putExtra("vnFileName", fileName)
-                startActivityForResult(intent, REQUEST_UPLOAD_FEED_ACTIVITY)
-//                requireActivity().startActivity(intent)
-            }
-            recordedAudioFiles.clear()
-
-        } catch (e: Exception) {
-            Log.d(TAG, "stopRecording: $e")
-            e.printStackTrace()
-            // Handle exceptions as needed
-        }
-    }
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun onUploadVNButtonClick() {
-        showVNDialog()
-    }
 
     @SuppressLint("ShowToast")
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -842,29 +679,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
 
-    companion object {
 
-        private const val FEED_POST_POSITION_FROM_SHORTS = "feed_post_position_from_shorts"
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FeedFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-
-        fun feedPostFromShorts(feedPostPositionFromShorts: Int = -1): FeedFragment {
-            val feedFragment = FeedFragment()
-
-            val args = Bundle()
-            feedPostPositionFromShorts.let {
-                args.putInt(FEED_POST_POSITION_FROM_SHORTS, it)
-            }
-            feedFragment.arguments = args
-            return feedFragment
-        }
-    }
 
     override fun onGetLayoutInflater(
         savedInstanceState: Bundle?
@@ -893,405 +708,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
     }
 
-    private fun deleteVn() {
-        recordedAudioFiles.clear()
-//        if (recordedAudioFiles.isNotEmpty()) {
-        val isDeleted = deleteFiles(recordedAudioFiles)
-        val outputVnFileList = mutableListOf<String>()
-        outputVnFileList.add(outputVnFile)
-        val deleteMixVn = deleteFiles(outputVnFileList)
-        if (isDeleted) {
-            Log.d(TAG, "File record deleted successfully")
-        } else {
-            println("Failed to delete file.")
-        }
-
-        if (deleteMixVn) {
-            Log.d(TAG, "File mix vn deleted successfully")
-        } else {
-            println("Failed to delete file.")
-        }
-//        }
-    }
-
-
-
-    @SuppressLint("SetTextI18n")
-    private fun deleteRecording() {
-
-        val TAG = "Recording"
-
-        try {
-            mediaRecorder?.apply {
-                stop()
-                release()
-            }
-            mediaRecorder = null
-            isRecording = false
-            isPaused = false
-//            isAudioVNPlaying = false
-
-            timerTv!!.text = "00:00.00"
-//            binding.recordVN.setImageResource(R.drawable.baseline_pause_24)
-            recordVN!!.setImageResource(R.drawable.ic_mic_on)
-
-//            binding.deleteVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
-//            binding.deleteVN.isClickable = false
-            sendVN!!.setBackgroundResource(R.drawable.ic_ripple_disabled)
-            sendVN!!.isClickable = false
-
-            amplitudes = waveForm!!.clear()
-            amps = 0
-            timer.stop()
-            Log.d("TAG", "deleteRecording: recorded files size ${recordedAudioFiles.size}")
-
-
-
-            deleteVn()
-//            if()
-            // Add any UI changes or notifications indicating recording has stopped
-//            showSaveConfirmationDialog(outputFile)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            // Handle exceptions as needed
-        }
-    }
-
-    private val waveHandler = Handler(Looper.getMainLooper())
-
-    private val onRecordWaveRunnable = object : Runnable {
-        override fun run() {
-//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
-            try {
-                if (!isOnRecordDurationOnPause) {
-                    val currentPosition = player?.currentPosition?.toFloat()!!
-                    updateRecordWaveProgress(currentPosition)
-                }
-                waveHandler.postDelayed(this, 20)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.d("Exception", "run: ${e.message}")
-            }
-
-        }
-    }
-
-    private fun updateRecordWaveProgress(progress: Float) {
-
-        CoroutineScope(Dispatchers.Main).launch {
-            wave!!.progress = progress
-            Log.d("updateWaveProgress", "updateWaveProgress: $progress")
-        }
-    }
-
-    private fun stopRecordWaveRunnable() {
-        try {
-            waveHandler.removeCallbacks(onRecordWaveRunnable)
-            isOnRecordDurationOnPause = true
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun startRecordWaveRunnable() {
-        try {
-            Log.d(
-                "isDurationOnPause",
-                " in comment audio start wave isDurationOnPause is $isOnRecordDurationOnPause"
-            )
-
-            waveHandler.removeCallbacks(onRecordWaveRunnable)
-            waveHandler.post(onRecordWaveRunnable)
-            isOnRecordDurationOnPause = false
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun stopPlaying() {
-        playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-        player?.release()
-        player = null
-        isAudioVNPlaying = false
-
-        stopRecordWaveRunnable()
-        wave!!.progress = 0F
-//        vnRecordProgress = 0
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun resumeRecording() {
-        if (isPaused) {
-            isVnResuming = true
-            startRecording() // Start a new recording session, appending to the previous file
-            waveForm!!.visibility = View.VISIBLE
-            timerTv!!.visibility = View.VISIBLE
-            playAudioLayout!!.visibility = View.GONE
-            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-            recordVN!!.setImageResource(R.drawable.baseline_pause_black)
-        }
-
-    }
-
-    override fun onTimerTick(duration: String) {
-        timerTv!!.text = duration
-
-        var amplitude = mediaRecorder!!.maxAmplitude.toFloat()
-        amplitude = if (amplitude > 0) amplitude else 130f
-//        Log.d("onTimerTick", "onTimerTick: media recorder amplitude: ${mediaRecorder?.maxAmplitude}")
-        waveForm!!.addAmplitude(amplitude)
-
-    }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun pauseRecording() {
-        val TAG = "pauseRecording"
-//        firstTimeSendVn = true
-        if (isRecording && !isPaused) {
-            try {
-                mediaRecorder?.apply {
-                    stop()
-                    release()
-                }
-                mediaRecorder = null
-            } catch (e: Exception) {
-                Log.d(TAG, " failed to stop media recorder: $e")
-                e.printStackTrace()
-            }
-            isPaused = true
-            timer.pause() // Pause the recording timer
-            timerTv!!.visibility = View.INVISIBLE
-            waveForm!!.visibility = View.GONE
-            playAudioLayout!!.visibility = View.VISIBLE
-            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-            recordVN!!.setImageResource(R.drawable.ic_mic_on)
-
-
-            Log.d(TAG, "pauseRecording: list of recordings  size: ${recordedAudioFiles.size}")
-            Log.d(TAG, "pauseRecording: list of recordings $recordedAudioFiles")
-
-            mixVN()
-        }
-    }
-
-    private fun mixVN() {
-        val TAG = "mixVN"
-        try {
-            wasPaused = true
-            Log.d(TAG, "pauseRecording: outputFile: $outputVnFile")
-
-            val audioMixer = AudioMixer(outputVnFile)
-
-            for (input in recordedAudioFiles) {
-                val ai = GeneralAudioInput(input)
-                audioMixer.addDataSource(ai)
-            }
-            audioMixer.mixingType = AudioMixer.MixingType.SEQUENTIAL
-
-            audioMixer.setProcessingListener(object : AudioMixer.ProcessingListener {
-                override fun onProgress(progress: Double) {
-                    // Not used in this example, but you can handle progress updates if needed
-                }
-
-                override fun onEnd() {
-                    requireActivity().runOnUiThread {
-                        audioMixer.release()
-//                        mixingCompleted = true // Set the flag to indicate mixing is completed
-                        // Additional code as needed
-                        val file = java.io.File(outputVnFile)
-                        Log.d(TAG, "onEnd: output vn file exists ${file.exists()}")
-                        Log.d(TAG, "onEnd: media muxed success")
-
-                        inflateWave(outputVnFile)
-
-//                        if(stopRecording) {
-//                            stopRecording()
-//                        }
-                        playVnAudioBtn.setOnClickListener {
-                            Log.d("playVnAudioBtn", "onEnd: play vn button clicked")
-                            when {
-                                !isAudioVNPlaying -> {
-                                    playVnAudioBtn.setImageResource(R.drawable.baseline_pause_black)
-                                    Log.d(
-                                        "playVnAudioBtn",
-                                        "play vn"
-                                    )
-                                    startPlaying(outputVnFile)
-                                }
-
-                                else -> {
-                                    Log.d(
-                                        "playVnAudioBtn",
-                                        "pause VN"
-                                    )
-                                    playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-                                    vnRecordAudioPlaying = true
-                                    pauseVn(vnRecordProgress)
-                                }
-                            }
-                        }
-                    }
-                }
-            })
-
-            try {
-                audioMixer.start()
-                audioMixer.processAsync()
-            } catch (e: IOException) {
-                audioMixer.release()
-                e.printStackTrace()
-                Log.d(TAG, "pauseRecording: exception 1 $e")
-                Log.d(TAG, "pauseRecording: exception 1 ${e.message}")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.d(TAG, "pauseRecording: exception 2 $e")
-            Log.d(TAG, "pauseRecording: exception 2 ${e.message}")
-        }
-    }
-
-    private fun pauseVn(progress: Int) {
-        Log.d("pauseVn", "vnRecordProgress $vnRecordProgress..... progress $progress")
-
-        player?.pause()
-        player?.seekTo(progress)
-        isAudioVNPlaying = false
-        isAudioVNPaused = true
-        isOnRecordDurationOnPause = true
-
-        playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-    }
-
-    private fun startPlaying(vnAudio: String) {
-        playVnAudioBtn.setImageResource(R.drawable.baseline_pause_white_24)
-        EventBus.getDefault().post(PauseShort(true))
-//        player?.reset()
-        isAudioVNPlaying = true
-        vnRecordAudioPlaying = true
-
-        isOnRecordDurationOnPause = false
-        startRecordWaveRunnable()
-        if (isAudioVNPaused) {
-//            progressAnim.resume()
-            Log.d("startPlaying", "(isAudioVNPaused)->vnRecordProgress $vnRecordProgress")
-
-            if (vnRecordProgress != 0) {
-                player?.seekTo(vnRecordProgress)
-            }
-            player?.start()
-        } else {
-
-            player = MediaPlayer().apply {
-                try {
-                    setDataSource(vnAudio)
-//                inputStream.close()
-                    prepare()
-                    Log.d("startPlaying", "vnRecordProgress $vnRecordProgress")
-                    if (vnRecordProgress != 0) {
-                        player?.seekTo(vnRecordProgress)
-                    }
-                    start()
-                    setOnCompletionListener {
-                        // Playback completed, restart playback
-                        isAudioVNPaused = false
-                        stopPlaying()
-                    }
-                } catch (e: IOException) {
-                    Log.e("MediaRecorder", "prepare() failed")
-                }
-            }
-
-        }
-    }
-
-    @SuppressLint("DefaultLocale")
-    private fun inflateWave(outputVN: String) {
-
-//        outputVnFile = outputVN
-
-        val TAG = "inflateWave"
-        Log.d("playVnAudioBtn", "inflateWave: outputvn $outputVN")
-
-        val audioFile = java.io.File(outputVN)
-        wave!!.visibility = View.VISIBLE
-        playerTimerTv!!.visibility = View.VISIBLE
-        Log.d(TAG, "render: does not start with http")
-        //                audioDuration = 100L
-        val file = java.io.File(outputVN)
-        Log.d(TAG, "render: file $outputVN exists: ${file.exists()}")
-        val locaAudioDuration = AudioDurationHelper.getLocalAudioDuration(outputVN)
-        if (locaAudioDuration != null) {
-            // Duration is available, do something with it
-            //                    println("Audio duration: ${duration}ms")
-            val minutes = (locaAudioDuration / 1000) / 60
-            val seconds = (locaAudioDuration / 1000) % 60
-            //                println("Audio duration: $minutes minutes $seconds seconds")
-            thirdTimerTv!!.text = String.format("%02d:%02d", minutes, seconds)
-        } else {
-            // File does not exist or error retrieving duration
-
-            Log.e(TAG, "render: failed to retrieve audio duration")
-
-        }
-
-        CoroutineScope(Dispatchers.IO).launch {
-            WaveFormExtractor.getSampleFrom(requireContext(), outputVN) {
-
-                CoroutineScope(Dispatchers.Main).launch {
-
-                    if (locaAudioDuration != null) {
-                        wave!!.maxProgress = locaAudioDuration.toFloat()
-                    }
-                    wave!!.setSampleFrom(it)
-
-                    wave!!.onProgressChanged = object : SeekBarOnProgressChanged {
-                        override fun onProgressChanged(
-                            waveformSeekBar: WaveformSeekBar,
-                            progress: Float,
-                            fromUser: Boolean
-                        ) {
-                            secondTimerTv!!.text = String.format(
-                                "%s",
-                                TrimVideoUtils.stringForTime(progress)
-                            )
-                            vnRecordProgress = progress.toInt()
-                            if (fromUser) {
-                                if (vnRecordAudioPlaying) {
-                                    vnRecordProgress = progress.toInt()
-                                    pauseVn(progress = progress.toInt())
-                                } else {
-                                    vnRecordProgress = progress.toInt()
-                                    Log.d("FromUser", "Scroll to this $progress")
-                                }
-
-                            }
-                        }
-                        override fun onRelease(event: MotionEvent?, progress: Float) {
-                            if (outputVN.isNotEmpty()) {
-
-                                if (vnRecordAudioPlaying) {
-                                    Log.d(
-                                        "onRelease",
-                                        "vnRecordAudioPlaying $isAudioVNPlaying progress $progress"
-                                    )
-                                    vnRecordProgress = progress.toInt()
-                                    startPlaying(outputVN)
-                                } else {
-                                    Log.d("onRelease", "Start playing from this progress $progress")
-                                    vnRecordProgress = progress.toInt()
-                                }
-
-                            } else {
-                                Log.d("onRelease", "output vn is empty")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-
-    }
 
     private var permissionGranted = false
 
@@ -1303,58 +719,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE) {
             permissionGranted = grantResults[0] == PackageManager.PERMISSION_GRANTED
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun startRecording() {
-        if (!permissionGranted) {
-            ActivityCompat.requestPermissions(requireActivity(), permissions, REQUEST_CODE)
-            return
-        }
-        try {
-
-            Log.d(TAG, "recorded files size ${recordedAudioFiles.size}")
-            if (player?.isPlaying == true) {
-                stopPlaying()
-            }
-            playerTimerTv!!.visibility = View.GONE
-            outputFile = getOutputFilePath("rec")
-            outputVnFile = getOutputFilePath("mix")
-            wasPaused = false
-//            firstTimeSendVn = false
-            mediaRecorder = MediaRecorder().apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                setOutputFile(outputFile)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-
-
-                prepare()
-                start()
-            }
-
-            isRecording = true
-            isPaused = false
-//            isVnResuming = false
-            recordVN!!.setImageResource(R.drawable.baseline_pause_white_24)
-            sendVN!!.setBackgroundResource(R.drawable.ic_ripple)
-            deleteVN!!.setBackgroundResource(R.drawable.ic_ripple)
-            timer.start()
-
-            deleteVN!!.isClickable = true
-            sendVN!!.isClickable = true
-//            mediaRecorder.
-            recordedAudioFiles.add(outputFile)
-
-//            mediaRecorder.logSessionId
-
-            Log.d("VNFile", outputFile)
-            // Add any UI changes or notifications indicating recording has started
-        } catch (e: Exception) {
-            Log.d("VNFile", "Failed to record audio properly")
-            e.printStackTrace()
-            // Handle exceptions as needed
         }
     }
 
@@ -1486,4 +850,571 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         params.bottomMargin = newMarginBottomPx
         viewPager2.layoutParams = params
     }
+
+
+    ///////////////////////////
+
+
+
+    @SuppressLint("SetTextI18n")
+    private fun stopRecording() {
+        try {
+            if (mediaRecorder != null) {
+                mediaRecorder?.apply {
+                    stop()
+                    release()
+                }
+                mediaRecorder = null
+            }
+            isRecording = false
+            isPaused = false
+            wasPaused = false
+            timerTv!!.text = "00:00.00"
+
+            recordVN!!.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
+            sendVN!!.setBackgroundResource(R.drawable.ic_ripple_disabled)
+            sendVN!!.isClickable = false
+
+            amplitudes = waveForm!!.clear()
+            amps = 0
+            timer.stop()
+            if (player?.isPlaying == true) {
+                stopPlaying()
+            }
+
+            val file = File(outputVnFile)
+            val file2 = File(outputFile)
+            var fileName = ""
+            var durationString = ""
+
+            if (recordedAudioFiles.size != 1) {
+                durationString = getFormattedDuration(outputVnFile)
+                fileName = getFileNameFromLocalPath(outputVnFile)
+                val intent = Intent(requireActivity(), UploadFeedActivity::class.java)
+                intent.putExtra("vnFilePath", outputVnFile)
+                intent.putExtra("vnFileName", fileName)
+                intent.putExtra("vnDurationString", durationString)
+                startActivityForResult(intent,
+                   REQUEST_UPLOAD_FEED_ACTIVITY
+                )
+            } else {
+                durationString = getFormattedDuration(outputFile)
+                fileName = getFileNameFromLocalPath(outputFile)
+                val intent = Intent(requireActivity(), UploadFeedActivity::class.java)
+                intent.putExtra("vnFilePath", outputFile)
+                intent.putExtra("vnDurationString", durationString)
+                intent.putExtra("vnFileName", fileName)
+                startActivityForResult(intent,
+                    REQUEST_UPLOAD_FEED_ACTIVITY
+                )
+            }
+            recordedAudioFiles.clear()
+        } catch (e: Exception) {
+            Log.e(TAG, "stopRecording: $e")
+            e.printStackTrace()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun onUploadVNButtonClick() {
+        showVNDialog()
+    }
+
+    private fun startUploadAnimation(uploadDurationMs: Long = 10000) {
+        uploadSeekBar.visibility = View.VISIBLE  // Changed from uploadSeekBar
+        uploadSeekBar.progress = 0
+
+        progressAnimator = ValueAnimator.ofInt(0, 100).apply {
+            duration = uploadDurationMs
+            interpolator = LinearInterpolator()
+
+            addUpdateListener { animator ->
+                val currentProgress = animator.animatedValue as Int
+                uploadSeekBar.progress = currentProgress  // Changed from uploadSeekBar
+            }
+
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    hideUploadSeekBar()
+                    showUploadSuccess()
+                }
+            })
+            start()
+        }
+    }
+
+    private fun hideUploadSeekBar() {
+        uploadSeekBar.visibility = View.GONE
+        uploadSeekBar.progress = 0
+        isUploadInProgress = false
+    }
+
+
+    private fun showUploadSuccess() {
+        val rootView: View = requireActivity().findViewById(android.R.id.content)
+        val snackBar = Snackbar.make(rootView, "Feed upload successful", Snackbar.LENGTH_LONG)
+        val snackBarTextColor = ContextCompat.getColor(requireContext(), R.color.green)
+        val snackBarView = snackBar.view
+
+        // Make background transparent
+        snackBarView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+
+        // Set text color to green
+        snackBar.setTextColor(snackBarTextColor)
+
+        snackBar.show()
+    }
+
+
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun startRecording() {
+        if (!permissionGranted) {
+            ActivityCompat.requestPermissions(requireActivity(), permissions, REQUEST_CODE)
+            return
+        }
+        try {
+
+            Log.d(TAG, "recorded files size ${recordedAudioFiles.size}")
+            if (player?.isPlaying == true) {
+                stopPlaying()
+            }
+            playerTimerTv!!.visibility = View.GONE
+            outputFile = getOutputFilePath("rec")
+            outputVnFile = getOutputFilePath("mix")
+            wasPaused = false
+//            firstTimeSendVn = false
+            mediaRecorder = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setOutputFile(outputFile)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+
+
+                prepare()
+                start()
+            }
+
+            isRecording = true
+            isPaused = false
+//            isVnResuming = false
+            recordVN!!.setImageResource(R.drawable.baseline_pause_white_24)
+            sendVN!!.setBackgroundResource(R.drawable.ic_ripple)
+            deleteVN!!.setBackgroundResource(R.drawable.ic_ripple)
+            timer.start()
+
+            deleteVN!!.isClickable = true
+            sendVN!!.isClickable = true
+//            mediaRecorder.
+            recordedAudioFiles.add(outputFile)
+
+//            mediaRecorder.logSessionId
+
+            Log.d("VNFile", outputFile)
+            // Add any UI changes or notifications indicating recording has started
+        } catch (e: Exception) {
+            Log.d("VNFile", "Failed to record audio properly")
+            e.printStackTrace()
+            // Handle exceptions as needed
+        }
+    }
+
+    private fun deleteVn() {
+        recordedAudioFiles.clear()
+//        if (recordedAudioFiles.isNotEmpty()) {
+        val isDeleted = deleteFiles(recordedAudioFiles)
+        val outputVnFileList = mutableListOf<String>()
+        outputVnFileList.add(outputVnFile)
+        val deleteMixVn = deleteFiles(outputVnFileList)
+        if (isDeleted) {
+            Log.d(TAG, "File record deleted successfully")
+        } else {
+            println("Failed to delete file.")
+        }
+
+        if (deleteMixVn) {
+            Log.d(TAG, "File mix vn deleted successfully")
+        } else {
+            println("Failed to delete file.")
+        }
+//        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun deleteRecording() {
+
+        val TAG = "Recording"
+
+        try {
+            mediaRecorder?.apply {
+                stop()
+                release()
+            }
+            mediaRecorder = null
+            isRecording = false
+            isPaused = false
+//            isAudioVNPlaying = false
+
+            timerTv!!.text = "00:00.00"
+//            binding.recordVN.setImageResource(R.drawable.baseline_pause_24)
+            recordVN!!.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
+
+//            binding.deleteVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
+//            binding.deleteVN.isClickable = false
+            sendVN!!.setBackgroundResource(R.drawable.ic_ripple_disabled)
+            sendVN!!.isClickable = false
+
+            amplitudes = waveForm!!.clear()
+            amps = 0
+            timer.stop()
+            Log.d("TAG", "deleteRecording: recorded files size ${recordedAudioFiles.size}")
+
+
+
+            deleteVn()
+//            if()
+            // Add any UI changes or notifications indicating recording has stopped
+//            showSaveConfirmationDialog(outputFile)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Handle exceptions as needed
+        }
+    }
+
+    private val waveHandler = Handler(Looper.getMainLooper())
+
+    private val onRecordWaveRunnable = object : Runnable {
+        override fun run() {
+//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
+            try {
+                if (!isOnRecordDurationOnPause) {
+                    val currentPosition = player?.currentPosition?.toFloat()!!
+                    updateRecordWaveProgress(currentPosition)
+                }
+                waveHandler.postDelayed(this, 20)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.d("Exception", "run: ${e.message}")
+            }
+
+        }
+    }
+
+    private fun updateRecordWaveProgress(progress: Float) {
+
+        CoroutineScope(Dispatchers.Main).launch {
+            wave!!.progress = progress
+            Log.d("updateWaveProgress", "updateWaveProgress: $progress")
+        }
+    }
+
+    private fun stopRecordWaveRunnable() {
+        try {
+            waveHandler.removeCallbacks(onRecordWaveRunnable)
+            isOnRecordDurationOnPause = true
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun startRecordWaveRunnable() {
+        try {
+            Log.d(
+                "isDurationOnPause",
+                " in comment audio start wave isDurationOnPause is $isOnRecordDurationOnPause"
+            )
+
+            waveHandler.removeCallbacks(onRecordWaveRunnable)
+            waveHandler.post(onRecordWaveRunnable)
+            isOnRecordDurationOnPause = false
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun stopPlaying() {
+        playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+        player?.release()
+        player = null
+        isAudioVNPlaying = false
+
+        stopRecordWaveRunnable()
+        wave!!.progress = 0F
+//        vnRecordProgress = 0
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun resumeRecording() {
+        if (isPaused) {
+            isVnResuming = true
+            startRecording() // Start a new recording session, appending to the previous file
+            waveForm!!.visibility = View.VISIBLE
+            timerTv!!.visibility = View.VISIBLE
+            playAudioLayout!!.visibility = View.GONE
+            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+            recordVN!!.setImageResource(R.drawable.baseline_pause_black)
+        }
+
+    }
+
+    override fun onTimerTick(duration: String) {
+        timerTv!!.text = duration
+
+        var amplitude = mediaRecorder!!.maxAmplitude.toFloat()
+        amplitude = if (amplitude > 0) amplitude else 130f
+//        Log.d("onTimerTick", "onTimerTick: media recorder amplitude: ${mediaRecorder?.maxAmplitude}")
+        waveForm!!.addAmplitude(amplitude)
+
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun pauseRecording() {
+        val TAG = "pauseRecording"
+//        firstTimeSendVn = true
+        if (isRecording && !isPaused) {
+            try {
+                mediaRecorder?.apply {
+                    stop()
+                    release()
+                }
+                mediaRecorder = null
+            } catch (e: Exception) {
+                Log.d(TAG, " failed to stop media recorder: $e")
+                e.printStackTrace()
+            }
+            isPaused = true
+            timer.pause() // Pause the recording timer
+            timerTv!!.visibility = View.INVISIBLE
+            waveForm!!.visibility = View.GONE
+            playAudioLayout!!.visibility = View.VISIBLE
+            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+            recordVN!!.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
+
+
+            Log.d(TAG, "pauseRecording: list of recordings  size: ${recordedAudioFiles.size}")
+            Log.d(TAG, "pauseRecording: list of recordings $recordedAudioFiles")
+
+            mixVN()
+        }
+    }
+
+    private fun mixVN() {
+        val TAG = "mixVN"
+        try {
+            wasPaused = true
+            Log.d(TAG, "pauseRecording: outputFile: $outputVnFile")
+
+            val audioMixer = AudioMixer(outputVnFile)
+
+            for (input in recordedAudioFiles) {
+                val ai = GeneralAudioInput(input)
+                audioMixer.addDataSource(ai)
+            }
+            audioMixer.mixingType = AudioMixer.MixingType.SEQUENTIAL
+
+            audioMixer.setProcessingListener(object : AudioMixer.ProcessingListener {
+                override fun onProgress(progress: Double) {
+                    // Not used in this example, but you can handle progress updates if needed
+                }
+
+                override fun onEnd() {
+                    requireActivity().runOnUiThread {
+                        audioMixer.release()
+//                        mixingCompleted = true // Set the flag to indicate mixing is completed
+                        // Additional code as needed
+                        val file = File(outputVnFile)
+                        Log.d(TAG, "onEnd: output vn file exists ${file.exists()}")
+                        Log.d(TAG, "onEnd: media muxed success")
+
+                        inflateWave(outputVnFile)
+
+//                        if(stopRecording) {
+//                            stopRecording()
+//                        }
+                        playVnAudioBtn.setOnClickListener {
+                            Log.d("playVnAudioBtn", "onEnd: play vn button clicked")
+                            when {
+                                !isAudioVNPlaying -> {
+                                    playVnAudioBtn.setImageResource(R.drawable.baseline_pause_black)
+                                    Log.d(
+                                        "playVnAudioBtn",
+                                        "play vn"
+                                    )
+                                    startPlaying(outputVnFile)
+                                }
+
+                                else -> {
+                                    Log.d(
+                                        "playVnAudioBtn",
+                                        "pause VN"
+                                    )
+                                    playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+                                    vnRecordAudioPlaying = true
+                                    pauseVn(vnRecordProgress)
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+
+            try {
+                audioMixer.start()
+                audioMixer.processAsync()
+            } catch (e: IOException) {
+                audioMixer.release()
+                e.printStackTrace()
+                Log.d(TAG, "pauseRecording: exception 1 $e")
+                Log.d(TAG, "pauseRecording: exception 1 ${e.message}")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.d(TAG, "pauseRecording: exception 2 $e")
+            Log.d(TAG, "pauseRecording: exception 2 ${e.message}")
+        }
+    }
+
+    private fun pauseVn(progress: Int) {
+        Log.d("pauseVn", "vnRecordProgress $vnRecordProgress..... progress $progress")
+
+        player?.pause()
+        player?.seekTo(progress)
+        isAudioVNPlaying = false
+        isAudioVNPaused = true
+        isOnRecordDurationOnPause = true
+
+        playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+    }
+
+    private fun startPlaying(vnAudio: String) {
+        playVnAudioBtn.setImageResource(R.drawable.baseline_pause_white_24)
+        EventBus.getDefault().post(PauseShort(true))
+//        player?.reset()
+        isAudioVNPlaying = true
+        vnRecordAudioPlaying = true
+
+        isOnRecordDurationOnPause = false
+        startRecordWaveRunnable()
+        if (isAudioVNPaused) {
+//            progressAnim.resume()
+            Log.d("startPlaying", "(isAudioVNPaused)->vnRecordProgress $vnRecordProgress")
+
+            if (vnRecordProgress != 0) {
+                player?.seekTo(vnRecordProgress)
+            }
+            player?.start()
+        } else {
+
+            player = MediaPlayer().apply {
+                try {
+                    setDataSource(vnAudio)
+//                inputStream.close()
+                    prepare()
+                    Log.d("startPlaying", "vnRecordProgress $vnRecordProgress")
+                    if (vnRecordProgress != 0) {
+                        player?.seekTo(vnRecordProgress)
+                    }
+                    start()
+                    setOnCompletionListener {
+                        // Playback completed, restart playback
+                        isAudioVNPaused = false
+                        stopPlaying()
+                    }
+                } catch (e: IOException) {
+                    Log.e("MediaRecorder", "prepare() failed")
+                }
+            }
+
+        }
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun inflateWave(outputVN: String) {
+
+//        outputVnFile = outputVN
+
+        val TAG = "inflateWave"
+        Log.d("playVnAudioBtn", "inflateWave: outputvn $outputVN")
+
+        val audioFile = File(outputVN)
+        wave!!.visibility = View.VISIBLE
+        playerTimerTv!!.visibility = View.VISIBLE
+        Log.d(TAG, "render: does not start with http")
+        //                audioDuration = 100L
+        val file = File(outputVN)
+        Log.d(TAG, "render: file $outputVN exists: ${file.exists()}")
+        val locaAudioDuration = AudioDurationHelper.getLocalAudioDuration(outputVN)
+        if (locaAudioDuration != null) {
+            // Duration is available, do something with it
+            //                    println("Audio duration: ${duration}ms")
+            val minutes = (locaAudioDuration / 1000) / 60
+            val seconds = (locaAudioDuration / 1000) % 60
+            //                println("Audio duration: $minutes minutes $seconds seconds")
+            thirdTimerTv!!.text = String.format("%02d:%02d", minutes, seconds)
+        } else {
+            // File does not exist or error retrieving duration
+
+            Log.e(TAG, "render: failed to retrieve audio duration")
+
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            WaveFormExtractor.getSampleFrom(requireContext(), outputVN) {
+
+                CoroutineScope(Dispatchers.Main).launch {
+
+                    if (locaAudioDuration != null) {
+                        wave!!.maxProgress = locaAudioDuration.toFloat()
+                    }
+                    wave!!.setSampleFrom(it)
+
+                    wave!!.onProgressChanged = object : SeekBarOnProgressChanged {
+                        override fun onProgressChanged(
+                            waveformSeekBar: WaveformSeekBar,
+                            progress: Float,
+                            fromUser: Boolean
+                        ) {
+                            secondTimerTv!!.text = String.format(
+                                "%s",
+                                TrimVideoUtils.stringForTime(progress)
+                            )
+                            vnRecordProgress = progress.toInt()
+                            if (fromUser) {
+                                if (vnRecordAudioPlaying) {
+                                    vnRecordProgress = progress.toInt()
+                                    pauseVn(progress = progress.toInt())
+                                } else {
+                                    vnRecordProgress = progress.toInt()
+                                    Log.d("FromUser", "Scroll to this $progress")
+                                }
+
+                            }
+                        }
+                        override fun onRelease(event: MotionEvent?, progress: Float) {
+                            if (outputVN.isNotEmpty()) {
+
+                                if (vnRecordAudioPlaying) {
+                                    Log.d(
+                                        "onRelease",
+                                        "vnRecordAudioPlaying $isAudioVNPlaying progress $progress"
+                                    )
+                                    vnRecordProgress = progress.toInt()
+                                    startPlaying(outputVN)
+                                } else {
+                                    Log.d("onRelease", "Start playing from this progress $progress")
+                                    vnRecordProgress = progress.toInt()
+                                }
+
+                            } else {
+                                Log.d("onRelease", "output vn is empty")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+    }
+
 }
