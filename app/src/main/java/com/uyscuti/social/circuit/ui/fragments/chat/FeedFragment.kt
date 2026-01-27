@@ -967,6 +967,129 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
 
 
+    private val waveHandler = Handler(Looper.getMainLooper())
+
+    private val onRecordWaveRunnable = object : Runnable {
+        override fun run() {
+//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
+            try {
+                if (!isOnRecordDurationOnPause) {
+                    val currentPosition = player?.currentPosition?.toFloat()!!
+                    updateRecordWaveProgress(currentPosition)
+                }
+                waveHandler.postDelayed(this, 20)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.d("Exception", "run: ${e.message}")
+            }
+
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun pauseRecording() {
+        val TAG = "pauseRecording"
+        if (isRecording && !isPaused) {
+            try {
+                mediaRecorder?.apply {
+                    stop()
+                    release()
+                }
+                mediaRecorder = null
+            } catch (e: Exception) {
+                Log.d(TAG, " failed to stop media recorder: $e")
+                e.printStackTrace()
+            }
+            isPaused = true
+            timer.pause()
+
+            // Hide recording UI, show playback UI
+            timerTv!!.visibility = View.GONE
+            waveForm!!.visibility = View.GONE
+            playAudioLayout!!.visibility = View.VISIBLE
+
+            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+            recordVN!!.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
+
+            Log.d(TAG, "pauseRecording: list of recordings  size: ${recordedAudioFiles.size}")
+            Log.d(TAG, "pauseRecording: list of recordings $recordedAudioFiles")
+
+            mixVN()
+        }
+    }
+
+    private fun updateRecordWaveProgress(progress: Float) {
+
+        CoroutineScope(Dispatchers.Main).launch {
+            wave!!.progress = progress
+            Log.d("updateWaveProgress", "updateWaveProgress: $progress")
+        }
+    }
+
+    private fun stopRecordWaveRunnable() {
+        try {
+            waveHandler.removeCallbacks(onRecordWaveRunnable)
+            isOnRecordDurationOnPause = true
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun startRecordWaveRunnable() {
+        try {
+            Log.d(
+                "isDurationOnPause",
+                " in comment audio start wave isDurationOnPause is $isOnRecordDurationOnPause"
+            )
+
+            waveHandler.removeCallbacks(onRecordWaveRunnable)
+            waveHandler.post(onRecordWaveRunnable)
+            isOnRecordDurationOnPause = false
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun stopPlaying() {
+        playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+        player?.release()
+        player = null
+        isAudioVNPlaying = false
+
+        stopRecordWaveRunnable()
+        wave!!.progress = 0F
+//        vnRecordProgress = 0
+    }
+
+    override fun onTimerTick(duration: String) {
+        timerTv!!.text = duration
+
+        var amplitude = mediaRecorder!!.maxAmplitude.toFloat()
+        amplitude = if (amplitude > 0) amplitude else 130f
+//        Log.d("onTimerTick", "onTimerTick: media recorder amplitude: ${mediaRecorder?.maxAmplitude}")
+        waveForm!!.addAmplitude(amplitude)
+
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun resumeRecording() {
+        if (isPaused) {
+            isVnResuming = true
+            startRecording()
+
+            // Show recording UI, hide playback UI
+            waveForm!!.visibility = View.VISIBLE
+            timerTv!!.visibility = View.VISIBLE
+            playAudioLayout!!.visibility = View.GONE
+            wave!!.visibility = View.GONE
+
+            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+            recordVN!!.setImageResource(R.drawable.baseline_pause_black)
+        }
+    }
+
+
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun startRecording() {
         if (!permissionGranted) {
@@ -1078,123 +1201,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         } catch (e: Exception) {
             e.printStackTrace()
             // Handle exceptions as needed
-        }
-    }
-
-    private val waveHandler = Handler(Looper.getMainLooper())
-
-    private val onRecordWaveRunnable = object : Runnable {
-        override fun run() {
-//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
-            try {
-                if (!isOnRecordDurationOnPause) {
-                    val currentPosition = player?.currentPosition?.toFloat()!!
-                    updateRecordWaveProgress(currentPosition)
-                }
-                waveHandler.postDelayed(this, 20)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.d("Exception", "run: ${e.message}")
-            }
-
-        }
-    }
-
-    private fun updateRecordWaveProgress(progress: Float) {
-
-        CoroutineScope(Dispatchers.Main).launch {
-            wave!!.progress = progress
-            Log.d("updateWaveProgress", "updateWaveProgress: $progress")
-        }
-    }
-
-    private fun stopRecordWaveRunnable() {
-        try {
-            waveHandler.removeCallbacks(onRecordWaveRunnable)
-            isOnRecordDurationOnPause = true
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun startRecordWaveRunnable() {
-        try {
-            Log.d(
-                "isDurationOnPause",
-                " in comment audio start wave isDurationOnPause is $isOnRecordDurationOnPause"
-            )
-
-            waveHandler.removeCallbacks(onRecordWaveRunnable)
-            waveHandler.post(onRecordWaveRunnable)
-            isOnRecordDurationOnPause = false
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun stopPlaying() {
-        playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-        player?.release()
-        player = null
-        isAudioVNPlaying = false
-
-        stopRecordWaveRunnable()
-        wave!!.progress = 0F
-//        vnRecordProgress = 0
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun resumeRecording() {
-        if (isPaused) {
-            isVnResuming = true
-            startRecording() // Start a new recording session, appending to the previous file
-            waveForm!!.visibility = View.VISIBLE
-            timerTv!!.visibility = View.VISIBLE
-            playAudioLayout!!.visibility = View.GONE
-            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-            recordVN!!.setImageResource(R.drawable.baseline_pause_black)
-        }
-
-    }
-
-    override fun onTimerTick(duration: String) {
-        timerTv!!.text = duration
-
-        var amplitude = mediaRecorder!!.maxAmplitude.toFloat()
-        amplitude = if (amplitude > 0) amplitude else 130f
-//        Log.d("onTimerTick", "onTimerTick: media recorder amplitude: ${mediaRecorder?.maxAmplitude}")
-        waveForm!!.addAmplitude(amplitude)
-
-    }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun pauseRecording() {
-        val TAG = "pauseRecording"
-//        firstTimeSendVn = true
-        if (isRecording && !isPaused) {
-            try {
-                mediaRecorder?.apply {
-                    stop()
-                    release()
-                }
-                mediaRecorder = null
-            } catch (e: Exception) {
-                Log.d(TAG, " failed to stop media recorder: $e")
-                e.printStackTrace()
-            }
-            isPaused = true
-            timer.pause() // Pause the recording timer
-            timerTv!!.visibility = View.INVISIBLE
-            waveForm!!.visibility = View.GONE
-            playAudioLayout!!.visibility = View.VISIBLE
-            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-            recordVN!!.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
-
-
-            Log.d(TAG, "pauseRecording: list of recordings  size: ${recordedAudioFiles.size}")
-            Log.d(TAG, "pauseRecording: list of recordings $recordedAudioFiles")
-
-            mixVN()
         }
     }
 
