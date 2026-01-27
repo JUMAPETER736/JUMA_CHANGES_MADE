@@ -790,6 +790,124 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         viewPager2.layoutParams = params
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun showVNDialog() {
+        dialog = BottomSheetDialog(requireContext())  // Remove 'val' - use class variable
+        dialog?.setContentView(R.layout.vn_record_layout)
+
+        // Initialize ALL views from the layout
+        deleteVN = dialog?.findViewById(R.id.deleteVN)!!
+        recordVN = dialog?.findViewById<ImageView>(R.id.recordVN)!!
+        playVnAudioBtn = dialog?.findViewById<ImageView>(R.id.playVnAudioBtn)!!
+        sendVN = dialog?.findViewById<ImageView>(R.id.sendVN)!!
+        timerTv = dialog?.findViewById<TextView>(R.id.timerTv)!!
+        secondTimerTv = dialog?.findViewById<TextView>(R.id.secondTimerTv)!!
+        wave = dialog?.findViewById<WaveformSeekBar>(R.id.wave)!!
+        playAudioLayout = dialog?.findViewById<LinearLayout>(R.id.playVNRecorded)!!
+
+        // Get the waveform containers
+        val waveformScrollView = dialog?.findViewById<HorizontalScrollView>(R.id.waveformScrollView)!!
+        val waveDotsContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer)!!
+
+        // Clear any existing views
+        waveDotsContainer.removeAllViews()
+        waveBars.clear()
+
+        // Set initial visibility
+        timerTv!!.visibility = View.VISIBLE
+        timerTv!!.text = "00:00"
+        playAudioLayout!!.visibility = View.GONE
+        wave!!.visibility = View.GONE
+        waveformScrollView.visibility = View.VISIBLE
+        waveDotsContainer.visibility = View.VISIBLE
+
+        playerTimerTv = playAudioLayout
+
+        Log.d(TAG, "showVNDialog: All views initialized")
+
+        val dialogView = dialog?.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+        dialogView?.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.slide_up))
+
+        // Start recording AFTER all views are initialized
+        startRecording()
+
+        deleteVN!!.setOnClickListener {
+            deleteRecording()
+            if (player?.isPlaying == true) {
+                stopPlaying()
+            }
+            dialog?.dismiss()
+        }
+
+        recordVN!!.setOnClickListener {
+            Log.d(TAG, "recordVN clicked - isPaused: $isPaused, isRecording: $isRecording")
+            when {
+                isPaused -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        resumeRecording()
+                    }
+                }
+                isRecording -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        pauseRecording()
+                    }
+                }
+                else -> Log.d("recordVN", "onCreate: else in vn record btn on click")
+            }
+        }
+
+        sendVN!!.setOnClickListener {
+            CoroutineScope(Dispatchers.Main).launch {
+                Log.d(TAG, "sendVN: recorded files size ${recordedAudioFiles.size}")
+                Log.d(TAG, "sendVN: wasPaused $wasPaused")
+
+                if (isRecording && !isPaused) {
+                    try {
+                        isListeningToAudio = false
+                        val currentTime = System.currentTimeMillis()
+                        recordingElapsedTime += (currentTime - recordingStartTime)
+                        mediaRecorder?.apply {
+                            stop()
+                            release()
+                        }
+                        mediaRecorder = null
+                        timerHandler.removeCallbacksAndMessages(null)
+                        Log.d("SendVN", "Stopped recording before sending")
+                    } catch (e: Exception) {
+                        Log.e("SendVN", "Error stopping recording: ${e.message}")
+                    }
+                }
+
+                if (!wasPaused && isRecording) {
+                    Log.d("SendVN", "When sending vn was paused was false")
+                    mixVoiceNote()
+                    delay(500)
+                }
+
+                lifecycleScope.launch(Dispatchers.Main) {
+                    delay(500)
+                    stopRecording()
+                }
+            }
+            dialog?.dismiss()
+        }
+
+        dialog?.setOnDismissListener {
+            if (isRecording && !isPaused) {
+                try {
+                    timer.stop()
+                    isListeningToAudio = false
+                    audioRecord?.release()
+                    audioRecord = null
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error stopping timer: ${e.message}")
+                }
+            }
+        }
+
+        dialog?.show()
+    }
+
 
     //  ADD THESE VARIABLES AT THE TOP OF YOUR CLASS
 
@@ -1316,150 +1434,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         waveDotsContainer?.removeAllViews()
         waveBars.clear()
     }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun showVNDialog() {
-        val dialog = BottomSheetDialog(requireContext())
-        dialog.setContentView(R.layout.vn_record_layout)
-
-        // Initialize ALL views from the layout
-        deleteVN = dialog.findViewById(R.id.deleteVN)!!
-        recordVN = dialog.findViewById<ImageView>(R.id.recordVN)!!
-        playVnAudioBtn = dialog.findViewById<ImageView>(R.id.playVnAudioBtn)!!
-        sendVN = dialog.findViewById<ImageView>(R.id.sendVN)!!
-        timerTv = dialog.findViewById<TextView>(R.id.timerTv)!!
-        secondTimerTv = dialog.findViewById<TextView>(R.id.secondTimerTv)!!
-        wave = dialog.findViewById<WaveformSeekBar>(R.id.wave)!!
-        playAudioLayout = dialog.findViewById<LinearLayout>(R.id.playVNRecorded)!!
-
-        // Get the waveform containers
-        val waveformScrollView = dialog.findViewById<HorizontalScrollView>(R.id.waveformScrollView)!!
-        val waveDotsContainer = dialog.findViewById<LinearLayout>(R.id.waveDotsContainer)!!
-
-        // IMPORTANT: Don't create WaveFormView - use the existing waveDotsContainer
-        // Clear any existing views
-        waveDotsContainer.removeAllViews()
-        waveBars.clear()
-
-        // Set initial visibility
-        timerTv!!.visibility = View.VISIBLE
-        timerTv!!.text = "00:00.00"
-        playAudioLayout!!.visibility = View.GONE
-        wave!!.visibility = View.GONE
-        waveformScrollView.visibility = View.VISIBLE
-        waveDotsContainer.visibility = View.VISIBLE
-
-        playerTimerTv = playAudioLayout
-
-        Log.d(TAG, "showVNDialog: All views initialized")
-
-        val dialogView = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-        dialogView?.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.slide_up))
-
-        // Start recording AFTER all views are initialized
-        startRecording()
-
-        deleteVN!!.setOnClickListener {
-            deleteRecording()
-            if (player?.isPlaying == true) {
-                stopPlaying()
-            }
-            dialog.dismiss()
-        }
-
-        recordVN!!.setOnClickListener {
-            Log.d(TAG, "recordVN clicked - isPaused: $isPaused, isRecording: $isRecording")
-            when {
-                isPaused -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        resumeRecording()
-                    }
-                }
-                isRecording -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        pauseRecording()
-                    }
-                }
-                else -> Log.d("recordVN", "onCreate: else in vn record btn on click")
-            }
-        }
-
-        sendVN!!.setOnClickListener {
-            CoroutineScope(Dispatchers.Main).launch {
-                Log.d(TAG, "sendVN: recorded files size ${recordedAudioFiles.size}")
-                Log.d(TAG, "sendVN: wasPaused $wasPaused")
-
-                // Stop recording if still recording
-                if (isRecording && !isPaused) {
-                    try {
-                        isListeningToAudio = false
-
-                        val currentTime = System.currentTimeMillis()
-                        recordingElapsedTime += (currentTime - recordingStartTime)
-
-                        mediaRecorder?.apply {
-                            stop()
-                            release()
-                        }
-                        mediaRecorder = null
-
-                        timerHandler.removeCallbacksAndMessages(null)
-
-                        Log.d("SendVN", "Stopped recording before sending")
-                    } catch (e: Exception) {
-                        Log.e("SendVN", "Error stopping recording: ${e.message}")
-                    }
-                }
-
-                // If paused and not mixed yet, wait for mixing
-                if (!wasPaused && isRecording) {
-                    Log.d("SendVN", "When sending vn was paused was false")
-                    mixVoiceNote()
-                    // Wait a bit for mixing to complete
-                    delay(500)
-                }
-
-                lifecycleScope.launch(Dispatchers.Main) {
-                    delay(500)
-                    stopRecording()
-                }
-            }
-            dialog.dismiss()
-        }
-
-        dialog.setOnDismissListener {
-            if (isRecording && !isPaused) {
-                try {
-                    timer.stop()
-                    isListeningToAudio = false
-                    audioRecord?.release()
-                    audioRecord = null
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error stopping timer: ${e.message}")
-                }
-            }
-        }
-
-        dialog.show()
-
-        Handler(Looper.getMainLooper()).postDelayed({
-            val testContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer)
-            Log.d(TAG, "TEST: testContainer = $testContainer")
-
-            if (testContainer != null) {
-                // Manually add a test bar
-                val testBar = View(requireContext()).apply {
-                    layoutParams = LinearLayout.LayoutParams(dpToPx(20), dpToPx(40))
-                    setBackgroundColor(Color.RED)
-                }
-                testContainer.addView(testBar)
-                Log.d(TAG, "TEST: Added red test bar, container now has ${testContainer.childCount} children")
-            } else {
-                Log.e(TAG, "TEST: testContainer is NULL - this means dialog variable is wrong!")
-            }
-        }, 1000)
-    }
-
+    
 
     // REPLACE or ADD the updateRecordingTimer function:
 
