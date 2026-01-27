@@ -85,6 +85,7 @@ import com.uyscuti.social.circuit.ui.fragments.feed.FavoriteFragment
 import com.uyscuti.sharedmodule.UploadFeedActivity
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
+import com.uyscuti.social.circuit.MainActivity.VoiceNoteState
 import com.uyscuti.social.circuit.adapter.FragmentPageAdapter
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.posts.Account
@@ -198,7 +199,9 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     private var waveForm: WaveFormView? = null
     private var wave: WaveformSeekBar? = null
     private var playAudioLayout: LinearLayout? = null
-
+    private var totalRecordedDuration = 0L
+    private var voiceNoteState = VoiceNoteState.IDLE
+    private var mixingCompleted = false
 
     // Add to your existing variable declarations
     private val waveBars = mutableListOf<View>()
@@ -208,9 +211,8 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     private var isListeningToAudio = false
     private var recordingStartTime = 0L
     private var recordingElapsedTime = 0L
-    private var totalRecordedDuration = 0L
     private var playbackTimerRunnable: kotlinx.coroutines.Runnable? = null
-
+    private var dialog: BottomSheetDialog? = null
     private var wifiAnimation: AnimationDrawable? = null
 
     //    private lateinit var feedUploadImageView: ImageView
@@ -772,26 +774,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     private val waveHandler = Handler(Looper.getMainLooper())
     private val timerHandler = Handler(Looper.getMainLooper())
 
-    @SuppressLint("DefaultLocale")
-    private fun updateRecordingTimer() {
-        timerHandler.post(object : Runnable {
-            override fun run() {
-                if (isRecording && !isPaused) {
-                    val currentTime = System.currentTimeMillis()
-                    val elapsed = recordingElapsedTime + (currentTime - recordingStartTime)
-
-                    val seconds = (elapsed / 1000) % 60
-                    val minutes = (elapsed / 1000) / 60
-
-                    val formatted = String.format("%02d:%02d", minutes, seconds)
-                    timerTv?.text = formatted
-
-                    timerHandler.postDelayed(this, 100) // Update every 100ms
-                }
-            }
-        })
-    }
-
     private val onRecordWaveRunnable = object : Runnable {
         override fun run() {
 //            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
@@ -808,7 +790,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
         }
     }
-
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun showVNDialog() {
@@ -874,17 +855,36 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
                 Log.d(TAG, "sendVN: recorded files size ${recordedAudioFiles.size}")
                 Log.d(TAG, "sendVN: wasPaused $wasPaused")
 
-                if (!wasPaused) {
-                    timer.stop()
-                    isListeningToAudio = false // Stop audio listening
-                    mediaRecorder?.apply {
-                        stop()
-                        release()
+                // Stop recording if still recording
+                if (isRecording && !isPaused) {
+                    try {
+                        isListeningToAudio = false
+
+                        val currentTime = System.currentTimeMillis()
+                        recordingElapsedTime += (currentTime - recordingStartTime)
+
+                        mediaRecorder?.apply {
+                            stop()
+                            release()
+                        }
+                        mediaRecorder = null
+
+                        timerHandler.removeCallbacksAndMessages(null)
+
+                        Log.d("SendVN", "Stopped recording before sending")
+                    } catch (e: Exception) {
+                        Log.e("SendVN", "Error stopping recording: ${e.message}")
                     }
-                    mediaRecorder = null
+                }
+
+                // If paused and not mixed yet, wait for mixing
+                if (!wasPaused && isRecording) {
                     Log.d("SendVN", "When sending vn was paused was false")
                     mixVN()
+                    // Wait a bit for mixing to complete
+                    delay(500)
                 }
+
                 lifecycleScope.launch(Dispatchers.Main) {
                     delay(500)
                     stopRecording()
@@ -907,6 +907,89 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
 
         dialog.show()
+    }
+
+
+// REPLACE or ADD the updateRecordingTimer function:
+
+    @SuppressLint("DefaultLocale")
+    private fun updateRecordingTimer() {
+        timerHandler.post(object : Runnable {
+            override fun run() {
+                if (isRecording && !isPaused) {
+                    val currentTime = System.currentTimeMillis()
+                    val elapsed = recordingElapsedTime + (currentTime - recordingStartTime)
+
+                    val seconds = (elapsed / 1000) % 60
+                    val minutes = (elapsed / 1000) / 60
+
+                    val formatted = String.format("%02d:%02d", minutes, seconds)
+                    timerTv?.text = formatted
+
+                    timerHandler.postDelayed(this, 100) // Update every 100ms
+                }
+            }
+        })
+    }
+
+// MAKE SURE your stopRecording function uses the correct file:
+
+    @SuppressLint("SetTextI18n")
+    private fun stopRecording() {
+        try {
+            if (mediaRecorder != null) {
+                mediaRecorder?.apply {
+                    stop()
+                    release()
+                }
+                mediaRecorder = null
+            }
+            isRecording = false
+            isPaused = false
+            wasPaused = false
+            timerTv!!.text = "00:00"
+
+            recordVN!!.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
+            sendVN!!.setBackgroundResource(R.drawable.ic_ripple_disabled)
+            sendVN!!.isClickable = false
+
+            amplitudes = waveForm!!.clear()
+            amps = 0
+            timer.stop()
+            if (player?.isPlaying == true) {
+                stopPlaying()
+            }
+
+            // Select appropriate audio file
+            val audioFilePath = if (mixingCompleted && File(outputVnFile).exists()) {
+                Log.d(TAG, "Using mixed audio file: $outputVnFile")
+                outputVnFile
+            } else {
+                Log.d(TAG, "Using single recording file: $outputFile")
+                outputFile
+            }
+
+            val file = File(audioFilePath)
+            if (!file.exists()) {
+                Log.e(TAG, "Audio file not found: $audioFilePath")
+                return
+            }
+
+            val durationString = getFormattedDuration(audioFilePath)
+            val fileName = getFileNameFromLocalPath(audioFilePath)
+
+            val intent = Intent(requireActivity(), UploadFeedActivity::class.java)
+            intent.putExtra("vnFilePath", audioFilePath)
+            intent.putExtra("vnFileName", fileName)
+            intent.putExtra("vnDurationString", durationString)
+            startActivityForResult(intent, REQUEST_UPLOAD_FEED_ACTIVITY)
+
+            recordedAudioFiles.clear()
+            mixingCompleted = false
+        } catch (e: Exception) {
+            Log.e(TAG, "stopRecording: $e")
+            e.printStackTrace()
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -974,64 +1057,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun stopRecording() {
-        try {
-            if (mediaRecorder != null) {
-                mediaRecorder?.apply {
-                    stop()
-                    release()
-                }
-                mediaRecorder = null
-            }
-            isRecording = false
-            isPaused = false
-            wasPaused = false
-            timerTv!!.text = "00:00.00"
-
-            recordVN!!.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
-            sendVN!!.setBackgroundResource(R.drawable.ic_ripple_disabled)
-            sendVN!!.isClickable = false
-
-            amplitudes = waveForm!!.clear()
-            amps = 0
-            timer.stop()
-            if (player?.isPlaying == true) {
-                stopPlaying()
-            }
-
-            val file = File(outputVnFile)
-            val file2 = File(outputFile)
-            var fileName = ""
-            var durationString = ""
-
-            if (recordedAudioFiles.size != 1) {
-                durationString = getFormattedDuration(outputVnFile)
-                fileName = getFileNameFromLocalPath(outputVnFile)
-                val intent = Intent(requireActivity(), UploadFeedActivity::class.java)
-                intent.putExtra("vnFilePath", outputVnFile)
-                intent.putExtra("vnFileName", fileName)
-                intent.putExtra("vnDurationString", durationString)
-                startActivityForResult(intent,
-                    REQUEST_UPLOAD_FEED_ACTIVITY
-                )
-            } else {
-                durationString = getFormattedDuration(outputFile)
-                fileName = getFileNameFromLocalPath(outputFile)
-                val intent = Intent(requireActivity(), UploadFeedActivity::class.java)
-                intent.putExtra("vnFilePath", outputFile)
-                intent.putExtra("vnDurationString", durationString)
-                intent.putExtra("vnFileName", fileName)
-                startActivityForResult(intent,
-                    REQUEST_UPLOAD_FEED_ACTIVITY
-                )
-            }
-            recordedAudioFiles.clear()
-        } catch (e: Exception) {
-            Log.e(TAG, "stopRecording: $e")
-            e.printStackTrace()
-        }
-    }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun onUploadVNButtonClick() {
