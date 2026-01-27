@@ -741,12 +741,14 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         val waveDotsContainer = dialog.findViewById<LinearLayout>(R.id.waveDotsContainer)!!
 
         // Create WaveFormView programmatically and add to container
-        waveForm = WaveFormView(requireContext()).apply {
+      
+        waveForm = WaveFormView(requireContext(), null).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT
             )
         }
+
         waveDotsContainer.removeAllViews()
         waveDotsContainer.addView(waveForm)
 
