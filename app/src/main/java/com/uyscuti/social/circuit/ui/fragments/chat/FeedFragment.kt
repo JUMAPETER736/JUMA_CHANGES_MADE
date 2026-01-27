@@ -11,6 +11,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.AnimationDrawable
+import android.media.AudioRecord
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Build
@@ -195,7 +196,14 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     private var playAudioLayout: LinearLayout? = null
 
 
+    // Add to your existing variable declarations
+    private val waveBars = mutableListOf<View>()
+    private var waveBarCount = 0
+    private val maxWaveBars = 100
+    private var audioRecord: AudioRecord? = null
+    private var isListeningToAudio = false
 
+    private val REQUEST_RECORD_AUDIO_PERMISSION = 200
 
     private var wifiAnimation: AnimationDrawable? = null
 
