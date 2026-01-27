@@ -342,7 +342,7 @@
 
                 <!-- Shared waveform area (always visible) -->
                 <LinearLayout
-                    android:id="@+id/recordingLayout"
+                    android:id="@+id/waveformArea"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -406,13 +406,14 @@
                             android:layout_height="match_parent"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:paddingEnd="8dp" />
+                            android:paddingEnd="8dp"
+                            tools:ignore="RtlSymmetry" />
                     </HorizontalScrollView>
                 </LinearLayout>
 
-                <!-- Container for WaveformSeekBar -->
+                <!-- Container for WaveformSeekBar (hidden by default) -->
                 <LinearLayout
-
+                    android:id="@+id/recordingLayout"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
                     android:orientation="vertical"
@@ -422,7 +423,6 @@
                         android:id="@+id/wave"
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
-                        android:layout_weight="1"
                         android:scaleY="1.8"
                         app:wave_width="4dp"
                         app:wave_gap="6dp"

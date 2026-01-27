@@ -2,9 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- ========================================================================================
+    <!-- ====
          PERMISSIONS - Grouped by Category
-         ======================================================================================== -->
+         ==== -->
 
     <!-- Storage Permissions (Android 12 and below) -->
     <uses-permission
@@ -45,9 +45,9 @@
     <!-- Audio Permissions -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <!-- ========================================================================================
+    <!-- ====
          QUERIES - External App Package Visibility
-         ======================================================================================== -->
+         ==== -->
 
     <!-- Image Picker Query -->
     <queries>
@@ -88,9 +88,9 @@
         <package android:name="org.thunderdog.challegram" />
     </queries>
 
-    <!-- ========================================================================================
+    <!-- ====
          APPLICATION
-         ======================================================================================== -->
+         ==== -->
 
     <application
         android:name=".MainApplication"
@@ -107,9 +107,9 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
-        <!-- ====================================================================================
+        <!-- 
              METADATA - Facebook SDK Configuration
-             ==================================================================================== -->
+              -->
 
         <meta-data
             android:name="com.facebook.sdk.ApplicationId"
@@ -118,9 +118,9 @@
             android:name="com.facebook.sdk.ClientToken"
             android:value="@string/facebook_client_token" />
 
-        <!-- ====================================================================================
+        <!-- 
              ACTIVITIES - Main & Core Activities
-             ==================================================================================== -->
+              -->
 
         <!-- Splash Screen - App Entry Point -->
         <activity
@@ -140,9 +140,9 @@
             android:theme="@style/AppThemeWithLightStatusBar"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- ====================================================================================
+        <!-- 
              ACTIVITIES - Authentication
-             ==================================================================================== -->
+              -->
 
         <activity
             android:name=".ui.LoginActivity"
@@ -166,9 +166,9 @@
             android:name=".ui.Password_Reset_Success"
             android:exported="false" />
 
-        <!-- ====================================================================================
+        <!-- 
              ACTIVITIES - User Profile & Settings
-             ==================================================================================== -->
+              -->
 
         <activity
             android:name=".ui.UserProfileActivity"
@@ -232,9 +232,9 @@
             android:exported="false"
             android:theme="@style/Base.Theme.FlashDesign"/>
 
-        <!-- ====================================================================================
+        <!-- 
              ACTIVITIES - Messaging & Chat
-             ==================================================================================== -->
+              -->
 
         <activity
             android:name="com.uyscuti.sharedmodule.MessagesActivity"
@@ -265,9 +265,9 @@
             android:label="@string/title_activity_group_settings"
             android:theme="@style/Theme.FlashDesign" />
 
-        <!-- ====================================================================================
+        <!-- 
              ACTIVITIES - Calls
-             ==================================================================================== -->
+              -->
 
         <activity
             android:name="com.uyscuti.social.call.ui.CallActivity"
@@ -280,9 +280,9 @@
             android:name=".CallInfoActivity"
             android:theme="@style/Base.Theme.FlashDesign" />
 
-        <!-- ====================================================================================
+        <!-- 
              ACTIVITIES - Business & Advertisements
-             ==================================================================================== -->
+              -->
 
         <!-- Business Profile & Details -->
         <activity
@@ -333,9 +333,9 @@
             </intent-filter>
         </activity>
 
-        <!-- ====================================================================================
+        <!-- 
              ACTIVITIES - Feed & Posts
-             ==================================================================================== -->
+              -->
 
         <activity
             android:name="com.uyscuti.sharedmodule.UploadFeedActivity"
@@ -356,9 +356,9 @@
             android:name="com.uyscuti.sharedmodule.FullSellerActivity"
             android:exported="false" />
 
-        <!-- ====================================================================================
+        <!-- 
              ACTIVITIES - Shorts & Videos
-             ==================================================================================== -->
+              -->
 
         <activity
             android:name="com.uyscuti.sharedmodule.shorts.UploadShortsActivity"
@@ -374,9 +374,9 @@
             android:name="com.uyscuti.sharedmodule.ui.SearchShortActivity"
             android:exported="false" />
 
-        <!-- ====================================================================================
+        <!-- 
              ACTIVITIES - Media Upload & Selection
-             ==================================================================================== -->
+              -->
 
         <!-- Image & Video Selection -->
         <activity
@@ -415,9 +415,9 @@
             android:name="com.uyscuti.sharedmodule.uploads.LocationActivity"
             android:exported="false" />
 
-        <!-- ====================================================================================
+        <!-- 
              ACTIVITIES - Media Viewing & Playback
-             ==================================================================================== -->
+              -->
 
         <!-- Image Viewing -->
         <activity
@@ -445,9 +445,9 @@
             android:name="com.uyscuti.sharedmodule.ui.GifActivity"
             android:exported="false" />
 
-        <!-- ====================================================================================
+        <!-- 
              ACTIVITIES - Notifications & Reports
-             ==================================================================================== -->
+              -->
 
         <activity
             android:name=".NotificationActivity"
@@ -457,17 +457,17 @@
             android:name="com.uyscuti.sharedmodule.ReportNotificationActivity2"
             android:exported="false" />
 
-        <!-- ====================================================================================
+        <!-- 
              ACTIVITIES - Search
-             ==================================================================================== -->
+              -->
 
         <activity
             android:name=".user_interface.UniversalSearchActivity"
             android:exported="false" />
 
-        <!-- ====================================================================================
+        <!-- 
              FILE PROVIDERS
-             ==================================================================================== -->
+              -->
 
         <!-- Main File Provider -->
         <provider
@@ -497,9 +497,9 @@
             android:authorities="${applicationId}.androidx-startup"
             tools:node="remove" />
 
-        <!-- ====================================================================================
+        <!-- 
              SERVICES
-             ==================================================================================== -->
+              -->
 
         <!-- Network & Socket Services -->
         <service
@@ -538,9 +538,9 @@
             android:name="com.uyscuti.sharedmodule.service.VideoPreLoadingService"
             android:exported="false" />
 
-        <!-- ====================================================================================
+        <!-- 
              BROADCAST RECEIVERS
-             ==================================================================================== -->
+              -->
 
         <!-- Connectivity Receiver -->
         <receiver

@@ -1256,7 +1256,7 @@ class MainActivity : AppCompatActivity(),
          }
 
          private fun mixVoiceNote() {
-             val TAG = "mixVN"
+             val TAG = "MixVoiceNote"
              try {
                  wasPaused = true
                  Log.d(TAG, "pauseRecording: outputFile: $outputVnFile")
