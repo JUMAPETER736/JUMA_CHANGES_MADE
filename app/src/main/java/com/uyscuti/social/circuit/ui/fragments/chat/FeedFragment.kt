@@ -1475,4 +1475,179 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
+    private fun listenToAudio() {
+        try {
+            val minBufferSize = AudioRecord.getMinBufferSize(
+                44100,
+                android.media.AudioFormat.CHANNEL_IN_MONO,
+                android.media.AudioFormat.ENCODING_PCM_16BIT
+            )
+
+            if (ActivityCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.RECORD_AUDIO
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+
+            audioRecord = AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                44100,
+                android.media.AudioFormat.CHANNEL_IN_MONO,
+                android.media.AudioFormat.ENCODING_PCM_16BIT,
+                minBufferSize * 2
+            )
+
+            audioRecord?.startRecording()
+            val buffer = ShortArray(minBufferSize)
+
+            while (isListeningToAudio && isRecording) {
+                val readSize = audioRecord?.read(buffer, 0, minBufferSize) ?: 0
+
+                if (readSize > 0) {
+                    // Calculate RMS (Root Mean Square) for better amplitude detection
+                    var sum = 0.0
+                    for (i in 0 until readSize) {
+                        sum += (buffer[i].toDouble() * buffer[i].toDouble())
+                    }
+                    val rms = sqrt(sum / readSize)
+
+                    // Normalize amplitude to 0-1 range
+                    val normalizedAmplitude = (rms / 5000.0).coerceIn(0.0, 1.0).toFloat()
+
+                    requireActivity().runOnUiThread {
+                        if (normalizedAmplitude > 0.05f) { // Sound detected
+                            val heightMultiplier = 0.3f + (normalizedAmplitude * 2.2f)
+                            addWaveBarForSound(heightMultiplier)
+                        } else { // No sound
+                            addIdleDottedBarAtEnd()
+                        }
+                        scrollToRight()
+                    }
+                }
+
+                Thread.sleep(50) // Update every 50ms
+            }
+
+            audioRecord?.release()
+            audioRecord = null
+        } catch (e: Exception) {
+            Log.e("ListenToAudio", "Error: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    private fun addWaveBarForSound(heightMultiplier: Float) {
+        val waveDotsContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer) ?: return
+
+        val bar = View(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                dpToPx(4), // 4dp width
+                dpToPx(48) // 48dp max height
+            ).apply {
+                marginEnd = dpToPx(6)
+                gravity = android.view.Gravity.CENTER_VERTICAL
+            }
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(Color.parseColor("#3284fc")) // Blue color
+                cornerRadius = dpToPx(2).toFloat()
+            }
+            scaleY = heightMultiplier.coerceIn(0.2f, 2.5f)
+            alpha = 1.0f
+            tag = heightMultiplier
+        }
+
+        waveDotsContainer.addView(bar)
+        waveBars.add(bar)
+
+        if (waveBars.size > maxWaveBars) {
+            waveDotsContainer.removeViewAt(0)
+            waveBars.removeAt(0)
+        }
+
+        scrollToRight()
+    }
+
+    private fun addIdleDottedBarAtEnd() {
+        val waveDotsContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer) ?: return
+
+        val bar = View(requireContext()).apply {
+            val dotSize = dpToPx(5)
+            layoutParams = LinearLayout.LayoutParams(
+                dotSize,
+                dotSize
+            ).apply {
+                marginEnd = dpToPx(3)
+                gravity = android.view.Gravity.CENTER_VERTICAL
+            }
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor("#3284fc"))
+            }
+            scaleY = 1.0f
+            alpha = 1.0f
+            tag = "idle_dot"
+        }
+
+        waveDotsContainer.addView(bar)
+        waveBars.add(bar)
+
+        if (waveBars.size > maxWaveBars) {
+            waveDotsContainer.removeViewAt(0)
+            waveBars.removeAt(0)
+        }
+    }
+
+    private fun initializeDottedWaveform() {
+        val waveDotsContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer) ?: return
+        val waveformScrollView = dialog?.findViewById<HorizontalScrollView>(R.id.waveformScrollView) ?: return
+
+        waveDotsContainer.removeAllViews()
+        waveBars.clear()
+
+        val barsToFill = calculateBarsNeededForFullWidth()
+        repeat(barsToFill) {
+            addIdleDottedBarAtEnd()
+        }
+
+        waveformScrollView.post {
+            val maxScroll = (waveDotsContainer.width - waveformScrollView.width).coerceAtLeast(0)
+            if (maxScroll > 0) {
+                waveformScrollView.scrollTo(maxScroll, 0)
+            }
+        }
+    }
+
+    private fun calculateBarsNeededForFullWidth(): Int {
+        val screenWidth = resources.displayMetrics.widthPixels
+        val barWidth = dpToPx(4)
+        val barMargin = dpToPx(6)
+        val totalBarWidth = barWidth + barMargin
+        return (screenWidth / totalBarWidth) + 5
+    }
+
+    private fun scrollToRight() {
+        val waveDotsContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer) ?: return
+        val waveformScrollView = dialog?.findViewById<HorizontalScrollView>(R.id.waveformScrollView) ?: return
+
+        waveformScrollView.post {
+            val maxScroll = (waveDotsContainer.width - waveformScrollView.width).coerceAtLeast(0)
+            if (maxScroll > 0) {
+                waveformScrollView.smoothScrollTo(maxScroll, 0)
+            }
+        }
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
+    }
+
+    private fun clearWaveform() {
+        val waveDotsContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer) ?: return
+        waveDotsContainer.removeAllViews()
+        waveBars.clear()
+    }
+
 }
