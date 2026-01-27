@@ -47,6 +47,7 @@ import android.view.animation.AnimationUtils
 import android.view.animation.LinearInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SeekBar
@@ -304,6 +305,7 @@ import kotlin.properties.Delegates
 import kotlin.random.Random
 import androidx.core.content.edit
 import androidx.core.view.isVisible
+import androidx.fragment.app.activityViewModels
 import com.google.gson.Gson
 import com.uyscuti.sharedmodule.adapter.OnCommentsClickListener
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
@@ -321,11 +323,13 @@ import com.uyscuti.sharedmodule.viewmodels.comments.ShortCommentsViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.FeedLiveDataViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
+import com.uyscuti.social.business.viewmodel.notificationViewModel.NotificationViewModel
 import com.uyscuti.social.circuit.user_interface.UniversalSearchActivity
 import com.uyscuti.social.circuit.user_interface.userProfile.MyUserProfileAccount
 import com.uyscuti.social.core.service.LocationService
 import com.uyscuti.social.core.util.LocationServiceUtil
 import java.lang.Math.sqrt
+import kotlin.getValue
 
 private const val TAG = "MainActivity"
 
@@ -350,133 +354,18 @@ class MainActivity : AppCompatActivity(),
 
     private val catalogueViewModel: CatalogueAdapterViewModel by viewModels()
 
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var bottomNavigation: BottomNavigationView
-    private lateinit var myProfileRepository: ProfileRepository
-    private lateinit var settings: SharedPreferences
-    private lateinit var businessSettings: SharedPreferences
-    private val onBackPressedListeners: MutableList<OnBackPressedListener> = mutableListOf()
-    private val PREFS_NAME = "LocalSettings"
-    private val BUSINESS_PREFS_NAME = "BusinessProfile"
-    private val WORKER_TAG = "flash_socket_worker"
-    private lateinit var followingManager: FollowingManager
-
-
-    private lateinit var directReplyListener: DirectReplyListener
-
-    @Inject
-    lateinit var retrofitInterface: RetrofitInstance
-
-    @Inject
-    lateinit var coreChatSocketClient: CoreChatSocketClient
-
-    @Inject // or another appropriate scope
-    lateinit var chatManager: ChatManager
-
-    @Inject
-    lateinit var mainRepository: MainRepository
-
-    @Inject
-    lateinit var chatDatabase: ChatDatabase
-
-    var count = 0
-
-    @Inject
-    lateinit var localStorage: LocalStorage
-
-    private lateinit var myId: String
-
-    @Inject
-    lateinit var mainServiceRepository: MainServiceRepository
-
-    private val messageViewModel: MessageViewModel by viewModels()
-    private val dialogViewModel: DialogViewModel by viewModels()
-    private val groupDialogViewModel: GroupDialogViewModel by viewModels()
-         private val relationshipsViewModel: UserRelationshipsViewModel by viewModels()
-
-         private val viewModel: UserProfileShortsViewModel by viewModels()
-
-    private val mainViewModel: MainViewModel by viewModels()
-
-    private val callViewModel: CallViewModel by viewModels()
-    private val feedLiveDataViewModel: FeedLiveDataViewModel by viewModels()
-
-    //    private val shortsViewModel: ShortsViewModel by viewModels()
-    private lateinit var shortsViewModel: ShortsViewModel
-    private lateinit var feedViewModel: GetFeedViewModel
-
-    private lateinit var userProfileShortsViewModel: GetShortsByUsernameViewModel
-    private lateinit var userShortsFragment: UserProfileShortsViewModel
-    private lateinit var shortsCommentViewModel: RoomCommentsViewModel
-    private lateinit var commentFilesViewModel: RoomCommentFilesViewModel
-    private lateinit var commentsViewModel: ShortCommentsViewModel
-    private lateinit var commentsReplyViewModel: ShortCommentReplyViewModel
-    private lateinit var roomCommentReplyViewModel: RoomCommentReplyViewModel
-    private lateinit var commentViewModel: CommentsViewModel
-
-
-    private var actionMode: ActionMode? = null
-
-
-    private lateinit var item: NavigationItem
-    private lateinit var item1: NavigationItem
-    private lateinit var item2: NavigationItem
-    private lateinit var item3: NavigationItem
-    private lateinit var item4: NavigationItem
-
-    private lateinit var myViewModel: LikeUnLikeViewModel
-
-    private lateinit var emojiPopup: EmojiPopup
-    private lateinit var inputMethodManager: InputMethodManager
-    private var emojiShowing = false
-    private lateinit var outputFile: String
-    private var mediaRecorder: MediaRecorder? = null
-
-    private var amps = 0
-
-
-    private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
-    private lateinit var audioPickerLauncher: ActivityResultLauncher<Intent>
-    private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
-    private lateinit var docsPickerLauncher: ActivityResultLauncher<Intent>
-
-    private var listOfReplies = mutableListOf<com.uyscuti.sharedmodule.data.model.Comment>()
-
-
-
-    private var adapter: CommentsRecyclerViewAdapter? = null
-    private var isReply = false
-
-
-    private lateinit var postId: String
-    private lateinit var commentId: String
-    private var commentCount by Delegates.notNull<Int>()
-    private var shortToComment: ShortsEntity? = null
-
-
-         @Inject
-         lateinit var clientSocket: CoreChatSocketClient
-
-    private var data: com.uyscuti.sharedmodule.data.model.Comment? = null
-    private var position: Int = 0
-    private val timeFormatter = MongoDBTimeFormatter()
-
-    /**
-     * */
-
-    private var feedToComment: com.uyscuti.social.network.api.response.posts.Post? =
+        private var feedToComment: com.uyscuti.social.network.api.response.posts.Post? =
         null
     private var favoriteFeedToComment: com.uyscuti.social.network.api.response.posts.Post? =
         null
     private var myFeedToComment: com.uyscuti.social.network.api.response.posts.Post? =
         null
 
-    private val REQUEST_CODE = 2024
-    private val IMAGES_REQUEST_CODE = 2023
+
     private val REQUEST_CODE_IMAGE_PICKER = 100
     private val REQUEST_CODE_VIDEO_PICKER = 158
     private val REQUEST_CODE_IMAGE_PICKER_CATALOGUE = 110
-         private val REQUEST_RECORD_AUDIO_PERMISSION = 200
+         private val BUSINESS_PREFS_NAME = "BusinessProfile"
 
         // Location service for getting user location
          private lateinit var locationService: LocationService
@@ -504,78 +393,12 @@ class MainActivity : AppCompatActivity(),
 
 
 
-    private lateinit var audioRecorder: AudioRecord
-    private var isRecording = false
-    private var isPaused = false
-    private var isAudioVNPlaying = false
-    private var isAudioVNPaused = false
-
-
-
-    private var isVnResuming = false
-
-         private var recordingStartTime = 0L
-         private var recordingElapsedTime = 0L
-         private var totalRecordedDuration = 0L
-         private var isListeningToAudio = false
-         private var playbackTimerRunnable: Runnable? = null
-         private var voiceNoteState = VoiceNoteState.IDLE
-         private var audioRecord: AudioRecord? = null
-
-  
-
-         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private val permissions = arrayOf(
-        Manifest.permission.RECORD_AUDIO,
-        Manifest.permission.READ_EXTERNAL_STORAGE,
-        Manifest.permission.READ_MEDIA_IMAGES,
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.ACCESS_COARSE_LOCATION,
-        Manifest.permission.ACCESS_BACKGROUND_LOCATION
-    )
-    private var permissionGranted = false
-    private var permissionGranted2 = false
-    private var permissionGranted3 = false
-
-    //    private var playButton: PlayButton? = null
-    private var player: MediaPlayer? = null
-
-    // Define a list to store the paths of recorded audio files
-    private val recordedAudioFiles = mutableListOf<String>()
-
-    private lateinit var amplitudes: ArrayList<Float>
-    private var outputVnFile: String = ""
-
-    private lateinit var httpDataSourceFactory: HttpDataSource.Factory
-    private lateinit var defaultDataSourceFactory: DefaultDataSourceFactory
-    private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
-
-    private val simpleCache: SimpleCache = FlashApplication.cache
-    private val playbackStateListener: Player.Listener = playbackStateListener()
-
-    private var exoPlayer: ExoPlayer? = null
-
-
-    private val exoPlayerItems = ArrayList<ExoPlayerItem>()
-    var customDialog: CustomAlertDialog? = null
-
-
-    private val notificationViewModel: com.uyscuti.social.business.viewmodel.notificationViewModel.NotificationViewModel by viewModels()
 
     private lateinit var notificationBadge: TextView
 
     private lateinit var notificationIcon: ImageView
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private val getDocumentContent =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                result.data?.data?.let { uri ->
-                    // Handle the selected document URI
-                    handleDocumentUri(uri)
-                }
-            }
-        }
+
 
          private val locationStatusReceiver = object : BroadcastReceiver() {
              @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -597,7 +420,6 @@ class MainActivity : AppCompatActivity(),
          }
 
 
-    private var lastFragmentId: String? = null
 
          private fun onGoBack() {
              val callback = object : OnBackPressedCallback(true) {
@@ -616,6 +438,188 @@ class MainActivity : AppCompatActivity(),
          }
 
 
+
+
+
+
+
+         // PERMISSIONS
+
+         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+         private val permissions = arrayOf(
+             Manifest.permission.RECORD_AUDIO,
+             Manifest.permission.READ_EXTERNAL_STORAGE,
+             Manifest.permission.READ_MEDIA_IMAGES
+         )
+
+         private lateinit var followingManager: FollowingManager
+         private var permissionGranted = false
+         private var permissionGranted2 = false
+         private var permissionGranted3 = false
+         private val REQUEST_CODE = 2024
+         private val IMAGES_REQUEST_CODE = 2023
+         private val REQUEST_RECORD_AUDIO_PERMISSION = 200
+
+
+
+         // VIEW BINDING & UI COMPONENTS
+
+         private lateinit var binding: ActivityMainBinding
+         private lateinit var bottomNavigation: BottomNavigationView
+         private lateinit var feedAdapter: FeedAdapter
+         private lateinit var emojiPopup: EmojiPopup
+         private lateinit var inputMethodManager: InputMethodManager
+         private lateinit var waveformScrollView: HorizontalScrollView
+         private lateinit var waveDotsContainer: LinearLayout
+         private var actionMode: ActionMode? = null
+         private var customDialog: CustomAlertDialog? = null
+
+
+         // NAVIGATION
+
+         private lateinit var item: NavigationItem
+         private lateinit var item1: NavigationItem
+         private lateinit var item2: NavigationItem
+         private lateinit var item3: NavigationItem
+         private lateinit var item4: NavigationItem
+         private var lastFragmentId: String? = null
+         private val onBackPressedListeners: MutableList<OnBackPressedListener> = mutableListOf()
+         //private val relationshipsViewModel: UserRelationshipsViewModel by activityViewModels()
+
+         // DEPENDENCY INJECTIONS
+
+         @Inject
+         lateinit var clientSocket: CoreChatSocketClient
+
+         @Inject
+         lateinit var retrofitInterface: RetrofitInstance
+
+         @Inject
+         lateinit var coreChatSocketClient: CoreChatSocketClient
+
+         @Inject
+         lateinit var chatManager: ChatManager
+
+         @Inject
+         lateinit var mainRepository: MainRepository
+
+         @Inject
+         lateinit var chatDatabase: ChatDatabase
+
+         @Inject
+         lateinit var localStorage: LocalStorage
+
+         @Inject
+         lateinit var mainServiceRepository: MainServiceRepository
+
+
+         // REPOSITORIES & PREFERENCES
+
+         private lateinit var myProfileRepository: ProfileRepository
+         private lateinit var settings: SharedPreferences
+         private val PREFS_NAME = "LocalSettings"
+         private val WORKER_TAG = "flash_socket_worker"
+
+
+         // VIEW MODELS
+         private lateinit var businessSettings: SharedPreferences
+         private val messageViewModel: MessageViewModel by viewModels()
+         private val dialogViewModel: DialogViewModel by viewModels()
+         private val groupDialogViewModel: GroupDialogViewModel by viewModels()
+         private val viewModel: UserProfileShortsViewModel by viewModels()
+         private val mainViewModel: MainViewModel by viewModels()
+         private val callViewModel: CallViewModel by viewModels()
+         private val feedLiveDataViewModel: FeedLiveDataViewModel by viewModels()
+         private lateinit var shortsViewModel: ShortsViewModel
+         private lateinit var feedViewModel: GetFeedViewModel
+         private lateinit var userProfileShortsViewModel: GetShortsByUsernameViewModel
+         private lateinit var userShortsFragment: UserProfileShortsViewModel
+         private lateinit var shortsCommentViewModel: RoomCommentsViewModel
+         private lateinit var commentFilesViewModel: RoomCommentFilesViewModel
+         private lateinit var commentsViewModel: ShortCommentsViewModel
+         private lateinit var commentsReplyViewModel: ShortCommentReplyViewModel
+         private lateinit var roomCommentReplyViewModel: RoomCommentReplyViewModel
+         private lateinit var commentViewModel: CommentsViewModel
+         private lateinit var myViewModel: LikeUnLikeViewModel
+         private lateinit var notificationViewModel: NotificationViewModel
+
+
+         // AUDIO RECORDING & PLAYBACK
+
+         private lateinit var outputFile: String
+         private var mediaRecorder: MediaRecorder? = null
+         private lateinit var audioRecorder: AudioRecord
+         private var audioRecord: AudioRecord? = null
+         private var amps = 0
+         private var isRecording = false
+         private var isPaused = false
+         private var isListeningToAudio = false
+         private lateinit var amplitudes: ArrayList<Float>
+         private var outputVnFile: String = ""
+         private val recordedAudioFiles = mutableListOf<String>()
+         private var recordingStartTime = 0L
+         private var recordingElapsedTime = 0L
+         private var totalRecordedDuration = 0L
+
+         // Playback
+         private var exoPlayer: ExoPlayer? = null
+         private var player: MediaPlayer? = null
+         private val simpleCache: SimpleCache = FlashApplication.cache
+         private lateinit var httpDataSourceFactory: HttpDataSource.Factory
+         private lateinit var defaultDataSourceFactory: DefaultDataSourceFactory
+         private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
+         private val playbackStateListener: Player.Listener = playbackStateListener()
+         private var isAudioVNPlaying = false
+         private var isAudioVNPaused = false
+         private var isVnResuming = false
+         private var playbackTimerRunnable: Runnable? = null
+
+         // Voice Note State
+         private var voiceNoteState = VoiceNoteState.IDLE
+
+
+         // MEDIA PICKERS & LAUNCHERS
+
+         private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
+         private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
+         private lateinit var audioPickerLauncher: ActivityResultLauncher<Intent>
+         private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
+         private lateinit var docsPickerLauncher: ActivityResultLauncher<Intent>
+         private lateinit var openFilePicker: ActivityResultLauncher<Intent>
+
+         private val getDocumentContent =
+             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                 if (result.resultCode == RESULT_OK) {
+                     result.data?.data?.let { uri ->
+                         // Handle the selected document URI
+                         handleDocumentUri(uri)
+                     }
+                 }
+             }
+
+
+         // COMMENTS & SOCIAL FEATURES
+
+         private var listOfReplies = mutableListOf<com.uyscuti.sharedmodule.data.model.Comment>()
+         private var adapter: CommentsRecyclerViewAdapter? = null
+         private var isReply = false
+         private lateinit var postId: String
+         private lateinit var commentId: String
+         private var commentCount by Delegates.notNull<Int>()
+         private var shortToComment: ShortsEntity? = null
+         private var data: com.uyscuti.sharedmodule.data.model.Comment? = null
+         private var position: Int = 0
+         private val timeFormatter = MongoDBTimeFormatter()
+         private lateinit var directReplyListener: DirectReplyListener
+
+
+         // UI STATE & INTERACTION
+
+         private var emojiShowing = false
+         private var backPressCount = 0
+         private val doubleBackPressThreshold = 3
+         var count = 0
+         private lateinit var myId: String
 
 
 
@@ -721,14 +725,10 @@ class MainActivity : AppCompatActivity(),
 
          @RequiresApi(Build.VERSION_CODES.TIRAMISU)
          private fun startRecording() {
-             Log.d("VoiceNote", "Start Recording called")
-
              if (!permissionGranted) {
-                 Log.e("VoiceNote", "No permission!")
                  ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
                  return
              }
-
              try {
                  if (player?.isPlaying == true) {
                      stopPlaying()
@@ -756,37 +756,30 @@ class MainActivity : AppCompatActivity(),
                  // Reset and start timer
                  recordingStartTime = System.currentTimeMillis()
                  recordingElapsedTime = 0L
-
-                 Log.d("VoiceNote", "Starting timer...")
                  updateRecordingTimer() // Start the timer
 
-                 // Update UI
                  binding.recordVN.setImageResource(R.drawable.baseline_pause_white_24)
                  binding.sendVN.setBackgroundResource(R.drawable.ic_ripple)
                  binding.deleteVN.setBackgroundResource(R.drawable.ic_ripple)
-                 binding.deleteVN.isClickable = true
-                 binding.sendVN.isClickable = true
 
-                 // Show the entire VN layout, not just recordingLayout
-                 binding.VNLayout.visibility = View.VISIBLE
-
+                 binding.recordingLayout.visibility = View.VISIBLE
                  updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
 
+                 binding.deleteVN.isClickable = true
+                 binding.sendVN.isClickable = true
                  recordedAudioFiles.add(outputFile)
 
                  // Initialize waveform with dots
-                 Log.d("VoiceNote", "Initializing waveform...")
                  initializeDottedWaveform()
 
                  // Start audio listening in background thread
                  Thread {
-                     Log.d("VoiceNote", "🎵 Starting audio listening thread...")
                      listenToAudio()
                  }.start()
 
-                 Log.d("VNFile", "Recording started: $outputFile")
+                 Log.d("VNFile", outputFile)
              } catch (e: Exception) {
-                 Log.e("VNFile", "Failed to record: ${e.message}", e)
+                 Log.d("VNFile", "Failed to record: ${e.message}")
                  e.printStackTrace()
              }
          }
@@ -1269,7 +1262,7 @@ class MainActivity : AppCompatActivity(),
          }
 
          private fun mixVoiceNote() {
-             val TAG = "MixVoiceNote"
+             val TAG = "mixVN"
              try {
                  wasPaused = true
                  Log.d(TAG, "pauseRecording: outputFile: $outputVnFile")
@@ -2300,7 +2293,7 @@ class MainActivity : AppCompatActivity(),
                 else -> {
                     Log.d("VoiceNote", "Starting new recording")
                     // Show VN layout and start recording
-                    binding.VNLayout.visibility = View.VISIBLE  
+                    binding.VNLayout.visibility = View.VISIBLE
                     binding.motionLayout.visibility = View.VISIBLE  // Show comment sheet if needed
                     startRecording()
                 }
@@ -2314,34 +2307,7 @@ class MainActivity : AppCompatActivity(),
 
     }
 
-         private fun loadUserRelationships() {
-             // Check if user is logged in first
-             if (isUserLoggedIn()) {
-                 Log.d("MainActivity", "Loading user relationships...")
-                 relationshipsViewModel.loadAllRelationships()
-
-                 // Optionally observe loading state
-                 lifecycleScope.launch {
-                     relationshipsViewModel.isLoading.collect { isLoading ->
-                         if (isLoading) {
-                             Log.d("MainActivity", "Loading relationships...")
-                         } else {
-                             Log.d("MainActivity", "Relationships loaded successfully")
-                         }
-                     }
-                 }
-
-                 // Optionally show error
-                 lifecycleScope.launch {
-                     relationshipsViewModel.error.collect { error ->
-                         error?.let {
-                             Log.e("MainActivity", "Error loading relationships: $it")
-                             Toast.makeText(this@MainActivity, it, Toast.LENGTH_SHORT).show()
-                         }
-                     }
-                 }
-             }
-         }
+      
 
          private fun isUserLoggedIn(): Boolean {
              // Add your logic to check if user is logged in
