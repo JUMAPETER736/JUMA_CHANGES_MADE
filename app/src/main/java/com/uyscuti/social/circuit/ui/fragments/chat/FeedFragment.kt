@@ -948,6 +948,201 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         dialog?.show()
     }
 
+    //   startRecording to call checkWaveformViewsStatus
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun startRecording() {
+        if (!permissionGranted) {
+            ActivityCompat.requestPermissions(requireActivity(), permissions, REQUEST_CODE)
+            return
+        }
+        try {
+            Log.d(TAG, "startRecording: BEGIN")
+
+            if (player?.isPlaying == true) {
+                stopPlaying()
+            }
+
+            outputFile = getOutputFilePath("rec")
+            outputVnFile = getOutputFilePath("mix")
+            wasPaused = false
+
+            mediaRecorder = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setOutputFile(outputFile)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioEncodingBitRate(128000)
+                setAudioSamplingRate(44100)
+                prepare()
+                start()
+            }
+
+            isRecording = true
+            isPaused = false
+            isListeningToAudio = true
+
+            // Initialize timer variables and start updateRecordingTimer
+            recordingStartTime = System.currentTimeMillis()
+            recordingElapsedTime = 0L
+            updateRecordingTimer()
+
+            recordVN!!.setImageResource(R.drawable.baseline_pause_white_24)
+            sendVN!!.setBackgroundResource(R.drawable.ic_ripple)
+            deleteVN!!.setBackgroundResource(R.drawable.ic_ripple)
+
+            // Update UI state
+            updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
+
+            deleteVN!!.isClickable = true
+            sendVN!!.isClickable = true
+            recordedAudioFiles.add(outputFile)
+
+            // **ADD DIAGNOSTIC CHECK**
+            requireActivity().runOnUiThread {
+                Handler(Looper.getMainLooper()).postDelayed({
+                    checkWaveformViewsStatus()
+                }, 500) // Check after 500ms
+            }
+
+            // Initialize waveform with dots
+            initializeDottedWaveform()
+
+            // Start audio listening in background thread
+            Thread {
+                listenToAudio()
+            }.start()
+
+            Log.d("VNFile", "Recording to: $outputFile")
+            Log.d(TAG, "startRecording: COMPLETE")
+        } catch (e: Exception) {
+            Log.e(TAG, "startRecording: Failed - ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun stopRecording() {
+        try {
+            if (mediaRecorder != null) {
+                mediaRecorder?.apply {
+                    stop()
+                    release()
+                }
+                mediaRecorder = null
+            }
+            isRecording = false
+            isPaused = false
+            wasPaused = false
+            timerTv?.text = "00:00"  // Use safe call here
+
+            recordVN?.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)  // Safe call
+            sendVN?.setBackgroundResource(R.drawable.ic_ripple)  // Safe call
+            sendVN?.isClickable = false  // Safe call
+
+            // REMOVE THESE LINES - waveForm doesn't exist anymore
+            // amplitudes = waveForm!!.clear()
+            // amps = 0
+            // timer.stop()
+
+            if (player?.isPlaying == true) {
+                stopPlaying()
+            }
+
+            // Select appropriate audio file
+            val audioFilePath = if (mixingCompleted && File(outputVnFile).exists()) {
+                Log.d(TAG, "Using mixed audio file: $outputVnFile")
+                outputVnFile
+            } else {
+                Log.d(TAG, "Using single recording file: $outputFile")
+                outputFile
+            }
+
+            val file = File(audioFilePath)
+            if (!file.exists()) {
+                Log.e(TAG, "Audio file not found: $audioFilePath")
+                Toast.makeText(requireContext(), "Recording file not found", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            Log.d(TAG, "stopRecording: File exists, size: ${file.length()} bytes")
+
+            val durationString = getFormattedDuration(audioFilePath)
+            val fileName = getFileNameFromLocalPath(audioFilePath)
+
+            Log.d(TAG, "stopRecording: Starting UploadFeedActivity")
+            Log.d(TAG, "stopRecording: vnFilePath=$audioFilePath")
+            Log.d(TAG, "stopRecording: vnFileName=$fileName")
+            Log.d(TAG, "stopRecording: vnDurationString=$durationString")
+
+            val intent = Intent(requireActivity(), UploadFeedActivity::class.java)
+            intent.putExtra("vnFilePath", audioFilePath)
+            intent.putExtra("vnFileName", fileName)
+            intent.putExtra("vnDurationString", durationString)
+            startActivityForResult(intent, REQUEST_UPLOAD_FEED_ACTIVITY)
+
+            recordedAudioFiles.clear()
+            mixingCompleted = false
+        } catch (e: Exception) {
+            Log.e(TAG, "stopRecording error: ${e.message}")
+            e.printStackTrace()
+            Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun deleteRecording() {
+        val TAG = "Recording"
+
+        try {
+            isListeningToAudio = false
+
+            // Stop all timers
+            timerHandler.removeCallbacksAndMessages(null)
+            playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
+
+            mediaRecorder?.apply {
+                try {
+                    stop()
+                    release()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error stopping recorder: $e")
+                }
+            }
+            mediaRecorder = null
+
+            isRecording = false
+            isPaused = false
+            isAudioVNPlaying = false
+
+            // Reset timer variables
+            recordingStartTime = 0L
+            recordingElapsedTime = 0L
+
+            recordVN?.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)  // Safe call
+            sendVN?.setBackgroundResource(R.drawable.ic_ripple)  // Safe call
+            sendVN?.isClickable = false  // Safe call
+
+            updateVoiceNoteUserInterfaceState(VoiceNoteState.IDLE)
+
+            timerTv?.text = "00:00"
+            secondTimerTv?.text = "00:00"
+
+            // REMOVE THESE LINES - waveForm doesn't exist
+            // amplitudes = waveForm!!.clear()
+            // amps = 0
+            // timer.stop()
+
+            Log.d(TAG, "deleteRecording: recorded files size ${recordedAudioFiles.size}")
+
+            deleteVn()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e(TAG, "Error deleting recording: $e")
+        }
+    }
+
+
     //   pauseRecording COMPLETELY
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -1391,61 +1586,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-    //   deleteRecording COMPLETELY
-
-    @SuppressLint("SetTextI18n")
-    private fun deleteRecording() {
-        val TAG = "Recording"
-
-        try {
-            isListeningToAudio = false
-
-            // Stop all timers
-            timerHandler.removeCallbacksAndMessages(null)
-            playbackTimerRunnable?.let { timerHandler.removeCallbacks(it) }
-
-            mediaRecorder?.apply {
-                try {
-                    stop()
-                    release()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error stopping recorder: $e")
-                }
-            }
-            mediaRecorder = null
-
-            isRecording = false
-            isPaused = false
-            isAudioVNPlaying = false
-
-            // Reset timer variables
-            recordingStartTime = 0L
-            recordingElapsedTime = 0L
-
-            recordVN!!.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
-            sendVN!!.setBackgroundResource(R.drawable.ic_ripple)
-            sendVN!!.isClickable = false
-
-            updateVoiceNoteUserInterfaceState(VoiceNoteState.IDLE)
-
-            timerTv?.text = "00:00"
-            secondTimerTv?.text = "00:00"
-
-            amplitudes = waveForm!!.clear()
-            amps = 0
-            timer.stop()
-
-            Log.d(TAG, "deleteRecording: recorded files size ${recordedAudioFiles.size}")
-
-            deleteVn()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e(TAG, "Error deleting recording: $e")
-        }
-    }
-
-    //   onTimerTick
-
     @SuppressLint("DefaultLocale")
     override fun onTimerTick(duration: String) {
         // This is called by the old Timer class - we don't use it anymore
@@ -1484,73 +1624,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
                 }
             }
         })
-    }
-
-    @SuppressLint("SetTextI18n")
-    private fun stopRecording() {
-        try {
-            if (mediaRecorder != null) {
-                mediaRecorder?.apply {
-                    stop()
-                    release()
-                }
-                mediaRecorder = null
-            }
-            isRecording = false
-            isPaused = false
-            wasPaused = false
-            timerTv!!.text = "00:00"
-
-            recordVN!!.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
-            sendVN!!.setBackgroundResource(R.drawable.ic_ripple)
-            sendVN!!.isClickable = false
-
-            amplitudes = waveForm!!.clear()
-            amps = 0
-            timer.stop()
-            if (player?.isPlaying == true) {
-                stopPlaying()
-            }
-
-            // Select appropriate audio file
-            val audioFilePath = if (mixingCompleted && File(outputVnFile).exists()) {
-                Log.d(TAG, "Using mixed audio file: $outputVnFile")
-                outputVnFile
-            } else {
-                Log.d(TAG, "Using single recording file: $outputFile")
-                outputFile
-            }
-
-            val file = File(audioFilePath)
-            if (!file.exists()) {
-                Log.e(TAG, "Audio file not found: $audioFilePath")
-                Toast.makeText(requireContext(), "Recording file not found", Toast.LENGTH_SHORT).show()
-                return
-            }
-
-            Log.d(TAG, "stopRecording: File exists, size: ${file.length()} bytes")
-
-            val durationString = getFormattedDuration(audioFilePath)
-            val fileName = getFileNameFromLocalPath(audioFilePath)
-
-            Log.d(TAG, "stopRecording: Starting UploadFeedActivity")
-            Log.d(TAG, "stopRecording: vnFilePath=$audioFilePath")
-            Log.d(TAG, "stopRecording: vnFileName=$fileName")
-            Log.d(TAG, "stopRecording: vnDurationString=$durationString")
-
-            val intent = Intent(requireActivity(), UploadFeedActivity::class.java)
-            intent.putExtra("vnFilePath", audioFilePath)
-            intent.putExtra("vnFileName", fileName)
-            intent.putExtra("vnDurationString", durationString)
-            startActivityForResult(intent, REQUEST_UPLOAD_FEED_ACTIVITY)
-
-            recordedAudioFiles.clear()
-            mixingCompleted = false
-        } catch (e: Exception) {
-            Log.e(TAG, "stopRecording error: ${e.message}")
-            e.printStackTrace()
-            Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -1938,77 +2011,5 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
     }
 
-    //   startRecording to call checkWaveformViewsStatus
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun startRecording() {
-        if (!permissionGranted) {
-            ActivityCompat.requestPermissions(requireActivity(), permissions, REQUEST_CODE)
-            return
-        }
-        try {
-            Log.d(TAG, "startRecording: BEGIN")
-
-            if (player?.isPlaying == true) {
-                stopPlaying()
-            }
-
-            outputFile = getOutputFilePath("rec")
-            outputVnFile = getOutputFilePath("mix")
-            wasPaused = false
-
-            mediaRecorder = MediaRecorder().apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                setOutputFile(outputFile)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                setAudioEncodingBitRate(128000)
-                setAudioSamplingRate(44100)
-                prepare()
-                start()
-            }
-
-            isRecording = true
-            isPaused = false
-            isListeningToAudio = true
-
-            // Initialize timer variables and start updateRecordingTimer
-            recordingStartTime = System.currentTimeMillis()
-            recordingElapsedTime = 0L
-            updateRecordingTimer()
-
-            recordVN!!.setImageResource(R.drawable.baseline_pause_white_24)
-            sendVN!!.setBackgroundResource(R.drawable.ic_ripple)
-            deleteVN!!.setBackgroundResource(R.drawable.ic_ripple)
-
-            // Update UI state
-            updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
-
-            deleteVN!!.isClickable = true
-            sendVN!!.isClickable = true
-            recordedAudioFiles.add(outputFile)
-
-            // **ADD DIAGNOSTIC CHECK**
-            requireActivity().runOnUiThread {
-                Handler(Looper.getMainLooper()).postDelayed({
-                    checkWaveformViewsStatus()
-                }, 500) // Check after 500ms
-            }
-
-            // Initialize waveform with dots
-            initializeDottedWaveform()
-
-            // Start audio listening in background thread
-            Thread {
-                listenToAudio()
-            }.start()
-
-            Log.d("VNFile", "Recording to: $outputFile")
-            Log.d(TAG, "startRecording: COMPLETE")
-        } catch (e: Exception) {
-            Log.e(TAG, "startRecording: Failed - ${e.message}")
-            e.printStackTrace()
-        }
-    }
 
 }
