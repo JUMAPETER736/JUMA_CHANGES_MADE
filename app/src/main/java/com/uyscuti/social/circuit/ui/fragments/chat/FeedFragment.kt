@@ -679,8 +679,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
 
-
-
     override fun onGetLayoutInflater(
         savedInstanceState: Bundle?
     ): LayoutInflater {
@@ -723,12 +721,13 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
 
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun showVNDialog() {
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(R.layout.vn_record_layout)
 
-        // Views that exist in the layout
+        // Initialize ALL views from the layout
         deleteVN = dialog.findViewById(R.id.deleteVN)!!
         recordVN = dialog.findViewById<ImageView>(R.id.recordVN)!!
         playVnAudioBtn = dialog.findViewById<ImageView>(R.id.playVnAudioBtn)!!
@@ -736,16 +735,33 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         timerTv = dialog.findViewById<TextView>(R.id.timerTv)!!
         secondTimerTv = dialog.findViewById<TextView>(R.id.secondTimerTv)!!
         wave = dialog.findViewById<WaveformSeekBar>(R.id.wave)!!
-
-        // Use the correct ID from the layout
         playAudioLayout = dialog.findViewById<LinearLayout>(R.id.playVNRecorded)!!
+
+        // Initialize the waveform container for live recording visualization
+        val waveDotsContainer = dialog.findViewById<LinearLayout>(R.id.waveDotsContainer)!!
+
+        // Create WaveFormView programmatically and add to container
+        waveForm = WaveFormView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+            )
+        }
+        waveDotsContainer.removeAllViews()
+        waveDotsContainer.addView(waveForm)
+
+        // Set initial visibility states
+        timerTv!!.visibility = View.VISIBLE
+        playAudioLayout!!.visibility = View.GONE
+        wave!!.visibility = View.GONE
+        waveForm!!.visibility = View.VISIBLE
 
         val dialogView = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
         dialogView?.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.slide_up))
 
         val selectableItemBackground = TypedValue()
 
-        // Apply ripple effect only to views that exist
+        // Apply ripple effect
         deleteVN!!.context?.theme?.resolveAttribute(
             android.R.attr.selectableItemBackground, selectableItemBackground, true
         )
@@ -756,18 +772,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             android.R.attr.selectableItemBackground, selectableItemBackground, true
         )
         sendVN!!.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        timerTv!!.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        secondTimerTv!!.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        wave!!.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        playAudioLayout!!.context?.theme?.resolveAttribute(
             android.R.attr.selectableItemBackground, selectableItemBackground, true
         )
 
@@ -850,10 +854,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         params.bottomMargin = newMarginBottomPx
         viewPager2.layoutParams = params
     }
-
-
-    ///////////////////////////
-
 
 
     @SuppressLint("SetTextI18n")
