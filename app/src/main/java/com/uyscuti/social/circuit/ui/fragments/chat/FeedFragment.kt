@@ -1365,91 +1365,101 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
     @SuppressLint("DefaultLocale")
     private fun inflateWave(outputVN: String) {
-
-//        outputVnFile = outputVN
-
         val TAG = "inflateWave"
         Log.d("playVnAudioBtn", "inflateWave: outputvn $outputVN")
 
-        val audioFile = File(outputVN)
-        wave!!.visibility = View.VISIBLE
-        playerTimerTv!!.visibility = View.VISIBLE
-        Log.d(TAG, "render: does not start with http")
-        //                audioDuration = 100L
-        val file = File(outputVN)
-        Log.d(TAG, "render: file $outputVN exists: ${file.exists()}")
-        val locaAudioDuration = AudioDurationHelper.getLocalAudioDuration(outputVN)
-        if (locaAudioDuration != null) {
-            // Duration is available, do something with it
-            //                    println("Audio duration: ${duration}ms")
-            val minutes = (locaAudioDuration / 1000) / 60
-            val seconds = (locaAudioDuration / 1000) % 60
-            //                println("Audio duration: $minutes minutes $seconds seconds")
-            thirdTimerTv!!.text = String.format("%02d:%02d", minutes, seconds)
-        } else {
-            // File does not exist or error retrieving duration
+        try {
+            val audioFile = File(outputVN)
 
-            Log.e(TAG, "render: failed to retrieve audio duration")
+            // Check if views are initialized
+            if (wave == null || playerTimerTv == null || secondTimerTv == null) {
+                Log.e(TAG, "inflateWave: Required views are null!")
+                Log.e(TAG, "wave null? ${wave == null}")
+                Log.e(TAG, "playerTimerTv null? ${playerTimerTv == null}")
+                Log.e(TAG, "secondTimerTv null? ${secondTimerTv == null}")
+                return
+            }
 
-        }
+            wave!!.visibility = View.VISIBLE
+            playerTimerTv!!.visibility = View.VISIBLE
 
-        CoroutineScope(Dispatchers.IO).launch {
-            WaveFormExtractor.getSampleFrom(requireContext(), outputVN) {
+            Log.d(TAG, "render: does not start with http")
+            val file = File(outputVN)
+            Log.d(TAG, "render: file $outputVN exists: ${file.exists()}")
 
-                CoroutineScope(Dispatchers.Main).launch {
+            val locaAudioDuration = AudioDurationHelper.getLocalAudioDuration(outputVN)
+            if (locaAudioDuration != null) {
+                val minutes = (locaAudioDuration / 1000) / 60
+                val seconds = (locaAudioDuration / 1000) % 60
+                // Use secondTimerTv instead of thirdTimerTv
+                secondTimerTv!!.text = String.format("%02d:%02d", minutes, seconds)
+                Log.d(TAG, "Audio duration: $minutes:$seconds")
+            } else {
+                Log.e(TAG, "render: failed to retrieve audio duration")
+            }
 
-                    if (locaAudioDuration != null) {
-                        wave!!.maxProgress = locaAudioDuration.toFloat()
-                    }
-                    wave!!.setSampleFrom(it)
-
-                    wave!!.onProgressChanged = object : SeekBarOnProgressChanged {
-                        override fun onProgressChanged(
-                            waveformSeekBar: WaveformSeekBar,
-                            progress: Float,
-                            fromUser: Boolean
-                        ) {
-                            secondTimerTv!!.text = String.format(
-                                "%s",
-                                TrimVideoUtils.stringForTime(progress)
-                            )
-                            vnRecordProgress = progress.toInt()
-                            if (fromUser) {
-                                if (vnRecordAudioPlaying) {
-                                    vnRecordProgress = progress.toInt()
-                                    pauseVn(progress = progress.toInt())
-                                } else {
-                                    vnRecordProgress = progress.toInt()
-                                    Log.d("FromUser", "Scroll to this $progress")
-                                }
-
+            CoroutineScope(Dispatchers.IO).launch {
+                WaveFormExtractor.getSampleFrom(requireContext(), outputVN) { samples ->
+                    CoroutineScope(Dispatchers.Main).launch {
+                        try {
+                            if (locaAudioDuration != null) {
+                                wave!!.maxProgress = locaAudioDuration.toFloat()
                             }
-                        }
-                        override fun onRelease(event: MotionEvent?, progress: Float) {
-                            if (outputVN.isNotEmpty()) {
+                            wave!!.setSampleFrom(samples)
 
-                                if (vnRecordAudioPlaying) {
-                                    Log.d(
-                                        "onRelease",
-                                        "vnRecordAudioPlaying $isAudioVNPlaying progress $progress"
+                            wave!!.onProgressChanged = object : SeekBarOnProgressChanged {
+                                override fun onProgressChanged(
+                                    waveformSeekBar: WaveformSeekBar,
+                                    progress: Float,
+                                    fromUser: Boolean
+                                ) {
+                                    secondTimerTv?.text = String.format(
+                                        "%s",
+                                        TrimVideoUtils.stringForTime(progress)
                                     )
                                     vnRecordProgress = progress.toInt()
-                                    startPlaying(outputVN)
-                                } else {
-                                    Log.d("onRelease", "Start playing from this progress $progress")
-                                    vnRecordProgress = progress.toInt()
+                                    if (fromUser) {
+                                        if (vnRecordAudioPlaying) {
+                                            vnRecordProgress = progress.toInt()
+                                            pauseVn(progress = progress.toInt())
+                                        } else {
+                                            vnRecordProgress = progress.toInt()
+                                            Log.d("FromUser", "Scroll to this $progress")
+                                        }
+                                    }
                                 }
 
-                            } else {
-                                Log.d("onRelease", "output vn is empty")
+                                override fun onRelease(event: MotionEvent?, progress: Float) {
+                                    if (outputVN.isNotEmpty()) {
+                                        if (vnRecordAudioPlaying) {
+                                            Log.d(
+                                                "onRelease",
+                                                "vnRecordAudioPlaying $isAudioVNPlaying progress $progress"
+                                            )
+                                            vnRecordProgress = progress.toInt()
+                                            startPlaying(outputVN)
+                                        } else {
+                                            Log.d("onRelease", "Start playing from this progress $progress")
+                                            vnRecordProgress = progress.toInt()
+                                        }
+                                    } else {
+                                        Log.d("onRelease", "output vn is empty")
+                                    }
+                                }
                             }
+
+                            Log.d(TAG, "Wave inflation complete")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error setting up wave: ${e.message}")
+                            e.printStackTrace()
                         }
                     }
                 }
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "inflateWave error: ${e.message}")
+            e.printStackTrace()
         }
-
-
     }
 
 }
