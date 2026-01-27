@@ -1074,23 +1074,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun resumeRecording() {
-        if (isPaused) {
-            isVnResuming = true
-            startRecording()
-
-            // Show recording UI, hide playback UI
-            waveForm!!.visibility = View.VISIBLE
-            timerTv!!.visibility = View.VISIBLE
-            playAudioLayout!!.visibility = View.GONE
-            wave!!.visibility = View.GONE
-
-            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-            recordVN!!.setImageResource(R.drawable.baseline_pause_black)
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun startRecording() {
         if (!permissionGranted) {
             ActivityCompat.requestPermissions(requireActivity(), permissions, REQUEST_CODE)
@@ -1181,6 +1164,25 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             Log.d(TAG, "list of recordings: $recordedAudioFiles")
 
             mixVN()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun resumeRecording() {
+        if (isPaused) {
+            Log.d(TAG, "Resuming recording...")
+
+            isVnResuming = true
+            startRecording() // This will show views and start timer again
+
+            // Ensure correct visibility (startRecording should handle this, but double-check)
+            waveForm!!.visibility = View.VISIBLE
+            timerTv!!.visibility = View.VISIBLE
+            playAudioLayout!!.visibility = View.GONE
+            wave!!.visibility = View.GONE
+
+            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+            recordVN!!.setImageResource(R.drawable.baseline_pause_black)
         }
     }
 
