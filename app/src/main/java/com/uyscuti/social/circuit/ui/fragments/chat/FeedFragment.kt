@@ -1122,8 +1122,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-
-
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun startRecording() {
         if (!permissionGranted) {
@@ -1131,48 +1129,54 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             return
         }
         try {
+            Log.d(TAG, "startRecording: BEGIN")
+            Log.d(TAG, "startRecording: timerTv is null? ${timerTv == null}")
+            Log.d(TAG, "startRecording: waveForm is null? ${waveForm == null}")
 
-            Log.d(TAG, "recorded files size ${recordedAudioFiles.size}")
             if (player?.isPlaying == true) {
                 stopPlaying()
             }
-            playerTimerTv!!.visibility = View.GONE
+
+            playerTimerTv?.visibility = View.GONE
             outputFile = getOutputFilePath("rec")
             outputVnFile = getOutputFilePath("mix")
             wasPaused = false
-//            firstTimeSendVn = false
+
             mediaRecorder = MediaRecorder().apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setOutputFile(outputFile)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-
-
                 prepare()
                 start()
             }
 
             isRecording = true
             isPaused = false
-//            isVnResuming = false
+
             recordVN!!.setImageResource(R.drawable.baseline_pause_white_24)
             sendVN!!.setBackgroundResource(R.drawable.ic_ripple)
             deleteVN!!.setBackgroundResource(R.drawable.ic_ripple)
+
+            // Make sure views are visible
+            timerTv!!.visibility = View.VISIBLE
+            waveForm!!.visibility = View.VISIBLE
+            playAudioLayout!!.visibility = View.GONE
+            wave!!.visibility = View.GONE
+
+            Log.d(TAG, "startRecording: About to start timer")
             timer.start()
+            Log.d(TAG, "startRecording: Timer started")
 
             deleteVN!!.isClickable = true
             sendVN!!.isClickable = true
-//            mediaRecorder.
             recordedAudioFiles.add(outputFile)
 
-//            mediaRecorder.logSessionId
-
-            Log.d("VNFile", outputFile)
-            // Add any UI changes or notifications indicating recording has started
+            Log.d("VNFile", "Recording to: $outputFile")
+            Log.d(TAG, "startRecording: COMPLETE")
         } catch (e: Exception) {
-            Log.d("VNFile", "Failed to record audio properly")
+            Log.e(TAG, "startRecording: Failed - ${e.message}")
             e.printStackTrace()
-            // Handle exceptions as needed
         }
     }
 
