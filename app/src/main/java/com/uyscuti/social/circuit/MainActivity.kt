@@ -768,14 +768,14 @@ class MainActivity : AppCompatActivity(),
                  binding.sendVN.isClickable = true
 
                  // Show the entire VN layout, not just recordingLayout
-                 binding.VNLayout.visibility = View.VISIBLE  
+                 binding.VNLayout.visibility = View.VISIBLE
 
                  updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
 
                  recordedAudioFiles.add(outputFile)
 
                  // Initialize waveform with dots
-                 Log.d("VoiceNote", "📊 Initializing waveform...")
+                 Log.d("VoiceNote", "Initializing waveform...")
                  initializeDottedWaveform()
 
                  // Start audio listening in background thread
@@ -784,9 +784,9 @@ class MainActivity : AppCompatActivity(),
                      listenToAudio()
                  }.start()
 
-                 Log.d("VNFile", "✅ Recording started: $outputFile")
+                 Log.d("VNFile", "Recording started: $outputFile")
              } catch (e: Exception) {
-                 Log.e("VNFile", "❌ Failed to record: ${e.message}", e)
+                 Log.e("VNFile", "Failed to record: ${e.message}", e)
                  e.printStackTrace()
              }
          }
@@ -2073,6 +2073,7 @@ class MainActivity : AppCompatActivity(),
                     }
                 }
             }
+
         docsPickerLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
@@ -2121,6 +2122,7 @@ class MainActivity : AppCompatActivity(),
                 }
 
             }
+
         cameraLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
@@ -2290,21 +2292,22 @@ class MainActivity : AppCompatActivity(),
 
 
         binding.recordVN.setOnClickListener {
-            Log.d("VoiceNote", "🎤 Record button clicked - isPaused: $isPaused, isRecording: $isRecording")
+
+            Log.d("VoiceNote", "Record button clicked - isPaused: $isPaused, isRecording: $isRecording")
 
             when {
                 isPaused -> {
-                    Log.d("VoiceNote", "▶️ Resuming recording")
+                    Log.d("VoiceNote", "Resuming recording")
                     resumeRecording()
                 }
                 isRecording -> {
-                    Log.d("VoiceNote", "⏸️ Pausing recording")
+                    Log.d("VoiceNote", "Pausing recording")
                     pauseRecording()
                 }
                 else -> {
-                    Log.d("VoiceNote", "🎙️ Starting new recording")
+                    Log.d("VoiceNote", "Starting new recording")
                     // Show VN layout and start recording
-                    binding.VNLayout.visibility = View.VISIBLE  // Changed from VNLayout
+                    binding.VNLayout.visibility = View.VISIBLE  
                     binding.motionLayout.visibility = View.VISIBLE  // Show comment sheet if needed
                     startRecording()
                 }
