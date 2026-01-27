@@ -530,7 +530,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
                             thumbnailLocalPath = it.documents!!.pdfFilePath, fileId = it.fileId)
                     )
                 } else if (it.images != null) {
-                    
+
                     filesList.add(
                         com.uyscuti.social.network.api.response.posts.File(
                             _id = "", fileId = it.fileId, url = it.images!!.imagePath,
