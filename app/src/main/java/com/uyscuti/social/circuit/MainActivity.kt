@@ -2240,7 +2240,7 @@ class MainActivity : AppCompatActivity(),
         }
 
 
-      
+
         binding.deleteVN.setOnClickListener {
             if (mediaRecorder != null) {
                 Log.d(TAG, "onCreate: media recorder not null")
