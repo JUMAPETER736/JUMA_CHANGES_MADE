@@ -782,6 +782,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun showVNDialog() {
         val dialog = BottomSheetDialog(requireContext())
@@ -797,32 +798,26 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         wave = dialog.findViewById<WaveformSeekBar>(R.id.wave)!!
         playAudioLayout = dialog.findViewById<LinearLayout>(R.id.playVNRecorded)!!
 
-        // CRITICAL: Set playerTimerTv to the same as playAudioLayout
-        playerTimerTv = playAudioLayout
-
-        // Get the waveform container from layout
+        // Get the waveform containers
+        val waveformScrollView = dialog.findViewById<HorizontalScrollView>(R.id.waveformScrollView)!!
         val waveDotsContainer = dialog.findViewById<LinearLayout>(R.id.waveDotsContainer)!!
 
-        // Create and add WaveFormView for live recording visualization
-        waveForm = WaveFormView(requireContext(), null).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT
-            )
-        }
+        // IMPORTANT: Don't create WaveFormView - use the existing waveDotsContainer
+        // Clear any existing views
         waveDotsContainer.removeAllViews()
-        waveDotsContainer.addView(waveForm)
+        waveBars.clear()
 
         // Set initial visibility
         timerTv!!.visibility = View.VISIBLE
         timerTv!!.text = "00:00.00"
         playAudioLayout!!.visibility = View.GONE
         wave!!.visibility = View.GONE
-        waveForm!!.visibility = View.VISIBLE
+        waveformScrollView.visibility = View.VISIBLE
+        waveDotsContainer.visibility = View.VISIBLE
+
+        playerTimerTv = playAudioLayout
 
         Log.d(TAG, "showVNDialog: All views initialized")
-        Log.d(TAG, "showVNDialog: playerTimerTv null? ${playerTimerTv == null}")
-        Log.d(TAG, "showVNDialog: wave null? ${wave == null}")
 
         val dialogView = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
         dialogView?.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.slide_up))
@@ -854,6 +849,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
                 if (!wasPaused) {
                     timer.stop()
+                    isListeningToAudio = false // Stop audio listening
                     mediaRecorder?.apply {
                         stop()
                         release()
@@ -874,6 +870,9 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             if (isRecording && !isPaused) {
                 try {
                     timer.stop()
+                    isListeningToAudio = false
+                    audioRecord?.release()
+                    audioRecord = null
                 } catch (e: Exception) {
                     Log.e(TAG, "Error stopping timer: ${e.message}")
                 }
@@ -883,6 +882,70 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         dialog.show()
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun startRecording() {
+        if (!permissionGranted) {
+            ActivityCompat.requestPermissions(requireActivity(), permissions, REQUEST_CODE)
+            return
+        }
+        try {
+            Log.d(TAG, "startRecording: BEGIN")
+
+            if (player?.isPlaying == true) {
+                stopPlaying()
+            }
+
+            outputFile = getOutputFilePath("rec")
+            outputVnFile = getOutputFilePath("mix")
+            wasPaused = false
+
+            mediaRecorder = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setOutputFile(outputFile)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioEncodingBitRate(128000)
+                setAudioSamplingRate(44100)
+                prepare()
+                start()
+            }
+
+            isRecording = true
+            isPaused = false
+            isListeningToAudio = true
+
+            recordVN!!.setImageResource(R.drawable.baseline_pause_white_24)
+            sendVN!!.setBackgroundResource(R.drawable.ic_ripple)
+            deleteVN!!.setBackgroundResource(R.drawable.ic_ripple)
+
+            // Make sure views are visible
+            timerTv!!.visibility = View.VISIBLE
+            playAudioLayout!!.visibility = View.GONE
+            wave!!.visibility = View.GONE
+
+            Log.d(TAG, "startRecording: About to start timer")
+            timer.start()
+            Log.d(TAG, "startRecording: Timer started")
+
+            deleteVN!!.isClickable = true
+            sendVN!!.isClickable = true
+            recordedAudioFiles.add(outputFile)
+
+            // Initialize waveform with dots
+            initializeDottedWaveform()
+
+            // Start audio listening in background thread
+            Thread {
+                listenToAudio()
+            }.start()
+
+            Log.d("VNFile", "Recording to: $outputFile")
+            Log.d(TAG, "startRecording: COMPLETE")
+        } catch (e: Exception) {
+            Log.e(TAG, "startRecording: Failed - ${e.message}")
+            e.printStackTrace()
+        }
+    }
 
     @SuppressLint("SetTextI18n")
     private fun stopRecording() {
@@ -1062,64 +1125,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
         } catch (e: Exception) {
             Log.e("onTimerTick", "Error in onTimerTick: ${e.message}")
-            e.printStackTrace()
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun startRecording() {
-        if (!permissionGranted) {
-            ActivityCompat.requestPermissions(requireActivity(), permissions, REQUEST_CODE)
-            return
-        }
-        try {
-            Log.d(TAG, "startRecording: BEGIN")
-            Log.d(TAG, "startRecording: timerTv is null? ${timerTv == null}")
-            Log.d(TAG, "startRecording: waveForm is null? ${waveForm == null}")
-
-            if (player?.isPlaying == true) {
-                stopPlaying()
-            }
-
-            playerTimerTv?.visibility = View.GONE
-            outputFile = getOutputFilePath("rec")
-            outputVnFile = getOutputFilePath("mix")
-            wasPaused = false
-
-            mediaRecorder = MediaRecorder().apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                setOutputFile(outputFile)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                prepare()
-                start()
-            }
-
-            isRecording = true
-            isPaused = false
-
-            recordVN!!.setImageResource(R.drawable.baseline_pause_white_24)
-            sendVN!!.setBackgroundResource(R.drawable.ic_ripple)
-            deleteVN!!.setBackgroundResource(R.drawable.ic_ripple)
-
-            // Make sure views are visible
-            timerTv!!.visibility = View.VISIBLE
-            waveForm!!.visibility = View.VISIBLE
-            playAudioLayout!!.visibility = View.GONE
-            wave!!.visibility = View.GONE
-
-            Log.d(TAG, "startRecording: About to start timer")
-            timer.start()
-            Log.d(TAG, "startRecording: Timer started")
-
-            deleteVN!!.isClickable = true
-            sendVN!!.isClickable = true
-            recordedAudioFiles.add(outputFile)
-
-            Log.d("VNFile", "Recording to: $outputFile")
-            Log.d(TAG, "startRecording: COMPLETE")
-        } catch (e: Exception) {
-            Log.e(TAG, "startRecording: Failed - ${e.message}")
             e.printStackTrace()
         }
     }
