@@ -84,6 +84,7 @@
                         android:layout_width="0dp"
                         android:layout_height="48dp"
                         android:layout_weight="1"
+                        android:visibility="visible"
                         android:scrollbars="none">
 
                         <LinearLayout
@@ -93,6 +94,7 @@
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
                             android:paddingEnd="8dp"
+                            android:visibility="visible"
                             tools:ignore="RtlSymmetry" />
 
                     </HorizontalScrollView>
