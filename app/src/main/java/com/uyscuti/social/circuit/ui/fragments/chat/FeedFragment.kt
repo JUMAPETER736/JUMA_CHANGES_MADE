@@ -1849,4 +1849,364 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         return (dp * resources.displayMetrics.density).toInt()
     }
 
+
+    private fun listenToAudio() {
+        try {
+            Log.d(TAG, "listenToAudio: STARTING")
+
+            val minBufferSize = AudioRecord.getMinBufferSize(
+                44100,
+                android.media.AudioFormat.CHANNEL_IN_MONO,
+                android.media.AudioFormat.ENCODING_PCM_16BIT
+            )
+
+            Log.d(TAG, "listenToAudio: minBufferSize = $minBufferSize")
+
+            if (ActivityCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.RECORD_AUDIO
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.e(TAG, "listenToAudio: RECORD_AUDIO permission NOT GRANTED")
+                return
+            }
+
+            Log.d(TAG, "listenToAudio: Creating AudioRecord...")
+            audioRecord = AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                44100,
+                android.media.AudioFormat.CHANNEL_IN_MONO,
+                android.media.AudioFormat.ENCODING_PCM_16BIT,
+                minBufferSize * 2
+            )
+
+            if (audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
+                Log.e(TAG, "listenToAudio: AudioRecord NOT INITIALIZED - state = ${audioRecord?.state}")
+                return
+            }
+
+            Log.d(TAG, "listenToAudio: Starting AudioRecord recording...")
+            audioRecord?.startRecording()
+
+            val buffer = ShortArray(minBufferSize)
+            var loopCount = 0
+
+            Log.d(TAG, "listenToAudio: Entering main loop - isListeningToAudio=$isListeningToAudio, isRecording=$isRecording")
+
+            while (isListeningToAudio && isRecording) {
+                val readSize = audioRecord?.read(buffer, 0, minBufferSize) ?: 0
+                loopCount++
+
+                if (loopCount % 20 == 0) { // Log every 20 iterations (once per second)
+                    Log.d(TAG, "listenToAudio: Loop #$loopCount - readSize=$readSize")
+                }
+
+                if (readSize > 0) {
+                    // Calculate RMS (Root Mean Square) for better amplitude detection
+                    var sum = 0.0
+                    for (i in 0 until readSize) {
+                        sum += (buffer[i].toDouble() * buffer[i].toDouble())
+                    }
+                    val rms = sqrt(sum / readSize)
+
+                    // Normalize amplitude to 0-1 range
+                    val normalizedAmplitude = (rms / 5000.0).coerceIn(0.0, 1.0).toFloat()
+
+                    if (loopCount % 20 == 0) {
+                        Log.d(TAG, "listenToAudio: rms=$rms, normalizedAmplitude=$normalizedAmplitude")
+                    }
+
+                    requireActivity().runOnUiThread {
+                        try {
+                            if (normalizedAmplitude > 0.05f) { // Sound detected
+                                val heightMultiplier = 0.3f + (normalizedAmplitude * 2.2f)
+                                addWaveBarForSound(heightMultiplier)
+
+                                if (loopCount % 20 == 0) {
+                                    Log.d(TAG, "listenToAudio: Added sound bar - height=$heightMultiplier")
+                                }
+                            } else { // No sound
+                                addIdleDottedBarAtEnd()
+
+                                if (loopCount % 20 == 0) {
+                                    Log.d(TAG, "listenToAudio: Added idle dot")
+                                }
+                            }
+                            scrollToRight()
+                        } catch (e: Exception) {
+                            Log.e(TAG, "listenToAudio: Error in UI thread - ${e.message}")
+                            e.printStackTrace()
+                        }
+                    }
+                }
+
+                Thread.sleep(50) // Update every 50ms
+            }
+
+            Log.d(TAG, "listenToAudio: Exited main loop - total iterations=$loopCount")
+            audioRecord?.release()
+            audioRecord = null
+            Log.d(TAG, "listenToAudio: FINISHED")
+        } catch (e: Exception) {
+            Log.e(TAG, "listenToAudio: EXCEPTION - ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+// ========== REPLACE addWaveBarForSound WITH LOGGING ==========
+
+    private fun addWaveBarForSound(heightMultiplier: Float) {
+        try {
+            val waveDotsContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer)
+
+            if (waveDotsContainer == null) {
+                Log.e(TAG, "addWaveBarForSound: waveDotsContainer is NULL!")
+                return
+            }
+
+            val bar = View(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    dpToPx(4), // 4dp width
+                    dpToPx(48) // 48dp max height
+                ).apply {
+                    marginEnd = dpToPx(6)
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                }
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    setColor(Color.parseColor("#3284fc")) // Blue color
+                    cornerRadius = dpToPx(2).toFloat()
+                }
+                scaleY = heightMultiplier.coerceIn(0.2f, 2.5f)
+                alpha = 1.0f
+                tag = heightMultiplier
+            }
+
+            waveDotsContainer.addView(bar)
+            waveBars.add(bar)
+
+            Log.d(TAG, "addWaveBarForSound: Added bar - total bars=${waveBars.size}, container children=${waveDotsContainer.childCount}")
+
+            if (waveBars.size > maxWaveBars) {
+                waveDotsContainer.removeViewAt(0)
+                waveBars.removeAt(0)
+            }
+
+            scrollToRight()
+        } catch (e: Exception) {
+            Log.e(TAG, "addWaveBarForSound: EXCEPTION - ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+// ========== REPLACE addIdleDottedBarAtEnd WITH LOGGING ==========
+
+    private fun addIdleDottedBarAtEnd() {
+        try {
+            val waveDotsContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer)
+
+            if (waveDotsContainer == null) {
+                Log.e(TAG, "addIdleDottedBarAtEnd: waveDotsContainer is NULL!")
+                return
+            }
+
+            val bar = View(requireContext()).apply {
+                val dotSize = dpToPx(5)
+                layoutParams = LinearLayout.LayoutParams(
+                    dotSize,
+                    dotSize
+                ).apply {
+                    marginEnd = dpToPx(3)
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                }
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(Color.parseColor("#3284fc"))
+                }
+                scaleY = 1.0f
+                alpha = 1.0f
+                tag = "idle_dot"
+            }
+
+            waveDotsContainer.addView(bar)
+            waveBars.add(bar)
+
+            if (waveBars.size > maxWaveBars) {
+                waveDotsContainer.removeViewAt(0)
+                waveBars.removeAt(0)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "addIdleDottedBarAtEnd: EXCEPTION - ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+// ========== REPLACE initializeDottedWaveform WITH LOGGING ==========
+
+    private fun initializeDottedWaveform() {
+        try {
+            val waveDotsContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer)
+            val waveformScrollView = dialog?.findViewById<HorizontalScrollView>(R.id.waveformScrollView)
+
+            Log.d(TAG, "initializeDottedWaveform: waveDotsContainer=$waveDotsContainer")
+            Log.d(TAG, "initializeDottedWaveform: waveformScrollView=$waveformScrollView")
+
+            if (waveDotsContainer == null) {
+                Log.e(TAG, "initializeDottedWaveform: waveDotsContainer is NULL!")
+                return
+            }
+
+            if (waveformScrollView == null) {
+                Log.e(TAG, "initializeDottedWaveform: waveformScrollView is NULL!")
+                return
+            }
+
+            waveDotsContainer.removeAllViews()
+            waveBars.clear()
+
+            val barsToFill = calculateBarsNeededForFullWidth()
+            Log.d(TAG, "initializeDottedWaveform: Creating $barsToFill initial bars")
+
+            repeat(barsToFill) {
+                addIdleDottedBarAtEnd()
+            }
+
+            Log.d(TAG, "initializeDottedWaveform: Created ${waveBars.size} bars, container has ${waveDotsContainer.childCount} children")
+
+            waveformScrollView.post {
+                val maxScroll = (waveDotsContainer.width - waveformScrollView.width).coerceAtLeast(0)
+                Log.d(TAG, "initializeDottedWaveform: Scrolling to right - maxScroll=$maxScroll")
+                if (maxScroll > 0) {
+                    waveformScrollView.scrollTo(maxScroll, 0)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "initializeDottedWaveform: EXCEPTION - ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+// ========== REPLACE scrollToRight WITH LOGGING ==========
+
+    private fun scrollToRight() {
+        try {
+            val waveDotsContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer) ?: return
+            val waveformScrollView = dialog?.findViewById<HorizontalScrollView>(R.id.waveformScrollView) ?: return
+
+            waveformScrollView.post {
+                val maxScroll = (waveDotsContainer.width - waveformScrollView.width).coerceAtLeast(0)
+                if (maxScroll > 0) {
+                    waveformScrollView.smoothScrollTo(maxScroll, 0)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "scrollToRight: EXCEPTION - ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+// ========== ADD THIS DIAGNOSTIC FUNCTION ==========
+
+    private fun checkWaveformViewsStatus() {
+        val waveDotsContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer)
+        val waveformScrollView = dialog?.findViewById<HorizontalScrollView>(R.id.waveformScrollView)
+
+        Log.d(TAG, "=== WAVEFORM VIEWS STATUS ===")
+        Log.d(TAG, "dialog = $dialog")
+        Log.d(TAG, "waveDotsContainer = $waveDotsContainer")
+        Log.d(TAG, "waveformScrollView = $waveformScrollView")
+
+        if (waveDotsContainer != null) {
+            Log.d(TAG, "waveDotsContainer.visibility = ${waveDotsContainer.visibility}")
+            Log.d(TAG, "waveDotsContainer.childCount = ${waveDotsContainer.childCount}")
+            Log.d(TAG, "waveDotsContainer.width = ${waveDotsContainer.width}")
+            Log.d(TAG, "waveDotsContainer.height = ${waveDotsContainer.height}")
+        }
+
+        if (waveformScrollView != null) {
+            Log.d(TAG, "waveformScrollView.visibility = ${waveformScrollView.visibility}")
+            Log.d(TAG, "waveformScrollView.width = ${waveformScrollView.width}")
+            Log.d(TAG, "waveformScrollView.height = ${waveformScrollView.height}")
+        }
+
+        Log.d(TAG, "waveBars.size = ${waveBars.size}")
+        Log.d(TAG, "isListeningToAudio = $isListeningToAudio")
+        Log.d(TAG, "isRecording = $isRecording")
+        Log.d(TAG, "voiceNoteState = $voiceNoteState")
+        Log.d(TAG, "===========================")
+    }
+
+// ========== UPDATE startRecording to call checkWaveformViewsStatus ==========
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun startRecording() {
+        if (!permissionGranted) {
+            ActivityCompat.requestPermissions(requireActivity(), permissions, REQUEST_CODE)
+            return
+        }
+        try {
+            Log.d(TAG, "startRecording: BEGIN")
+
+            if (player?.isPlaying == true) {
+                stopPlaying()
+            }
+
+            outputFile = getOutputFilePath("rec")
+            outputVnFile = getOutputFilePath("mix")
+            wasPaused = false
+
+            mediaRecorder = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setOutputFile(outputFile)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioEncodingBitRate(128000)
+                setAudioSamplingRate(44100)
+                prepare()
+                start()
+            }
+
+            isRecording = true
+            isPaused = false
+            isListeningToAudio = true
+
+            // Initialize timer variables and start updateRecordingTimer
+            recordingStartTime = System.currentTimeMillis()
+            recordingElapsedTime = 0L
+            updateRecordingTimer()
+
+            recordVN!!.setImageResource(R.drawable.baseline_pause_white_24)
+            sendVN!!.setBackgroundResource(R.drawable.ic_ripple)
+            deleteVN!!.setBackgroundResource(R.drawable.ic_ripple)
+
+            // Update UI state
+            updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
+
+            deleteVN!!.isClickable = true
+            sendVN!!.isClickable = true
+            recordedAudioFiles.add(outputFile)
+
+            // **ADD DIAGNOSTIC CHECK**
+            requireActivity().runOnUiThread {
+                Handler(Looper.getMainLooper()).postDelayed({
+                    checkWaveformViewsStatus()
+                }, 500) // Check after 500ms
+            }
+
+            // Initialize waveform with dots
+            initializeDottedWaveform()
+
+            // Start audio listening in background thread
+            Thread {
+                listenToAudio()
+            }.start()
+
+            Log.d("VNFile", "Recording to: $outputFile")
+            Log.d(TAG, "startRecording: COMPLETE")
+        } catch (e: Exception) {
+            Log.e(TAG, "startRecording: Failed - ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
 }
