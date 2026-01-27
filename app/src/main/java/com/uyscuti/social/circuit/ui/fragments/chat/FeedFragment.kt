@@ -789,6 +789,9 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         wave = dialog.findViewById<WaveformSeekBar>(R.id.wave)!!
         playAudioLayout = dialog.findViewById<LinearLayout>(R.id.playVNRecorded)!!
 
+        // CRITICAL: Set playerTimerTv to the same as playAudioLayout
+        playerTimerTv = playAudioLayout
+
         // Get the waveform container from layout
         val waveDotsContainer = dialog.findViewById<LinearLayout>(R.id.waveDotsContainer)!!
 
@@ -802,43 +805,24 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         waveDotsContainer.removeAllViews()
         waveDotsContainer.addView(waveForm)
 
-        // Set initial visibility - CRITICAL for showing timer and waveform during recording
+        // Set initial visibility
         timerTv!!.visibility = View.VISIBLE
         timerTv!!.text = "00:00.00"
         playAudioLayout!!.visibility = View.GONE
         wave!!.visibility = View.GONE
         waveForm!!.visibility = View.VISIBLE
 
-        Log.d(TAG, "showVNDialog: Views initialized - timerTv visible: ${timerTv!!.visibility == View.VISIBLE}")
-        Log.d(TAG, "showVNDialog: waveForm visible: ${waveForm!!.visibility == View.VISIBLE}")
+        Log.d(TAG, "showVNDialog: All views initialized")
+        Log.d(TAG, "showVNDialog: playerTimerTv null? ${playerTimerTv == null}")
+        Log.d(TAG, "showVNDialog: wave null? ${wave == null}")
 
         val dialogView = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
         dialogView?.startAnimation(AnimationUtils.loadAnimation(requireContext(), R.anim.slide_up))
-
-        val selectableItemBackground = TypedValue()
-
-        deleteVN!!.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        recordVN!!.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        playVnAudioBtn.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
-        sendVN!!.context?.theme?.resolveAttribute(
-            android.R.attr.selectableItemBackground, selectableItemBackground, true
-        )
 
         // Start recording AFTER all views are initialized
         startRecording()
 
         deleteVN!!.setOnClickListener {
-            if (mediaRecorder != null) {
-                Log.d(TAG, "onCreate: media recorder not null")
-            } else {
-                Log.d(TAG, "onCreate: media recorder null")
-            }
             deleteRecording()
             if (player?.isPlaying == true) {
                 stopPlaying()
@@ -879,7 +863,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
 
         dialog.setOnDismissListener {
-            // Clean up when dialog is dismissed
             if (isRecording && !isPaused) {
                 try {
                     timer.stop()
