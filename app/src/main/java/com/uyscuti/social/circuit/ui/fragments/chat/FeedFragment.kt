@@ -1180,6 +1180,42 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun pauseRecording() {
+        val TAG = "pauseRecording"
+        if (isRecording && !isPaused) {
+            try {
+                Log.d(TAG, "Pausing recording...")
+
+                mediaRecorder?.apply {
+                    stop()
+                    release()
+                }
+                mediaRecorder = null
+            } catch (e: Exception) {
+                Log.d(TAG, "Failed to stop media recorder: $e")
+                e.printStackTrace()
+            }
+
+            isPaused = true
+            timer.pause()
+
+            // Hide recording UI, show playback UI
+            timerTv!!.visibility = View.GONE
+            waveForm!!.visibility = View.GONE
+            playAudioLayout!!.visibility = View.VISIBLE
+            wave!!.visibility = View.GONE
+
+            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
+            recordVN!!.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
+
+            Log.d(TAG, "list of recordings size: ${recordedAudioFiles.size}")
+            Log.d(TAG, "list of recordings: $recordedAudioFiles")
+
+            mixVN()
+        }
+    }
+
     private fun deleteVn() {
         recordedAudioFiles.clear()
 //        if (recordedAudioFiles.isNotEmpty()) {
