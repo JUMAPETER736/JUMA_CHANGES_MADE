@@ -751,6 +751,27 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         viewPager2.layoutParams = params
     }
 
+
+
+    private val waveHandler = Handler(Looper.getMainLooper())
+
+    private val onRecordWaveRunnable = object : Runnable {
+        override fun run() {
+//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
+            try {
+                if (!isOnRecordDurationOnPause) {
+                    val currentPosition = player?.currentPosition?.toFloat()!!
+                    updateRecordWaveProgress(currentPosition)
+                }
+                waveHandler.postDelayed(this, 20)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.d("Exception", "run: ${e.message}")
+            }
+
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun showVNDialog() {
         val dialog = BottomSheetDialog(requireContext())
@@ -909,7 +930,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
                 intent.putExtra("vnFileName", fileName)
                 intent.putExtra("vnDurationString", durationString)
                 startActivityForResult(intent,
-                   REQUEST_UPLOAD_FEED_ACTIVITY
+                    REQUEST_UPLOAD_FEED_ACTIVITY
                 )
             } else {
                 durationString = getFormattedDuration(outputFile)
@@ -963,7 +984,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         isUploadInProgress = false
     }
 
-
     private fun showUploadSuccess() {
         val rootView: View = requireActivity().findViewById(android.R.id.content)
         val snackBar = Snackbar.make(rootView, "Feed upload successful", Snackbar.LENGTH_LONG)
@@ -977,58 +997,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         snackBar.setTextColor(snackBarTextColor)
 
         snackBar.show()
-    }
-
-
-    private val waveHandler = Handler(Looper.getMainLooper())
-
-    private val onRecordWaveRunnable = object : Runnable {
-        override fun run() {
-//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
-            try {
-                if (!isOnRecordDurationOnPause) {
-                    val currentPosition = player?.currentPosition?.toFloat()!!
-                    updateRecordWaveProgress(currentPosition)
-                }
-                waveHandler.postDelayed(this, 20)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.d("Exception", "run: ${e.message}")
-            }
-
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun pauseRecording() {
-        val TAG = "pauseRecording"
-        if (isRecording && !isPaused) {
-            try {
-                mediaRecorder?.apply {
-                    stop()
-                    release()
-                }
-                mediaRecorder = null
-            } catch (e: Exception) {
-                Log.d(TAG, " failed to stop media recorder: $e")
-                e.printStackTrace()
-            }
-            isPaused = true
-            timer.pause()
-
-            // Hide recording UI, show playback UI
-            timerTv!!.visibility = View.GONE
-            waveForm!!.visibility = View.GONE
-            playAudioLayout!!.visibility = View.VISIBLE
-
-            playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
-            recordVN!!.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
-
-            Log.d(TAG, "pauseRecording: list of recordings  size: ${recordedAudioFiles.size}")
-            Log.d(TAG, "pauseRecording: list of recordings $recordedAudioFiles")
-
-            mixVN()
-        }
     }
 
     private fun updateRecordWaveProgress(progress: Float) {
