@@ -10,7 +10,9 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.drawable.AnimationDrawable
+import android.graphics.drawable.GradientDrawable
 import android.media.AudioRecord
 import android.media.MediaPlayer
 import android.media.MediaRecorder
@@ -27,6 +29,7 @@ import android.view.ViewGroup
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.view.animation.LinearInterpolator
+import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SeekBar
@@ -107,6 +110,7 @@ import java.io.IOException
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.io.File
+import kotlin.math.sqrt
 
 
 private const val ARG_PARAM1 = "param1"
@@ -1130,11 +1134,16 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
+    @RequiresApi(Build.VERSION_CODES.R)
     private fun pauseRecording() {
         val TAG = "pauseRecording"
         if (isRecording && !isPaused) {
             try {
                 Log.d(TAG, "Pausing recording...")
+
+                isListeningToAudio = false // Stop audio listening
+                audioRecord?.release()
+                audioRecord = null
 
                 mediaRecorder?.apply {
                     stop()
@@ -1151,7 +1160,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
             // Hide recording UI, show playback UI
             timerTv!!.visibility = View.GONE
-            waveForm!!.visibility = View.GONE
             playAudioLayout!!.visibility = View.VISIBLE
             wave!!.visibility = View.GONE
 
