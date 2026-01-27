@@ -161,6 +161,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     private val PREFS_NAME = "LocalSettings"
     private val REQUEST_CODE = 2024
     private val maxWaveBars = 100
+    private val REQUEST_UPLOAD_FEED_ACTIVITY = 1001
 
     //  PERMISSIONS
 
@@ -532,9 +533,15 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+
         super.onActivityResult(requestCode, resultCode, data)
+
         if (requestCode == REQUEST_UPLOAD_FEED_ACTIVITY && resultCode == Activity.RESULT_OK) {
+
+            Log.d(TAG, "Upload completed successfully")
+            showUploadSuccess()
             startUploadAnimation()
+
             val mixedFilesData = data?.getStringExtra("mixedFiles")
             val caption = data?.getStringExtra("caption")
             val tags = data?.getStringExtra("tags")
@@ -869,38 +876,59 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
 
         sendVN!!.setOnClickListener {
+            Log.d(TAG, "sendVN clicked")
+
             CoroutineScope(Dispatchers.Main).launch {
-                Log.d(TAG, "sendVN: recorded files size ${recordedAudioFiles.size}")
-                Log.d(TAG, "sendVN: wasPaused $wasPaused")
+                try {
+                    Log.d(TAG, "sendVN: recorded files size ${recordedAudioFiles.size}")
+                    Log.d(TAG, "sendVN: wasPaused $wasPaused")
+                    Log.d(TAG, "sendVN: isRecording $isRecording, isPaused $isPaused")
 
-                if (isRecording && !isPaused) {
-                    try {
-                        isListeningToAudio = false
-                        val currentTime = System.currentTimeMillis()
-                        recordingElapsedTime += (currentTime - recordingStartTime)
-                        mediaRecorder?.apply {
-                            stop()
-                            release()
+                    // Stop recording if still recording
+                    if (isRecording && !isPaused) {
+                        try {
+                            isListeningToAudio = false
+
+                            val currentTime = System.currentTimeMillis()
+                            recordingElapsedTime += (currentTime - recordingStartTime)
+
+                            mediaRecorder?.apply {
+                                stop()
+                                release()
+                            }
+                            mediaRecorder = null
+
+                            timerHandler.removeCallbacksAndMessages(null)
+
+                            Log.d(TAG, "sendVN: Stopped recording before sending")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "sendVN: Error stopping recording - ${e.message}")
                         }
-                        mediaRecorder = null
-                        timerHandler.removeCallbacksAndMessages(null)
-                        Log.d("SendVN", "Stopped recording before sending")
-                    } catch (e: Exception) {
-                        Log.e("SendVN", "Error stopping recording: ${e.message}")
                     }
-                }
 
-                if (!wasPaused && isRecording) {
-                    Log.d("SendVN", "When sending vn was paused was false")
-                    mixVoiceNote()
-                    delay(500)
-                }
+                    // If we have multiple recordings (paused/resumed), mix them
+                    if (recordedAudioFiles.size > 1) {
+                        Log.d(TAG, "sendVN: Multiple files detected, mixing...")
+                        mixVoiceNote()
+                        // Wait for mixing to complete
+                        delay(1000)
+                    } else {
+                        Log.d(TAG, "sendVN: Single file, no mixing needed")
+                    }
 
-                lifecycleScope.launch(Dispatchers.Main) {
-                    delay(500)
+                    // Wait a bit before proceeding
+                    delay(300)
+
+                    Log.d(TAG, "sendVN: Calling stopRecording()")
                     stopRecording()
+
+                } catch (e: Exception) {
+                    Log.e(TAG, "sendVN: Error - ${e.message}")
+                    e.printStackTrace()
+                    Toast.makeText(requireContext(), "Error preparing upload: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
+
             dialog?.dismiss()
         }
 
@@ -1458,8 +1486,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         })
     }
 
-    //  stopRecording function uses the correct file:
-
     @SuppressLint("SetTextI18n")
     private fun stopRecording() {
         try {
@@ -1498,11 +1524,19 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             val file = File(audioFilePath)
             if (!file.exists()) {
                 Log.e(TAG, "Audio file not found: $audioFilePath")
+                Toast.makeText(requireContext(), "Recording file not found", Toast.LENGTH_SHORT).show()
                 return
             }
 
+            Log.d(TAG, "stopRecording: File exists, size: ${file.length()} bytes")
+
             val durationString = getFormattedDuration(audioFilePath)
             val fileName = getFileNameFromLocalPath(audioFilePath)
+
+            Log.d(TAG, "stopRecording: Starting UploadFeedActivity")
+            Log.d(TAG, "stopRecording: vnFilePath=$audioFilePath")
+            Log.d(TAG, "stopRecording: vnFileName=$fileName")
+            Log.d(TAG, "stopRecording: vnDurationString=$durationString")
 
             val intent = Intent(requireActivity(), UploadFeedActivity::class.java)
             intent.putExtra("vnFilePath", audioFilePath)
@@ -1513,8 +1547,9 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             recordedAudioFiles.clear()
             mixingCompleted = false
         } catch (e: Exception) {
-            Log.e(TAG, "stopRecording: $e")
+            Log.e(TAG, "stopRecording error: ${e.message}")
             e.printStackTrace()
+            Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
