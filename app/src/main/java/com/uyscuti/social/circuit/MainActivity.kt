@@ -2240,14 +2240,7 @@ class MainActivity : AppCompatActivity(),
         }
 
 
-        binding.recordVN.setOnClickListener {
-            when {
-                isPaused -> resumeRecording()
-                isRecording -> pauseRecording()
-               // else -> Log.d("recordVN", "onCreate: else in vn record btn on click")
-                else-> startRecording()
-            }
-        }
+      
         binding.deleteVN.setOnClickListener {
             if (mediaRecorder != null) {
                 Log.d(TAG, "onCreate: media recorder not null")
