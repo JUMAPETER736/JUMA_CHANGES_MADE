@@ -124,10 +124,9 @@ private const val REQUEST_UPLOAD_FEED_ACTIVITY = 1010
 @UnstableApi
 class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
-
     companion object {
-
         private const val FEED_POST_POSITION_FROM_SHORTS = "feed_post_position_from_shorts"
+
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
             FeedFragment().apply {
@@ -139,7 +138,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
         fun feedPostFromShorts(feedPostPositionFromShorts: Int = -1): FeedFragment {
             val feedFragment = FeedFragment()
-
             val args = Bundle()
             feedPostPositionFromShorts.let {
                 args.putInt(FEED_POST_POSITION_FROM_SHORTS, it)
@@ -149,94 +147,104 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-    // TODO: Rename and change types of parameters
+    //  ENUMS
+
+    internal enum class VoiceNoteState {
+        IDLE,
+        RECORDING,
+        PLAYING,
+        PAUSED
+    }
+
+    //  CONSTANTS
+
+    private val PREFS_NAME = "LocalSettings"
+    private val REQUEST_CODE = 2024
+    private val maxWaveBars = 100
+
+    //  PERMISSIONS
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private val permissions = arrayOf(
+        Manifest.permission.RECORD_AUDIO,
+        Manifest.permission.READ_EXTERNAL_STORAGE,
+        Manifest.permission.READ_MEDIA_IMAGES
+    )
+
+    //  FRAGMENT ARGUMENTS
+
     private var param1: String? = null
     private var param2: String? = null
-    private lateinit var uploadSeekBar: SeekBar
-    private val feedMultipleImageViewFragment : FeedMultipleImageViewFragment? = null
+    private var feedPostPositionFromShorts = -1
+
+    //  VIEW MODELS
+
+    private val feedUploadProgressViewModel: FeedUploadProgressViewModel by viewModels()
+    private val getFeedViewModel: GetFeedViewModel by activityViewModels()
+
+    //  SHARED PREFERENCES
+
+    private lateinit var settings: SharedPreferences
+
+    //  UI COMPONENTS - MAIN FEED
+
     private lateinit var tabLayout: TabLayout
     private lateinit var viewPager2: ViewPager2
     private lateinit var adapter: FragmentPageAdapter
+    private lateinit var uploadSeekBar: SeekBar
+    private val feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
+
+    //  UI COMPONENTS - FLOATING ACTION BUTTONS
+
     private lateinit var fileFloatingActionButton: FloatingActionButton
     private lateinit var vnFloatingActionButton: FloatingActionButton
     private lateinit var fabAction: FloatingActionButton
-    private val feedUploadProgressViewModel: FeedUploadProgressViewModel by viewModels()
-    private val getFeedViewModel: GetFeedViewModel by activityViewModels()
-    private val rotateOpen: Animation by lazy {
-        AnimationUtils.loadAnimation(
-            requireActivity(),
-            R.anim.rotate_open_anim
-        )
-    }
-    private val rotateClose: Animation by lazy {
-        AnimationUtils.loadAnimation(
-            requireActivity(),
-            R.anim.rotate_close_anim
-        )
-    }
-    private val fromBottom: Animation by lazy {
-        AnimationUtils.loadAnimation(
-            requireActivity(),
-            R.anim.from_bottom_anim
-        )
-    }
-    private val toBottom: Animation by lazy {
-        AnimationUtils.loadAnimation(
-            requireActivity(),
-            R.anim.to_bottom_anim
-        )
-    }
 
+    //  UI COMPONENTS - UPLOAD
+
+    private lateinit var feedUploadView: ImageView
+    private lateinit var feedCancelView: ImageView
+
+    //  UI COMPONENTS - VOICE NOTE DIALOG
+
+    private var dialog: BottomSheetDialog? = null
     private var deleteVN: ImageView? = null
     private var recordVN: ImageView? = null
-    private lateinit var playVnAudioBtn: ImageView
     private var sendVN: ImageView? = null
-
+    private lateinit var playVnAudioBtn: ImageView
     private var timerTv: TextView? = null
-    private var playerTimerTv: LinearLayout? = null
     private var secondTimerTv: TextView? = null
-
-
+    private var playerTimerTv: LinearLayout? = null
     private var waveForm: WaveFormView? = null
     private var wave: WaveformSeekBar? = null
     private var playAudioLayout: LinearLayout? = null
-    private var totalRecordedDuration = 0L
-    private var voiceNoteState = VoiceNoteState.IDLE
-    private var mixingCompleted = false
 
-    // Add to your existing variable declarations
-    private val waveBars = mutableListOf<View>()
-    private var waveBarCount = 0
-    private val maxWaveBars = 100
-    private var audioRecord: AudioRecord? = null
-    private var isListeningToAudio = false
-    private var recordingStartTime = 0L
-    private var recordingElapsedTime = 0L
-    private var playbackTimerRunnable: kotlinx.coroutines.Runnable? = null
-    private var dialog: BottomSheetDialog? = null
+    //  ANIMATIONS
+
+    private val rotateOpen: Animation by lazy {
+        AnimationUtils.loadAnimation(requireActivity(), R.anim.rotate_open_anim)
+    }
+    private val rotateClose: Animation by lazy {
+        AnimationUtils.loadAnimation(requireActivity(), R.anim.rotate_close_anim)
+    }
+    private val fromBottom: Animation by lazy {
+        AnimationUtils.loadAnimation(requireActivity(), R.anim.from_bottom_anim)
+    }
+    private val toBottom: Animation by lazy {
+        AnimationUtils.loadAnimation(requireActivity(), R.anim.to_bottom_anim)
+    }
     private var wifiAnimation: AnimationDrawable? = null
 
-    //    private lateinit var feedUploadImageView: ImageView
-    private lateinit var feedUploadView: ImageView
-    private lateinit var feedCancelView: ImageView
-//    private lateinit var uploadProgressSeekBar: ProgressBar
-
-    //    private lateinit var feedUploadViewModel: FeedUploadViewModel
-    private lateinit var settings: SharedPreferences
-    private val PREFS_NAME = "LocalSettings"
-
-
-
-    // UPLOAD STATE & PROGRESS
+    //  UPLOAD STATE & PROGRESS
 
     private var progressAnimator: ValueAnimator? = null
     private var isUploadInProgress = false
 
-
-    // AUDIO RECORDING & PLAYBACK
+    //  AUDIO RECORDING & PLAYBACK
 
     private var mediaRecorder: MediaRecorder? = null
     private var player: MediaPlayer? = null
+    private var audioRecord: AudioRecord? = null
     private lateinit var outputFile: String
     private var outputVnFile: String = ""
     private val recordedAudioFiles = mutableListOf<String>()
@@ -244,31 +252,40 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     private lateinit var timer: Timer
     private var amps = 0
 
+    //  WAVEFORM VISUALIZATION
 
-    // AUDIO STATE FLAGS
+    private val waveBars = mutableListOf<View>()
+    private var waveBarCount = 0
+
+    //  AUDIO RECORDING STATE
 
     private var isRecording = false
     private var isPaused = false
+    private var isListeningToAudio = false
+    private var recordingStartTime = 0L
+    private var recordingElapsedTime = 0L
+    private var voiceNoteState = VoiceNoteState.IDLE
+    private var mixingCompleted = false
+    private var wasPaused = false
+
+    //  AUDIO PLAYBACK STATE
+
     private var isAudioVNPlaying = false
     private var isAudioVNPaused = false
     private var isVnResuming = false
     private var vnRecordAudioPlaying = false
     private var isOnRecordDurationOnPause = false
-    private var wasPaused = false
-
-
-    // GENERAL STATE FLAGS
-
-    private var clicked = false
     private var vnRecordProgress = 0
-    private var feedPostPositionFromShorts = -1
+    private var totalRecordedDuration = 0L
+
+    //  HANDLERS & RUNNABLES
 
     private val waveHandler = Handler(Looper.getMainLooper())
     private val timerHandler = Handler(Looper.getMainLooper())
+    private var playbackTimerRunnable: kotlinx.coroutines.Runnable? = null
 
     private val onRecordWaveRunnable = object : Runnable {
         override fun run() {
-//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
             try {
                 if (!isOnRecordDurationOnPause) {
                     val currentPosition = player?.currentPosition?.toFloat()!!
@@ -279,17 +296,12 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
                 e.printStackTrace()
                 Log.d("Exception", "run: ${e.message}")
             }
-
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private val permissions = arrayOf(
-        Manifest.permission.RECORD_AUDIO,
-        Manifest.permission.READ_EXTERNAL_STORAGE,
-        Manifest.permission.READ_MEDIA_IMAGES
-    )
-    private val REQUEST_CODE = 2024
+    //  GENERAL STATE FLAGS
+
+    private var clicked = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -908,18 +920,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         dialog?.show()
     }
 
-
-    //  ADD THESE VARIABLES AT THE TOP OF YOUR CLASS
-
-    internal enum class VoiceNoteState {
-        IDLE,
-        RECORDING,
-        PLAYING,
-        PAUSED
-    }
-
-
-    //  REPLACE pauseRecording COMPLETELY
+    //   pauseRecording COMPLETELY
 
     @RequiresApi(Build.VERSION_CODES.R)
     private fun pauseRecording() {
@@ -969,7 +970,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-//  REPLACE resumeRecording COMPLETELY
+    //   resumeRecording COMPLETELY
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun resumeRecording() {
@@ -1013,7 +1014,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-//  ADD THIS NEW FUNCTION
+    //  ADD THIS NEW FUNCTION
 
     private fun updateVoiceNoteUserInterfaceState(newState: VoiceNoteState) {
         voiceNoteState = newState
@@ -1064,7 +1065,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-    //  REPLACE mixVN COMPLETELY
+    //   mixVN COMPLETELY
 
     private fun mixVoiceNote() {
         val TAG = "mixVoiceNote"
@@ -1137,7 +1138,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-    //  REPLACE startPlaying COMPLETELY
+    //   startPlaying COMPLETELY
 
     private fun startPlaying(vnAudio: String) {
         EventBus.getDefault().post(PauseShort(true))
@@ -1211,7 +1212,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         playbackTimerRunnable = null
     }
 
-    //  REPLACE pauseVn COMPLETELY
+    //   pauseVn COMPLETELY
 
     @SuppressLint("DefaultLocale")
     private fun pauseVoiceNote(progress: Int) {
@@ -1278,7 +1279,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-    //  REPLACE stopPlaying COMPLETELY
+    //   stopPlaying COMPLETELY
 
     private fun stopPlaying() {
         val waveformScrollView = dialog?.findViewById<HorizontalScrollView>(R.id.waveformScrollView)
@@ -1362,7 +1363,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-    //  REPLACE deleteRecording COMPLETELY
+    //   deleteRecording COMPLETELY
 
     @SuppressLint("SetTextI18n")
     private fun deleteRecording() {
@@ -1415,7 +1416,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-    //  REPLACE onTimerTick
+    //   onTimerTick
 
     @SuppressLint("DefaultLocale")
     override fun onTimerTick(duration: String) {
@@ -1424,7 +1425,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         Log.d(TAG, "onTimerTick (old timer): $duration - IGNORED")
     }
 
-    //  REPLACE clearWaveform
+    //   clearWaveform
 
     private fun clearWaveform() {
         val waveDotsContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer)
@@ -1434,9 +1435,8 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         waveDotsContainer?.removeAllViews()
         waveBars.clear()
     }
-    
 
-    // REPLACE or ADD the updateRecordingTimer function:
+    //  or ADD the updateRecordingTimer function:
 
     @SuppressLint("DefaultLocale")
     private fun updateRecordingTimer() {
@@ -1458,7 +1458,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         })
     }
 
-    // MAKE SURE your stopRecording function uses the correct file:
+    //  stopRecording function uses the correct file:
 
     @SuppressLint("SetTextI18n")
     private fun stopRecording() {
@@ -1720,7 +1720,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-// ========== REPLACE addWaveBarForSound WITH LOGGING ==========
+    //   addWaveBarForSound WITH LOGGING
 
     private fun addWaveBarForSound(heightMultiplier: Float) {
         try {
@@ -1766,7 +1766,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-// ========== REPLACE addIdleDottedBarAtEnd WITH LOGGING ==========
+    //   addIdleDottedBarAtEnd WITH LOGGING
 
     private fun addIdleDottedBarAtEnd() {
         try {
@@ -1808,7 +1808,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-// ========== REPLACE initializeDottedWaveform WITH LOGGING ==========
+    //   initializeDottedWaveform WITH LOGGING
 
     private fun initializeDottedWaveform() {
         try {
@@ -1853,7 +1853,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-// ========== REPLACE scrollToRight WITH LOGGING ==========
+    //   scrollToRight WITH LOGGING
 
     private fun scrollToRight() {
         try {
@@ -1872,7 +1872,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-// ========== ADD THIS DIAGNOSTIC FUNCTION ==========
+    //  ADD THIS DIAGNOSTIC FUNCTION
 
     private fun checkWaveformViewsStatus() {
         val waveDotsContainer = dialog?.findViewById<LinearLayout>(R.id.waveDotsContainer)
@@ -1900,10 +1900,10 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         Log.d(TAG, "isListeningToAudio = $isListeningToAudio")
         Log.d(TAG, "isRecording = $isRecording")
         Log.d(TAG, "voiceNoteState = $voiceNoteState")
-        Log.d(TAG, "===========================")
+
     }
 
-// ========== UPDATE startRecording to call checkWaveformViewsStatus ==========
+    //   startRecording to call checkWaveformViewsStatus
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun startRecording() {
