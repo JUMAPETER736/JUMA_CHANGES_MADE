@@ -206,8 +206,10 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     private val maxWaveBars = 100
     private var audioRecord: AudioRecord? = null
     private var isListeningToAudio = false
-
-    private val REQUEST_RECORD_AUDIO_PERMISSION = 200
+    private var recordingStartTime = 0L
+    private var recordingElapsedTime = 0L
+    private var totalRecordedDuration = 0L
+    private var playbackTimerRunnable: kotlinx.coroutines.Runnable? = null
 
     private var wifiAnimation: AnimationDrawable? = null
 
@@ -768,6 +770,27 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
 
     private val waveHandler = Handler(Looper.getMainLooper())
+    private val timerHandler = Handler(Looper.getMainLooper())
+
+    @SuppressLint("DefaultLocale")
+    private fun updateRecordingTimer() {
+        timerHandler.post(object : Runnable {
+            override fun run() {
+                if (isRecording && !isPaused) {
+                    val currentTime = System.currentTimeMillis()
+                    val elapsed = recordingElapsedTime + (currentTime - recordingStartTime)
+
+                    val seconds = (elapsed / 1000) % 60
+                    val minutes = (elapsed / 1000) / 60
+
+                    val formatted = String.format("%02d:%02d", minutes, seconds)
+                    timerTv?.text = formatted
+
+                    timerHandler.postDelayed(this, 100) // Update every 100ms
+                }
+            }
+        })
+    }
 
     private val onRecordWaveRunnable = object : Runnable {
         override fun run() {
@@ -1102,48 +1125,28 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 //        vnRecordProgress = 0
     }
 
+    @SuppressLint("DefaultLocale")
     override fun onTimerTick(duration: String) {
-        try {
-            Log.d("onTimerTick", "Timer tick: $duration")
-
-            // Update timer text
-            timerTv?.text = duration
-
-            // Get and add amplitude to waveform
-            mediaRecorder?.let { recorder ->
-                try {
-                    var amplitude = recorder.maxAmplitude.toFloat()
-                    amplitude = if (amplitude > 0) amplitude else 130f
-                    Log.d("onTimerTick", "Amplitude: $amplitude")
-
-                    waveForm?.let {
-                        it.addAmplitude(amplitude)
-                        Log.d("onTimerTick", "Amplitude added to waveform")
-                    } ?: Log.e("onTimerTick", "waveForm is null!")
-
-                } catch (e: Exception) {
-                    Log.e("onTimerTick", "Error getting amplitude: ${e.message}")
-                    e.printStackTrace()
-                }
-            } ?: Log.e("onTimerTick", "mediaRecorder is null!")
-
-        } catch (e: Exception) {
-            Log.e("onTimerTick", "Error in onTimerTick: ${e.message}")
-            e.printStackTrace()
+        // Only update the timer text - no waveform manipulation
+        requireActivity().runOnUiThread {
+            val parts = duration.split(":")
+            val formatted = if (parts.size >= 2) {
+                String.format("%02d:%02d",
+                    parts[0].toIntOrNull() ?: 0,
+                    parts[1].toIntOrNull() ?: 0)
+            } else {
+                "00:00"
+            }
+            timerTv?.text = formatted
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
     @RequiresApi(Build.VERSION_CODES.R)
     private fun pauseRecording() {
         val TAG = "pauseRecording"
         if (isRecording && !isPaused) {
             try {
                 Log.d(TAG, "Pausing recording...")
-
-                isListeningToAudio = false // Stop audio listening
-                audioRecord?.release()
-                audioRecord = null
 
                 mediaRecorder?.apply {
                     stop()
@@ -1160,6 +1163,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
             // Hide recording UI, show playback UI
             timerTv!!.visibility = View.GONE
+            waveForm!!.visibility = View.GONE
             playAudioLayout!!.visibility = View.VISIBLE
             wave!!.visibility = View.GONE
 
