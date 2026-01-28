@@ -985,7 +985,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         followUnfollowLayout.visibility = View.GONE
     }
 
-    //  ENHANCED DEBUG VERSION
+    
     private fun handleMuteToggle(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
@@ -994,16 +994,36 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                         FeedAdapter.isUserPostsMuted(userId) ||
                         isUserPostsMutedInPrefs(userId)
 
-                Log.d(TAG, "handleMuteToggle: userId=$userId, currentlyMuted=$isMuted")
+                Log.d(TAG, " MUTE TOGGLE START ")
+                Log.d(TAG, "userId: $userId")
+                Log.d(TAG, "currentlyMuted: $isMuted")
+                Log.d(TAG, "Action: ${if (isMuted) "UNMUTE" else "MUTE"}")
 
                 val response = if (isMuted) {
+                    Log.d(TAG, "Calling unMutePosts API...")
                     withContext(Dispatchers.IO) {
                         retrofitInstance.apiService.unMutePosts(userId)
                     }
                 } else {
+                    Log.d(TAG, "Calling mutePosts API...")
                     withContext(Dispatchers.IO) {
                         retrofitInstance.apiService.mutePosts(userId)
                     }
+                }
+
+                Log.d(TAG, "API Response Code: ${response.code()}")
+                Log.d(TAG, "API Response Message: ${response.message()}")
+                Log.d(TAG, "API Response Successful: ${response.isSuccessful}")
+
+                if (response.body() != null) {
+                    Log.d(TAG, "API Response Body: ${response.body()}")
+                } else {
+                    Log.w(TAG, "API Response Body is null")
+                }
+
+                if (!response.isSuccessful) {
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "API Error Body: $errorBody")
                 }
 
                 if (response.isSuccessful) {
@@ -1011,16 +1031,20 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
                     // Update ALL THREE caches
                     if (isMuted) {
+                        Log.d(TAG, "Removing from caches...")
                         relationshipsViewModel.removeMutedPosts(userId)
                         FeedAdapter.removeFromMutedPostsCache(userId)
                         saveUserMutedToPrefs(userId, false)
+                        Log.d(TAG, "Removed from all caches")
                     } else {
+                        Log.d(TAG, "Adding to caches...")
                         relationshipsViewModel.addMutedPosts(userId)
                         FeedAdapter.addToMutedPostsCache(userId)
                         saveUserMutedToPrefs(userId, true)
+                        Log.d(TAG, " Added to all caches")
                     }
 
-                    // ===== ENHANCED DEBUG: Find ALL possible author IDs =====
+                    // Remove posts from feed if muting
                     if (!isMuted) {
                         val currentPosts = getFeedViewModel.getAllFeedData()
                         Log.d(TAG, "Current feed has ${currentPosts.size} posts")
@@ -1028,76 +1052,45 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
                         val positionsToRemove = mutableListOf<Int>()
 
-                        // DETAILED LOGGING for each post
                         currentPosts.forEachIndexed { index, post ->
-                            // Try ALL possible ways to get the author ID
-                            val authorId1 = post.author?.account?._id
-                            val authorId2 = post.author?._id
-                            val ownerId = post.author
+                            val authorId = post.author?.account?._id
                             val reposterId = post.repostedUser?.owner
-                            val reposterId2 = post.repostedUser?._id
-                            val userId1 = post.author?._id
-                            val userId2 = post._id
+                            val posterId = reposterId ?: authorId
 
-                            // Log EVERYTHING for debugging
-                            Log.d(TAG, """
-                            Post #$index structure:
-                            - post.author?.account?._id = $authorId1
-                            - post.author?._id = $authorId2
-                            - post.owner = $ownerId
-                            - post.repostedUser?.owner = $reposterId
-                            - post.repostedUser?._id = $reposterId2
-                            - post.user?._id = $userId1
-                            - post.userId = $userId2
-                        """.trimIndent())
-
-                            // Check ALL possible matches
-                            val allPossibleIds = listOf(
-                                authorId1, authorId2, ownerId,
-                                reposterId, reposterId2,
-                                userId1, userId2
-                            ).filterNotNull()
-
-                            if (allPossibleIds.contains(userId)) {
+                            if (posterId == userId) {
                                 positionsToRemove.add(index)
-                                Log.d(TAG, "✓ MATCH FOUND at position $index!")
+                                Log.d(TAG, "✓ Post match at position $index (postId: ${post._id})")
                             }
                         }
 
-                        Log.d(TAG, "Found ${positionsToRemove.size} posts to remove from user $userId")
+                        Log.d(TAG, "Found ${positionsToRemove.size} posts to remove")
 
                         if (positionsToRemove.isNotEmpty()) {
-                            // Remove in reverse order to maintain indices
                             positionsToRemove.reversed().forEach { index ->
                                 currentPosts.removeAt(index)
                             }
 
                             Log.d(TAG, "After removal: ${currentPosts.size} posts remain")
 
-                            // Update adapter
                             allFeedAdapter.submitItems(currentPosts)
 
-                            // Notify adapter about removals
                             positionsToRemove.reversed().forEach { index ->
                                 allFeedAdapter.notifyItemRemoved(index)
                             }
 
-                            // Update range
                             if (positionsToRemove.isNotEmpty()) {
                                 val firstRemoved = positionsToRemove.minOrNull() ?: 0
                                 allFeedAdapter.notifyItemRangeChanged(firstRemoved, currentPosts.size)
                             }
 
                             Log.d(TAG, "UI updated - removed ${positionsToRemove.size} posts")
-                        } else {
-                            Log.d(TAG, "NO POSTS FOUND! Check the logs above to see the actual post structure")
                         }
 
-                        // Show Snackbar with Undo
                         Snackbar.make(feedListView, "Posts muted", Snackbar.LENGTH_LONG)
                             .setAction("Undo") {
                                 lifecycleScope.launch {
                                     try {
+                                        Log.d(TAG, "Undo: Unmuting user $userId")
                                         val unmuteResponse = withContext(Dispatchers.IO) {
                                             retrofitInstance.apiService.unMutePosts(userId)
                                         }
@@ -1106,35 +1099,50 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                                             FeedAdapter.removeFromMutedPostsCache(userId)
                                             saveUserMutedToPrefs(userId, false)
                                             Toast.makeText(context, "Unmuted", Toast.LENGTH_SHORT).show()
+                                            Log.d(TAG, "Undo successful")
 
-                                            // Refresh feed
                                             getFeedViewModel.clearAllFeedData()
                                             allFeedAdapter.submitItems(mutableListOf())
                                             getAllFeed(1)
+                                        } else {
+                                            Log.e(TAG, "Undo failed: ${unmuteResponse.code()}")
                                         }
                                     } catch (e: Exception) {
-                                        Log.e(TAG, "Error undoing mute: ${e.message}")
+                                        Log.e(TAG, "Error undoing mute: ${e.message}", e)
                                     }
                                 }
                             }
                             .show()
 
                     } else {
-                        // Unmuted - refresh feed
                         Toast.makeText(context, "Posts unmuted. Refreshing feed...", Toast.LENGTH_SHORT).show()
+                        Log.d(TAG, "Unmuted - refreshing feed")
 
                         getFeedViewModel.clearAllFeedData()
                         allFeedAdapter.submitItems(mutableListOf())
                         getAllFeed(1)
                     }
 
+                    Log.d(TAG, " MUTE TOGGLE END (SUCCESS) ")
+
                 } else {
                     Log.e(TAG, "API call failed with code: ${response.code()}")
-                    Toast.makeText(context, "Failed to update mute status", Toast.LENGTH_SHORT).show()
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "Error body: $errorBody")
+
+                    Toast.makeText(
+                        context,
+                        "Failed to ${if (isMuted) "unmute" else "mute"} user (${response.code()})",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    Log.d(TAG, " MUTE TOGGLE END (FAILED) ")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error in handleMuteToggle: ${e.message}", e)
-                Toast.makeText(context, "Network error", Toast.LENGTH_SHORT).show()
+                e.printStackTrace()
+                Toast.makeText(context, "Network error: ${e.message}", Toast.LENGTH_SHORT).show()
+                Log.d(TAG, " MUTE TOGGLE END (EXCEPTION) ")
             }
         }
     }
