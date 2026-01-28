@@ -117,6 +117,7 @@ class SettingsActivity : AppCompatActivity() {
         when (selectedItem.title) {
             "Username" -> {
                 val intent = Intent(this@SettingsActivity, ViewImagesActivity::class.java)
+                intent.putExtra("imageUrl", avatar)
                 startActivity(intent)
             }
 
