@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.ScaleGestureDetector
 import android.view.View
+import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.activity.OnBackPressedCallback
 import com.bumptech.glide.Glide
@@ -31,10 +32,9 @@ class ViewImagesActivity : AppCompatActivity() {
     private var updateLike:Boolean = false
 
     private var updateReplyLikes:Boolean = false
+
     @SuppressLint("ClickableViewAccessibility")
-
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
 
         binding = ActivityViewImagesBinding.inflate(layoutInflater)
@@ -52,9 +52,23 @@ class ViewImagesActivity : AppCompatActivity() {
 
         Log.d(Tag, "currentReplyComment -> $currentReplyComment")
         Log.d(Tag, "updateReplyLike -> $updateReplyLike")
-
-
         Log.i(Tag, "imagePath from viewing images - $imagePath")
+
+        // Load the image using Glide
+        if (!imagePath.isNullOrEmpty()) {
+            Glide.with(this)
+                .load(imagePath)
+                .placeholder(R.drawable.google) // Optional: placeholder while loading
+                .error(R.drawable.google) // Optional: error image if loading fails
+                .into(binding.fullImageView)
+        } else {
+            Log.e(Tag, "Image path is null or empty")
+        }
+
+        // Set up close button click listener
+        binding.closeButton.setOnClickListener {
+            onReturn()
+        }
 
         // Create a callback for handling back button presses
         val callback = object : OnBackPressedCallback(true) {
@@ -69,17 +83,9 @@ class ViewImagesActivity : AppCompatActivity() {
         onBackPressedDispatcher.addCallback(this, callback)
     }
 
-
-
     private fun onReturn(){
         Log.d("onReturn", "onReturn")
-
         Log.d(Tag, "currentReplyComment like -> ${currentReplyComment?.isLiked}")
-
         finish()
-
-
     }
-
-
 }
