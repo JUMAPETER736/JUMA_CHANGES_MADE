@@ -22,7 +22,6 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -43,7 +42,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -62,10 +60,7 @@ import com.uyscuti.sharedmodule.model.PauseShort
 import com.uyscuti.sharedmodule.model.ProgressEvent
 import com.uyscuti.sharedmodule.model.UploadSuccessful
 import com.uyscuti.sharedmodule.model.feed.SetAllFragmentScrollPosition
-import com.uyscuti.sharedmodule.utils.AudioDurationHelper
 import com.uyscuti.sharedmodule.utils.Timer
-import com.uyscuti.sharedmodule.utils.TrimVideoUtils
-import com.uyscuti.sharedmodule.utils.WaveFormExtractor
 import com.uyscuti.sharedmodule.utils.audiomixer.AudioMixer
 import com.uyscuti.sharedmodule.utils.audiomixer.input.GeneralAudioInput
 import com.uyscuti.sharedmodule.utils.deleteFiles
@@ -73,7 +68,6 @@ import com.uyscuti.sharedmodule.utils.feedutils.deserializeFeedUploadDataList
 import com.uyscuti.sharedmodule.utils.filterStringsContainingSubstring
 import com.uyscuti.sharedmodule.utils.getFileNameFromLocalPath
 import com.uyscuti.sharedmodule.utils.getOutputFilePath
-import com.uyscuti.sharedmodule.utils.waveformseekbar.SeekBarOnProgressChanged
 import com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
 import com.uyscuti.sharedmodule.viewmodels.FeedShortsViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.FeedUploadProgressViewModel
@@ -85,7 +79,6 @@ import com.uyscuti.social.circuit.ui.fragments.feed.FavoriteFragment
 import com.uyscuti.sharedmodule.UploadFeedActivity
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
-import com.uyscuti.social.circuit.MainActivity.VoiceNoteState
 import com.uyscuti.social.circuit.adapter.FragmentPageAdapter
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.posts.Account
@@ -810,9 +803,10 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun showVNDialog() {
-        dialog = BottomSheetDialog(requireContext())  // Remove 'val' - use class variable
-        dialog?.setContentView(R.layout.vn_record_layout)
+    private fun showVoiceNoteDialog() {
+
+        dialog = BottomSheetDialog(requireContext())
+        dialog?.setContentView(R.layout.voice_note_record_layout)
 
         // Initialize ALL views from the layout
         deleteVN = dialog?.findViewById(R.id.deleteVN)!!
@@ -1040,10 +1034,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             sendVN?.setBackgroundResource(R.drawable.ic_ripple)  // Safe call
             sendVN?.isClickable = false  // Safe call
 
-            // REMOVE THESE LINES - waveForm doesn't exist anymore
-            // amplitudes = waveForm!!.clear()
-            // amps = 0
-            // timer.stop()
 
             if (player?.isPlaying == true) {
                 stopPlaying()
@@ -1135,7 +1125,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
             Log.d(TAG, "deleteRecording: recorded files size ${recordedAudioFiles.size}")
 
-            deleteVn()
+            deleteVoiceNote()
         } catch (e: Exception) {
             e.printStackTrace()
             Log.e(TAG, "Error deleting recording: $e")
@@ -1628,7 +1618,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun onUploadVNButtonClick() {
-        showVNDialog()
+        showVoiceNoteDialog()
     }
 
     private fun startUploadAnimation(uploadDurationMs: Long = 10000) {
@@ -1692,7 +1682,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         }
     }
 
-    private fun deleteVn() {
+    private fun deleteVoiceNote() {
         recordedAudioFiles.clear()
 //        if (recordedAudioFiles.isNotEmpty()) {
         val isDeleted = deleteFiles(recordedAudioFiles)
