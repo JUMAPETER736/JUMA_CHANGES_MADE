@@ -396,7 +396,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
 
                 } else {
                     Log.e(TAG, "API call failed with code: ${response.code()}")
-                    Toast.makeText(this@MutedPostsActivity, "Failed to unmute user", Toast.LENGTH_SHORT).show()
+
                 }
 
             } catch (e: Exception) {
