@@ -1522,7 +1522,7 @@ class FeedAdapter(
             try {
                 val activity = getActivityFromContext(itemView.context)
                 if (activity != null) {
-                    // ✅ USE android.R.id.content - it always exists in every activity
+                    // USE android.R.id.content - it always exists in every activity
                     activity.supportFragmentManager.beginTransaction()
                         .setCustomAnimations(
                             R.anim.slide_in_right,
@@ -1530,7 +1530,7 @@ class FeedAdapter(
                             R.anim.slide_in_left,
                             R.anim.slide_out_right
                         )
-                        .add(android.R.id.content, fragment)  // ✅ CHANGED from R.id.frame_layout
+                        .add(android.R.id.content, fragment)  // from R.id.frame_layout
                         .addToBackStack(tag)
                         .commit()
 

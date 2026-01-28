@@ -35,15 +35,15 @@ class SettingsActivity : AppCompatActivity() {
         username = settings.getString("username", "login") ?: "login"
         avatar = settings.getString("avatar", "") ?: ""
 
-        // Option 1: Use the existing full_name key
+        //  Use the existing full_name key
         val fullName = settings.getString("full_name", "") ?: ""
 
-        // Option 2: Use firstname and lastname (lowercase!)
+        //  Use firstname and lastname (lowercase!)
         val firstName = settings.getString("firstname", "") ?: ""
         val lastName = settings.getString("lastname", "") ?: ""
 
-        // DEBUG: Print what's in SharedPreferences
-        android.util.Log.d("SettingsActivity", "=== SharedPreferences Debug ===")
+        //  Print what's in SharedPreferences
+        android.util.Log.d("SettingsActivity", "SharedPreferences Debug ")
         android.util.Log.d("SettingsActivity", "full_name: '$fullName'")
         android.util.Log.d("SettingsActivity", "firstname: '$firstName'")
         android.util.Log.d("SettingsActivity", "lastname: '$lastName'")

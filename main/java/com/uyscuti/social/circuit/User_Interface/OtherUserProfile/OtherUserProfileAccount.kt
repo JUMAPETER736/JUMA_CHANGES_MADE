@@ -565,8 +565,27 @@ class OtherUserProfileAccount : AppCompatActivity() {
 
     private fun showFullProfilePicture() {
 
-        Toast.makeText(this, "View full profile picture", Toast.LENGTH_SHORT).show()
+        if (!avatarUrl.isNullOrEmpty()) {
+            val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+            dialog.setContentView(R.layout.dialog_profile_full_image)
+
+            val imageView = dialog.findViewById<ImageView>(R.id.fullImageView)
+            val closeButton = dialog.findViewById<ImageButton>(R.id.closeButton)
+
+            Glide.with(this)
+                .load(avatarUrl)
+                .into(imageView)
+
+            closeButton?.setOnClickListener {
+                dialog.dismiss()
+            }
+
+            dialog.show()
+        } else {
+            Toast.makeText(this, "No profile picture available", Toast.LENGTH_SHORT).show()
+        }
     }
+
 
     private fun handleAddFriend() {
         lifecycleScope.launch {
