@@ -157,7 +157,7 @@ class SettingsAdapter(
         }
     }
 
-    // ==================== EXISTING VIEW HOLDERS ====================
+    //  EXISTING VIEW HOLDERS
 
     inner class FirstItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val userFullName: TextView = itemView.findViewById(R.id.fullNameTextView)
@@ -336,7 +336,7 @@ class SettingsAdapter(
         }
     }
 
-    // ==================== NEW RELATIONSHIP MANAGEMENT VIEW HOLDER ====================
+    // RELATIONSHIP MANAGEMENT VIEW HOLDER
 
     inner class RelationshipItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val title: TextView = itemView.findViewById(R.id.titleTextView)

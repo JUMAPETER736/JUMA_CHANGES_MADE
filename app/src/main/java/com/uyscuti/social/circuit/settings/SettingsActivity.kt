@@ -82,8 +82,8 @@ class SettingsActivity : AppCompatActivity() {
                 imageBitmap = avatarBitmap,
                 title = "Username",
                 subTitle = null,
-                firstName = firstName,      // Now using "firstname" (lowercase)
-                lastName = lastName,        // Now using "lastname" (lowercase)
+                firstName = firstName,
+                lastName = lastName,
                 username = username,
                 avatarUrl = avatar
             ),
@@ -96,7 +96,7 @@ class SettingsActivity : AppCompatActivity() {
             SettingsModel(lockBitmap, "Help", "Help center, contact us, privacy policy"),
             SettingsModel(lockBitmap, "Invite", ""),
 
-            // ========== RELATIONSHIP MANAGEMENT SECTION ==========
+            //  RELATIONSHIP MANAGEMENT SECTION
             SettingsModel(blockBitmap, "Blocked Users", "Manage blocked accounts"),
             SettingsModel(muteBitmap, "Muted Posts", "Accounts whose posts you've muted"),
             SettingsModel(muteBitmap, "Muted Stories", "Accounts whose stories you've muted"),
@@ -130,7 +130,7 @@ class SettingsActivity : AppCompatActivity() {
                 startActivity(intent)
             }
 
-            // ========== RELATIONSHIP MANAGEMENT CLICKS ==========
+            //  RELATIONSHIP MANAGEMENT CLICKS
 
             "Blocked Users" -> {
                 val intent = Intent(this@SettingsActivity, BlockedUsersActivity::class.java)
