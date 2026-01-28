@@ -183,7 +183,7 @@ import java.util.UUID
 import javax.inject.Inject
 import kotlin.properties.Delegates
 
-// TODO: Rename parameter arguments, choose names that match
+
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
@@ -212,7 +212,27 @@ class FavoriteFragment : Fragment(),
     Timer.OnTimeTickListener
 
 {
-    // TODO: Rename and change types of parameters
+
+
+    companion object {
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment FavoriteFragment.
+         **/
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FavoriteFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
     private var param1: String? = null
     private var param2: String? = null
 
@@ -349,9 +369,6 @@ class FavoriteFragment : Fragment(),
     }
 
 
-
-
-
     private lateinit var repository: IFlashApiRepositoryImplementation
 
     @Inject
@@ -360,47 +377,7 @@ class FavoriteFragment : Fragment(),
     @Inject
     lateinit var localStorage: LocalStorage
 
-    private fun setUpViewModel() {
 
-        repository = IFlashApiRepositoryImplementation(retrofitInstance)
-
-        val factory = BusinessCatalogueViewModelFactory(repository)
-
-        catalogueViewModel = ViewModelProvider(this,factory)[BusinessCatalogueViewModel::class.java]
-
-    }
-
-    private fun observeViewModel() {
-        // Observe catalogue items and update adapter
-        catalogueViewModel.catalogueItems.observe(viewLifecycleOwner) { items ->
-            val list = ArrayList<Post>()
-            items.forEach {
-                if (it.isBookmarked) {
-                    list.add(it)
-                }
-            }
-            businessAdapter.updateCatalogue(list)
-        }
-
-
-        businessPostsViewModel.commentLiveData.observe(viewLifecycleOwner) { commentState ->
-            if (binding.motionLayout.isVisible) {
-                if (commentState.isReply) {
-                    processReplyComments(commentState.comment)
-                } else {
-                    commentAdapter!!.submitItem(commentState.comment,0)
-                    businessAdapter.updateCommentCount(postPosition)
-
-                    if(commentAdapter!!.itemCount == 1) {
-                        updateUI(false)
-                    }
-                }
-            }
-        }
-
-
-
-    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -443,14 +420,14 @@ class FavoriteFragment : Fragment(),
             catalogueList,
             onItemClick = { item ->
                 // Handle item click - navigate to detail screen
-               navigateToItemDetail(item)
+                navigateToItemDetail(item)
             },
             this,
             onBookmarkClick = {item ->
-               bookmarkBusinessPost(item)
+                bookmarkBusinessPost(item)
             },
             onFollowClick = { item ->
-               followBusinessPostOwner(item)
+                followBusinessPostOwner(item)
             },
             onMessageClick = { user, post ->
                 val productReference = "#Is Product available\n${post.itemName}\n${post.description}\n\n${post.images.first()}"
@@ -477,13 +454,13 @@ class FavoriteFragment : Fragment(),
 
         favoriteFeedAdapter.setOnPaginationListener(object : com. uyscuti. sharedmodule. adapter. FeedPaginatedAdapter. OnPaginationListener {
             override fun onCurrentPage(page: Int) {
-//                Toast.makeText(requireContext(), "Page $page loaded!", Toast.LENGTH_SHORT).show()
+
                 Log.d(TAG, "currentPage: page number $page")
 
             }
             override fun onNextPage(page: Int) {
                 lifecycleScope.launch(Dispatchers.Main) {
-//                    loadMoreShorts(page)
+
                     Log.d(TAG, "onNextPage: page number $page")
                     getAllFeed(page)
                 }
@@ -577,7 +554,7 @@ class FavoriteFragment : Fragment(),
                     TAG,
                     "onCreateView: data is available and size is ${getFeedViewModel.getAllFavoriteFeedData().size}"
                 )
-//                    allFeedAdapter.item
+
                 favoriteFeedAdapter.submitItems(getFeedViewModel.getAllFavoriteFeedData())
                 getFeedViewModel.setIsDataAvailable(false)
 
@@ -588,6 +565,48 @@ class FavoriteFragment : Fragment(),
             }
         }
     }
+
+    private fun setUpViewModel() {
+
+        repository = IFlashApiRepositoryImplementation(retrofitInstance)
+
+        val factory = BusinessCatalogueViewModelFactory(repository)
+
+        catalogueViewModel = ViewModelProvider(this,factory)[BusinessCatalogueViewModel::class.java]
+
+    }
+
+    private fun observeViewModel() {
+        // Observe catalogue items and update adapter
+        catalogueViewModel.catalogueItems.observe(viewLifecycleOwner) { items ->
+            val list = ArrayList<Post>()
+            items.forEach {
+                if (it.isBookmarked) {
+                    list.add(it)
+                }
+            }
+            businessAdapter.updateCatalogue(list)
+        }
+
+
+        businessPostsViewModel.commentLiveData.observe(viewLifecycleOwner) { commentState ->
+            if (binding.motionLayout.isVisible) {
+                if (commentState.isReply) {
+                    processReplyComments(commentState.comment)
+                } else {
+                    commentAdapter!!.submitItem(commentState.comment,0)
+                    businessAdapter.updateCommentCount(postPosition)
+
+                    if(commentAdapter!!.itemCount == 1) {
+                        updateUI(false)
+
+                    }
+                }
+            }
+        }
+
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun handleEventsLister() {
@@ -729,24 +748,7 @@ class FavoriteFragment : Fragment(),
         }
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FavoriteFragment.
-         **/
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FavoriteFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
+
 
 
 
@@ -1046,7 +1048,7 @@ class FavoriteFragment : Fragment(),
                         val downloadProgress =
                             (bytesCopied.toFloat() / fileSize.toFloat() * 100).toInt()
                         requireActivity().runOnUiThread {
-//
+
                         }
                         outputStream.write(buffer, 0, bytes)
                         bytes = inputStream.read(buffer)
@@ -1080,6 +1082,7 @@ class FavoriteFragment : Fragment(),
             }
         }
     }
+
     private fun generateUniqueFileName(originalUrl: String): String {
         val timestamp =
             SimpleDateFormat("yyyy_MM_dd_HHmmss", Locale.getDefault()).format(Date())
@@ -1194,7 +1197,7 @@ class FavoriteFragment : Fragment(),
 
                 favoriteFeedAdapter.removeItem(position)
                 favoriteFeedAdapter.notifyItemRemoved(position)
-//                allFeedAdapter.notifyItemChanged(position)
+
                 // Optional: Add fade-out animation
                 val viewHolder = binding.rv.findViewHolderForAdapterPosition(position)
                 if (viewHolder != null) {
@@ -1297,9 +1300,6 @@ class FavoriteFragment : Fragment(),
     }
 
     @SuppressLint("ServiceCast")
-
-
-
     private fun showDeleteConfirmationDialog(feedId: String, position: Int) {
         val inflater = LayoutInflater.from(requireContext())
         val customTitleView: View = inflater.inflate(R.layout.delete_title_custom_layout, null)
@@ -1750,7 +1750,7 @@ class FavoriteFragment : Fragment(),
     private fun replaceFragment(fragment: Fragment) {
         val supportFragmentManager = requireActivity().supportFragmentManager
         val fragmentTransaction = supportFragmentManager.beginTransaction()
-        fragmentTransaction.replace(R.id.frame_layout, fragment)
+        fragmentTransaction.replace(android.R.id.content, fragment)
         fragmentTransaction.commit()
     }
 
@@ -1838,7 +1838,7 @@ class FavoriteFragment : Fragment(),
 
             val fragment = NewRepostedPostFragment(data)
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.frame_layout, fragment) // Ensure fragment_container is correct
+            transaction.replace(android.R.id.content, fragment) // Ensure fragment_container is correct
             transaction.addToBackStack(null)
             transaction.commit()
         }
@@ -2017,14 +2017,14 @@ class FavoriteFragment : Fragment(),
     }
 
     override fun finishedPlayingVideo(position: Int) {
-        TODO("Not yet implemented")
+
     }
 
     override fun onRePostClickFromFeedTextViewFragment(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 
 
@@ -2084,7 +2084,7 @@ class FavoriteFragment : Fragment(),
                 }
             }
 
-            // Debug: Check if file exists and has content
+            //Check if file exists and has content
             Log.d("FileDebug", "File path: ${tempFile.absolutePath}")
             Log.d("FileDebug", "File exists: ${tempFile.exists()}")
             Log.d("FileDebug", "File size: ${tempFile.length()} bytes")
@@ -2109,7 +2109,7 @@ class FavoriteFragment : Fragment(),
             cursor.moveToFirst()
             val fileName = cursor.getString(nameIndex)
             val fileSize = cursor.getLong(sizeIndex)
-//            val numberOfPages = getNumberOfPagesFromUri(this, uri)
+
             var numberOfPages = 0
             val formattedFileSize = formatFileSize(fileSize)
 
@@ -2258,11 +2258,11 @@ class FavoriteFragment : Fragment(),
                 when (mediaType) {
                     CameraActivity.MEDIA_TYPE_PHOTO -> {
                         Log.d("From Camera activity", "Image url: $mediaUri \n Image path: $mediaPath")
-                        //handlePhotoResult(mediaUri, mediaPath)
+
                     }
                     CameraActivity.MEDIA_TYPE_VIDEO -> {
                         Log.d("From Camera activity", "Video url: $mediaUri \n Video path: $mediaPath")
-                        //  handleVideoResult(mediaUri, mediaPath)
+
                     }
                 }
             } else {
@@ -2310,16 +2310,19 @@ class FavoriteFragment : Fragment(),
                                     uploadVideoComment(videoPath)
                                 }
                             } else {
+
                                 Log.d("VideoPicker", "File size: less than $fileSizeInMB MB")
+
                                 if(isReply) {
                                     uploadVideoComment(videoPath, isReply)
+
                                 } else {
                                     uploadVideoComment(videoPath)
                                 }
+
                             }
                         }
                     }
-
 
                 }
             }
@@ -2340,7 +2343,7 @@ class FavoriteFragment : Fragment(),
 
                 Log.d("AudioPicker", "File name: $fileName")
                 Log.d("AudioPicker", "durationString: $durationString")
-//                        Log.d("AudioPicker", "reverseDurationString: $reverseDurationString")
+
                 val file = File(audioPath)
 
                 var fileSizeInBytes by Delegates.notNull<Long>()
@@ -2462,7 +2465,6 @@ class FavoriteFragment : Fragment(),
                             }
                         }
                     }
-
                 }
 
             } else {
@@ -2629,7 +2631,7 @@ class FavoriteFragment : Fragment(),
 
         CoroutineScope(Dispatchers.Main).launch {
             binding.wave.progress = progress
-//            currentComment?.progress = progress
+
             Log.d("updateWaveProgress", "updateWaveProgress: $progress")
         }
     }
@@ -2651,8 +2653,9 @@ class FavoriteFragment : Fragment(),
     }
 
     private val waveRunnable = object : kotlinx.coroutines.Runnable {
+
         override fun run() {
-//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
+
             if (!isDurationOnPause) {
                 val currentPosition = exoPlayer?.currentPosition?.toFloat()!!
 
@@ -2731,7 +2734,7 @@ class FavoriteFragment : Fragment(),
     @RequiresApi(Build.VERSION_CODES.R)
     private fun pauseRecordingVn() {
         val TAG = "pauseRecording"
-//        firstTimeSendVn = true
+
         if (isRecording && !isPaused) {
 
             try {
@@ -2764,14 +2767,14 @@ class FavoriteFragment : Fragment(),
     private fun startPlayingVn(vnAudio: String) {
         binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.baseline_pause_white_24)
         EventBus.getDefault().post(PauseShort(true))
-//        player?.reset()
+
         isAudioVNPlaying = true
         vnRecordAudioPlaying = true
 
         isOnRecordDurationOnPause = false
         startRecordWaveRunnable()
         if (isAudioVNPaused) {
-//            progressAnim.resume()
+
             Log.d("startPlaying", "(isAudioVNPaused)->vnRecordProgress $vnRecordProgress")
 
             if (vnRecordProgress != 0) {
@@ -2783,7 +2786,7 @@ class FavoriteFragment : Fragment(),
             player = MediaPlayer().apply {
                 try {
                     setDataSource(vnAudio)
-//                inputStream.close()
+
                     prepare()
                     Log.d("startPlaying", "vnRecordProgress $vnRecordProgress")
                     if (vnRecordProgress != 0) {
@@ -2812,14 +2815,12 @@ class FavoriteFragment : Fragment(),
         isAudioVNPaused = true
         isOnRecordDurationOnPause = true
 
-//        progressAnim.pause()
+
         binding.playVnAudioBtn.setImageResource(com.uyscuti.social.business.R.drawable.play_svgrepo_com)
     }
 
     @SuppressLint("DefaultLocale")
     private fun inflateWave(outputVN: String) {
-
-//        outputVnFile = outputVN
 
         val TAG = "inflateWave"
         Log.d("playVnAudioBtn", "inflateWave: outputvn $outputVN")
@@ -2828,34 +2829,30 @@ class FavoriteFragment : Fragment(),
         binding.wave.visibility = View.VISIBLE
         binding.playerTimerTv.visibility = View.VISIBLE
         Log.d(TAG, "render: does not start with http")
-        //                audioDuration = 100L
+
         val file = File(outputVN)
         Log.d(TAG, "render: file $outputVN exists: ${file.exists()}")
         val locaAudioDuration = AudioDurationHelper.getLocalAudioDuration(outputVN)
+
         if (locaAudioDuration != null) {
             // Duration is available, do something with it
-            //                    println("Audio duration: ${duration}ms")
+
             val minutes = (locaAudioDuration / 1000) / 60
             val seconds = (locaAudioDuration / 1000) % 60
-            //                println("Audio duration: $minutes minutes $seconds seconds")
+
             binding.thirdTimerTv.text = String.format("%02d:%02d", minutes, seconds)
+
         } else {
             // File does not exist or error retrieving duration
-//            println("Unable to retrieve audio duration.")
+
             Log.e(TAG, "render: failed to retrieve audio duration")
 
         }
 
-
-        //                Log.d(TAG, "render: file $audioUrl can execute: ${file.canExecute()}")
-
-//        binding.wave.setSampleFrom(audioFile)
         CoroutineScope(Dispatchers.IO).launch {
             WaveFormExtractor.getSampleFrom(requireActivity().applicationContext, outputVN) {
 
                 CoroutineScope(Dispatchers.Main).launch {
-//                    binding.wave.progress = 0F
-//                    binding.wave.progress = currentItem.progress
 
                     if (locaAudioDuration != null) {
                         binding.wave.maxProgress = locaAudioDuration.toFloat()
@@ -2868,13 +2865,12 @@ class FavoriteFragment : Fragment(),
                             progress: Float,
                             fromUser: Boolean
                         ) {
-//                                    wave.progress = progress
+
                             binding.secondTimerTv.text = String.format(
                                 "%s",
                                 TrimVideoUtils.stringForTime(progress)
                             )
 
-//                            currentItem.progress = progress
 
                             if (fromUser) {
                                 if (vnRecordAudioPlaying) {
@@ -2889,7 +2885,7 @@ class FavoriteFragment : Fragment(),
 
                         override fun onRelease(event: MotionEvent?, progress: Float) {
                             if (outputVN.isNotEmpty()) {
-//                                inflateWave(outputVN)
+
                                 if (vnRecordAudioPlaying) {
                                     Log.d(
                                         "onRelease",
@@ -3001,15 +2997,12 @@ class FavoriteFragment : Fragment(),
             wasPaused = false
 
             mediaRecorder = MediaRecorder().apply {
+
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+
                 setOutputFile(outputFile)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-
-//                setAudioSource(MediaRecorder.AudioSource.MIC)
-//                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-//                setOutputFile(outputFile)
-//                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
 
                 prepare()
                 start()
@@ -3018,6 +3011,7 @@ class FavoriteFragment : Fragment(),
             isRecording = true
             isPaused = false
             isVnResuming = false
+
             binding.recordVN.setImageResource(com.uyscuti.social.business.R.drawable.baseline_pause_white_24)
             binding.sendVN.setBackgroundResource(com.uyscuti.social.business.R.drawable.ic_ripple)
             binding.deleteVN.setBackgroundResource(com.uyscuti.social.business.R.drawable.ic_ripple)
@@ -3037,7 +3031,7 @@ class FavoriteFragment : Fragment(),
 
     private fun deleteRecording() {
 
-        val TAG = "Recording"
+        val TAG = "deleteRecording"
 
         try {
             mediaRecorder?.apply {
@@ -3052,7 +3046,7 @@ class FavoriteFragment : Fragment(),
             binding.timerTv.text = "00:00.00"
             binding.secondTimerTv.visibility = View.GONE
             binding.thirdTimerTv.visibility = View.GONE
-//            binding.recordVN.setImageResource(R.drawable.baseline_pause_24)
+
             binding.recordVN.setImageResource(com.uyscuti.social.business.R.drawable.mic_2)
 
 
@@ -3064,7 +3058,7 @@ class FavoriteFragment : Fragment(),
             timer.stop()
             Log.d("TAG", "deleteRecording: recorded files size ${recordedAudioFiles.size}")
             deleteVn()
-//            if()
+
         } catch (e: Exception) {
             e.printStackTrace()
             // Handle exceptions as needed
@@ -3073,7 +3067,7 @@ class FavoriteFragment : Fragment(),
 
     private fun deleteVn() {
         recordedAudioFiles.clear()
-//        if (recordedAudioFiles.isNotEmpty()) {
+
         val isDeleted = deleteFiles(recordedAudioFiles)
         var outputVnFileList = mutableListOf<String>()
         outputVnFileList.add(outputVnFile)
@@ -3089,7 +3083,7 @@ class FavoriteFragment : Fragment(),
         } else {
             println("Failed to delete file.")
         }
-//        }
+
     }
 
     private fun stopRecordingAndSendVn() {
@@ -3257,7 +3251,7 @@ class FavoriteFragment : Fragment(),
         val TAG = "audioWave"
 
         audioFormWave = event.audioWave
-//        event.audioWave.setSampleFrom(event.audioPath)
+
         audioDurationTVCount = event.leftDuration
         wavePosition = event.position
         Log.d(TAG, "audioWave: position $wavePosition ")
@@ -3300,17 +3294,23 @@ class FavoriteFragment : Fragment(),
 
 
     private fun initializeSeekBar(exoPlayer: ExoPlayer) {
+
         audioSeekBar.max = exoPlayer.duration.toInt()
-// Remove callbacks from the current handler, if any
+
+        // Remove callbacks from the current handler, if any
         currentHandler?.removeCallbacksAndMessages(currentHandler)
         val handler = Handler(Looper.getMainLooper())
+
         handler.postDelayed(object : Runnable {
+
             override fun run() {
+
                 try {
                     Log.d(
                         "initializeSeekBar",
                         "Position $currentCommentAudioPosition is reply $isReplyVnPlaying"
                     )
+
                     if (!isVnAudioToPlay && exoPlayer.isPlaying) {
 
                         exoPlayer.let {
@@ -3373,15 +3373,20 @@ class FavoriteFragment : Fragment(),
 
     private fun playbackStateListener() = object : Player.Listener {
         @SuppressLint("SetTextI18n")
+
         override fun onPlaybackStateChanged(state: Int) {
+
             when (state) {
+
                 ExoPlayer.STATE_ENDED -> {
-//                     The video playback ended. Move to the next video if available.
+
+                    //  The video playback ended. Move to the next video if available.
                     Log.d(
                         "playbackStateListener",
                         "commentAudioStartPlaying: comment audio completed"
                     )
-//                    audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
+
+
                     if (isVnAudioToPlay) {
                         if (::audioDurationTVCount.isInitialized) {
                             audioDurationTVCount.text = "00:00"
@@ -3416,8 +3421,7 @@ class FavoriteFragment : Fragment(),
 
                     commentAdapter?.refreshMainComment(position)
                     commentAdapter?.changePlayingStatus()
-//                    adapter?.resetWaveForm()
-//                    adapter?.notifyDataSetChanged()
+
                     if (isVnAudioToPlay) {
                         stopWaveRunnable()
 
@@ -3436,37 +3440,34 @@ class FavoriteFragment : Fragment(),
                     if (!isVnAudioToPlay) {
                         exoPlayer?.let { initializeSeekBar(it) }
                     }
+
                     Log.d("TAG", "STATE_READY")
-//                    startUpdatingSeekBar()
-//                    shortsAdapter.setSeekBarProgress(exoPlayer!!.currentPosition.toInt())
 
                 }
 
                 else -> {
                     Log.d("TAG", "STOP SEEK BAR")
-                    // Stop updating seek bar in other states
-//                    stopUpdatingSeekBar()
+
                 }
             }
         }
 
         override fun onIsPlayingChanged(isVideoPlaying: Boolean) {
-//        super.onIsPlayingChanged(isPlaying)
+
 
         }
 
         override fun onEvents(player: Player, events: Player.Events) {
-//        super.onEvents(player, events)
+
             if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
                 events.contains(Player.EVENT_IS_PLAYING_CHANGED)
             ) {
 
-//                progressBar.visibility = View.GONE
             }
 
             if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)
             ) {
-//                player.seekTo(5000L)
+
             }
         }
     }
@@ -3475,7 +3476,7 @@ class FavoriteFragment : Fragment(),
     fun commentAudioSeekBar(event: CommentAudioPlayerHandler) {
         val TAG = "commentAudioSeekBar"
         audioSeekBar = event.audioSeekBar
-//        event.audioWave.setSampleFrom(event.audioPath)
+
         audioDurationTVCount = event.leftDuration
         seekPosition = event.position
         maxDuration = event.maxDuration
@@ -3626,9 +3627,11 @@ class FavoriteFragment : Fragment(),
     }
 
     private fun toggleBusinessCommentBottomSheet() {
+
         val currentVisibility = binding.motionLayout.visibility
 
         if(currentVisibility == View.VISIBLE) {
+
             binding.motionLayout.visibility = View.GONE
             binding.VnLayout.visibility = View.GONE
 
@@ -3637,14 +3640,16 @@ class FavoriteFragment : Fragment(),
 
             deleteRecording()
             stopPlayingVn()
+
             commentAudioStop()
             stopWaveRunnable()
+
             stopRecordWaveRunnable()
             exoPlayer?.release()
-           // EventBus.getDefault().post(ShowBottomNav(true))
+
 
         } else {
-           // EventBus.getDefault().post(HideBottomNav(true))
+
             binding.motionLayout.visibility = View.VISIBLE
             binding.motionLayout.transitionToStart()
         }
@@ -3652,11 +3657,11 @@ class FavoriteFragment : Fragment(),
     }
 
     private fun initCommentAdapter() {
+
         commentAdapter = CommentsRecyclerViewAdapter(requireActivity(), this)
         commentAdapter?.setDefaultRecyclerView(requireActivity(), R.id.commentSRecyclerView)
 
         commentRecyclerView = binding.commentSRecyclerView
-
         commentRecyclerView.itemAnimator = null
     }
 
