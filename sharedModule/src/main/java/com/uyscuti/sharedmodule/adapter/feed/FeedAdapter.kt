@@ -2680,7 +2680,7 @@ class FeedAdapter(
 
         private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             val originalPost = data.originalPost?.firstOrNull()
-            val targetPostId = originalPost?._id ?: data._id  // Use original post ID for API calls
+            val targetPostId = originalPost?._id ?: data._id
 
             totalMixedRePostCounts = data.safeRepostCount
             updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
@@ -2688,28 +2688,17 @@ class FeedAdapter(
 
             repostPost.setOnClickListener { view ->
                 if (!repostPost.isEnabled) return@setOnClickListener
-                repostPost.isEnabled = false
 
-                try {
-                    val wasReposted = data.isReposted
-                    data.isReposted = !wasReposted
-                    totalMixedRePostCounts = if (data.isReposted) totalMixedRePostCounts + 1 else maxOf(0, totalMixedRePostCounts - 1)
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                    updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
-                    updateRepostButtonAppearance(data.isReposted)
+                // Just show a quick animation
+                YoYo.with(Techniques.Pulse)
+                    .duration(300)
+                    .playOn(repostPost)
 
-                    YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
-                        .duration(700)
-                        .playOn(repostPost)
-
-                    repostPost.alpha = 0.8f
-
-                    feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
-                } catch (e: Exception) {
-                    repostPost.isEnabled = true
-                    repostPost.alpha = 1f
-                    Log.e(TAG, "Exception in repost click listener", e)
-                }
+                // Navigate to edit fragment WITHOUT changing any state
+                // Pass the complete post data including files
+                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
             }
         }
 
