@@ -43,7 +43,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     private val TAG = "MutedPostsActivity"
     private val mutedPosts = mutableListOf<Post>()
 
-    // ✅ NEW: Track post IDs to prevent duplicates
+    //  Track post IDs to prevent duplicates
     private val seenPostIds = mutableSetOf<String>()
 
     @SuppressLint("MissingInflatedId")
@@ -114,7 +114,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         Log.d(TAG, "recyclerView visibility after: ${recyclerView.visibility}")
     }
 
-    // ✅ FIXED: Prevent duplicate posts
+    //  Prevent duplicate posts
     private fun loadMutedPosts() {
         lifecycleScope.launch {
             try {
@@ -125,14 +125,14 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
 
                 if (mutedUserIds.isEmpty()) {
                     mutedPosts.clear()
-                    seenPostIds.clear() // ✅ Clear tracking set
+                    seenPostIds.clear() //  Clear tracking set
                     feedAdapter.submitItems(mutableListOf())
                     showEmptyState(true)
                     Log.d(TAG, "No muted users found - showing empty state")
                     return@launch
                 }
 
-                // ✅ Clear both lists and tracking set
+                //  Clear both lists and tracking set
                 mutedPosts.clear()
                 seenPostIds.clear()
 
@@ -150,12 +150,12 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
 
                         val isMuted = posterId?.let { mutedUserIds.contains(it) } ?: false
 
-                        // ✅ Check if post is muted AND not already added
+                        //  Check if post is muted AND not already added
                         val isNotDuplicate = post._id?.let { !seenPostIds.contains(it) } ?: false
 
                         if (isMuted && isNotDuplicate) {
                             Log.d(TAG, "Found muted post from user: $posterId, postId: ${post._id}")
-                            post._id?.let { seenPostIds.add(it) } // ✅ Track this post ID
+                            post._id?.let { seenPostIds.add(it) } //  Track this post ID
                         }
 
                         isMuted && isNotDuplicate
@@ -181,11 +181,11 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
 
                                     val isMuted = posterId?.let { mutedUserIds.contains(it) } ?: false
 
-                                    // ✅ Check both: muted AND not duplicate
+                                    //  muted AND not duplicate
                                     val isNotDuplicate = post._id?.let { !seenPostIds.contains(it) } ?: false
 
                                     if (isMuted && isNotDuplicate) {
-                                        post._id?.let { seenPostIds.add(it) } // ✅ Track this post ID
+                                        post._id?.let { seenPostIds.add(it) } // Track this post ID
                                     }
 
                                     isMuted && isNotDuplicate
@@ -205,7 +205,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                     post.createdAt
                 }
 
-                // ✅ Final duplicate check before submitting (safety net)
+                // Final duplicate check before submitting (safety net)
                 val uniquePosts = mutedPosts.distinctBy { it._id }
                 if (uniquePosts.size != mutedPosts.size) {
                     Log.w(TAG, "WARNING: Found duplicates! Original: ${mutedPosts.size}, Unique: ${uniquePosts.size}")
@@ -247,6 +247,132 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         Log.d(TAG, "Total unique muted user IDs: ${allMutedIds.size}")
 
         return allMutedIds
+    }
+
+    private fun showUnmuteDialog(position: Int, data: Post) {
+        // ✅ FIX: Get userId from all possible sources
+        val authorId = data.author?.account?._id
+        val reposterId = data.repostedUser?.owner
+        val userId = reposterId ?: authorId
+
+        if (userId == null) {
+            Log.e(TAG, "Cannot unmute: userId is null")
+            Toast.makeText(this, "Error: Unable to identify user", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Unmute User")
+            .setMessage("Do you want to unmute this user and show their posts in your feed again?")
+            .setPositiveButton("Unmute") { dialog, _ ->
+                handleUnmuteUser(position, data, userId)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun handleUnmuteUser(position: Int, data: Post, userId: String) {
+        Log.d(TAG, "Unmuting user: $userId at position: $position")
+
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    retrofitInstance.apiService.unMutePosts(userId)
+                }
+
+                if (response.isSuccessful) {
+                    Log.d(TAG, "API call successful. Updating ALL caches...")
+
+                    // Update all caches
+                    FeedAdapter.removeFromMutedPostsCache(userId)
+
+                    val currentMutedIds = sharedPrefs.getStringSet("muted_posts", emptySet())?.toMutableSet() ?: mutableSetOf()
+                    currentMutedIds.remove(userId)
+                    sharedPrefs.edit().putStringSet("muted_posts", currentMutedIds).apply()
+
+                    Log.d(TAG, "Removed $userId from all caches")
+
+                    // ✅ FIX: Remove ALL posts from this user using same logic as loadMutedPosts
+                    val postsToRemove = mutedPosts.filter { post ->
+                        val authorId = post.author?.account?._id
+                        val reposterId = post.repostedUser?.owner
+                        val posterId = reposterId ?: authorId
+                        posterId == userId
+                    }
+
+                    // Remove their post IDs from tracking set
+                    postsToRemove.forEach { post ->
+                        post._id?.let { seenPostIds.remove(it) }
+                    }
+
+                    mutedPosts.removeAll(postsToRemove)
+                    feedAdapter.submitItems(mutedPosts.toMutableList())
+
+                    Log.d(TAG, "Removed ${postsToRemove.size} posts from user. Remaining: ${mutedPosts.size}")
+
+                    Snackbar.make(
+                        recyclerView,
+                        "User unmuted",
+                        Snackbar.LENGTH_LONG
+                    ).setAction("Undo") {
+                        lifecycleScope.launch {
+                            try {
+                                val muteResponse = withContext(Dispatchers.IO) {
+                                    retrofitInstance.apiService.mutePosts(userId)
+                                }
+
+                                if (muteResponse.isSuccessful) {
+                                    FeedAdapter.addToMutedPostsCache(userId)
+
+                                    val currentIds = sharedPrefs.getStringSet("muted_posts", emptySet())?.toMutableSet() ?: mutableSetOf()
+                                    currentIds.add(userId)
+                                    sharedPrefs.edit().putStringSet("muted_posts", currentIds).apply()
+
+                                    Log.d(TAG, "Undo: Re-muted user $userId")
+
+                                    // Re-add post IDs to tracking set
+                                    postsToRemove.forEach { post ->
+                                        post._id?.let { seenPostIds.add(it) }
+                                    }
+
+                                    mutedPosts.addAll(postsToRemove)
+                                    mutedPosts.sortByDescending { it.createdAt }
+                                    feedAdapter.submitItems(mutedPosts.toMutableList())
+
+                                    showEmptyState(false)
+
+                                    Toast.makeText(this@MutedPostsActivity, "User muted again", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Log.e(TAG, "Undo mute failed with code: ${muteResponse.code()}")
+                                    Toast.makeText(this@MutedPostsActivity, "Failed to undo", Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error undoing unmute: ${e.message}", e)
+                                Toast.makeText(this@MutedPostsActivity, "Failed to undo", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }.show()
+
+                    if (mutedPosts.isEmpty()) {
+                        showEmptyState(true)
+                        Log.d(TAG, "No more muted posts")
+                    }
+
+                } else {
+                    Log.e(TAG, "API call failed with code: ${response.code()}")
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "Error body: $errorBody")
+                    Toast.makeText(this@MutedPostsActivity, "Failed to unmute user (${response.code()})", Toast.LENGTH_SHORT).show()
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in handleUnmuteUser: ${e.message}", e)
+                Toast.makeText(this@MutedPostsActivity, "Network error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     // OnFeedClickListener IMPLEMENTATION
@@ -302,115 +428,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         Toast.makeText(this, "Unmute the user to view images", Toast.LENGTH_SHORT).show()
     }
 
-    private fun showUnmuteDialog(position: Int, data: Post) {
-        val userId = data.author?.account?._id ?: return
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Unmute User")
-            .setMessage("Do you want to unmute this user and show their posts in your feed again?")
-            .setPositiveButton("Unmute") { dialog, _ ->
-                handleUnmuteUser(position, data, userId)
-                dialog.dismiss()
-            }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
-    }
-
-    private fun handleUnmuteUser(position: Int, data: Post, userId: String) {
-        Log.d(TAG, "Unmuting user: $userId at position: $position")
-
-        lifecycleScope.launch {
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    retrofitInstance.apiService.unMutePosts(userId)
-                }
-
-                if (response.isSuccessful) {
-                    Log.d(TAG, "API call successful. Updating ALL caches...")
-
-                    FeedAdapter.removeFromMutedPostsCache(userId)
-
-                    val currentMutedIds = sharedPrefs.getStringSet("muted_posts", emptySet())?.toMutableSet() ?: mutableSetOf()
-                    currentMutedIds.remove(userId)
-                    sharedPrefs.edit().putStringSet("muted_posts", currentMutedIds).apply()
-
-                    Log.d(TAG, "Removed $userId from all caches")
-
-                    // Remove ALL posts from this user from the list
-                    val postsToRemove = mutedPosts.filter { post ->
-                        val authorId = post.author?.account?._id
-                        val reposterId = post.repostedUser?.owner
-                        val posterId = reposterId ?: authorId
-                        posterId == userId
-                    }
-
-                    // ✅ Also remove their post IDs from tracking set
-                    postsToRemove.forEach { post ->
-                        post._id?.let { seenPostIds.remove(it) }
-                    }
-
-                    mutedPosts.removeAll(postsToRemove)
-                    feedAdapter.submitItems(mutedPosts.toMutableList())
-
-                    Log.d(TAG, "Removed ${postsToRemove.size} posts from user. Remaining: ${mutedPosts.size}")
-
-                    Snackbar.make(
-                        recyclerView,
-                        "User unmuted",
-                        Snackbar.LENGTH_LONG
-                    ).setAction("Undo") {
-                        lifecycleScope.launch {
-                            try {
-                                val muteResponse = withContext(Dispatchers.IO) {
-                                    retrofitInstance.apiService.mutePosts(userId)
-                                }
-
-                                if (muteResponse.isSuccessful) {
-                                    FeedAdapter.addToMutedPostsCache(userId)
-
-                                    val currentIds = sharedPrefs.getStringSet("muted_posts", emptySet())?.toMutableSet() ?: mutableSetOf()
-                                    currentIds.add(userId)
-                                    sharedPrefs.edit().putStringSet("muted_posts", currentIds).apply()
-
-                                    Log.d(TAG, "Undo: Re-muted user $userId")
-
-                                    // ✅ Re-add post IDs to tracking set
-                                    postsToRemove.forEach { post ->
-                                        post._id?.let { seenPostIds.add(it) }
-                                    }
-
-                                    mutedPosts.addAll(postsToRemove)
-                                    mutedPosts.sortByDescending { it.createdAt }
-                                    feedAdapter.submitItems(mutedPosts.toMutableList())
-
-                                    showEmptyState(false)
-
-                                    Toast.makeText(this@MutedPostsActivity, "User muted again", Toast.LENGTH_SHORT).show()
-                                }
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Error undoing unmute: ${e.message}")
-                                Toast.makeText(this@MutedPostsActivity, "Failed to undo", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }.show()
-
-                    if (mutedPosts.isEmpty()) {
-                        showEmptyState(true)
-                        Log.d(TAG, "No more muted posts")
-                    }
-
-                } else {
-                    Log.e(TAG, "API call failed with code: ${response.code()}")
-                }
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Error in handle Un mute User: ${e.message}", e)
-                Toast.makeText(this@MutedPostsActivity, "Network error", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 
     override fun onResume() {
         super.onResume()
