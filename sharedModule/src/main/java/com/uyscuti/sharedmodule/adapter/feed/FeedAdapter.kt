@@ -1030,64 +1030,18 @@ class FeedAdapter(
             repostedPost.setOnClickListener { view ->
 
                 if (!repostedPost.isEnabled) return@setOnClickListener
-                repostedPost.isEnabled = false
 
-                try {
+                // Haptic feedback
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                    val wasReposted = data.isReposted
-                    data.isReposted = !wasReposted
-                    totalTextRePostCounts = if (data.isReposted) totalTextRePostCounts + 1 else maxOf(0, totalTextRePostCounts - 1)
+                // Simple animation feedback
+                YoYo.with(Techniques.Pulse)
+                    .duration(300)
+                    .playOn(repostedPost)
 
-                    data.repostCount = totalTextRePostCounts
-                    updateMetricDisplay(repostCount, totalTextRePostCounts, "repost")
-                    updateRepostButtonAppearance(data.isReposted)
-
-                    YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
-                        .duration(700)
-                        .playOn(repostedPost)
-                    repostedPost.alpha = 0.8f
-
-                    val apiCall = if (data.isReposted) {
-                        RetrofitClient.repostService.incrementRepost(data._id)
-                    } else {
-                        RetrofitClient.repostService.decrementRepost(data._id)
-                    }
-
-                    apiCall.enqueue(object : Callback<RepostResponse> {
-
-                        override fun onResponse(call: Call<RepostResponse>, response: Response<RepostResponse>) {
-                            repostedPost.isEnabled = true
-                            repostedPost.alpha = 1f
-
-                            if (response.isSuccessful) {
-                                response.body()?.let { repostResponse ->
-                                    if (abs(repostResponse.repostCount - totalTextRePostCounts) > 1) {
-                                        data.safeRepostCount = repostResponse.repostCount
-                                        totalTextRePostCounts = repostResponse.repostCount
-                                        updateMetricDisplay(repostCount, totalTextRePostCounts, "repost")
-                                    }
-                                }
-                            } else {
-                                Log.e(TAG, "Repost API failed: ${response.code()}")
-                            }
-                        }
-
-                        override fun onFailure(call: Call<RepostResponse>, t: Throwable) {
-                            repostedPost.isEnabled = true
-                            repostedPost.alpha = 1f
-                            Log.e(TAG, "Repost network error - will sync later", t)
-                        }
-                    })
-
-
-                    feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
-
-                } catch (e: Exception) {
-                    repostedPost.isEnabled = true
-                    repostedPost.alpha = 1f
-                    Log.e(TAG, "Exception in repost click listener", e)
-
-                }
+                // Navigate to Fragment_Edit_Post_To_Repost WITHOUT changing any state
+                // The actual repost logic will happen in that fragment
+                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
             }
         }
 
