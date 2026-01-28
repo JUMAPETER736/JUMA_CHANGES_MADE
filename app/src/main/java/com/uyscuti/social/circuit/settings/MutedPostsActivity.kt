@@ -119,8 +119,8 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
             try {
                 showLoading(true)
 
-                // ✅ CRITICAL: Use the SAME logic as getAllFeed filtering
-                // Get muted user IDs from ALL THREE sources (just like the feed does)
+                //  Use the SAME logic as getAllFeed filtering
+
                 val mutedUserIds = getMutedUserIdsFromAllSources()
                 Log.d(TAG, "Found ${mutedUserIds.size} muted user IDs from all sources: $mutedUserIds")
 
@@ -230,7 +230,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         }
     }
 
-    // ✅ NEW METHOD: Get muted IDs from ALL sources (matching your feed logic)
+    //Get muted IDs from ALL sources (matching your feed logic)
     private fun getMutedUserIdsFromAllSources(): Set<String> {
         val allMutedIds = mutableSetOf<String>()
 
@@ -288,7 +288,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     }
 
     private fun handleUnMuteUser(position: Int, data: Post, userId: String) {
-        Log.d(TAG, "Unmuting user: $userId at position: $position")
+        Log.d(TAG, "Un Muting User: $userId at position: $position")
 
         lifecycleScope.launch {
             try {
@@ -297,7 +297,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                     retrofitInstance.apiService.unMutePosts(userId)
                 }
 
-                Log.d(TAG, "Unmute API response code: ${response.code()}")
+                Log.d(TAG, "Un Mute API response code: ${response.code()}")
 
                 // Handle both success (200) and "not in backend" (404)
                 if (response.isSuccessful || response.code() == 404) {
@@ -307,7 +307,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
 
                     Log.d(TAG, "Cleaning ALL local caches...")
 
-                    // ✅ Clean ALL THREE cache sources
+                    // Clean ALL THREE cache sources
                     FeedAdapter.removeFromMutedPostsCache(userId)
 
                     // Remove from MutedPosts SharedPreferences
@@ -364,15 +364,15 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     // OnFeedClickListener IMPLEMENTATION
 
     override fun likeUnLikeFeed(position: Int, data: Post) {
-        Toast.makeText(this, "Unmute the user to interact with their posts", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Un Mute the user to interact with their posts", Toast.LENGTH_SHORT).show()
     }
 
     override fun feedCommentClicked(position: Int, data: Post) {
-        Toast.makeText(this, "Unmute the user to comment", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Un Mute the user to comment", Toast.LENGTH_SHORT).show()
     }
 
     override fun feedFavoriteClick(position: Int, data: Post) {
-        Toast.makeText(this, "Unmute the user to bookmark", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Un Mute the user to bookmark", Toast.LENGTH_SHORT).show()
     }
 
     override fun moreOptionsClick(position: Int, data: Post) {
@@ -380,38 +380,38 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     }
 
     override fun feedFileClicked(position: Int, data: Post) {
-        Toast.makeText(this, "Unmute the user to view media", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Un Mute the user to view media", Toast.LENGTH_SHORT).show()
     }
 
     override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
-        Toast.makeText(this, "Unmute the user to view", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Un Mute the user to view", Toast.LENGTH_SHORT).show()
     }
 
     override fun feedShareClicked(position: Int, data: Post) {
-        Toast.makeText(this, "Unmute the user to share", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Un Mute the user to share", Toast.LENGTH_SHORT).show()
     }
 
     override fun followButtonClicked(
         followUnFollowEntity: FollowUnFollowEntity,
         followButton: AppCompatButton
     ) {
-        Toast.makeText(this, "Unmute the user to follow", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Un Mute the user to follow", Toast.LENGTH_SHORT).show()
     }
 
     override fun feedRepostPost(position: Int, data: Post) {
-        Toast.makeText(this, "Unmute the user to repost", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Un Mute the user to repost", Toast.LENGTH_SHORT).show()
     }
 
     override fun feedRepostPostClicked(position: Int, data: Post) {
-        Toast.makeText(this, "Unmute the user to view repost", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Un Mute the user to view repost", Toast.LENGTH_SHORT).show()
     }
 
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
-        Toast.makeText(this, "Unmute the user to view original", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Un Mute the user to view original", Toast.LENGTH_SHORT).show()
     }
 
     override fun onImageClick() {
-        Toast.makeText(this, "Unmute the user to view images", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Un Mute the user to view images", Toast.LENGTH_SHORT).show()
     }
 
 
