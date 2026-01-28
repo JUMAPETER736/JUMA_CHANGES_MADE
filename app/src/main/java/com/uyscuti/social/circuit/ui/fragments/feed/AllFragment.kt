@@ -144,15 +144,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     companion object {
 
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment AllFragment.
-         */
-        // TODO: Rename and change types and number of parameters
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
             AllFragment().apply {
@@ -1099,7 +1090,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
                             Log.d(TAG, "UI updated - removed ${positionsToRemove.size} posts")
                         } else {
-                            Log.d(TAG, "⚠️ NO POSTS FOUND! Check the logs above to see the actual post structure")
+                            Log.d(TAG, "NO POSTS FOUND! Check the logs above to see the actual post structure")
                         }
 
                         // Show Snackbar with Undo
@@ -1804,7 +1795,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     // Replace fragment helper method
     private fun replaceFragment(fragment: Fragment) {
         val fragmentTransaction = parentFragmentManager.beginTransaction()
-        fragmentTransaction.replace(R.id.container, fragment)  // Replace with your container's ID
+        fragmentTransaction.replace(android.R.id.content, fragment)  // Replace with your container's ID
         fragmentTransaction.addToBackStack(null)  // Optional, if you want to add it to the back stack
         fragmentTransaction.commit()
     }
@@ -1878,8 +1869,8 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             dialog.dismiss()
             val fragment = Fragment_Edit_Post_To_Repost(data)
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
-            transaction.replace(android.R.id.content, fragment) // Ensure fragment_container is correct
-            transaction.addToBackStack("NewRepostedPostFragment") // Name the back stack entry
+            transaction.replace(android.R.id.content, fragment)
+            transaction.addToBackStack("NewRepostedPostFragment")
             transaction.commit()
             hidingBottomNav()
 
@@ -1911,7 +1902,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             )
         )
         lifecycleScope.launch(Dispatchers.IO) {
-//            delay(200)
+
             val uniqueFollowList = removeDuplicateFollowers(followListItem)
 
             followUnFollowViewModel.followUnFollow(followUnFollowEntity.userId)
@@ -2198,7 +2189,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedAllFeedUpdateLike(event: AllFeedUpdateLike) {
-//        Log.d("AllFeedUpdateLike", "AllFeedUpdateLike: in all fragment")
+
         Log.d(
             "AllFeedUpdateLike",
             "AllFeedUpdateLike: event bus position ${event.position} isLiked ${event.data.isLiked} likes ${event.data.likes}"
