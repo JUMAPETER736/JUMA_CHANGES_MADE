@@ -1,37 +1,32 @@
 package com.uyscuti.sharedmodule.media
 
 import android.annotation.SuppressLint
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.view.ScaleGestureDetector
-import android.view.View
-import android.widget.ImageButton
-import android.widget.ImageView
 import androidx.activity.OnBackPressedCallback
 import com.bumptech.glide.Glide
-import com.daimajia.androidanimations.library.Techniques
-import com.daimajia.androidanimations.library.YoYo
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.data.model.Comment
 import com.uyscuti.sharedmodule.databinding.ActivityViewImagesBinding
-import java.lang.Float
 import kotlin.properties.Delegates
 
 class ViewImagesActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityViewImagesBinding
+    private lateinit var settings: SharedPreferences
+    private val PREFS_NAME = "LocalSettings"
 
     private val Tag = "ViewImagesActivity"
     private var liked = false
 
     private var position by Delegates.notNull<Int>()
     private var data: Comment? = null
-    private var currentReplyComment:com.uyscuti.social.network.api.response.commentreply.allreplies.Comment? = null
-    private var reply:Boolean = false
-    private var updateLike:Boolean = false
-
-    private var updateReplyLikes:Boolean = false
+    private var currentReplyComment: com.uyscuti.social.network.api.response.commentreply.allreplies.Comment? = null
+    private var reply: Boolean = false
+    private var updateLike: Boolean = false
+    private var updateReplyLikes: Boolean = false
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,15 +35,24 @@ class ViewImagesActivity : AppCompatActivity() {
         binding = ActivityViewImagesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val imagePath = intent.getStringExtra("imageUrl")
+        settings = getSharedPreferences(PREFS_NAME, 0)
+
+        // Get intent extras
+        var imagePath = intent.getStringExtra("imageUrl")
         val owner = intent.getStringExtra("owner")
-        position = intent?.getIntExtra("position", 0)!!
+        position = intent.getIntExtra("position", 0)
 
-        val displayLikeButton = intent?.getBooleanExtra("displayLikeButton", false)
-        val updateReplyLike = intent?.getBooleanExtra("updateReplyLike", false)
+        val displayLikeButton = intent.getBooleanExtra("displayLikeButton", false)
+        val updateReplyLike = intent.getBooleanExtra("updateReplyLike", false)
 
-        data = intent?.extras?.getSerializable("data") as Comment?
-        currentReplyComment = intent?.extras?.getSerializable("currentItem") as com.uyscuti.social.network.api.response.commentreply.allreplies.Comment?
+        data = intent.extras?.getSerializable("data") as? Comment
+        currentReplyComment = intent.extras?.getSerializable("currentItem") as? com.uyscuti.social.network.api.response.commentreply.allreplies.Comment
+
+        // If no imageUrl passed via intent, try to get from SharedPreferences
+        if (imagePath.isNullOrEmpty()) {
+            imagePath = settings.getString("avatar", "")
+            Log.d(Tag, "No imageUrl in intent, loaded from SharedPreferences: $imagePath")
+        }
 
         Log.d(Tag, "currentReplyComment -> $currentReplyComment")
         Log.d(Tag, "updateReplyLike -> $updateReplyLike")
@@ -58,11 +62,15 @@ class ViewImagesActivity : AppCompatActivity() {
         if (!imagePath.isNullOrEmpty()) {
             Glide.with(this)
                 .load(imagePath)
-                .placeholder(R.drawable.google) // Optional: placeholder while loading
-                .error(R.drawable.google) // Optional: error image if loading fails
+                .placeholder(R.drawable.google)
+                .error(R.drawable.round_user)
                 .into(binding.fullImageView)
+
+            Log.d(Tag, "Loading image from: $imagePath")
         } else {
-            Log.e(Tag, "Image path is null or empty")
+            Log.e(Tag, "Image path is null or empty, loading default avatar")
+            // Load default avatar image
+            binding.fullImageView.setImageResource(R.drawable.round_user)
         }
 
         // Set up close button click listener
@@ -73,8 +81,7 @@ class ViewImagesActivity : AppCompatActivity() {
         // Create a callback for handling back button presses
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                // Handle the back button press here
-                Log.d("onBackPressed", "Back button pressed")
+                Log.d(Tag, "Back button pressed")
                 onReturn()
             }
         }
@@ -83,8 +90,8 @@ class ViewImagesActivity : AppCompatActivity() {
         onBackPressedDispatcher.addCallback(this, callback)
     }
 
-    private fun onReturn(){
-        Log.d("onReturn", "onReturn")
+    private fun onReturn() {
+        Log.d(Tag, "onReturn called")
         Log.d(Tag, "currentReplyComment like -> ${currentReplyComment?.isLiked}")
         finish()
     }
