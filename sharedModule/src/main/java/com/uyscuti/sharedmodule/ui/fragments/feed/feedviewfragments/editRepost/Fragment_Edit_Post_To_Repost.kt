@@ -654,19 +654,8 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
     @OptIn(UnstableApi::class)
     private fun cleanupAndGoBack() {
-        //  Go back first - this is the priority
+        // FIRST: Restore UI elements BEFORE navigation
         try {
-            if (isAdded && !parentFragmentManager.isStateSaved) {
-                parentFragmentManager.popBackStackImmediate()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error popping back stack", e)
-            // If immediate fails, try regular popBackStack
-            parentFragmentManager.popBackStack()
-        }
-
-        // Everything else happens AFTER we're already going back
-        view?.post {
             // Clear focus
             _binding?.replyInput?.clearFocus()
 
@@ -679,13 +668,37 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                 WindowCompat.setDecorFitsSystemWindows(act.window, true)
                 WindowInsetsControllerCompat(act.window, act.window.decorView)
                     .show(WindowInsetsCompat.Type.systemBars())
-
-                EventBus.getDefault().post(ShowAppBar(true))
-                EventBus.getDefault().post(ShowBottomNav(true))
             }
+
+            // CRITICAL: Show AppBar and BottomNav BEFORE going back
+            EventBus.getDefault().post(ShowAppBar(true))
+            EventBus.getDefault().post(ShowBottomNav(true))
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during cleanup", e)
         }
+
+        // THEN: Navigate back AFTER UI is restored
+        view?.postDelayed({
+            try {
+                if (isAdded && !parentFragmentManager.isStateSaved) {
+                    parentFragmentManager.popBackStackImmediate()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error popping back stack", e)
+                parentFragmentManager.popBackStack()
+            }
+        }, 50) // Small delay to ensure UI updates are processed
     }
 
+    override fun onDestroyView() {
+        // Make sure you're showing them here too
+        EventBus.getDefault().post(ShowAppBar(true))
+        EventBus.getDefault().post(ShowBottomNav(true))
+
+        super.onDestroyView()
+        _binding = null
+    }
 
     private fun getAvatarUrl(context: Context): String {
         val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
