@@ -262,7 +262,6 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
 
 
 
-
     private fun showUnmuteDialog(position: Int, data: Post) {
         // Get userId from all possible sources
         val authorId = data.author?.account?._id
@@ -293,31 +292,33 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
 
         lifecycleScope.launch {
             try {
-                // ✅ Try to unmute in backend first
+                // Try to unmute in backend
                 val response = withContext(Dispatchers.IO) {
                     retrofitInstance.apiService.unMutePosts(userId)
                 }
 
                 Log.d(TAG, "Unmute API response code: ${response.code()}")
 
-                // ✅ Handle both success (200) and "not muted in backend" (404)
-                // We proceed with local cleanup in both cases
+                // Handle both success (200) and "not in backend" (404)
                 if (response.isSuccessful || response.code() == 404) {
                     if (response.code() == 404) {
-                        Log.w(TAG, "User $userId was not muted in backend (404), but exists in local cache")
-                        Log.w(TAG, "This is OK - we'll clean up local cache anyway")
-                    } else {
-                        Log.d(TAG, "Successfully unmuted in backend (200)")
+                        Log.w(TAG, "User $userId not muted in backend, cleaning local caches only")
                     }
 
-                    Log.d(TAG, "Cleaning up ALL local caches...")
+                    Log.d(TAG, "Cleaning ALL local caches...")
 
-                    // Update all caches
+                    // ✅ Clean ALL THREE cache sources
                     FeedAdapter.removeFromMutedPostsCache(userId)
 
-                    val currentMutedIds = sharedPrefs.getStringSet("muted_posts", emptySet())?.toMutableSet() ?: mutableSetOf()
+                    // Remove from MutedPosts SharedPreferences
+                    val mutedPostsPrefs = getSharedPreferences("MutedPosts", Context.MODE_PRIVATE)
+                    mutedPostsPrefs.edit().remove(userId).apply()
+
+                    // Remove from user_actions SharedPreferences
+                    val userActionsPrefs = getSharedPreferences("user_actions", Context.MODE_PRIVATE)
+                    val currentMutedIds = userActionsPrefs.getStringSet("muted_posts", emptySet())?.toMutableSet() ?: mutableSetOf()
                     currentMutedIds.remove(userId)
-                    sharedPrefs.edit().putStringSet("muted_posts", currentMutedIds).apply()
+                    userActionsPrefs.edit().putStringSet("muted_posts", currentMutedIds).apply()
 
                     Log.d(TAG, "Removed $userId from all caches")
 
@@ -329,7 +330,6 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                         posterId == userId
                     }
 
-                    // Remove their post IDs from tracking set
                     postsToRemove.forEach { post ->
                         post._id?.let { seenPostIds.remove(it) }
                     }
@@ -339,49 +339,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
 
                     Log.d(TAG, "Removed ${postsToRemove.size} posts from user. Remaining: ${mutedPosts.size}")
 
-                    // ✅ Show snackbar with undo (only if was in backend)
-                    if (response.isSuccessful) {
-                        Snackbar.make(
-                            recyclerView,
-                            "User unmuted",
-                            Snackbar.LENGTH_LONG
-                        ).setAction("Undo") {
-                            lifecycleScope.launch {
-                                try {
-                                    val muteResponse = withContext(Dispatchers.IO) {
-                                        retrofitInstance.apiService.mutePosts(userId)
-                                    }
-
-                                    if (muteResponse.isSuccessful) {
-                                        FeedAdapter.addToMutedPostsCache(userId)
-
-                                        val currentIds = sharedPrefs.getStringSet("muted_posts", emptySet())?.toMutableSet() ?: mutableSetOf()
-                                        currentIds.add(userId)
-                                        sharedPrefs.edit().putStringSet("muted_posts", currentIds).apply()
-
-                                        Log.d(TAG, "Undo: Re-muted user $userId")
-
-                                        postsToRemove.forEach { post ->
-                                            post._id?.let { seenPostIds.add(it) }
-                                        }
-
-                                        mutedPosts.addAll(postsToRemove)
-                                        mutedPosts.sortByDescending { it.createdAt }
-                                        feedAdapter.submitItems(mutedPosts.toMutableList())
-
-                                        showEmptyState(false)
-
-                                        Toast.makeText(this@MutedPostsActivity, "User muted again", Toast.LENGTH_SHORT).show()
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "Error undoing unmute: ${e.message}")
-                                }
-                            }
-                        }.show()
-                    } else {
-                        // 404 - just removed from local cache
-                        Toast.makeText(this@MutedPostsActivity, "Removed from muted list", Toast.LENGTH_SHORT).show()
-                    }
+                    Toast.makeText(this@MutedPostsActivity, "User unmuted", Toast.LENGTH_SHORT).show()
 
                     if (mutedPosts.isEmpty()) {
                         showEmptyState(true)
@@ -389,7 +347,6 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                     }
 
                 } else {
-                    // Real error (not 404)
                     Log.e(TAG, "API call failed with code: ${response.code()}")
                     val errorBody = response.errorBody()?.string()
                     Log.e(TAG, "Error body: $errorBody")
