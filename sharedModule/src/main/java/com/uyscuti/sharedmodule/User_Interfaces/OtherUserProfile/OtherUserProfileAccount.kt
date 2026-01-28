@@ -997,7 +997,7 @@ class OtherUserProfileAccount : AppCompatActivity() {
             try {
                 val response = apiService.followUnFollow(userId)
                 if (response.isSuccessful) {
-                    Toast.makeText(this@OtherUserProfileAccount, "Friend request sent", Toast.LENGTH_SHORT).show()
+                   // Toast.makeText(this@OtherUserProfileAccount, "Friend request sent", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error adding friend", e)

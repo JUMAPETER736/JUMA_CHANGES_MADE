@@ -55,7 +55,7 @@ class ViewImagesActivity : AppCompatActivity() {
 
 
         Log.i(Tag, "imagePath from viewing images - $imagePath")
-     
+
         // Create a callback for handling back button presses
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -80,17 +80,6 @@ class ViewImagesActivity : AppCompatActivity() {
 
 
     }
-    private inner class ScaleListener(private val imageView: ImageView) :
-        ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        private var scaleFactor = 1f
 
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
-            scaleFactor *= detector.scaleFactor
-            scaleFactor = Float.max(1.0f, Float.min(scaleFactor, 3.0f)) // Limit the zoom level
-            imageView.scaleX = scaleFactor
-            imageView.scaleY = scaleFactor
-            return true
-        }
-    }
 
 }
