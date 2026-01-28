@@ -52,24 +52,10 @@ class ViewImagesActivity : AppCompatActivity() {
 
         Log.d(Tag, "currentReplyComment -> $currentReplyComment")
         Log.d(Tag, "updateReplyLike -> $updateReplyLike")
-        
+
 
         Log.i(Tag, "imagePath from viewing images - $imagePath")
-        Glide.with(this).load(imagePath)
-            .error(R.drawable.flash21).into(binding.imageView)
-
-        // Add pinch-to-zoom functionality
-        val scaleGestureDetector = ScaleGestureDetector(this, ScaleListener(binding.imageView))
-
-        binding.imageView.setOnTouchListener { _, motionEvent ->
-            scaleGestureDetector.onTouchEvent(motionEvent)
-            true
-        }
-
-        // Swipe to close the activity
-        binding.imageView.setOnClickListener {
-            finish()
-        }
+     
         // Create a callback for handling back button presses
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
