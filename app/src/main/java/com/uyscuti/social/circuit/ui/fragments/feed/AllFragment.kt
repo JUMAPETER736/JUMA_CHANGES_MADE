@@ -985,7 +985,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         followUnfollowLayout.visibility = View.GONE
     }
 
-    
+
     private fun handleMuteToggle(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
