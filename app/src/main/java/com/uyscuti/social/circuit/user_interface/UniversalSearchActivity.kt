@@ -3077,64 +3077,18 @@ class SearchUserNameAdapter(
             repostedPost.setOnClickListener { view ->
 
                 if (!repostedPost.isEnabled) return@setOnClickListener
-                repostedPost.isEnabled = false
 
-                try {
+                // Haptic feedback
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                    val wasReposted = data.isReposted
-                    data.isReposted = !wasReposted
-                    totalTextRePostCounts = if (data.isReposted) totalTextRePostCounts + 1 else maxOf(0, totalTextRePostCounts - 1)
+                // Simple animation feedback
+                YoYo.with(Techniques.Pulse)
+                    .duration(300)
+                    .playOn(repostedPost)
 
-                    data.repostCount = totalTextRePostCounts
-                    updateMetricDisplay(repostCount, totalTextRePostCounts, "repost")
-                    updateRepostButtonAppearance(data.isReposted)
-
-                    YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
-                        .duration(700)
-                        .playOn(repostedPost)
-                    repostedPost.alpha = 0.8f
-
-                    val apiCall = if (data.isReposted) {
-                        RetrofitClient.repostService.incrementRepost(data._id)
-                    } else {
-                        RetrofitClient.repostService.decrementRepost(data._id)
-                    }
-
-                    apiCall.enqueue(object : Callback<RepostResponse> {
-
-                        override fun onResponse(call: Call<RepostResponse>, response: Response<RepostResponse>) {
-                            repostedPost.isEnabled = true
-                            repostedPost.alpha = 1f
-
-                            if (response.isSuccessful) {
-                                response.body()?.let { repostResponse ->
-                                    if (abs(repostResponse.repostCount - totalTextRePostCounts) > 1) {
-                                        data.safeRepostCount = repostResponse.repostCount
-                                        totalTextRePostCounts = repostResponse.repostCount
-                                        updateMetricDisplay(repostCount, totalTextRePostCounts, "repost")
-                                    }
-                                }
-                            } else {
-                                Log.e(TAG, "Repost API failed: ${response.code()}")
-                            }
-                        }
-
-                        override fun onFailure(call: Call<RepostResponse>, t: Throwable) {
-                            repostedPost.isEnabled = true
-                            repostedPost.alpha = 1f
-                            Log.e(TAG, "Repost network error - will sync later", t)
-                        }
-                    })
-
-
-                    feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
-
-                } catch (e: Exception) {
-                    repostedPost.isEnabled = true
-                    repostedPost.alpha = 1f
-                    Log.e(TAG, "Exception in repost click listener", e)
-
-                }
+                // Navigate to Fragment_Edit_Post_To_Repost WITHOUT changing any state
+                // The actual repost logic will happen in that fragment
+                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
             }
         }
 
@@ -3569,7 +3523,7 @@ class SearchUserNameAdapter(
             try {
                 val activity = getActivityFromContext(itemView.context)
                 if (activity != null) {
-                    // ✅ USE android.R.id.content - it always exists in every activity
+                    // USE android.R.id.content - it always exists in every activity
                     activity.supportFragmentManager.beginTransaction()
                         .setCustomAnimations(
                             com.uyscuti.sharedmodule.R.anim.slide_in_right,
@@ -3577,7 +3531,7 @@ class SearchUserNameAdapter(
                             com.uyscuti.sharedmodule.R.anim.slide_in_left,
                             com.uyscuti.sharedmodule.R.anim.slide_out_right
                         )
-                        .add(android.R.id.content, fragment)  // ✅ CHANGED from R.id.frame_layout
+                        .add(android.R.id.content, fragment)  // from R.id.frame_layout
                         .addToBackStack(tag)
                         .commit()
 
@@ -4352,6 +4306,7 @@ class SearchUserNameAdapter(
         }
 
         private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+
             Log.d(TAG, "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}, bookmarkCount=${totalMixedBookMarkCounts}")
             updateBookmarkButtonUI(data.isBookmarked ?: false)
             updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
@@ -4726,7 +4681,7 @@ class SearchUserNameAdapter(
 
         private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             val originalPost = data.originalPost?.firstOrNull()
-            val targetPostId = originalPost?._id ?: data._id  // Use original post ID for API calls
+            val targetPostId = originalPost?._id ?: data._id
 
             totalMixedRePostCounts = data.safeRepostCount
             updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
@@ -4734,28 +4689,17 @@ class SearchUserNameAdapter(
 
             repostPost.setOnClickListener { view ->
                 if (!repostPost.isEnabled) return@setOnClickListener
-                repostPost.isEnabled = false
 
-                try {
-                    val wasReposted = data.isReposted
-                    data.isReposted = !wasReposted
-                    totalMixedRePostCounts = if (data.isReposted) totalMixedRePostCounts + 1 else maxOf(0, totalMixedRePostCounts - 1)
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                    updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
-                    updateRepostButtonAppearance(data.isReposted)
+                // Just show a quick animation
+                YoYo.with(Techniques.Pulse)
+                    .duration(300)
+                    .playOn(repostPost)
 
-                    YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
-                        .duration(700)
-                        .playOn(repostPost)
-
-                    repostPost.alpha = 0.8f
-
-                    feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
-                } catch (e: Exception) {
-                    repostPost.isEnabled = true
-                    repostPost.alpha = 1f
-                    Log.e(TAG, "Exception in repost click listener", e)
-                }
+                // Navigate to edit fragment WITHOUT changing any state
+                // Pass the complete post data including files
+                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
             }
         }
 
@@ -5424,7 +5368,9 @@ class SearchUserNameAdapter(
                         putLong("navigation_timestamp", System.currentTimeMillis())
                     }
                 }
+
                 navigateToFragment(fragment, "edit_post_to_repost")
+
             } catch (e: Exception) {
                 Log.e(tag, "Error navigating to edit post fragment: ${e.message}")
                 e.printStackTrace()
@@ -6302,65 +6248,27 @@ class SearchUserNameAdapter(
         }
 
         private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-            totalMixedRePostCounts = 0
+            totalMixedRePostCounts = data.repostCount  // Use actual count, not 0
             updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
             updateRepostButtonAppearance(data.isReposted)
 
             repostButton.setOnClickListener { view ->
                 if (!repostButton.isEnabled) return@setOnClickListener
-                repostButton.isEnabled = false
 
-                try {
-                    val wasReposted = data.isReposted
-                    data.isReposted = !wasReposted
-                    totalMixedRePostCounts = if (data.isReposted) totalMixedRePostCounts + 1 else maxOf(0, totalMixedRePostCounts - 1)
+                // Haptic feedback
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
+                // Simple animation feedback
+                YoYo.with(Techniques.Pulse)
+                    .duration(300)
+                    .playOn(repostButton)
 
-                    updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
-                    updateRepostButtonAppearance(data.isReposted)
+                // Navigate to Fragment_Edit_Post_To_Repost WITHOUT changing any state
+                // The actual repost logic will happen in that fragment
+                navigateToEditPostToRepost(data)
 
-                    YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
-                        .duration(700)
-                        .playOn(repostButton)
-
-                    repostButton.alpha = 0.8f
-                    val apiCall = if (data.isReposted) {
-                        RetrofitClient.repostService.incrementRepost(data._id)
-                    } else {
-                        RetrofitClient.repostService.decrementRepost(data._id)
-                    }
-
-                    apiCall.enqueue(object : Callback<RepostResponse> {
-                        override fun onResponse(call: Call<RepostResponse>, response: Response<RepostResponse>) {
-                            repostButton.isEnabled = true
-                            repostButton.alpha = 1f
-                            if (response.isSuccessful) {
-                                response.body()?.let { repostResponse ->
-                                    if (abs(repostResponse.repostCount - totalMixedRePostCounts) > 1) {
-
-                                        totalMixedRePostCounts = repostResponse.repostCount
-                                        updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
-                                    }
-                                }
-                            }
-                        }
-
-                        override fun onFailure(call: Call<RepostResponse>, t: Throwable) {
-                            repostButton.isEnabled = true
-                            repostButton.alpha = 1f
-                            Log.e(TAG, "Repost network error - will sync later", t)
-                        }
-                    })
-
-                    if (data.isReposted) {
-                        navigateToEditPostToRepost(data)
-                    }
-                    feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
-                } catch (e: Exception) {
-                    repostButton.isEnabled = true
-                    repostButton.alpha = 1f
-                    Log.e(TAG, "Exception in repost click listener", e)
-                }
+                // Also notify the listener if needed
+                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
             }
         }
 
@@ -8143,62 +8051,27 @@ class SearchUserNameAdapter(
 
         private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
 
-            totalMixedRePostCounts = 0
+            totalMixedRePostCounts = data.repostCount  // Use actual count, not 0
             updateMetricDisplay(repostCountTextView, totalMixedRePostCounts, "repost")
             updateRepostButtonAppearance(data.isReposted)
 
             repostPost.setOnClickListener { view ->
                 if (!repostPost.isEnabled) return@setOnClickListener
-                repostPost.isEnabled = false
 
-                try {
-                    val wasReposted = data.isReposted
-                    data.isReposted = !wasReposted
-                    totalMixedRePostCounts = if (data.isReposted) totalMixedRePostCounts + 1 else maxOf(0, totalMixedRePostCounts - 1)
-                    updateMetricDisplay(repostCountTextView, totalMixedRePostCounts, "repost")
-                    updateRepostButtonAppearance(data.isReposted)
+                // Haptic feedback
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                    YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
-                        .duration(700)
-                        .playOn(repostPost)
+                // Simple animation feedback
+                YoYo.with(Techniques.Pulse)
+                    .duration(300)
+                    .playOn(repostPost)
 
-                    repostPost.alpha = 0.8f
-                    val apiCall = if (data.isReposted) {
-                        RetrofitClient.repostService.incrementRepost(data._id)
-                    } else {
-                        RetrofitClient.repostService.decrementRepost(data._id)
-                    }
+                // Navigate to Fragment_Edit_Post_To_Repost WITHOUT changing any state
+                // The actual repost logic will happen in that fragment
+                navigateToEditPostToRepost(data)
 
-                    apiCall.enqueue(object : Callback<RepostResponse> {
-                        override fun onResponse(call: Call<RepostResponse>, response: Response<RepostResponse>) {
-                            repostPost.isEnabled = true
-                            repostPost.alpha = 1f
-                            if (response.isSuccessful) {
-                                response.body()?.let { repostResponse ->
-                                    if (abs(repostResponse.repostCount - totalMixedRePostCounts) > 1) {
-                                        totalMixedRePostCounts = repostResponse.repostCount
-                                        updateMetricDisplay(repostCountTextView, totalMixedRePostCounts, "repost")
-                                    }
-                                }
-                            }
-                        }
-
-                        override fun onFailure(call: Call<RepostResponse>, t: Throwable) {
-                            repostPost.isEnabled = true
-                            repostPost.alpha = 1f
-                            Log.e(TAG, "Repost network error - will sync later", t)
-                        }
-                    })
-
-                    if (data.isReposted) {
-                        navigateToEditPostToRepost(data)
-                    }
-                    feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
-                } catch (e: Exception) {
-                    repostPost.isEnabled = true
-                    repostPost.alpha = 1f
-                    Log.e(TAG, "Exception in repost click listener", e)
-                }
+                // Also notify the listener if needed
+                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
             }
         }
 

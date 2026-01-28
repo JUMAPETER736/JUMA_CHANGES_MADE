@@ -19,7 +19,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.sharedmodule.model.FeedCommentClicked
-import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.ui.fragments.feed.AllFragment
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
@@ -39,6 +38,7 @@ private const val TAG = "MyUsersFeedFragment"
 
 
 
+@UnstableApi
 @AndroidEntryPoint
 class MyUserFeedFragment : Fragment(), OnFeedClickListener {
 
@@ -62,20 +62,10 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
             }
         }
 
-        fun clearCache(username: String) {
-            val cleanUsername = username.trim().lowercase()
-            postsCache.remove(cleanUsername)
-            cacheTimestamp.remove(cleanUsername)
-        }
     }
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
-
-    @OptIn(UnstableApi::class)
-    private fun getMainActivity(): MainActivity? {
-        return activity as? MainActivity
-    }
 
     private lateinit var apiService: IFlashapi
     private lateinit var recyclerView: RecyclerView
@@ -157,14 +147,14 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
     }
 
     private fun setupRecyclerView() {
-        // ✅ CHANGED: Use activity's fragment manager instead of childFragmentManager
+        // Use activity's fragment manager instead of childFragmentManager
         val parentActivity = requireActivity()
 
         feedAdapter = FeedAdapter(
             requireContext(),
             retrofitInstance,
             this,
-            fragmentManager = parentActivity.supportFragmentManager  // ✅ Use activity's fragment manager
+            fragmentManager = parentActivity.supportFragmentManager  // Use activity's fragment manager
         )
 
         recyclerView.apply {
@@ -232,23 +222,22 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
     }
 
     private fun filterUserPost(post: Post): Post? {
-        val isDirectPost = post.author?.let { author ->
+        val isDirectPost = post.author.let { author ->
             val matchesUserId = author.owner == userId
-            val apiUsername = author.account?.username?.trim()?.lowercase()
+            val apiUsername = author.account.username.trim().lowercase()
             val matchesUsername = apiUsername == cleanUsername
-            val isValid = author.account != null
+            val isValid = true
             matchesUserId && matchesUsername && isValid
-        } ?: false
+        }
 
-        val isRepostOfUserContent = post.isReposted == true &&
-                !post.originalPost.isNullOrEmpty() &&
-                post.originalPost[0].author?.let { originalAuthor ->
-                    val matchesUserId = originalAuthor.owner == userId
-                    val apiUsername = originalAuthor.account?.username?.trim()?.lowercase()
-                    val matchesUsername = apiUsername == cleanUsername
-                    val isValid = originalAuthor.account != null
-                    matchesUserId && matchesUsername && isValid
-                } ?: false
+        val isRepostOfUserContent =
+            post.isReposted && post.originalPost.isNotEmpty() && post.originalPost[0].author?.let { originalAuthor ->
+                val matchesUserId = originalAuthor.owner == userId
+                val apiUsername = originalAuthor.account.username.trim().lowercase()
+                val matchesUsername = apiUsername == cleanUsername
+                val isValid = true
+                matchesUserId && matchesUsername && isValid
+            } ?: false
 
         return when {
             isDirectPost || isRepostOfUserContent -> post
@@ -321,61 +310,61 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
 
     private fun validateAndFixPost(post: Post): Post? {
         try {
-            if (post.isReposted == true && !post.originalPost.isNullOrEmpty()) {
+            if (post.isReposted == true && post.originalPost.isNotEmpty()) {
                 val originalPost = post.originalPost[0]
 
-                if (originalPost.author?.account == null) {
+                if (false) {
                     return null
                 }
 
-                post.comments = originalPost.commentCount ?: 0
-                post.likes = originalPost.likeCount ?: 0
-                post.bookmarkCount = originalPost.bookmarkCount ?: 0
-                post.repostCount = originalPost.repostCount ?: 0
+                post.comments = originalPost.commentCount
+                post.likes = originalPost.likeCount
+                post.bookmarkCount = originalPost.bookmarkCount
+                post.repostCount = originalPost.repostCount
                 post.shareCount = 0
 
-                if (post.contentType.isNullOrEmpty() || post.contentType == "mixed") {
+                if (post.contentType.isEmpty() || post.contentType == "mixed") {
                     post.contentType = when {
-                        !originalPost.files.isNullOrEmpty() -> {
+                        originalPost.files.isNotEmpty() -> {
                             when {
                                 originalPost.files.size > 1 -> "mixed_files"
-                                originalPost.fileTypes?.any { it.fileType == "video" } == true -> "videos"
+                                originalPost.fileTypes.any { it.fileType == "video" } == true -> "videos"
                                 else -> "mixed_files"
                             }
                         }
                         post.files.isNotEmpty() -> {
                             when {
                                 post.files.size > 1 -> "mixed_files"
-                                post.fileTypes?.any { it.fileType == "video" } == true -> "videos"
+                                post.fileTypes.any { it.fileType == "video" } == true -> "videos"
                                 else -> "mixed_files"
                             }
                         }
-                        !originalPost.content.isNullOrEmpty() || !post.content.isNullOrEmpty() -> "text"
+                        originalPost.content.isNotEmpty() || post.content.isNotEmpty() -> "text"
                         else -> "text"
                     }
                 }
 
             } else {
-                if (post.author == null || post.author.account == null) {
+                if (false) {
                     return null
                 }
 
-                post.comments = post.comments ?: 0
-                post.likes = post.likes ?: 0
-                post.bookmarkCount = post.bookmarkCount ?: 0
-                post.repostCount = post.repostCount ?: 0
-                post.shareCount = post.shareCount ?: 0
+                post.comments = post.comments
+                post.likes = post.likes
+                post.bookmarkCount = post.bookmarkCount
+                post.repostCount = post.repostCount
+                post.shareCount = post.shareCount
 
-                if (post.contentType.isNullOrEmpty()) {
+                if (post.contentType.isEmpty()) {
                     post.contentType = when {
                         post.files.isNotEmpty() -> {
                             when {
                                 post.files.size > 1 -> "mixed_files"
-                                post.fileTypes?.any { it.fileType == "video" } == true -> "videos"
+                                post.fileTypes.any { it.fileType == "video" } == true -> "videos"
                                 else -> "mixed_files"
                             }
                         }
-                        !post.content.isNullOrEmpty() -> "text"
+                        post.content.isNotEmpty() -> "text"
                         else -> "text"
                     }
                 }
@@ -414,6 +403,7 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
     }
 
     // Add this helper method to find AllFragment
+    @OptIn(UnstableApi::class)
     private fun getAllFragment(): AllFragment? {
         // Try to get cached reference first
         if (allFragment != null && allFragment?.isAdded == true) {
@@ -431,14 +421,12 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
         return allFragment
     }
 
-// Replace all the stub methods with these implementations:
 
+    @OptIn(UnstableApi::class)
     override fun likeUnLikeFeed(position: Int, data: Post) {
         Log.d(TAG, "Like clicked at position $position - delegating to AllFragment")
 
-        getAllFragment()?.let { fragment ->
-            fragment.likeUnLikeFeed(position, data)
-        } ?: run {
+        getAllFragment()?.likeUnLikeFeed(position, data) ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate like action")
             Toast.makeText(requireContext(), "Unable to process like action", Toast.LENGTH_SHORT).show()
         }
@@ -451,107 +439,97 @@ class MyUserFeedFragment : Fragment(), OnFeedClickListener {
         EventBus.getDefault().post(FeedCommentClicked(position, data))
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedFavoriteClick(position: Int, data: Post) {
         Log.d(TAG, "Favorite clicked at position $position - delegating to AllFragment")
 
-        getAllFragment()?.let { fragment ->
-            fragment.feedFavoriteClick(position, data)
-        } ?: run {
+        getAllFragment()?.feedFavoriteClick(position, data) ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate favorite action")
             Toast.makeText(requireContext(), "Unable to bookmark", Toast.LENGTH_SHORT).show()
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun moreOptionsClick(position: Int, data: Post) {
         Log.d(TAG, "More options clicked at position $position - delegating to AllFragment")
 
-        getAllFragment()?.let { fragment ->
-            fragment.moreOptionsClick(position, data)
-        } ?: run {
+        getAllFragment()?.moreOptionsClick(position, data) ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate more options action")
             Toast.makeText(requireContext(), "Unable to show options", Toast.LENGTH_SHORT).show()
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedFileClicked(position: Int, data: Post) {
         Log.d(TAG, "File clicked at position $position - delegating to AllFragment")
 
-        getAllFragment()?.let { fragment ->
-            fragment.feedFileClicked(position, data)
-        } ?: run {
+        getAllFragment()?.feedFileClicked(position, data) ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate file click action")
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
         Log.d(TAG, "Repost file clicked at position $position - delegating to AllFragment")
 
-        getAllFragment()?.let { fragment ->
-            fragment.feedRepostFileClicked(position, data)
-        } ?: run {
+        getAllFragment()?.feedRepostFileClicked(position, data) ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate repost file click action")
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedShareClicked(position: Int, data: Post) {
         Log.d(TAG, "Share clicked at position $position - delegating to AllFragment")
 
-        getAllFragment()?.let { fragment ->
-            fragment.feedShareClicked(position, data)
-        } ?: run {
+        getAllFragment()?.feedShareClicked(position, data) ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate share action")
             Toast.makeText(requireContext(), "Unable to share", Toast.LENGTH_SHORT).show()
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {
         Log.d(TAG, "Follow clicked for user ${followUnFollowEntity.userId} - delegating to AllFragment")
 
-        getAllFragment()?.let { fragment ->
-            fragment.followButtonClicked(followUnFollowEntity, followButton)
-        } ?: run {
+        getAllFragment()?.followButtonClicked(followUnFollowEntity, followButton) ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate follow action")
             Toast.makeText(requireContext(), "Unable to follow/unfollow", Toast.LENGTH_SHORT).show()
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedRepostPost(position: Int, data: Post) {
         Log.d(TAG, "Repost clicked at position $position - delegating to AllFragment")
 
-        getAllFragment()?.let { fragment ->
-            fragment.feedRepostPost(position, data)
-        } ?: run {
+        getAllFragment()?.feedRepostPost(position, data) ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate repost action")
             Toast.makeText(requireContext(), "Unable to repost", Toast.LENGTH_SHORT).show()
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedRepostPostClicked(position: Int, data: Post) {
         Log.d(TAG, "Repost post clicked at position $position - delegating to AllFragment")
 
-        getAllFragment()?.let { fragment ->
-            fragment.feedRepostPostClicked(position, data)
-        } ?: run {
+        getAllFragment()?.feedRepostPostClicked(position, data) ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate repost post click action")
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
         Log.d(TAG, "Original post clicked: $originalPostId - delegating to AllFragment")
 
-        getAllFragment()?.let { fragment ->
-            fragment.feedClickedToOriginalPost(position, originalPostId)
-        } ?: run {
+        getAllFragment()?.feedClickedToOriginalPost(position, originalPostId) ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate original post click action")
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun onImageClick() {
         Log.d(TAG, "Image clicked - delegating to AllFragment")
 
-        getAllFragment()?.let { fragment ->
-            fragment.onImageClick()
-        } ?: run {
+        getAllFragment()?.onImageClick() ?: run {
             Log.e(TAG, "AllFragment not found, cannot delegate image click action")
         }
     }

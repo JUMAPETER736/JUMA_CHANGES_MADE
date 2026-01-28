@@ -4201,7 +4201,7 @@ class FeedAdapter(
         }
 
         private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-            totalMixedRePostCounts = data.safeRepostCount  // Use actual count, not 0
+            totalMixedRePostCounts = data.repostCount  // Use actual count, not 0
             updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
             updateRepostButtonAppearance(data.isReposted)
 
@@ -6004,7 +6004,7 @@ class FeedAdapter(
 
         private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
 
-            totalMixedRePostCounts = data.safeRepostCount  // Use actual count, not 0
+            totalMixedRePostCounts = data.repostCount  // Use actual count, not 0
             updateMetricDisplay(repostCountTextView, totalMixedRePostCounts, "repost")
             updateRepostButtonAppearance(data.isReposted)
 
