@@ -124,7 +124,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         Log.d(TAG, "recyclerView visibility after: ${recyclerView.visibility}")
     }
 
-    // UPDATED loadMutedPosts - correct order of calls
+    // loadMutedPosts - correct order of calls
     private fun loadMutedPosts() {
         lifecycleScope.launch {
             try {
@@ -226,10 +226,10 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
     private fun getMutedUserIds(): Set<String> {
         val allMutedIds = mutableSetOf<String>()
 
-        // Source 1: FeedAdapter companion object static cache
+        //  FeedAdapter companion object static cache
         allMutedIds.addAll(FeedAdapter.getMutedPostsUsers())
 
-        // Source 2: SharedPreferences
+        //  SharedPreferences
         val prefsIds = sharedPrefs.getStringSet("muted_posts", emptySet()) ?: emptySet()
         allMutedIds.addAll(prefsIds)
 
@@ -294,7 +294,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         Toast.makeText(this, "Unmute the user to view images", Toast.LENGTH_SHORT).show()
     }
 
-    //  UNMUTE FUNCTIONALITY
+    //  UN MUTE FUNCTIONALITY
 
     private fun showUnmuteDialog(position: Int, data: Post) {
         val userId = data.author?.account?._id ?: return
@@ -326,10 +326,10 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                     Log.d(TAG, "API call successful. Updating ALL caches...")
 
                     // Update ALL caches (same as feed mute/unmute)
-                    // 1. Remove from FeedAdapter cache
+                    //  Remove from FeedAdapter cache
                     FeedAdapter.removeFromMutedPostsCache(userId)
 
-                    // 2. Remove from SharedPreferences
+                    // Remove from SharedPreferences
                     val currentMutedIds = sharedPrefs.getStringSet("muted_posts", emptySet())?.toMutableSet() ?: mutableSetOf()
                     currentMutedIds.remove(userId)
                     sharedPrefs.edit().putStringSet("muted_posts", currentMutedIds).apply()

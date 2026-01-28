@@ -522,7 +522,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         shareButtonIcon.setOnClickListener { handleShareClick() }
 
 
-        // FIXED: Reposter Profile Image Click
+        // Reposter Profile Image Click
         userReposterProfile.setOnClickListener { view ->
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
@@ -580,7 +580,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
             }
         }
 
-        // FIXED: Original Poster Profile Image Click
+        //  Original Poster Profile Image Click
         originalPostProfileImage.setOnClickListener { view ->
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
@@ -654,13 +654,13 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
     @OptIn(UnstableApi::class)
     private fun cleanupAndGoBack() {
-        // IMMEDIATE: Go back first - this is the priority
+        //  Go back first - this is the priority
         try {
             if (isAdded && !parentFragmentManager.isStateSaved) {
                 parentFragmentManager.popBackStackImmediate()
             }
         } catch (e: Exception) {
-            Log.e(Fragment_Edit_Post_To_Repost.Companion.TAG, "Error popping back stack", e)
+            Log.e(TAG, "Error popping back stack", e)
             // If immediate fails, try regular popBackStack
             parentFragmentManager.popBackStack()
         }
@@ -1824,16 +1824,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
             Log.w("DateFormat", "Failed to format date: $dateTimeString", e)
             "now"
         }
-    }
-
-    private fun handleUserProfileClick() {
-        Toast.makeText(context, "Navigate to your profile", Toast.LENGTH_SHORT).show()
-    }
-
-
-    private fun handleOriginalUserProfileClick() {
-        val username = data.author.account?.username ?: "Unknown User"
-        Toast.makeText(context, "View $username's profile", Toast.LENGTH_SHORT).show()
     }
 
     private fun handleMediaClick() {
