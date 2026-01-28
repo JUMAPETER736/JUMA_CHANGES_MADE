@@ -52,78 +52,7 @@ class ViewImagesActivity : AppCompatActivity() {
 
         Log.d(Tag, "currentReplyComment -> $currentReplyComment")
         Log.d(Tag, "updateReplyLike -> $updateReplyLike")
-        binding.toolbar.backIcon.setOnClickListener {
-            finish()
-        }
-        binding.toolbar.apply {
-            username.text = owner
-
-            replyIcon.setOnClickListener {
-
-                reply = true
-                onReturn()
-
-            }
-
-            if (displayLikeButton == true) {
-                likeIcon.visibility = View.VISIBLE
-                if(updateReplyLike == true) {
-                    if (currentReplyComment?.isLiked == true) {
-                        likeIcon.setImageResource(R.drawable.filled_favorite_like)
-                    } else {
-                        likeIcon.setImageResource(R.drawable.like_svgrepo_com_white)
-                    }
-                }else {
-                    if (data!!.isLiked) {
-                        likeIcon.setImageResource(R.drawable.filled_favorite_like)
-                    } else {
-                        likeIcon.setImageResource(R.drawable.like_svgrepo_com_white)
-                    }
-                }
-
-            }
-            likeIcon.setOnClickListener {
-                if (updateReplyLike == true){
-//                    updateReplyLike = true
-                    updateReplyLikes = true
-                    currentReplyComment?.isLiked = !currentReplyComment?.isLiked!!
-                    if (currentReplyComment!!.isLiked) {
-                        likeIcon.setImageResource(R.drawable.filled_favorite_like)
-                        YoYo.with(Techniques.Tada)
-                            .duration(700)
-                            .repeat(1)
-                            .playOn(likeIcon)
-                    } else {
-                        likeIcon.setImageResource(R.drawable.like_svgrepo_com_white)
-                        YoYo.with(Techniques.Tada)
-                            .duration(700)
-                            .repeat(1)
-                            .playOn(likeIcon)
-                    }
-                }else{
-                    data!!.isLiked = !data!!.isLiked
-                    liked = data!!.isLiked
-                    updateLike = true
-                    if (data!!.isLiked) {
-                        likeIcon.setImageResource(R.drawable.filled_favorite_like)
-                        YoYo.with(Techniques.Tada)
-                            .duration(700)
-                            .repeat(1)
-                            .playOn(likeIcon)
-                    } else {
-                        likeIcon.setImageResource(R.drawable.like_svgrepo_com_white)
-                        YoYo.with(Techniques.Tada)
-                            .duration(700)
-                            .repeat(1)
-                            .playOn(likeIcon)
-                    }
-                }
-                }
-
-
-        }
-
-
+        
 
         Log.i(Tag, "imagePath from viewing images - $imagePath")
         Glide.with(this).load(imagePath)
