@@ -474,8 +474,8 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     // Update the getAllFeed method to filter based on relationships
     fun getAllFeed(page: Int) {
-        val TAG = "AllFeedTag"
-        Log.d(TAG, "getAllFeed: page number $page")
+        val TAG = "GetAllFeed"
+        Log.d(TAG, "GetAllFeed: page number $page")
 
         CoroutineScope(Dispatchers.IO).launch {
             try {

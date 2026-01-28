@@ -119,48 +119,10 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
             try {
                 showLoading(true)
 
-                // ✅ Get muted users from backend (source of truth)
-                val backendMutedResponse = withContext(Dispatchers.IO) {
-                    retrofitInstance.apiService.getMutedPostsUsers()
-                }
-
-                val backendMutedIds = if (backendMutedResponse.isSuccessful && backendMutedResponse.body() != null) {
-                    backendMutedResponse.body()!!.data.mapNotNull { it.user?._id }.toSet()
-                } else {
-                    Log.w(TAG, "Failed to fetch backend muted users, using local cache")
-                    getMutedUserIds()
-                }
-
-                // Get local cache
-                val localMutedIds = getMutedUserIds()
-
-                // ✅ Sync: Update local cache to match backend
-                val idsToRemove = localMutedIds - backendMutedIds
-                if (idsToRemove.isNotEmpty()) {
-                    Log.w(TAG, "Found ${idsToRemove.size} IDs in local cache but not in backend. Cleaning up...")
-                    idsToRemove.forEach { userId ->
-                        FeedAdapter.removeFromMutedPostsCache(userId)
-                    }
-                    val currentPrefs = sharedPrefs.getStringSet("muted_posts", emptySet())?.toMutableSet() ?: mutableSetOf()
-                    currentPrefs.removeAll(idsToRemove)
-                    sharedPrefs.edit().putStringSet("muted_posts", currentPrefs).apply()
-                }
-
-                // ✅ Add any backend IDs missing from local cache
-                val idsToAdd = backendMutedIds - localMutedIds
-                if (idsToAdd.isNotEmpty()) {
-                    Log.d(TAG, "Found ${idsToAdd.size} IDs in backend but not in local cache. Adding...")
-                    idsToAdd.forEach { userId ->
-                        FeedAdapter.addToMutedPostsCache(userId)
-                    }
-                    val currentPrefs = sharedPrefs.getStringSet("muted_posts", emptySet())?.toMutableSet() ?: mutableSetOf()
-                    currentPrefs.addAll(idsToAdd)
-                    sharedPrefs.edit().putStringSet("muted_posts", currentPrefs).apply()
-                }
-
-                // Use backend as source of truth
-                val mutedUserIds = backendMutedIds
-                Log.d(TAG, "Using ${mutedUserIds.size} muted user IDs from backend: $mutedUserIds")
+                // ✅ CRITICAL: Use the SAME logic as getAllFeed filtering
+                // Get muted user IDs from ALL THREE sources (just like the feed does)
+                val mutedUserIds = getMutedUserIdsFromAllSources()
+                Log.d(TAG, "Found ${mutedUserIds.size} muted user IDs from all sources: $mutedUserIds")
 
                 if (mutedUserIds.isEmpty()) {
                     mutedPosts.clear()
@@ -188,12 +150,10 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                         val posterId = reposterId ?: authorId
 
                         val isMuted = posterId?.let { mutedUserIds.contains(it) } ?: false
-
-                        // Check if post is muted AND not already added
                         val isNotDuplicate = post._id?.let { !seenPostIds.contains(it) } ?: false
 
                         if (isMuted && isNotDuplicate) {
-                            Log.d(TAG, "Found muted post from user: $posterId, postId: ${post._id}")
+                            Log.d(TAG, "Found muted post from user: $posterId (${post.author?.account?.username}), postId: ${post._id}")
                             post._id?.let { seenPostIds.add(it) }
                         }
 
@@ -219,7 +179,6 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                                     val posterId = reposterId ?: authorId
 
                                     val isMuted = posterId?.let { mutedUserIds.contains(it) } ?: false
-
                                     val isNotDuplicate = post._id?.let { !seenPostIds.contains(it) } ?: false
 
                                     if (isMuted && isNotDuplicate) {
@@ -239,11 +198,9 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                 }
 
                 // Sort by most recent
-                mutedPosts.sortByDescending { post ->
-                    post.createdAt
-                }
+                mutedPosts.sortByDescending { it.createdAt }
 
-                // Final duplicate check before submitting (safety net)
+                // Final duplicate check
                 val uniquePosts = mutedPosts.distinctBy { it._id }
                 if (uniquePosts.size != mutedPosts.size) {
                     Log.w(TAG, "WARNING: Found duplicates! Original: ${mutedPosts.size}, Unique: ${uniquePosts.size}")
@@ -254,7 +211,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                 // Update adapter
                 feedAdapter.submitItems(mutedPosts.toMutableList())
 
-                // Show empty state or recycler view based on posts count
+                // Show empty state or recycler view
                 showEmptyState(mutedPosts.isEmpty())
 
                 Log.d(TAG, "Successfully loaded ${mutedPosts.size} unique muted posts")
@@ -262,6 +219,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
 
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading muted posts: ${e.message}", e)
+                e.printStackTrace()
                 Toast.makeText(
                     this@MutedPostsActivity,
                     "Failed to load muted posts: ${e.message}",
@@ -272,20 +230,37 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         }
     }
 
-    private fun getMutedUserIds(): Set<String> {
+    // ✅ NEW METHOD: Get muted IDs from ALL sources (matching your feed logic)
+    private fun getMutedUserIdsFromAllSources(): Set<String> {
         val allMutedIds = mutableSetOf<String>()
 
+        // Source 1: FeedAdapter cache
         allMutedIds.addAll(FeedAdapter.getMutedPostsUsers())
 
-        val prefsIds = sharedPrefs.getStringSet("muted_posts", emptySet()) ?: emptySet()
+        // Source 2: SharedPreferences (MutedPosts)
+        val mutedPostsPrefs = getSharedPreferences("MutedPosts", Context.MODE_PRIVATE)
+        val mutedPostsEntries = mutedPostsPrefs.all
+        mutedPostsEntries.forEach { (userId, isMuted) ->
+            if (isMuted == true) {
+                allMutedIds.add(userId)
+            }
+        }
+
+        // Source 3: SharedPreferences (user_actions - your old cache)
+        val userActionsPrefs = getSharedPreferences("user_actions", Context.MODE_PRIVATE)
+        val prefsIds = userActionsPrefs.getStringSet("muted_posts", emptySet()) ?: emptySet()
         allMutedIds.addAll(prefsIds)
 
-        Log.d(TAG, "Source 1 (FeedAdapter cache): ${FeedAdapter.getMutedPostsUsers().size}")
-        Log.d(TAG, "Source 2 (SharedPreferences): ${prefsIds.size}")
+        Log.d(TAG, "Source 1 (FeedAdapter): ${FeedAdapter.getMutedPostsUsers().size}")
+        Log.d(TAG, "Source 2 (MutedPosts prefs): ${mutedPostsEntries.size}")
+        Log.d(TAG, "Source 3 (user_actions prefs): ${prefsIds.size}")
         Log.d(TAG, "Total unique muted user IDs: ${allMutedIds.size}")
+        Log.d(TAG, "Muted IDs: $allMutedIds")
 
         return allMutedIds
     }
+
+
 
 
     private fun showUnmuteDialog(position: Int, data: Post) {
@@ -295,16 +270,16 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
         val userId = reposterId ?: authorId
 
         if (userId == null) {
-            Log.e(TAG, "Cannot unmute: userId is null")
+            Log.e(TAG, "Cannot un mute: userId is null")
             Toast.makeText(this, "Error: Unable to identify user", Toast.LENGTH_SHORT).show()
             return
         }
 
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Unmute User")
+            .setTitle("Un mute User")
             .setMessage("Do you want to unmute this user and show their posts in your feed again?")
             .setPositiveButton("Unmute") { dialog, _ ->
-                handleUnmuteUser(position, data, userId)
+                handleUnMuteUser(position, data, userId)
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel") { dialog, _ ->
@@ -313,22 +288,29 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
             .show()
     }
 
-    private fun handleUnmuteUser(position: Int, data: Post, userId: String) {
+    private fun handleUnMuteUser(position: Int, data: Post, userId: String) {
         Log.d(TAG, "Unmuting user: $userId at position: $position")
 
         lifecycleScope.launch {
             try {
+                // ✅ Try to unmute in backend first
                 val response = withContext(Dispatchers.IO) {
                     retrofitInstance.apiService.unMutePosts(userId)
                 }
 
-                // ✅ FIX: Handle both success (200) and "not muted" (404)
+                Log.d(TAG, "Unmute API response code: ${response.code()}")
+
+                // ✅ Handle both success (200) and "not muted in backend" (404)
+                // We proceed with local cleanup in both cases
                 if (response.isSuccessful || response.code() == 404) {
                     if (response.code() == 404) {
-                        Log.w(TAG, "User $userId was not muted in backend, but exists in local cache. Cleaning up local cache...")
+                        Log.w(TAG, "User $userId was not muted in backend (404), but exists in local cache")
+                        Log.w(TAG, "This is OK - we'll clean up local cache anyway")
+                    } else {
+                        Log.d(TAG, "Successfully unmuted in backend (200)")
                     }
 
-                    Log.d(TAG, "Updating ALL local caches...")
+                    Log.d(TAG, "Cleaning up ALL local caches...")
 
                     // Update all caches
                     FeedAdapter.removeFromMutedPostsCache(userId)
@@ -357,7 +339,7 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
 
                     Log.d(TAG, "Removed ${postsToRemove.size} posts from user. Remaining: ${mutedPosts.size}")
 
-                    // ✅ Only show undo if it was actually muted in backend (200 response)
+                    // ✅ Show snackbar with undo (only if was in backend)
                     if (response.isSuccessful) {
                         Snackbar.make(
                             recyclerView,
@@ -390,18 +372,14 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                                         showEmptyState(false)
 
                                         Toast.makeText(this@MutedPostsActivity, "User muted again", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        Log.e(TAG, "Undo mute failed with code: ${muteResponse.code()}")
-                                        Toast.makeText(this@MutedPostsActivity, "Failed to undo", Toast.LENGTH_SHORT).show()
                                     }
                                 } catch (e: Exception) {
-                                    Log.e(TAG, "Error undoing unmute: ${e.message}", e)
-                                    Toast.makeText(this@MutedPostsActivity, "Failed to undo", Toast.LENGTH_SHORT).show()
+                                    Log.e(TAG, "Error undoing unmute: ${e.message}")
                                 }
                             }
                         }.show()
                     } else {
-                        // 404 case - just show simple message
+                        // 404 - just removed from local cache
                         Toast.makeText(this@MutedPostsActivity, "Removed from muted list", Toast.LENGTH_SHORT).show()
                     }
 
@@ -411,15 +389,16 @@ class MutedPostsActivity : AppCompatActivity(), OnFeedClickListener {
                     }
 
                 } else {
-                    // Other error codes (not 404)
+                    // Real error (not 404)
                     Log.e(TAG, "API call failed with code: ${response.code()}")
                     val errorBody = response.errorBody()?.string()
                     Log.e(TAG, "Error body: $errorBody")
-                    Toast.makeText(this@MutedPostsActivity, "Failed to unmute user (${response.code()})", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MutedPostsActivity, "Failed to unmute: ${response.code()}", Toast.LENGTH_SHORT).show()
                 }
 
             } catch (e: Exception) {
                 Log.e(TAG, "Error in handleUnmuteUser: ${e.message}", e)
+                e.printStackTrace()
                 Toast.makeText(this@MutedPostsActivity, "Network error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
