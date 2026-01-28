@@ -3378,7 +3378,9 @@ class FeedAdapter(
                         putLong("navigation_timestamp", System.currentTimeMillis())
                     }
                 }
+
                 navigateToFragment(fragment, "edit_post_to_repost")
+
             } catch (e: Exception) {
                 Log.e(tag, "Error navigating to edit post fragment: ${e.message}")
                 e.printStackTrace()

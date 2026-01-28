@@ -32,6 +32,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.TransitionInflater
@@ -135,6 +136,7 @@ private const val ARG_PARAM2 = "param2"
 private const val TAG = "AllFragment"
 private const val REQUEST_REPOST_FEED_ACTIVITY = 1020
 
+@UnstableApi
 @AndroidEntryPoint
 class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterface,
     ToggleFeedFloatingActionButton {
@@ -949,7 +951,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         quoteFeedLayout.setOnClickListener {
             val fragment = Fragment_Edit_Post_To_Repost(data)
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.frame_layout, fragment)
+            transaction.replace(android.R.id.content, fragment)
             transaction.addToBackStack(null)
             transaction.commit()
             dialog.dismiss()
@@ -1875,7 +1877,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             dialog.dismiss()
             val fragment = Fragment_Edit_Post_To_Repost(data)
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.frame_layout, fragment) // Ensure fragment_container is correct
+            transaction.replace(android.R.id.content, fragment) // Ensure fragment_container is correct
             transaction.addToBackStack("NewRepostedPostFragment") // Name the back stack entry
             transaction.commit()
             hidingBottomNav()
