@@ -884,7 +884,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         // Show the dialog
         dialog.show()
 
-        // ==================== SHARE ACTION ====================
+        //  SHARE ACTION 
         shareAction.setOnClickListener {
             val shareIntent = Intent(Intent.ACTION_SEND)
             shareIntent.type = "text/plain"
@@ -893,7 +893,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             dialog.dismiss()
         }
 
-        // ==================== DOWNLOAD ACTION ====================
+        //  DOWNLOAD ACTION 
         downloadFiles.setOnClickListener {
             Log.d("DownloadButton", "Data: $data")
             if (data.files.isNotEmpty()) {
@@ -909,7 +909,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             downloadFiles.visibility = View.GONE
         }
 
-        // ==================== MUTE ACTION ====================
+        //  MUTE ACTION 
         muteOptionLayout.setOnClickListener {
             Log.d("MuteButton", "Mute button clicked for user: $authorId")
             dialog.dismiss()
@@ -921,7 +921,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             }
         }
 
-        // ==================== BLOCK USER ACTION ====================
+        //  BLOCK USER ACTION 
         blockUserLayout.setOnClickListener {
             Log.d("BlockButton", "Block button clicked for user: $authorId")
             dialog.dismiss()
@@ -947,8 +947,9 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             }
         }
 
-        // ==================== REPOST ACTION ====================
+        //  REPOST ACTION 
         quoteFeedLayout.setOnClickListener {
+
             val fragment = Fragment_Edit_Post_To_Repost(data)
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
             transaction.replace(android.R.id.content, fragment)
@@ -957,7 +958,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             dialog.dismiss()
         }
 
-        // ==================== COPY LINK ACTION ====================
+        //  COPY LINK ACTION 
         copyLink.setOnClickListener {
             val postId = data._id
             val linkToCopy = "https://circuitSocial.app/post/$postId"
@@ -968,20 +969,20 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             dialog.dismiss()
         }
 
-        // ==================== NOT INTERESTED ACTION ====================
+        //  NOT INTERESTED ACTION 
         notInterested.setOnClickListener {
             handleNotInterested(data)
             dialog.dismiss()
         }
 
-        // ==================== HIDE POST ACTION ====================
+        //  HIDE POST ACTION 
         hidePostLayout.setOnClickListener {
             Log.d(TAG, "hidePostLayout: hide post clicked")
             hideSinglePost(position, data)
             dialog.dismiss()
         }
 
-        // ==================== REPORT USER ACTION ====================
+        //  REPORT USER ACTION 
         reportUser.setOnClickListener {
             Log.d("reportUser", "Report button clicked")
             val intent = Intent(requireActivity(), ReportNotificationActivity2::class.java)
@@ -993,7 +994,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         followUnfollowLayout.visibility = View.GONE
     }
 
-    // ==================== ENHANCED DEBUG VERSION ====================
+    //  ENHANCED DEBUG VERSION 
     private fun handleMuteToggle(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
@@ -1147,7 +1148,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    // ==================== BLOCK USER CONFIRMATION ====================
+    //  BLOCK USER CONFIRMATION 
     private fun showBlockConfirmationDialog(userId: String, username: String, position: Int) {
         AlertDialog.Builder(requireContext())
             .setTitle("Block $username?")
@@ -1162,7 +1163,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             .show()
     }
 
-    // ==================== BLOCK USER ====================
+    //  BLOCK USER 
     private fun handleBlockUser(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
@@ -1212,7 +1213,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    // ==================== GET CURRENT USER ID ====================
+    //  GET CURRENT USER ID 
    // Helper method to get the current logged-in user's ID
     private fun getCurrentUserId(): String? {
         // Use UserStorageHelper from LoginActivity
@@ -1220,7 +1221,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         return if (userId.isNotEmpty()) userId else null
     }
 
-    // ==================== UNBLOCK USER ====================
+    //  UNBLOCK USER 
     private fun handleUnblockUser(userId: String, username: String) {
         lifecycleScope.launch {
             try {
