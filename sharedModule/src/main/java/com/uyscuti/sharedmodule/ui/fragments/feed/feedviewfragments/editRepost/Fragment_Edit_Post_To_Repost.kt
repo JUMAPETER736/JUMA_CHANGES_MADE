@@ -651,6 +651,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
     }
 
+
     @OptIn(UnstableApi::class)
     private fun cleanupAndGoBack() {
         // IMMEDIATE: Go back first - this is the priority
@@ -659,7 +660,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                 parentFragmentManager.popBackStackImmediate()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error popping back stack", e)
+            Log.e(Fragment_Edit_Post_To_Repost.Companion.TAG, "Error popping back stack", e)
             // If immediate fails, try regular popBackStack
             parentFragmentManager.popBackStack()
         }
@@ -684,6 +685,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
             }
         }
     }
+
 
     private fun getAvatarUrl(context: Context): String {
         val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
