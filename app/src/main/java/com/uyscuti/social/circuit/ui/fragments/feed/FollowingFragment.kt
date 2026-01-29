@@ -666,59 +666,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    private fun refreshFeedAfterUnfollow() {
-        val currentUserId = getUserId(requireContext())
-        val allPosts = getFeedViewModel.getAllFeedData()
-
-
-        Log.d(TAG, "REFRESHING AFTER UNFOLLOW")
-        Log.d(TAG, "Now following ${followingUserIds.size} users")
-
-
-        val filteredData = allPosts.mapNotNull { post ->
-            try {
-                // WHO POSTED THIS?
-                val posterAccountId: String
-                val posterUsername: String
-
-                if (post.repostedUser != null) {
-                    posterAccountId = post.repostedUser.owner
-                    posterUsername = post.repostedUser.username.trim().lowercase()
-                } else {
-                    posterAccountId = post.author?.account?._id ?: return@mapNotNull null
-                    posterUsername = post.author.account.username.trim().lowercase()
-                }
-
-                // Skip own posts
-                if (posterAccountId == currentUserId) return@mapNotNull null
-
-                // DO I FOLLOW THE POSTER?
-                val isFollowingById = followingUserIds.contains(posterAccountId)
-                val isFollowingByUsername = followingUserMap.values.any {
-                    it.trim().lowercase() == posterUsername
-                }
-
-                if (isFollowingById || isFollowingByUsername) {
-                    Log.d(TAG, "  Keeping post by @$posterUsername (I follow them)")
-                    return@mapNotNull post
-                } else {
-                    Log.d(TAG, "  Removing post by @$posterUsername (I don't follow them)")
-                    return@mapNotNull null
-                }
-
-            } catch (e: Exception) {
-                return@mapNotNull null
-            }
-        }
-
-        followedPostsAdapter.submitItems(filteredData.toMutableList())
-
-
-        Log.d(TAG, "Posts before: ${allPosts.size}")
-        Log.d(TAG, "Posts after: ${filteredData.size}")
-        Log.d(TAG, "Removed: ${allPosts.size - filteredData.size} posts")
-
-    }
 
     private suspend fun loadMyFollowersList() {
         try {
@@ -874,7 +821,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         Log.e(TAG, message)
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
-    
+
     override fun onDetach() {
         super.onDetach()
         Log.d(TAG, "onDetach: called")
@@ -926,11 +873,9 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     fun onFollowEvent(event: ShortsFollowButtonClicked) {
         val followEntity = event.followUnFollowEntity
 
-
         Log.d(TAG, "FOLLOW EVENT in FollowingFragment")
         Log.d(TAG, "User: ${followEntity.userId}")
         Log.d(TAG, "isFollowing: ${followEntity.isFollowing}")
-
 
         if (followEntity.isFollowing) {
             // User followed someone new
@@ -944,17 +889,115 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             // Optionally reload feed to show their posts
             // clearAndReloadFeed()
         } else {
-            // User unfollowed someone
+            // User unfollowed someone - IMMEDIATE REMOVAL
             followingUserIds.remove(followEntity.userId)
+            followingUserMap.remove(followEntity.userId)
 
             // Update FeedAdapter cache
             FeedAdapter.removeFromFollowingCache(followEntity.userId)
 
             Log.d(TAG, "Removed user from following list. Total following: ${followingUserIds.size}")
 
-            // Refresh to remove their posts
-            refreshFeedAfterUnfollow()
+            // IMMEDIATELY filter and update the adapter
+            val currentUserId = getUserId(requireContext())
+            val currentPosts = getFeedViewModel.getAllFeedData()
+
+            val filteredPosts = currentPosts.filter { post ->
+                try {
+                    // WHO POSTED THIS?
+                    val posterAccountId: String = if (post.repostedUser != null) {
+                        post.repostedUser.owner
+                    } else {
+                        post.author?.account?._id ?: return@filter false
+                    }
+
+                    // Keep post only if:
+                    // 1. Not my own post
+                    // 2. I still follow the poster
+                    posterAccountId != currentUserId && followingUserIds.contains(posterAccountId)
+
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error filtering post: ${e.message}")
+                    false
+                }
+            }
+
+            Log.d(TAG, "Posts before unfollow: ${currentPosts.size}")
+            Log.d(TAG, "Posts after unfollow: ${filteredPosts.size}")
+            Log.d(TAG, "Removed ${currentPosts.size - filteredPosts.size} posts")
+
+            // Update ViewModel
+            getFeedViewModel.clearAllFeedData()
+            getFeedViewModel.addAllFeedData(filteredPosts.toMutableList())
+
+            // FORCE adapter to update immediately
+            followedPostsAdapter.submitItems(filteredPosts.toMutableList())
+            followedPostsAdapter.notifyDataSetChanged()
+
+            // Scroll to top to show the change
+            feedListView.scrollToPosition(0)
         }
+    }
+
+    private fun refreshFeedAfterUnfollow() {
+        val currentUserId = getUserId(requireContext())
+        val allPosts = getFeedViewModel.getAllFeedData()
+
+        Log.d(TAG, "REFRESHING AFTER UNFOLLOW")
+        Log.d(TAG, "Now following ${followingUserIds.size} users")
+        Log.d(TAG, "Following IDs: $followingUserIds")
+
+        val filteredData = allPosts.filter { post ->
+            try {
+                // WHO POSTED THIS?
+                val posterAccountId: String = if (post.repostedUser != null) {
+                    post.repostedUser.owner
+                } else {
+                    post.author?.account?._id ?: return@filter false
+                }
+
+                val posterUsername: String = if (post.repostedUser != null) {
+                    post.repostedUser.username.trim().lowercase()
+                } else {
+                    post.author?.account?.username?.trim()?.lowercase() ?: return@filter false
+                }
+
+                // Skip own posts
+                if (posterAccountId == currentUserId) return@filter false
+
+                // DO I FOLLOW THE POSTER?
+                val isFollowingById = followingUserIds.contains(posterAccountId)
+                val isFollowingByUsername = followingUserMap.values.any {
+                    it.trim().lowercase() == posterUsername
+                }
+
+                val shouldKeep = isFollowingById || isFollowingByUsername
+
+                if (shouldKeep) {
+                    Log.d(TAG, "  ✓ Keeping post by @$posterUsername (ID: $posterAccountId)")
+                } else {
+                    Log.d(TAG, "  ✗ Removing post by @$posterUsername (ID: $posterAccountId)")
+                }
+
+                shouldKeep
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error filtering post: ${e.message}")
+                false
+            }
+        }
+
+        // Update ViewModel
+        getFeedViewModel.clearAllFeedData()
+        getFeedViewModel.addAllFeedData(filteredData.toMutableList())
+
+        // Force update adapter
+        followedPostsAdapter.submitItems(filteredData.toMutableList())
+        followedPostsAdapter.notifyDataSetChanged()
+
+        Log.d(TAG, "Posts before: ${allPosts.size}")
+        Log.d(TAG, "Posts after: ${filteredData.size}")
+        Log.d(TAG, "Removed: ${allPosts.size - filteredData.size} posts")
     }
 
     override fun likeUnLikeFeed(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
