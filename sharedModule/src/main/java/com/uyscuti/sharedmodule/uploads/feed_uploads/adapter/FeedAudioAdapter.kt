@@ -32,10 +32,7 @@ class FeedAudioAdapter(
 {
 
     var audiosSelected: MutableList<AudioDataClass> = mutableListOf()
-    //
-//    init {
-//        audioLists = audioList
-//    }
+
     inner class AudioViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val albumArtImageView: ImageView = itemView.findViewById(R.id.albumArtImageView)
         val audioTitleTextView: TextView = itemView.findViewById(R.id.audioTitleTextView)
@@ -43,27 +40,9 @@ class FeedAudioAdapter(
         val audioSize: TextView = itemView.findViewById(R.id.audioSize)
         val audioItemContainer: LinearLayout = itemView.findViewById(R.id.audioItemContainer)
 
-
-
-        init {
-//            val selectableItemBackground = TypedValue()
-//            itemView.context.theme.resolveAttribute(
-//                android.R.attr.selectableItemBackground,
-//                selectableItemBackground,
-//                true
-//            )
-//            itemView.setBackgroundResource(selectableItemBackground.resourceId)
-
-//            audioItemContainer.setOnClickListener {
-//                Log.d(TAG, "itemClicked: ")
-//                setMultipleSelection(adapterPosition)
-//            }
-        }
-
-
-
-
     }
+
+    
     private fun setMultipleSelection(adapterPosition: Int) {
         val audio = audioList[adapterPosition]
 

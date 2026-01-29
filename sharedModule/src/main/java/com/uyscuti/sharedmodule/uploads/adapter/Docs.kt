@@ -49,7 +49,7 @@ class Docs : AppCompatActivity() {
             MediaStore.Files.getContentUri("external"),
             docCols, selection, mimeTypes, null
         )!!
-//        rs.moveToFirst()
+
 
         binding.documentGridView.adapter = DocumentAdapter(applicationContext)
         (binding.documentGridView.adapter as DocumentAdapter).notifyDataSetChanged()
@@ -94,12 +94,7 @@ class Docs : AppCompatActivity() {
 
             documentNameTextView.text = getDocumentFileName(path) // Set the actual document file name here
             val fileExtension = getFileExtension(path)
-//            if(fileExtension == "pdf") {
-//                documentImageView.setImageResource(R.drawable.pdf)
-//            }else {
-//                documentImageView.setImageResource(R.drawable.doc)
-//            }
-            // Handle document file actions as needed
+
             // For example, you can set an OnClickListener to open the document.
             itemView.setOnClickListener {
                 // Handle document action here.

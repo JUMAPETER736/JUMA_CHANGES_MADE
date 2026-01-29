@@ -39,7 +39,6 @@ class VideoAdapter(private val videoList: List<String>, private val onItemClick:
         val durationTextView: TextView = holder.itemView.findViewById(R.id.durationTextView)
         val sizeTextView: TextView = holder.itemView.findViewById(R.id.sizeTextView)
 
-//        Log.d("VideoPath", videoPath)
 
         try {
             val mediaMetadataRetriever = MediaMetadataRetriever()
@@ -57,13 +56,9 @@ class VideoAdapter(private val videoList: List<String>, private val onItemClick:
             e.printStackTrace()
         }
 
-//        val mediaMetadataRetriever = MediaMetadataRetriever()
-//        mediaMetadataRetriever.setDataSource(videoPath)
-//
-//        val duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+
         val size = File(videoPath).length()
 
-//        durationTextView.text = formatDuration(duration?.toLong() ?: 0)
         sizeTextView.text = formatSize(size)
 
         holder.itemView.setOnClickListener {

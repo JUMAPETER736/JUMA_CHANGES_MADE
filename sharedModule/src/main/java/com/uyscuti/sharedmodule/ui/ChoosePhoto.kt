@@ -34,7 +34,6 @@ class ChoosePhoto : AppCompatActivity() {
             onBackPressed()
         }
 
-//        loadImage()
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), REQUEST_PERMISSION)
