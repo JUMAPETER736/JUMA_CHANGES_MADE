@@ -343,7 +343,7 @@ open class WaveformSeekBar @JvmOverloads constructor(
                 previousWaveRight = mWaveRect.right + waveGap
             }
 
-            // TODO: implement for visibleProgress > 0
+
             //draw markers
             if (visibleProgress <= 0) marker?.forEach {
                 // out of progress range
