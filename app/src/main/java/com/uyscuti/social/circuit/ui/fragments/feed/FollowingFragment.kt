@@ -874,31 +874,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         Log.e(TAG, message)
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
-
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
-    override fun onResume() {
-        super.onResume()
-
-        if (isVisible) {
-            clearAndReloadFeed()
-        }
-
-        getFeedViewModel.isResuming = true
-        Log.d("getCurrentLocation", "onResume: ${getFeedViewModel.isResuming}")
-        Log.d(TAG, "onResume: currentAdapterPosition $currentAdapterPosition")
-        Log.d(TAG, "onResume: called")
-
-        feedListView.visibility = View.VISIBLE
-        frameLayout.visibility = View.GONE
-
-
-
-        EventBus.getDefault().post(ShowBottomNav(false))
-        EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
-        EventBus.getDefault().post(ShowAppBar(false))
-    }
-
-
+    
     override fun onDetach() {
         super.onDetach()
         Log.d(TAG, "onDetach: called")
@@ -1829,6 +1805,34 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         TODO("Not yet implemented")
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
+    override fun onResume() {
+        super.onResume()
+
+        // DON'T clear and reload - just refresh the following list
+        lifecycleScope.launch(Dispatchers.IO) {
+            // Reload following list to sync any changes
+            loadFollowingUserIds()
+
+            // Remove posts from unfollowed users
+            withContext(Dispatchers.Main) {
+                refreshFeedAfterUnfollow()
+            }
+        }
+
+        getFeedViewModel.isResuming = true
+        Log.d("getCurrentLocation", "onResume: ${getFeedViewModel.isResuming}")
+        Log.d(TAG, "onResume: currentAdapterPosition $currentAdapterPosition")
+        Log.d(TAG, "onResume: called")
+
+        feedListView.visibility = View.VISIBLE
+        frameLayout.visibility = View.GONE
+
+        EventBus.getDefault().post(ShowBottomNav(false))
+        EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
+        EventBus.getDefault().post(ShowAppBar(false))
     }
 
     override fun onDestroy() {
