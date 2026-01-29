@@ -1854,20 +1854,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     override fun onResume() {
         super.onResume()
 
-        // DON'T clear and reload - just refresh the following list
-        lifecycleScope.launch(Dispatchers.IO) {
-            // Reload following list to sync any changes
-            loadFollowingUserIds()
-
-            // Remove posts from unfollowed users
-            withContext(Dispatchers.Main) {
-                refreshFeedAfterUnfollow()
-            }
-        }
-
         getFeedViewModel.isResuming = true
-        Log.d("getCurrentLocation", "onResume: ${getFeedViewModel.isResuming}")
-        Log.d(TAG, "onResume: currentAdapterPosition $currentAdapterPosition")
         Log.d(TAG, "onResume: called")
 
         feedListView.visibility = View.VISIBLE
@@ -1876,6 +1863,56 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         EventBus.getDefault().post(ShowBottomNav(false))
         EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
         EventBus.getDefault().post(ShowAppBar(false))
+
+        // CRITICAL: Reload following list from server AND update cache
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                // Force reload following list from API
+                loadFollowingUserIds()
+
+                // Also sync the adapter's cache with current following list
+                withContext(Dispatchers.Main) {
+                    if (::followedPostsAdapter.isInitialized) {
+                        // Update adapter's cache
+                        FeedAdapter.setCachedFollowingList(followingUserIds)
+                        followedPostsAdapter.updateFollowingList(followingUserIds.toList())
+
+                        Log.d(TAG, "onResume: Updated adapter cache with ${followingUserIds.size} users")
+                    }
+
+                    // Filter the feed based on updated following list
+                    val currentUserId = getUserId(requireContext())
+                    val currentPosts = getFeedViewModel.getAllFeedData()
+
+                    val filteredPosts = currentPosts.filter { post ->
+                        try {
+                            val posterAccountId: String = if (post.repostedUser != null) {
+                                post.repostedUser.owner
+                            } else {
+                                post.author?.account?._id ?: return@filter false
+                            }
+
+                            // Keep only if still following
+                            posterAccountId != currentUserId && followingUserIds.contains(posterAccountId)
+                        } catch (e: Exception) {
+                            false
+                        }
+                    }
+
+                    Log.d(TAG, "onResume: Posts before filter: ${currentPosts.size}")
+                    Log.d(TAG, "onResume: Posts after filter: ${filteredPosts.size}")
+                    Log.d(TAG, "onResume: Following ${followingUserIds.size} users")
+
+                    // Update UI
+                    getFeedViewModel.clearAllFeedData()
+                    getFeedViewModel.addAllFeedData(filteredPosts.toMutableList())
+                    followedPostsAdapter.submitItems(filteredPosts.toMutableList())
+                    followedPostsAdapter.notifyDataSetChanged()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error refreshing feed in onResume: ${e.message}", e)
+            }
+        }
     }
 
     override fun onDestroy() {
