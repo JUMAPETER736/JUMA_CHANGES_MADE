@@ -33,8 +33,6 @@ class VideoFragment : Fragment(), FeedTextViewFragmentInterface {
     private var isUserSeeking = false
     private lateinit var binding: FragmentVideoBinding
 
-    private lateinit var backPressedCallback: OnBackPressedCallback
-    private var feedTextViewFragmentInterface: FeedTextViewFragmentInterface? = null
 
 
     override fun onCreateView(
@@ -42,7 +40,7 @@ class VideoFragment : Fragment(), FeedTextViewFragmentInterface {
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentVideoBinding.inflate(layoutInflater, container, false)
-//        playerView = findViewById(R.id.playerView)
+
         return binding.root
     }
 
@@ -126,7 +124,7 @@ class VideoFragment : Fragment(), FeedTextViewFragmentInterface {
     }
 
     private fun updateSeekBar() {
-//        Log.d(TAG, "updateSeekBar: ")
+
         player.let { player ->
             if (!isUserSeeking) {
                 val currentPosition = player.currentPosition.toInt()
@@ -233,7 +231,7 @@ class VideoFragment : Fragment(), FeedTextViewFragmentInterface {
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 
 }

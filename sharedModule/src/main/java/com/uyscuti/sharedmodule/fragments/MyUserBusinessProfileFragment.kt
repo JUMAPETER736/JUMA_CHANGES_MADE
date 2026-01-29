@@ -40,7 +40,7 @@ class MyUserBusinessProfileFragment : Fragment() {
             val fragment = MyUserBusinessProfileFragment()
             val args = Bundle()
             args.putSerializable("user", user)
-//            args.putParcelable("user", user)
+
             fragment.arguments = args
             return fragment
         }
@@ -49,7 +49,7 @@ class MyUserBusinessProfileFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-//            user = it.getParcelable("user")!!
+
             user = it.getSerializable("user") as User
         }
     }
@@ -74,9 +74,7 @@ class MyUserBusinessProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-//        val userId = arguments?.getString("userId")
-//        val userName = arguments?.getString("userName")
-//        val avatar = arguments?.getString("userAvatar")
+
 
         Log.d("onViewCreated", "onViewCreated called")
         val userId = user._id
@@ -120,15 +118,17 @@ class MyUserBusinessProfileFragment : Fragment() {
                     } else {
                         Log.e("ApiService", "Failed to get business profile: ${profileResponse.message()}")
                         // Show toast message on main thread
-//                        Toast.makeText(requireContext(), "Failed to get business profile", Toast.LENGTH_SHORT).show()
+                        //  Toast.makeText(requireContext(), "Failed to get business profile", Toast.LENGTH_SHORT).show()
                     }
                 }
             } catch (e: HttpException) {
                 Log.e("ApiService", "Failed to fetch data: ${e.message}", e)
-                // Show toast message on main thread
-//                withContext(Dispatchers.Main) {
-//                    Toast.makeText(requireContext(), "Failed to fetch data: ${e.message}", Toast.LENGTH_SHORT).show()
-//                }
+
+            // Show toast message on main thread
+                //withContext(Dispatchers.Main) {
+                //    Toast.makeText(requireContext(), "Failed to fetch data: ${e.message}", Toast.LENGTH_SHORT).show()
+                //}
+
             } catch (e: Throwable) {
                 Log.e("ApiService", "Network error: ${e.message}", e)
                 // Show toast message on main thread

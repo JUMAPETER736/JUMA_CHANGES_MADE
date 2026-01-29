@@ -183,7 +183,7 @@ class MixedFeedFilesUploadFragment : Fragment() {
         }
     }
 
-    // UPDATED: Add minimum scale factor calculation
+    //  Add minimum scale factor calculation
     private fun calculateMaxAllowedScale() {
         mixedFeedUploadDataClass?.let { data ->
             when (data.fileTypes) {
@@ -198,7 +198,7 @@ class MixedFeedFilesUploadFragment : Fragment() {
     }
 
     private fun calculateImageMaxScale() {
-        // FIXED: Check if binding is still valid
+        // Check if binding is still valid
         if (_binding == null || !isAdded) {
             Log.w(TAG, "calculateImageMaxScale: Fragment not in valid state, skipping")
             return
@@ -510,7 +510,7 @@ class MixedFeedFilesUploadFragment : Fragment() {
                 }
             }
 
-            // UPDATED: Set appropriate ScaleType based on mode
+            //  Set appropriate ScaleType based on mode
             binding.feedUploadImageView.scaleType = if (isFullScreen) {
                 // For fullscreen, use CENTER_CROP to fill the entire width
                 ImageView.ScaleType.CENTER_CROP
@@ -519,7 +519,7 @@ class MixedFeedFilesUploadFragment : Fragment() {
                 ImageView.ScaleType.CENTER_CROP
             }
 
-            // UPDATED: Configure layout for fullscreen to take full width
+            //  Configure layout for fullscreen to take full width
             if (isFullScreen) {
                 // Remove background color to avoid black bars
                 binding.feedUploadImageView.setBackgroundColor(android.graphics.Color.TRANSPARENT)

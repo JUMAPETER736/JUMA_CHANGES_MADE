@@ -14,7 +14,6 @@ data class MixedFeedUploadDataClass(
     var audios: FeedMultipleAudios? = null,
     var documents: FeedMultipleDocumentsDataClass? = null,
     var fileId:String = generateRandomId(),
-//    var feedShortsBusinessId:String = generateRandomId(),
     var fileTypes:String
-//    val total: Int = 0
+
 ): Parcelable, Serializable

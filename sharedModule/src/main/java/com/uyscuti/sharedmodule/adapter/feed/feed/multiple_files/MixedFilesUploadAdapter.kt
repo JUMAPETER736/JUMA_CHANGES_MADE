@@ -64,7 +64,7 @@ class MixedFilesUploadAdapter(
     private val viewTypeVideo = 0
     private val viewTypeImage = 1
     override fun getItemViewType(position: Int): Int {
-//        return if (type == "image") {
+
         return if (position < images.size){
             viewTypeImage
         } else {
