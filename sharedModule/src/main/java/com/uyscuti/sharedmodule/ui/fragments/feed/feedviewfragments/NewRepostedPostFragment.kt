@@ -2331,7 +2331,7 @@ class NewRepostedPostFragment(
         val cacheDir = context.cacheDir // Get the cache directory
 
         // Create a file in the cache directory
-//        val file = File(cacheDir, "first_page_image.png")
+
         val file = File(cacheDir, generateRandomFileName())
 
         try {
@@ -2352,7 +2352,7 @@ class NewRepostedPostFragment(
         val cacheDir = context.cacheDir // Get the cache directory
 
         // Create a file in the cache directory
-//        val file = File(cacheDir, "first_page_image.png")
+
         val file = File(cacheDir, generateRandomFileName())
 
         try {
@@ -2363,7 +2363,7 @@ class NewRepostedPostFragment(
             // Bitmap saved successfully
             Log.d(TAG, "Bitmap saved to cache directory: ${file.absolutePath}")
             return file.absolutePath
-//            documentThumbnailsToUpload.add(file.absolutePath)
+
         } catch (e: IOException) {
             Log.e(TAG, "saveBitmapToCache: not saved to bitmap")
             e.printStackTrace()
@@ -2402,7 +2402,6 @@ class NewRepostedPostFragment(
 
                     val applicationContext = requireContext().applicationContext
 
-//                    Log.d(TAG, "uploadMixedFeed: video ${video.videos!!.videoPath}")
                     val thumbnailFile =
                         video.videos!!.thumbnail?.let {
                             saveBitmapToFile(it, applicationContext) }
@@ -2425,7 +2424,6 @@ class NewRepostedPostFragment(
 
             val cacheDir = context.cacheDir // Get the cache directory
 
-//            Log.d(TAG, "uploadMixedFeed: audioListToUpload size ${audioListToUpload.size}")
             if (audioListToUpload.isNotEmpty()) {
                 for (audioList in audioListToUpload) {
 
@@ -2434,9 +2432,6 @@ class NewRepostedPostFragment(
                     val duration = audioList.audios?.duration
                     if (audioPath != null) {
 
-//                        Log.d(TAG, "uploadMixedFeed: file paths $audioPath")
-
-//                        Log.d(TAG, "uploadAudioFeed audioPath: $audioPath")
                         val outputFileName =
                             "compressed_audio${System.currentTimeMillis()}.mp3"
 
@@ -2447,30 +2442,21 @@ class NewRepostedPostFragment(
                         Log.d(TAG, "uploadMixedFeed: 3")
                         val audioDu =
                             reverseFormattedDuration(audioList.audios!!.duration)
-//                        withContext(Dispatchers.IO) {
-//
-//                        }
-//                        Log.d(TAG, "uploadMixedFeed: 4")
+
 
                         val audioFile = File(audioPath)
                         val fileSizeInBytes = audioFile.length()
                         val fileSizeInKB = fileSizeInBytes / 1024
                         val fileSizeInMB = fileSizeInKB / 1024
 
-//
-
                         if (fileSizeInMB > 2) {
-//
 
                             val isCompressionSuccessful = ffmpegCompressor.compress(
                                 audioPath,
                                 outputFilePath.absolutePath,
                                 audioDu, this@NewRepostedPostFragment
                             )
-//                            Log.d(
-//                                TAG,
-//                                "uploadAudioFeed outputFileName: ${outputFilePath.absolutePath}"
-//                            )
+
                             if (isCompressionSuccessful) {
                                 compressedAudioListToUpload.add(
                                     MixedFeedUploadDataClass(
@@ -2481,12 +2467,12 @@ class NewRepostedPostFragment(
                                         ), fileTypes = "audio"
                                     )
                                 )
-//                                Log.d(TAG, "uploadAudioFeed: compression successful")
+
                             } else {
-//                                Log.d(TAG, "uploadAudioFeed: compression not successful")
+
                             }
                         } else {
-//                            Log.d(TAG, "uploadMixedFeed: found one with file size less than 2mbs")
+
                             compressedAudioListToUpload.add(
                                 MixedFeedUploadDataClass(
                                     audios = audioList.audios, fileTypes = "audio"
@@ -2495,10 +2481,9 @@ class NewRepostedPostFragment(
                         }
                     }
                 }
-//                Log.d(TAG, "uploadMixedFeed: finished for loop")
+
             }
 
-//            Log.d(TAG, "uploadMixedFeed: after audio compression")
 
             if (compressedAudioListToUpload.isNotEmpty()) {
                 for (audios in compressedAudioListToUpload) {
@@ -2528,10 +2513,10 @@ class NewRepostedPostFragment(
 
 
             try {
+
                 GlobalScope.launch(Dispatchers.IO) {
                     Log.d(TAG, "uploadVideoFeed: step 3")
 
-//                    Log.d(TAG, "uploadVideoFeed: thumbnailFilePath $thumbnailFilePaths")
                     uploadWorkRequest = OneTimeWorkRequestBuilder<FeedUploadWorker>()
                         .setInputData(inputData)
                         .build()
@@ -2548,7 +2533,7 @@ class NewRepostedPostFragment(
                 e.printStackTrace()
             }
         }
-//        Log.d(TAG, "uploadVideoFeed: step 4")
+
     }
 
     private fun compressShorts(
