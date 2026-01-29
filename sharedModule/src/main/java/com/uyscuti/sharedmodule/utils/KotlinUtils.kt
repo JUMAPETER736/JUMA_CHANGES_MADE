@@ -573,42 +573,6 @@ fun getFileDuration(filePath: String): Long? {
     return null
 }
 
-//fun extractThumbnailFromVideo(filePath: String): Bitmap? {
-//    val retriever = MediaMetadataRetriever()
-//    try {
-//        retriever.setDataSource(filePath)
-//        // Extracting the thumbnail at the first frame
-//        val bitmap = retriever.getFrameAtTime(0)
-//        return bitmap
-//    } catch (e: Exception) {
-//        // Handle any exceptions, such as invalid file path or unsupported format
-//        e.printStackTrace()
-//    } finally {
-//        retriever.release()
-//    }
-//    return null
-//}
-
-//fun extractThumbnailAsMultipart(filePath: String): Pair<Boolean, RequestBody?> {
-//    val retriever = MediaMetadataRetriever()
-//    try {
-//        retriever.setDataSource(filePath)
-//        // Extracting the thumbnail at the first frame
-//        val bitmap = retriever.getFrameAtTime(0)
-//        val outputStream = ByteArrayOutputStream()
-//        // Compress the bitmap to a byte array
-//        bitmap?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-//        // Convert the byte array to a RequestBody
-//        val requestBody = RequestBody.create("image/*".toMediaTypeOrNull(), outputStream.toByteArray())
-//        return Pair(true, requestBody)
-//    } catch (e: Exception) {
-//        // Handle any exceptions, such as invalid file path or unsupported format
-//        e.printStackTrace()
-//    } finally {
-//        retriever.release()
-//    }
-//    return Pair(false, null)
-//}
 fun extractThumbnailFromVideo(filePath: String): Pair<Boolean, Bitmap?> {
     val retriever = MediaMetadataRetriever()
     try {
@@ -655,11 +619,7 @@ private fun createTempFile(context: Context, extension: String): File {
         storageDir
     )
 
-//    return File.createTempFile(
-//        "temp_doc_file",
-//        ".${extension}",
-//        storageDir
-//    )
+
 }
 
 fun listToCommaSeparatedString(list: List<String>): String {
@@ -756,6 +716,7 @@ fun uriToFile2(context: Context, uri: Uri, extension: String): File? {
 
     return tempFile
 }
+
 fun convertPdfUriToFile(context: Context, uri: Uri): File? {
     val contentResolver: ContentResolver = context.contentResolver
     val tempFile = createPdfTempFile(context)
@@ -777,6 +738,7 @@ fun convertPdfUriToFile(context: Context, uri: Uri): File? {
 
     return tempFile
 }
+
 private fun createPdfTempFile(context: Context): File {
     val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         ?: context.filesDir // Fallback to internal storage if external directory is not available
