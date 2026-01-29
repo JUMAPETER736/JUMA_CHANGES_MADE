@@ -80,19 +80,19 @@ class OtherUsersShortsProfileFragment : Fragment(), ShortsUserProfileAdapter.Thu
 
         shortsAdapter.setOnPaginationListener(object : PaginatedAdapter.OnPaginationListener {
             override fun onCurrentPage(page: Int) {
-//                Toast.makeText(requireContext(), "Page $page loaded!", Toast.LENGTH_SHORT).show()
+
             }
 
             override fun onNextPage(page: Int) {
                 lifecycleScope.launch(Dispatchers.Main) {
-//                    loadMoreShorts(page)
+
                     userShorts(page)
                     Log.d(TAG, "onNextPage: $page")
                 }
             }
 
             override fun onFinish() {
-//                Toast.makeText(requireContext(), "finish", Toast.LENGTH_SHORT).show()
+
             }
         })
 
@@ -120,7 +120,7 @@ class OtherUsersShortsProfileFragment : Fragment(), ShortsUserProfileAdapter.Thu
         Log.d(TAG, "userShorts:  invoke getUserProfileShorts $page")
 
         shortsViewModel.getUsersShorts(username, page)
-//        sharedViewModel.getShorts(page)
+
     }
 
     companion object {
@@ -133,35 +133,12 @@ class OtherUsersShortsProfileFragment : Fragment(), ShortsUserProfileAdapter.Thu
         }
     }
 
-    private val otherUsersProfileViewModel: OtherUsersProfileViewModel by viewModels()
+
     @OptIn(UnstableApi::class)
     override fun onUserProfileShortClick(shortsEntity: UserShortsEntity) {
 
         Log.d("onUserProfileShortClick", "onUserProfileShortClick: short thumbnail clicked")
-
-//        onShortThumbnailClickListener?.onShortClick(shortsProfile, shortsEntity)
-//        binding.userShortsRecyclerView.visibility = View.GONE
-//        binding.otherUsersShortsPlayFragment.visibility = View.VISIBLE
-//        EventBus.getDefault().post(
-//            HideToolBar(shortsProfile, shortsEntity)
-//        )
-//        shortPlayerFragment = OtherUserProfileShortsPlayerFragment()
-//
-//        requireActivity().supportFragmentManager.beginTransaction()
-//            .replace(
-//                R.id.other_users_shorts_play_fragment,
-//                shortPlayerFragment!!
-//            ) // Use the correct container ID
-//            .addToBackStack(null) // Optional, to add to back stack
-//            .commit()
-
-//        val intent = Intent(activity, UserProfileShortsPlayerActivity::class.java)
-////        intent.putExtra("theClickedShort", clickedShort)
-//        intent.putExtra(UserProfileShortsPlayerActivity.CLICKED_SHORT, shortsEntity)
-//
-//        intent.putExtra(UserProfileShortsPlayerActivity.SHORTS_LIST, shortsProfile)
-////        intent.putExtra("userShortsEntity", storedShortsList)
-//        startActivity(intent)
+        
 
         val intent = Intent(activity, UserProfileShortsPlayerActivity::class.java).apply {
             putExtra(UserProfileShortsPlayerActivity.CLICKED_SHORT, shortsEntity)
