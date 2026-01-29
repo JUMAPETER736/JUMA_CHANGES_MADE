@@ -1,11 +1,10 @@
 package com.uyscuti.sharedmodule.utils.audio_compressor
 
-//import com.arthenica.mobileffmpeg.Config
-//import com.arthenica.mobileffmpeg.FFmpeg
-//import com.arthenica.mobileffmpeg.StatisticsCallback
+
 
 
 private const val TAG  = "AudioCompressorWithProgress"
+
 class AudioCompressorWithProgress {
 
     interface ProgressListener {
@@ -21,62 +20,6 @@ class AudioCompressorWithProgress {
             outputFilePath
         )
 
-//        Config.enableStatisticsCallback(StatisticsCallback { newStatistics ->
-//            val progress: Float =
-//                java.lang.String.valueOf(newStatistics.time).toFloat() / audioLength
-//            val progressFinal = progress * 100
-////            Log.d(TAG, "Video Length: $progressFinal")
-////            progressCallback(progressFinal.toInt())
-//            progressListener.onProgress(progressFinal.toInt())
-
-//            Log.d(
-//                Config.TAG,
-//                java.lang.String.format(
-//                    "frame: %d, time: %d",
-//                    newStatistics.videoFrameNumber,
-//                    newStatistics.time
-//                )
-//            )
-//            Log.d(
-//                Config.TAG,
-//                java.lang.String.format(
-//                    "Quality: %f, time: %f",
-//                    newStatistics.videoQuality,
-//                    newStatistics.videoFps
-//                )
-//            )
-//            progressDialog.setProgress(progressFinal.toInt())
-        //})
-
-
-//        val result = FFmpeg.executeAsync(command) { executionId, returnCode ->
-//            when (returnCode) {
-//                RETURN_CODE_SUCCESS -> {
-//                    Log.i(
-//                        Config.TAG,
-//                        "Async command execution completed successfully."
-//                    )
-//                }
-//                RETURN_CODE_CANCEL -> {
-//                    Log.i(
-//                        Config.TAG,
-//                        "Async command execution cancelled by user."
-//                    )
-//                }
-//                else -> {
-//
-//                    Log.i(
-//                        Config.TAG,
-//                        java.lang.String.format(
-//                            "Async command execution failed with rc=%d.",
-//                            returnCode
-//                        )
-//                    )
-//                }
-//            }
-//        }
-//        val result = FFmpeg.execute(command)
-//        return result.toInt() == 0
 
         return false
     }
