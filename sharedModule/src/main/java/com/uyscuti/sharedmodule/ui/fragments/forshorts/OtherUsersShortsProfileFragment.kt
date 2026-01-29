@@ -138,7 +138,7 @@ class OtherUsersShortsProfileFragment : Fragment(), ShortsUserProfileAdapter.Thu
     override fun onUserProfileShortClick(shortsEntity: UserShortsEntity) {
 
         Log.d("onUserProfileShortClick", "onUserProfileShortClick: short thumbnail clicked")
-        
+
 
         val intent = Intent(activity, UserProfileShortsPlayerActivity::class.java).apply {
             putExtra(UserProfileShortsPlayerActivity.CLICKED_SHORT, shortsEntity)

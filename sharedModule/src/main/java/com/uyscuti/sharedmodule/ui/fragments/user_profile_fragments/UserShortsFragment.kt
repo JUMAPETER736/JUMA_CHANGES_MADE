@@ -48,7 +48,7 @@ private const val ARG_PARAM2 = "param2"
  */
 @AndroidEntryPoint
 class UserShortsFragment : Fragment(), ShortsUserProfileAdapter.ThumbnailClickListener {
-    // TODO: Rename and change types of parameters
+
     private var param1: String? = null
     private var param2: String? = null
 
@@ -85,41 +85,25 @@ class UserShortsFragment : Fragment(), ShortsUserProfileAdapter.ThumbnailClickLi
 
 
         profileShortsAdapterRecyclerView = view.findViewById(R.id.userShortsRecyclerView)
-
-//        initializeShortsViewModel()
-
-
         shortsAdapter = ShortsUserProfileAdapter(this)
         shortsAdapter.recyclerView = profileShortsAdapterRecyclerView
         profileShortsAdapterRecyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
-//        var pages = 0
+
         shortsAdapter.setOnPaginationListener(object : PaginatedAdapter.OnPaginationListener {
             override fun onCurrentPage(page: Int) {
-//                Toast.makeText(requireContext(), "Page $page loaded!", Toast.LENGTH_SHORT).show()
-//                Log.d(TAG, "onCurrentPage: $page")
-//                pages = page + 1
+
             }
 
             override fun onNextPage(page: Int) {
                 lifecycleScope.launch(Dispatchers.Main) {
-//                    loadMoreShorts(page)
-//                    if(!viewModel.isResuming) {
-////                        userShorts(page)
-//                        getUserProfileShorts(page)
-//                    }
+
                     getUserProfileShorts(page)
 
-//                    Log.d(TAG, "onNextPage: $page")
                 }
             }
 
             override fun onFinish() {
-//                Log.d(TAG, "onFinish: last page")
-//                Log.d(TAG, "onFinish: last pages $pages")
-//                getUserProfileShorts(pages)
-//                onNextPage(pages)
 
-//                Toast.makeText(requireContext(), "finish", Toast.LENGTH_SHORT).show()
             }
         })
 
