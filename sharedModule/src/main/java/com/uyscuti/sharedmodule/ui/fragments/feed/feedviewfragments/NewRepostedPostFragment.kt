@@ -1019,7 +1019,7 @@ class NewRepostedPostFragment(
                             audiosList.add(MultipleAudios(
                                 audioFilePath, durationString, fileName))
                             audioToUpload.add(audioFilePath)
-//                            audioToUpload = audioFilePath
+
                             audioDurationToUpload.add(durationString)
                             feedMultipleAudios.add(
                                 FeedMultipleAudios(
@@ -1066,7 +1066,7 @@ class NewRepostedPostFragment(
                                 Log.d(TAG, "onCreate: audio to upload $audio")
                                 feedUploadViewModel.addMixedFeedUploadDataClass(
                                     MixedFeedUploadDataClass(
-//                                        videos = video
+
                                         audios = audio, fileTypes = "audio"
                                     )
                                 )
@@ -1088,7 +1088,7 @@ class NewRepostedPostFragment(
                                 // This method will be invoked when a new page becomes selected.
                                 // You can perform actions here based on the selected page position.
                                 Log.d("ViewPager2", "Page selected: $position")
-//                                content.visibility = View.VISIBLE
+
                                 if (!addMoreFeedFiles) {
                                     val audioDetails =
                                         multipleAudioAdapter.getAudioDetails(position)
@@ -1111,7 +1111,7 @@ class NewRepostedPostFragment(
 
 
                                     recyclerView2.visibility = View.INVISIBLE
-//                                    content.visibility = View.VISIBLE
+
                                     val handler = Handler(Looper.getMainLooper())
                                     handler.postDelayed({
                                         if (audioDetails != null) {
@@ -1345,8 +1345,6 @@ class NewRepostedPostFragment(
 
                                     override fun onPageSelected(position: Int) {
                                         // This method will be invoked
-                                        // when a new page becomes selected.
-                                        // You can perform actions here
                                         // based on the selected page position.
                                         Log.d("ViewPager2", "onPageSelected: $position")
 
@@ -1391,32 +1389,6 @@ class NewRepostedPostFragment(
                 Log.d("PhotoPicker", "No media selected")
             }
         }
-
-    private fun saveDraftFeed() {
-        val editTextText: EditText = requireView().findViewById(R.id.editTextText)
-        val text = editTextText.text.toString().trim()
-        with(sharedPreferences.edit()) {
-            if (text.isNotEmpty() || attachedMediaUris.isNotEmpty() || postList.isNotEmpty()) {
-                val gson = Gson()
-                // Save user's comment
-                putString("draft_text", text)
-                putLong("draft_timestamp", System.currentTimeMillis())
-                // Save original post details
-                putString("original_post", gson.toJson(postList))
-                // Save user's attached media URIs
-                if (attachedMediaUris.isNotEmpty()) {
-                    putString(
-                        "draft_media_uris",
-                        gson.toJson(attachedMediaUris.map { it.toString() })
-                    )
-                }
-            } else {
-
-            }
-            apply()
-        }
-
-    }
 
     private fun getFirstFrameAsThumbnail(videoUri: Uri): Bitmap? {
         Log.d("getFirstFrameAsThumbnail", "getFirstFrameAsThumbnail: ")
