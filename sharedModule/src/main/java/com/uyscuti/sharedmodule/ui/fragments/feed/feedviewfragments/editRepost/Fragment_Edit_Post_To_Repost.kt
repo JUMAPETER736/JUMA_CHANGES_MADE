@@ -654,7 +654,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
     @OptIn(UnstableApi::class)
     private fun cleanupAndGoBack() {
-        // FIRST: Restore UI elements BEFORE navigation
+        // Restore UI elements BEFORE navigation
         try {
             // Clear focus
             _binding?.replyInput?.clearFocus()
@@ -670,7 +670,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                     .show(WindowInsetsCompat.Type.systemBars())
             }
 
-            // CRITICAL: Show AppBar and BottomNav BEFORE going back
+            //  Show AppBar and BottomNav BEFORE going back
             EventBus.getDefault().post(ShowAppBar(true))
             EventBus.getDefault().post(ShowBottomNav(true))
 
