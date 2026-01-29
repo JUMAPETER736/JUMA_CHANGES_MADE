@@ -127,63 +127,6 @@ class UserShortsFragment : Fragment(), ShortsUserProfileAdapter.ThumbnailClickLi
         return view
     }
 
-//    @SuppressLint("NotifyDataSetChanged")
-//    private fun initializeShortsViewModel() {
-//        Log.d(TAG, "initializeShortsViewModel: is not resuming")
-//        viewModel.getUserProfileShortsObserver().observe(
-//            viewLifecycleOwner
-//        ) { shortsList ->
-//            if (shortsList != null) {
-//
-//
-//                // Remove duplicates from the new data
-//                val uniqueShortsList = shortsList.distinct()
-//
-//                // Check if the new data contains items already in the existing list
-//                val filteredNewItems = uniqueShortsList.filter { !viewModel.mutableShortsList.contains(it) }
-//
-//                // Add the new and unique items to the existing list
-//                viewModel.mutableShortsList.addAll(filteredNewItems)
-//
-//                // Submit the updated list to the adapter
-//                shortsAdapter.clear()
-//                shortsAdapter.submitItems(viewModel.mutableShortsList)
-//
-//                // If you still want to maintain a separate list (shortsProfile), update it accordingly
-//                shortsProfile.clear()
-//                shortsProfile.addAll(viewModel.mutableShortsList)
-//
-//                Log.d(TAG, "initializeShortsViewModel: shorts list size: ${shortsList.size}")
-//                Log.d(TAG, "initializeShortsViewModel: mutable shorts list size: ${viewModel.mutableShortsList.size}")
-//                Log.d(TAG, "initializeShortsViewModel: shorts profile size after add: ${shortsProfile.size}")
-//
-//            }
-//            Log.d(
-//                TAG,
-//                "initializeShortsViewModel: shorts profile size after add: ${shortsProfile.size}"
-//            )
-//
-//        }
-//        viewModel.getOnErrorFeedBackObserver().observe(viewLifecycleOwner) { onErrorFeedback ->
-//            MotionToast.createToast(
-//                requireActivity(),
-//                "Failed To Retrieve Data☹️",
-//                onErrorFeedback,
-//                MotionToastStyle.ERROR,
-//                MotionToast.GRAVITY_BOTTOM,
-//                MotionToast.LONG_DURATION,
-//                ResourcesCompat.getFont(requireActivity(), R.font.helvetica_regular)
-//            )
-//        }
-//
-//
-//    }
-
-//    private fun userShorts(page: Int) {
-//        Log.d(TAG, "userShorts:  invoke getUserProfileShorts $page")
-//
-//        viewModel.getUserProfileShorts(page)
-//    }
 
     private fun serverResponseToUserEntity(serverResponse: List<Post>): List<UserShortsEntity> {
         return serverResponse.map { serverResponseItem ->
@@ -223,18 +166,10 @@ class UserShortsFragment : Fragment(), ShortsUserProfileAdapter.ThumbnailClickLi
                 if (shortsEntity != null) {
                     withContext(Dispatchers.Main) {
 
-//                        val uniqueShortsList = shortsEntity.distinct()
-////
-//                        // Check if the new data contains items already in the existing list
-//                        val filteredNewItems = uniqueShortsList.filter { !viewModel.mutableShortsList.contains(it) }
-//
-//                        // Add the new and unique items to the existing list
-//                        viewModel.mutableShortsList.addAll(filteredNewItems)
-//
                         // Assuming ShortsEntity has an 'id' property
                         val uniqueShortsList = shortsEntity.distinctBy { it._id }
 
-// Check if the new data contains items already in the existing list
+                        // Check if the new data contains items already in the existing list
                         val filteredNewItems = uniqueShortsList.filter { newItem ->
                             viewModel.mutableShortsList.none { existingItem -> existingItem._id == newItem._id }
                         }
