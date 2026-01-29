@@ -82,7 +82,7 @@ class ChatManager @Inject constructor(
                 dialogRepository.updateDialogEntityId(dialogEntity.id, newChatId)
                 listener?.onDialogUpdated(newChatId)
                 // Notify the ViewModel about the update
-//                dialogViewModel.updateDialogEntityId(dialogEntity.id, newChatId)
+
             } catch (e: Exception) {
                 // Handle error updating dialog entity ID in the database
                 Log.e(TAG, "Error updating dialog entity ID in the database ${e.message}")

@@ -110,10 +110,7 @@ fun formattedMongoDateTime(dateTimeString: String?): String {
     }
 }
 
-//fun deleteFile(filePath: String): Boolean {
-//    val file = File(filePath)
-//    return file.delete()
-//}
+
 fun getOutputFilePath(startName: String): String {
     val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
 
@@ -280,7 +277,7 @@ object AudioDurationHelper {
             Log.e(TAG, "getAudioDuration: IOException ")
             e.printStackTrace()
         } finally {
-//            Log.e(TAG, "getAudioDuration: finally exception ", )
+
             retriever.release()
         }
 
@@ -308,15 +305,7 @@ object AudioDurationHelper {
 
         return durationStr?.toLong()
     }
-//   fun reverseFormattedDuration(durationString: String): Long {
-//        val parts = durationString.split(":")
-//        if (parts.size != 2) {
-//            throw IllegalArgumentException("Invalid duration format: $durationString")
-//        }
-//        val minutes = parts[0].toIntOrNull() ?: throw IllegalArgumentException("Invalid minutes: ${parts[0]}")
-//        val seconds = parts[1].toIntOrNull() ?: throw IllegalArgumentException("Invalid seconds: ${parts[1]}")
-//        return (minutes * 60 + seconds).toLong() * 1000
-//    }
+
 
     fun reverseFormattedDuration(durationString: String): Long {
         try {
