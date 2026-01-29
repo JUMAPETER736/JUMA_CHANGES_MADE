@@ -15,9 +15,7 @@ public class DownMixAudioRemixer implements AudioRemixer {
     @Override
     public void remix(@NonNull ShortBuffer inputBuffer, int inputChannelCount, @NonNull ShortBuffer outputBuffer, int outputChannelCount) {
         // Down-mix stereo to mono
-        // Viktor Toth's algorithm -
-        // See: http://www.vttoth.com/CMS/index.php/technical-notes/68
-        //      http://stackoverflow.com/a/25102339
+
         final int inRemaining = inputBuffer.remaining() / 2;
         final int outSpace = outputBuffer.remaining();
 

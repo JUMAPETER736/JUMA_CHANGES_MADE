@@ -91,12 +91,7 @@ fun feedDisplayPdfFirstPage(imageView: ImageView, pdfFile: File) {
             .into(imageView)  // Set it into the ImageView
     }
 }
-//fun feedDisplayPdfFirstPage(imageView: ImageView, pdfFile: File) {
-//    val bitmap = renderFirstPage(pdfFile)
-//    bitmap?.let {
-//        imageView.setImageBitmap(it)
-//    }
-//}
+
 
 fun feedRemoveTextStartingWithHash(inputText: String): String {
     // Define a regex pattern to match text starting with #

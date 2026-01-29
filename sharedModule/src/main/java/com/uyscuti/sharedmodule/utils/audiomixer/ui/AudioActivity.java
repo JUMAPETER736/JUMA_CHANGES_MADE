@@ -85,13 +85,7 @@ public class AudioActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 // Create an Intent to start the MainActivity
-//                Intent intent = new Intent(AudioActivity.this, MainActivity.class);
-//
-//                // Add any additional data or flags if needed
-//                // intent.putExtra("key", "value");
-//
-//                // Start the activity
-//                startActivity(intent);
+
             }
         });
 
@@ -147,11 +141,7 @@ public class AudioActivity extends AppCompatActivity {
                             public void run() {
                                 progressDialog.setProgress(100);
                                 progressDialog.dismiss();
-//                                Toast.makeText(activity, "Success!!! Ouput path: " + audioOutPutPath, Toast.LENGTH_LONG).show();
 
-                                // Copy the file to a designated location
-//                                String destinationPath = getDestinationPath(); // Define your destination path
-//                                copyFile(audioOutPutPath, destinationPath);
 
                                 // Add the copied file to the MediaStore
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -203,11 +193,6 @@ public class AudioActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        //audioMixer.setSampleRate(44100);  // optional
-        //audioMixer.setBitRate(128000); // optional
-        //audioMixer.setChannelCount(2); // 1 or 2 // optional
-        //audioMixer.setLoopingEnabled(true); // Only works for parallel mixing
-
 
     }
 
