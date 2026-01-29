@@ -646,20 +646,30 @@ class FeedAdapter(
                 FollowingManager(itemView.context).addToFollowing(feedOwnerId)
 
                 Log.d(TAG, "Now following user $feedOwnerId")
+
             } else {
-                // Show button
-                followButton.text = "Follow"
-                followButton.visibility = View.VISIBLE
+            // Show button immediately when unfollowing
+            followButton.text = if (FeedAdapter.isUserInMyFollowersList(feedOwnerId)) "Follow Back" else "Follow"
+            followButton.visibility = View.VISIBLE
+            followButton.backgroundTintList = ContextCompat.getColorStateList(
+                itemView.context,
+                R.color.blueJeans
+            )
 
-                // Remove from adapter's following list AND persistent storage
-                (bindingAdapter as? FeedAdapter)?.removeFromFollowing(feedOwnerId, username)
+            // Remove from adapter's following list AND persistent storage
+            (bindingAdapter as? FeedAdapter)?.removeFromFollowing(feedOwnerId, username)
 
-                // Also update via manager for consistency
-                FollowingManager(itemView.context).removeFromFollowing(feedOwnerId)
+            // Update via manager for consistency
+            FollowingManager(itemView.context).removeFromFollowing(feedOwnerId)
 
-                Log.d(TAG, "Unfollowed user $feedOwnerId")
-            }
+            // CRITICAL: Update the global cache immediately
+            FeedAdapter.removeFromFollowingCache(feedOwnerId)
 
+            // Update local state immediately
+            isFollowingUser = false
+
+            Log.d(TAG, "Unfollowed user $feedOwnerId - button now visible, cache updated")
+        }
             // Notify listener
             feedClickListener.followButtonClicked(followEntity, followButton)
             EventBus.getDefault().post(ShortsFollowButtonClicked(followEntity))
@@ -1966,21 +1976,29 @@ class FeedAdapter(
                 FollowingManager(itemView.context).addToFollowing(feedOwnerId)
 
                 Log.d(TAG, "Now following user $feedOwnerId")
-            } else {
-                // Check if they follow you to determine button text
-                val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
 
-                // Show button with appropriate text
-                followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
+            } else {
+                // Show button immediately when unfollowing
+                followButton.text = if (FeedAdapter.isUserInMyFollowersList(feedOwnerId)) "Follow Back" else "Follow"
                 followButton.visibility = View.VISIBLE
+                followButton.backgroundTintList = ContextCompat.getColorStateList(
+                    itemView.context,
+                    R.color.blueJeans
+                )
 
                 // Remove from adapter's following list AND persistent storage
                 (bindingAdapter as? FeedAdapter)?.removeFromFollowing(feedOwnerId, username)
 
-                // Also update via manager for consistency
+                // Update via manager for consistency
                 FollowingManager(itemView.context).removeFromFollowing(feedOwnerId)
 
-                Log.d(TAG, "Unfollowed user $feedOwnerId")
+                // CRITICAL: Update the global cache immediately
+                FeedAdapter.removeFromFollowingCache(feedOwnerId)
+
+                // Update local state immediately
+                isFollowingUser = false
+
+                Log.d(TAG, "Unfollowed user $feedOwnerId - button now visible, cache updated")
             }
 
             // Notify listener
