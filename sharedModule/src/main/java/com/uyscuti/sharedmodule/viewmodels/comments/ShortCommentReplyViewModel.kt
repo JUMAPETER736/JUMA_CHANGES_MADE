@@ -22,6 +22,7 @@ private const val TAG = "ShortCommentReplyViewModel"
 
 @HiltViewModel
 class ShortCommentReplyViewModel @Inject constructor(private val retrofitInstance: RetrofitInstance) :
+
     ViewModel() {
     private val replyCommentsMutableLiveData: MutableLiveData<com.uyscuti.social.network.api.response.commentreply.Data> =
         MutableLiveData()
@@ -49,7 +50,7 @@ class ShortCommentReplyViewModel @Inject constructor(private val retrofitInstanc
                 val responseBody = response.body()
                 Log.d("addCommentReply", "commentReply: response body $responseBody")
                 Log.d("addCommentReply", "commentReply: response body ${responseBody?.message}")
-//                Log.d(TAG, "commentReply: response body ${responseBody.data.}")
+
                 if (responseBody != null) {
                     val data = responseBody.data
 
@@ -350,93 +351,6 @@ class ShortCommentReplyViewModel @Inject constructor(private val retrofitInstanc
     fun commentReply(commentId: String, content: String, localUpdateId: String) {
             TODO("Not yet implemented")
     }
-//    fun commentReplyAudio(
-//        commentId: String, content:String, contentType: String, audio: MultipartBody.Part,
-//        video: MultipartBody.Part, thumbnail: MultipartBody.Part, gif: MultipartBody.Part, docs: MultipartBody.Part,
-//        image: MultipartBody.Part, localUpdateId: String, duration: String,
-//    ) {
-//        viewModelScope.launch(Dispatchers.IO) {
-//            try{
-//                val contentPart: RequestBody = RequestBody.create(
-//                    "text/plain".toMediaTypeOrNull(),
-//                    content
-//                )
-//                val contentTypePart: RequestBody = RequestBody.create(
-//                    "text/plain".toMediaTypeOrNull(),
-//                    contentType
-//                )
-//                val durationTypePart: RequestBody = RequestBody.create(
-//                    "text/plain".toMediaTypeOrNull(),
-//                    duration
-//                )
-//                val localUpdateIdPart: RequestBody = RequestBody.create(
-//                    "text/plain".toMediaTypeOrNull(),
-//                    localUpdateId
-//                )
-//                when (contentType) {
-//                    "image" -> {
-//                        Log.d("commentReplyAudio", "content type is image")
-//                        val response = retrofitInstance.apiService.addImageCommentReply(
-//                            commentId, contentPart, contentTypePart, image=image, localUpdateId =  localUpdateIdPart
-//                        )
-//                        val responseBody = response.body()
-//                        Log.d(TAG, "comment: response $response")
-//                        Log.d(TAG, "comment: response message ${response.message()}")
-//                        Log.d(TAG, "comment: response message error body ${response.errorBody()}")
-//                        Log.d(TAG, "comment: response body $responseBody")
-//                        Log.d(TAG, "comment: response body data ${responseBody?.data}")
-//                        Log.d(TAG, "comment: response body message ${responseBody!!.message}")
-//                        val data = responseBody.data
-//
-//                        Log.d(TAG, "audio comment data response: $data")
-//                        replyCommentsMutableLiveData.postValue(data)
-//                    }
-//                    "video" -> {
-//                        Log.d("commentReplyVideo", "content type is video")
-//                        val response = retrofitInstance.apiService.addVideoCommentReply(
-//                            commentId, contentPart, contentTypePart, video=video, localUpdateId =  localUpdateIdPart,
-//                            thumbnail = thumbnail, duration = durationTypePart
-//                        )
-//                        val responseBody = response.body()
-//                        Log.d("commentReplyVideo", "comment: response $response")
-//                        Log.d("commentReplyVideo", "comment: response message ${response.message()}")
-//                        Log.d("commentReplyVideo", "comment: response message error body ${response.errorBody()}")
-//                        Log.d("commentReplyVideo", "comment: response body $responseBody")
-//                        Log.d("commentReplyVideo", "comment: response body data ${responseBody?.data}")
-//                        Log.d("commentReplyVideo", "comment: response body message ${responseBody!!.message}")
-//                        val data = responseBody.data
-//
-//                        Log.d(TAG, "audio comment data response: $data")
-//                        replyCommentsMutableLiveData.postValue(data)
-//                    }
-//                    else -> {
-//                        Log.d("commentReplyAudio", "content type is audio")
-//
-//                        val response = retrofitInstance.apiService.addCommentReply(
-//                            commentId, contentPart, contentTypePart, audio=audio, localUpdateId = localUpdateIdPart
-//                        )
-//                        val responseBody = response.body()
-//                        Log.d(TAG, "comment: response $response")
-//                        Log.d(TAG, "comment: response message ${response.message()}")
-//                        Log.d(TAG, "comment: response message error body ${response.errorBody()}")
-//                        Log.d(TAG, "comment: response body $responseBody")
-//                        Log.d(TAG, "comment: response body data ${responseBody?.data}")
-//                        Log.d(TAG, "comment: response body message ${responseBody!!.message}")
-//                        val data = responseBody.data
-//
-//                        Log.d(TAG, "audio comment data response: $data")
-//                        replyCommentsMutableLiveData.postValue(data)
-//                    }
-//                }
-//
-//
-//
-//            }catch (e: Exception) {
-//                Log.e(TAG, "comment: $e")
-//                Log.e(TAG, "comment: ${e.message}")
-//            }
-//        }
-//
-//    }
+ 
 
 }

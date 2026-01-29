@@ -23,9 +23,9 @@ class RoomCommentsViewModel @Inject constructor(private val repository: ShortCom
 
     fun insertComment(comment: ShortCommentEntity) {
         viewModelScope.launch {
-//            Log.d(TAG, "Inserting comment: $comment")
+
             repository.insertComment(comment)
-//            Log.d(TAG, "Comm inserted or updated successfully")
+
         }
     }
 

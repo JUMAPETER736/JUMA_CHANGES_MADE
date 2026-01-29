@@ -27,7 +27,7 @@ class RoomCommentFilesViewModel @Inject constructor(private val repository: Comm
         viewModelScope.launch {
             Log.d(TAG, "Inserting comment: $comment")
             repository.insertCommentFile(comment)
-//            Log.d(TAG, "Comm inserted or updated successfully")
+
         }
     }
 
