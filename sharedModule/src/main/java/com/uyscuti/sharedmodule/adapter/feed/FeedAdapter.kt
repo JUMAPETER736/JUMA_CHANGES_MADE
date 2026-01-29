@@ -3435,19 +3435,29 @@ class FeedAdapter(
                 FollowingManager(itemView.context).addToFollowing(accountId)
 
                 Log.d(TAG, "Added account $accountId (@$username) to following list")
+
             } else {
-                // Check if they follow you to determine button text
-                val theyFollowMe = FeedAdapter.isUserInMyFollowersList(accountId)
-
-                // Show button with appropriate text
-                followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
+                // Show button immediately when unfollowing
+                followButton.text = if (FeedAdapter.isUserInMyFollowersList(accountId)) "Follow Back" else "Follow"
                 followButton.visibility = View.VISIBLE
+                followButton.backgroundTintList = ContextCompat.getColorStateList(
+                    itemView.context,
+                    R.color.blueJeans
+                )
 
-                // Remove from following list
+                // Remove from adapter's following list AND persistent storage
                 (bindingAdapter as? FeedAdapter)?.removeFromFollowing(accountId, username)
+
+                // Update via manager for consistency
                 FollowingManager(itemView.context).removeFromFollowing(accountId)
 
-                Log.d(TAG, "Removed account $accountId (@$username) from following list")
+                // CRITICAL: Update the global cache immediately
+                FeedAdapter.removeFromFollowingCache(accountId)
+
+                // Update local state immediately
+                isFollowingUser = false
+
+                Log.d(TAG, "Unfollowed user $accountId - button now visible, cache updated")
             }
 
             // Notify listener
@@ -5103,36 +5113,36 @@ class FeedAdapter(
                     // Store current post reference
                     currentPost = data
 
-                    // ✅ Extract ACCOUNT ID and USERNAME for follow check
+                    // Extract ACCOUNT ID and USERNAME for follow check
                     val feedReposterOwnerId: String
                     val feedReposterUsername: String
 
                     when {
                         // Case 1: Someone reposted - use their OWNER field (account ID) and username
                         data.repostedUser != null -> {
-                            feedReposterOwnerId = data.repostedUser.owner  // ✅ Use owner field, not _id!
+                            feedReposterOwnerId = data.repostedUser.owner  // Use owner field, not _id!
                             feedReposterUsername = data.repostedUser.username
-                            Log.d(TAG, "🔵 Case 1: RepostedUser account ID (owner): $feedReposterOwnerId")
-                            Log.d(TAG, "🔵 Case 1: RepostedUser username: @$feedReposterUsername")
-                            Log.d(TAG, "🔵 Case 1: (NOT using repostedUser._id which is: ${data.repostedUser._id})")
+                            Log.d(TAG, "Case 1: RepostedUser account ID (owner): $feedReposterOwnerId")
+                            Log.d(TAG, "Case 1: RepostedUser username: @$feedReposterUsername")
+                            Log.d(TAG, "Case 1: (NOT using repostedUser._id which is: ${data.repostedUser._id})")
                         }
 
                         // Case 2: Original post - use author.owner (the account ID!)
                         data.originalPost != null && data.originalPost.isNotEmpty() -> {
                             val originalAuthor = data.originalPost[0].author
-                            feedReposterOwnerId = originalAuthor.owner  // ✅ This is the account ID!
+                            feedReposterOwnerId = originalAuthor.owner  // This is the account ID!
                             feedReposterUsername = originalAuthor.account.username
-                            Log.d(TAG, "🔵 Case 2: Using author.owner (account ID): $feedReposterOwnerId")
-                            Log.d(TAG, "🔵 Case 2: Username: @$feedReposterUsername")
-                            Log.d(TAG, "🔵 Case 2: (NOT using author._id which is: ${originalAuthor._id})")
+                            Log.d(TAG, "Case 2: Using author.owner (account ID): $feedReposterOwnerId")
+                            Log.d(TAG, "Case 2: Username: @$feedReposterUsername")
+                            Log.d(TAG, "Case 2: (NOT using author._id which is: ${originalAuthor._id})")
                         }
 
                         // Case 3: Regular post - use main author's account ID
                         else -> {
                             feedReposterOwnerId = data.author?.account?._id ?: "Unknown"
                             feedReposterUsername = data.author?.account?.username ?: "unknown"
-                            Log.d(TAG, "🔵 Case 3: Main author account ID: $feedReposterOwnerId")
-                            Log.d(TAG, "🔵 Case 3: Username: @$feedReposterUsername")
+                            Log.d(TAG, "Case 3: Main author account ID: $feedReposterOwnerId")
+                            Log.d(TAG, "Case 3: Username: @$feedReposterUsername")
                         }
                     }
 
@@ -6349,16 +6359,29 @@ class FeedAdapter(
                 FollowingManager(itemView.context).addToFollowing(accountId)
 
                 Log.d(TAG, "Added account $accountId (@$username) to following list")
+
             } else {
-                // Show button
-                followButton.text = "Follow"
+                // Show button immediately when unfollowing
+                followButton.text = if (FeedAdapter.isUserInMyFollowersList(feedOwnerId)) "Follow Back" else "Follow"
                 followButton.visibility = View.VISIBLE
+                followButton.backgroundTintList = ContextCompat.getColorStateList(
+                    itemView.context,
+                    R.color.blueJeans
+                )
 
-                // Remove from following list
-                (bindingAdapter as? FeedAdapter)?.removeFromFollowing(accountId, username)
-                FollowingManager(itemView.context).removeFromFollowing(accountId)
+                // Remove from adapter's following list AND persistent storage
+                (bindingAdapter as? FeedAdapter)?.removeFromFollowing(feedOwnerId, username)
 
-                Log.d(TAG, "Removed account $accountId (@$username) from following list")
+                // Update via manager for consistency
+                FollowingManager(itemView.context).removeFromFollowing(feedOwnerId)
+
+                // CRITICAL: Update the global cache immediately
+                FeedAdapter.removeFromFollowingCache(feedOwnerId)
+
+                // Update local state immediately
+                isFollowingUser = false
+
+                Log.d(TAG, "Unfollowed user $feedOwnerId - button now visible, cache updated")
             }
 
             // Notify listener
