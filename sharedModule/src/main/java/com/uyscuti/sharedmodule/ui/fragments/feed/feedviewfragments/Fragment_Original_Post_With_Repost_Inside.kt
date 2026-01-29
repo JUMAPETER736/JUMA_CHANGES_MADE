@@ -90,6 +90,19 @@ private const val FRAGMENT_ORIGINAL_POST_WITH_REPOST = 1
 
 class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
+    companion object {
+        private const val ARG_ORIGINAL_POST = "original_post"
+
+        fun newInstance(data: com.uyscuti.social.network.api.response.posts.Post): Fragment_Original_Post_With_Repost_Inside {
+            return Fragment_Original_Post_With_Repost_Inside().apply {
+                arguments = Bundle().apply {
+                    putSerializable(ARG_ORIGINAL_POST, data)
+                }
+            }
+        }
+
+    }
+
     private lateinit var feedPost: com.uyscuti.social.network.api.response.posts.Post
 
     // Views from header_toolbar.xml
@@ -3597,18 +3610,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
-    companion object {
-        private const val ARG_ORIGINAL_POST = "original_post"
 
-        fun newInstance(data: com.uyscuti.social.network.api.response.posts.Post): Fragment_Original_Post_With_Repost_Inside {
-            return Fragment_Original_Post_With_Repost_Inside().apply {
-                arguments = Bundle().apply {
-                    putSerializable(ARG_ORIGINAL_POST, data)
-                }
-            }
-        }
-
-    }
 
 
 }

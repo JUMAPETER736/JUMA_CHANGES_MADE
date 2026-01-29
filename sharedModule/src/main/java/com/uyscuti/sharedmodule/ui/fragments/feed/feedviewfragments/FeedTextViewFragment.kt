@@ -39,8 +39,23 @@ private const val ARG_PARAM2 = "param2"
  */
 
 private const val TAG = "FeedTextViewFragment"
+
 class FeedTextViewFragment : Fragment() {
-    // TODO: Rename and change types of parameters
+
+    companion object {
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedTextViewFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+
+                }
+            }
+    }
+
+
     private var param1: String? = null
     private var param2: String? = null
     private lateinit var data: Post
@@ -53,14 +68,14 @@ class FeedTextViewFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val inflater = TransitionInflater.from(requireContext())
-//        enterTransition = inflater.inflateTransition(R.transition.feed_fragment_slide_right)
+
         arguments?.let {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
             position = it.getInt("position")
             data = (it.getSerializable("data") as Post?)!! // Adjust type if needed
         }
-//        EventBus.getDefault().register(this)
+
     }
 
     @SuppressLint("SetTextI18n")
@@ -95,8 +110,7 @@ class FeedTextViewFragment : Fragment() {
             .into(binding.toolbar.feedProfilePic)
 
         binding.toolbar.backIcon.setOnClickListener {
-//            feedTextViewFragmentInterface.onBackPressed()
-//            navigateBack()
+
             if (feedTextViewFragmentInterface != null) {
                 feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
             }
@@ -107,18 +121,18 @@ class FeedTextViewFragment : Fragment() {
 
             if (value) {
                 // Handle true state
-//                textView.text = "Enabled"
+
                 val totalComments = data.comments
                 Log.d(TAG, "onCreateView: data . comments ${data.comments} total comments $totalComments")
                 binding.feedCommentsCount.text = "$totalComments"
-//                totalComments.toString() += 1
+
                 feedLiveDataViewModel.setBoolean(false)
             }
 
         }
 
         binding.share.setOnClickListener {
-//              Create an Intent with action Intent.ACTION_SEND
+
             Toast.makeText(requireContext(), "share clicked", Toast.LENGTH_SHORT).show()
             val sendIntent = Intent().apply {
                 action = Intent.ACTION_SEND
@@ -135,8 +149,7 @@ class FeedTextViewFragment : Fragment() {
         feedLiveDataViewModel.counter.observe(viewLifecycleOwner) { count ->
             // Update UI with new count value
             binding.feedCommentsCount.text = "${data.comments+count}"
-//            val totalComments = data.comments.size
-//            binding.feedCommentsCount.text = "$totalComments"
+
         }
         binding.comment.setOnClickListener {
             Log.d(TAG, "Comments: comment clicked")
@@ -150,7 +163,7 @@ class FeedTextViewFragment : Fragment() {
         }else {
             binding.likesCount.text = data.likes.toString()
         }
-//        binding.feedCommentsCount.text = data.comments.size.toString()
+
         if (data.isLiked) {
             binding.like.setImageResource(R.drawable.filled_favorite_like)
         } else {
@@ -229,25 +242,7 @@ class FeedTextViewFragment : Fragment() {
         }
         return binding.root
     }
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FeedTextViewFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FeedTextViewFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
 
-                }
-            }
-    }
 
     private fun navigateBack() {
         requireActivity().supportFragmentManager.popBackStack() // Pops the back stack
@@ -258,7 +253,7 @@ class FeedTextViewFragment : Fragment() {
         backPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Handle back press
-//                navigateBack()
+
                 if (feedTextViewFragmentInterface != null) {
                     feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
                 }

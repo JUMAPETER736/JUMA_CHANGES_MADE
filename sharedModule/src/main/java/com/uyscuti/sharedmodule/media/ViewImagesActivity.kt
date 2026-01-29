@@ -24,9 +24,7 @@ class ViewImagesActivity : AppCompatActivity() {
     private var position by Delegates.notNull<Int>()
     private var data: Comment? = null
     private var currentReplyComment: com.uyscuti.social.network.api.response.commentreply.allreplies.Comment? = null
-    private var reply: Boolean = false
-    private var updateLike: Boolean = false
-    private var updateReplyLikes: Boolean = false
+
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -175,16 +175,18 @@ class MyUserBusinessProfileFragment : Fragment() {
                     {
                         Log.e("ApiService", "Failed to get business catalogue: ${catalogueResponse.message()}")
                         // Show toast message on main thread
-//                        Toast.makeText(requireContext(), "Failed to get business catalogue", Toast.LENGTH_SHORT).show()
+                        //Toast.makeText(requireContext(), "Failed to get business catalogue", Toast.LENGTH_SHORT).show()
 
                     }
                 }
             } catch (e: HttpException) {
                 Log.e("ApiService", "Failed to fetch data: ${e.message}", e)
-                // Show toast message on main thread
-//                withContext(Dispatchers.Main) {
-//                    Toast.makeText(requireContext(), "Failed to fetch data: ${e.message}", Toast.LENGTH_SHORT).show()
-//                }
+
+            // Show toast message on main thread
+                //withContext(Dispatchers.Main) {
+                //    Toast.makeText(requireContext(), "Failed to fetch data: ${e.message}", Toast.LENGTH_SHORT).show()
+                //}
+
             } catch (e: Throwable) {
                 Log.e("ApiService", "Network error: ${e.message}", e)
                 // Show toast message on main thread
