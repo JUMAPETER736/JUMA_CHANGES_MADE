@@ -16,8 +16,10 @@ import com.uyscuti.sharedmodule.uploads.feed_uploads.models.SelectFeedVideoDataC
 import com.uyscuti.sharedmodule.R
 import java.io.File
 
-private const val TAG =""
+private const val TAG ="SelectFeedVideoAdapter"
+
 class SelectFeedVideoAdapter(
+
     private val videoList: List<SelectFeedVideoDataClass>,
     private val onSelectedFilesCount: SelectedFilesCount,
     private val onItemClick: (String) -> Unit
@@ -45,16 +47,18 @@ class SelectFeedVideoAdapter(
             .error(R.drawable.ic_launcher_background)
             .centerCrop()
             .into(holder.videoThumbnail)
+
         if(videoPath.isSelected) {
-//            holder.videoThumbnail.setBackgroundColor(holder.videoThumbnail.context.resources.getColor(R.color.black))
+
             holder.videosThumbnail.visibility = View.VISIBLE
+
         }else {
             holder.videosThumbnail.visibility = View.INVISIBLE
         }
+
         val durationTextView: TextView = holder.itemView.findViewById(R.id.durationTextView)
         val sizeTextView: TextView = holder.itemView.findViewById(R.id.sizeTextView)
 
-//        Log.d("VideoPath", videoPath)
 
         try {
             val mediaMetadataRetriever = MediaMetadataRetriever()
@@ -72,19 +76,11 @@ class SelectFeedVideoAdapter(
             e.printStackTrace()
         }
 
-//        val mediaMetadataRetriever = MediaMetadataRetriever()
-//        mediaMetadataRetriever.setDataSource(videoPath)
-//
-//        val duration = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+
         val size = File(videoPath.videoList).length()
 
-//        durationTextView.text = formatDuration(duration?.toLong() ?: 0)
-        sizeTextView.text = formatSize(size)
 
-//        holder.itemView.setOnClickListener {
-//            onItemClick(videoPath.videoList)
-//            setMultipleSelection(position)
-//        }
+        sizeTextView.text = formatSize(size)
 
         holder.videoItemLayout.setOnClickListener {
             onItemClick(videoPath.videoList)

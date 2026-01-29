@@ -23,23 +23,25 @@ import com.uyscuti.sharedmodule.uploads.feed_uploads.models.SelectFeedVideoDataC
 import com.uyscuti.sharedmodule.R
 
 class FeedSelectVideoActivity : AppCompatActivity(), SelectedFilesCount {
+
     private lateinit var binding: ActivityFeedSelectVideoBinding
     private val REQUEST_PERMISSIONS_CODE = 123
     private val imagesList = ArrayList<String>()
 
-    var TAG = ""
+    var TAG = "FeedSelectVideoActivity "
     private lateinit var videoAdapter: SelectFeedVideoAdapter
     private val selectedVideos: MutableList<String> = mutableListOf()
     private val selectedVideosUriString: MutableList<String> = mutableListOf()
     private val selectedVideosUri: MutableList<Uri> = mutableListOf()
     val videoList = mutableListOf<SelectFeedVideoDataClass>()
+
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         binding = ActivityFeedSelectVideoBinding.inflate(layoutInflater)
         setContentView(binding.root)
-//        setContentView(R.layout.activity_feed_select_video)
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -55,7 +57,7 @@ class FeedSelectVideoActivity : AppCompatActivity(), SelectedFilesCount {
                 this.selectedVideos.add(i.videoList)
                 this.selectedVideosUriString.add(i.videoUri.toString())
                 this.selectedVideosUri.add(i.videoUri)
-//                val selectedVideoUri = uriList[i.videoList]
+
                 Log.d(TAG, "onCreate: video uri ${i.videoUri}")
             }
 

@@ -42,7 +42,7 @@ class FeedAudioActivity : AppCompatActivity(), SelectedFilesCount {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-//        setContentView(R.layout.activity_feed_audio)
+
         binding = ActivityFeedAudioBinding.inflate(layoutInflater)
         setContentView(binding.root)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->

@@ -42,7 +42,7 @@ class FeedAudioAdapter(
 
     }
 
-    
+
     private fun setMultipleSelection(adapterPosition: Int) {
         val audio = audioList[adapterPosition]
 
@@ -59,28 +59,6 @@ class FeedAudioAdapter(
         notifyItemChanged(adapterPosition)
     }
 
-    //    private fun setMultipleSelection(adapterPosition: Int) {
-//
-//        audioList[adapterPosition].isSelected = !audioList[adapterPosition].isSelected
-////        audiosSelected[adapterPosition].isSelected = !audiosSelected[adapterPosition].isSelected
-//        if (audioList[adapterPosition].isSelected) {
-//            audiosSelected.add(adapterPosition, audioList[adapterPosition])
-//        }else {
-//            try {
-//                for(i in audiosSelected) {
-//                    val found = audioList.find { it.audioList == i.audioList }
-//                    audiosSelected.remove(found)
-//
-//                }
-//            }catch (e: IndexOutOfBoundsException) {
-//                Log.e(TAG, "setMultipleSelection: IndexOutOfBoundsException ${e.message}")
-//                e.printStackTrace()
-//            }
-//        }
-//        Log.d(TAG, "onBindViewHolder: audioList size ${audiosSelected.size}")
-//
-//        notifyItemChanged(adapterPosition)
-//    }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AudioViewHolder {
         val view =
             LayoutInflater.from(parent.context).inflate(R.layout.audio_item_layout, parent, false)
@@ -113,11 +91,7 @@ class FeedAudioAdapter(
         } else {
             holder.albumArtImageView.setImageResource(R.drawable.ic_launcher_background)
         }
-//        holder.itemView.setOnClickListener {
-//            // Handle audio item click event
-//            // You can start audio playback or perform other actions here
-//            onItemClick(audioPath.audioList)
-//        }
+
 
         if(audioPath.isSelected) {
             holder.itemView.setBackgroundColor(holder.itemView.context.resources.getColor(R.color.bluejeans))
@@ -220,5 +194,5 @@ class FeedAudioAdapter(
 
 interface SelectedFilesCount {
     fun onFilesCount(count: Int)
-//    fun doneClicked(count: Int, selectedAudios: AudioDataClass)
+
 }
