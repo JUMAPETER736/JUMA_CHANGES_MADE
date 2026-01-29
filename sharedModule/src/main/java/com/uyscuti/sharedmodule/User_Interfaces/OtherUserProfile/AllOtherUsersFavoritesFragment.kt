@@ -122,7 +122,7 @@ class AllOtherUsersFavoritesFragment : Fragment(), OnFeedClickListener {
             loadMyFavorites()
         } else {
             // Viewing someone else's favorites - show privacy message
-            Log.d(TAG, "🔒 Showing privacy message - favorites are private")
+            Log.d(TAG, "Showing privacy message - favorites are private")
             showPrivacyMessage()
         }
     }

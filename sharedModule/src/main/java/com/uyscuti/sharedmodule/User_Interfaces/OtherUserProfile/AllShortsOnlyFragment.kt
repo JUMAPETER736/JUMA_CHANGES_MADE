@@ -146,7 +146,7 @@ class AllShortsOnlyFragment : Fragment() {
 
         if (cached != null && cached.isValid()) {
             // INSTANT LOAD from cache
-            Log.d(TAG, "🚀 INSTANT LOAD - Displaying ${cached.videos.size} cached videos")
+            Log.d(TAG, "INSTANT LOAD - Displaying ${cached.videos.size} cached videos")
 
             displayCachedData(cached)
 
@@ -240,7 +240,7 @@ class AllShortsOnlyFragment : Fragment() {
 
         // Enforce pagination limits
         if (currentPage > MAX_PAGES) {
-            Log.d(TAG, "⚠️ Reached MAX_PAGES limit ($MAX_PAGES)")
+            Log.d(TAG, "Reached MAX_PAGES limit ($MAX_PAGES)")
             hasMoreData = false
             isInitialLoad = false
             finalizeLoading()
@@ -609,8 +609,6 @@ class AllShortsOnlyFragment : Fragment() {
                 // Remove the clipToOutline from here since container handles it
             }
             container.addView(imageView)
-
-            // ... rest of your code
 
             // Find the first video file
             val videoFileIndex = post.fileTypes?.indexOfFirst {
