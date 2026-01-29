@@ -68,9 +68,7 @@ class FeedSelectVideoActivity : AppCompatActivity(), SelectedFilesCount {
             val resultIntent = Intent()
             resultIntent.putStringArrayListExtra("video_url", arrayListToSend)
             resultIntent.putStringArrayListExtra("vUri", videoUriListToSend)
-//            val bundle = Bundle()
-//            bundle.pu
-//            resultIntent.putExtras(videoUriListToSend)
+
             setResult(RESULT_OK, resultIntent)
             finish()
 
@@ -122,7 +120,7 @@ class FeedSelectVideoActivity : AppCompatActivity(), SelectedFilesCount {
         val videosUri = MediaStore.Video.Media.getContentUri("external")
         cursor?.use {
             if (it.moveToFirst()) {
-//                val videoList = mutableListOf<String>()
+
                 val uriList = mutableListOf<Uri>()
                 val dataIndex = it.getColumnIndex(MediaStore.Video.Media.DATA)
 
@@ -133,8 +131,6 @@ class FeedSelectVideoActivity : AppCompatActivity(), SelectedFilesCount {
                         uriList.add(uri)
                         videoList.add(SelectFeedVideoDataClass(videoPath, uri))
 
-//                        vUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, it.getLong(0))
-//                        uriList.add(ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, it.getLong(0)))
                     }
                 } while (it.moveToNext())
 
@@ -143,13 +139,7 @@ class FeedSelectVideoActivity : AppCompatActivity(), SelectedFilesCount {
                 recyclerView.layoutManager = layoutManager
                 videoAdapter = SelectFeedVideoAdapter(videoList, this ) { selectedVideoPath ->
                     // Handle the click event
-//                    val selectedVideoIndex = videoList.indexOf(selectedVideoPath)
-//                    val selectedVideoUri = uriList[selectedVideoIndex]
-//                    val resultIntent = Intent()
-//                    resultIntent.putExtra("video_url", selectedVideoPath)
-//                    resultIntent.putExtra("vUri", selectedVideoUri.toString())
-//                    setResult(Activity.RESULT_OK, resultIntent)
-//                    finish()
+
                 }
                 recyclerView.adapter = videoAdapter
             } else {
@@ -194,12 +184,9 @@ class FeedSelectVideoActivity : AppCompatActivity(), SelectedFilesCount {
                 imagesList.add(selectedImagePath)
             }
 
-//            val adapter = VideoAdapter(imagesList) {
-//
-//            }
             binding.recyclerView.layoutManager =
                 GridLayoutManager(this, 3) // Grid layout with 3 columns
-//            binding.recyclerView.adapter = adapter
+
         }
     }
 

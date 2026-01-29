@@ -40,7 +40,7 @@ class CameraActivity : AppCompatActivity() {
             // Handle the result (captured image)
             if (result != null) {
                 // Do something with the captured image (e.g., display in an ImageView)
-//                imageView.setImageBitmap(result)
+
                 binding.image.setImageBitmap(result)
             }
         }
@@ -128,7 +128,7 @@ class CameraActivity : AppCompatActivity() {
             R.id.menu_confirm -> {
 
                 confirmImage()
-//                return true
+
             }
             else -> {
 

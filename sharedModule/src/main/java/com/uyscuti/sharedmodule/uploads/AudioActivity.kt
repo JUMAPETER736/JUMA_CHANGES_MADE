@@ -19,6 +19,7 @@ import com.uyscuti.sharedmodule.R
 
 
 class AudioActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityAudioBinding
     private val REQUEST_PERMISSION = 158
 
