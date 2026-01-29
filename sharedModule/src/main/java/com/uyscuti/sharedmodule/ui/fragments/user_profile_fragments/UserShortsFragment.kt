@@ -36,7 +36,6 @@ import org.greenrobot.eventbus.ThreadMode
 import javax.inject.Inject
 
 
-// TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
@@ -48,6 +47,20 @@ private const val ARG_PARAM2 = "param2"
  */
 @AndroidEntryPoint
 class UserShortsFragment : Fragment(), ShortsUserProfileAdapter.ThumbnailClickListener {
+
+
+    companion object {
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            UserShortsFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
 
     private var param1: String? = null
     private var param2: String? = null
@@ -201,25 +214,7 @@ class UserShortsFragment : Fragment(), ShortsUserProfileAdapter.ThumbnailClickLi
         }
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment UserShortsFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            UserShortsFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
+
 
     fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
@@ -239,7 +234,7 @@ class UserShortsFragment : Fragment(), ShortsUserProfileAdapter.ThumbnailClickLi
         lifecycleScope.launch {
             viewModel.isResuming = true
         }
-//        Log.d(TAG, "onDestroy: method")
+
     }
 
 
@@ -248,7 +243,7 @@ class UserShortsFragment : Fragment(), ShortsUserProfileAdapter.ThumbnailClickLi
         lifecycleScope.launch {
             viewModel.isResuming = true
         }
-//        Log.d(TAG, "onDestroyView: method")
+
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -260,20 +255,7 @@ class UserShortsFragment : Fragment(), ShortsUserProfileAdapter.ThumbnailClickLi
     override fun onUserProfileShortClick(shortsEntity: UserShortsEntity) {
 
         val clickedShort = shortsEntity.images[0].url
-//        Log.d(TAG, "onUserProfileShortClick: ${storedShortsList.size}")
-////        shortsEntity.
-//        val intent = Intent(activity, UserProfileShortsPlayerActivity::class.java)
-////        intent.putExtra("theClickedShort", clickedShort)
-//        intent.putExtra(UserProfileShortsPlayerActivity.CLICKED_SHORT, shortsEntity)
-//
-//        Log.d(TAG, "onUserProfileShortClick: shortsProfile size: ${shortsProfile.size}")
-//        intent.putExtra(UserProfileShortsPlayerActivity.SHORTS_LIST, shortsProfile)
-////        intent.putExtra("userShortsEntity", storedShortsList)
-//        startActivity(intent)
 
-//        EventBus.getDefault().post(UserProfileShortsOnClickEvent(storedShortsList))
-
-//        Log.d(TAG, "onUserProfileShortClick: User thumbnail short clicked")
         EventBus.getDefault().post(GoToUserProfileShortsPlayerFragment(shortsProfile, shortsEntity, false))
 
     }
