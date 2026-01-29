@@ -149,16 +149,7 @@ class DocumentsActivity : AppCompatActivity() {
         Log.d("Documents", "documents List found: ${rs.count}")
 
 
-//        binding.documentGridView.adapter = DocumentAdapter(applicationContext)
-//        (binding.documentGridView.adapter as DocumentAdapter).notifyDataSetChanged()
-//
-//        binding.documentGridView.setOnItemClickListener { _, _, i, _ ->
-//            rs.moveToPosition(i)
-//            val path = rs.getString(0)
-//            // Handle document file actions as needed
-//            // For example, you can open a PDF viewer or a DOCX reader activity.
-//            // You can pass the document path to the viewer/reader activity.
-//        }
+
     }
 
 }

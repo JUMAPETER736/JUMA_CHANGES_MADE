@@ -17,7 +17,9 @@ import com.uyscuti.sharedmodule.databinding.ActivityImagesBinding
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.uploads.adapter.ImageAdapter
 
+
 class ImagesActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityImagesBinding
     private val imagesList = ArrayList<String>()
     private val REQUEST_PERMISSION = 100
@@ -31,7 +33,7 @@ class ImagesActivity : AppCompatActivity() {
             onBackPressed()
         }
 
-//        loadImage()
+
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), REQUEST_PERMISSION)
