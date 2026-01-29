@@ -21,8 +21,9 @@ private const val ARG_PARAM2 = "param2"
  * create an instance of this fragment.
  */
 private const val  TAG = "PostRepostedFragment"
+
 class  PostRepostedFragment : Fragment() {
-    // TODO: Rename and change types of parameters
+
     private var param1: String? = null
     private var param2: String? = null
     private var position = 0
@@ -46,7 +47,7 @@ class  PostRepostedFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         // Inflate the layout for this fragment
-       //return inflater.inflate(R.layout.tapped_images_posted_files_viewers, container, false)
+
         binding = TappedPostedFilesViewersBinding.inflate(layoutInflater, container, false)
 
         return binding.root
@@ -55,7 +56,7 @@ class  PostRepostedFragment : Fragment() {
 
     companion object {
 
-        // TODO: Rename and change types and number of parameters
+
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
             PostRepostedFragment().apply {

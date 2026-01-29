@@ -21,6 +21,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @SuppressLint("StaticFieldLeak")
 private const val TAG = "RepostingPostActivity"
+
 @AndroidEntryPoint
 class RepostingPostActivity : AppCompatActivity() {
     private lateinit var binding: ActivityRepostingPostBinding

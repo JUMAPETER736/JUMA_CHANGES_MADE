@@ -39,22 +39,12 @@ class OtherUsersShortsProfileFragment : Fragment(), ShortsUserProfileAdapter.Thu
     private lateinit var shortsAdapter: ShortsUserProfileAdapter
     private lateinit var recyclerViewAdapter: RecyclerViewAdapter
     private var shortsList = ArrayList<String>()
-
     private var shortsProfile = ArrayList<UserShortsEntity>()
-//    private lateinit var profileShortsAdapterRecyclerView: RecyclerView
 
-//    private val viewModel: UserProfileShortsViewModel by viewModels()
     private val shortsViewModel: GetShortsByUsernameViewModel by viewModels()
-
     private var storedShortsList: List<UserShortsEntity> = emptyList()
-
     private lateinit var username: String
-
     private lateinit var binding: FragmentOtherUsersShortsProfileBinding
-
-
-//    private var shortPlayerFragment: OtherUserProfileShortsPlayerFragment? = null
-
     private var onShortThumbnailClickListener: OnShortThumbnailClickListener? = null
 
     fun setListener(listener: OnShortThumbnailClickListener) {
@@ -64,12 +54,12 @@ class OtherUsersShortsProfileFragment : Fragment(), ShortsUserProfileAdapter.Thu
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         arguments?.let {
             username = it.getString("username").toString()
         }
 
-//        EventBus.getDefault().register(this)
 
     }
 
@@ -79,9 +69,9 @@ class OtherUsersShortsProfileFragment : Fragment(), ShortsUserProfileAdapter.Thu
     ): View? {
         // Inflate the layout for this fragment
         binding =   FragmentOtherUsersShortsProfileBinding.inflate(layoutInflater, container, false)
-//        profileShortsAdapterRecyclerView = view.findViewById(R.id.userShortsRecyclerView)
+
         Log.d(TAG, "onCreateView username: $username")
-//        shortsViewModel.getOtherUsersProfileShorts(username)
+
         viewModelObserver()
 
         shortsAdapter = ShortsUserProfileAdapter(this)
