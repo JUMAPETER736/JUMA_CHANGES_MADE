@@ -132,39 +132,7 @@ fun getFileExtension(filePath: String): String {
     return filePath.substringAfterLast('.', "")
 }
 
-// Function to create a temporary file from an existing file
-//@Throws(IOException::class)
-//fun createTempFileFromFile(originalFile: File, fileName:String, fileExtension: String): File {
-//    // Generate a temporary file with a prefix and suffix based on the original file's name
-//    val tempFileName = fileName
-//
-//    Log.d("createTempFileFromFile", "createTempFileFromFile: file name $fileName....file ext $fileExtension")
-//    val sanitizedFileExtension = fileExtension.takeIf { it.startsWith(".") } ?: ".$fileExtension"
-//
-//    val tempFile = File.createTempFile(tempFileName, sanitizedFileExtension)
-//    Files.copy(originalFile.toPath(), tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-//    return tempFile
-//}
 
-
-//@Throws(IOException::class)
-//fun createTempFileFromFile(originalFile: File, fileName: String, fileExtension: String): File {
-//    // Ensure file extension starts with a dot
-//    val sanitizedFileExtension =
-//        if (fileExtension.startsWith(".")) fileExtension else ".$fileExtension"
-//
-//    // Create a temporary directory
-//    val tempDir = File.createTempFile("tempDir", "").apply { delete(); mkdir() }
-//
-//    // Construct the temporary file path
-//    val tempFile = File(tempDir, "$fileName$sanitizedFileExtension")
-//
-//    // Copy content from the original file to the temporary file
-//    Files.copy(originalFile.toPath(), tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-//
-//    return tempFile
-//
-//}
 
 @Throws(IOException::class)
 fun createTempFileFromFile(originalFile: File, fileName: String, fileExtension: String): File {
@@ -183,12 +151,7 @@ fun createTempFileFromFile(originalFile: File, fileName: String, fileExtension: 
     return tempFile
 }
 
-// Later, you can manually delete the temporary files if needed
-//fun deleteTemporaryFiles(tempFilePaths: List<String>) {
-//    tempFilePaths.forEach { path ->
-//        File(path).delete()
-//    }
-//}
+
 
 fun deleteTemporaryFiles(tempFilePaths: List<String>) {
     tempFilePaths.forEach { path ->
