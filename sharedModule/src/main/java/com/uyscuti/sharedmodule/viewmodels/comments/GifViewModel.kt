@@ -14,44 +14,7 @@ import javax.inject.Inject
 class GifViewModel @Inject constructor(private val retrofitInterface: RetrofitInstance) :
     ViewModel() {
     // Example method to fetch data
-//    suspend fun fetchData(): String {
-//        // Simulate fetching data from a remote source or database
-//        return withContext(Dispatchers.IO) {
-//            // Perform data fetching operations here
-//            // For example:
-//            // fetchDataFromRepository()
-//            "Sample Data"
-//        }
-//    }
 
-//   suspend fun fetchData(
-//        page: Int
-//    ): GifResults {
-//        val TAG = "fetchData"
-//        try {
-//            var hasNextPage: Boolean
-//            val pageNumber = page + 1
-//            withContext(Dispatchers.IO) {
-//                // Handle UI-related tasks if needed
-//                val response =
-//                    retrofitInterface.apiService.getGif(page.toString())
-//
-//                val responseBody = response.body()
-//
-//                Log.d(TAG, "fetchData responseBody: $responseBody")
-//                Log.d(TAG, "fetchData responseBody.data: ${responseBody?.data}")
-//                val gifs = responseBody!!.data
-//                return@withContext GifResults(gifs.gifs, gifs.hasNextPage, pageNumber)
-////            return CommentReplyResults(commentsReplyViewModel.commentsReplyMutableList, hasNextPage, pageNumber)
-//            }
-//        } catch (e: Exception) {
-//            Log.e("UserProfileShortsViewModel", "Exception: ${e.message}")
-//
-//            e.printStackTrace()
-//        }
-//
-//        return GifResults(Collections.emptyList(), false, page)
-//    }
 
     suspend fun fetchData(page: Int): GifResults {
         val TAG = "fetchData"

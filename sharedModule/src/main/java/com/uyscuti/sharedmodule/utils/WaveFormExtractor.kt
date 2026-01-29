@@ -38,7 +38,7 @@ object WaveFormExtractor {
             Log.e("Amplitude", "Amplitude exception: ${exception.message}")
             exception.printStackTrace()
         }
-//        onSuccess(result.amplitudesAsList().toTypedArray().toIntArray())
+
 
         result?.let {
             onSuccess(result.amplitudesAsList().toTypedArray().toIntArray())

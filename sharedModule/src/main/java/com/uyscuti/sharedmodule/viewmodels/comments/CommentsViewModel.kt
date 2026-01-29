@@ -52,7 +52,7 @@ class CommentsViewModel @Inject constructor(private val retrofitInstance: Retrof
                     )
                 }
 
-//                responseBody?.data?.comments ?: emptyList()
+
                 commentsWithReplies
             } catch (e: Exception) {
                 // Handle errors
@@ -101,7 +101,7 @@ class CommentsViewModel @Inject constructor(private val retrofitInstance: Retrof
                     )
                 }
 
-//                responseBody?.data?.comments ?: emptyList()
+
                 commentsWithReplies
             } catch (e: Exception) {
                 // Handle errors
