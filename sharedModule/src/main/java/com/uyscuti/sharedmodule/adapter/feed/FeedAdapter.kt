@@ -3431,6 +3431,7 @@ class FeedAdapter(
 
         @SuppressLint("NotifyDataSetChanged")
         private fun handleFollowButtonClick(accountId: String, username: String) {
+
             YoYo.with(Techniques.Pulse).duration(300).playOn(followButton)
 
             Log.d(TAG, "FOLLOW BUTTON CLICKED")
@@ -3445,11 +3446,19 @@ class FeedAdapter(
                 // Hide button immediately
                 followButton.visibility = View.GONE
 
-                // Add ACCOUNT ID and USERNAME to following list
+                // Add to adapter's following list AND persistent storage
                 (bindingAdapter as? FeedAdapter)?.addToFollowing(accountId, username)
+
+                // CRITICAL: Also update global cache
+                FeedAdapter.addToFollowingCache(accountId)
+
+                // Also update via manager for consistency
                 FollowingManager(itemView.context).addToFollowing(accountId)
 
-                Log.d(TAG, "Added account $accountId (@$username) to following list")
+                // Update local state immediately
+                isFollowingUser = true
+
+                Log.d(TAG, "Now following user $accountId (@$username)")
 
             } else {
                 // Show button immediately when unfollowing
@@ -5340,8 +5349,6 @@ class FeedAdapter(
             }
         }
 
-
-
         private fun ensurePostClickability(data: com.uyscuti.social.network.api.response.posts.Post) {
 
             // Ensure main container is clickable
@@ -6369,11 +6376,19 @@ class FeedAdapter(
                 // Hide button immediately
                 followButton.visibility = View.GONE
 
-                // Add ACCOUNT ID and USERNAME to following list
+                // Add to adapter's following list AND persistent storage
                 (bindingAdapter as? FeedAdapter)?.addToFollowing(accountId, username)
+
+                // CRITICAL: Also update global cache
+                FeedAdapter.addToFollowingCache(accountId)
+
+                // Also update via manager for consistency
                 FollowingManager(itemView.context).addToFollowing(accountId)
 
-                Log.d(TAG, "Added account $accountId (@$username) to following list")
+                // Update local state immediately
+                isFollowingUser = true
+
+                Log.d(TAG, "Now following user $accountId (@$username)")
 
             } else {
                 // Show button immediately when unfollowing

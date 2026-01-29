@@ -1864,23 +1864,23 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         EventBus.getDefault().post(ShowFeedFloatingActionButton(false))
         EventBus.getDefault().post(ShowAppBar(false))
 
-        // CRITICAL: Reload following list from server AND update cache
+        // CRITICAL: Reload following list from server AND refresh feed
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // Force reload following list from API
+                // Reload following list from API
                 loadFollowingUserIds()
 
-                // Also sync the adapter's cache with current following list
                 withContext(Dispatchers.Main) {
+                    // Sync adapter cache with fresh data
                     if (::followedPostsAdapter.isInitialized) {
-                        // Update adapter's cache
                         FeedAdapter.setCachedFollowingList(followingUserIds)
                         followedPostsAdapter.updateFollowingList(followingUserIds.toList())
+                        followedPostsAdapter.updateFollowingUsernames(followingUserMap.values.toList())
 
-                        Log.d(TAG, "onResume: Updated adapter cache with ${followingUserIds.size} users")
+                        Log.d(TAG, "onResume: Synced cache - now following ${followingUserIds.size} users")
                     }
 
-                    // Filter the feed based on updated following list
+                    // Filter posts based on current following list
                     val currentUserId = getUserId(requireContext())
                     val currentPosts = getFeedViewModel.getAllFeedData()
 
@@ -1892,25 +1892,24 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                                 post.author?.account?._id ?: return@filter false
                             }
 
-                            // Keep only if still following
+                            // Keep post only if still following the poster
                             posterAccountId != currentUserId && followingUserIds.contains(posterAccountId)
                         } catch (e: Exception) {
+                            Log.e(TAG, "Error filtering post: ${e.message}")
                             false
                         }
                     }
 
-                    Log.d(TAG, "onResume: Posts before filter: ${currentPosts.size}")
-                    Log.d(TAG, "onResume: Posts after filter: ${filteredPosts.size}")
-                    Log.d(TAG, "onResume: Following ${followingUserIds.size} users")
+                    Log.d(TAG, "onResume: Posts before: ${currentPosts.size}, after: ${filteredPosts.size}")
 
-                    // Update UI
+                    // Update ViewModel and adapter
                     getFeedViewModel.clearAllFeedData()
                     getFeedViewModel.addAllFeedData(filteredPosts.toMutableList())
                     followedPostsAdapter.submitItems(filteredPosts.toMutableList())
                     followedPostsAdapter.notifyDataSetChanged()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error refreshing feed in onResume: ${e.message}", e)
+                Log.e(TAG, "Error in onResume refresh: ${e.message}", e)
             }
         }
     }
