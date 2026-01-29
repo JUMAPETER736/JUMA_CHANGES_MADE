@@ -132,6 +132,7 @@ private const val FRAGMENT_ORIGINAL_POST_WITHOUT_REPOST = 1
 class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFilesClickListener {
 
     companion object {
+
         private const val TAG = "Fragment_Original_Post_Without_Repost_Inside"
         const val ARG_ORIGINAL_POST = "ARG_ORIGINAL_POST"
         private const val ARG_POST = "ARG_POST"

@@ -142,13 +142,15 @@ private const val TAG = "NewRepostedPostFragment"
 
 @AndroidEntryPoint
 class NewRepostedPostFragment(
+
     val data: com.uyscuti.social.network.api.response.posts.Post) :
     Fragment(),
     MultipleImagesListener,
     FeedVideoThumbnailAdapter.ThumbnailClickListener, MultipleAudiosListener,
     AudioCompressorWithProgress.ProgressListener,
     MultipleVideosListener {
-    // TODO: Rename and change types of parameters
+
+
     private var param1: String? = null
     private var param2: String? = null
     private val postList:
@@ -271,11 +273,11 @@ class NewRepostedPostFragment(
         val originalPostUsername: TextView = view.findViewById(R.id.originalPostUsername)
         val originalFeedTextContent: TextView = view.findViewById(R.id.originalFeedTextContent)
         val userprofile: ImageView = view.findViewById(R.id.userprofile)
-//        val usernameText: TextView = view.findViewById(R.id.usernameText)
+
         val backButton: ImageView = view.findViewById(R.id.backButton)
         val repostButton: AppCompatButton = view.findViewById(R.id.repostButton)
         val viewPager: ViewPager2 = view.findViewById(R.id.viewPagers)
-//        val viewPager2 : ViewPager2 = view.findViewById(R.id.viewPagers2)
+
         val recyclerView: RecyclerView = view.findViewById(R.id.recyclerView2)
         val recyclerView2: RecyclerView = view.findViewById(R.id.recyclerView)
         val mixedFilesCardView: CardView = view.findViewById(R.id.mixedFilesCardView)
@@ -300,7 +302,7 @@ class NewRepostedPostFragment(
             .into(userprofile)
 
         val username = repostUser.getString("username", "").toString()
-//        usernameText.text = username
+
         val userId = repostUser.getString("userId", "").toString()
         val imageList: MutableList<String> = mutableListOf()
 
@@ -342,7 +344,7 @@ class NewRepostedPostFragment(
             mixedFilesCardView.visibility = View.GONE
         } else {
             originalFeedTextContent.visibility = View.GONE
-//
+
             mixedFilesCardView.visibility = View.VISIBLE
         }
 
@@ -931,9 +933,7 @@ class NewRepostedPostFragment(
                                         }
 
                                         override fun onPageSelected(position: Int) {
-                                            // This method will be invoked when
-                                            // a new page becomes selected.
-                                            // You can perform actions here
+
                                             // based on the selected page position.
                                             Log.d("ViewPager2", "onPageSelected: $position")
 
@@ -965,14 +965,14 @@ class NewRepostedPostFragment(
                                     recyclerView2.visibility = View.INVISIBLE
                                     multipleImagesContainers.visibility = View.VISIBLE
                                     shortThumbNail.visibility = View.GONE
-//                                    binding.content.visibility = View.VISIBLE
+
                                 } else {
 
                                     Glide.with(this@NewRepostedPostFragment)
                                         .load(compressedImageFile)
                                         .into(shortThumbNail)
                                 }
-//                                binding.content.text = ""
+
                                 feedUploadViewModel.setText("")
                                 recyclerView2.visibility = View.INVISIBLE
                                 shortThumbNail.colorFilter = null
@@ -993,7 +993,7 @@ class NewRepostedPostFragment(
                     // Handle image selection result here
                     fileType = "mixed_files"
                     setAddMoreFeedVisible()
-//                    content.visibility = View.VISIBLE
+
                     val data = result.data
                     // Process the selected image data
                     val audioPath = data?.getStringArrayListExtra("audio_url")
