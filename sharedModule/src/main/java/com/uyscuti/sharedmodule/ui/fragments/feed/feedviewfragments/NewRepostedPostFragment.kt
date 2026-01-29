@@ -1478,7 +1478,7 @@ class NewRepostedPostFragment(
             }
         } else {
             Log.d(TAG, "onCreate: Lets upload some text")
-//                    resultIntent.putExtra("tags", tags.toString())
+
             val resultIntent = Intent()
             resultIntent.putExtra("tags", tags.toString())
             resultIntent.putExtra("contentType", "text")
@@ -1486,7 +1486,7 @@ class NewRepostedPostFragment(
             if (text.isNotEmpty()) {
                 resultIntent.putExtra("caption", text)
 
-//                    Log.d(TAG, "I have found this $text and tags $tags")
+
                 feedUploadViewModel.uploadTextFeed(
                     text, "text", tags,
                     onSuccess = { data ->
@@ -1504,7 +1504,7 @@ class NewRepostedPostFragment(
             } else {
                 resultIntent.putExtra("caption", caption)
 
-//                    Log.d(TAG, "I have found this $caption and tags $tags")
+
                 feedUploadViewModel.uploadTextFeed(
                     caption, "text", tags,
                     onSuccess = { data ->
@@ -1574,7 +1574,6 @@ class NewRepostedPostFragment(
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 
 
-    /// Private....
     override fun showAttachmentDialog() {
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(R.layout.file_upload_dialog)
@@ -1685,11 +1684,11 @@ class NewRepostedPostFragment(
     }
 
     override fun backFromShortsUpload() {
-        TODO("Not yet implemented")
+
     }
 
     override fun cancelShortsUpload() {
-        TODO("Not yet implemented")
+
     }
 
     private val filePickerLauncher =
@@ -1705,7 +1704,7 @@ class NewRepostedPostFragment(
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
-//                selectFiles()
+
             } else {
 
 
@@ -1859,7 +1858,8 @@ class NewRepostedPostFragment(
             "uploadMultipleImageFeed: 'upload multiple files size: " +
                     "${compressedImageFiles.size}"
         )
-// Assuming compressedImageFiles is your list of compressed files
+
+        // Assuming compressedImageFiles is your list of compressed files
         val multipleImagesList: MutableList<String> = mutableListOf()
         for (compressedFile in compressedImageFiles) {
             val compressedFilePath = compressedFile.absolutePath
@@ -2086,7 +2086,7 @@ class NewRepostedPostFragment(
             if (documentType == "pdf") {
                 retrieveFirstPageAndSaveAsImage(context, uri)
             }
-//            binding.content.text =
+
         }
     }
 
@@ -2158,10 +2158,8 @@ class NewRepostedPostFragment(
             documentNumberOfPagesToUpload.add(numberOfPages.toString())
             documentTypesToUpload.add(documentType)
 
-
-//            binding.content.text =
-
         }
+
         if (bitmapDocument != null) {
             return FeedMultipleDocumentsDataClass(
                 uri = uri,
@@ -2250,8 +2248,7 @@ class NewRepostedPostFragment(
             this.fileName = fileName
             this.docType = documentType
             this.docFilePath = uri.toString()
-//            retrieveFirstPageAndSaveAsImage(this, uri)
-//            binding.content.text =
+
         }
     }
 
