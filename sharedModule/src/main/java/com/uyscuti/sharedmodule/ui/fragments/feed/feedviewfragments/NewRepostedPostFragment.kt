@@ -2551,8 +2551,7 @@ class NewRepostedPostFragment(
                     .putString(ShortsUploadWorker.FILE_ID, fileId)
                     .putString(ShortsUploadWorker.FEED_SHORTS_BUSINESS_ID,
                         feedShortsBusinessId)
-//                    .putString(ShortsUploadWorker.FEED_SHORTS_BUSINESS_ID, feedShortsBusinessId)
-//                        .putString(ShortsUploadWorker.TAGS, tags)
+
                     .putString(ShortsUploadWorker.THUMBNAIL, thumbnailFilePath)
 
                     .build()
@@ -2569,7 +2568,7 @@ class NewRepostedPostFragment(
         lifecycleScope.launch(Dispatchers.Main) {
             Log.d("Progress", "Progress ...scope")
 
-//                            val workManager = WorkManager.getInstance(applicationContext)
+
             workManager = WorkManager.getInstance(applicationContext)
             workManager.getWorkInfoByIdLiveData(uploadWorkRequest.id)
                 .observe(viewLifecycleOwner) { workInfo ->
@@ -2622,7 +2621,7 @@ class NewRepostedPostFragment(
         val adapter = FeedVideoThumbnailAdapter(videoThumbnails, this)
         adapter.setVideoDetails(videoDetails)
         recyclerView.visibility = View.VISIBLE
-//        val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
+
         recyclerView.layoutManager = layoutManager
         recyclerView.adapter = adapter
     }
@@ -2643,7 +2642,7 @@ class NewRepostedPostFragment(
         backPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Handle back press
-//                navigateBack()
+
                 if (feedTextViewFragmentInterface != null) {
                     feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
                 }
@@ -2662,19 +2661,19 @@ class NewRepostedPostFragment(
     }
 
     override fun onAudioDisplay(details: MultipleAudios) {
-        TODO("Not yet implemented")
+
     }
 
     override fun onProgress(progress: Int) {
-        TODO("Not yet implemented")
+
     }
 
     override fun onVideoClick() {
-        TODO("Not yet implemented")
+
     }
 
     override fun onVideoDisplay(details: FeedMultipleVideos) {
-        TODO("Not yet implemented")
+
     }
 
     fun backPressedFromFeedTextViewFragment() {
@@ -2692,13 +2691,12 @@ class NewRepostedPostFragment(
         mediaPlayer = null
         val handler = Handler(Looper.getMainLooper())
 
-//        handler.removeCallbacks(updateSeekBarRunnable)
+
     }
 
     override fun onDestroy() {
         super.onDestroy()
-//        player?.removeListener(playbackStateListener)
-//        player?.release()
+
     }
 
     fun setListener(listener: FeedTextViewFragmentInterface) {
