@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import com.uyscuti.social.circuit.R
+import com.uyscuti.social.network.api.response.login.ForgotPasswordRequest
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
