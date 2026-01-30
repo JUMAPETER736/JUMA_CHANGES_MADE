@@ -2680,7 +2680,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
         audio?.setOnClickListener {
             val intent = Intent(this@OtherUserProfile, AudioActivity::class.java)
-            
+
             dialog.dismiss()
             audioPickerLauncher.launch(intent)
 
@@ -2693,7 +2693,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         }
         camera?.setOnClickListener {
             val intent = Intent(this@OtherUserProfile, CameraActivity::class.java)
-//            startActivity(intent)
+
             cameraLauncher.launch(intent)
             dialog.dismiss()
         }
@@ -2789,9 +2789,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             }
 
             Log.d("uploadImageComment", "uploadImageComment: comment $comment")
-//        adapter.submitItems(listOf(comment) )
-//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
-//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
+
 
             recordedAudioFiles.clear()
             if (!update) {
@@ -2834,7 +2832,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                         feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
 
                     if (myFeedToComment != null) {
-//                        myFeedToComment!!.comments += 1
 
                         feedViewModel.getMyFeedData().forEach { feed ->
                             if (feed._id == postId) {
@@ -2843,7 +2840,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                         }
                     }
                     if (favoriteFeedToComment != null) {
-//                        favoriteFeedToComment!!.comments += 1
 
                         feedViewModel.getAllFavoriteFeedData().forEach { feed ->
                             if (feed._id == postId) {
@@ -2852,8 +2848,8 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                         }
 
                     }
+
                     if (feedToComment != null) {
-//                        feedToComment!!.comments += 1
 
                         feedViewModel.getAllFeedData().forEach { feed ->
                             if (feed._id == postId) {
@@ -2903,9 +2899,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         )
 
         Log.d("uploadReplyImageComment", "uploadReplyImageComment: handle reply to a comment")
-//        isReply = false
-
-//        val newCommentReplyEntity = CommentsFilesEntity(commentId, vnToUpload, vnToUpload, isReply = 1)
 
         //if it clash on upload un comment the line below//
         if (!placeholder) {
@@ -2931,6 +2924,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         val imageFile = CommentFiles(_id = "", url = vnToUpload, localPath = "image")
 
         val newReply = Comment(
+
             __v = data!!.__v,
             _id = "commentId",
             author = commentReplyAuthor,
@@ -2941,12 +2935,13 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             commentId = commentId,
             updatedAt = mongoDbTimeStamp,
             images = mutableListOf(imageFile),
-//            audios = mutableListOf(vnFile),
+
             contentType = "image"
         )
 
         val replyCount = data!!.replyCount + 1
         val commentWithReplies = com.uyscuti.sharedmodule.data.model.Comment(
+
             __v = data!!.__v,
             _id = data!!._id,
             author = data!!.author,
@@ -2957,7 +2952,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -3029,8 +3024,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
         Log.d("uploadReplyVideoComment", "uploadReplyVideoComment: handle reply to a comment")
 
-//        val newCommentReplyEntity = CommentsFilesEntity(commentId, vnToUpload, vnToUpload, isReply = 1)
-
         //if it clash on upload un comment the line below//
         if (!placeholder) {
             val newCommentReplyEntity =
@@ -3075,6 +3068,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
         val replyCount = data!!.replyCount + 1
         val commentWithReplies = com.uyscuti.sharedmodule.data.model.Comment(
+
             __v = data!!.__v,
             _id = data!!._id,
             author = data!!.author,
@@ -3085,7 +3079,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -3260,39 +3254,35 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                         EventBus.getDefault().post(ShortAdapterNotifyDatasetChanged())
                     }
                 } else {
+
                     feedToComment = feedViewModel.getAllFeedData().find { it._id == postId }
                     Log.d(TAG, "onSubmit: total before feed count is ${feedToComment?.comments}")
                     myFeedToComment = feedViewModel.getMyFeedData().find { it._id == postId }
                     favoriteFeedToComment =
                         feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                    Log.d(TAG, "onSubmit: total before feed count is ${feedToComment?.comments}")
+
 
                     if (myFeedToComment != null) {
-//                        myFeedToComment!!.comments += 1
 
                         feedViewModel.getMyFeedData().forEach { feed ->
                             if (feed._id == postId) {
                                 feed.comments = myFeedToComment!!.comments
                             }
                         }
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
                     }
+
                     if (favoriteFeedToComment != null) {
-//                        favoriteFeedToComment!!.comments += 1
 
                         feedViewModel.getAllFavoriteFeedData().forEach { feed ->
                             if (feed._id == postId) {
                                 feed.comments = favoriteFeedToComment!!.comments
                             }
                         }
-//                        favoriteFeedToComment = feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                        Log.d(TAG, "onSubmit: total after feed count is ${favoriteFeedToComment?.comments}")
-//
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
 
                     }
+
                     if (feedToComment != null) {
-//                        feedToComment!!.comments += 1
 
                         feedViewModel.getAllFeedData().forEach { feed ->
                             if (feed._id == postId) {
@@ -3307,9 +3297,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
                     }
                 }
-
-                //            addCommentVN()
-
 
             }
         } else {
@@ -3330,7 +3317,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         documentType: String = ""
 
     ) {
-//        binding.mainContents.visibility = View.VISIBLE
+
         val uniqueId = UniqueIdGenerator.generateUniqueId()
         Log.d("progress id", uniqueId)
 
@@ -3343,14 +3330,12 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     saveAt = SaveLocation.movies,
                     subFolderName = "flash_comments_compresses"
                 ),
-//                appSpecificStorageConfiguration = AppSpecificStorageConfiguration(
-//
-//                ),
+
                 configureWith = Configuration(
                     quality = VideoQuality.MEDIUM,
-//                    videoNames = uris.map { uri -> uri.pathSegments.last() },
+
                     videoNames = toCompressUris.map { uri -> uri.pathSegments.last() },
-//                    videoNames = listOf("compressed_short"),
+
                     isMinBitrateCheckEnabled = false,
                 ),
 
@@ -3360,7 +3345,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                         //Update UI
                         if (percent <= 100) {
                             Log.d("Compress", "Progress: $percent")
-//                            EventBus.getDefault().post(ProgressEvent(uniqueId, percent.toInt()))
+
 
                         }
                     }
@@ -3376,8 +3361,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                         Log.d("Compress", "comment compress successful is reply $isReply")
                         Log.d("Compress", "comment file size: ${getFileSize(size)}")
                         Log.d("Compress", "comment path: $path")
-//                        val thumbnailFile = saveBitmapToFile(thumbnail, applicationContext)
-//                        val thumbnailFilePath = thumbnailFile.absolutePath
 
                         if (path != null) {
 
@@ -3442,7 +3425,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             cursor.moveToFirst()
             val fileName = cursor.getString(nameIndex)
             val fileSize = cursor.getLong(sizeIndex)
-//            val numberOfPages = getNumberOfPagesFromUri(this, uri)
+
             var numberOfPages = 0
             val formattedFileSize = formatFileSize(fileSize)
 
@@ -3491,17 +3474,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                         fileName, placeholder = true
                     )
                 }
-//                                if (vUri != null) {
-//                toCompressUris.add(uri)
-////                                }
-//                compressShorts(
-//                    "",
-//                    fileType = "doc",
-//                    fileName = fileName,
-//                    numberOfPages = numberOfPages,
-//                    documentType = documentType,
-//                    formattedFileSize = formattedFileSize
-//                )
+
             } else {
 
                 if (!isReply) {
@@ -3590,7 +3563,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -3604,12 +3577,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                             val externalStorageDir = Environment.getExternalStorageDirectory()
                             val fullPath = File(externalStorageDir, i.url)
 
-//                            Log.d(TAG, "Full path $fullPath")
-//                            val audioDuration = AudioDurationHelper.getLocalAudioDuration(i.url)!!
-//                            val minutes = (audioDuration / 1000) / 60
-//                            val seconds = (audioDuration / 1000) % 60
-//
-//                            val durationString = String.format("%02d:%02d", minutes, seconds)
                             val (success, bitmapThumbnail) = extractThumbnailFromVideo(i.url)
                             if (success) {
                                 // Thumbnail extraction successful, use the 'thumbnail' Bitmap
@@ -3619,9 +3586,11 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                 Log.d("ThumbnailExtract", "ThumbnailExtract failed")
                             }
                             val outputStream = ByteArrayOutputStream()
-//                            // Compress the bitmap to a byte array
+
+                            // Compress the bitmap to a byte array
                             bitmapThumbnail?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-//                            // Convert the byte array to a RequestBody
+
+                            // Convert the byte array to a RequestBody
                             val requestBody = outputStream.toByteArray()
                                 .toRequestBody(
                                     "image/*".toMediaTypeOrNull(),
@@ -3663,11 +3632,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                     )
                                 val gif =
                                     MultipartBody.Part.createFormData("gif", file.name, requestFile)
-//                               val thumbnail =  MultipartBody.Part.createFormData(
-//                                    "thumbnail",
-//                                    file.name,
-//                                    requestFile
-//                                )
 
                                 Log.d(TAG, "addVideoComment: comments in room count is ${it.size}")
                                 if (postId != " ") {
@@ -3690,7 +3654,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                         isFeedComment = i.isFeedComment
                                     ) {
                                         Log.d(" onSuccess()", " onSuccess(): upload successful")
-//                                    deleteFile(i.url) addCommentFileReply
+
                                         val deleted = deleteFiled(i.url)
                                         if (deleted) {
                                             Log.d(
@@ -3728,10 +3692,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                 }
                             }
                         }
-//                        else if(i.localPath == "video"){
-//                            Log.d("LocalPath","ready to upload video")
-//                            Log.d("LocalPath", "url ${i.url} type ${i.localPath}")
-//                        }
 
                     }
 
@@ -3843,9 +3803,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             }
 
             Log.d("uploadDocumentComment", "uploadDocumentComment: comment $comment")
-//        adapter.submitItems(listOf(comment) )
-//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
-//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
+
 
             recordedAudioFiles.clear()
             if (!update) {
@@ -3888,31 +3846,28 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     Log.d(TAG, "onSubmit: total before feed count is ${feedToComment?.comments}")
 
                     if (myFeedToComment != null) {
-//                        myFeedToComment!!.comments += 1
+
 
                         feedViewModel.getMyFeedData().forEach { feed ->
                             if (feed._id == postId) {
                                 feed.comments = myFeedToComment!!.comments
                             }
                         }
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
                     }
                     if (favoriteFeedToComment != null) {
-//                        favoriteFeedToComment!!.comments += 1
+
 
                         feedViewModel.getAllFavoriteFeedData().forEach { feed ->
                             if (feed._id == postId) {
                                 feed.comments = favoriteFeedToComment!!.comments
                             }
                         }
-//                        favoriteFeedToComment = feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                        Log.d(TAG, "onSubmit: total after feed count is ${favoriteFeedToComment?.comments}")
-//
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
 
                     }
                     if (feedToComment != null) {
-//                        feedToComment!!.comments += 1
+
 
                         feedViewModel.getAllFeedData().forEach { feed ->
                             if (feed._id == postId) {
@@ -3927,7 +3882,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
                     }
                 }
-//            addCommentVN()
 
             }
 
@@ -3966,7 +3920,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         )
 
         Log.d("uploadReplyDocumentComment", "uploadReplyDocumentComment: handle reply to a comment")
-//        isReply = false
+
 
         if (!placeholder) {
             val newCommentReplyEntity =
@@ -4007,7 +3961,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             commentId = commentId,
             updatedAt = mongoDbTimeStamp,
             docs = mutableListOf(documentReplyFile),
-//            audios = mutableListOf(vnFile),
+
             contentType = "docs",
             fileName = fileName,
             fileSize = fileSize,
@@ -4027,7 +3981,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -4085,8 +4039,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         placeholder: Boolean = false, update: Boolean = false
     ) {
         Log.d("uploadVnComment", "uploadVnComment: placeholder $placeholder")
-//        Log.d("uploadVnComment", "stopRecording: isReply is $isReply")
-//        Log.d("uploadVnComment", "stopRecording: duration is $durationString")
+
 
         val mongoDbTimeStamp = generateMongoDBTimestamp()
 
@@ -4162,9 +4115,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             }
 
             Log.d(TAG, "uploadVnComment: comment $comment")
-//        adapter.submitItems(listOf(comment) )
-//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
-//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
+
             recordedAudioFiles.clear()
 
             if (!update) {
@@ -4199,20 +4150,20 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     myFeedToComment = feedViewModel.getMyFeedData().find { it._id == postId }
                     favoriteFeedToComment =
                         feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                    Log.d(TAG, "onSubmit: total before feed count is ${feedToComment?.comments}")
+
 
                     if (myFeedToComment != null) {
-//                        myFeedToComment!!.comments += 1
+
 
                         feedViewModel.getMyFeedData().forEach { feed ->
                             if (feed._id == postId) {
                                 feed.comments = myFeedToComment!!.comments
                             }
                         }
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
                     }
                     if (favoriteFeedToComment != null) {
-//                        favoriteFeedToComment!!.comments += 1
+
 
                         feedViewModel.getAllFavoriteFeedData().forEach { feed ->
                             if (feed._id == postId) {
