@@ -166,10 +166,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         }
     }
 
-    fun setPositionFromShorts(positionFromShorts: SetAllFragmentScrollPosition) {
-        Log.d(TAG, "setPositionFromShorts: ${positionFromShorts.allFragmentFeedPosition}")
-        this.positionFromShorts = positionFromShorts
-    }
     @SuppressLint("MissingInflatedId", "CutPasteId")
 
     override fun onCreateView(
@@ -797,23 +793,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         } catch (e: Exception) {
             Log.e(TAG, "Error loading blocked users: ${e.message}", e)
         }
-    }
-
-
-    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
-    fun clearAndReloadFeed() {
-        Log.d(TAG, "Clearing and reloading Following feed")
-
-        // Clear all old data
-        getFeedViewModel.clearAllFeedData()
-        followedPostsAdapter.submitItems(mutableListOf())
-
-        // Reset state
-        hasLoadedFollowingList = false
-        isLoading = false
-
-        // Reload fresh data
-        getAllFeed(1)
     }
 
 
@@ -1595,18 +1574,6 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
     }
 
 
-
-
-    interface FeedClickListener {
-        fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton)
-
-        // Add this method to notify the parent UI that a user was unfollowed
-        fun userUnfollowed(followUnFollowEntity: FollowUnFollowEntity)
-    }
-
-
-
-
     @SuppressLint("CutPasteId", "InflateParams")
     override fun feedRepostPost(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
 
@@ -1656,15 +1623,15 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
-        TODO("Not yet implemented")
+
     }
 
     override fun onImageClick() {
-        TODO("Not yet implemented")
+
     }
 
     override fun backPressedFromFeedTextViewFragment() {
@@ -1847,7 +1814,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)

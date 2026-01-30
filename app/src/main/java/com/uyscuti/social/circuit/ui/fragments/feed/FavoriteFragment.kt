@@ -1655,15 +1655,15 @@ class FavoriteFragment : Fragment(),
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        
+
     }
 
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
-        
+
     }
 
     override fun onImageClick() {
-        
+
     }
 
     private fun followClicked(followUnFollowEntity: FollowUnFollowEntity) {
@@ -3713,7 +3713,7 @@ class FavoriteFragment : Fragment(),
         repliesRecyclerView: RecyclerView,
         position: Int
     ) {
-        
+
     }
 
     override fun onViewRepliesClick(
