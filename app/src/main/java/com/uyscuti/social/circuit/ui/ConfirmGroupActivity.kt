@@ -38,6 +38,7 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class ConfirmGroupActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityConfirmGroupBinding
     private lateinit var horizontalRecyclerView: RecyclerView
     private lateinit var selectedUsersAdapter: AddParticipantsAdapter
@@ -45,17 +46,8 @@ class ConfirmGroupActivity : AppCompatActivity() {
     lateinit var retrofitInterface: RetrofitInstance
     private var participantsIds: ArrayList<String> = arrayListOf()
     private var participants: ArrayList<User> = arrayListOf()
-
-    //    private lateinit var groupRepository: GroupCreateRepository
     private var dialog: android.app.Dialog? = null
     private var chatParticipant: ArrayList<UserEntity> = arrayListOf()
-//    private lateinit var userChatRepository: UserChatDialogRepository
-
-
-    private val usersViewModel: UsersViewModel by viewModels()
-
-    private val dialogViewModel: DialogViewModel by viewModels()
-
     private val groupDialogViewModel: GroupDialogViewModel by viewModels()
 
 
@@ -129,24 +121,6 @@ class ConfirmGroupActivity : AppCompatActivity() {
     }
 
 
-//    private fun convertToDBUserList(participants: List<User>): List<DBUserList> {
-//        val avatar = Avatar(
-//            _id = "",
-//            localPath = "",
-//            url = ""
-//        )
-//
-//        return participants.map {
-//            DBUserList(
-//                it._id,
-//                avatar,
-//                it.username,
-//                it.email,
-//                it.createdAt,
-//                it.updatedAt
-//            )
-//        }
-//    }
 
     private fun convertIso8601ToUnixTimestamp(iso8601Date: String): Long {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
@@ -197,17 +171,16 @@ class ConfirmGroupActivity : AppCompatActivity() {
             val response = try {
                 retrofitInterface.apiService.createGroupChat(data)
             }catch (e: HttpException) {
-//                Log.d("RetrofitActivity", "Http : ${e.message}")
+
                 return@launch
             }catch (e: IOException) {
-//                Log.d("RetrofitActivity", "IOException : ${e.message}")
+
                 return@launch
             }
 
             if (response.isSuccessful) {
                 // User chat created successfully, you can handle this as needed
-//                Log.d("UserDialog", "Group chat created successfully: id ${response.body()!!.data._id}")
-//                        callBack?.onChatCreated()
+
                 val chatId = response.body()!!.data._id
                 val chatName = response.body()!!.data.name
                 val adminId = response.body()!!.data.admin
@@ -227,15 +200,11 @@ class ConfirmGroupActivity : AppCompatActivity() {
                     null,
                     0
                 )
-//                response.body()!!.data.participants.map {
-//                    participants.add(it.toUser())
-//                }
+
 
                 participants.map {
                     chatParticipant.add(it.toUserEntity())
                 }
-//                chatParticipant.add(participants.map { it.toUserEntity() })
-
 
                 val chatResponse = response.body()!!.data
                 val lastMessage = createDefaultMessageEntity(chatResponse.createdAt)
@@ -255,7 +224,6 @@ class ConfirmGroupActivity : AppCompatActivity() {
                     createdAt = createdAt
                 )
 
-//                        allUsers.add(dialogEntity)
                 insertDialog(dialogEntity)
 
                 dismissLoadingDialog()
@@ -264,7 +232,7 @@ class ConfirmGroupActivity : AppCompatActivity() {
                     this@ConfirmGroupActivity, "",
                     dialog, false, ""
                 )
-//                        openChatActivity(chatId,chatName)
+
                 finish()
             }else{
                 Toast.makeText(this@ConfirmGroupActivity, "Failed To Create Group, Please Try again later", Toast.LENGTH_SHORT).show()
@@ -276,7 +244,7 @@ class ConfirmGroupActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             groupDialogViewModel.insertGroupDialog(dialog)
         }
-//        Log.d("GroupChat", "Added Group to local -  $dialog")
+
     }
 
     private fun User.toUserEntity(): UserEntity {
@@ -299,11 +267,7 @@ class ConfirmGroupActivity : AppCompatActivity() {
             lastseen
         )
     }
-    //    private fun addGroupToRoomDb(groupUsers: GroupChatEntity) {
-//        CoroutineScope(Dispatchers.IO).launch {
-//            groupRepository.addGroupUsers(groupUsers)
-//        }
-//    }
+
     private fun showLoadingDialog() {
         // Create a dialog with the loading layout
         dialog = android.app.Dialog(this)
