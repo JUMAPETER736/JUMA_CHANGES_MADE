@@ -10,3 +10,14 @@ data class LoginResponse(
 )
 
 
+data class ResetPasswordRequest(
+    val token: String,  // Reset token from email
+    val newPassword: String
+)
+
+
+data class ResetPasswordResponse(
+    val message: String,
+    val statusCode: Int,
+    val success: Boolean
+)
