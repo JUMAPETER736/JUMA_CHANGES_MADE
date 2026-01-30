@@ -5298,7 +5298,6 @@ class UploadFeedActivity : AppCompatActivity(),
                                 "onPageSelected: get document details $documentDetails"
                             )
                             if (documentDetails == null) {
-//
                             } else {
                                 binding.selectCoverText.visibility = View.VISIBLE
                             }
@@ -5309,7 +5308,7 @@ class UploadFeedActivity : AppCompatActivity(),
                                     binding.uploadedFileThumbNail.colorFilter = null
                                     binding.selectCoverText.text =
                                         "File name: ${documentDetails.filename} \nFile size: ${documentDetails.fileSize} \nDocument Type: ${documentDetails.documentType} \n${documentDetails.numberOfPages} pages"
-//                                    feedUploadViewModel.setText("File name: ${documentDetails.filename} \nFile size: ${documentDetails.fileSize} \nDocument Type: ${documentDetails.documentType} \n${documentDetails.numberOfPages} pages")
+
                                 }
                             }, 500)
                         }
