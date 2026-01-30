@@ -21,3 +21,19 @@ data class ResetPasswordResponse(
     val statusCode: Int,
     val success: Boolean
 )
+
+
+data class ForgotPasswordRequest(
+    val email: String
+)
+
+data class VerifyOTPRequest(
+    val resetToken: String,
+    val otp: String
+)
+
+
+data class ResetPasswordRequest(
+    val token: String,
+    val newPassword: String
+)
