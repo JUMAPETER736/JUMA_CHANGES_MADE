@@ -78,12 +78,24 @@ private const val ARG_PARAM2 = "param2"
 
 @AndroidEntryPoint
 class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActionListener {
+
+    companion object {
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            NotificationsFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
     val adapter: NotificationViewPagerAdapter by lazy {
         NotificationViewPagerAdapter(childFragmentManager, lifecycle)
     }
     private var onItemSelectedListener: ((Boolean) -> Unit)? = null
 
-    // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
 
@@ -119,9 +131,9 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
                 e.printStackTrace()
             }
             socket.connect()
-//            fetchNotifications()
+
         }
-//        notificationViewModel = ViewModelProvider(requireActivity())[NotificationViewModel::class.java]
+
 
 
         notificationDataBase = Room.databaseBuilder(
@@ -130,19 +142,6 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
         ).build()
         // Initialize the adapter
 
-//        fun createNotificationChannel() {
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                val name = HIGH_CHANNEL_NAME
-//                val descriptionText = "Important notifications"
-//                val importance = NotificationManager.IMPORTANCE_HIGH
-//                val channel = NotificationChannel(HIGH_CHANNEL_ID, name, importance).apply {
-//                    description = descriptionText
-//                }
-//                val notificationManager: NotificationManager =
-//                    requireContext().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-//                notificationManager.createNotificationChannel(channel)
-//            }
-//        }
     }
 
     // fragment code added here
@@ -173,16 +172,6 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
 
         getMyUnifiedNotifications()
 
-
-//        if (notifications != null) {
-//            Log.d("notificationViewModel", "notificationDay itemCount : $notifications")
-//            val dayNotifications = NotificationByDay("Today", "", notifications.asReversed())
-//            dayNotificationsAdapter.addNotifications(arrayListOf(dayNotifications))
-//            dayNotificationsAdapter.addNotification(dayNotifications)
-//             // Ensure this method initializes the socket
-//        } else {
-//           getMyUnifiedNotifications()
-//        }
         return view
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -204,14 +193,11 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
                     val groupedNotification = mutableMapOf<String, MutableList<Notification>>()
                     Log.d("ApiService", "notifications: $notifications")
                     for (notification in notifications) {
-//                        val dateLabel = getDateLabel(date = Date.from())
+
                         val createdAt = convertIso8601ToUnixTimestamp(notification.createdAt)
                         val date = Date(createdAt)
                         val formated = format(date)
-//                        when(notification.type){
-//                            "comment" -> {
-//                            }
-//                        }
+
                         val isLike = notification.message.contains("liked")
                         val isCommented = notification.message.contains("commented")
                         val isCommentReply = notification.message.contains("replied")
@@ -220,13 +206,7 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
                         val isFollowed = notification.message.contains("started")
                         Log.d("CheckFollowed", "you are followed: $isFollowed")
                         val link = "onComment"
-//                        val link :String = when{
-//                            isCommented -> "onComment"
-////                            isCommentReply -> "onCommentReplyComment"
-//                            isLike -> "onLike"
-//                            else -> ""
-//                        }
-//                        if (isCommented){
+
                         val note = CommentNotification(
                             notification.sender.username,
                             notification.message,
@@ -249,31 +229,15 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
                             avatar = notification.sender.avatar.url,
                             owner = notification.sender._id,
                             isRead = notification.read,
-//                            colorState = notification.colorState
+
 
                         )
                         notificationEntities.add(notificationEntity)
 
-//                        } else
-//                            if (isLike) {
-//                                Log.d("isLike","is working:$isLike")
-//                                val note = LikeNotification(
-//                                    notification.sender.username,
-//                                    notification.message,
-//                                    link,
-//                                    formated,
-//                                    notification.sender.avatar.url,
-//                                    notification._id,
-//                                    notification.sender._id,
-//                                    isRead = notification.read,
-//                                    likeId = notification.postId
-//                                )
-//                                notes.add(note)
-//                            }
                     }
                     // Insert notifications into the database
                     notificationDataBase.notificationDao().insertNotifications(notificationEntities)
-//                    val dayNotifications = NotificationByDay("Today", "follow", notes)
+
                     val dayNotifications = NotificationByDay("Today", "", notes)
 
                     Log.d("Api Service", "notificationDay itemCount : $dayNotifications")
@@ -308,8 +272,6 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
                     val groupedNotifications = mutableMapOf<String, MutableList<INotification>>()
                     val notificationsByDate = mutableMapOf<String, MutableList<INotification>>()
                     val notes: ArrayList<INotification> = arrayListOf()
-
-               //     Log.d("ApiService", "notifications: $notifications")
 
                     for (notification in notifications) {
 
@@ -351,7 +313,7 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
                                     notification.sender._id,
                                     isRead = notification.read,
                                     postId = "" //notification.data.postId,
-//                                    commentId = notification.data.commentId
+
                                 )
                                 notes.add(note)
                             }
@@ -444,10 +406,10 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
                             notificationViewModel.setNotifications(notes)
                         }
                         val dayNotifications = NotificationByDay("Today", "", notes)
-//                      notificationDataBase.notificationDao().insertNotifications(notificationEntities)
+
                         withContext(Dispatchers.Main) {
                             dayNotificationsAdapter.addNotifications(arrayListOf(dayNotifications))
-//                            dayNotificationsAdapter.addNotification(dayNotifications)
+
                         }
                     }
                 } else {
@@ -561,7 +523,7 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
                 events.owner,
                 isRead = events.isRead,
                 postId = events.postId,// Assuming link represents postId
-//                commentId = events.commentId // Assuming link represents commentId
+
             )
             "onCommentPost" -> CommentNotification(
                 events.name,
@@ -650,7 +612,7 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
         return when {
             DateFormatter.isToday(date) -> "Today"
             DateFormatter.isYesterday(date) -> "Yesterday"
-//            DateFormatter.is (date, 7) -> "Within the last week"
+
             else -> "Older"
         }
     }
@@ -672,25 +634,7 @@ class NotificationsFragment : Fragment(), NotificationsAdapter.NotificationActio
         }
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment NotificationsFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            NotificationsFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
+
     override fun onResume() {
         super.onResume()
         updateStatusBar()
