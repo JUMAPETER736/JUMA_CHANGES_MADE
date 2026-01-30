@@ -141,7 +141,6 @@ import com.uyscuti.sharedmodule.model.ProgressViewModel
 import com.uyscuti.sharedmodule.model.ShortsBookmarkButton
 import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
 import com.uyscuti.sharedmodule.model.ShortsLikeUnLike
-import com.uyscuti.sharedmodule.model.ShortsLikeUnLike2
 import com.uyscuti.sharedmodule.model.ShortsLikeUnLikeButton
 import com.uyscuti.sharedmodule.model.ShortsViewModel
 import com.uyscuti.sharedmodule.model.ShowBottomNav
@@ -2103,7 +2102,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
                 val videoPosts = responseBody?.data?.data?.posts?.filter { post ->
                     post.contentType == "mixed_files" && post.fileTypes.any {
-                        // FIX: Add null safety check
+                        //  Add null safety check
                         it.fileType?.contains("video", ignoreCase = true) == true
                     }
                 } ?: emptyList()
@@ -2422,7 +2421,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
                     )
                 )
 
-                // FIX: Add null safety for fileType
+                //  Add null safety for fileType
                 val shortsImages = feedPost.files.filter { file ->
                     feedPost.fileTypes.any {
                         it.fileId == file.fileId && it.fileType?.contains("video", ignoreCase = true) == true
@@ -2440,7 +2439,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
                     return@mapNotNull null
                 }
 
-                // FIX: Add null safety for fileType in thumbnails
+                //  Add null safety for fileType in thumbnails
                 val shortsThumbnails = feedPost.thumbnail.mapNotNull { thumb ->
                     try {
                         val isVideoThumbnail = feedPost.fileTypes.any {
@@ -2884,85 +2883,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
         }
 
 
-    }
-
-    private fun handleLikeClick(
-        postId: String,
-        likeCount: TextView,
-        btnLike: ImageButton,
-        shortsEntity: ShortsEntity
-
-    ) {
-
-        Log.d("handleLikeClick", "handleLikeClick: before ${shortsViewModel.isLiked}")
-        shortsViewModel.isLiked = !shortsViewModel.isLiked
-        Log.d("handleLikeClick", "handleLikeClick: after ! ${shortsViewModel.isLiked}")
-        EventBus.getDefault().post(ShortsLikeUnLike2(postId))
-
-        if (!shortsEntity.isLiked) {
-
-
-            shortsEntity.likes += 1
-            likeCount.text = shortsEntity.likes.toString()
-
-            btnLike.setImageResource(R.drawable.filled_favorite_like)
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(btnLike)
-
-            shortsEntity.isLiked = true
-
-
-            val myShorts = userProfileShortsViewModel.mutableShortsList.find { it._id == postId }
-            var myFavoriteShorts =
-                userProfileShortsViewModel.mutableFavoriteShortsList.find { it._id == postId }
-
-            if (myShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myShorts._id}")
-                myShorts.isLiked = true
-                myShorts.likes += 1
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            if (myFavoriteShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myFavoriteShorts._id}")
-                myFavoriteShorts.isLiked = true
-                myFavoriteShorts.likes += 1
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            shortsViewModel.isLiked = true
-        } else {
-            shortsEntity.likes -= 1
-            likeCount.text = shortsEntity.likes.toString()
-            var myShorts = userProfileShortsViewModel.mutableShortsList.find { it._id == postId }
-            var myFavoriteShorts =
-                userProfileShortsViewModel.mutableFavoriteShortsList.find { it._id == postId }
-
-            if (myShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myShorts._id}")
-                myShorts.isLiked = false
-                myShorts.likes -= 1
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            if (myFavoriteShorts != null) {
-                Log.d("handleLikeClick", "handleLikeClick: short found id: ${myFavoriteShorts._id}")
-                myFavoriteShorts.isLiked = false
-                myFavoriteShorts.likes -= 1
-            } else {
-                Log.d("handleLikeClick", "handleLikeClick: short not found")
-            }
-            btnLike.setImageResource(R.drawable.favorite_svgrepo_com)
-            shortsEntity.isLiked = false
-
-            shortsViewModel.isLiked = false
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(btnLike)
-        }
     }
 
     private fun shortsEntityToUserShortsEntity(serverResponseItem: ShortsEntity): UserShortsEntity {
@@ -3511,7 +3431,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
                         requireActivity().runOnUiThread {
 
                             downloadProgressBarLayout.visibility = View.VISIBLE
-                            shortsDownloadImageView.setBackgroundResource(R.drawable.shorts_download_animation)
+
                             wifiAnimation =
                                 shortsDownloadImageView.background as AnimationDrawable
                             wifiAnimation!!.start()

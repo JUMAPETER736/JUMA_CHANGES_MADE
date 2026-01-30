@@ -49,7 +49,7 @@ private const val TAG = "UserProfileFragment"
 class UserProfileFragment : Fragment() {
 
     private lateinit var  binding : FeedRetweetPostBinding
-    //    private lateinit var binding: FragmentMyProfileBinding
+
     private lateinit var settings: SharedPreferences
     private val PREFS_NAME = "LocalSettings" // Change this to a unique name for your app
     private lateinit var username: String
@@ -67,7 +67,7 @@ class UserProfileFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         binding = FeedRetweetPostBinding.inflate(inflater,container, false)
-//        binding = FragmentMyProfileBinding.inflate(inflater, container, false)
+
         activity?.window?.statusBarColor = ContextCompat.getColor(requireContext(), R.color.white)
         // Set the navigation bar color dynamically
         activity?.window?.navigationBarColor = ContextCompat.getColor(requireContext(), R.color.white)
@@ -79,8 +79,6 @@ class UserProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-//        (activity as AppCompatActivity).setSupportActionBar(binding.toolbar)
-//        (activity as AppCompatActivity).supportActionBar?.title = "Profile"
         val TAG = "onViewCreated"
 
         EventBus.getDefault().post(ShowBottomNav(false))
@@ -176,10 +174,6 @@ class UserProfileFragment : Fragment() {
             }
         }
 
-//        getUserProfile()
-
-//        binding.followersCount.text = shortsViewModel.followersCount.toString()
-//        binding.followingCount.text = shortsViewModel.followingCount.toString()
 
     }
 
@@ -217,30 +211,15 @@ class UserProfileFragment : Fragment() {
         bottomNavigationView?.visibility = View.VISIBLE
     }
 
-    //    override fun onStart() {
-//        super.onStart()
-////        EventBus.getDefault().register(this)
-//    }
-//
-//    override fun onStop() {
-//        super.onStop()
-////        EventBus.getDefault().unregister(this)
-//    }
+
 
     private fun updateStatusBar() {
         val decor: View? = activity?.window?.decorView
 
         // Your logic to determine the status bar appearance based on the fragment's theme
-//        val isLightTheme = // Your logic to determine if the fragment has a light theme
-//        decor?.systemUiVisibility = 0
+
         decor?.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
 
-//            if (isLightTheme) {
-//                // Light theme
-//            } else {
-//                // Dark theme
-//                decor?.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-//            }
     }
 
     private fun viewImage(url: String, name: String) {
@@ -271,10 +250,7 @@ class UserProfileFragment : Fragment() {
         savedInstanceState: Bundle?
     ): LayoutInflater {
         // Use a custom theme for the fragment layout
-//        val themeId = if (someCondition) {
-//            R.style.FragmentLightTheme
-//        } else {
-//        }
+
 
         return super.onGetLayoutInflater(savedInstanceState).cloneInContext(
             ContextThemeWrapper(
