@@ -20,16 +20,13 @@ import com.uyscuti.social.circuit.databinding.FragmentFeedRepostTextBinding
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [FeedRepostTextFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+
 
 private const val TAG = "FeedTextViewFragment"
 
 class FeedRepostTextFragment : Fragment() {
-    // TODO: Rename and change types of parameters
+
+
     private var param1: String? = null
     private var param2: String? = null
     private lateinit var data: com.uyscuti.social.network.api.response.allFeedRepostsPost.OriginalPost
@@ -74,17 +71,10 @@ class FeedRepostTextFragment : Fragment() {
         }else {
             binding.toolbar.username.text = data.author[0].account.username
         }
-//        binding.toolbar.username.text = data.author!!.account.username
-//        Glide.with(this)
-//            .load(data.author!!.account.avatar.url)
-//            .apply(RequestOptions.bitmapTransform(CircleCrop()))
-//            .placeholder(R.drawable.profilepic2)
-//            .diskCacheStrategy(DiskCacheStrategy.ALL)
-//            .into(binding.toolbar.feedProfilePic)
+
 
         binding.toolbar.backIcon.setOnClickListener {
-//            feedTextViewFragmentInterface.onBackPressed()
-//            navigateBack()
+
             if (feedTextViewFragmentInterface != null) {
                 feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
             }
@@ -95,18 +85,19 @@ class FeedRepostTextFragment : Fragment() {
 
             if (value) {
                 // Handle true state
-//                textView.text = "Enabled"
+
                 val totalComments = data.commentCount.toString()
-//                Log.d(TAG, "onCreateView: data . comments ${data.comments} total comments $totalComments")
+
                 binding.feedCommentsCount.text = "$totalComments"
-//                totalComments.toString() += 1
+
                 feedLiveDataViewModel.setBoolean(false)
             }
 
         }
 
         binding.shareButtonIcon.setOnClickListener {
-//              Create an Intent with action Intent.ACTION_SEND
+
+           // Create an Intent with action Intent.ACTION_SEND
             Toast.makeText(requireContext(), "share clicked", Toast.LENGTH_SHORT).show()
             val sendIntent = Intent().apply {
                 action = Intent.ACTION_SEND
@@ -122,70 +113,11 @@ class FeedRepostTextFragment : Fragment() {
         }
         feedLiveDataViewModel.counter.observe(viewLifecycleOwner) { count ->
             // Update UI with new count value
-//            binding.feedCommentsCount.text = "${data.comments+count}"
-//            val totalComments = data.comments.
-//            binding.feedCommentsCount.text = "$totalComments"
+
         }
         binding.commentButtonIcon.setOnClickListener {
-//            Log.d(TAG, "Comments: comment clicked")
-//            feedTextViewFragmentInterface?.onCommentClickFromFeedTextViewFragment(position, data)
-//            binding.feedCommentsCount.text = (data.comments + 1).toString()
-//            EventBus.getDefault().post(FeedCommentClicked(position, data))
+
         }
-//        binding.toolbar.username.text = data.author!!.account.username
-//        if (data.likes <= 0) {
-//            binding.likesCount.text = "0"
-//        }else {
-//            binding.likesCount.text = data.likes.toString()
-//        }
-//        binding.feedCommentsCount.text = data.comments.size.toString()
-//        if (data.isLiked) {
-//            binding.like.setImageResource(R.drawable.filled_favorite_like)
-//        } else {
-//            binding.like.setImageResource(R.drawable.like_svgrepo_com)
-//        }
-//        binding.like.setOnClickListener {
-//            data.likeCount = !data.isLiked
-//            if (data.isLiked) {
-//                Log.d(TAG, "onCreateView: data likes ${data.likes}")
-//                binding.likesCount.text = data.likes.toString()
-//                if (data.likes < 0) {
-//                    binding.likesCount.text = "0"
-//                } else {
-//                    binding.likesCount.text = (data.likes + 1).toString()
-//                }
-//                binding.like.setImageResource(R.drawable.filled_favorite_like)
-//                YoYo.with(Techniques.Tada)
-//                    .duration(700)
-//                    .repeat(1)
-//                    .playOn(binding.like)
-//            } else {
-//                Log.d(TAG, "onCreateView: data likes ${data.likes}")
-//                binding.likesCount.text = data.likes.toString()
-//                if (data.likes <= 0) {
-//                    binding.likesCount.text = "0"
-//                } else {
-//                    binding.likesCount.text = (data.likes - 1).toString()
-//                }
-//                binding.like.setImageResource(R.drawable.like_svgrepo_com)
-//                YoYo.with(Techniques.Tada)
-//                    .duration(700)
-//                    .repeat(1)
-//                    .playOn(binding.like)
-//            }
-//            feedTextViewFragmentInterface?.onLikeUnLikeFeedFromFeedTextViewFragment(position, data)
-//        }
-//        if (data.isBookmarked) {
-//            binding.fav.setImageResource(R.drawable.filled_favorite)
-//        } else {
-//            binding.fav.setImageResource(R.drawable.favorite_svgrepo_com__1_)
-//        }
-//        binding.moreOptions.setOnClickListener {
-//            feedTextViewFragmentInterface?.onMoreOptionsClickFromFeedTextViewFragment(
-//                position,
-//                data.)
-//
-//        }
         binding.favoriteSection.setOnClickListener {
 //            data.isBookmarked = !data.isBookmarked
 //            feedTextViewFragmentInterface?.onFeedFavoriteClickFromFeedTextViewFragment(position, data)
