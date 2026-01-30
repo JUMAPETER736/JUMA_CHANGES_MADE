@@ -436,7 +436,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             if (currentFragment is AllFragment) {
                 Log.d(TAG, "onCreateView: current frag $feedPostPositionFromShorts")
                 // Pass data to the current fragment
-//                currentFragment.updateData("New Data")
+
                 currentFragment.setPositionFromShorts(
                     SetAllFragmentScrollPosition(
                         true, feedPostPositionFromShorts))
@@ -490,7 +490,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         if (!clicked) {
             fileFloatingActionButton.visibility = View.VISIBLE
             vnFloatingActionButton.visibility = View.VISIBLE
-//            fabAction.visibility = View.VISIBLE
+
         } else {
             fileFloatingActionButton.visibility = View.INVISIBLE
             vnFloatingActionButton.visibility = View.INVISIBLE
@@ -637,7 +637,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
         val rootView: View = requireActivity().findViewById(android.R.id.content)
         wifiAnimation!!.stop()
-//        uploadProgressMainLayout.visibility = View.GONE
+
         feedUploadView.visibility = View.GONE
         feedCancelView.visibility = View.GONE
         EventBus.getDefault().post(FeedUploadProgress(100, 0))
@@ -668,7 +668,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedVideoSuccessEvent(event: FeedUploadSuccessful) {
         wifiAnimation!!.stop()
-//        uploadProgressMainLayout.visibility = View.GONE
+
         feedUploadView.visibility = View.GONE
         feedCancelView.visibility = View.GONE
         EventBus.getDefault().post(FeedUploadProgress(100, 0))
@@ -686,7 +686,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onProgressEvent(event: ProgressEvent) {
-//        uploadProgressMainLayout.visibility = View.VISIBLE
+
 
         feedUploadView.visibility = View.VISIBLE
         feedCancelView.visibility = View.VISIBLE
@@ -1118,10 +1118,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             timerTv?.text = "00:00"
             secondTimerTv?.text = "00:00"
 
-            // REMOVE THESE LINES - waveForm doesn't exist
-            // amplitudes = waveForm!!.clear()
-            // amps = 0
-            // timer.stop()
 
             Log.d(TAG, "deleteRecording: recorded files size ${recordedAudioFiles.size}")
 
@@ -1160,10 +1156,10 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
             isPaused = true
 
-            // **CRITICAL FIX: Stop the recording timer**
+            //  Stop the recording timer**
             timerHandler.removeCallbacksAndMessages(null)
 
-            // **CRITICAL FIX: Update both timers to show current recorded duration**
+            //  Update both timers to show current recorded duration**
             requireActivity().runOnUiThread {
                 val seconds = (recordingElapsedTime / 1000) % 60
                 val minutes = (recordingElapsedTime / 1000) / 60
@@ -1172,7 +1168,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
                 secondTimerTv?.text = formatted
             }
 
-            // **CRITICAL FIX: Use updateVoiceNoteUserInterfaceState**
+            //  Use updateVoiceNoteUserInterfaceState**
             updateVoiceNoteUserInterfaceState(VoiceNoteState.PAUSED)
             recordVN!!.setImageResource(R.drawable.mic_2)
 
@@ -1215,7 +1211,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
             recordVN!!.setImageResource(R.drawable.baseline_pause_white_24)
 
-            // **CRITICAL FIX: Use updateVoiceNoteUserInterfaceState**
+            //  Use updateVoiceNoteUserInterfaceState**
             updateVoiceNoteUserInterfaceState(VoiceNoteState.RECORDING)
 
             recordedAudioFiles.add(outputFile)
@@ -1684,7 +1680,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
     private fun deleteVoiceNote() {
         recordedAudioFiles.clear()
-//        if (recordedAudioFiles.isNotEmpty()) {
+
         val isDeleted = deleteFiles(recordedAudioFiles)
         val outputVnFileList = mutableListOf<String>()
         outputVnFileList.add(outputVnFile)
@@ -1700,7 +1696,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         } else {
             println("Failed to delete file.")
         }
-//        }
+
     }
 
     private fun calculateBarsNeededForFullWidth(): Int {
