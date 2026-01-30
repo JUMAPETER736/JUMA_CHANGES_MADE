@@ -127,11 +127,7 @@ import javax.inject.Inject
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [AllFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+
 
 private const val TAG = "AllFragment"
 private const val REQUEST_REPOST_FEED_ACTIVITY = 1020

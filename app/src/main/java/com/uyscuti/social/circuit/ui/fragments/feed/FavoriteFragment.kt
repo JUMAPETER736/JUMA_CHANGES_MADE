@@ -37,7 +37,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -241,17 +240,22 @@ class FavoriteFragment : Fragment(),
 
     private val requestCode = 2024
     private val WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 12
+
     private val shortsViewModel: GetShortsByUsernameViewModel by activityViewModels()
     private val getFeedViewModel: GetFeedViewModel by activityViewModels()
     private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
     private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
+    private val businessPostsViewModel: BusinessPostsViewModel by activityViewModels()
+    private val feesShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
+    private val dialogViewModel: DialogViewModel by activityViewModels()
+
     private var feedVideoViewFragment: FeedVideoViewFragment? = null
     private var feedTextViewFragment: FeedTextViewFragment?= null
     private var feedAudioViewFragment: FeedAudioViewFragment? = null
     private var feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
     private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
     private lateinit var favoriteFeedAdapter: FeedAdapter
-    private val feesShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
+
     private var fragmentOriginalPostWithRepostInside: Fragment_Original_Post_With_Repost_Inside? = null
     private var feedRepostDocFragment : FeedRepostDocFragment? = null
     private var feedRepostTextFragment : FeedRepostTextFragment? = null
@@ -262,15 +266,8 @@ class FavoriteFragment : Fragment(),
 
 
     private lateinit var businessAdapter: BusinessCatalogueAdapter
-
-    private val businessPostsViewModel: BusinessPostsViewModel by activityViewModels()
-
     private lateinit var catalogueViewModel: BusinessCatalogueViewModel
-
-    private val dialogViewModel: DialogViewModel by activityViewModels()
-
     private lateinit var dialogManager: DialogManager
-
     private var catalogueList: ArrayList<Post> = ArrayList()
 
 
@@ -281,10 +278,8 @@ class FavoriteFragment : Fragment(),
 
     private var commentAdapter: CommentsRecyclerViewAdapter? = null
     private lateinit var commentRecyclerView: RecyclerView
-
     private lateinit var inputMethodManager: InputMethodManager
     private lateinit var emojiPopup: EmojiPopup
-
     private var emojiShowing = false
 
     private var isReply = false
@@ -294,26 +289,18 @@ class FavoriteFragment : Fragment(),
 
     private var commentToAddReplies: Comment? = null
     private var commentPosition = 0
-
-
     private var exoPlayer: ExoPlayer? = null
-
     private val recordedAudioFiles = mutableListOf<String>()
-
     private var mediaRecorder: MediaRecorder? = null
 
 
     private var player: MediaPlayer? = null
     private val waveHandler = Handler()
-
     private lateinit var outputFile: String
-
     private var outputVnFile: String = ""
-
     private lateinit var amplitudes: ArrayList<Float>
 
     private var amps = 0
-
     var wasPaused = false
     var sending = false
     var firstTimeSendVn = false
@@ -324,10 +311,7 @@ class FavoriteFragment : Fragment(),
     private var isAudioVNPaused = false
 
     private var mixingCompleted = false
-
     private var isVnResuming = false
-
-
     var vnRecordAudioPlaying = false
     var vnRecordProgress = 0
     var isOnRecordDurationOnPause = false
@@ -341,17 +325,14 @@ class FavoriteFragment : Fragment(),
     var maxDuration = 0L
 
     private val simpleCache: SimpleCache = FlashApplication.cache
-
-
     private lateinit var audioDurationTVCount: TextView
     private lateinit var audioFormWave: WaveformSeekBar
-
     private lateinit var audioSeekBar: SeekBar
 
     private lateinit var httpDataSourceFactory: HttpDataSource.Factory
     private lateinit var defaultDataSourceFactory: DefaultDataSourceFactory
     private lateinit var cacheDataSourceFactory: CacheDataSource.Factory
-
+    private lateinit var timer: Timer
 
     private var isReplyVnPlaying = false
     private var isVnAudioToPlay = false
@@ -360,7 +341,6 @@ class FavoriteFragment : Fragment(),
     private var currentCommentAudioPath = ""
 
 
-    private lateinit var timer: Timer
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -749,9 +729,6 @@ class FavoriteFragment : Fragment(),
     }
 
 
-
-
-
     override fun likeUnLikeFeed(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         try {
             val updatedComment = if (data.isLiked) {
@@ -992,9 +969,6 @@ class FavoriteFragment : Fragment(),
                 download(url, fileLocation)
             }
         }
-
-
-
 
     }
 
@@ -1237,18 +1211,6 @@ class FavoriteFragment : Fragment(),
     }
 
 
-
-
-    private fun muteUserOption(userId: String) {
-        Log.d(TAG, "muteUserOption: $userId")
-        val sharedPreferences = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        val mutedUsersSet = sharedPreferences.getStringSet("muted_users", mutableSetOf()) ?: mutableSetOf()
-        mutedUsersSet.add(userId)
-        editor.putStringSet("muted_users", mutedUsersSet)
-        editor.apply()
-    }
-
     @OptIn(DelicateCoroutinesApi::class)
     private fun downloadMediaFile(fileUrl: String, fileName: String, fileType: String) {
         // Check for permissions (write external storage)
@@ -1299,139 +1261,6 @@ class FavoriteFragment : Fragment(),
         }
     }
 
-    @SuppressLint("ServiceCast")
-    private fun showDeleteConfirmationDialog(feedId: String, position: Int) {
-        val inflater = LayoutInflater.from(requireContext())
-        val customTitleView: View = inflater.inflate(R.layout.delete_title_custom_layout, null)
-        val builder = AlertDialog.Builder(requireContext())
-
-        builder.setCustomTitle(customTitleView)
-        builder.setMessage("Are you sure you want to delete this feed?")
-
-        // Positive Button
-        builder.setPositiveButton("Delete") { dialog, which ->
-            // Handle delete action
-
-            handleDeleteAction(feedId = feedId, position){ isSuccess, message ->
-                if (isSuccess) {
-                    Log.d(TAG, "handleDeleteAction $message")
-                    dialog.dismiss()
-                } else {
-                    dialog.dismiss()
-                    Log.e(TAG, "handleDeleteAction $message")
-                }}
-            dialog.dismiss()
-        }
-
-
-        // Negative Button
-        builder.setNegativeButton("Cancel") { dialog, which ->
-            dialog.dismiss() // Dismiss the dialog
-        }
-
-        // Create and show the AlertDialog
-        val alertDialog = builder.create()
-        alertDialog.show()
-    }
-
-
-    @SuppressLint("NotifyDataSetChanged")
-    private fun handleDeleteAction(feedId: String, position: Int, callback: (Boolean, String) -> Unit) {
-        // Logic to delete the item
-        // e.g., remove it from a list or database
-        Log.d(TAG, "handleDeleteAction: remove from database")
-        lifecycleScope.launch {
-            val response = retrofitInstance.apiService.deleteFeed(feedId)
-
-            Log.d(TAG, "handleDeleteAction: $response")
-            Log.d(TAG, "handleDeleteAction body: ${response.body()}")
-            Log.d(TAG, "handleDeleteAction isSuccessful: ${response.isSuccessful}")
-            if(response.isSuccessful) {
-                getFeedViewModel.removeMyFeed(position)
-                favoriteFeedAdapter.removeItem(position)
-
-
-                shortsViewModel.postCount -= 1
-                shortsViewModel.setIsRefreshPostCount(true)
-
-                Log.d(TAG, "handleDeleteAction: delete successful")
-                showSnackBar("File has been deleted successfully")
-                val isAllFeedDataEmpty = getFeedViewModel.getAllFeedData().isEmpty()
-                val isFavoriteFeedDataEmpty = getFeedViewModel.getAllFavoriteFeedData().isEmpty()
-
-                if(!isFavoriteFeedDataEmpty) {
-                    val favoriteFeed = getFeedViewModel.getAllFavoriteFeedData()
-                    val feedToUpdate = favoriteFeed.find { feed-> feed._id == feedId }
-
-                    if(feedToUpdate != null) {
-
-                        Log.d(TAG, "handleDeleteAction: feed to update id ${feedToUpdate._id}")
-                        try {
-                            Log.d("feedResponse", "handleDeleteAction: 1 ${feedToUpdate._id}")
-                            val feedPos = getFeedViewModel.getPositionById(feedId)
-                            Log.d("feedResponse", "handleDeleteAction: 2 ${feedToUpdate._id}")
-                            getFeedViewModel.removeFavoriteFeed(feedPos)
-                            Log.d("feedResponse", "handleDeleteAction: 3 ${feedToUpdate._id}")
-
-                            Log.d("feedResponse", "handleDeleteAction: 4 ${feedToUpdate._id}")
-
-                        }catch (e: Exception) {
-                            Log.e(TAG, "handleDeleteAction: error on bookmark delete ${e.message}")
-                            e.printStackTrace()
-                        }
-
-                    }else {
-                        Log.e("feedResponse", "handleDeleteAction: feed to un-favorite not available")
-                    }
-                }
-
-                if(!isAllFeedDataEmpty) {
-                    val allFeedData = getFeedViewModel.getAllFeedData()
-                    val feedToUpdate = allFeedData.find { feed -> feed._id == feedId }
-                    if (feedToUpdate != null) {
-                        Log.d(TAG, "handleDeleteAction: feed data found for all fragment")
-                        val pos = getFeedViewModel.getAllFeedDataPositionById(feedToUpdate._id)
-                        try{
-                            getFeedViewModel.removeAllFeedFragment(pos)
-                        }catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-
-                    }else {
-                        Log.d(TAG, "handleDeleteAction: feed data not found for all fragment")
-                    }
-                }else {
-                    Log.i(TAG, "handleDeleteAction: all feed data is empty")
-                }
-
-                if(!isFavoriteFeedDataEmpty) {
-                    val favoriteFeedData = getFeedViewModel.getAllFavoriteFeedData()
-                    val feedToUpdate = favoriteFeedData.find { feed -> feed._id == feedId }
-                    if (feedToUpdate != null) {
-                        Log.d(TAG, "handleDeleteAction: feed data found for favorite")
-                        getFeedViewModel.setRefreshMyData(position, true)
-                    }else {
-                        Log.d(TAG, "handleDeleteAction: feed data not found for favorite")
-                    }
-                }else {
-                    Log.i(TAG, "handleDeleteAction: favorite feed data is empty")
-                }
-            }else {
-                callback(false, "Failed to delete file")
-                showSnackBar("Please try again!!!")
-            }
-
-        }
-    }
-
-    private fun showSnackBar(message: String) {
-        Snackbar.make(requireActivity().findViewById(android.R.id.content), message, 1000)
-            .setBackgroundTint((ContextCompat.getColor(requireContext(),R.color.green_dark))) // Custom background color
-            .setAction("OK") {
-                // Handle undo action if needed
-            }
-            .show()
-    }
 
     fun forShow() {
         Log.d("forShow", "forShow: is called")
@@ -1733,28 +1562,6 @@ class FavoriteFragment : Fragment(),
         }
     }
 
-    private fun  shareTextFeed(data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
-        val sendIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, data.content)
-            type = "text/plain"
-        }
-        // Verify that the Intent will resolve to an activity
-        if (sendIntent.resolveActivity(requireContext().packageManager) != null) {
-            // Start the activity to share the text
-            startActivity(Intent.createChooser(sendIntent, "Share via"))
-        }
-
-    }
-
-    private fun replaceFragment(fragment: Fragment) {
-        val supportFragmentManager = requireActivity().supportFragmentManager
-        val fragmentTransaction = supportFragmentManager.beginTransaction()
-        fragmentTransaction.replace(android.R.id.content, fragment)
-        fragmentTransaction.commit()
-    }
-
-
 
     @SuppressLint("MissingInflatedId", "ServiceCast", "InflateParams")// Suppresses lint warning for missing inflated ID check
     override fun feedShareClicked
@@ -1848,15 +1655,15 @@ class FavoriteFragment : Fragment(),
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+        
     }
 
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
-        TODO("Not yet implemented")
+        
     }
 
     override fun onImageClick() {
-        TODO("Not yet implemented")
+        
     }
 
     private fun followClicked(followUnFollowEntity: FollowUnFollowEntity) {
@@ -3906,7 +3713,7 @@ class FavoriteFragment : Fragment(),
         repliesRecyclerView: RecyclerView,
         position: Int
     ) {
-        TODO("Not yet implemented")
+        
     }
 
     override fun onViewRepliesClick(
