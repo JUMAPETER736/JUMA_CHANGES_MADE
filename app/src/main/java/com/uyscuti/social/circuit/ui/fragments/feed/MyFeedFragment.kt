@@ -41,14 +41,23 @@ import javax.inject.Inject
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
-/**
- * A simple [Fragment] subclass.
- * Use the [MyFeedFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 private const val TAG = "MyFeedFragment"
+
 @AndroidEntryPoint
 class MyFeedFragment : Fragment(), OnFeedClickListener {
+
+    companion object {
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            MyFeedFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
 
     private var param1: String? = null
     private var param2: String? = null
@@ -78,7 +87,7 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
     fun feedAdapterNotifyDatasetChanged(event: FeedAdapterNotifyDatasetChanged) {
         Log.d(TAG, "FeedAdapterNotifyDatasetChanged: in feed adapter notify adapter: seh data set changed")
         myFeedAdapter.notifyDataSetChanged()
-//        myFeedAdapter.notifyItemChanged(event.position)
+
     }
 
 
@@ -154,27 +163,6 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
         return view
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment MyFeedFragment.
-         */
-
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            MyFeedFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
-
-
 
     override fun likeUnLikeFeed(position: Int,  data: com.uyscuti.social.network.api.response.posts.Post) {
         try {
@@ -210,7 +198,7 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
                 }
             }
 
-//            EventBus.getDefault().post(FromFavoriteFragmentFeedLikeClick(position, updatedComment))
+
             myFeedAdapter.updateItem(position, updatedComment)
             val isAllFeedDataEmpty = getFeedViewModel.getAllFeedData().isEmpty()
             val isFavoriteFeedDataEmpty = getFeedViewModel.getAllFavoriteFeedData().isEmpty()
@@ -319,7 +307,6 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
                 Log.d(TAG, "Feed Feed getAllFeed feed: response message ${response.message()}")
                 Log.d(TAG, "Feed Feed getAllFeed feed: response message error body ${response.errorBody()}")
                 Log.d(TAG, "Feed Feed getAllFeed feed: response body $responseBody")
-//                Log.d(TAG, "Feed Feed getAllFeed feed: response body data ${responseBody?.data?.posts?.posts?.get(4)}")
                 Log.d("AllFeedTag", "Feed Feed getAllFeed feed: response body message ${responseBody!!.message}")
                 val data = responseBody.data
 
@@ -358,13 +345,11 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
     }
     @SuppressLint("InflateParams")
     override fun moreOptionsClick(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
-//        Log.d(TAG, "moreOptionsClick: More options clicked")
+
         val view: View = layoutInflater.inflate(R.layout.feed_moreoptions_bottomsheet_layout, null)
-//        val deleteFeedLayout: LinearLayout = view.findViewById(R.id.deleteFeedLayout)
           val hidePostLayout : MaterialCardView = view.findViewById(R.id.hidePostLayout)
-//        deleteFeedLayout.visibility = View.VISIBLE
         hidePostLayout.setOnClickListener {
-//            Log.d(TAG,"DELETE LAYOUT HAS BEEN CLICKED")
+
             showDeleteConfirmationDialog(data._id, position)
         }
         val dialog = BottomSheetDialog(requireContext())
@@ -404,15 +389,15 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
-        TODO("Not yet implemented")
+
     }
 
     override fun onImageClick() {
-        TODO("Not yet implemented")
+
     }
 
     @SuppressLint("InflateParams")
@@ -420,7 +405,7 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
         val inflater = LayoutInflater.from(requireContext())
         val customTitleView: View = inflater.inflate(R.layout.delete_title_custom_layout, null)
         val builder = AlertDialog.Builder(requireContext())
-//        builder.setTitle("Delete Feed Confirmation")
+
         builder.setCustomTitle(customTitleView)
         builder.setMessage("Are you sure you want to delete this feed?")
 
@@ -462,12 +447,10 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
             if(response.isSuccessful) {
                 getFeedViewModel.removeMyFeed(position)
                 myFeedAdapter.removeItem(position)
-//                shortsViewModel.decrementPostCount()
+
 
                 shortsViewModel.postCount -= 1
                 shortsViewModel.setIsRefreshPostCount(true)
-//                myFeedAdapter.notifyItemRemoved(position)
-//                myFeedAdapter.notifyDataSetChanged()
                 Log.d(TAG, "handleDeleteAction: delete successful")
                 showSnackBar("File has been deleted successfully")
                 val isAllFeedDataEmpty = getFeedViewModel.getAllFeedData().isEmpty()
@@ -486,10 +469,8 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
                             Log.d("feedResponse", "handleDeleteAction: 2 ${feedToUpdate._id}")
                             getFeedViewModel.removeFavoriteFeed(feedPos)
                             Log.d("feedResponse", "handleDeleteAction: 3 ${feedToUpdate._id}")
-//                            val feedResponse = retrofitInstance.apiService.deleteFavoriteFeed(feedToUpdate._id)
                             Log.d("feedResponse", "handleDeleteAction: 4 ${feedToUpdate._id}")
-//                            Log.d("feedResponse", "handleDeleteAction: $feedResponse")
-//                            Log.d("feedResponse", "handleDeleteAction body: ${feedResponse.body()}")
+
                         }catch (e: Exception) {
                             Log.e(TAG, "handleDeleteAction: error on bookmark delete ${e.message}")
                             e.printStackTrace()
@@ -499,7 +480,7 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
                         Log.e("feedResponse", "handleDeleteAction: feed to un-favorite not available")
                     }
                 }
-//
+
                 if(!isAllFeedDataEmpty) {
                     val allFeedData = getFeedViewModel.getAllFeedData()
                     val feedToUpdate = allFeedData.find { feed -> feed._id == feedId }
@@ -511,7 +492,7 @@ class MyFeedFragment : Fragment(), OnFeedClickListener {
                         }catch (e: Exception) {
                             e.printStackTrace()
                         }
-//                        getFeedViewModel.setRefreshMyData(pos, true)
+
                     }else {
                         Log.d(TAG, "handleDeleteAction: feed data not found for all fragment")
                     }
