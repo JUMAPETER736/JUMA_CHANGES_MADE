@@ -6159,72 +6159,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         }
     }
 
-//
-//    override fun onShortClick(
-//        shortsProfile: ArrayList<UserShortsEntity>,
-//        userShortEntity: UserShortsEntity
-//    ) {
-//        if (supportFragmentManager.backStackEntryCount > 0) {
-//            Log.d("onShortClick", "onBackPressed: backStackEntryCount > 0 ")
-//        } else {
-//            Log.d("onShortClick", "onBackPressed: backStackEntryCount < 0 ")
-//        }
-//        binding.otherUsersShortsPlayFragment.visibility = View.VISIBLE
-//
-//        if (!supportFragmentManager.isStateSaved) {
-//            Log.d(TAG, "onShortClick: state not saved")
-//            val shortPlayerFragment = TrialFragment()
-//            val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
-//            transaction.replace(binding.otherUsersShortsPlayFragment.id, shortPlayerFragment)
-//            transaction.setReorderingAllowed(true)
-////
-////            if (transaction.isAddToBackStackAllowed) {
-////                Log.d(TAG, "isAddToBackStackAllowed")
-////                transaction.addToBackStack("isAddToBackStackAllowed");
-////            }else {
-////                Log.d(TAG, "isAddToBackStackAllowed not allowed")
-////            }
-//
-//            // Check if the transaction is not already on the back stack
-//            val existingFragment =
-//                supportFragmentManager.findFragmentById(binding.otherUsersShortsPlayFragment.id)
-//            if (existingFragment == null || existingFragment !is TrialFragment) {
-//                transaction.addToBackStack("shortPlayerFragment")
-//                Log.d(TAG, "existingFragment")
-//            } else {
-//                Log.d(TAG, "not existingFragment")
-//            }
-//            transaction.commit();
-//        } else {
-//            Log.d(TAG, "onShortClick: state  saved")
-//        }
-//
-//
-//    }
 
-    //        try {
-//            otherUserProfileShortsPlayerFragment = OtherUserProfileShortsPlayerFragment()
-//            otherUserProfileShortsPlayerFragment.arguments = Bundle().apply {
-//                putSerializable(
-//                    UserProfileShortsPlayerActivity.CLICKED_SHORT,
-//                    userShortEntity
-//                )
-//                putSerializable(UserProfileShortsPlayerActivity.SHORTS_LIST, shortsProfile)
-//            }
-//
-//            val transaction = supportFragmentManager.beginTransaction()
-//            transaction.replace(
-//                R.id.other_users_shorts_play_fragment,
-//                otherUserProfileShortsPlayerFragment
-//            )
-//            transaction.addToBackStack("shortPlayerFragment")
-//            transaction.commit()
-//
-//            binding.otherUsersShortsPlayFragment.visibility = View.GONE
-//        } catch (e: Exception) {
-//            Log.e(TAG, "hideToolBar: ${e.message}")
-//        }
-//        Log.d(TAG, "onShortClick: in other user profile")
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "onResume: ")
