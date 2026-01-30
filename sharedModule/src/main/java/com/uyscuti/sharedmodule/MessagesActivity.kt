@@ -1078,10 +1078,10 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
             // Add to UI IMMEDIATELY
             runOnUiThread {
                 if (message.getVoice() != null) {
-                    Log.d("VoiceNote", "✅ Adding voice message to adapter")
+                    Log.d("VoiceNote", "Adding voice message to adapter")
                     messagesAdapter?.addToStart(message, true)
                 } else {
-                    Log.e("VoiceNote", "❌ ERROR: Voice is null, cannot add to adapter")
+                    Log.e("VoiceNote", "ERROR: Voice is null, cannot add to adapter")
                 }
             }
 
@@ -1091,7 +1091,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     // Save to database first
                     insertMessage(voiceMessage)
                     updateLastMessage(isGroup, chatId, voiceMessage)
-                    Log.d("VoiceNote", "✅ Voice message saved to DB")
+                    Log.d("VoiceNote", "Voice message saved to DB")
 
                     // NOW SEND TO SERVER
                     withContext(Dispatchers.Main) {
@@ -1106,14 +1106,14 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                             sendAttachmentContent(contentUri, voiceMessage) { success ->
                                 if (success) {
-                                    Log.d("VoiceNote", "✅ Voice note sent successfully")
+                                    Log.d("VoiceNote", "Voice note sent successfully")
                                     updateMessageStatusInUI(messageId, "Sent")
                                     CoroutineScope(Dispatchers.IO).launch {
                                         voiceMessage.status = "Sent"
                                         messageViewModel.updateMessage(voiceMessage)
                                     }
                                 } else {
-                                    Log.e("VoiceNote", "❌ Failed to send voice note")
+                                    Log.e("VoiceNote", "Failed to send voice note")
                                     updateMessageStatusInUI(messageId, "Failed")
                                     CoroutineScope(Dispatchers.IO).launch {
                                         voiceMessage.status = "Failed"
@@ -1124,14 +1124,14 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         } else {
                             sendAttachment(encodedFilePath, voiceMessage) { success ->
                                 if (success) {
-                                    Log.d("VoiceNote", "✅ Voice note sent successfully")
+                                    Log.d("VoiceNote", "Voice note sent successfully")
                                     updateMessageStatusInUI(messageId, "Sent")
                                     CoroutineScope(Dispatchers.IO).launch {
                                         voiceMessage.status = "Sent"
                                         messageViewModel.updateMessage(voiceMessage)
                                     }
                                 } else {
-                                    Log.e("VoiceNote", "❌ Failed to send voice note")
+                                    Log.e("VoiceNote", "Failed to send voice note")
                                     updateMessageStatusInUI(messageId, "Failed")
                                     CoroutineScope(Dispatchers.IO).launch {
                                         voiceMessage.status = "Failed"
@@ -1142,7 +1142,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e("VoiceNote", "❌ Error saving/sending message: ${e.message}")
+                    Log.e("VoiceNote", "Error saving/sending message: ${e.message}")
                     withContext(Dispatchers.Main) {
                         updateMessageStatusInUI(messageId, "Failed")
                     }
@@ -1178,12 +1178,12 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                 if (message != null) {
                     message.status = status
                     messagesAdapter?.update(message)
-                    Log.d("VoiceNote", "✅ Updated message status to: $status")
+                    Log.d("VoiceNote", "Updated message status to: $status")
                 } else {
-                    Log.e("VoiceNote", "❌ Could not find message with ID: $messageId")
+                    Log.e("VoiceNote", "Could not find message with ID: $messageId")
                 }
             } catch (e: Exception) {
-                Log.e("VoiceNote", "❌ Error updating message status: ${e.message}")
+                Log.e("VoiceNote", "Error updating message status: ${e.message}")
             }
         }
     }
@@ -2123,8 +2123,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     is Result.Success -> {
                         // Message sent successfully, update the UI as needed
                         withContext(Dispatchers.Main) {
-//                            showToast("Message sent successfully")
-//                            Log.d("MessageSent", "Message sent successfully : ${message.text} ${message.id}")
+
                             super.messagesAdapter?.notifyMessageSent(message)
                         }
                         messageViewModel.updateMessageStatus(dBMessage)
@@ -2133,9 +2132,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                     is Result.Error -> {
                         // Handle the error
-//                        withContext(Dispatchers.Main) {
-//                            showToast("Message sending failed: ${result.exception.message}")
-//                        }
+
                         callback(false)
                     }
 
@@ -2207,8 +2204,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         val url = resolveContentUriToFilePath(Uri.parse(imagePath))
                         val imageFileName =
                             "files/${System.currentTimeMillis()}.jpg" // Change the file name as needed
-//                        Log.d(TAG, "file name $imageFileName")
-//                        Log.d(TAG, "image path $imagePath")
+
                         Log.d(TAG, "camera image path $url")
 
                         val user = User("0", "You", "test", true, Date())
@@ -2260,11 +2256,11 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                 insertMessage(imageMessage)
 
                                 updateLastMessage(isGroup, chatId, imageMessage)
-//                                dialogViewModel.updateLastMessageForThisChat(chatId, imageMessage)
+
                             }
                         }
 
-//                        message.setImage(Message.Image("https://habrastorage.org/getpro/habr/post_images/e4b/067/b17/e4b067b17a3e414083f7420351db272b.jpg"))
+
                         message.setImage(Message.Image(imageUrl.toString()))
                         message.setUser(user)
                         message.status = "Sending"
@@ -2273,14 +2269,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             super.messagesAdapter?.addToStart(message, true)
                         }
 
-//                        sendFile(imagePath, message)
 
-// Convert the image path to a File or use the path directly if it's a valid file path
-                        //val imageFile = File(imagePath)
-
-
-//
-                        // sendFile(chatId, imagePath)
                     }
                 }
 
@@ -2311,20 +2300,15 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                         Log.d("FileOperation", "Completed : $saved")
 
-                        //val imagePathRef =
-                        //val fileRef = storageRef.child("files/$fileName")
-                        // You can proceed to send the image or display it in your chat.
 
                         val imageFileName =
                             "files/${System.currentTimeMillis()}.jpg" // Change the file name as needed
-//                        Log.d(TAG, "file name $imageFileName")
-//                        Log.d(TAG, "image path $imagePath")
+
                         Log.d(TAG, "image path $url")
 
                         val user = User("0", "You", "test", true, Date())
 
                         val date = Date(System.currentTimeMillis())
-//                        val messageId = "Image_${Random.nextInt()}"
 
                         val message = Message(
                             messageId,
@@ -2337,12 +2321,14 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         Log.d(TAG, "image url $imageUrl")
 
                         if (file != null) {
+
                             if (file.exists()) {
+
                                 val absolutePath = file.absolutePath
                                 Log.d(TAG, "image absolute path $absolutePath")
                                 val fileUri = Uri.fromFile(file)
                                 val fileUrl = fileUri.toString()
-                                //                            Log.d(TAG, "image file url path $fileUrl")
+
 
                                 message.setImage(Message.Image(fileUrl))
 
@@ -2367,13 +2353,13 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                                 CoroutineScope(Dispatchers.IO).launch {
                                     insertMessage(imageMessage)
-//                                    dialogViewModel.updateLastMessageForThisChat(chatId, imageMessage)
+
                                     updateLastMessage(isGroup, chatId, imageMessage)
                                 }
                             }
                         }
 
-//                        message.setImage(Message.Image("https://habrastorage.org/getpro/habr/post_images/e4b/067/b17/e4b067b17a3e414083f7420351db272b.jpg"))
+
                         message.setImage(Message.Image(imageUrl.toString()))
                         message.setUser(user)
                         message.status = "Sending"
@@ -2382,14 +2368,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             super.messagesAdapter?.addToStart(message, true)
                         }
 
-//                        sendFile(imagePath, message)
-
-// Convert the image path to a File or use the path directly if it's a valid file path
-                        //val imageFile = File(imagePath)
-
-
-//
-                        // sendFile(chatId, imagePath)
                     }
                 }
 
@@ -2407,13 +2385,11 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         // You can use it as needed, for example, to send the image in a message.
                         Log.d("ChatActivityAudioPath", "Selected audio path: $audioPath")
 
-                        //val imagePathRef =
-                        //val fileRef = storageRef.child("files/$fileName")
+
                         // You can proceed to send the image or display it in your chat.
                         val audioFileName =
                             "files/${System.currentTimeMillis()}.jpg" // Change the file name as needed
-//                        Log.d(TAG, "file name $audioFileName")
-//                        Log.d(TAG, "audio path $audioPath")
+
 
 
                         val user = User("0", "You", "test", true, Date())
@@ -2435,10 +2411,10 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                             Log.d("Audio File", "Audio File Exists : $file")
                             val absolutePath = file.absolutePath
-//                            Log.d(TAG, "image absolute path $absolutePath")
+
                             val fileUri = Uri.fromFile(file)
                             val fileUrl = fileUri.toString()
-//                            Log.d(TAG, "image file url path $fileUrl")
+
 
                             message.setAudio(
                                 Message.Audio(
@@ -2469,22 +2445,20 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                             CoroutineScope(Dispatchers.IO).launch {
                                 insertMessage(imageMessage)
-//                                dialogViewModel.updateLastMessageForThisChat(chatId, imageMessage)
+
                                 updateLastMessage(isGroup, chatId, imageMessage)
                             }
                         }
 
-//                        message.setImage(Message.Image("https://habrastorage.org/getpro/habr/post_images/e4b/067/b17/e4b067b17a3e414083f7420351db272b.jpg"))
-//                        message.setImage(Message.Image(imageUrl.toString()))
                         message.setUser(user)
                         message.status = "Sending"
 
                         CoroutineScope(Dispatchers.Main).launch {
-//                            delay(500)
+
                             super.messagesAdapter?.addToStart(message, true)
                         }
 
-                        // sendFile(chatId, imagePath)
+
                     }
                 }
 
@@ -2502,15 +2476,11 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                     if (videoPath != null) {
                         // You now have the imagePath from the DisplayImages activity.
                         // You can use it as needed, for example, to send the image in a message.
-//                        Log.d("ChatActivityVideoPath", "Selected video path: $videoPath")
 
-                        //val imagePathRef =
-                        //val fileRef = storageRef.child("files/$fileName")
                         // You can proceed to send the image or display it in your chat.
                         val videoFileName =
                             "files/${System.currentTimeMillis()}.jpg" // Change the file name as needed
-//                        Log.d(TAG, "file name $videoFileName")
-//                        Log.d(TAG, "video path $videoPath")
+
 
 
                         val user = User("0", "You", "test", true, Date())
@@ -2529,12 +2499,10 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         val file = File(videoPath)
                         if (file.exists()) {
 
-//                            Log.d("Video File", "Video File Exists : $file")
                             val absolutePath = file.absolutePath
-//                            Log.d(TAG, "image absolute path $absolutePath")
+
                             val fileUri = Uri.fromFile(file)
                             val fileUrl = fileUri.toString()
-//                            Log.d(TAG, "image file url path $fileUrl")
 
                             message.setVideo(Message.Video(fileUrl))
 
@@ -2559,18 +2527,16 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                             CoroutineScope(Dispatchers.IO).launch {
                                 insertMessage(imageMessage)
-//                                dialogViewModel.updateLastMessageForThisChat(chatId, imageMessage)
+
                                 updateLastMessage(isGroup, chatId, imageMessage)
                             }
                         }
 
-//                        message.setImage(Message.Image("https://habrastorage.org/getpro/habr/post_images/e4b/067/b17/e4b067b17a3e414083f7420351db272b.jpg"))
-//                        message.setImage(Message.Image(imageUrl.toString()))
                         message.setUser(user)
                         message.status = "Sending"
 
                         CoroutineScope(Dispatchers.Main).launch {
-//                            delay(500)
+
                             super.messagesAdapter?.addToStart(message, true)
                         }
 
@@ -2594,13 +2560,9 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         // You can use it as needed, for example, to send the image in a message.
                         Log.d("ChatActivityDocPath", "Selected Document path: $docPath")
 
-                        //val imagePathRef =
-                        //val fileRef = storageRef.child("files/$fileName")
-                        // You can proceed to send the image or display it in your chat.
+
                         val docFileName =
                             "files/${System.currentTimeMillis()}.jpg" // Change the file name as needed
-//                        Log.d(TAG, "file name $docFileName")
-//                        Log.d(TAG, "image path $docPath")
 
                         val user = User("0", "You", "test", true, Date())
                         val messageId = "Doc_${Random.Default.nextInt()}"
@@ -2639,7 +2601,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                 userName = "You",
                                 user = userEntity,
                                 userId = myId,
-                                text = "📄 Document",
+                                text = "Document",
                                 createdAt = System.currentTimeMillis(),
                                 imageUrl = null,
                                 voiceUrl = null,
@@ -2659,17 +2621,15 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             }
                         }
 
-//                        message.setImage(Message.Image("https://habrastorage.org/getpro/habr/post_images/e4b/067/b17/e4b067b17a3e414083f7420351db272b.jpg"))
-//                        message.setImage(Message.Image(imageUrl.toString()))
                         message.setUser(user)
                         message.status = "Sending"
 
                         CoroutineScope(Dispatchers.Main).launch {
-//                            delay(500)
+
                             super.messagesAdapter?.addToStart(message, true)
                         }
 
-                        // sendFile(chatId, imagePath)
+
                     }
                 }
 
@@ -2709,20 +2669,16 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                         Log.d("File Path", "File Path - $selectedPath")
                         Log.d("File Path", "File Path from uri- $filePath")
 
-//                        val fileExtension = getFileExtension(selectedPath!!)
 
                         if (selectedPath != null) {
                             // You now have the imagePath from the DisplayImages activity.
                             // You can use it as needed, for example, to send the image in a message.
                             Log.d("ChatActivityDocPath", "Selected Document path: $selectedPath")
 
-                            //val imagePathRef =
-                            //val fileRef = storageRef.child("files/$fileName")
-                            // You can proceed to send the image or display it in your chat.
+                           // You can proceed to send the image or display it in your chat.
                             val docFileName =
                                 "files/${System.currentTimeMillis()}.jpg" // Change the file name as needed
-//                            Log.d(TAG, "file name $docFileName")
-//                            Log.d(TAG, "document path $selectedPath")
+
 
                             val user = User("0", "You", "test", true, Date())
 
@@ -2742,7 +2698,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                                 Log.d("Document File", "Document File Exists : $file")
                                 val absolutePath = file.absolutePath
-//                            Log.d(TAG, "image absolute path $absolutePath")
+
                                 val fileUri = Uri.fromFile(file)
                                 val fileUrl = fileUri.toString()
 
@@ -2761,7 +2717,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     userName = "This",
                                     user = userEntity,
                                     userId = myId,
-                                    text = "📄 Document",
+                                    text = "Document",
                                     createdAt = System.currentTimeMillis(),
                                     imageUrl = null,
                                     voiceUrl = null,
@@ -2777,42 +2733,26 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                                 CoroutineScope(Dispatchers.IO).launch {
                                     insertMessage(imageMessage)
-//                                    dialogViewModel.updateLastMessageForThisChat(chatId, imageMessage)
                                     updateLastMessage(isGroup, chatId, imageMessage)
 
                                 }
                             }
 
-//                        message.setImage(Message.Image("https://habrastorage.org/getpro/habr/post_images/e4b/067/b17/e4b067b17a3e414083f7420351db272b.jpg"))
-//                        message.setImage(Message.Image(imageUrl.toString()))
                             message.setUser(user)
                             message.status = "Sending"
 
                             CoroutineScope(Dispatchers.Main).launch {
-//                            delay(500)
                                 super.messagesAdapter?.addToStart(message, true)
                             }
 
-                            //val fileExtension = getFileExtension(selectedPath!!)
+
 
                         }
                     }
 
                     // Handle the selected file here
                     val contentResolver = getContentResolver()
-                    //val docName = getPathFromUri(uri)
-                    //val selectedPath = copyFileToInternalStorage(uri, docName!!)
-                    //val filePath = getFilePathFromUri(uri)
-//                    val localPath = uri.toString() // You can store this URI for later use
-//                    Log.i("File Path", localPath)
-//                    Log.i("File Path", "docName - $docName")
-//                    Log.d("File Path", "File Path - $selectedPath")
-//                    Log.d("File Path", "File Path from uri- $filePath")
 
-                    //val data = result.data
-
-                    // Process the selected image data
-                    //val docPath = data?.getStringExtra("docPath")
 
                     Log.d("Document Results", "Picked Document : $data")
 
@@ -2902,13 +2842,13 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     }
 
     override fun onAddAttachments() {
-//        messagesAdapter.addToStart(MessagesFixtures.getImageMessage(), true)
+
 
         showAttachmentDialog()
     }
 
     override fun format(date: Date): String {
-//        Log.d("Formatter", "Formatter Initiated And Working Fine.......")
+
         return when {
             DateFormatter.isToday(date) -> {
 
@@ -2943,16 +2883,6 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     }
 
 
-//    private fun initAdapter() {
-//        super.messagesAdapter = MessagesListAdapter(super.senderId, super.imageLoader)
-//        super.messagesAdapter.enableSelectionMode(this)
-//        super.messagesAdapter.setLoadMoreListener(this)
-//        super.messagesAdapter.setMessageSentListener(this)
-//
-//        super.messagesAdapter.enableDateListener(this)
-//        super.messagesAdapter.setDateHeadersFormatter(this)
-//        messagesList.setAdapter(super.messagesAdapter)
-//    }
 
 
     override fun onFormatDate(date: Date?): String {
@@ -3047,7 +2977,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         }
 
         video?.setOnClickListener {
-//            val intent = Intent(this@ChatActivity, DisplayVideosActivity::class.java)
+
             val intent = Intent(this@MessagesActivity, VideosActivity::class.java)
             dialog.dismiss()
             videoPickerLauncher.launch(intent)
@@ -3108,7 +3038,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
     }
 
     override fun onAddEmoji() {
-//        Toast.makeText(this, "Emoji Added", Toast.LENGTH_SHORT).show()
+
         initView()
     }
 
@@ -3135,7 +3065,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         CoroutineScope(Dispatchers.Main).launch {
             messageViewModel.observeTempMessages(name)
                 .observe(this@MessagesActivity, Observer { tempMessages ->
-//                    Log.d("Temporally", "Temporally Messages Found : $tempMessages")
+
                     if (tempMessages.isNotEmpty()) {
                         updateTempMessages(tempMessages)
                     }
@@ -3170,7 +3100,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
         val fileExtension = file.extension
 
         // Construct the new path with the ID inserted before the extension
-//        Log.i(offlineTag, "New file path - ${file.parent}/$fileName$id.$fileExtension")
+
         return "${file.parent}/$fileName$id.$fileExtension"
     }
 
@@ -3194,7 +3124,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
             val newAttachmentFile = File(newFilePath)
 
-//            val encodedFilePath = URLDecoder.decode(filePath, "UTF-8")
+
             val attachmentFile = File(decoded)
 
             // Use the ContentResolver to open an InputStream for the content URI
@@ -3308,7 +3238,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                             val messageContent = if (message.imageUrl != null) {
 
                                 Log.d("File Sent", "Image found ${message.imageUrl}")
-//                        user.id = "0"
+
                                 Message(
                                     message.id,
                                     user,
@@ -3319,7 +3249,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
 
                                 }
                             } else if (message.videoUrl != null) {
-//                        user.id = "0"
+
                                 Message(
                                     message.id,
                                     user,
@@ -3329,7 +3259,7 @@ class MessagesActivity : MainMessagesActivity(), MessageInput.InputListener,
                                     setVideo(Message.Video(message.videoUrl!!))
                                 }
                             } else if (message.audioUrl != null) {
-//                        user.id = "0"
+
                                 Message(
                                     message.id,
                                     user,
