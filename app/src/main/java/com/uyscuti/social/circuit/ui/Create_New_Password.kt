@@ -26,6 +26,7 @@ import java.io.IOException
 import javax.inject.Inject
 
 
+
 class Create_New_Password : AppCompatActivity() {
 
     // Declare views
@@ -52,7 +53,7 @@ class Create_New_Password : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.create_new_password)
 
-        // Get reset token from intent (passed from OTP verification screen)
+        // Get reset token from intent
         resetToken = intent.getStringExtra("RESET_TOKEN")
 
         if (resetToken.isNullOrEmpty()) {
