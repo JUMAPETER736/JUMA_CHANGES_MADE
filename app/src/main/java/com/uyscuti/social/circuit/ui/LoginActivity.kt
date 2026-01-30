@@ -124,7 +124,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
 
-    // UPDATE the loginUser method - Add relationship loading after successful login
+    //  the loginUser method - Add relationship loading after successful login
     @OptIn(DelicateCoroutinesApi::class)
     private fun loginUser(password: String, username: String) {
         val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -187,12 +187,12 @@ class LoginActivity : AppCompatActivity() {
                             Log.d("RetrofitActivity", "Login Success")
                             Log.d("RetrofitActivity", "Access Token: $accessToken")
 
-                            // ✅ SAVE USER DATA USING UserStorageHelper (persists forever)
+                            // SAVE USER DATA USING UserStorageHelper (persists forever)
                             val saveSuccess = UserStorageHelper.saveUserData(this@LoginActivity, responseBody)
                             if (saveSuccess) {
-                                Log.d("LOGIN", "✅ User data saved with UserStorageHelper")
+                                Log.d("LOGIN", "User data saved with UserStorageHelper")
                             } else {
-                                Log.e("LOGIN", "❌ Failed to save user data with UserStorageHelper")
+                                Log.e("LOGIN", "Failed to save user data with UserStorageHelper")
                             }
 
                             // Keep existing SharedPreferences for backward compatibility
@@ -211,7 +211,7 @@ class LoginActivity : AppCompatActivity() {
                             localStorage.setToken(responseBody.data.accessToken)
                             localStorage.setUserName(username)
 
-                            // ✅ ADD THIS - Load relationships after successful login
+                            //ADD THIS - Load relationships after successful login
                             loadUserRelationshipsAfterLogin()
 
                             dismissLoadingDialog()
@@ -246,12 +246,12 @@ class LoginActivity : AppCompatActivity() {
                     val responseBody = response.body()
                     if (responseBody?.user != null) {
                         withContext(Dispatchers.Main) {
-                            // ✅ SAVE USER DATA USING UserStorageHelper
+                            // SAVE USER DATA USING UserStorageHelper
                             val saveSuccess = UserStorageHelper.saveUserDataFromGoogle(this@LoginActivity, responseBody)
                             if (saveSuccess) {
-                                Log.d("GOOGLE_LOGIN", "✅ User data saved with UserStorageHelper")
+                                Log.d("GOOGLE_LOGIN", "User data saved with UserStorageHelper")
                             } else {
-                                Log.e("GOOGLE_LOGIN", "❌ Failed to save user data with UserStorageHelper")
+                                Log.e("GOOGLE_LOGIN", "Failed to save user data with UserStorageHelper")
                             }
 
                             // Keep existing storage for backward compatibility
@@ -272,7 +272,7 @@ class LoginActivity : AppCompatActivity() {
                             dismissLoadingDialog()
                             Toast.makeText(this@LoginActivity, "Google Login Success", Toast.LENGTH_SHORT).show()
 
-                            // ✅ ADD THIS - Load relationships after Google login
+                            // ADD THIS - Load relationships after Google login
                             loadUserRelationshipsAfterLogin()
 
                             showGoogleSuccess()
@@ -323,12 +323,12 @@ class LoginActivity : AppCompatActivity() {
 
                     if (responseBody != null) {
                         withContext(Dispatchers.Main) {
-                            // ✅ SAVE USER DATA USING UserStorageHelper (persists forever)
+                            // SAVE USER DATA USING UserStorageHelper (persists forever)
                             val saveSuccess = UserStorageHelper.saveUserDataFromFacebook(this@LoginActivity, responseBody)
                             if (saveSuccess) {
-                                Log.d("FACEBOOK_LOGIN", "✅ User data saved with UserStorageHelper")
+                                Log.d("FACEBOOK_LOGIN", "User data saved with UserStorageHelper")
                             } else {
-                                Log.e("FACEBOOK_LOGIN", "❌ Failed to save user data with UserStorageHelper")
+                                Log.e("FACEBOOK_LOGIN", "Failed to save user data with UserStorageHelper")
                             }
 
                             // Keep existing storage methods for backward compatibility
@@ -337,7 +337,7 @@ class LoginActivity : AppCompatActivity() {
 
                             Toast.makeText(this@LoginActivity, "Facebook Login Success", Toast.LENGTH_SHORT).show()
 
-                            // ✅ ADD THIS - Load relationships after Facebook login
+                            // ADD THIS - Load relationships after Facebook login
                             loadUserRelationshipsAfterLogin()
 
                             showFacebookSuccess()
@@ -389,7 +389,7 @@ class LoginActivity : AppCompatActivity() {
                     // Wait briefly for relationships to load
                     kotlinx.coroutines.delay(500)
 
-                    Log.d("LoginActivity", "✅ Relationships loading initiated")
+                    Log.d("LoginActivity", "Relationships loading initiated")
                     Log.d("LoginActivity", "Close Friends: ${relationshipsViewModel.closeFriendIds.value.size}")
                     Log.d("LoginActivity", "Muted Posts: ${relationshipsViewModel.mutedPostsIds.value.size}")
                     Log.d("LoginActivity", "Favorites: ${relationshipsViewModel.favoriteIds.value.size}")

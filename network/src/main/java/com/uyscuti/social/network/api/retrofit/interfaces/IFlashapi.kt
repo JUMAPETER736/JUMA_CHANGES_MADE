@@ -130,9 +130,6 @@ interface IFlashapi {
     @POST("users/google-login")
     suspend fun googleLogin(@Body requestPost: GoogleLoginRequest): Response<GoogleLoginResponse>
 
-    @POST("users/resend-email-verification")
-    suspend fun resendEmailVerification(): Response<MainResponse>
-
     @POST("users/forgot-password")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<ForgotPasswordResponse>
 

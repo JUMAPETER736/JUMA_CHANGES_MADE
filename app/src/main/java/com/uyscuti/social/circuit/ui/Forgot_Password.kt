@@ -20,8 +20,11 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
+import dagger.hilt.android.AndroidEntryPoint
 
 
+
+@AndroidEntryPoint
 class Forgot_Password : AppCompatActivity() {
 
     private lateinit var forgotPasswordEmail: EditText

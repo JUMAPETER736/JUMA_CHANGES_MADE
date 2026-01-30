@@ -23,7 +23,9 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class Verification_Code : AppCompatActivity() {
 
     private lateinit var tvTitle: TextView
@@ -156,10 +158,10 @@ class Verification_Code : AppCompatActivity() {
         }
     }
 
-    // ✅ UPDATED: Handle continue button click with API call
+    //  Handle continue button click with API call
     private fun onContinueClicked() {
         val otp = getOTP()
-        if (otp.length == 6) { // ✅ Changed from 4 to 6
+        if (otp.length == 6) { // Changed from 4 to 6
             verifyOTP(otp)
         } else {
             Toast.makeText(this, "Please enter a valid 6-digit verification code", Toast.LENGTH_SHORT).show()

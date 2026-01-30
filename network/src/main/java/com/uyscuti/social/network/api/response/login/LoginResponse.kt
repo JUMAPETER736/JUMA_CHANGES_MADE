@@ -11,7 +11,8 @@ data class LoginResponse(
 
 
 data class ForgotPasswordRequest(
-    val email: String
+    val email: String? = null,
+    val username: String? = null
 )
 
 data class VerifyOTPRequest(
