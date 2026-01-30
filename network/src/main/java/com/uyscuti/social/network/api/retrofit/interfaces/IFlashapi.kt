@@ -117,6 +117,9 @@ interface IFlashapi {
     @POST("users/login")
     suspend fun loginUsers(@Body requestPost: LoginRequest): Response<LoginResponse>
 
+    @POST("users/reset-password")
+    suspend fun resetPassword(@Body requestPost: ResetPasswordRequest): Response<ResetPasswordResponse>
+
     @POST("users/google-login")
     suspend fun googleLogin(@Body requestPost: GoogleLoginRequest): Response<GoogleLoginResponse>
 

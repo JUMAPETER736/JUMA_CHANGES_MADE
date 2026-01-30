@@ -721,7 +721,7 @@ class CreateChatActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
 
         return true
     }
-    
+
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {

@@ -841,7 +841,7 @@ class LoginActivity : AppCompatActivity() {
 
         }
 
-        // ✅ Save data from Facebook login
+        // Save data from Facebook login
 
         fun saveUserDataFromFacebook(context: Context, facebookResponse: Any): Boolean {
 
