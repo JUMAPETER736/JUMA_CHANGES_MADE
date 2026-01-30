@@ -26,6 +26,17 @@ private const val TAG = "FeedTextViewFragment"
 
 class FeedRepostTextFragment : Fragment() {
 
+    companion object {
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedRepostTextFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
 
     private var param1: String? = null
     private var param2: String? = null
@@ -119,57 +130,17 @@ class FeedRepostTextFragment : Fragment() {
 
         }
         binding.favoriteSection.setOnClickListener {
-//            data.isBookmarked = !data.isBookmarked
-//            feedTextViewFragmentInterface?.onFeedFavoriteClickFromFeedTextViewFragment(position, data)
-//            if(data.isBookmarked) {
-//                binding.fav.setImageResource(R.drawable.filled_favorite)
-//                YoYo.with(Techniques.Tada)
-//                    .duration(700)
-//                    .repeat(1)
-//                    .playOn(binding.fav)
-//            } else {
-//                binding.fav.setImageResource(R.drawable.favorite_svgrepo_com__1_)
-//                YoYo.with(Techniques.Tada)
-//                    .duration(700)
-//                    .repeat(1)
-//                    .playOn(binding.fav)
-//            }
+
         }
 
         binding.re.setOnClickListener {
-//            data.isReposted = !data.isReposted
-//            if (data.isReposted) {
-//                Log.d(TAG, "reposted: data likes ${data.likes}")
-//                binding.retweetCount.text = data.likes.toString()
-//
-//            }else {
-//                Log.d(TAG, "reposted: data likes ${data.likes}")
-//                binding.retweetCount.text = data.isReposted.toString()
-//            }
+
         }
         return binding.root
 
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FeedRepostTextFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FeedRepostTextFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
+
 
     override fun onResume() {
         Log.d(TAG, "onResume: ")
@@ -177,7 +148,7 @@ class FeedRepostTextFragment : Fragment() {
         backPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Handle back press
-//                navigateBack()
+
                 if (feedTextViewFragmentInterface != null) {
                     feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
                 }
@@ -204,8 +175,7 @@ class FeedRepostTextFragment : Fragment() {
     }
     @SuppressLint("SetTextI18n")
     fun setFeedCommentsCount() {
-//        Log.d(TAG, "setFeedCommentsCount: data.comments+1: ${data.comments+1} ")
-//        binding.feedCommentsCount.text = "${data.comments +1}"
+
     }
 
 }
