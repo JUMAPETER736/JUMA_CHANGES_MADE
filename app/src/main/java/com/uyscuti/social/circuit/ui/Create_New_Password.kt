@@ -1,15 +1,30 @@
 package com.uyscuti.social.circuit.ui
 
 import android.annotation.SuppressLint
+import com.uyscuti.social.circuit.R
+import com.uyscuti.social.network.api.response.login.ResetPasswordRequest
+import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
+import android.util.Log
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
-import com.uyscuti.social.circuit.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import retrofit2.HttpException
+import java.io.IOException
+import javax.inject.Inject
+
 
 class Create_New_Password : AppCompatActivity() {
 
@@ -26,11 +41,25 @@ class Create_New_Password : AppCompatActivity() {
 
     private var isNewPasswordVisible = false
     private var isConfirmPasswordVisible = false
+    private var dialog: Dialog? = null
+    private var resetToken: String? = null
+
+    @Inject
+    lateinit var retrofitInstance: RetrofitInstance
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.create_new_password)
+
+        // Get reset token from intent (passed from OTP verification screen)
+        resetToken = intent.getStringExtra("RESET_TOKEN")
+
+        if (resetToken.isNullOrEmpty()) {
+            Toast.makeText(this, "Invalid reset token", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
 
         // Initialize views
         tvCreateNewPassword = findViewById(R.id.tvCreateNewPassword)
@@ -108,9 +137,92 @@ class Create_New_Password : AppCompatActivity() {
 
     // Function to handle password reset logic
     private fun resetPassword(newPassword: String) {
-        // Update the password in your database or backend
-        val intent = Intent(this, Password_Reset_Success::class.java) // Redirect to a success page
-        startActivity(intent)
-        finish()
+        showLoadingDialog()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val resetRequest = ResetPasswordRequest(
+                    token = resetToken!!,
+                    newPassword = newPassword
+                )
+
+                val response = retrofitInstance.apiService.resetPassword(resetRequest)
+
+                withContext(Dispatchers.Main) {
+                    dismissLoadingDialog()
+
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        Log.d("ResetPassword", "Password reset successful")
+                        Toast.makeText(
+                            this@Create_New_Password,
+                            "Password reset successful",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        // Redirect to success page
+                        val intent = Intent(this@Create_New_Password, Password_Reset_Success::class.java)
+                        startActivity(intent)
+                        finish()
+                    } else {
+                        Log.e("ResetPassword", "Password reset failed: ${response.message()}")
+                        Toast.makeText(
+                            this@Create_New_Password,
+                            response.body()?.message ?: "Password reset failed",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: HttpException) {
+                Log.e("ResetPassword", "HTTP Exception: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    dismissLoadingDialog()
+                    Toast.makeText(
+                        this@Create_New_Password,
+                        "HTTP error. Please try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: IOException) {
+                Log.e("ResetPassword", "IO Exception: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    dismissLoadingDialog()
+                    Toast.makeText(
+                        this@Create_New_Password,
+                        "Network error. Please check your connection.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Log.e("ResetPassword", "Exception: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    dismissLoadingDialog()
+                    Toast.makeText(
+                        this@Create_New_Password,
+                        "An error occurred. Please try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun showLoadingDialog() {
+        if (dialog == null) {
+            dialog = Dialog(this)
+            dialog?.setContentView(R.layout.loading_dialog)
+            dialog?.setCancelable(false)
+            dialog?.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        }
+        dialog?.show()
+    }
+
+    private fun dismissLoadingDialog() {
+        dialog?.dismiss()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        dialog?.dismiss()
+        dialog = null
     }
 }

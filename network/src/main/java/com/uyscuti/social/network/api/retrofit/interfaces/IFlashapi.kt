@@ -85,6 +85,8 @@ import com.uyscuti.social.network.api.response.shorts.ShortsUploadResponse
 import com.uyscuti.social.network.api.response.updateavatar.UpdateAvatarResponse
 import com.uyscuti.social.network.api.response.userstatus.UserStatusResponse
 import com.uyscuti.social.network.api.response.getallshorts.ApiResponse
+import com.uyscuti.social.network.api.response.login.ResetPasswordRequest
+import com.uyscuti.social.network.api.response.login.ResetPasswordResponse
 import com.uyscuti.social.network.api.response.posts.FeedResponse
 import com.uyscuti.social.network.api.response.profile.followersList.UserOtherFollowersResponse
 import com.uyscuti.social.network.api.response.profile.followingList.BaseResponse
