@@ -4170,14 +4170,10 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                 feed.comments = favoriteFeedToComment!!.comments
                             }
                         }
-//                        favoriteFeedToComment = feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                        Log.d(TAG, "onSubmit: total after feed count is ${favoriteFeedToComment?.comments}")
-//
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
 
                     }
                     if (feedToComment != null) {
-//                        feedToComment!!.comments += 1
+
 
                         feedViewModel.getAllFeedData().forEach { feed ->
                             if (feed._id == postId) {
@@ -4192,7 +4188,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
                     }
                 }
-//            addCommentVN()
+
 
             }
 
@@ -4232,11 +4228,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         )
 
         Log.d(TAG, "onSubmit: handle reply to a comment")
-//        isReply = false
-
-//        val newCommentReplyEntity = CommentsFilesEntity(commentId, vnToUpload, vnToUpload, isReply = 1)
-
-        //if it clash on upload un comment the line below//
 
 
         val mongoDbTimeStamp = generateMongoDBTimestamp()
@@ -4266,7 +4257,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             __v = data!!.__v,
             _id = data!!._id,
             author = data!!.author,
-//            content = data!!.author?.account?.username!!,
+
             content = data!!.content,
             createdAt = data!!.createdAt,
             isLiked = data!!.isLiked,
@@ -4274,7 +4265,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -4312,14 +4303,12 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     parentPosition = updateReplyPosition,
                     uploadId = uploadId
                 )
-//            commentFilesViewModel.insertCommentFile(newCommentReplyEntity)
-
 
             commentFilesViewModel.insertCommentFile(newCommentReplyEntity)
             Log.d(TAG, "onSubmit: inserted comment $newCommentReplyEntity")
-//            commentFilesViewModel
+
         } else {
-//            isReply = false
+
             Log.d("placeholder", "uploadReplyVnComment: its placeholder ")
         }
 
@@ -4353,17 +4342,12 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         val TAG = "addCommentVN"
         Log.d("addCommentReply", "addComment: is reply $isReply")
 
-//        commentsViewModel.commentAudio(postId, "", "audio", filePart, video, image, docs, gif, thumbnail)
-
         if (isInternetAvailable(this)) {
 
             commentFilesViewModel.allCommentFiles.observe(this) {
 
-//                if(it.isNotEmpty()) {
-//
-//                }
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -4376,7 +4360,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                 val requestFile =
                                     file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
 
-// Create MultipartBody.Part instance from RequestBody
+                                // Create MultipartBody.Part instance from RequestBody
                                 val filePart =
                                     MultipartBody.Part.createFormData(
                                         "audio",
@@ -4428,30 +4412,8 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                     isFeedComment = i.isFeedComment
 
                                 )
-//                                { data ->
-//                                    Log.d(
-//                                        "OnSuccess",
-//                                        "OnSuccess: addCommentVN id: ${data._id} parent position ${it[0].parentPosition}"
-//                                    )
-//
-//                                    val commentPosition = adapter?.getPositionByUploadId(i.uploadId)
-//
-//                                    val comment = commentPosition?.let { it1 ->
-//                                        adapter?.getComment(
-//                                            it1
-//                                        )
-//                                    }
-//                                    Log.d(
-//                                        TAG,
-//                                        "addCommentVN: comment get successful  $comment"
-//                                    )
-//                                    if (comment != null) {
-//                                        comment._id = data._id
-//                                    }
-//                                    adapter?.notifyItemChanged(commentPosition!!)
-//                                }
-//                    commentsViewModel.comment(it[0].postId, it[0].content, "text")
-                                commentFilesViewModel.viewModelScope.launch {
+
+                             commentFilesViewModel.viewModelScope.launch {
                                     val isDeleted = commentFilesViewModel.deleteCommentById(i.id)
                                     if (isDeleted) {
                                         // Deletion was successful, update UI or perform other actions
@@ -4591,16 +4553,15 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
     ) {
         isReplyVnPlaying = isReply
         isVnAudioToPlay = isVnAudio
-//        Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
+
         Log.d(
             "toggleAudioPlayer",
             "progress received from adapter $progress is reply $isReply    is seeking $isSeeking is vn audio $isVnAudio"
         )
-//
 
 
         if (currentCommentAudioPath == audioToPlayPath) {
-//            Log.d(TAG, "toggleAudioPlayer: currentCommentAudioPosition == position")
+
             if (seekTo) {
                 Log.d("SeekTo", "Seek to $progress")
                 EventBus.getDefault().post(PauseShort(true))
@@ -4615,7 +4576,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     "toggleAudioPlayer",
                     "toggleAudioPlayer: current player is playing then pause"
                 )
-//                audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
+
 
                 if (isVnAudio) {
                     Log.d("waveProgress", "toggleAudioPlayer: $waveProgress")
@@ -4632,10 +4593,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                 exoPlayer?.pause()
                 isDurationOnPause = true
 
-//                Log.d(
-//                    "toggleAudioPlayer",
-//                    " in pause toggle audio player isDurationOnPause is $isDurationOnPause"
-//                )
 
             } else {
                 Log.d(
@@ -4655,7 +4612,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
             if (isReply) {
                 Log.d("IsReply", "is reply position $position")
-//                adapter?.refreshMainComment(position)
+
             }
 
             commentAudioStartPlaying(audioToPlayPath, audioPlayPauseBtn, progress, position)
@@ -4763,7 +4720,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             exoPlayer!!.prepare()
             exoPlayer!!.seekTo(progress.toLong())
             exoPlayer!!.playWhenReady = true
-//            exoPlayer!!.play()
+
             exoPlayer!!.repeatMode = Player.REPEAT_MODE_OFF
             exoPlayer!!.addListener(playbackStateListener)
             exoPlayer!!.addListener(object : Player.Listener {
@@ -4772,8 +4729,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     playWhenReady: Boolean,
                     playbackState: Int
                 ) {
-//                    if (playbackState == Player.STATE_READY && exoPlayer!!.duration != C.TIME_UNSET) {
-//                    }
+
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
@@ -4790,18 +4746,16 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
             })
             if (isReplyVnPlaying) {
-//                Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
+
                 val handler = Handler()
 
                 handler.postDelayed({
                     commentsAdapter?.refreshMainComment(position)
                 }, 200)
             } else {
-//                Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
+
             }
-//            if (isVnAudioToPlay) {
-//
-//            }
+
 
         } catch (e: Exception) {
             Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: error: ${e.message}")
@@ -4831,12 +4785,12 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         override fun onPlaybackStateChanged(state: Int) {
             when (state) {
                 ExoPlayer.STATE_ENDED -> {
-//                     The video playback ended. Move to the next video if available.
+                   //  The video playback ended. Move to the next video if available.
                     Log.d(
                         "playbackStateListener",
                         "commentAudioStartPlaying: comment audio completed"
                     )
-//                    audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
+
                     if (isVnAudioToPlay) {
                         if (::audioDurationTVCount.isInitialized) {
                             audioDurationTVCount.text = "00:00"
@@ -4871,8 +4825,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
                     commentsAdapter?.refreshMainComment(position)
                     commentsAdapter?.changePlayingStatus()
-//                    adapter?.resetWaveForm()
-//                    adapter?.notifyDataSetChanged()
+
                     if (isVnAudioToPlay) {
                         stopWaveRunnable()
 
@@ -4968,7 +4921,8 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
     private fun initializeSeekBar(exoPlayer: ExoPlayer) {
         audioSeekBar.max = exoPlayer.duration.toInt()
-// Remove callbacks from the current handler, if any
+
+        // Remove callbacks from the current handler, if any
         currentHandler?.removeCallbacksAndMessages(currentHandler)
         val handler = Handler(Looper.getMainLooper())
         handler.postDelayed(object : Runnable {
@@ -5033,7 +4987,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             outputFile = getOutputFilePath("rec")
             outputVnFile = getOutputFilePath("mix")
             wasPaused = false
-//            firstTimeSendVn = false
+
 
 
             mediaRecorder = MediaRecorder().apply {
@@ -5042,10 +4996,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                 setOutputFile(outputFile)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
 
-//                setAudioSource(MediaRecorder.AudioSource.MIC)
-//                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-//                setOutputFile(outputFile)
-//                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
 
                 prepare()
                 start()
@@ -5061,10 +5011,8 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
             binding.deleteVN.isClickable = true
             binding.sendVN.isClickable = true
-//            mediaRecorder.
-            recordedAudioFiles.add(outputFile)
 
-//            mediaRecorder.logSessionId
+            recordedAudioFiles.add(outputFile)
 
             Log.d("VNFile", outputFile)
             // Add any UI changes or notifications indicating recording has started
@@ -5127,7 +5075,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             binding.waveForm.visibility = View.VISIBLE
             binding.timerTv.visibility = View.VISIBLE
             binding.playAudioLayout.visibility = View.GONE
-//            binding.playVnAudioBtn.setImageResource(R.drawable.baseline_pause_black)
+
             binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
 
             binding.recordVN.setImageResource(R.drawable.baseline_pause_black)
@@ -5138,7 +5086,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
     @RequiresApi(Build.VERSION_CODES.R)
     private fun pauseRecording() {
         val TAG = "pauseRecording"
-//        firstTimeSendVn = true
+
         if (isRecording && !isPaused) {
 
             try {
@@ -5184,11 +5132,9 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             isAudioVNPlaying = false
 
             binding.timerTv.text = "00:00.00"
-//            binding.recordVN.setImageResource(R.drawable.baseline_pause_24)
+
             binding.recordVN.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
 
-//            binding.deleteVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
-//            binding.deleteVN.isClickable = false
             binding.sendVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
             binding.sendVN.isClickable = false
 
@@ -5200,9 +5146,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
 
             deleteVn()
-//            if()
-            // Add any UI changes or notifications indicating recording has stopped
-//            showSaveConfirmationDialog(outputFile)
+
         } catch (e: Exception) {
             e.printStackTrace()
             // Handle exceptions as needed
@@ -5299,10 +5243,9 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             isPaused = false
 
             binding.timerTv.text = "00:00.00"
-//            binding.recordVN.setImageResource(R.drawable.baseline_pause_24)
+
             binding.recordVN.setImageResource(com.uyscuti.social.call.R.drawable.ic_mic_on)
-//            binding.deleteVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
-//            binding.deleteVN.isClickable = false
+
             binding.sendVN.setBackgroundResource(R.drawable.ic_ripple_disabled)
             binding.sendVN.isClickable = false
 
@@ -5326,7 +5269,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     val durationString = getFormattedDuration(outputVnFile)
                     val fileName = getFileNameFromLocalPath(outputVnFile)
                     uploadVnComment(outputVnFile, fileName, durationString, "vnAudio")
-//                    firstTimeSendVn = false
+
                 } else {
                     val durationString = getFormattedDuration(outputFile)
                     val fileName = getFileNameFromLocalPath(outputFile)
@@ -5355,7 +5298,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
     private fun deleteVn() {
         recordedAudioFiles.clear()
-//        if (recordedAudioFiles.isNotEmpty()) {
+
         val isDeleted = deleteFiles(recordedAudioFiles)
         val outputVnFileList = mutableListOf<String>()
         outputVnFileList.add(outputVnFile)
@@ -5371,7 +5314,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         } else {
             println("Failed to delete file.")
         }
-//        }
+
     }
 
     @SuppressLint("DefaultLocale")
@@ -5462,7 +5405,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
     private fun startPlaying(vnAudio: String) {
         binding.playVnAudioBtn.setImageResource(R.drawable.baseline_pause_white_24)
         EventBus.getDefault().post(PauseShort(true))
-//        player?.reset()
+
         isAudioVNPlaying = true
         vnRecordAudioPlaying = true
 
@@ -5480,7 +5423,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             player = MediaPlayer().apply {
                 try {
                     setDataSource(vnAudio)
-//                inputStream.close()
+
                     prepare()
                     Log.d("startPlaying", "vnRecordProgress $vnRecordProgress")
                     if (vnRecordProgress != 0) {
@@ -5553,7 +5496,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                 likeCommentReplyFromViewsActivity(likeCommentReply)
             }
 
-//            EventBus.getDefault().post(ToggleReplyToTextView(modifiedData, position))
 
         } else if (requestCode == COMMENT_VIDEO_CODE && resultCode == RESULT_OK && data != null) {
 
@@ -5610,7 +5552,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             TAG,
             "toggleReplyToTextView: comment id $commentId data comment id ${data._id} comment position $position"
         )
-//        Log.d(TAG, "toggleReplyToTextView: data ${event.comment}")
+
         val username = data.author!!.account.username
 
         binding.replyToLayout.visibility = View.VISIBLE
@@ -5721,11 +5663,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                 )
             val author =
                 Author(_id = "12", account = account, firstName = "", lastName = "", avatar = null)
-//            val gifFile = CommentFiles(
-//                _id = "124",
-//                url = gifFilePathToUpload,
-//                localPath = gifFilePathToUpload
-//            )
+
             val comment = com.uyscuti.sharedmodule.data.model.Comment(
                 __v = 1,
                 _id = commentsAdapter!!.itemCount.toString(),
@@ -5795,14 +5733,14 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                 }
             } else {
                 feedToComment = feedViewModel.getAllFeedData().find { it._id == postId }
-//                Log.d(TAG, "onSubmit: total before feed count is ${feedToComment?.comments}")
+
                 myFeedToComment = feedViewModel.getMyFeedData().find { it._id == postId }
                 favoriteFeedToComment =
                     feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
                 Log.d(TAG, "onSubmit: total before feed count is ${feedToComment?.comments}")
 
                 if (myFeedToComment != null) {
-//                    myFeedToComment!!.comments += 1
+
 
                     feedViewModel.getMyFeedData().forEach { feed ->
                         if (feed._id == postId) {
@@ -5811,7 +5749,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     }
                 }
                 if (favoriteFeedToComment != null) {
-//                    favoriteFeedToComment!!.comments += 1
+
 
                     feedViewModel.getAllFavoriteFeedData().forEach { feed ->
                         if (feed._id == postId) {
@@ -5820,7 +5758,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     }
                 }
                 if (feedToComment != null) {
-//                    feedToComment!!.comments += 1
+
 
                     feedViewModel.getAllFeedData().forEach { feed ->
                         if (feed._id == postId) {
@@ -5867,7 +5805,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         Log.d("uploadGifImageComment", "uploadGifImageComment: handle reply to a comment")
         isReply = false
 
-//        val newCommentReplyEntity = CommentsFilesEntity(commentId, vnToUpload, vnToUpload, isReply = 1)
 
         //if it clash on upload un comment the line below//
         val newCommentReplyEntity =
@@ -5887,7 +5824,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             "uploadGifImageComment: inserted comment $newCommentReplyEntity"
         )
         lifecycleScope.launch {
-//                allCommentReplies2(1, commentId)
+
         }
         val mongoDbTimeStamp = generateMongoDBTimestamp()
         val gifFile = CommentFiles(_id = "", url = gifToUpload, localPath = "gif")
@@ -5903,7 +5840,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             commentId = commentId,
             updatedAt = mongoDbTimeStamp,
             gifs = gifToUpload,
-//            audios = mutableListOf(vnFile),
+
             contentType = "gif"
         )
 
@@ -5919,7 +5856,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -5975,7 +5912,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         } catch (e: HttpException) {
             Log.d(TAG, "Http Exception ${e.message}")
             withContext(Dispatchers.Main) {
-//                showToast(this@MainActivity, "Check Internet Connection")
+
             }
             return false
         } catch (e: IOException) {
@@ -6001,7 +5938,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         } catch (e: HttpException) {
             Log.d(TAG, "Http Exception ${e.message}")
             withContext(Dispatchers.Main) {
-//                showToast(this@MainActivity, "Check Internet Connection")
+
             }
             return false
         } catch (e: IOException) {
@@ -6030,7 +5967,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         } catch (e: HttpException) {
             Log.d(TAG, "Http Exception ${e.message}")
             withContext(Dispatchers.Main) {
-//                showToast(this@MainActivity, "Check Internet Connection")
+
             }
             return false
         } catch (e: IOException) {
@@ -6043,14 +5980,14 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         val TAG = "addGifComment"
         Log.d("addGifComment", "addGifComment: is reply $isReply")
 
-//        commentsViewModel.commentAudio(postId, "", "audio", filePart, video, image, docs, gif, thumbnail)
+
 
         if (isInternetAvailable(this)) {
 
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -6087,9 +6024,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                         file.name,
                                         requestFile
                                     )
-//                                val gif = createMultipartBody(this, i.url.toUri(), "gif")
-//                                val gif =
-//                                    MultipartBody.Part.createFormData("gif", file.name, requestFile)
+
                                 val thumbnail =
                                     MultipartBody.Part.createFormData(
                                         "thumbnail",
