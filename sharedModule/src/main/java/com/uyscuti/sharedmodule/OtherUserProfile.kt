@@ -6078,10 +6078,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                 }
                             }
                         }
-//                        else if(i.localPath == "video"){
-//                            Log.d("LocalPath","ready to upload video")
-//                            Log.d("LocalPath", "url ${i.url} type ${i.localPath}")
-//                        }
+
 
                     }
 
@@ -6098,123 +6095,21 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
     }
 
-//    private var shortPlayerFragment: OtherUserProfileShortsPlayerFragment? = null
+
 
     @SuppressLint("CommitTransaction")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun hideToolBar(event: HideToolBar) {
-//        binding.toolbarLayout.visibility = View.GONE
-//        binding.toolbar.visibility = View.GONE
-//        binding.mainContainer.visibility = View.GONE
 
-//        binding.otherUsersShortsPlayFragment.visibility = View.VISIBLE
 
         Log.d("hideToolBar", "hideToolBar: step 1")
         binding.otherUsersShortsPlayFragment.visibility = View.VISIBLE
         Log.d("hideToolBar", "hideToolBar: step 2")
-//        try {
-//            otherUserProfileShortsPlayerFragment = OtherUserProfileShortsPlayerFragment()
-//            otherUserProfileShortsPlayerFragment.arguments = Bundle().apply {
-//                putSerializable(
-//                    UserProfileShortsPlayerActivity.CLICKED_SHORT,
-//                    event.userShortEntity
-//                )
-//                putSerializable(UserProfileShortsPlayerActivity.SHORTS_LIST, event.shortsProfile)
-//            }
-//
-//            val transaction = supportFragmentManager.beginTransaction()
-//            transaction.replace(
-//                R.id.other_users_shorts_play_fragment,
-//                otherUserProfileShortsPlayerFragment
-//            )
-//            transaction.addToBackStack("shortPlayerFragment")
-//            transaction.commit()
-//
-//            binding.otherUsersShortsPlayFragment.visibility = View.GONE
-//        } catch (e: Exception) {
-//            Log.e(TAG, "hideToolBar: ${e.message}")
-//        }
 
-
-        // Begin fragment transaction
-//        val transaction = supportFragmentManager.beginTransaction()
-//        Log.d("hideToolBar", "hideToolBar: step 3")
-//        // Replace fragment in the container
-//        transaction.replace(R.id.other_users_shorts_play_fragment, otherUserProfileShortsPlayerFragment)
-//        Log.d("hideToolBar", "hideToolBar: step 4")
-//        // Optional: add this transaction to the back stack
-//        transaction.addToBackStack("shortPlayerFragment")
-//        Log.d("hideToolBar", "hideToolBar: step 5")
-//        // Commit the transaction
-//        transaction.commit()
-//        Log.d("hideToolBar", "hideToolBar: step 6")
-//        shortPlayerFragment = OtherUserProfileShortsPlayerFragment()
-//
-//        supportFragmentManager.beginTransaction()
-//            .replace(
-//                R.id.other_users_shorts_play_fragment,
-//                shortPlayerFragment!!
-//            ) // Use the correct container ID
-//            .addToBackStack(null) // Optional, to add to back stack
-//            .commit()
-//        otherUsersProfileViewModel.setOpenShortsPlayerFragment(true)
-//        runOnUiThread {
-//            val shortPlayerFragment = OtherUserProfileShortsPlayerFragment()
-//            supportFragmentManager.beginTransaction()
-//                .replace(
-//                    R.id.other_users_shorts_play_fragment,
-//                    shortPlayerFragment,
-//                    "MY_FRAGMENT_TAG"
-//                )
-//                .addToBackStack("null")
-//                .commit()
-//        }
-//        lifecycleScope.launch(Dispatchers.Main) {
-//
-//        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-//    fun businessCommentsClicked(event: BusinessCommentsClicked) {
-//        binding.toolbarLayout.visibility = View.GONE
-//        binding.toolbar.visibility = View.GONE
-//        binding.mainContainer.visibility = View.GONE
 
-//        binding.otherUsersShortsPlayFragment.visibility = View.VISIBLE
-
-//        Log.d("businessCommentsClicked", "businessCommentsClicked: step 1 ${event.data}")
-
-//    }
-    //    override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
-//        super.onCreate(savedInstanceState, persistentState)
-//    }
-//    override fun onShortClick(
-//        shortsProfile: ArrayList<UserShortsEntity>,
-//        userShortEntity: UserShortsEntity
-//    ) {
-//        if (!supportFragmentManager.isStateSaved) {
-//            Log.d(TAG, "onShortClick: state not saved")
-//
-//            val shortPlayerFragment = TrialFragment()
-//            val transaction = supportFragmentManager.beginTransaction()
-//
-//            // Check if the fragment already exists
-//            val existingFragment = supportFragmentManager.findFragmentById(binding.otherUsersShortsPlayFragment.id)
-//
-//            if (existingFragment == null || existingFragment.javaClass != TrialFragment::class.java) {
-//                // Replace the fragment if it's not already present
-//                Log.d(TAG, "not existingFragment")
-//                transaction.replace(binding.otherUsersShortsPlayFragment.id, shortPlayerFragment)
-//                transaction.setReorderingAllowed(true)
-//                transaction.addToBackStack("shortPlayerFragment")
-//                transaction.commit()
-//            } else {
-//                Log.d(TAG, "Fragment already exists: ${existingFragment.javaClass.simpleName}")
-//            }
-//        } else {
-//            Log.d(TAG, "onShortClick: state saved")
-//        }
-//    }
     override fun onShortClick(
         shortsProfile: ArrayList<UserShortsEntity>,
         userShortEntity: UserShortsEntity
