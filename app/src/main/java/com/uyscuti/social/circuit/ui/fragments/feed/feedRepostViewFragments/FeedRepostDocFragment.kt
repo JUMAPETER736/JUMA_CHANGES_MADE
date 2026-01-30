@@ -20,21 +20,27 @@ import com.uyscuti.social.circuit.databinding.FragmentFeedRepostDocBinding
 import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 
-// TODO: Rename parameter arguments, choose names that match
+
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
-/**
- * A simple [Fragment] subclass.
- * Use the [FeedRepostDocFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+
 
 private const val TAG = "FeedDocumentViewAdapter"
 
 class FeedRepostDocFragment : Fragment(), OnFeedClickListener {
 
+    companion object {
 
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedRepostDocFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
 
     private var currentCommentCount = 0
 
@@ -45,7 +51,7 @@ class FeedRepostDocFragment : Fragment(), OnFeedClickListener {
     }
 
 
-    // TODO: Rename and change types of parameters
+
     private var param1: String? = null
     private var param2: String? = null
     private lateinit var data: com.uyscuti.social.network.api.response.allFeedRepostsPost. OriginalPost
@@ -92,28 +98,23 @@ class FeedRepostDocFragment : Fragment(), OnFeedClickListener {
             .into(binding.toolbar.feedProfilePic)
 
         binding.toolbar.backIcon.setOnClickListener {
-//            feedTextViewFragmentInterface.onBackPressed()
-//            navigateBack()
+
             if (feedTextViewFragmentInterface != null) {
                 feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
             }
        }
-//        binding.comment.setOnClickListener {
-////            feedTextViewFragmentInterface?.onCommentClickFromFeedTextViewFragment(position, data)
-////            binding.feedCommentsCount.text = (data.comments + 1).toString()
-////            EventBus.getDefault().post(FeedCommentClicked(position, data))
-//        }
+
 
         val documentList:MutableList<String> = mutableListOf()
+
         if(data.files.isNotEmpty()) {
             for (document in data.files) {
                 documentList.add(document.url)
             }
+
         }else {
+
         }
-
-     //   val feedDocumentAdapter = FeedRepostDocumentViewAdapter()
-
 
 
         binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
@@ -127,34 +128,13 @@ class FeedRepostDocFragment : Fragment(), OnFeedClickListener {
 
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FeedRepostDocFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FeedRepostDocFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
-
-
     override fun onResume() {
         Log.d(TAG, "onResume: ")
         super.onResume()
         backPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Handle back press
-//                navigateBack()
+
                 if (feedTextViewFragmentInterface != null) {
                     feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
                 }
@@ -170,42 +150,42 @@ class FeedRepostDocFragment : Fragment(), OnFeedClickListener {
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 
     override fun feedCommentClicked(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 
     override fun feedFavoriteClick(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 
     override fun moreOptionsClick(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 
     override fun feedFileClicked(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 
     override fun feedRepostFileClicked(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.OriginalPost
     ) {
-        TODO("Not yet implemented")
+
     }
 
 
@@ -214,35 +194,35 @@ class FeedRepostDocFragment : Fragment(), OnFeedClickListener {
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 
     override fun followButtonClicked(
         followUnFollowEntity: FollowUnFollowEntity,
         followButton: AppCompatButton
     ) {
-        TODO("Not yet implemented")
+
     }
 
     override fun feedRepostPost(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 
     override fun feedRepostPostClicked(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
-        TODO("Not yet implemented")
+
     }
 
     override fun onImageClick() {
-        TODO("Not yet implemented")
+
     }
 }

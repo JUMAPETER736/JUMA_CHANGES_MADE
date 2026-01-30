@@ -43,7 +43,20 @@ private const val ARG_PARAM2 = "param2"
  */private const val TAG = "FeedRepostAudioViewFragment"
 
 class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
-    // TODO: Rename and change types of parameters
+
+    companion object {
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedRepostAudioViewFragment()
+                .apply {
+                    arguments = Bundle().apply {
+                        putString(ARG_PARAM1, param1)
+                        putString(ARG_PARAM2, param2)
+                    }
+                }
+    }
+
     private var param1: String? = null
     private var param2: String? = null
     private lateinit var data:  OriginalPost
@@ -143,7 +156,7 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
             val audioList: ArrayList<String> = ArrayList()
             if (data.files.isNotEmpty()) {
                 for (audio in data.files) {
-//                Log.d(TAG, "render: images ${audio.url}")
+
                     audioList.add(audio.url)
                 }
             } else {
@@ -195,7 +208,7 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
                             pause()
                             stop()
                             release()
-//                      removeListener(playbackStateListener)
+
                         }
                         mediaPlayer = null
                     }
@@ -209,25 +222,25 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
                     when (state) {
                         ViewPager2.SCROLL_STATE_IDLE -> {
                             // The pager is in an idle, settled state.
-//                        Log.d("ViewPager2", "Page selected: SCROLL_STATE_IDLE")
+
                         }
 
                         ViewPager2.SCROLL_STATE_DRAGGING -> {
                             // The user is dragging the pager.
-//                        Log.d("ViewPager2", "Page selected: SCROLL_STATE_DRAGGING")
+
                         }
 
-//                    ViewPager2.
+
                         ViewPager2.SCROLL_STATE_SETTLING -> {
                             // The pager is settling to a final position.
-//                        Log.d("ViewPager2", "Page selected: SCROLL_STATE_SETTLING")
+
                         }
                     }
                 }
             })
             adapter?.setAudioData(data)
             // Setup CircleIndicator for ViewPager2
-//        val indicator = findViewById<CircleIndicator3>(R.id.circleIndicator)
+
             binding.circleIndicator.setViewPager(binding.viewPager)
 
             binding.seekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -253,26 +266,7 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
         return binding.root
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FeedRepostAudioViewFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FeedRepostAudioViewFragment()
-                .apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
+
 
     private fun setupMediaPlayer(
         audioUrl: String,
@@ -389,8 +383,7 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
         }
         mediaPlayer = null
 
-//        mediaPlayer?.stop()
-//        mediaPlayer?.release()
+
     }
 
     override fun onResume() {
@@ -401,7 +394,7 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
         backPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Handle back press
-//                navigateBack()
+
                 if (mediaPlayer?.isPlaying == true) {
                     mediaPlayer!!.stop()
                 }
@@ -418,9 +411,7 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
     override fun onPause() {
         super.onPause()
         releaseMediaPlayer()
-//        if(mediaPlayer?.isPlaying == true) {
-//            mediaPlayer!!.pause()
-//        }
+
     }
 
     override fun onDestroy() {
@@ -445,7 +436,7 @@ class FeedRepostAudioViewFragment() : Fragment(), PlayFeedAudioInterface {
         currentDuration: TextView
     ) {
         Log.d(TAG, "onAudioPlayClickListener: start playing audio")
-//        isPlaying = true
+
         this.pausePlayButton = playImageView
         this.seekBar = seekBar
         this.currentDuration = currentDuration
