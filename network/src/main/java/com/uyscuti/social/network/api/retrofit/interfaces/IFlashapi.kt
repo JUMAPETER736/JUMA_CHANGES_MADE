@@ -85,8 +85,13 @@ import com.uyscuti.social.network.api.response.shorts.ShortsUploadResponse
 import com.uyscuti.social.network.api.response.updateavatar.UpdateAvatarResponse
 import com.uyscuti.social.network.api.response.userstatus.UserStatusResponse
 import com.uyscuti.social.network.api.response.getallshorts.ApiResponse
+import com.uyscuti.social.network.api.response.login.ForgotPasswordRequest
+import com.uyscuti.social.network.api.response.login.ForgotPasswordResponse
+import com.uyscuti.social.network.api.response.login.ResendEmailRequest
 import com.uyscuti.social.network.api.response.login.ResetPasswordRequest
 import com.uyscuti.social.network.api.response.login.ResetPasswordResponse
+import com.uyscuti.social.network.api.response.login.VerifyOTPRequest
+import com.uyscuti.social.network.api.response.login.VerifyOTPResponse
 import com.uyscuti.social.network.api.response.posts.FeedResponse
 import com.uyscuti.social.network.api.response.profile.followersList.UserOtherFollowersResponse
 import com.uyscuti.social.network.api.response.profile.followingList.BaseResponse
@@ -127,6 +132,16 @@ interface IFlashapi {
 
     @POST("users/resend-email-verification")
     suspend fun resendEmailVerification(): Response<MainResponse>
+
+    @POST("users/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<ForgotPasswordResponse>
+
+    @POST("users/verify-otp")
+    suspend fun verifyOTP(@Body request: VerifyOTPRequest): Response<VerifyOTPResponse>
+
+    @POST("users/resend-email-verification")
+    suspend fun resendEmailVerification(@Body request: ResendEmailRequest): Response<MainResponse>
+
 
     @Multipart
     @PATCH("users/avatar")

@@ -10,14 +10,6 @@ data class LoginResponse(
 )
 
 
-
-data class ResetPasswordResponse(
-    val message: String,
-    val statusCode: Int,
-    val success: Boolean
-)
-
-
 data class ForgotPasswordRequest(
     val email: String
 )
@@ -61,5 +53,12 @@ data class VerifyOTPResponse(
 data class VerifyOTPData(
     val resetToken: String,
     val verified: Boolean
+)
+
+data class ResetPasswordResponse(
+    val success: Boolean,
+    val message: String,
+    val statusCode: Int,
+    val data: Map<String, Any> = emptyMap()
 )
 

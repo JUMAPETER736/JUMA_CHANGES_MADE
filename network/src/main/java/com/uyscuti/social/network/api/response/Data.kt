@@ -1,3 +1,6 @@
 package com.uyscuti.social.network.api.response
 
-class Data
+data class Data(
+    val email: String? = null,
+    val otpSent: Boolean? = null
+)
