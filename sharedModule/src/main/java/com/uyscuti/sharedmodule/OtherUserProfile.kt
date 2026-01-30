@@ -283,7 +283,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
     private lateinit var commentsReplyViewModel: ShortCommentReplyViewModel
     private lateinit var commentFilesViewModel: RoomCommentFilesViewModel
 
-   // private lateinit var otherUserProfileShortsPlayerFragment: OtherUserProfileShortsPlayerFragment
 
 
     private var vnList = ArrayList<String>()
@@ -397,11 +396,11 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        binding = ActivityOtherUserProfileBinding.inflate(layoutInflater)
+
         binding = OtherUserProfileRedesignBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
-//        onShortThumbnailClickListener(this)
+
         callViewModel = ViewModelProvider(this)[CallViewModel::class.java]
         commentsViewModel = ViewModelProvider(this)[ShortCommentsViewModel::class.java]
         commentViewModel = ViewModelProvider(this)[CommentsViewModel::class.java]
@@ -411,7 +410,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         feedViewModel = ViewModelProvider(this)[GetFeedViewModel::class.java]
         commentsReplyViewModel = ViewModelProvider(this)[ShortCommentReplyViewModel::class.java]
         commentFilesViewModel = ViewModelProvider(this)[RoomCommentFilesViewModel::class.java]
-//        followViewModel = ViewModelProvider(this)[FollowViewModel::class.java]
+
 
         user = intent.getParcelableExtra("User_Extra")
         avatar = intent.getStringExtra("Avatar_Extra").toString()
@@ -434,12 +433,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         val isConnected = networkInfo != null && networkInfo.isConnected
 
 
-//        supportActionBar?.title = "@${user?.name?.replace("\\s".toRegex(), "")?.toLowerCase(Locale.ROOT)}"
-
         supportActionBar?.title = ""
-//        supportActionBar?.title = user?.name
-//        supportActionBar?.title = user?.name ?: fromShortsUserAccount?.username
-//        supportActionBar?.title = user?.name ?: fromShortsUserAccount?.username ?: "Default Title"
 
         val user = User(
             _id = fromShortsUserAccount!!.userId,
@@ -464,7 +458,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics)
                 .toInt()
 
-//        val drawable = Drawable()
+
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         val navigationIcon = ContextCompat.getDrawable(this, R.drawable.baseline_arrow_back_ios_24)
@@ -491,46 +485,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         for (i in 0 until tabsAdapter.count) {
             tabs.getTabAt(i)?.icon = tabsAdapter.getIcon(i)
         }
-        /**
-         * commented ID WILL BE ADDED SOON
-         * */
-//        val textView: ImageView = findViewById(R.id.callTextView)
-//        val callTypeSpinner: Spinner = findViewById(R.id.callTypeSpinner)
-
-        // Populate the spinner with options (Video and Voice)
-//        val callTypes = arrayOf("Video Call", "Voice Call")
-//        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, callTypes)
-//        callTypeSpinner.adapter = adapter
-//
-//        textView.setOnClickListener {
-////                callTypeSpinner.visibility = View.VISIBLE
-////                callTypeSpinner.performClick() // When the text view is clicked, open the dropdown
-//            showCallTypeDialog()
-//        }
-//
-//        callTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-//            override fun onItemSelected(
-//                parent: AdapterView<*>?,
-//                view: View?,
-//                position: Int,
-//                id: Long
-//            ) {
-//                // Respond to the selected item
-//                // Perform actions based on the selected option (Video or Voice)
-//                when (callTypes[position]) {
-//                    "Video Call" -> startVideoCall()
-//                    "Voice Call" -> startVoiceCall()
-//                }
-//                // Hide the dropdown after selection
-//                callTypeSpinner.visibility = View.GONE
-//            }
-//
-//            override fun onNothingSelected(parent: AdapterView<*>?) {
-//                // Handle the case where nothing is selected
-//                callTypeSpinner.visibility = View.GONE
-//            }
-//        }
-
 
         initUser()
 
@@ -546,18 +500,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         }
         otherUsersProfileViewModel.getOpenShortsPlayerFragment.observe(this) { openShortsPlayer ->
             if (openShortsPlayer) {
-//                otherUserProfileShortsPlayerFragment = OtherUserProfileShortsPlayerFragment()
-//
-//                val transaction = supportFragmentManager.beginTransaction()
-//                Log.d("openShortsPlayer", "openShortsPlayer: step 3")
-//                // Replace fragment in the container
-//                transaction.replace(R.id.other_users_shorts_play_fragment, otherUserProfileShortsPlayerFragment)
-//                Log.d("openShortsPlayer", "openShortsPlayer: step 4")
-//                // Optional: add this transaction to the back stack
-//                transaction.addToBackStack("shortPlayerFragment")
-//                Log.d("openShortsPlayer", "openShortsPlayer: step 5")
-//                // Commit the transaction
-//                transaction.commit()
+
                 Log.d("openShortsPlayer", "openShortsPlayer: step 6")
             } else {
                 Log.d("openShortsPlayer", "openShortsPlayer openShortsPlayer: $openShortsPlayer")
@@ -570,9 +513,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                 followEntity?.let {
                     if (it.isFollowing) {
                         // User is currently following, update UI accordingly
-//                        binding.followTextView.text = "Following"
-//                        binding.followIcon.setImageResource(R.drawable.notifications_svgrepo_com_fill)
-
 
                         if (!isConnected) {
                             Log.d(TAG, "onCreate: no internet connection")
@@ -598,14 +538,13 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
                     } else {
                         // User is not following, update UI accordingly
-//                        binding.followTextView.text = "Follow"
-//                        binding.followIcon.setImageResource(R.drawable.notification_follow_bluejeans)
+
                         if (!isConnected) {
                             Log.d(TAG, "onCreate: no internet connection")
                         } else {
+
                             Log.d(TAG, "onCreate: internet connected")
                             followUnFollowViewModel.followUnFollow(fromShortsUserAccount!!.userId)
-//                            viewModel.getOtherUsersProfile(fromShortsUserAccount!!.username)
 
                             viewModel.viewModelScope.launch {
                                 delay(500)
@@ -633,24 +572,26 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                 "feesShortsSharedViewModel",
                 "onCreateView: data from all shorts fragment $newData"
             )
+
             EventBus.getDefault().post(InformShortsFragment2(newData.userId, newData.isFollowing))
+
             val followersCountText = binding.followersCount.text.toString()
+
             val followersCount: Int = try {
                 followersCountText.toInt()
+
             } catch (e: NumberFormatException) {
                 // Handle the case where the text is not a valid integer
                 0 // Or any default value or error handling
             }
+
             if (newData.isFollowing) {
-//                binding.followTextView.text = "Following"
-//                binding.followIcon.setImageResource(R.drawable.notifications_svgrepo_com_fill)
 
 
 
                 binding.followersCount.text = (followersCount + 1).toString()
             } else {
-//                binding.followIcon.setImageResource(R.drawable.notification_follow_bluejeans)
-//                binding.followTextView.text = "Follow"
+
                 binding.followersCount.text = (followersCount - 1).toString()
             }
             YoYo.with(Techniques.Tada)
@@ -666,7 +607,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
             // Update the Room database with the new follow status
             val newFollowEntity = FollowUnFollowEntity(fromShortsUserAccount!!.userId, isFollowing)
-//            feesShortsSharedViewModel.setData(newFollowEntity)
+
 
             EventBus.getDefault()
                 .post(InformFeedFragment(fromShortsUserAccount!!.userId, isFollowing))
@@ -712,9 +653,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         }
 
         initializeCommentsBottomSheet()
-//        binding.click.setOnClickListener {
-//            toggleMotionLayoutVisibility()
-//        }
+
 
         cameraLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -773,8 +712,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     val videoPath = data?.getStringExtra("video_url")
                     val uriString = data?.getStringExtra("vUri")
                     val vUri = Uri.parse(uriString)
-//                    Log.d("VideoPicker", "File(1) path: $videoPath")
-//                    Log.d("VideoPicker", "File(1) path: $isReply")
+
                     val uri = Uri.parse(videoPath)
 
                     if (videoPath != null) {
@@ -791,7 +729,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                             Log.d("VideoPicker", "File size: $fileSizeInMB MB")
 
                             val fileSizeInGB = fileSizeInMB / 1024 // Conversion from MB to GB
-//                            Log.d("VideoPicker", "File size: $fileSizeInGB GB")
+
 
                             if (fileSizeInGB.toInt() == 1) {
                                 showToast(this, "File size too large")
@@ -822,8 +760,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                             Log.d("VideoPicker", "File does not exists ")
                         }
 
-
-//                        toCompressUris
                     } else {
                         Log.d("PhotoPicker", "No media selected")
                     }
@@ -837,10 +773,10 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     val data = result.data
                     // Process the selected image data
                     val audioPath = data?.getStringExtra("audio_url")
-//                    val aUri = data?.getStringExtra("aUri")
+
                     val uriString = data?.getStringExtra("aUri")
                     val aUri = Uri.parse(uriString)
-//                    val vUri = Uri.parse(uriString)
+
                     if (audioPath != null) {
                         Log.d("AudioPicker", "File path: $audioPath")
                         Log.d("AudioPicker", "File path: $isReply")
@@ -848,10 +784,10 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                         val fileName = getFileNameFromLocalPath(audioPath)
                         val reverseDurationString = reverseFormattedDuration(durationString)
 
-//                        Log.d("AudioPicker", "File path: $audioPath")
+
                         Log.d("AudioPicker", "File name: $fileName")
                         Log.d("AudioPicker", "durationString: $durationString")
-//                        Log.d("AudioPicker", "reverseDurationString: $reverseDurationString")
+
                         val file = File(audioPath)
 
 
@@ -905,7 +841,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                 val isCompressionSuccessful =
                                     compressor.compress(audioPath, outputFilePath.absolutePath)
 
-//                            val compressedFile = compressAudio(audioPath, outputFilePath.absolutePath)
                                 if (isCompressionSuccessful) {
                                     Log.d("AudioPicker", "AudioPicker: Compression successful ")
 
@@ -919,7 +854,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
                                     val fileSizeInGB =
                                         fileSizeInMB / 1024 // Conversion from MB to GB
-//                            Log.d("VideoPicker", "File size: $fileSizeInGB GB")
+
                                     withContext(Dispatchers.Main) {
                                         if (!isReply) {
                                             uploadVnComment(
@@ -947,7 +882,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                 }
                             }
                         } else {
-//                            Log.d(TAG, "onCreate: is reply $isReply")
+
                             if (isReply) {
                                 uploadReplyVnComment(
                                     audioPath,
@@ -967,62 +902,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                             }
                         }
 
-
-//                        if (file.exists()) {
-//                            val fileSizeInBytes = file.length()
-//                            val fileSizeInKB = fileSizeInBytes / 1024
-//                            val fileSizeInMB = fileSizeInKB / 1024
-//                            Log.d("VideoPicker", "File size: $fileSizeInMB MB")
-//
-//                            val fileSizeInGB = fileSizeInMB / 1024 // Conversion from MB to GB
-////                            Log.d("VideoPicker", "File size: $fileSizeInGB GB")
-//
-//                            if (fileSizeInGB.toInt() == 1) {
-//                                showToast(this, "File size too large")
-//                            } else if (fileSizeInMB > 1) {
-//                                Log.d("AudioPicker", "File size: greater than $fileSizeInMB MB")
-//                                Log.d("AudioPicker", "v Uri $aUri")
-//                                if (isReply) {
-////                                    uploadReplyVideoComment(videoPath, durationString, true)
-//                                    uploadReplyVnComment(
-//                                        audioPath,
-//                                        fileName,
-//                                        durationString,
-//                                        "mAudio",
-//                                        true
-//                                    )
-//                                } else {
-////                                    uploadVideoComment(videoPath, durationString, true)
-//                                    uploadVnComment(
-//                                        audioPath,
-//                                        fileName,
-//                                        durationString,
-//                                        "mAudio",
-//                                        true
-//                                    )
-//                                }
-//                                if (aUri != null) {
-//                                    toCompressUris.add(aUri)
-//                                }
-//                                compressShorts(durationString, fileName, "mAudio", "audio")
-//                            } else {
-//                                Log.d("AudioPicker", "File size: less than $fileSizeInMB MB")
-//                                if (!isReply) {
-//                                    uploadVnComment(audioPath, fileName, durationString, "mAudio")
-//                                } else {
-//                                    uploadReplyVnComment(
-//                                        audioPath,
-//                                        fileName,
-//                                        durationString,
-//                                        "mAudio"
-//                                    )
-//                                }
-//                            }
-//
-//
-//                        } else {
-//                            Log.d("AudioPicker", "File does not exists ")
-//                        }
 
 
                     } else {
@@ -1073,11 +952,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             binding.VNLayout.visibility = View.GONE
         }
         binding.sendVN.setOnClickListener {
-//            if (!wasPaused) {
-//                Log.d("SendVN", "When sending vn was paused was false")
-//                mixVN()
-//            }
-//            stopRecording()
+
 
             sending = true
             CoroutineScope(Dispatchers.Main).launch {
@@ -1093,23 +968,14 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                 }
 
                 lifecycleScope.launch(Dispatchers.Main) {
-//                    timer.stop()
+
                     delay(500)
                     stopRecording()
                 }
 
-//                stopRecording() // Stop recording after mixVN finishes executing or immediately if wasPaused is true
             }
         }
 
-        // Optionally, use commitAllowingStateLoss() if necessary
-//        val shortPlayerFragment = TrialFragment()
-//        val transaction = supportFragmentManager.beginTransaction()
-//
-//        transaction.replace(binding.otherUsersShortsPlayFragment.id, shortPlayerFragment)
-//        transaction.setReorderingAllowed(true)
-//        transaction.addToBackStack("TrialFragment")
-//        transaction.commit()
     }
 
 
@@ -1135,7 +1001,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     ) {
                         val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
 
-//                        drawable.cornerRadius = resources.getDimension(R.dimen.icon_radius)
                         drawable.isCircular = true
 
                         val marginDrawable = InsetDrawable(drawable, 0, 0, 0, 0)
@@ -1144,7 +1009,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                 })
 
             binding.groupNameET.text = user?.name
-//            binding.userBioText.text =
+
         } else if (fromShortsUserAccount != null) {
             Log.d(fromShortsTag, "initUser: not empty")
             Glide.with(this)
@@ -1158,7 +1023,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     ) {
                         val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
 
-//                        drawable.cornerRadius = resources.getDimension(R.dimen.icon_radius)
                         drawable.isCircular = true
 
                         val marginDrawable = InsetDrawable(drawable, 0, 0, 0, 0)
@@ -1167,27 +1031,26 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                 })
 
             binding.groupNameET.text = fromShortsUserAccount!!.name
-//            getUserProfileByUsername(fromShortsUserAccount!!.username)
             viewModel.getOtherUsersProfile(fromShortsUserAccount!!.username)
             shortsViewModel.getOtherUsersProfileShorts(fromShortsUserAccount!!.username)
 
             viewModel.getUserProfileShortsObserver().observe(
                 this
             ) { userProfileData ->
-//                    binding.posts.text = userProfileData.f
+
                 binding.followersCount.text = "${userProfileData!!.followersCount}"
                 binding.followingCount.text = "${userProfileData.followingCount}"
                 binding.userBioText.text = userProfileData.bio
                 if (userProfileData.isFollowing) {
-//                    binding.followTextView.text = "Following"
+
                 } else {
-//                    binding.followTextView.text = "Follow"
+
                 }
 
                 Log.d(TAG, "initUser followers count: ${userProfileData.followersCount}")
             }
 
-//            getUserProfileShortsObserver
+
             viewModel.getOnErrorFeedBackObserver().observe(this) { onErrorFeedback ->
                 MotionToast.createToast(
                     this,
@@ -1254,9 +1117,9 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-//        this.menu = menu
+
         menuInflater.inflate(R.menu.one_dialog_menu, menu)
-//        onSelectionChanged(0)
+
         return true
     }
 
@@ -1280,20 +1143,14 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         if (supportFragmentManager.backStackEntryCount > 0) {
             Log.d("onBackPressed", "onBackPressed: backStackEntryCount > 0 ")
 
-//            supportFragmentManager.popBackStack() // Pop the top entry from the back stack
         } else {
 
-//            super.onBackPressed() // Default back button behavior
+
         }
 
     }
 
-//    override fun onBackPressed() {
-//        super.onBackPressed()
-//        supportActionBar?.hide()
-//
-//        finish()
-//    }
+
 
     private fun updateDataBeforeFinish() {
         // Update your data here and use setResult to send data back
@@ -1327,7 +1184,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             intent.putExtra("user_profile", otherUserProfile)
 
             context.startActivity(intent)
-//            (context as Activity).startActivityForResult(intent, REQUEST_CODE_OTHER_USER_PROFILE)
+
         }
     }
 
@@ -1405,10 +1262,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         if (messageEntity.videoUrl != null) {
             message.setVideo(Message.Video(messageEntity.videoUrl!!))
         }
-//
-//        if (messageEntity.docUrl != null) {
-//            message.setDocument(Message.Document(messageEntity.videoUrl!!))
-//        }
+
         if (messageEntity.voiceUrl != null) {
             message.setVoice(Message.Voice(messageEntity.voiceUrl!!, messageEntity.voiceDuration))
         }
@@ -1511,13 +1365,13 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
         commentsAdapter!!.setOnPaginationListener(object : AdPaginatedAdapter.OnPaginationListener {
             override fun onCurrentPage(page: Int) {
-//                Toast.makeText(requireContext(), "Page $page loaded!", Toast.LENGTH_SHORT).show()
+
                 Log.d(TAG, "currentPage: page number $page")
             }
 
             override fun onNextPage(page: Int) {
                 lifecycleScope.launch(Dispatchers.Main) {
-//                    loadMoreShorts(page)
+
                     Log.d(TAG, "onNextPage: page number $page")
                     allFeedComments(page, event.data._id)
                 }
@@ -1529,7 +1383,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         })
         lifecycleScope.launch(Dispatchers.Main) {
             allFeedComments(commentsAdapter!!.startPage, event.data._id)
-//            allCommentReplies(adapter!!.startPage)
+
         }
 
         observeComments()
@@ -1539,7 +1393,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         val TAG = "observeComments"
         commentsViewModel.commentsLiveData.observe(this) { it ->
             Log.d(TAG, "observeComments comments size: ${it.size}")
-//            val commentsWithReplies = it.find{it.}
+
             val commentsWithReplies = it.filter { it.replyCount > 0 }
             Log.d(TAG, "observeComments comments with replies size: ${commentsWithReplies.size}")
 
@@ -1668,7 +1522,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             } catch (e: Exception) {
                 Log.e("feedEventCommentClick", "Exception: ${e.message}")
                 lifecycleScope.launch {
-//                    hideShimmer()
+
                     if (page == 1) {
                         hideShimmer()
                     } else {
@@ -1697,7 +1551,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             commentsViewModel.resetLiveData()
 
             binding.mainContainer.isClickable = true
-//            binding.toolbarLayout.isClickable = true
+
             binding.toolbar.visibility = View.VISIBLE
         } else {
             var currentState = binding.motionLayout.currentState
@@ -1705,22 +1559,11 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             // If currently gone, make it visible and set the transition to start
             binding.motionLayout.visibility = View.VISIBLE
 
-//            binding.motionLayout.setTransition(R.id.start, R.id.start)
             binding.motionLayout.transitionToStart()
 
 
             binding.toolbar.visibility = View.GONE
-//            binding.mainContainer.isClickable = false
-//            binding.mainContainer.isFocusable = false
-//            binding.mainContainer.isFocusableInTouchMode = false
-//
-//
-//            binding.toolbarLayout.isClickable = false
-//            binding.toolbar.isClickable = false
-//            binding.toolbarLayout.isFocusable = false
-//            binding.toolbar.isFocusable = false
-//            binding.toolbarLayout.isFocusableInTouchMode = false
-//            binding.toolbar.isFocusableInTouchMode = false
+
         }
     }
 
@@ -1760,7 +1603,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         })
 
         binding.click.setOnClickListener {
-//            Log.d(TAG, "onCreate: toggle layout")
+
             toggleMotionLayoutVisibility()
 
         }
@@ -1805,10 +1648,10 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
                 val responseBody = response.body()
 
-//               val  comments = responseBody?.data?.comments ?: emptyList()
+
                 responseBody?.data?.comments?.let { comments.addAll(it) }
                 hasNextPage = responseBody?.data?.hasNextPage ?: false
-//                pageNumber = responseBody!!.data.page
+
                 Log.d(TAG, "allCommentRepliesOnce: has next page $hasNextPage")
                 val uniqueCommentsList = comments.distinctBy { it._id }
 
@@ -1824,11 +1667,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     }
                     commentsReplyViewModel.commentsReplyMutableList.addAll(filteredNewItems)
 
-//                    Log.d(TAG, "allCommentReplies: $comments")
-//                    Log.d(
-//                        TAG,
-//                        "allShortComments: total comments for this post: ${filteredNewItems.size}"
-//                    )
                     Log.d(
                         TAG, "allShortComments: total comments for this post: ${comments.size}"
                     )
@@ -1836,10 +1674,10 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                 for (i in comments) {
                     Log.d(TAG, "All comments images ${i.images}")
                 }
-//                Log.d(TAG, "Comments $comments")
+
             }
             return CommentReplyResults(comments, hasNextPage, pageNumber)
-//            return CommentReplyResults(commentsReplyViewModel.commentsReplyMutableList, hasNextPage, pageNumber)
+
         } catch (e: Exception) {
             Log.e("UserProfileShortsViewModel", "Exception: ${e.message}")
             lifecycleScope.launch {
@@ -1857,7 +1695,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
 
     override fun onSubmit(input: CharSequence?): Boolean {
-//        hideKeyboard(binding.input.inputEditText)
+
         val localUpdateId = generateRandomId()
         if (!isReply) {
 
@@ -1945,7 +1783,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                 Log.d(TAG, "onSubmit: total before feed count is ${feedToComment?.comments}")
 
                 if (myFeedToComment != null) {
-//                    myFeedToComment!!.comments += 1
+
 
                     feedViewModel.getMyFeedData().forEach { feed ->
                         if (feed._id == postId) {
@@ -1983,7 +1821,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     EventBus.getDefault()
                         .post(FeedAdapterNotifyDatasetChanged(commentsAdapter!!.itemCount))
                 }
-//                feedLiveDataViewModel.incrementCounter()
+
                 feedLiveDataViewModel.setBoolean(true)
             }
 
@@ -2014,7 +1852,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
             roomCommentReplyViewModel.insertCommentReply(newCommentReplyEntity)
             Log.d(TAG, "onSubmit: inserted comment $newCommentReplyEntity")
             lifecycleScope.launch {
-//                allCommentReplies2(1, commentId)
+
             }
             val mongoDbTimeStamp = generateMongoDBTimestamp()
 
@@ -2043,7 +1881,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     postId = data!!.postId,
                     updatedAt = data!!.updatedAt,
                     replyCount = replyCount,
-//                replies = data!!.replies
+
                     replies = data?.replies?.toMutableList()?.apply {
                         // Assuming newReply is the new reply you want to add
                         add(0, newReply)
@@ -2060,7 +1898,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                     localUpdateId = localUpdateId,
                     replyCountVisible = false
                 )
-//            val updatedComment = commentWithReplies.copy(replies = commentReplies.toMutableList(), isRepliesVisible = isRepliesVisible)
+
 
             listOfReplies.add(commentWithReplies)
 
@@ -2073,7 +1911,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                 "onSubmit: comment id = data is? $commentId = ${data!!._id} on position $position"
             )
             updateAdapter(commentWithReplies, position)
-//            addCommentReply(input.toString())
+
         }
         binding.replyToLayout.visibility = View.GONE
         return true
@@ -2260,14 +2098,13 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         val TAG = "addImageComment"
         Log.d("addImageComment", "addImageComment: is reply $isReply")
 
-//        commentsViewModel.commentAudio(postId, "", "audio", filePart, video, image, docs, gif, thumbnail)
 
         if (isInternetAvailable(this)) {
 
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -2352,10 +2189,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                 }
                             }
                         }
-//                        else if(i.localPath == "video"){
-//                            Log.d("LocalPath","ready to upload video")
-//                            Log.d("LocalPath", "url ${i.url} type ${i.localPath}")
-//                        }
 
                     }
 
@@ -2436,9 +2269,9 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                             Log.d("ThumbnailExtract", "ThumbnailExtract failed")
                         }
                         val outputStream = ByteArrayOutputStream()
-//                            // Compress the bitmap to a byte array
+
                         bitmapThumbnail?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-//                            // Convert the byte array to a RequestBody
+
                         val requestBody = outputStream.toByteArray()
                             .toRequestBody(
                                 "image/*".toMediaTypeOrNull(),
@@ -2510,7 +2343,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                             Log.e("CommentId", "Comment Id not initialized ")
                         }
                     } else if (it[0].localPath == "gif") {
-//                        val replyGif = createMultipartBody(this, it[0].url.toUri(), "gif")
+
                         Log.d("LocalPath", "is set to gif")
                         if (::commentId.isInitialized) {
                             commentsReplyViewModel.commentReply(
@@ -2575,7 +2408,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                 }
                                 replyToUpdate?._id = data._id
                                 commentsAdapter?.notifyItemChanged(it[0].parentPosition)
-//                                adapter?.updateItem(it[0].parentPosition, comment)
+
                             }
                         } else {
                             Log.e("CommentId", "Comment Id not initialized ")
@@ -2610,14 +2443,12 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
         val TAG = "addDocumentComment"
         Log.d("addDocumentComment", "addDocumentComment: is reply $isReply")
 
-//        commentsViewModel.commentAudio(postId, "", "audio", filePart, video, image, docs, gif, thumbnail)
 
         if (isInternetAvailable(this)) {
 
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -2648,12 +2479,7 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                         file.name,
                                         requestFile
                                     )
-//                                val docs =
-//                                    MultipartBody.Part.createFormData(
-//                                        "docs",
-//                                        file.name,
-//                                        requestFile
-//                                    )
+
                                 Log.d(
                                     "addDocumentComment",
                                     "addDocumentComment: uri ${i.url.toUri()} ::i.url:: ${i.url}"
@@ -2715,10 +2541,6 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
                                 }
                             }
                         }
-//                        else if(i.localPath == "video"){
-//                            Log.d("LocalPath","ready to upload video")
-//                            Log.d("LocalPath", "url ${i.url} type ${i.localPath}")
-//                        }
 
                     }
 
@@ -2842,41 +2664,23 @@ class OtherUserProfile : AppCompatActivity(), OnViewRepliesClickListener,
 
         image?.setOnClickListener {
             Log.d("SelectImage", "Image selector button clicked")
-//            if (!permissionGranted3) {
-//                ActivityCompat.requestPermissions(this, permissions, IMAGES_REQUEST_CODE)
-//                return@setOnClickListener
-//            }
-//            val intent = Intent(this@MainActivity, ImagesActivity::class.java)
-//            dialog.dismiss()
-//            imagePickerLauncher.launch(intent)
-            // Launch the photo picker and let the user choose only images.
-//            pickMedia.launch(PickMultipleVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+
             pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             dialog.dismiss()
         }
 
         video?.setOnClickListener {
-//            val intent = Intent(this@ChatActivity, DisplayVideosActivity::class.java)
+
             val intent = Intent(this@OtherUserProfile, VideosActivity::class.java)
             dialog.dismiss()
             videoPickerLauncher.launch(intent)
-//            overridePendingTransition(R.anim.slide_up, R.anim.stay)
 
-//            overridePendingTransition(0, 0) // Disable the default transition
-//            this@MessagesActivity.overridePendingTransition(
-//                R.anim.up_slide,
-//                R.anim.stay
-//            )
 
-//            pickMultipleVideos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
-//            dialog.dismiss()
         }
 
         audio?.setOnClickListener {
             val intent = Intent(this@OtherUserProfile, AudioActivity::class.java)
-//            overridePendingTransition(R.anim.up_slide, R.anim.stay)
-
-
+            
             dialog.dismiss()
             audioPickerLauncher.launch(intent)
 
