@@ -9,7 +9,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.uyscuti.sharedmodule.adapter.PaginatedAdapter;
 import com.uyscuti.sharedmodule.data.model.Comment;
 
 import java.util.ArrayList;
@@ -25,11 +24,7 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
     private int mPageSize = 10;
     private RecyclerView mRecyclerView;
     private boolean loadingNewItems = true;
-    private int childItemPosition = -1;
     private int parentItemPosition = -1;
-
-
-    public PaginatedAdapter.LoadMoreListener loadMoreListener;
 
 
     @NonNull
@@ -47,7 +42,7 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
     public void submitItems(Collection<? extends Comment> collection) {
         int previousSize = mDataSet.size();
         mDataSet.addAll(collection);
-//        notifyDataSetChanged();
+
         // Notify the adapter about the inserted items
         notifyItemRangeInserted(previousSize, collection.size());
         if (mListener != null) {
@@ -196,113 +191,12 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
         }
     }
 
-    //    public void changePlayingStatus() {
-//        Log.d("changePlayingStatus", "invoke changePlayingStatus ");
-//
-//        for (int i = 0; i < mDataSet.size(); i++) {
-//            Comment item = mDataSet.get(i);
-//            // Assuming ITEM has a method to set isPlaying value
-//            // Change the isPlaying value to false
-////            item.setPlaying(false);
-//            if (item.isReplyPlaying()) {
-//                Log.i("changePlayingStatus", "changePlayingStatus " + item.isReplyPlaying() + " position " + i);
-//                Bundle bundle = new Bundle();
-//
-//                for (int j = 0; j < item.getReplies().size(); j++) {
-//
-//                    com.uyscut.network.api.response.commentreply.allreplies.Comment replyItem = item.getReplies().get(j);
-//                    if (replyItem.isPlaying()) {
-//                        bundle.putInt("childPosition", j);
-//                        item.setPlaying(false);
-//                        item.setReplyPlaying(false);
-//
-//                        Log.i("changePlayingStatus", "changePlayingStatus setPlaying" + item.isPlaying() + " position " + j);
-//
-//                        notifyItemChanged(i, bundle);
-//
-//                        return;
-//
-//                    }
-//                }
-//            } else if (item.isPlaying()) { // Assuming there's a method to check if the item is playing
-//                // If an item with isPlaying true is found, update its position and set it to false
-//                Log.i("changePlayingStatus", "(else)changePlayingStatus isPlaying" + item.isPlaying() + " position " + i);
-//                Log.i("changePlayingStatus", "(else)changePlayingStatus isReplyPlaying" + item.isReplyPlaying() + " position " + i);
-//
-//
-//                item.setPlaying(false);
-//                item.setReplyPlaying(false);
-//                mDataSet.set(i, item);
-//                notifyItemChanged(i);
-//            }
-//            // Update the item in the dataset
-//        }
-//    }
-
-    public int childAdapterItemToRefresh() {
-
-        return childItemPosition;
-    }
-
-    public int parentAdapterItemToRefresh() {
-
-        return parentItemPosition;
-    }
-
-    public void resetChildAdapterPosition() {
-        childItemPosition = -1;
-    }
 
     public void resetParentAdapterPosition() {
         parentItemPosition = -1;
     }
 
-    //    public void changePlayingStatus() {
-//        Log.d("changePlayingStatus", "invoke changePlayingStatus ");
-//
-//
-//        for (int i = 0; i < mDataSet.size(); i++) {
-//            Comment item = mDataSet.get(i);
-//
-//            if (item.isReplyPlaying()) {
-//                Log.d("changePlayingStatus", "reply playing on parent pos "+i);
-//
-//                for (int j = 0; j < item.getReplies().size(); j++) {
-//                    com.uyscut.network.api.response.commentreply.allreplies.Comment replyItem = item.getReplies().get(j);
-//                    if (replyItem.isPlaying()) {
-//                        Log.d("changePlayingStatus", "reply playing on pos "+j);
-//                        Log.d("changePlayingStatus", "find a way to update only reply item on position "+ j);
-//                        childItemPosition = j;
-//                        parentItemPosition = i;
-//                        item.setPlaying(false);
-//                        item.setReplyPlaying(false);
-//                        replyItem.setPlaying(false);
-//                        return;
-//                    }
-//                }
-//                return;
-//            } else if (item.isPlaying()) { // Assuming there's a method to check if the item is playing
-//                // If an item with isPlaying true is found, update its position and set it to false
-//                Log.i("changePlayingStatus", "(else)changePlayingStatus isPlaying" + item.isPlaying() + " position " + i);
-//                Log.i("changePlayingStatus", "(else)changePlayingStatus isReplyPlaying" + item.isReplyPlaying() + " position " + i);
-//
-//
-//                item.setPlaying(false);
-//                item.setReplyPlaying(false);
-//                mDataSet.set(i, item);
-//                notifyItemChanged(i);
-//            }
-//            // Update the item in the dataset
-//        }
-//    }
-    public void refreshParent(int position) {
-        Log.d("refreshParent", "invoke refreshParent  position " + position);
-        notifyItemChanged(position);
-//        try {
-//
-//        }
 
-    }
     public void changePlayingStatus() {
         Log.d("changePlayingStatus", "invoke changePlayingStatus ");
 
@@ -322,37 +216,12 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
                     Log.d("Replies", "Replies was playing  " + replyItem.isPlaying() + " on position " + j);
                     replyItem.setProgress(0f);
                     item.getReplies().set(j, replyItem);
-//                    if (replyItem.isPlaying()) {
-//                        Log.d("changePlayingStatus", "reply playing on pos " + j + " parent position " + i);
-//
-////                        item.setPlaying(false);
-////                        item.setReplyPlaying(false);
-////                        item.getReplies().get(j).setPlaying(false);
-////                        mDataSet.set(i, item);
-////                        notifyItemChanged(i);
-//                    }
+
                 }
                 mDataSet.set(i, item);
 
                 notifyItemChanged(i);
 
-//                for (int j = 0; j < item.getReplies().size(); j++) {
-//                    com.uyscut.network.api.response.commentreply.allreplies.Comment replyItem = item.getReplies().get(j);
-//                    Log.d("ChangedPlayingStatus", "is reply playing " + replyItem.isPlaying() + " position " + j);
-//                    if (replyItem.isPlaying()) {
-//                        Log.d("changePlayingStatus", "reply playing on pos " + j + " parent position " + i);
-//
-////                        item.setPlaying(false);
-////                        item.setReplyPlaying(false);
-////                        item.getReplies().get(j).setPlaying(false);
-////                        mDataSet.set(i, item);
-////                        notifyItemChanged(i);
-//                    }
-//                }
-//                item.setPlaying(false);
-//                item.setReplyPlaying(false);
-//                mDataSet.set(i, item);
-//                notifyItemChanged(i);
             }
             else if (item.isPlaying()) { // Assuming there's a method to check if the item is playing
                 // If an item with isPlaying true is found, update its position and set it to false
@@ -364,8 +233,7 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
 
                 String fileType = item.getFileType();
                 Log.d("changePlayingStatus","fileType: "+fileType+ " progress "+item.getProgress());
-//                if(fileType)
-//                item.setReplyPlaying(false);
+
                 mDataSet.set(i, item);
                 notifyItemChanged(i);
             }
@@ -380,7 +248,4 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
         void onFinish();
     }
 
-    public interface LoadMoreListener {
-        void onLoadMore(int pageNumber);
-    }
 }
