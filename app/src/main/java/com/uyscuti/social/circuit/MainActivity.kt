@@ -2050,6 +2050,7 @@ class MainActivity : AppCompatActivity(),
                     }
                 }
             }
+
         docsPickerLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
@@ -2098,6 +2099,7 @@ class MainActivity : AppCompatActivity(),
                 }
 
             }
+
         cameraLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
@@ -2142,11 +2144,9 @@ class MainActivity : AppCompatActivity(),
 
                     }
 
-
                 }
 
             }
-
 
 
         installTwitter()
@@ -3339,17 +3339,8 @@ class MainActivity : AppCompatActivity(),
 
     }
 
-    fun setOnBackPressedListener() {
 
-    }
-
-    private fun setUpTabs() {
-        // Initialize TabLayout
-
-    }
-
-
-    suspend fun deleteUserProfile() {
+         fun deleteUserProfile() {
         myProfileRepository.deleteMyProfile()
     }
 
@@ -3359,11 +3350,7 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
-    private fun setItemColor(item: NavigationItem) {
-
-    }
-
-    private fun setNavigationListener() {
+         private fun setNavigationListener() {
         bottomNavigation.setOnClickedButtonListener { button, pos ->
             // Reset all items to black background
             item.drawableTint = Color.BLACK
@@ -3595,7 +3582,7 @@ class MainActivity : AppCompatActivity(),
         val bundle = Bundle().apply {
             putSerializable(SHORTS_LIST, userShortsList)
             putSerializable(CLICKED_SHORT, clickedShort)
-           // putBoolean(FROM_FAVORITE_FRAGMENT, isFromFavorite)
+
         }
 
         fragment.arguments = bundle
@@ -3610,17 +3597,14 @@ class MainActivity : AppCompatActivity(),
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun openUserProfileFragment(event: GoToUserProfileFragment) {
 
-//        binding.bottomNavigationView.r
         binding.bottomNavigationView.visibility = View.VISIBLE
         binding.bottomNavigationView.position = 4
         item2.drawableTint = Color.BLACK
 
 
         setRingDrawable(item4.imageView)
-//        item4.imageView.back
         getNavigationController().navigate("R.id.profile", "Profile")
 
-//        replaceFragment(UserProfileFragment())
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -3659,7 +3643,7 @@ class MainActivity : AppCompatActivity(),
     fun openUserProfileShortsPlayerFragment(event: GoToUserProfileShortsPlayerFragment) {
 
         Log.d("openUserProfileShortsPlayerFragment", "openUserProfileShortsPlayerFragment: inside ")
-//        binding.bottomNavigationView.r
+
         binding.bottomNavigationView.visibility = View.GONE
 
         replaceFragment2(
@@ -3677,10 +3661,9 @@ class MainActivity : AppCompatActivity(),
             "openShortsFragment",
             "openShortsFragment: inside feedPostPosition ${event.feedPostPosition}"
         )
-//        binding.pageTitle.text = "Shorts"
+
 
         hideAppBar()
-//        binding.bottomNavigationView.r
         binding.bottomNavigationView.visibility = View.VISIBLE
         binding.bottomNavigationView.position = 2
         item2.drawableTint = Color.WHITE
@@ -3695,9 +3678,6 @@ class MainActivity : AppCompatActivity(),
             )
         )
 
-//        setRingDrawable(item2.imageView)
-//        item4.imageView.back
-//        getNavigationController().navigate("R.id.shots", "Shorts")
     }
 
 
@@ -3705,7 +3685,6 @@ class MainActivity : AppCompatActivity(),
     fun openFeedFragment(event: GoToFeedFragment) {
 
         Log.d("openFeedFragment", "openFeedFragment: inside ")
-//        binding.bottomNavigationView.r
 
         binding.bottomNavigationView.visibility = View.VISIBLE
         binding.bottomNavigationView.position = 3
@@ -3713,11 +3692,7 @@ class MainActivity : AppCompatActivity(),
         item2.drawableTint = Color.BLACK
         showAppBar()
         replaceFragment(FeedFragment.feedPostFromShorts(event.feedPostPosition))
-//        replaceFragment(ShotsFragment.willReturnToFeedInstance(true))
 
-//        setRingDrawable(item2.imageView)
-//        item4.imageView.back
-//        getNavigationController().navigate("R.id.shots", "Shorts")
     }
 
 
@@ -3736,21 +3711,15 @@ class MainActivity : AppCompatActivity(),
                     )
                 } else {
                     Log.d(TAG, "Error: ${response.message()}")
-//                requireActivity().runOnUiThread {
-//                    showToast(response.message())
-//                }
+
                 }
 
             } catch (e: HttpException) {
                 Log.d(TAG, "Http Exception ${e.message}")
-//            requireActivity().runOnUiThread {
-//                showToast("Failed to connect try again...")
-//            }
+
             } catch (e: IOException) {
                 Log.d(TAG, "IOException ${e.message}")
-//            requireActivity().runOnUiThread {
-//                showToast("Failed to connect try again...")
-//            }
+
             }
         }
     }
@@ -3770,9 +3739,7 @@ class MainActivity : AppCompatActivity(),
                     )
                 } else {
                     Log.d(TAG, "Error: ${response.message()}")
-//                requireActivity().runOnUiThread {
-//                    showToast(response.message())
-//                }
+
                 }
 
             } catch (e: HttpException) {
@@ -3782,9 +3749,7 @@ class MainActivity : AppCompatActivity(),
                 }
             } catch (e: IOException) {
                 Log.d(TAG, "IOException ${e.message}")
-//            requireActivity().runOnUiThread {
-//                showToast("Failed to connect try again...")
-//            }
+
             }
         }
     }
@@ -3793,17 +3758,16 @@ class MainActivity : AppCompatActivity(),
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun openUserProfileFragment2(event: GoToUserProfileFragment2) {
 
-//        binding.bottomNavigationView.r
+
         binding.bottomNavigationView.visibility = View.VISIBLE
         binding.bottomNavigationView.position = 4
         item2.drawableTint = Color.BLACK
 
 
         setRingDrawable(item4.imageView)
-//        item4.imageView.back
+
         getNavigationController().navigate("R.id.profile", "Profile")
 
-//        replaceFragment(UserProfileFragment())
     }
 
     private fun setRingDrawable(imageView: ImageBadgeView) {
@@ -3812,7 +3776,7 @@ class MainActivity : AppCompatActivity(),
         val TAG = "setRingDrawable"
         Log.d(TAG, "setRingDrawable: set ring drawable")
         val ringDrawable = ContextCompat.getDrawable(this, R.drawable.profile_ring_background)
-//        imageView.background = ringDrawable
+
         if (ringDrawable != null) {
             imageView.background = ringDrawable
             Log.d(TAG, "setRingDrawable: able to load ring drawable.")
@@ -3846,7 +3810,7 @@ class MainActivity : AppCompatActivity(),
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun shortsCacheEvent(event: ShortsCacheEvent) {
         Log.d("shortsCacheEvent", "shortsCacheEvent - ${event.videoPath}")
-//        Log.d("shortsCacheEvent", "shortsCacheEvent - ${event.}")
+
 
     }
 
@@ -3856,11 +3820,11 @@ class MainActivity : AppCompatActivity(),
         val savedState = savedInstanceState.getInt("bottomNavState", STATE_SCROLLED_UP)
         // Set the state based on the savedState
         if (savedState == STATE_SCROLLED_DOWN) {
-//            behavior.slideDown(binding.bottomNavigationView, animate = false)
+
             val behavior = HideBottomViewOnScrollBehavior<BottomNavigationView>()
             behavior.slideUp(binding.bottomNavigationView)
         } else {
-//            behavior.slideUp(binding.bottomNavigationView, animate = false)
+
             val behavior = HideBottomViewOnScrollBehavior<BottomNavigationView>()
             behavior.slideUp(binding.bottomNavigationView)
         }
@@ -3869,14 +3833,14 @@ class MainActivity : AppCompatActivity(),
 
     override fun onPause() {
         super.onPause()
-//        badge.isVisible = true
+
         if (player?.isPlaying == true) {
             player?.pause()
         }
         if (exoPlayer?.isPlaying == true) {
             exoPlayer?.stop()
         }
-//        if(mediaRecorder?.)
+
     }
 
          @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
@@ -3952,15 +3916,14 @@ class MainActivity : AppCompatActivity(),
             listOfReplies.add(comment)
 
             Log.d(TAG, "onSubmit: comment $comment")
-//        adapter.submitItems(listOf(comment) )
-//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
-//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
 
             adapter!!.submitItem(comment, adapter!!.itemCount)
             updateUI(dataEmpty = false)
+
             if (!isFeedComment) {
                 shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
                 Log.d(TAG, "onSubmit: count before ${shortToComment!!.comments}")
+
                 if (shortToComment != null) {
                     shortToComment!!.comments += 1
                     // Update the count in the mutableShortsList
@@ -3990,7 +3953,7 @@ class MainActivity : AppCompatActivity(),
                             feed.comments = myFeedToComment!!.comments
                         }
                     }
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
                 }
                 if (favoriteFeedToComment != null) {
                     favoriteFeedToComment!!.comments + 1
@@ -4000,9 +3963,7 @@ class MainActivity : AppCompatActivity(),
                             feed.comments = favoriteFeedToComment!!.comments
                         }
                     }
-//                        favoriteFeedToComment = feedViewModel.getAllFavoriteFeedData().find { it._id == postId }
-//                        Log.d(TAG, "onSubmit: total after feed count is ${favoriteFeedToComment?.comments}")
-//                        EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
+
                 }
                 if (feedToComment != null) {
                     feedToComment!!.comments + 1
@@ -4017,7 +3978,7 @@ class MainActivity : AppCompatActivity(),
 
                     EventBus.getDefault().post(FeedAdapterNotifyDatasetChanged(adapter!!.itemCount))
                 }
-//                feedLiveDataViewModel.incrementCounter()
+
                 feedLiveDataViewModel.setBoolean(true)
             }
         } else {
@@ -4034,6 +3995,7 @@ class MainActivity : AppCompatActivity(),
                     _id = "21", account = account, firstName = "", lastName = ""
                 )
             Log.d(TAG, "onSubmit: handle reply to a comment")
+
             isReply = false
             val newCommentReplyEntity =
                 ShortCommentReply(
@@ -4046,7 +4008,9 @@ class MainActivity : AppCompatActivity(),
             Log.d(TAG, "onSubmit: inserted comment $newCommentReplyEntity")
             lifecycleScope.launch {
             }
+
             val mongoDbTimeStamp = generateMongoDBTimestamp()
+
             val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
                 __v = data!!.__v,
                 _id = "commentId",
@@ -4072,7 +4036,7 @@ class MainActivity : AppCompatActivity(),
                     postId = data!!.postId,
                     updatedAt = data!!.updatedAt,
                     replyCount = replyCount,
-//                replies = data!!.replies
+
                     replies = data?.replies?.toMutableList()?.apply {
                         // Assuming newReply is the new reply you want to add
                         add(0, newReply)
@@ -4089,7 +4053,7 @@ class MainActivity : AppCompatActivity(),
                     localUpdateId = localUpdateId,
                     replyCountVisible = false
                 )
-//            val updatedComment = commentWithReplies.copy(replies = commentReplies.toMutableList(), isRepliesVisible = isRepliesVisible)
+
 
             listOfReplies.add(commentWithReplies)
 
@@ -4102,7 +4066,7 @@ class MainActivity : AppCompatActivity(),
                 "onSubmit: comment id = data is? $commentId = ${data!!._id} on position $position"
             )
             updateAdapter(commentWithReplies, position)
-//            addCommentReply(input.toString())
+
         }
         binding.replyToLayout.visibility = View.GONE
         return true
@@ -4136,18 +4100,10 @@ class MainActivity : AppCompatActivity(),
         return timestamp.format(formatter)
     }
 
-    private fun addAudioComment(postId: String, content: String, audio: File) {
-//        commentsViewModel.commentAudio(postId, content, audio)
-
-        val audioPart = createAudioMultipart(audio)
-//        commentsViewModel.commentAudio(postId, content, "audio", audioPart)
-
-    }
-
-    private fun createAudioMultipart(audioFile: File): MultipartBody.Part {
+         private fun createAudioMultipart(audioFile: File): MultipartBody.Part {
         // Create RequestBody from file
         val requestFile = audioFile.asRequestBody("audio/*".toMediaTypeOrNull())
-//        val requestFile = RequestBody.create("audio/*".toMediaTypeOrNull(), audioFile)
+
 
         // Create MultipartBody.Part from RequestBody
         return MultipartBody.Part.createFormData("audio", audioFile.name, requestFile)
@@ -4199,8 +4155,7 @@ class MainActivity : AppCompatActivity(),
     private fun addCommentReply() {
         val TAG = "addCommentReply"
         Log.d(TAG, "addCommentReply: inside")
-//        Log.d(TAG, "addCommentReply: comment id $commentId")
-//        commentsReplyViewModel.commentReply(commentId, content)
+
 
         if (isInternetAvailable(this)) {
 
@@ -4243,16 +4198,7 @@ class MainActivity : AppCompatActivity(),
         initView()
     }
 
-    //    @RequiresApi(Build.VERSION_CODES.O)
-//    private fun openFilePicker() {
-//        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-//            addCategory(Intent.CATEGORY_OPENABLE)
-//            type = "application/*"
-////            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/pdf"))
-////            type = "images/*" // Set MIME type to select all types of documents
-//        }
-//        getDocumentContent.launch(intent)
-//    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun openFilePicker() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
