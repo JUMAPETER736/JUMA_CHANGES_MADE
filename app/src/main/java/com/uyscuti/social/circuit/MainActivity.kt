@@ -31,7 +31,6 @@ import android.os.Environment
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.transition.ChangeBounds
 import android.transition.TransitionManager
@@ -75,7 +74,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
-import androidx.loader.content.CursorLoader
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -277,7 +275,6 @@ import ru.nikartm.support.ImageBadgeView
 
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
@@ -4204,8 +4201,7 @@ class MainActivity : AppCompatActivity(),
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "application/*"
-//            type = "*/*"
-//            type = "images/*" // Set MIME type to select all types of documents
+
         }
         getDocumentContent.launch(intent)
     }
@@ -4220,7 +4216,7 @@ class MainActivity : AppCompatActivity(),
             cursor.moveToFirst()
             val fileName = cursor.getString(nameIndex)
             val fileSize = cursor.getLong(sizeIndex)
-//            val numberOfPages = getNumberOfPagesFromUri(this, uri)
+
             var numberOfPages = 0
             val formattedFileSize = formatFileSize(fileSize)
 
@@ -4245,8 +4241,6 @@ class MainActivity : AppCompatActivity(),
             }
 
 
-
-
             if (fileSizes) {
 
 
@@ -4269,17 +4263,7 @@ class MainActivity : AppCompatActivity(),
                         fileName, placeholder = true
                     )
                 }
-//                                if (vUri != null) {
-//                toCompressUris.add(uri)
-////                                }
-//                compressShorts(
-//                    "",
-//                    fileType = "doc",
-//                    fileName = fileName,
-//                    numberOfPages = numberOfPages,
-//                    documentType = documentType,
-//                    formattedFileSize = formattedFileSize
-//                )
+
             } else {
 
                 if (!isReply) {
@@ -4358,26 +4342,7 @@ class MainActivity : AppCompatActivity(),
 
     }
 
-    private fun getNumberOfPagesFromUri(context: Context, uri: Uri): Int {
-        var inputStream: InputStream? = null
-        var numberOfPages = 0
-        try {
-            inputStream = context.contentResolver.openInputStream(uri)
-            if (inputStream != null) {
-                val document = PDDocument.load(inputStream)
-                numberOfPages = document.numberOfPages
-                document.close()
-            }
-        } catch (e: Exception) {
-            // Handle exceptions
-            e.printStackTrace()
-        } finally {
-            inputStream?.close()
-        }
-        return numberOfPages
-    }
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onAddAttachments() {
         showAttachmentDialog()
     }
@@ -4442,90 +4407,35 @@ class MainActivity : AppCompatActivity(),
 
         image?.setOnClickListener {
             Log.d("SelectImage", "Image selector button clicked")
-//            if (!permissionGranted3) {
-//                ActivityCompat.requestPermissions(this, permissions, IMAGES_REQUEST_CODE)
-//                return@setOnClickListener
-//            }
-//            val intent = Intent(this@MainActivity, ImagesActivity::class.java)
-//            dialog.dismiss()
-//            imagePickerLauncher.launch(intent)
-            // Launch the photo picker and let the user choose only images.
-//            pickMedia.launch(PickMultipleVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+
             pickMultipleMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             dialog.dismiss()
         }
 
         video?.setOnClickListener {
-//            val intent = Intent(this@ChatActivity, DisplayVideosActivity::class.java)
+
             val intent = Intent(this@MainActivity, VideosActivity::class.java)
             dialog.dismiss()
             videoPickerLauncher.launch(intent)
-//            overridePendingTransition(R.anim.slide_up, R.anim.stay)
 
-//            overridePendingTransition(0, 0) // Disable the default transition
-//            this@MessagesActivity.overridePendingTransition(
-//                R.anim.up_slide,
-//                R.anim.stay
-//            )
-
-//            pickMultipleVideos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
-//            dialog.dismiss()
         }
 
         audio?.setOnClickListener {
             val intent = Intent(this@MainActivity, AudioActivity::class.java)
-//            overridePendingTransition(R.anim.up_slide, R.anim.stay)
-
 
             dialog.dismiss()
             audioPickerLauncher.launch(intent)
-//
-//            overridePendingTransition(0, 0) // Disable the default transition
-//            this@MessagesActivity.overridePendingTransition(
-//                R.anim.up_slide,
-//                R.anim.stay
-//            )
 
         }
 
         doc?.setOnClickListener {
             openFilePicker()
             dialog.dismiss()
-            //val intent = Intent(this@ChatActivity, DisplayOtherFilesActivity::class.java)
-//            val currentApiVersion = Build.VERSION.SDK_INT
-//            if (currentApiVersion < Build.VERSION_CODES.Q) {
-//                val intent = Intent(this@MainActivity, DocumentsActivity::class.java)
-//                dialog.dismiss()
-//                docsPickerLauncher.launch(intent)
-////                overridePendingTransition(R.anim.up_slide, R.anim.stay)
-//
-////                overridePendingTransition(0, 0) // Disable the default transition
-////                this@MessagesActivity.overridePendingTransition(
-////                    R.anim.up_slide,
-////                    R.anim.stay
-////                )
-//
-//            }
-//            else {
-//                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-//                intent.addCategory(Intent.CATEGORY_OPENABLE)
-//                val mimeTypes = arrayOf(
-//                    "application/pdf",
-//                    "application/msword",
-//                    "application/ms-doc",
-//                    "application/doc",
-//                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-//                    "text/plain"
-//                )
-//                intent.type = "*/*" // You can specify the MIME type of the files you want to select
-//                intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
-//                openFilePicker.launch(intent)
-//                dialog.dismiss()
-//            }
+
         }
         camera?.setOnClickListener {
             val intent = Intent(this@MainActivity, CameraActivity::class.java)
-//            startActivity(intent)
+
             cameraLauncher.launch(intent)
             dialog.dismiss()
         }
@@ -4562,52 +4472,7 @@ class MainActivity : AppCompatActivity(),
         }.start()
     }
 
-    private fun resolveContentUriToFilePath(contentUri: Uri): String? {
-        val projection = arrayOf(MediaStore.Images.Media.DATA)
-        val cursorLoader = CursorLoader(this, contentUri, projection, null, null, null)
-        val cursor = cursorLoader.loadInBackground()
-
-        return cursor?.use {
-            if (it.moveToFirst()) {
-                val columnIndex = it.getColumnIndex(MediaStore.Images.Media.DATA)
-                it.getString(columnIndex)
-            } else {
-                null // Handle the error, unable to retrieve the actual path
-            }
-        }
-    }
-
-    private fun copyFileToInternalStorage(
-        context: Context, sourceFilePath: String, destinationFileName: String
-    ): File? {
-        val destinationDir = context.filesDir // Use "context.cacheDir" for cache directory
-
-        // Create the destination file
-        val destinationFile = File(destinationDir, destinationFileName)
-
-        try {
-            // Open the source and destination streams
-            FileInputStream(File(sourceFilePath)).use { inputStream ->
-                FileOutputStream(destinationFile).use { outputStream ->
-                    // Copy the file content
-                    val buffer = ByteArray(4 * 1024)
-                    var read: Int
-                    while (inputStream.read(buffer).also { read = it } != -1) {
-                        outputStream.write(buffer, 0, read)
-                    }
-                    outputStream.flush()
-                }
-            }
-            return destinationFile
-        } catch (e: IOException) {
-            Log.e("FileOperation", "Error : ${e.message}")
-            e.printStackTrace()
-        }
-
-        return null
-    }
-
-    private fun installTwitter() {
+         private fun installTwitter() {
         EmojiManager.install(TwitterEmojiProvider())
     }
 
@@ -4618,7 +4483,7 @@ class MainActivity : AppCompatActivity(),
 
         postId = data._id
         commentCount = data.comments
-//        commentId = data.images
+
 
         this.isFeedComment = isFeedComment
 
@@ -4632,19 +4497,19 @@ class MainActivity : AppCompatActivity(),
         binding.recyclerView.itemAnimator = null
 
         if (adapter?.itemCount == 0) {
-//            adapter.
+
         }
         toggleMotionLayoutVisibility()
         adapter!!.setOnPaginationListener(object : AdPaginatedAdapter.OnPaginationListener {
             override fun onCurrentPage(page: Int) {
-//                Toast.makeText(requireContext(), "Page $page loaded!", Toast.LENGTH_SHORT).show()
+
                 Log.d(TAG, "currentPage: page number $page")
 
             }
 
             override fun onNextPage(page: Int) {
                 lifecycleScope.launch(Dispatchers.Main) {
-//                    loadMoreShorts(page)
+
                     Log.d(TAG, "onNextPage: page number $page")
                     allShortComments(page)
                 }
@@ -4653,13 +4518,12 @@ class MainActivity : AppCompatActivity(),
             override fun onFinish() {
                 Log.d(TAG, "finished: page number")
 
-//                Toast.makeText(requireContext(), "finish", Toast.LENGTH_SHORT).show()
             }
         })
 
         lifecycleScope.launch(Dispatchers.Main) {
             allShortComments(adapter!!.startPage)
-//            allCommentReplies(adapter!!.startPage)
+
         }
         observeComments()
 
@@ -4701,30 +4565,9 @@ class MainActivity : AppCompatActivity(),
         data: com.uyscuti.sharedmodule.data.model.Comment, position: Int
     ) {
         val TAG = "updateAdapter"
-//
-//        val commentWithReplies = com.uyscuti.social.circuit.data.model.Comment(
-//            __v = data.__v,
-//            _id = data._id,
-//            author = data.author,
-//            content = data.content,
-//            createdAt = data.createdAt,
-//            isLiked = data.isLiked,
-//            likes = data.likes,
-//            postId = data.postId,
-//            updatedAt = data.updatedAt,
-//            replyCount = data.replyCount,
-//            replies = data.replies
-//        )
 
-//
-//        val updatedComment =
-//            data.copy(replies = commentReplies, isRepliesVisible = false)
-//        Log.d(TAG, "updateAdapter: position $position   replies size ${data.replies.size}")
-//        Log.d("updateItem", "updated main item $data")
-//        Log.d("updateItem", "updated main item ${data.replies[0].images}")
-//        Log.d("updateItem", "updated main item images" + data.images)
         Log.d("UpdateItem", "reply count visible ${data.replyCountVisible}")
-//        isReply = false
+
 
         adapter?.updateItem(position, data)
     }
@@ -4823,10 +4666,10 @@ class MainActivity : AppCompatActivity(),
 
                 val responseBody = response.body()
 
-//               val  comments = responseBody?.data?.comments ?: emptyList()
+
                 responseBody?.data?.comments?.let { comments.addAll(it) }
                 hasNextPage = responseBody?.data?.hasNextPage ?: false
-//                pageNumber = responseBody!!.data.page
+
                 Log.d(TAG, "allCommentRepliesOnce: has next page $hasNextPage")
                 val uniqueCommentsList = comments.distinctBy { it._id }
 
@@ -4842,11 +4685,6 @@ class MainActivity : AppCompatActivity(),
                     }
                     commentsReplyViewModel.commentsReplyMutableList.addAll(filteredNewItems)
 
-//                    Log.d(TAG, "allCommentReplies: $comments")
-//                    Log.d(
-//                        TAG,
-//                        "allShortComments: total comments for this post: ${filteredNewItems.size}"
-//                    )
                     Log.d(
                         TAG, "allShortComments: total comments for this post: ${comments.size}"
                     )
@@ -4854,10 +4692,10 @@ class MainActivity : AppCompatActivity(),
                 for (i in comments) {
                     Log.d(TAG, "All comments images ${i.images}")
                 }
-//                Log.d(TAG, "Comments $comments")
+
             }
             return CommentReplyResults(comments, hasNextPage, pageNumber)
-//            return CommentReplyResults(commentsReplyViewModel.commentsReplyMutableList, hasNextPage, pageNumber)
+
         } catch (e: Exception) {
             Log.e("UserProfileShortsViewModel", "Exception: ${e.message}")
             lifecycleScope.launch {
@@ -4896,15 +4734,10 @@ class MainActivity : AppCompatActivity(),
     ) {
         val TAG = "onViewRepliesClick"
         lifecycleScope.launch {
-//            Log.d(TAG, "onViewRepliesClick:  display on view with ${data.replyCount} reply count")
+
             Log.d(TAG, "onViewRepliesClick:  page number $page")
 
-//            var commentReplies : List<com.uyscut.network.api.response.commentreply.allreplies.Comment> = listOf()
-//            if(data.replies.isEmpty() ) {
-//                firstTime = false
-//            if(!commentRepliesTV.text.equals("Loading...")) {
-//                Log.d(TAG, "onViewRepliesClick: before does not contain loading...")
-//            }
+
             if (data.hasNextPage) {
                 commentRepliesTV.text = "Loading..."
 
@@ -4914,9 +4747,7 @@ class MainActivity : AppCompatActivity(),
                         hideCommentReplies.visibility = View.GONE
                     }
                 }
-//                Log.d(TAG, "onViewRepliesClick: Data is not available")
 
-//                val commentReplies = allCommentReplies2(1, data._id)
                 val commentReplies = allCommentRepliesOnce(page, data._id)
                 val commentWithReplies = com.uyscuti.sharedmodule.data.model.Comment(
                     __v = data.__v,
@@ -4946,8 +4777,6 @@ class MainActivity : AppCompatActivity(),
                     fileType = data.fileType,
                     numberOfPages = data.numberOfPages
 
-
-//                    pageNumber =
                 )
 
 
@@ -4956,7 +4785,7 @@ class MainActivity : AppCompatActivity(),
                     "onViewRepliesClick: has next page ${commentReplies.hasNextPage} page number ${commentReplies.pageNumber}"
                 )
                 val updatedComment = commentWithReplies.copy(
-//                        replies = commentReplies.comments,
+
                     replies = data.replies.toMutableList().apply {
                         // Assuming newReply is the new reply you want to add
                         addAll(commentReplies.comments)
@@ -4968,17 +4797,10 @@ class MainActivity : AppCompatActivity(),
 
                 withContext(Dispatchers.Main) {
                     adapter?.updateItem(position, updatedComment)
-//                commentRepliesTV.text = "Hide replies"
+
                     hideCommentReplies.visibility = View.VISIBLE
                 }
             }
-//            }else {
-//                Log.d(TAG, "onViewRepliesClick: Data is already available")
-//            }
-
-//            replyAdapter.addComment(newComment)
-
-//            Log.d(TAG, "onViewRepliesClick:  display replies - ${commentReplies[0].content} ")
 
         }
     }
@@ -4987,7 +4809,7 @@ class MainActivity : AppCompatActivity(),
     override fun onReplyButtonClick(
         position: Int, data: com.uyscuti.sharedmodule.data.model.Comment
     ) {
-      //  binding.replyToLayout.visibility = View.VISIBLE
+
     }
 
     override fun likeUnLikeComment(
@@ -5000,7 +4822,7 @@ class MainActivity : AppCompatActivity(),
             "CommentsRecyclerViewAdapter",
             "override: likeUnLikeComment: data.isLiked ${data.isLiked}"
         )
-//        var updatedComment : com.uyscuti.social.circuit.data.model.Comment? = null
+
         val updatedComment = if (data.isLiked) {
             data.copy(
                 likes = data.likes + 1,
@@ -5018,7 +4840,7 @@ class MainActivity : AppCompatActivity(),
 
         if (isInternetAvailable(this)) {
             Log.d(TAG, "override :likeUnLikeComment: internet is available")
-//            Log.d(TAG, "likeUnLikeComment: internet is available")
+
             var result by Delegates.notNull<Boolean>()
             lifecycleScope.launch {
                 result = if (isFeedComment) {
@@ -5028,13 +4850,7 @@ class MainActivity : AppCompatActivity(),
                     commentLikeUnLike(data._id)
                 }
             }
-//            lifecycleScope.launch {
-//                val result = commentLikeUnLike(data._id)
-//                Log.d(TAG, "likeUnLikeComment server result: $result")
-//
-//                if (result) {
-//                }
-//            }
+
         } else {
             Log.d(TAG, "likeUnLikeComment: cant like offline")
         }
@@ -5047,7 +4863,7 @@ class MainActivity : AppCompatActivity(),
              mainCommentPosition: Int,
              mainComment: com.uyscuti.sharedmodule.data.model.Comment
          ) {
-             TODO("Not yet implemented")
+
          }
 
          private suspend fun commentLikeUnLike(commentId: String): Boolean {
@@ -5066,7 +4882,7 @@ class MainActivity : AppCompatActivity(),
         } catch (e: HttpException) {
             Log.d(TAG, "Http Exception ${e.message}")
             withContext(Dispatchers.Main) {
-//                showToast(this@MainActivity, "Check Internet Connection")
+
             }
             return false
         } catch (e: IOException) {
@@ -5091,7 +4907,7 @@ class MainActivity : AppCompatActivity(),
         } catch (e: HttpException) {
             Log.d(TAG, "Http Exception ${e.message}")
             withContext(Dispatchers.Main) {
-//                showToast(this@MainActivity, "Check Internet Connection")
+
             }
             return false
         } catch (e: IOException) {
@@ -5136,13 +4952,7 @@ class MainActivity : AppCompatActivity(),
                 } else {
                     commentLikeUnLike(data._id)
                 }
-//            lifecycleScope.launch {
-//                val result = commentLikeUnLike(data._id)
-//                Log.d(TAG, "likeUnLikeComment server result: $result")
-//
-//                if (result) {
-//                }
-//            }
+
             }
         }
     }
@@ -5264,28 +5074,7 @@ class MainActivity : AppCompatActivity(),
     private val READ_EXTERNAL_STORAGE_REQUEST_CODE = 101 // Any integer value
 
 
-    private fun playAudioFile(audioFile: String) {
-        val TAG = "pauseRecording"
-        Log.d(TAG, "playAudioFile: audio file $audioFile")
-        val mediaPlayer = MediaPlayer()
-
-        try {
-            mediaPlayer.setDataSource(audioFile)
-            mediaPlayer.prepare()
-            mediaPlayer.start()
-        } catch (e: Exception) {
-            Log.d(TAG, "playAudioFile: exception ${e.message}")
-            e.printStackTrace()
-        }
-
-        mediaPlayer.setOnCompletionListener { player ->
-            player.release()
-        }
-    }
-
-    private var commentAudioIsPlaying = false
-    private var commentAudioIsPaused = false
-    private var currentCommentAudioPath = ""
+         private var currentCommentAudioPath = ""
     private var currentCommentAudioPosition = RecyclerView.NO_POSITION
     private var isReplyVnPlaying = false
     private var isVnAudioToPlay = false
@@ -5641,11 +5430,7 @@ class MainActivity : AppCompatActivity(),
 
     private lateinit var audioFormWave: WaveformSeekBar
     private lateinit var audioSeekBar: SeekBar
-    private var leftProgress: Long = 0
-    private var rightProgress: Long = 0
-    private var isSeeking = false
-    private var selectedAudio = ""
-    private lateinit var audioDurationTVCount: TextView
+         private lateinit var audioDurationTVCount: TextView
     private var wavePosition = -1
     private var seekPosition = -1
 
@@ -5726,14 +5511,9 @@ class MainActivity : AppCompatActivity(),
 
     var isDurationOnPause = false
     var isOnRecordDurationOnPause = false
-
-
     var wasPaused = false
     var sending = false
     var firstTimeSendVn = false
-
-
-
     private var mixingCompleted = false // Define a flag to track if mixing is completed
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -5775,34 +5555,7 @@ class MainActivity : AppCompatActivity(),
         startService(preloadingServiceIntent)
     }
 
-    @SuppressLint("NewApi")
-    private val pickMultipleVideos =
-        registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(5)) { uris ->
-            // Callback is invoked after the user selects media items or closes the
-            // photo picker.
-            if (uris.isNotEmpty()) {
-                for (uri in uris) {
-                    val filePath = PathUtil.getPath(
-                        this,
-                        uri
-                    ) // Use the utility class to get the real file path
-                    Log.d("VideoPicker", "File path: $filePath")
-                    Log.d("VideoPicker", "File path: $isReply")
-                    if (filePath != null && !isReply) {
-
-                    } else {
-                        if (filePath != null) {
-
-                        }
-                    }
-                }
-
-            } else {
-                Log.d("PhotoPicker", "No media selected")
-            }
-        }
-
-    @RequiresApi(Build.VERSION_CODES.O)
+         @RequiresApi(Build.VERSION_CODES.O)
     private val pickMultipleMedia =
         registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(2)) { uris ->
             // Callback is invoked after the user selects media items or closes the
