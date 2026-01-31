@@ -4,15 +4,12 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.provider.Settings
 import android.util.Log
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.annotation.OptIn
-import androidx.appcompat.widget.PopupMenu
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -25,8 +22,6 @@ import com.uyscuti.sharedmodule.OtherUserProfile
 import com.uyscuti.sharedmodule.model.notificatioRead.NotificationRead
 import com.uyscuti.sharedmodule.model.notifications_data_class.INotification
 import com.uyscuti.sharedmodule.R
-import com.uyscuti.sharedmodule.ReportNotificationActivity2
-import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import org.greenrobot.eventbus.EventBus
 
@@ -245,25 +240,19 @@ private lateinit var retrofitInterface: RetrofitInstance
                         "followButton",
                         "Profile Image URL NotificationAdapter: ${notificationItem.avatar}"
                     )
-//                    val otherUsersProfile = OtherUsersProfile(
-//                        notificationItem.name,
-//                        notificationItem.name,
-//                        notificationItem.avatar,
-//                        notificationItem.owner
-//                    )
-//                    OtherUserProfile.openFromShorts(holder.itemView.context, otherUsersProfile)
+
                 }
             }
             /**this is the comment REPLY VIEW HOLDER */
             is CommentReplyViewHolder -> {
                 val fullMessage = notificationItem.notificationMessage
                 // Limit the message to 40 characters
-                val truncatedMessage = if (fullMessage.length > 40) {
+                if (fullMessage.length > 40) {
                     "${fullMessage.substring(0, 40)}..."
                 } else {
                     fullMessage
                 }
-//                holder.notificationMessage.text = truncatedMessage
+
                 holder.notificationTime.text = notificationItem.notificationTime
                 holder.username.text = notificationItem.name
                 notificationItem.avatar
@@ -303,7 +292,7 @@ private lateinit var retrofitInterface: RetrofitInstance
             /**This is the function for favorite */
             is FavoriteViewHolder -> {
                 val fullMessage = notificationItem.notificationTime
-                val truncatedMessage = if (fullMessage.length > 40) {
+                if (fullMessage.length > 40) {
                     "${fullMessage.substring(0, 40)}..."
                 } else {
                     fullMessage
@@ -429,69 +418,6 @@ private lateinit var retrofitInterface: RetrofitInstance
         }
     }
 
-    private fun toggleSelection(position: Int) {
-        if (selectedItems.contains(position)) {
-            selectedItems.remove(position)
-        } else {
-            selectedItems.add(position)
-        }
-        notifyItemChanged(position)
-    }
-
-    /**code not used */
-
-    @SuppressLint("ResourceType")
-    private fun showPopupMenu(view: View?, position: Int, notification: INotification) {
-        if (view == null) return
-        val popupMenu = PopupMenu(view.context, view, Gravity.END)
-        popupMenu.inflate(R.menu.notification_menu_options)
-        popupMenu.show()
-        popupMenu.setOnMenuItemClickListener { item ->
-
-            when (item.itemId) {
-                R.id.action_mark_as_read -> {
-                    // Handle mark as read action
-                    handleMarkAsdRead(position)
-                    EventBus.getDefault().post(NotificationRead(true, notifications[position]._id))
-                    true
-                }
-
-                R.id.action_mark_as_unread -> {
-                    // Handle mark as Unread action
-                    handleMarkUnread(position)
-                    EventBus.getDefault().post(NotificationRead(false, notifications[position]._id))
-                    true
-                }
-
-                R.id.delete -> {
-                    // Handle remove notifications action
-//                    notificationActionListener.removeNotification(notification)
-                    handleRemoveNotifications(position, notification)
-                    true
-                }
-
-                R.id.action_report -> {
-                    // Handle _report action
-                    val intent = Intent(view.context, ReportNotificationActivity2::class.java)
-                    intent.putExtra("position", position)
-                    view.context.startActivity(intent)
-                    Toast.makeText(view.context, "Report has been sent", Toast.LENGTH_SHORT).show()
-                    true
-                }
-
-                R.id.priority -> {
-                    // handle priority action
-                    handlePriority(position)
-                    true
-                }
-
-                else -> {
-                    false
-                }
-            }
-        }
-    }
-
     /**code not used */
     private fun handleMarkUnread(position: Int) {
         notifications[position].isRead = false
@@ -511,22 +437,6 @@ private lateinit var retrofitInterface: RetrofitInstance
 
     private fun startActivity(intent: Intent) {
 
-    }
-
-    private fun handleReport(position: Int) {
-        notifyItemChanged(position)
-    }
-
-    private fun handleMarkAsdRead(position: Int) {
-        notifications[position].isRead = true
-        notifyItemChanged(position)
-    }
-
-    /** has been passed to the dayAdapter */
-    fun handleRemoveNotifications(position: Int, notification: INotification) {
-        notificationActionListener.removeNotification(notification)
-        notifications.remove(notification)
-        notifyItemRemoved(position)
     }
 
     /** Determine the view type based on the link type (assuming linkType is a string)*/
@@ -550,12 +460,6 @@ private lateinit var retrofitInterface: RetrofitInstance
     }
 
 
-    fun addIsFollowingData(isFollowingData: List<ShortsEntityFollowList>) {
-//      val startPosition = followingData.size
-        val followingData = null
-        followingData?.addAll(isFollowingData)
-//        android.util.Log(, "addIsFollowingData: $isFollowingData")
-    }
 }
 
 /**these are the class view holder */
