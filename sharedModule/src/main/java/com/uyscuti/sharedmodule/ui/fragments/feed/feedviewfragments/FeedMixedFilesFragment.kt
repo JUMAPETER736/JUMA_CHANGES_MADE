@@ -23,7 +23,7 @@ import com.uyscuti.sharedmodule.model.ShowAppBar
 import com.uyscuti.sharedmodule.model.ShowBottomNav
 import org.greenrobot.eventbus.EventBus
 
-// TODO: Rename parameter arguments, choose names that match
+
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
@@ -37,7 +37,19 @@ private const val ARG_PARAM2 = "param2"
 private const val TAG = "FeedMixedFilesFragment"
 
 class FeedMixedFilesFragment : Fragment(), FeedTextViewFragmentInterface {
-    // TODO: Rename and change types of parameters
+
+    companion object {
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedMixedFilesFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
     private var param1: String? = null
     private var param2: String? = null
     private lateinit var data:  com.uyscuti.social.network.api.response.posts.Post
@@ -45,7 +57,6 @@ class FeedMixedFilesFragment : Fragment(), FeedTextViewFragmentInterface {
     private var feedPostPosition = -1
     private var fileId = ""
     private var mediaPlayer: MediaPlayer? = null
-    private var audioPlayingPosition = -1
     private var isPlaying = false
     private lateinit var binding: FragmentFeedMixedFilesBinding
 
@@ -67,7 +78,7 @@ class FeedMixedFilesFragment : Fragment(), FeedTextViewFragmentInterface {
         // Inflate the layout for this fragment
         binding = FragmentFeedMixedFilesBinding.inflate(layoutInflater, container, false)
 
-        val fileIdToFind = data.fileTypes?.get(position)
+        data.fileTypes?.get(position)
 
         fileId = data.fileIds[position].toString()
 
@@ -196,7 +207,7 @@ class FeedMixedFilesFragment : Fragment(), FeedTextViewFragmentInterface {
                     binding.seekBar.max = mediaPlayer.duration
                     binding.seekBar.progress = 0
                     binding.seekBar.isEnabled = true
-//                    binding.audioDuration.text = (mediaPlayer.duration)
+
                     playAudio()
                 }
                 setOnCompletionListener {
@@ -295,10 +306,7 @@ class FeedMixedFilesFragment : Fragment(), FeedTextViewFragmentInterface {
 
         val thumbnailItem = data.thumbnail.find { it.fileId == fileId }
         val durationItem = data.duration.find { it.fileId == fileId }
-//        Log.d(TAG, "setVideo: displaying video")
-//        if (thumbnailItem != null) {
-//            Log.d(TAG, "setVideo: ${thumbnailItem.thumbnailUrl}")
-//        }
+
         if (thumbnailItem != null) {
             Glide.with(this)
                 .load(thumbnailItem.thumbnailUrl)
@@ -345,25 +353,7 @@ class FeedMixedFilesFragment : Fragment(), FeedTextViewFragmentInterface {
         }
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
 
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FeedMixedFilesFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FeedMixedFilesFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
 
     override fun backPressedFromFeedTextViewFragment() {
         EventBus.getDefault().post(ShowBottomNav(false))
@@ -401,6 +391,6 @@ class FeedMixedFilesFragment : Fragment(), FeedTextViewFragmentInterface {
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+
     }
 }

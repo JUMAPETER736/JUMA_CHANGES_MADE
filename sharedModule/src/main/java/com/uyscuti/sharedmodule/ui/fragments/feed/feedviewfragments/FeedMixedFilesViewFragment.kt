@@ -8,7 +8,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.activity.OnBackPressedCallback
@@ -26,7 +25,6 @@ import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedTextViewFragment
 import com.uyscuti.sharedmodule.eventbus.HideFeedFloatingActionButton
 import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
 import com.uyscuti.sharedmodule.R
@@ -35,7 +33,6 @@ import com.uyscuti.sharedmodule.adapter.feed.feed.ShareFeedPostAdapter
 import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.FeedMixedFilesViewPagerAdapter
 import com.uyscuti.sharedmodule.databinding.FragmentFeedMixedFilesViewBinding
 import com.uyscuti.sharedmodule.model.FeedCommentClicked
-import com.uyscuti.sharedmodule.viewmodels.feed.FeedUploadViewModel
 import org.greenrobot.eventbus.EventBus
 import com.uyscuti.social.network.api.response.posts.Post
 
@@ -53,13 +50,22 @@ private const val ARG_PARAM2 = "param2"
 private const val TAG = "FeedMixedFilesViewFragment"
 
 class FeedMixedFilesViewFragment : Fragment() {
-    // TODO: Rename and change types of parameters
+
+    companion object {
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedMixedFilesViewFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
     private var param1: String? = null
     private var param2: String? = null
-    private var feedTextViewFragment: FeedTextViewFragment? = null
-    private lateinit var frameLayout: FrameLayout
     private lateinit var binding: FragmentFeedMixedFilesViewBinding
-    private lateinit var feedUploadViewModel: FeedUploadViewModel
     private lateinit var data:  Post
     private var position = 0
     private lateinit var backPressedCallback: OnBackPressedCallback
@@ -70,7 +76,7 @@ class FeedMixedFilesViewFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val inflater = TransitionInflater.from(requireContext())
-//        enterTransition = inflater.inflateTransition(R.transition.feed_slide_from_top)
+
         arguments?.let {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
@@ -123,9 +129,7 @@ class FeedMixedFilesViewFragment : Fragment() {
             binding.tags.text = formattedTags
         }
         binding.share.setOnClickListener {
-//            val bottomSheet = BottomSheetFragment()
-//            bottomSheet.show(requireActivity().supportFragmentManager, "BottomSheetFeedFragment")
-//            Toast.makeText(context, "share clicked is here", Toast.LENGTH_SHORT).show()
+
             ShareClicked()
 
         }
@@ -140,8 +144,7 @@ class FeedMixedFilesViewFragment : Fragment() {
         } else {
             binding.likesCount.text = data.likes.toString()
         }
-//        binding.feedCommentsCount.text = "${data.comments.size}"
-//        binding.feedCommentsCount.text = data.comments.toString()
+
         if (data.isLiked) {
             binding.like.setImageResource(R.drawable.filled_favorite_like)
         } else {
@@ -230,26 +233,18 @@ class FeedMixedFilesViewFragment : Fragment() {
 
         return binding.root
     }
-    private fun playRepostAnimation() {
-        binding.re.animate().rotation(360f).setDuration(500).start()
-    }
-
-    private fun replaceFragment (fragment: Fragment){
-            val supportFragmentManager = requireActivity().supportFragmentManager
-            val fragmentTransaction = supportFragmentManager.beginTransaction()
-            fragmentTransaction.add(R.id.fragment_frame, fragment)
-            fragmentTransaction.commit()
-    }
 
     fun setListener(listener: FeedTextViewFragmentInterface) {
         feedTextViewFragmentInterface = listener
     }
+
     private fun ShareClicked (){
         val context = requireContext()
 
         val bottomSheetDialog = BottomSheetDialog(requireContext())
         val shareView = layoutInflater.inflate(R.layout.example, null)
         val close_button = shareView.findViewById<ImageButton>(R.id.close_button)
+
         val recyclerView = shareView.findViewById<RecyclerView>(R.id.apps_recycler_view)
         val userRecyclerView = shareView.findViewById<RecyclerView>(R.id.users_recycler_view)
         val people_search_container = shareView.findViewById<LinearLayout>(R.id.people_search_container)
@@ -276,26 +271,33 @@ class FeedMixedFilesViewFragment : Fragment() {
 
         }
     }
+
     private fun repostClicked (){
+
         val view: View = layoutInflater.inflate(R.layout.feed_moreoptions_bottomsheet_layout, null)
         val quoteButton: MaterialCardView = view.findViewById(R.id.rePostFeedLayout)
         val repostButton: MaterialCardView = view.findViewById(R.id.shareFeedLayout)
         val download: MaterialCardView = view.findViewById(R.id.downloadFeedLayout)
+
         val followUnfollowLayout : MaterialCardView = view.findViewById(R.id.followUnfollowLayout)
         val shareFeedLayout : MaterialCardView = view.findViewById(R.id.shareFeedLayout)
         val notInterestedLayout : MaterialCardView = view.findViewById(R.id.notInterestedLayout)
+
         val hidePostLayout : MaterialCardView = view.findViewById(R.id.hidePostLayout)
         val reportOptionLayout : MaterialCardView = view.findViewById(R.id.reportOptionLayout)
         val copyLinkLayout: MaterialCardView = view.findViewById(R.id.copyLinkLayout)
         val muteUser : MaterialCardView = view.findViewById(R.id.muteOptionLayout)
+
         download.visibility = View.GONE
         repostButton.visibility = View.GONE
         repostButton.visibility = View.GONE
         download.visibility = View.GONE
+
         shareFeedLayout.visibility = View.GONE
         notInterestedLayout.visibility = View.GONE
         hidePostLayout.visibility = View.GONE
         reportOptionLayout.visibility = View.GONE
+
         copyLinkLayout.visibility = View.GONE
         followUnfollowLayout.visibility = View.GONE
         quoteButton.visibility = View.VISIBLE
@@ -330,22 +332,5 @@ class FeedMixedFilesViewFragment : Fragment() {
         requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FeedMixedFilesViewFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FeedMixedFilesViewFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
+
 }

@@ -23,7 +23,7 @@ import com.uyscuti.sharedmodule.model.FeedCommentClicked
 import org.greenrobot.eventbus.EventBus
 import com.uyscuti.social.network.api.response.posts.Post
 
-// TODO: Rename parameter arguments, choose names that match
+
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
@@ -37,7 +37,19 @@ private const val ARG_PARAM2 = "param2"
 private const val TAG = "FeedImageViewFragment"
 
 class FeedImageViewFragment : Fragment() {
-    // TODO: Rename and change types of parameters
+
+    companion object {
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedImageViewFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
     private var param1: String? = null
     private var param2: String? = null
     private lateinit var data:  Post
@@ -49,7 +61,7 @@ class FeedImageViewFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val inflater = TransitionInflater.from(requireContext())
-//        enterTransition = inflater.inflateTransition(R.transition.feed_slide_from_top)
+
         arguments?.let {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
@@ -96,8 +108,7 @@ class FeedImageViewFragment : Fragment() {
             .into(binding.toolbar.feedProfilePic)
 
         binding.toolbar.backIcon.setOnClickListener {
-//            feedTextViewFragmentInterface.onBackPressed()
-//            navigateBack()
+
             if (feedTextViewFragmentInterface != null) {
                 feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
             }else{
@@ -106,7 +117,7 @@ class FeedImageViewFragment : Fragment() {
         }
         binding.comment.setOnClickListener {
             feedTextViewFragmentInterface?.onCommentClickFromFeedTextViewFragment(position, data)
-//            binding.feedCommentsCount.text = (data.comments + 1).toString()
+
             EventBus.getDefault().post(FeedCommentClicked(position, data))
         }
 
@@ -117,8 +128,7 @@ class FeedImageViewFragment : Fragment() {
         } else {
             binding.likesCount.text = data.likes.toString()
         }
-//        binding.feedCommentsCount .text ="${data.comments.size}"
-//        binding.feedCommentsCount.text = data.comments.size.toString()
+
         if (data.isLiked) {
             binding.like.setImageResource(R.drawable.filled_favorite_like)
         } else {
@@ -191,26 +201,7 @@ class FeedImageViewFragment : Fragment() {
         return binding.root
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.replace
-         * @param param2 Parameter 2.replace
-         * @return A new instance of fragment FeedImageViewFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FeedImageViewFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
+
 
     override fun onResume() {
         Log.d(TAG, "onResume: ")
@@ -218,7 +209,7 @@ class FeedImageViewFragment : Fragment() {
         backPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Handle back press
-//                navigateBack()
+
                 if (feedTextViewFragmentInterface != null) {
                     feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
                 }
