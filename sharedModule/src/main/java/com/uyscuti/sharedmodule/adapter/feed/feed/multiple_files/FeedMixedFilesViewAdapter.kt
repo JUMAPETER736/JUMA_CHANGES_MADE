@@ -45,7 +45,6 @@ import com.google.android.material.imageview.ShapeableImageView
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.Companion.getCachedFollowingList
-import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter.Companion.getCachedFollowingUsernames
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
 import com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
@@ -1275,7 +1274,7 @@ class FeedMixedFilesViewAdapter(
                     data
                 )
 
-                // Optional: Still call the original listener if you need it for other purposes
+                // Still call the original listener if you need it for other purposes
                 onMultipleFilesClickListener?.multipleFileClickListener(
                     absoluteAdapterPosition,
                     data.files,
@@ -1413,6 +1412,7 @@ class FeedMixedFilesViewAdapter(
                 }
 
                 fileSize == 4 -> {
+
                     // Square items in 2x2 grid, but constrained by adaptive height
                     val idealSquareSize = screenWidth / 2 // Exact half width
                     val constrainedHeight = getConstrainedHeight(context, idealSquareSize)
@@ -1436,6 +1436,7 @@ class FeedMixedFilesViewAdapter(
                 }
 
                 fileSize > 4 -> {
+
                     if (absoluteAdapterPosition >= 4) {
                         // Hide extra files beyond the first 4
                         itemView.visibility = View.GONE
@@ -1693,6 +1694,7 @@ class FeedMixedFilesViewAdapter(
             // Load thumbnail
             val thumbnail = actualThumbnails.find { it.fileId == fileIdToFind }
             pdfImageView.visibility = View.VISIBLE
+
             if (thumbnail != null && !thumbnail.thumbnailUrl.isNullOrEmpty()) {
                 Glide.with(context)
                     .load(thumbnail.thumbnailUrl)
@@ -2102,7 +2104,7 @@ class FeedMixedFilesViewAdapter(
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
-                    // ✅ PASS FOLLOWING LIST FROM ADAPTER
+                    // PASS FOLLOWING LIST FROM ADAPTER
                     val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
                     putStringArrayList("following_ids", ArrayList(cachedFollowingIds))
 
@@ -3512,12 +3514,6 @@ class FeedMixedFilesViewAdapter(
 
         private fun navigateToPostDetail(data: Post) {
             // Navigate to post detail fragment/activity
-        }
-
-        // Utility methods
-        private fun formatDate(dateString: String?): String {
-            // Implement date formatting logic
-            return dateString ?: ""
         }
 
         private fun formatCount(count: Int): String {

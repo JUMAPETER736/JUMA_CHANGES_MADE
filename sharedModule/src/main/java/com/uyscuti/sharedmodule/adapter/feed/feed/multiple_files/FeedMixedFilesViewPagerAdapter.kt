@@ -62,6 +62,6 @@ class  FeedMixedFilesViewPagerAdapter(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        TODO("Not yet implemented")
+       
     }
 }
