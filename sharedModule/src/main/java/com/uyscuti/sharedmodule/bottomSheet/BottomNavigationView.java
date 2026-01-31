@@ -719,10 +719,6 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
         this.animateTextsColorDuration = animateTextsColorDuration;
     }
 
-    public void setAnimateDrawablesTintExit(int animateDrawablesTintExit) {
-        this.animateDrawablesTintExit = animateDrawablesTintExit;
-    }
-
     public int getAnimateDrawablesTintColorDuration() {
         return animateDrawablesTintDuration;
     }
@@ -735,24 +731,8 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
         return interpolatorDrawablesEnter;
     }
 
-    public void setInterpolatorDrawablesEnter(Interpolator interpolatorDrawablesEnter) {
-        this.interpolatorDrawablesEnter = interpolatorDrawablesEnter;
-    }
-
-    public Interpolator getInterpolatorText() {
-        return interpolatorText;
-    }
-
     public void setInterpolatorDrawablesExit(Interpolator interpolatorDrawablesExit) {
         this.interpolatorDrawablesExit = interpolatorDrawablesExit;
-    }
-
-    public void setInterpolatorTextExit(Interpolator interpolatorTextExit) {
-        this.interpolatorTextExit = interpolatorTextExit;
-    }
-
-    public void setAnimationType(int animationType) {
-        this.animationType = animationType;
     }
 
     public void setAnimateDrawablesEnterDuration(int animateDrawablesEnterDuration) {
