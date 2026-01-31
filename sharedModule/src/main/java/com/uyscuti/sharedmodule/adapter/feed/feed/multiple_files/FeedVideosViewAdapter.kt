@@ -16,11 +16,12 @@ import com.uyscuti.sharedmodule.utils.commaSeparatedStringToList
 import com.uyscuti.sharedmodule.R
 
 private const val TAG = "FeedVideosViewAdapter"
-class FeedVideosViewAdapter(private val imageList: List<String>?) : RecyclerView.Adapter<FeedVideosViewAdapter.ViewHolder>() {
-    private var onMultipleImagesClickListener: OnMultipleImagesClickListener? = null
-    fun setOnMultipleImagesClickListener(l: OnMultipleImagesClickListener) {
-        onMultipleImagesClickListener = l
-    }
+
+class FeedVideosViewAdapter(
+    private val imageList: List<String>?) : RecyclerView.Adapter<FeedVideosViewAdapter.ViewHolder>() {
+
+        private var onMultipleImagesClickListener: OnMultipleImagesClickListener? = null
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.feed_multiple_videos_item, parent, false)
         return ViewHolder(view)
@@ -46,11 +47,11 @@ class FeedVideosViewAdapter(private val imageList: List<String>?) : RecyclerView
         private val cardView: CardView = itemView.findViewById(R.id.cardView)
         private val countTextView: TextView = itemView.findViewById(R.id.textView)
         private val feedVideoDurationTextView: TextView = itemView.findViewById(R.id.feedVideoDurationTextView)
-//        private val transparentView: View = itemView.findViewById(R.id.transparentView)
+
 
         @SuppressLint("ResourceAsColor", "SetTextI18n")
         fun bind(imageItem: String) {
-//            imageView.setImageResource()
+
             if(data != null) {
                 Log.d(TAG, "bind: video data duration ${data!!.duration}")
 
@@ -69,10 +70,7 @@ class FeedVideosViewAdapter(private val imageList: List<String>?) : RecyclerView
             if(imageList?.size!! <= 2) {
                 Log.d("TAG", "bind: more")
             }else if(imageList.size == 3) {
-//                val layoutParams = cardView.layoutParams as ViewGroup.MarginLayoutParams
-//                layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
-//                holder.cardView.layoutParams = layoutParams
-//                imageList[0]
+
                 val layoutParams = cardView.layoutParams
                 val newWidthInPixels = 320  // for example, 300 pixels
                 val newHeightInPixels = 180 // for example, 200 pixels
@@ -106,7 +104,7 @@ class FeedVideosViewAdapter(private val imageList: List<String>?) : RecyclerView
                 val layoutParams = cardView.layoutParams
                 val newWidthInPixels = 320  // for example, 300 pixels
                 val newHeightInPixels = 185 // for example, 200 pixels
-//                val layoutParams = holder.cardView.layoutParams as RecyclerView.LayoutParams
+
                 when (absoluteAdapterPosition) {
                     0 -> {
                         layoutParams.width = newWidthInPixels
@@ -125,7 +123,7 @@ class FeedVideosViewAdapter(private val imageList: List<String>?) : RecyclerView
                     }
                     3 -> {
                         Log.d("TAG", "bind: load 4th")
-//                        transparentView.visibility = View.VISIBLE
+
                         imageView2.visibility = View.VISIBLE
                         countTextView.visibility = View.VISIBLE
 

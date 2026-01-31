@@ -48,6 +48,7 @@ private const val VIEW_TYPE_COMBINATION_OF_MULTIPLE_FILES = 4
 private const val TAG = "FeedRepostFilesAdapter"
 
 class FeedRepostViewFileAdapter(
+
     private val feedPost: OriginalPost,
     ) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -892,106 +893,6 @@ class FeedRepostViewFileAdapter(
             // Find the audioDurationLayout and keep it visible
             val audioDurationLayout = itemView.findViewById<LinearLayout>(R.id.audioDurationLayout)
             audioDurationLayout?.visibility = View.VISIBLE
-        }
-
-        private fun addPlayIconOverlay(targetImageView: ImageView) {
-            val context = targetImageView.context
-            val parent = targetImageView.parent as? ViewGroup ?: return
-
-            // Remove any existing play icon overlays to avoid duplicates
-            for (i in parent.childCount - 1 downTo 0) {
-                val child = parent.getChildAt(i)
-                if (child.tag == "play_icon_overlay_image") {
-                    parent.removeView(child)
-                }
-            }
-
-            // Create a FrameLayout to overlay on top of the image
-            val overlayContainer = FrameLayout(context)
-            val containerParams = when (parent) {
-                is FrameLayout -> FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT
-                )
-                is LinearLayout -> LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
-                )
-                else -> ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
-            }
-            overlayContainer.layoutParams = containerParams
-            overlayContainer.tag = "play_icon_overlay_image"
-
-            // Create a play icon overlay
-            val playIcon = ImageView(context)
-            playIcon.setImageResource(R.drawable.play_button_filled)
-            playIcon.setColorFilter(Color.WHITE)
-            val playIconSize = 48.dpToPx(context)
-            val playLayoutParams = FrameLayout.LayoutParams(playIconSize, playIconSize)
-            playLayoutParams.gravity = Gravity.CENTER
-            playIcon.layoutParams = playLayoutParams
-
-            // Add semi-transparent background to the play icon for better visibility
-            val playBackground = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(Color.parseColor("#80000000")) // Semi-transparent black
-            }
-            playIcon.background = playBackground
-            playIcon.setPadding(12, 12, 12, 12)
-
-            // Add the play icon to the overlay container
-            overlayContainer.addView(playIcon)
-
-            // Add the overlay container to the parent
-            parent.addView(overlayContainer)
-        }
-
-        private fun addPlayIconOverlayToLayout(targetLayout: LinearLayout) {
-            val context = targetLayout.context
-
-            // Remove any existing play icon overlays to avoid duplicates
-            for (i in targetLayout.childCount - 1 downTo 0) {
-                val child = targetLayout.getChildAt(i)
-                if (child.tag == "play_icon_overlay") {
-                    targetLayout.removeView(child)
-                }
-            }
-
-            // Create a FrameLayout to hold both the audio icon and play button
-            val overlayContainer = FrameLayout(context)
-            val containerParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT
-            )
-            containerParams.gravity = Gravity.CENTER
-            overlayContainer.layoutParams = containerParams
-
-            // Create a play icon overlay
-            val playIcon = ImageView(context)
-            playIcon.setImageResource(R.drawable.play_button_filled)
-            playIcon.setColorFilter(Color.WHITE)
-            val playIconSize = 48.dpToPx(context)
-            val playLayoutParams = FrameLayout.LayoutParams(playIconSize, playIconSize)
-            playLayoutParams.gravity = Gravity.CENTER
-            playIcon.layoutParams = playLayoutParams
-
-            // Add semi-transparent background to the play icon for better visibility
-            val playBackground = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(Color.parseColor("#80000000")) // Semi-transparent black
-            }
-            playIcon.background = playBackground
-            playIcon.setPadding(12, 12, 12, 12)
-            playIcon.tag = "play_icon_overlay"
-
-            // Add the play icon to the overlay container
-            overlayContainer.addView(playIcon)
-
-            // Add the overlay container to the target layout
-            targetLayout.addView(overlayContainer)
         }
 
         private fun resetMargins(layoutParams: ViewGroup.MarginLayoutParams) {

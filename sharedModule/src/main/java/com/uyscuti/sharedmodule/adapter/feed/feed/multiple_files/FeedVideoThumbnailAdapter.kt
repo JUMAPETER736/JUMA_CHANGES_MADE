@@ -1,11 +1,8 @@
 package com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
-import androidx.core.graphics.createBitmap
-import android.graphics.BitmapFactory
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.util.Log
@@ -34,12 +31,6 @@ class FeedVideoThumbnailAdapter(
 
     fun setVideoDetails(videoDetails: FeedMultipleVideos) {
         this.videoDetails = videoDetails
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    fun setItemWidth(width: Int) {
-        this.itemWidth = width
-        notifyDataSetChanged()
     }
 
 
@@ -143,32 +134,6 @@ class FeedVideoThumbnailAdapter(
         }
     }
 
-    // Retrieve first page as bitmap from PDF
-    fun retrieveFirstPageAsBitmap(
-        activity: UploadFeedActivity,
-        uri: Uri): Bitmap? {
-        return try {
-            val parcelFileDescriptor = activity.contentResolver.openFileDescriptor(uri, "r")
-            parcelFileDescriptor?.use { pfd ->
-                val pdfRenderer = PdfRenderer(pfd)
-                if (pdfRenderer.pageCount > 0) {
-                    val page = pdfRenderer.openPage(0)
-                    val bitmap = createBitmap(page.width, page.height)
-                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                    page.close()
-                    pdfRenderer.close()
-                    bitmap
-                } else {
-                    pdfRenderer.close()
-                    null
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("FeedVideoThumbnailAdapter", "Error retrieving first page as bitmap: ${e.message}")
-            null
-        }
-    }
-
 
     override fun getItemCount(): Int {
         return thumbnails.size
@@ -190,44 +155,31 @@ class FeedVideoThumbnailAdapter(
 }
 
 
-// Fixed function - Returns Bitmap? instead of Unit
-private fun loadBitmapFromUri(context: Context, uri: Uri?): Bitmap? {
-    if (uri == null) return null
-    return try {
-        context.contentResolver.openInputStream(uri)?.use { inputStream ->
-            BitmapFactory.decodeStream(inputStream)
-        }
-    } catch (e: Exception) {
-        Log.e("YourActivity", "Error loading bitmap: ${e.message}")
-        null
-    }
-}
-
 fun saveBitmapToCache(context: Context, bitmap: Bitmap): Unit? {
     // Example: implement saving logic here
     return null
 }
 
 fun getNumberOfPagesFromUriForDoc(uri: Uri): Int {
-    // TODO: Implement DOC file page counting logic
+
     return 0
 }
 
 fun getNumberOfPagesFromUriForDocx(uri: Uri): Int {
-    // TODO: Implement DOCX file page counting logic
+
     return 0
 }
 
 fun getNumberOfPagesFromUriForPDF(activity: Activity, uri: Uri): Int {
-    // TODO: Implement PDF page counting logic using PDF renderer
+
     return 0
 }
 
 fun retrieveFirstPageAsBitmap(activity: Activity, uri: Uri): Bitmap? {
-    // TODO: Implement retrieval of first page as bitmap
+
     return null
 }
 
 fun retrieveFirstPageAndSaveAsImage(activity: Activity, uri: Uri) {
-    // TODO: Implement logic to save first page of document as image
+
 }

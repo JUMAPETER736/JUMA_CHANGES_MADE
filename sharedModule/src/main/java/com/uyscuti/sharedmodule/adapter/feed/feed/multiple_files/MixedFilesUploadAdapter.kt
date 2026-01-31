@@ -19,6 +19,7 @@ import java.io.File
 private const val TAG = "MixedFilesUploadAdapter"
 
 class MixedFilesUploadAdapter(
+
     private var context: Context,
     private var multipleImagesListener: MultipleImagesListener,
     private var multipleVideosListener: MultipleVideosListener,

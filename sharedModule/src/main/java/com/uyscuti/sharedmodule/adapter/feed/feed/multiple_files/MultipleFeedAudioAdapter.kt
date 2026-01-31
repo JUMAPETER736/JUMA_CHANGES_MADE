@@ -22,9 +22,13 @@ import java.io.FileOutputStream
 private const val TAG ="MultipleFeedAudioAdapter"
 
 class MultipleFeedAudioAdapter(
-    private var context: Context, private var audios: List<MultipleAudios>, private var multipleAudiosListener: MultipleAudiosListener) :
+    private var context: Context,
+    private var audios: List<MultipleAudios>,
+    private var multipleAudiosListener: MultipleAudiosListener) :
+
     RecyclerView.Adapter<MultipleFeedAudioAdapter.Pager2ViewHolder>() {
-    inner class Pager2ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        inner class Pager2ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         val images: ImageView = itemView.findViewById(R.id.img)
 
@@ -51,7 +55,6 @@ class MultipleFeedAudioAdapter(
 
     override fun onBindViewHolder(holder: Pager2ViewHolder, position: Int) {
 
-//        holder.images.setImageResource(images[position])
         val audioPath = audios[position]
         val albumArt = getAlbumArt(audioPath.audioPath)
         multipleAudiosListener.onAudioDisplay(audios[position])
@@ -61,10 +64,10 @@ class MultipleFeedAudioAdapter(
             val color = ContextCompat.getColor(context, com.uyscuti.social.chatsuit.R.color.transparent)
             val mode = PorterDuff.Mode.SRC_ATOP  // Or another mode as per your requirement
 
-// Create a color filter with the specified color and mode
+            // Create a color filter with the specified color and mode
             val colorFilter = PorterDuffColorFilter(color, mode)
 
-// Apply the color filter to the ImageView
+            // Apply the color filter to the ImageView
             holder.images.colorFilter = colorFilter
             Glide.with(context)
                 .load(albumArt)
