@@ -1,7 +1,6 @@
 package com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments
 
 import android.Manifest
-import android.R.attr.data
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -43,7 +42,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -69,7 +67,6 @@ import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.F
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
 import com.uyscuti.sharedmodule.utils.FollowingManager
-import com.uyscuti.sharedmodule.viewmodels.feed.FeedUploadViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
@@ -179,7 +176,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private lateinit var allFeedAdapter: FeedAdapter
     private var blockedUserIds = mutableSetOf<String>()
     private val getFeedViewModel: GetFeedViewModel by activityViewModels()
-    private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
     private lateinit var feedListView: RecyclerView
 
 
@@ -661,7 +657,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         lifecycleScope.launch {
             try {
                 if (relationshipsViewModel.isPostsMuted(userId)) {
-                    // Unmute
+                    // Un mute
                     val response = retrofitInstance.apiService.unMutePosts(userId)
                     if (response.isSuccessful) {
                         relationshipsViewModel.removeMutedPosts(userId)
@@ -912,10 +908,10 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         try {
             if (::allFeedAdapter.isInitialized) {
 
-//                feedListView.removeViewAt( position )
+
                 allFeedAdapter.removeItem(position)
                 allFeedAdapter.notifyItemRemoved(position)
-//                allFeedAdapter.notifyItemChanged(position)
+
                 // Optional: Add fade-out animation
                 val viewHolder = feedListView.findViewHolderForAdapterPosition(position)
                 if (viewHolder != null) {
@@ -937,7 +933,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                 Snackbar.make(feedListView, "Post hidden", Snackbar.LENGTH_LONG)
                     .setAction("Undo") {
                         // Restore the post
-//                        favoriteFeedAdapter.restoreItem(position, data)
+
                         allFeedAdapter.notifyItemInserted(position)
                     }
                     .show()
@@ -2177,9 +2173,8 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         Log.d(logTag, "Audio at index $index clicked")
 
         if (index < files.size) {
-            val audioFile = files[index]
-            // TODO: Implement audio player logic
-            // playAudio(audioFile.url)
+            files[index]
+
         }
     }
 
@@ -2206,7 +2201,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         )
     }
 
-// VIDEOS MEDIA TYPE HANDLERS
+    // VIDEOS MEDIA TYPE HANDLERS
 
     @SuppressLint("RestrictedApi")
     private fun isVideoFile(file: File): Boolean {
@@ -2595,7 +2590,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         Log.d(logTag, "Video at index $index clicked")
 
         if (index < files.size) {
-            val videoFile = files[index]
+            files[index]
             navigateToVideoFragment(files, index)
         }
     }
@@ -2746,10 +2741,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         val sideMargin = 2.dpToPx(context, requireContext())
         val standardImageHeight = 300.dpToPx(context, requireContext())
         var cornerRadius: Float = 14.dpToPx(context, requireContext()).toFloat()
-
-        fun dpToPx(context: Context, dp: Float): Int {
-            return (dp * context.resources.displayMetrics.density).toInt()
-        }
 
         // Overload for Int values if needed
         fun dpToPx(context: Context, dp: Int): Int {

@@ -22,7 +22,6 @@ import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentIn
 import com.uyscuti.sharedmodule.model.GoToShortsFragment
 import com.uyscuti.sharedmodule.model.ShowAppBar
 import com.uyscuti.sharedmodule.model.ShowBottomNav
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
 import org.greenrobot.eventbus.EventBus
 
 // TODO: Rename parameter arguments, choose names that match
@@ -59,7 +58,6 @@ class FeedRepostFilesFragment : Fragment(), FeedTextViewFragmentInterface {
     private var feedPostPosition = -1
     private var fileId = ""
     private var mediaPlayer: MediaPlayer? = null
-    private var audioPlayingPosition = -1
     private var isPlaying = false
 
     private lateinit var data:  com.uyscuti.social.network.api.response.posts.OriginalPost
@@ -83,7 +81,7 @@ class FeedRepostFilesFragment : Fragment(), FeedTextViewFragmentInterface {
         // Inflate the layout for this fragment
         binding = FragmentFeedRepostFilesBinding.inflate(layoutInflater,container,false)
 
-        val fileIdToFind = data.fileTypes?.get(position)
+        data.fileTypes?.get(position)
 
         fileId = data.fileIds[position].toString()
 
@@ -394,11 +392,11 @@ class FeedRepostFilesFragment : Fragment(), FeedTextViewFragmentInterface {
     }
 
     override fun onRePostClickFromFeedTextViewFragment(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
-        TODO("Not yet implemented")
+
     }
 
     fun onImageClick() {
-        TODO("Not yet implemented")
+
     }
 
 }

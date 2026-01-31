@@ -278,11 +278,6 @@ class FeedTextViewFragment : Fragment() {
     fun setListener(listener: FeedTextViewFragmentInterface) {
         feedTextViewFragmentInterface = listener
     }
-    @SuppressLint("SetTextI18n")
-    fun setFeedCommentsCount() {
-        Log.d(TAG, "setFeedCommentsCount: data.comments+1: ${data.comments+1} ")
-        binding.feedCommentsCount.text = "${data.comments +1}"
-    }
 
 }
 
