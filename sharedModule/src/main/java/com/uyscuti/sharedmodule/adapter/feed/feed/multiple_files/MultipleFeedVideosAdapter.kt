@@ -21,6 +21,7 @@ import com.uyscuti.social.network.api.response.feed.getallfeed.Post
 private const val TAG = "MultipleFeedVideosAdapter"
 
 class MultipleFeedVideosAdapter(
+
     private var context: Context,
     private var images: List<String>,
     private var playFeedVideoInterface: PlayFeedVideoInterface,
@@ -29,6 +30,7 @@ class MultipleFeedVideosAdapter(
     RecyclerView.Adapter<MultipleFeedVideosAdapter.Pager2ViewHolder>() {
 
     private var videoThumbnail = ""
+    private var data: Post? = null
 
     inner class Pager2ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val images: ImageView = itemView.findViewById(R.id.imageView)
@@ -57,22 +59,14 @@ class MultipleFeedVideosAdapter(
         )
     }
 
-    private var data: Post? = null
-    fun setVideoData(data: Post) {
-        this.data = data
-    }
 
-    fun refreshVideo(position: Int) {
-        Log.d(TAG, "refreshVideo: ")
-        notifyItemChanged(position)
-    }
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(
         holder: Pager2ViewHolder,
         position: Int
     ) {
 
-//        holder.images.setImageResource(images[position])
+
         if (data != null) {
             val durationString = data?.duration?.let { commaSeparatedStringToList(it.toString()) }
             holder.finalDuration.text = durationString?.get(position) ?: "00:00"
@@ -110,9 +104,6 @@ class MultipleFeedVideosAdapter(
         return images.size
     }
 
-    fun getVideoThumbnail(): String {
-        return videoThumbnail
-    }
 }
 
 interface PlayFeedVideoInterface {

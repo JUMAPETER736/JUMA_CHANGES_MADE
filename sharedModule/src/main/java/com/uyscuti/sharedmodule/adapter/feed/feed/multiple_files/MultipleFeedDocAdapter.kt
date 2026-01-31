@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.sharedmodule.R
 
 private const val TAG = ""
+
 class MultipleFeedDocAdapter(
     private var context: Context,
     private var documentList: List<Uri>,

@@ -16,6 +16,7 @@ import java.io.File
 private const val TAG = "MultipleSelectedFeedVideoAdapter"
 
 class MultipleSelectedFeedVideoAdapter(
+
     private var context: Context,
     private var videos: ArrayList<FeedMultipleVideos>,
     private var multipleVideosListener: MultipleVideosListener,
@@ -63,8 +64,7 @@ class MultipleSelectedFeedVideoAdapter(
     ) {
 
         val videoData = videos[position]
-//        holder.images.setImageResource(images[position])
-
+        
         multipleVideosListener.onVideoDisplay(videos[position])
         if (videoData.thumbnail != null) {
             Glide.with(context)

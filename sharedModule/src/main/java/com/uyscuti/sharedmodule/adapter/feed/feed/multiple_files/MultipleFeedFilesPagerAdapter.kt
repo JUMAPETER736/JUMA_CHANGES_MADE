@@ -15,23 +15,18 @@ import com.uyscuti.sharedmodule.model.feed.multiple_files.MixedFeedUploadDataCla
 
 
 private const val TAG = "MultipleFeedFilesPagerAdapter"
+
 class MultipleFeedFilesPagerAdapter(fragmentActivity: FragmentActivity) :
     FragmentStateAdapter(fragmentActivity) {
 
     private lateinit var backPressedCallback: OnBackPressedCallback
     private var feedTextViewFragmentInterface: FeedTextViewFragmentInterface? = null
 
-    private var currentFragment: MixedFeedFilesUploadFragment? = null
-
     private val activity = fragmentActivity
 
     private var mixedFeedUploadDataClass: MutableList<MixedFeedUploadDataClass> = mutableListOf()
     var position = 0
     var fragment : MixedFeedFilesUploadFragment? = null
-    fun setMixedFeedUploadDataClass(mixedFeedUploadDataClass: MixedFeedUploadDataClass) {
-        this.mixedFeedUploadDataClass.clear()
-        this.mixedFeedUploadDataClass.add(mixedFeedUploadDataClass)
-    }
 
     fun setMixedFeedUploadDataClass2(mixedFeedUploadDataClass: MutableList<MixedFeedUploadDataClass>) {
         Log.d(TAG, "setMixedFeedUploadDataClass2: size b4 clear: ${mixedFeedUploadDataClass.size}")
@@ -40,13 +35,7 @@ class MultipleFeedFilesPagerAdapter(fragmentActivity: FragmentActivity) :
         this.mixedFeedUploadDataClass.addAll(mixedFeedUploadDataClass)
         Log.d(TAG, "setMixedFeedUploadDataClass2: size after add: ${mixedFeedUploadDataClass.size}")
     }
-    fun setBackPressedCallback(backPressedCallback: OnBackPressedCallback) {
-        this.backPressedCallback = backPressedCallback
-    }
 
-    fun setFeedTextViewFragmentInterface(feedTextViewFragmentInterface: FeedTextViewFragmentInterface) {
-        this.feedTextViewFragmentInterface = feedTextViewFragmentInterface
-    }
     override fun getItemCount(): Int = mixedFeedUploadDataClass.size
 
     override fun createFragment(position: Int): Fragment {
@@ -54,7 +43,7 @@ class MultipleFeedFilesPagerAdapter(fragmentActivity: FragmentActivity) :
 
         this.position = position
         fragment!!.arguments = Bundle().apply {
-//            putString("videoUri", videoUrls[position])
+
             putParcelable("mixedFeedUploadDataClass", mixedFeedUploadDataClass[position])
         }
         return fragment as MixedFeedFilesUploadFragment
