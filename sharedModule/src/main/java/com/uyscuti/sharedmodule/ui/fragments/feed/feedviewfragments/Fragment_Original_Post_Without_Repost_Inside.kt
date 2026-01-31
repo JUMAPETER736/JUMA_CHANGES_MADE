@@ -38,7 +38,6 @@ import androidx.annotation.OptIn
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
-import androidx.appcompat.widget.PopupMenu
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
@@ -89,7 +88,6 @@ import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.F
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
 import com.uyscuti.sharedmodule.utils.FollowingManager
-import com.uyscuti.sharedmodule.viewmodels.feed.FeedUploadViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.network.api.response.posts.OriginalPost
@@ -180,7 +178,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private lateinit var cancelButton: ImageView
     private lateinit var headerTitle: TextView
     private lateinit var headerMenuButton: ImageView
-    private var isNavigatingBack = false
 
     // Original Post Views
     private lateinit var quotedPostCard: CardView
@@ -193,7 +190,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private lateinit var tvQuotedHashtags: TextView
     private lateinit var mixedFilesCardView: CardView
     private lateinit var originalFeedImage: ImageView
-    private lateinit var videoContainer: LinearLayout
     private lateinit var multipleAudiosContainer: LinearLayout
     private lateinit var recyclerViews: RecyclerView
     private lateinit var ivQuotedPostImage: ImageView
@@ -223,7 +219,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private lateinit var allFeedAdapter: FeedAdapter
     private var blockedUserIds = mutableSetOf<String>()
     private val getFeedViewModel: GetFeedViewModel by activityViewModels()
-    private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
     private lateinit var feedListView: RecyclerView
 
 
@@ -444,6 +439,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     }
 
     interface OnFeedClickListener {
+
         fun likeUnLikeFeed(position: Int, data: Post)
         fun feedCommentClicked(position: Int, data: Post)
         fun feedFavoriteClick(position: Int, data: Post)
@@ -719,7 +715,9 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     private fun initializeViews(view: View) {
         itemView = view
         try {
+
             _binding?.let { safeBinding ->
+
                 cancelButton = safeBinding.cancelButton
                 headerTitle = safeBinding.headerTitle
                 headerMenuButton = safeBinding.headerMenuButton
@@ -1189,7 +1187,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             "OnDownload $url  \nto path : $fileLocation"
         )
 
-        val permissions = arrayOf(
+        arrayOf(
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.READ_EXTERNAL_STORAGE
         )
@@ -1238,10 +1236,9 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         try {
             if (::allFeedAdapter.isInitialized) {
 
-//                feedListView.removeViewAt( position )
                 allFeedAdapter.removeItem(position)
                 allFeedAdapter.notifyItemRemoved(position)
-//                allFeedAdapter.notifyItemChanged(position)
+
                 // Optional: Add fade-out animation
                 val viewHolder = feedListView.findViewHolderForAdapterPosition(position)
                 if (viewHolder != null) {
@@ -1262,7 +1259,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 Snackbar.make(feedListView, "Post hidden", Snackbar.LENGTH_LONG)
                     .setAction("Undo") {
                         // Restore the post
-//                        favoriteFeedAdapter.restoreItem(position, data)
+
                         allFeedAdapter.notifyItemInserted(position)
                     }
                     .show()
@@ -1363,7 +1360,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 }
 
                 showToast("Now following $displayName")
-                Log.d(TAG, "✓ Added account $feedOwnerId (@$feedOwnerUsername) to following list")
+                Log.d(TAG, "Added account $feedOwnerId (@$feedOwnerUsername) to following list")
 
             } else {
 
@@ -1498,6 +1495,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     }
 
     private fun populatePostData(post: Post) {
+
         Log.d(TAG, "populatePostData: Starting to populate data for post ${post._id}")
         Log.d(TAG, "populatePostData: Post comments = ${post.comments}")
         Log.d(TAG, "populatePostData: Post likes = ${post.likes}")
@@ -1533,7 +1531,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 Log.d("MediaDebug", "Handling media from original post with ${repostedPostData.files.size} files")
                 showRepostHeader(post)
 
-                // **KEY FIX: Populate the original post content and author info for reposts**
+                //Populate the original post content and author info for reposts**
                 populatePostContent(repostedPostData)
                 populateOriginalAuthorInfo(repostedPostData)
 
@@ -2763,40 +2761,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
-    private fun populateInteractionData(post: OriginalPost) {
-        try {
-            if (::likesCount.isInitialized) {
-                likesCount.text = formatCount(post.likeCount)
-            }
-            if (::commentCount.isInitialized) {
-                commentCount.text = formatCount(post.commentCount)
-            }
-            if (::repostCount.isInitialized) {
-                repostCount.text = formatCount(post.repostCount)
-            }
-            if (::favoriteCounts.isInitialized) {
-                favoriteCounts.text = formatCount(post.bookmarkCount)
-            }
-            if (::shareCount.isInitialized) {
-                shareCount.text = "0"
-            }
-
-            updateInteractionStates(post)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error populating interaction data: ${e.message}", e)
-        }
-    }
-
-    private fun updateInteractionStates(post: OriginalPost) {
-//        updateLikeUI(post.isLikedCount)
-        updateFavoriteUI(post.bookmarks.isNotEmpty())
-        if (::repostPost.isInitialized) {
-            repostPost.setImageResource(
-                if (post.isReposted) R.drawable.retweet else R.drawable.repeat_svgrepo_com
-            )
-        }
-    }
-
 
     // Add missing methods
     private fun populatePostInteractionData(post: Post) {
@@ -2823,7 +2787,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     }
 
     private fun updatePostInteractionStates(post: Post) {
-//        updateLikeUI(post.isLikedCount)
+
         updateFavoriteUI(post.isBookmarked)
         if (::repostPost.isInitialized) {
             repostPost.setImageResource(
@@ -3049,8 +3013,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         val fileId: String,
         val fileName: String?
     )
-
-
 
 
 
@@ -3280,7 +3242,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     showAudioContainer()
                     setupCleanRecyclerView(mediaAdapter)
 
-                    // : Force audio container to stay visible with delay
+                    // Force audio container to stay visible with delay
                     multipleAudiosContainer?.postDelayed({
                         Log.d("PostMediaHandler", "Post-setup check - multipleAudiosContainer visibility: ${multipleAudiosContainer?.visibility}")
                         if (multipleAudiosContainer?.visibility != View.VISIBLE) {
@@ -3377,7 +3339,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
 
-                // REMOVE FIXED HEIGHT - Let it wrap content to show all items
+                //Let it wrap content to show all items
                 layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
                 layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
 
@@ -4254,7 +4216,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
             val displayMetrics = context.resources.displayMetrics
             val screenWidth = displayMetrics.widthPixels
-            val margin = 4.dpToPx(context)
+            4.dpToPx(context)
             val spaceBetweenRows = 4.dpToPx(context)
             val layoutParams = materialCardView.layoutParams as ViewGroup.MarginLayoutParams
 
@@ -4409,7 +4371,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
-                    // **ADD THIS: Create PostItem list for the ViewPager**
+                    // Create PostItem list for the ViewPager**
                     val postItems = ArrayList<PostItem>()
                     files.forEachIndexed { index, file ->
 
@@ -4563,12 +4525,16 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             val layoutParams = cardView.layoutParams as ViewGroup.MarginLayoutParams
 
             when {
+
                 fileSize <= 1 -> {
+
                     layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
                     layoutParams.height = getConstrainedHeight(context, (getAdaptiveHeights(context).second * 0.75).toInt())
                     layoutParams.setMargins(0, 0, 0, 0)
                 }
+
                 fileSize == 2 -> {
+
                     layoutParams.width = screenWidth / 2
                     layoutParams.height = getConstrainedHeight(context, (getAdaptiveHeights(context).second * 0.75).toInt())
                     layoutParams.topMargin = 0
@@ -4577,6 +4543,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     layoutParams.leftMargin = if (isLeftColumn) 0 else (spaceBetweenRows / 2)
                     layoutParams.rightMargin = if (isLeftColumn) (spaceBetweenRows / 2) else 0
                 }
+
                 fileSize == 3 -> {
                     val spanLayout = cardView.layoutParams as? StaggeredGridLayoutManager.LayoutParams
                     when (position) {
@@ -4590,6 +4557,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                             layoutParams.setMargins(0, 0, spaceBetweenRows / 2, 0)
                         }
                         1, 2 -> {
+
                             spanLayout?.isFullSpan = false
                             layoutParams.width = screenWidth / 2
                             val baseVideoHeight = getConstrainedHeight(context, (getAdaptiveHeights(context).second * 0.65).toInt())
@@ -4602,6 +4570,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                         }
                     }
                 }
+
                 fileSize == 4 -> {
                     layoutParams.width = screenWidth / 2
                     layoutParams.height = getConstrainedHeight(context, screenWidth / 2)
@@ -4611,6 +4580,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     layoutParams.topMargin = if (position < 2) 0 else (margin / 2)
                     layoutParams.bottomMargin = if (position < 2) (margin / 2) else 0
                 }
+
                 fileSize > 4 -> {
                     if (position >= 4) {
                         itemView.visibility = View.GONE
@@ -4921,7 +4891,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             }
 
         }
-
 
     }
 
@@ -5395,6 +5364,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     layoutParams.topMargin = if (position < 2) 0 else spaceBetweenRows
                     layoutParams.bottomMargin = if (position < 2) spaceBetweenRows / 2 else 0
                     itemView.layoutParams = layoutParams
+
                     if (position == 3) {
                         setupCountTextViewStyling(context, "+${fileSize - 4}")
                     } else {
@@ -5687,8 +5657,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         // Other state variables
         private var isFollowed = false
         private var totalMixedComments = 0
-        private var serverCommentCount = 0
-        private var loadedCommentCount = 0
         private var currentPost: Post? = null
         private var totalMixedLikesCounts = 0
         private var totalMixedBookMarkCounts = 0
@@ -5989,25 +5957,30 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             val layoutParams = materialCardView.layoutParams as ViewGroup.MarginLayoutParams
 
             when {
+
                 fileSize == 2 -> {
                     setupTwoFileLayout(layoutParams, screenWidth, spaceBetweenRows, context, maxHeight)
                     loadFileContent(fileUrl, mimeType, data, fileIdToFind.toString(), context)
                 }
+
                 fileSize == 3 -> {
                     setupThreeFileLayout(layoutParams, screenWidth, spaceBetweenRows,
                         context, maxHeight, data, actualFileIndex,
                         fileIdToFind.toString(), fileUrl, mimeType)
                 }
+
                 fileSize == 4 -> {
                     setupFourFileLayout(layoutParams, screenWidth, spaceBetweenRows, context, maxHeight)
                     loadFileContent(fileUrl, mimeType, data, fileIdToFind.toString(), context)
                 }
+
                 fileSize == 5 -> {
                     setupFiveFileLayout(layoutParams, screenWidth, spaceBetweenRows, context, maxHeight, fileSize)
                     if (position < 4) {
                         loadFileContent(fileUrl, mimeType, data, fileIdToFind.toString(), context)
                     }
                 }
+
                 fileSize > 4 -> {
                     setupMoreThanFourFileLayout(layoutParams, screenWidth, spaceBetweenRows, context, maxHeight, fileSize)
                     if (position < 4) {
@@ -6151,7 +6124,9 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             data: Post,
             fileIdToFind: String
         ) {
+
             when (absoluteAdapterPosition) {
+
                 0 -> {
                     layoutParams.width = screenWidth / 2
                     val baseFileHeight = getConstrainedHeight(context, (maxHeight * 0.8).toInt())
@@ -6163,6 +6138,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     layoutParams.topMargin = 0
                     layoutParams.bottomMargin = 0
                 }
+
                 1 -> {
                     layoutParams.width = screenWidth / 2
                     val baseFileHeight = getConstrainedHeight(context, (maxHeight * 0.8).toInt())
@@ -6173,6 +6149,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     layoutParams.topMargin = 0
                     layoutParams.bottomMargin = 0
                 }
+
                 2 -> {
                     layoutParams.width = screenWidth / 2
                     val baseFileHeight = getConstrainedHeight(context, (maxHeight * 0.8).toInt())

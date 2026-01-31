@@ -153,10 +153,6 @@ class NewRepostedPostFragment(
 
     private var param1: String? = null
     private var param2: String? = null
-    private val postList:
-            MutableList<com.uyscuti.social.network.api.response.posts.Post> =
-        mutableListOf()
-    private var attachedMediaUris: MutableList<Uri> = mutableListOf()
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
     private lateinit var audioPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
@@ -165,7 +161,6 @@ class NewRepostedPostFragment(
     private lateinit var repostUser: SharedPreferences
     private lateinit var backPressedCallback: OnBackPressedCallback
     private var adapter: FeedMixedFilesViewPagerAdapter? = null
-    private lateinit var username: String
     private lateinit var avatar: String
     private val PREFS_NAME = "LocalSettings" // Change this to a unique name for your app
     private var caption = ""
@@ -182,9 +177,7 @@ class NewRepostedPostFragment(
     private lateinit var multipleAudioAdapter: MultipleFeedAudioAdapter
     private var audiosList = mutableListOf<MultipleAudios>()
     private var audioDurationStringList: MutableList<String> = mutableListOf()
-    private var durationString = ""
     val audioPathList: MutableList<String> = mutableListOf()
-    private var audioPath = ""
     private var videosList = mutableListOf<FeedMultipleVideos>()
     var text = ""
 
@@ -213,16 +206,7 @@ class NewRepostedPostFragment(
     private lateinit var mixedFilesUploadAdapter: MixedFilesUploadAdapter
 
     private var mediaPlayer: MediaPlayer? = null
-    private var audioPlayingPosition = -1
-    private var isPlaying = false
     private lateinit var sharedPreferences: SharedPreferences
-
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private val permissions = arrayOf(
-        Manifest.permission.RECORD_AUDIO,
-        Manifest.permission.READ_EXTERNAL_STORAGE,
-        Manifest.permission.READ_MEDIA_IMAGES
-    )
 
     private var videoUris: MutableList<Uri> = mutableListOf()
     private var videoPaths: MutableList<String> = mutableListOf()
@@ -241,8 +225,7 @@ class NewRepostedPostFragment(
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
             position = it.getInt("position")
-            //data = (it.getSerializable("data") as
-        // com.uyscut.network.api.response.allFeedRepostsPost. Post?)!!
+
         }
     }
 
@@ -301,9 +284,9 @@ class NewRepostedPostFragment(
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(userprofile)
 
-        val username = repostUser.getString("username", "").toString()
+        repostUser.getString("username", "").toString()
 
-        val userId = repostUser.getString("userId", "").toString()
+        repostUser.getString("userId", "").toString()
         val imageList: MutableList<String> = mutableListOf()
 
         backPressedCallback = object : OnBackPressedCallback(true) {
