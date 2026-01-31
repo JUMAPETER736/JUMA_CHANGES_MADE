@@ -56,7 +56,7 @@ object ChatNotificationModule {
         return NotificationCompat.Builder(context, "Chat_Notification")
             .setSmallIcon(R.drawable.ic_message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-//            .setStyle(notificationStyle)
+
             .addAction(replyAction)
     }
 

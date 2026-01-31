@@ -41,7 +41,7 @@ class Verification_Code : AppCompatActivity() {
     private lateinit var btnContinue: AppCompatButton
     private lateinit var btnResendCode: TextView
 
-    private var timerValue = 120 // 2 minutes in seconds
+    private var timerValue = 300
     private var timerRunning = false
     private val timerHandler = Handler()
     private var dialog: Dialog? = null

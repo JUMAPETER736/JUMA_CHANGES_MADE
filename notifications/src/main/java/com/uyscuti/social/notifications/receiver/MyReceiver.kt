@@ -41,10 +41,7 @@ class MyReceiver : BroadcastReceiver() {
     @Inject
     lateinit var localStorage: LocalStorage
 
-    private var directReplyListener: DirectReplyListener? = null
 
-//    @Inject
-//    lateinit var messageRepository: MessageRepository
 
     @Inject
     lateinit var replyMessageRepository: ReplyMessageRepository
@@ -55,15 +52,13 @@ class MyReceiver : BroadcastReceiver() {
             val input = remoteInput.getCharSequence(RESULT_KEY).toString()
 
             val chatI = intent?.getStringExtra("chatId")
-//            val results = RemoteInput.getResultsFromIntent(intent, RESULT_KEY)
-//            val text = results.getString(RESULT_KEY)
+
 
             Log.d("MyReceiver", "onReceive ChatId: $chatI")
 
             val chatId = localStorage.getChatId()
 
-//            Log.d("MyReceiver", "onReceive: chatId $chatId")
-//            directReplyListener?.onDirectReply(input, chatId)
+
             // Post the event to EventBus
             EventBus.getDefault().post(DirectReplyEvent(input, chatId))
 
@@ -71,20 +66,16 @@ class MyReceiver : BroadcastReceiver() {
                 if (chatId.length >= 10 ) {
                     when(val result = replyMessageRepository.sendReply(chatId, input)){
                         is  Result.Success -> {
-//                            Log.d("MyReceiver", "onReceive: message sent successfully")
-//                            ChatNotificationService.stopSelf()
+
 
                             withContext(Dispatchers.Main) {
                                 NoteUtils.showToast(context, "Reply sent", false)
                             }
                             localStorage.clearChatId()
-//                            return
+
                         }
                         is  Result.Error -> {
-//                            Log.d("MyReceiver", "onReceive: there was an error sending the message : ${result.exception.message}")
-//                            withContext(Dispatchers.Main) {
-////                                NoteUtils.showToast(context, "Reply failed", false)
-//                            }
+
                             localStorage.clearChatId()
                         }
                     }
@@ -103,28 +94,14 @@ class MyReceiver : BroadcastReceiver() {
                     )
                 } != PackageManager.PERMISSION_GRANTED
             ) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
+
                 return
             }
-//            notificationManager.notify(
-//                5858,
-//                notificationBuilder
-////                    .setStyle(notificationStyle)
-//                    .setContentTitle("Sent!")
-//                    .setAutoCancel(true)
-//                    .setStyle(null)
-//                    .build()
-//            )
+
 
             // Cancel the original notification
             notificationManager.cancel(5858)
-//            notificationManager.
+
             return
         }
         return
