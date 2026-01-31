@@ -27,8 +27,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.Parcel
-import android.os.Parcelable
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.text.Editable
@@ -47,7 +45,6 @@ import android.view.WindowManager
 import android.view.animation.AnimationUtils
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.webkit.WebView
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageButton
@@ -58,7 +55,6 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import android.widget.VideoView
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
@@ -113,7 +109,6 @@ import com.uyscuti.sharedmodule.model.HideAppBar
 import com.uyscuti.sharedmodule.model.HideBottomNav
 import com.uyscuti.sharedmodule.model.ShowAppBar
 import com.uyscuti.sharedmodule.model.ShowBottomNav
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
 import com.uyscuti.sharedmodule.uploads.CameraActivity
@@ -230,10 +225,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     private var totalMixedBookMarkCounts = 0
     private var totalMixedShareCounts = 0
 
-    private var currentVideoPosition = 0
     private lateinit var videoView: VideoView
-    private var documentWebView: WebView? = null
-    private var isVideoPlaying = false
     private var mediaPlayer: MediaPlayer? = null
 
     private val Post.safeRepostCount: Int
@@ -251,9 +243,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     private val Post.safeShareCount: Int
         get() = shareCount ?: 0
 
-    // Media adapter for displaying files
-    private lateinit var mediaAdapter: OriginalPostMediaAdapter
-
     // Activity result launchers
     private lateinit var pickMultipleMedia: ActivityResultLauncher<PickVisualMediaRequest>
     private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
@@ -261,7 +250,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     private lateinit var audioPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var documentPickerLauncher: ActivityResultLauncher<Intent>
-    private lateinit var attachmentFile: CardView
 
     // Additional media for repost
     private val additionalMediaUris = mutableListOf<Uri>()
@@ -399,7 +387,6 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         render(data)
         setupClickListeners()
         setupTextWatcher()
-       // setupBackNavigation()
         initializeMediaHandling()
         setupLikeButton(data)
         setupBookmarkButton(data)
@@ -6203,11 +6190,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                     }
                 }
             }
-
-
         }
-
-
     }
 
 }

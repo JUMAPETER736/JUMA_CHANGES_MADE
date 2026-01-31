@@ -80,6 +80,10 @@ public class NavigationItem extends LinearLayout {
         badgeDrawable.setVisibility(View.GONE);
     }
 
+    public void showBadge() {
+        badgeDrawable.setVisibility(View.VISIBLE);
+    }
+
     //    private AppCompatImageView imageView;
     private ImageBadgeView imageBadgeView;
     private AppCompatTextView textView;
@@ -165,7 +169,7 @@ public class NavigationItem extends LinearLayout {
             gravity = Gravity.CENTER;
         }});
         setDrawable(drawable);
-
+//        setDrawableAttrs();
         addView(imageBadgeView);
 
         textView = new AppCompatTextView(getContext());
@@ -292,6 +296,10 @@ public class NavigationItem extends LinearLayout {
         return textColorTo;
     }
 
+    public void setTextColorTo(int textColorTo) {
+        this.textColorTo = textColorTo;
+    }
+
     public boolean hasTextColorTo() {
         return hasTextColorTo;
     }
@@ -300,16 +308,37 @@ public class NavigationItem extends LinearLayout {
         return hasTextColor;
     }
 
+    public void setHasTextColor(boolean hasTextColor) {
+        this.hasTextColor = hasTextColor;
+    }
+
+    public void setHasTextColorTo(boolean hasTextColorTo) {
+        this.hasTextColorTo = hasTextColorTo;
+    }
+
     public boolean hasDrawableTintTo() {
         return hasDrawableTintTo;
+    }
+
+    public void setHasDrawableTintTo(boolean hasDrawableTintTo) {
+        this.hasDrawableTintTo = hasDrawableTintTo;
     }
 
     public int getDrawableTintTo() {
         return drawableTintTo;
     }
 
+    public void setDrawableTintTo(int drawableTintTo) {
+        this.drawableTintTo = drawableTintTo;
+    }
+
     public int getSelectorColor() {
         return selectorColor;
+    }
+
+    public void setSelectorColor(int selectorColor) {
+        this.selectorColor = selectorColor;
+        onSelectorColorChangedListener.onSelectorColorChanged(position, selectorColor);
     }
 
     public boolean hasSelectorColor() {
@@ -503,6 +532,10 @@ public class NavigationItem extends LinearLayout {
         textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, size);
     }
 
+    public void setTextSizeSP(float size) {
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, size);
+    }
+
     public int getTextSize() {
         return textSize;
     }
@@ -513,6 +546,14 @@ public class NavigationItem extends LinearLayout {
 
     public void setTextStyle(int typeface) {
         textView.setTypeface(textView.getTypeface(), typeface);
+    }
+
+    public void restoreTypeface() {
+        textView.setTypeface(defaultTypeface);
+    }
+
+    public String getTypefacePath() {
+        return textTypefacePath;
     }
 
     /**
@@ -532,6 +573,10 @@ public class NavigationItem extends LinearLayout {
             Typeface typeface = Typeface.createFromAsset(getContext().getAssets(), location);
             textView.setTypeface(typeface);
         }
+    }
+
+    public Typeface getDefaultTypeface() {
+        return defaultTypeface;
     }
 
     /**
@@ -596,6 +641,22 @@ public class NavigationItem extends LinearLayout {
         return paddingBottom;
     }
 
+    public boolean hasPaddingLeft() {
+        return hasPaddingLeft;
+    }
+
+    public boolean hasPaddingRight() {
+        return hasPaddingRight;
+    }
+
+    public boolean hasPaddingTop() {
+        return hasPaddingTop;
+    }
+
+    public boolean hasPaddingBottom() {
+        return hasPaddingBottom;
+    }
+
     /**
      * DRAWABLE
      */
@@ -645,6 +706,10 @@ public class NavigationItem extends LinearLayout {
             imageBadgeView.clearColorFilter();
     }
 
+    public int getDrawableWidth() {
+        return drawableWidth;
+    }
+
     public void setDrawableWidth(int drawableWidth) {
         this.drawableWidth = drawableWidth;
 
@@ -654,6 +719,11 @@ public class NavigationItem extends LinearLayout {
         }
     }
 
+
+
+    public int getDrawableHeight() {
+        return drawableHeight;
+    }
 
     public void setDrawableHeight(int drawableHeight) {
         this.drawableHeight = drawableHeight;
@@ -679,6 +749,17 @@ public class NavigationItem extends LinearLayout {
         width = Helper.dpToPx(getContext(), width);
         height = Helper.dpToPx(getContext(), height);
         setDrawableSizeByPx(width, height);
+    }
+
+    public DrawableGravity getDrawableGravity() {
+        return drawableGravity;
+    }
+
+    public void setDrawableGravity(DrawableGravity gravity) {
+        this.drawableGravity = gravity;
+
+        setDrawableGravity();
+        setPaddingAttrs();
     }
 
     public int getDrawablePadding() {

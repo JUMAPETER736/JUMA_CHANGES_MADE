@@ -984,7 +984,4 @@ interface IFlashapi {
     suspend fun markNotificationRead(@Path("notificationId") notificationId: String): Response<ReadNotificationResponse>
 
 
-
-
-
 }
