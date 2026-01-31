@@ -8,7 +8,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
-import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -93,8 +92,7 @@ import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.feed.FeedUploadRepository
-import com.uyscuti.social.circuit.settings.MutedPostsActivity
-import com.uyscuti.social.circuit.ui.LoginActivity
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity
 import com.uyscuti.social.circuit.ui.fragments.chat.FeedFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostAudioViewFragment
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragmentsimport.FeedRepostMultipleImageFragment

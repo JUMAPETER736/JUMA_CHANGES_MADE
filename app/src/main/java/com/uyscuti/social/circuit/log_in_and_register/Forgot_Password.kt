@@ -1,4 +1,4 @@
-package com.uyscuti.social.circuit.ui
+package com.uyscuti.social.circuit.log_in_and_register
 
 import android.annotation.SuppressLint
 import android.app.Dialog
@@ -21,6 +21,7 @@ import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
+import org.json.JSONObject
 
 @AndroidEntryPoint
 class Forgot_Password : AppCompatActivity() {
@@ -285,7 +286,7 @@ class Forgot_Password : AppCompatActivity() {
     private fun handleErrorFromBody(errorBody: String?, statusCode: Int, fallbackMessage: String) {
         try {
             errorBody?.let {
-                val jsonObject = org.json.JSONObject(it)
+                val jsonObject = JSONObject(it)
                 val success = jsonObject.optBoolean("success", false)
                 val message = jsonObject.optString("message", fallbackMessage)
                 val code = jsonObject.optInt("statusCode", statusCode)

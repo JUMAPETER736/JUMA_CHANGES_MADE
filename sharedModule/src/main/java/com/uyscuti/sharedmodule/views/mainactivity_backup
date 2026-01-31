@@ -69,7 +69,7 @@ import com.uyscuti.social.circuit.presentation.DialogViewModel
 import com.uyscuti.social.circuit.presentation.GroupDialogViewModel
 import com.uyscuti.social.circuit.presentation.MainViewModel
 import com.uyscuti.social.circuit.presentation.MessageViewModel
-import com.uyscuti.social.circuit.ui.LoginActivity
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity
 import com.uyscuti.social.circuit.settings.SettingsActivity
 import com.uyscuti.social.circuit.ui.fragments.ChatFragment
 import com.uyscuti.social.circuit.ui.fragments.FeedFragment

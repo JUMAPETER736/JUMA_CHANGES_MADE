@@ -63,8 +63,8 @@ import com.uyscuti.sharedmodule.model.ShowAppBar
 import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.NewRepostedPostFragment
 import com.uyscuti.sharedmodule.viewmodels.feed.FeedUploadViewModel
-import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getUserId
-import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getUsername
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity.UserStorageHelper.getUserId
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity.UserStorageHelper.getUsername
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.comment.allcomments.Comment
 import com.uyscuti.social.network.api.response.posts.Post

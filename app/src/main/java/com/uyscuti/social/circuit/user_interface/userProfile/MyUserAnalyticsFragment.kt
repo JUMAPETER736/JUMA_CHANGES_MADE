@@ -21,10 +21,10 @@ import com.github.mikephil.charting.data.*
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.databinding.MyUserAnalyticsFragmentBinding
 import com.uyscuti.social.circuit.databinding.MyUserItemAnalyticsBinding
-import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getAvatarUrl
-import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getEmail
-import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getUserId
-import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getUsername
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity.UserStorageHelper.getAvatarUrl
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity.UserStorageHelper.getEmail
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity.UserStorageHelper.getUserId
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity.UserStorageHelper.getUsername
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi

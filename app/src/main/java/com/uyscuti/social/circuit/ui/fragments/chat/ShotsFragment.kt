@@ -157,7 +157,7 @@ import com.uyscuti.sharedmodule.viewmodels.FollowUnfollowViewModel
 import com.uyscuti.sharedmodule.viewmodels.FollowViewModel
 import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.databinding.BottomDialogForShareBinding
-import com.uyscuti.social.circuit.ui.LoginActivity
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity
 import com.uyscuti.social.circuit.settings.SettingsActivity
 import com.uyscuti.social.circuit.user_interface.UniversalSearchActivity
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse

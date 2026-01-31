@@ -10,7 +10,6 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -40,7 +39,6 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
-import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AnimationUtils
@@ -137,12 +135,11 @@ import com.uyscuti.sharedmodule.presentation.LikeUnLikeViewModel
 import com.uyscuti.sharedmodule.presentation.MainViewModel
 import com.uyscuti.sharedmodule.presentation.MessageViewModel
 import com.uyscuti.sharedmodule.service.VideoPreLoadingService
-import com.uyscuti.social.circuit.ui.LoginActivity
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity
 import com.uyscuti.social.circuit.settings.SettingsActivity
 import com.uyscuti.sharedmodule.shorts.ExoPlayerItem
 import com.uyscuti.sharedmodule.shorts.UniqueIdGenerator
 import com.uyscuti.sharedmodule.shorts.getFileSize
-import com.uyscuti.sharedmodule.utils.AudioDurationHelper
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper.reverseFormattedDuration
 import com.uyscuti.sharedmodule.utils.COMMENT_VIDEO_CODE
@@ -156,7 +153,6 @@ import com.uyscuti.sharedmodule.utils.PathUtil
 import com.uyscuti.sharedmodule.utils.R_CODE
 import com.uyscuti.sharedmodule.utils.Timer
 import com.uyscuti.sharedmodule.utils.TrimVideoUtils
-import com.uyscuti.sharedmodule.utils.WaveFormExtractor
 import com.uyscuti.sharedmodule.utils.audio_compressor.FFMPEG_AudioCompressor
 import com.uyscuti.sharedmodule.utils.createMultipartBody
 import com.uyscuti.sharedmodule.utils.deleteFiled
@@ -170,7 +166,6 @@ import com.uyscuti.sharedmodule.utils.getNavigationController
 import com.uyscuti.sharedmodule.utils.getOutputFilePath
 import com.uyscuti.sharedmodule.utils.isFileExists
 import com.uyscuti.sharedmodule.utils.isFileSizeGreaterThan2MB
-import com.uyscuti.sharedmodule.utils.waveformseekbar.SeekBarOnProgressChanged
 import com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
 
 import com.uyscuti.social.network.api.response.comment.allcomments.Account
@@ -191,7 +186,6 @@ import com.uyscuti.sharedmodule.bottomSheet.NavigationItem
 import com.uyscuti.sharedmodule.data.model.Dialog
 import com.uyscuti.sharedmodule.data.model.Message
 import com.uyscuti.sharedmodule.data.model.User
-import com.uyscuti.sharedmodule.interfaces.ShortFragmentProvider
 import com.uyscuti.sharedmodule.model.AudioPlayerHandler
 import com.uyscuti.sharedmodule.model.CleanCache
 import com.uyscuti.sharedmodule.model.CommentAudioPlayerHandler
@@ -221,7 +215,6 @@ import com.uyscuti.sharedmodule.model.ToggleReplyToTextView
 import com.uyscuti.sharedmodule.model.UserProfileShortsStartGet
 import com.uyscuti.sharedmodule.model.UserProfileShortsViewModel
 import com.uyscuti.sharedmodule.ui.GifActivity
-import com.uyscuti.sharedmodule.ui.SearchShortActivity
 import com.uyscuti.sharedmodule.uploads.AudioActivity
 import com.uyscuti.sharedmodule.uploads.CameraActivity
 import com.uyscuti.sharedmodule.uploads.VideosActivity
@@ -232,7 +225,6 @@ import com.uyscuti.sharedmodule.utils.audiomixer.input.GeneralAudioInput
 import com.uyscuti.social.circuit.ui.fragments.chat.ChatFragment
 import com.uyscuti.social.circuit.ui.fragments.chat.FeedFragment
 import com.uyscuti.social.circuit.ui.fragments.chat.ShotsFragment
-import com.uyscuti.social.circuit.ui.fragments.chat.UserProfileFragment
 import com.uyscuti.social.compressor.VideoQuality
 import com.uyscuti.social.core.common.data.room.database.ChatDatabase
 import com.uyscuti.social.core.common.data.room.entity.CallLogEntity
@@ -304,9 +296,7 @@ import kotlin.properties.Delegates
 import kotlin.random.Random
 import androidx.core.content.edit
 import androidx.core.view.isVisible
-import com.google.gson.Gson
 import com.uyscuti.sharedmodule.adapter.OnCommentsClickListener
-import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.shorts.OtherUserProfileShortsPlayerFragment
 import com.uyscuti.sharedmodule.shorts.OtherUserProfileShortsPlayerFragment.Companion.CLICKED_SHORT
 import com.uyscuti.sharedmodule.shorts.OtherUserProfileShortsPlayerFragment.Companion.SHORTS_LIST

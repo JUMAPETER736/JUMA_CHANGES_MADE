@@ -1,4 +1,4 @@
-package com.uyscuti.social.circuit.ui
+package com.uyscuti.social.circuit.log_in_and_register
 
 import android.annotation.SuppressLint
 import com.uyscuti.social.circuit.R
@@ -20,8 +20,6 @@ import androidx.appcompat.widget.AppCompatButton
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject

@@ -1,4 +1,4 @@
-package com.uyscuti.social.circuit
+package com.uyscuti.social.circuit.log_in_and_register
 
 import android.app.Dialog
 import android.content.Intent
@@ -40,7 +40,6 @@ import com.facebook.appevents.AppEventsLogger
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
 import com.facebook.GraphRequest
-import com.uyscuti.social.circuit.ui.LoginActivity
 import org.json.JSONException
 
 @AndroidEntryPoint

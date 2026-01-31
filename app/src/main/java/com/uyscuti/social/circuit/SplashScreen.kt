@@ -15,6 +15,7 @@ import com.uyscuti.sharedmodule.model.LoadMoreShorts
 import com.uyscuti.sharedmodule.model.ShortsCacheEvent
 import com.uyscuti.sharedmodule.model.ShortsViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
+import com.uyscuti.social.circuit.log_in_and_register.RegisterActivity
 import com.uyscuti.social.core.common.data.room.database.ChatDatabase
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList

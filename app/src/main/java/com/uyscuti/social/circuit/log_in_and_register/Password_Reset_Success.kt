@@ -1,4 +1,4 @@
-package com.uyscuti.social.circuit.ui
+package com.uyscuti.social.circuit.log_in_and_register
 
 import android.annotation.SuppressLint
 import android.content.Intent

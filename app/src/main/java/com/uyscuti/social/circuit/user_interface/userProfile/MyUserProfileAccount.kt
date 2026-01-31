@@ -72,11 +72,11 @@ import com.uyscuti.sharedmodule.model.User
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.UserFollowersFragment
 import com.uyscuti.social.circuit.User_Interface.OtherUserProfile.UserFollowingFragment
 import com.uyscuti.social.circuit.databinding.ActivityMyUserProfileAccountBinding
-import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getAccessToken
-import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getAvatarUrl
-import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getEmail
-import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getUserId
-import com.uyscuti.social.circuit.ui.LoginActivity.UserStorageHelper.getUsername
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity.UserStorageHelper.getAccessToken
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity.UserStorageHelper.getAvatarUrl
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity.UserStorageHelper.getEmail
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity.UserStorageHelper.getUserId
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity.UserStorageHelper.getUsername
 import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
 import com.uyscuti.social.network.api.response.otherusersprofile.Data
 import com.uyscuti.social.network.api.response.posts.Post

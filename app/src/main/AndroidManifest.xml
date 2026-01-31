@@ -145,25 +145,25 @@
               -->
 
         <activity
-            android:name=".ui.LoginActivity"
+            android:name=".log_in_and_register.LoginActivity"
             android:exported="false" />
         <activity
-            android:name=".RegisterActivity"
+            android:name=".log_in_and_register.RegisterActivity"
             android:exported="false" />
         <activity
             android:name=".GoogleOAuth"
             android:exported="false" />
         <activity
-            android:name=".ui.Forgot_Password"
+            android:name=".log_in_and_register.Forgot_Password"
             android:exported="false" />
         <activity
-            android:name=".ui.Verification_Code"
+            android:name=".log_in_and_register.Verification_Code"
             android:exported="false" />
         <activity
-            android:name=".ui.Create_New_Password"
+            android:name=".log_in_and_register.Create_New_Password"
             android:exported="false" />
         <activity
-            android:name=".ui.Password_Reset_Success"
+            android:name=".log_in_and_register.Password_Reset_Success"
             android:exported="false" />
 
         <!-- 

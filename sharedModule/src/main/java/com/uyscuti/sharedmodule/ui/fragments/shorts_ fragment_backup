@@ -113,7 +113,7 @@ import com.uyscuti.social.circuit.model.UserProfileShortsViewModel
 import com.uyscuti.social.circuit.presentation.GetOtherUsersProfileViewModel
 import com.uyscuti.social.circuit.presentation.LikeUnLikeViewModel
 import com.uyscuti.social.circuit.service.VideoPreLoadingService
-import com.uyscuti.social.circuit.ui.LoginActivity
+import com.uyscuti.social.circuit.log_in_and_register.LoginActivity
 import com.uyscuti.social.circuit.ui.shorts.ExoPlayerItem
 import com.uyscuti.social.circuit.ui.shorts.UploadShortsActivity
 import com.uyscuti.social.circuit.utils.Constants

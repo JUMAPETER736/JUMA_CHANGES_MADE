@@ -1,9 +1,10 @@
-package com.uyscuti.social.circuit.ui
+package com.uyscuti.social.circuit.log_in_and_register
 
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -42,7 +43,7 @@ class Verification_Code : AppCompatActivity() {
 
     private var timerValue = 120 // 2 minutes in seconds
     private var timerRunning = false
-    private val timerHandler = android.os.Handler()
+    private val timerHandler = Handler()
     private var dialog: Dialog? = null
 
     // ADD THESE VARIABLES

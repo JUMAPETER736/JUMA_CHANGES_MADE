@@ -1,4 +1,4 @@
-package com.uyscuti.social.circuit.ui
+package com.uyscuti.social.circuit.log_in_and_register
 
 import android.app.Dialog
 import android.content.Context
@@ -34,7 +34,6 @@ import com.uyscuti.social.core.common.data.room.repository.GroupDialogRepository
 import com.uyscuti.social.core.common.data.room.repository.MessageRepository
 import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.circuit.R
-import com.uyscuti.social.circuit.RegisterActivity
 import com.uyscuti.social.circuit.databinding.ActivityLoginBinding
 import com.uyscuti.social.network.api.request.googlelogin.GoogleLoginRequest
 import com.uyscuti.social.network.api.request.login.LoginRequest
@@ -46,6 +45,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
@@ -387,7 +387,7 @@ class LoginActivity : AppCompatActivity() {
 
                 withContext(Dispatchers.Main) {
                     // Wait briefly for relationships to load
-                    kotlinx.coroutines.delay(500)
+                    delay(500)
 
                     Log.d("LoginActivity", "Relationships loading initiated")
                     Log.d("LoginActivity", "Close Friends: ${relationshipsViewModel.closeFriendIds.value.size}")
@@ -713,7 +713,7 @@ class LoginActivity : AppCompatActivity() {
 
             return try {
 
-                val sharedPrefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                val sharedPrefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE)
 
                 val user = loginResponse.data.user
 
@@ -761,7 +761,7 @@ class LoginActivity : AppCompatActivity() {
 
             return try {
 
-                val sharedPrefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                val sharedPrefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE)
 
                 // Use reflection to get fields (adjust based on your GoogleLoginResponse structure)
 
@@ -847,7 +847,7 @@ class LoginActivity : AppCompatActivity() {
 
             return try {
 
-                val sharedPrefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                val sharedPrefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE)
 
                 // Use reflection to get fields (adjust based on your FacebookLoginResponse structure)
 
@@ -929,7 +929,7 @@ class LoginActivity : AppCompatActivity() {
 
         fun getUserId(context: Context): String {
 
-            val sharedPrefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val sharedPrefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE)
 
             return sharedPrefs.getString(KEY_USER_ID, "") ?: ""
 
@@ -937,7 +937,7 @@ class LoginActivity : AppCompatActivity() {
 
         fun getUsername(context: Context): String {
 
-            val sharedPrefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val sharedPrefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE)
 
             return sharedPrefs.getString(KEY_USERNAME, "") ?: ""
 
@@ -945,7 +945,7 @@ class LoginActivity : AppCompatActivity() {
 
         fun getEmail(context: Context): String {
 
-            val sharedPrefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val sharedPrefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE)
 
             return sharedPrefs.getString(KEY_EMAIL, "") ?: ""
 
@@ -953,7 +953,7 @@ class LoginActivity : AppCompatActivity() {
 
         fun getAvatarUrl(context: Context): String {
 
-            val sharedPrefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val sharedPrefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE)
 
             return sharedPrefs.getString(KEY_AVATAR_URL, "") ?: ""
 
@@ -961,7 +961,7 @@ class LoginActivity : AppCompatActivity() {
 
         fun getAccessToken(context: Context): String {
 
-            val sharedPrefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val sharedPrefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE)
 
             return sharedPrefs.getString(KEY_ACCESS_TOKEN, "") ?: ""
 
