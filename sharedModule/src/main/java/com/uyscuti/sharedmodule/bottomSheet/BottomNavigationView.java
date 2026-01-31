@@ -13,7 +13,6 @@ import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -28,7 +27,7 @@ import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.TextView;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -329,47 +328,6 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
 
     private int numberOfButtons = 0;
 
-    public void addAllItems(ArrayList<NavigationItem> items) {
-        for (NavigationItem item : items) {
-            addItem(item);
-        }
-    }
-
-
-
-    public void setBadgeForItem(int position, int count) {
-        // Find the NavigationItem corresponding to the position
-        NavigationItem item = findItemByPosition(position);
-
-        Log.d("Badge", "(setBadgeForItem) position - " + position);
-        // If the item is found, set its badge count
-        if (item != null) {
-            item.setBadge(count);
-        } else {
-            Log.d("Badge", "(setBadgeForItem) item not found");
-        }
-    }
-
-    public void addBadge(int position, String value) {
-
-        NavigationItem item = findItemByPosition(position);
-
-
-
-        View badge = LayoutInflater.from(getContext()).inflate(R.layout.custom_badge, this, false);
-
-        TextView text = badge.findViewById(R.id.badge_text_view);
-        text.setText(value);
-
-        if(item != null) {
-            Log.d("Badge", "(addBadge) position - " + position);
-
-            item.addView(badge);
-        }else {
-            Log.d("Badge", "(addBadge) item not found");
-
-        }
-    }
 
     public void removeBadge(int position) {
         NavigationItem item = findItemByPosition(position);
@@ -554,10 +512,6 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
         } else if (button.hasEnabled()) {
             button.setEnabled(isEnabled);
         }
-    }
-
-    public int getNumberOfButtons() {
-        return numberOfButtons;
     }
 
     public void setPosition(int position) {
@@ -757,82 +711,20 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
 
     private OnPositionChangedListener onPositionChangedListener;
 
-    public void setOnPositionChangedListener(OnPositionChangedListener onPositionChangedListener) {
-        this.onPositionChangedListener = onPositionChangedListener;
-    }
-
     public interface OnPositionChangedListener {
         void onPositionChanged(NavigationItem button, int currentPosition, int lastPosition);
-    }
-
-    public void setOnLongClickedButtonListener(final OnLongClickedButtonListener onLongClickedButtonListener) {
-        for (int i = 0; i < numberOfButtons; i++) {
-            final int buttonPosition = i;
-            buttons.get(i).setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    return onLongClickedButtonListener == null || onLongClickedButtonListener.onLongClickedButton((NavigationItem) v, buttonPosition);
-                }
-            });
-        }
-    }
-
-    public interface OnLongClickedButtonListener {
-        boolean onLongClickedButton(NavigationItem button, int position);
-
-    }
-
-    /**
-     * LISTENERS --- ENDS
-     */
-
-
-    public int getAnimateTextsColorExit() {
-        return animateTextsColorExit;
-    }
-
-    public void setAnimateTextsColorExit(int animateTextsColorExit) {
-        this.animateTextsColorExit = animateTextsColorExit;
-    }
-
-    public int getAnimateTextsColorEnter() {
-        return animateTextsColorEnter;
-    }
-
-    public void setAnimateTextsColorEnter(int animateTextsColorEnter) {
-        this.animateTextsColorEnter = animateTextsColorEnter;
-    }
-
-    public int getAnimateTextsColorDuration() {
-        return animateTextsColorDuration;
     }
 
     public void setAnimateTextsColorDuration(int animateTextsColorDuration) {
         this.animateTextsColorDuration = animateTextsColorDuration;
     }
 
-    public int getAnimateDrawablesTintExit() {
-        return animateDrawablesTintExit;
-    }
-
     public void setAnimateDrawablesTintExit(int animateDrawablesTintExit) {
         this.animateDrawablesTintExit = animateDrawablesTintExit;
     }
 
-    public int getAnimateDrawablesTintEnter() {
-        return animateDrawablesTintEnter;
-    }
-
-    public void setAnimateDrawablesTintEnter(int animateDrawablesTintEnter) {
-        this.animateDrawablesTintEnter = animateDrawablesTintEnter;
-    }
-
     public int getAnimateDrawablesTintColorDuration() {
         return animateDrawablesTintDuration;
-    }
-
-    public void setAnimateDrawablesTintColorDuration(int animateDrawablesTintColorDuration) {
-        this.animateDrawablesTintDuration = animateDrawablesTintColorDuration;
     }
 
     public List<NavigationItem> getButtons() {

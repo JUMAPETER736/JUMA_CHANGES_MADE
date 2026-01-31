@@ -36,8 +36,10 @@ private const val TAG = "UserProfileShortsAdapter"
 
 
 class UserProfileShortsAdapter(
+
     private val commentsClickListener: OnCommentsClickListener,
     private var clickListeners: OnClickListeners,
+
 ) : RecyclerView.Adapter<UserProfileShortsViewHolder>() {
     private val viewHolderList = mutableListOf<UserProfileShortsViewHolder>()
     private val shortsList: MutableList<UserShortsEntity> = mutableListOf()
@@ -113,6 +115,7 @@ class UserProfileShortsViewHolder(
     private val commentsParentLayout: LinearLayout = itemView.findViewById(R.id.commentsParentLayout)
     private val downloadBtn: ImageButton = itemView.findViewById(R.id.downloadBtn)
     private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
+
     private val shortsSeekBar: SeekBar = itemView.findViewById(R.id.shortsSeekBar)
     private val shortsViewPager: FrameLayout = itemView.findViewById(R.id.shortsViewPager)
     private val shortUsername: TextView = itemView.findViewById(R.id.shortUsername)
