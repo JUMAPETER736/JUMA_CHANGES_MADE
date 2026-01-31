@@ -22,8 +22,6 @@ import java.io.IOException
 import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
 
-
-
 @AndroidEntryPoint
 class Forgot_Password : AppCompatActivity() {
 
@@ -43,7 +41,6 @@ class Forgot_Password : AppCompatActivity() {
         USERNAME,
         USER_ID
     }
-
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,7 +77,6 @@ class Forgot_Password : AppCompatActivity() {
         showLoadingDialog()
 
         CoroutineScope(Dispatchers.IO).launch {
-
             try {
                 // Determine input type: email, username, or userId
                 val inputType = determineInputType(input)
@@ -112,90 +108,146 @@ class Forgot_Password : AppCompatActivity() {
                 Log.d(TAG, "  - Is successful: ${response.isSuccessful}")
                 Log.d(TAG, "  - Response body: ${response.body()}")
                 Log.d(TAG, "  - Response message: ${response.message()}")
-                Log.d(TAG, "  - Success flag: ${response.body()?.success}")
-                Log.d(TAG, "  - Message: ${response.body()?.message}")
 
                 withContext(Dispatchers.Main) {
                     dismissLoadingDialog()
 
-                    if (response.isSuccessful && response.body()?.success == true) {
-                        val resetToken = response.body()?.data?.resetToken ?: ""
-                        val email = response.body()?.data?.email ?: ""
+                    // Handle response based on HTTP status code
+                    when (response.code()) {
+                        200 -> {
+                            // HTTP 200 - Check success flag in body
+                            val body = response.body()
+                            if (body?.success == true) {
+                                // Success: Extract data
+                                val data = body.data
+                                val resetToken = data?.resetToken ?: ""
+                                val email = data?.email ?: ""
+                                val message = body.message
 
-                        Log.d(TAG, "Password reset request successful!")
-                        Log.d(TAG, "  - Reset token: $resetToken")
-                        Log.d(TAG, "  - Email: $email")
+                                Log.d(TAG, "✅ SUCCESS (200)")
+                                Log.d(TAG, "  - Success: ${body.success}")
+                                Log.d(TAG, "  - Message: $message")
+                                Log.d(TAG, "  - StatusCode: ${body.statusCode}")
+                                Log.d(TAG, "  - Reset Token: $resetToken")
+                                Log.d(TAG, "  - Email: $email")
 
-                        Toast.makeText(
-                            this@Forgot_Password,
-                            "Password reset OTP sent to your email",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                                if (resetToken.isNotEmpty() && email.isNotEmpty()) {
+                                    Toast.makeText(
+                                        this@Forgot_Password,
+                                        message,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
 
-                        // Redirect to verification code page
-                        Log.d(TAG, "Navigating to Verification_Code activity")
-                        val intent = Intent(this@Forgot_Password, Verification_Code::class.java)
-                        intent.putExtra("RESET_TOKEN", resetToken)
-                        intent.putExtra("EMAIL", email)
-                        startActivity(intent)
-                        finish()
-                    } else {
-                        val errorMessage = response.body()?.message ?: "User not found. Please check your email, username, or user ID."
-                        Log.e(TAG, "Password reset failed: $errorMessage")
-                        Log.e(TAG, "  - Response code: ${response.code()}")
-                        Log.e(TAG, "  - Success flag: ${response.body()?.success}")
+                                    // Navigate to Verification Code page
+                                    Log.d(TAG, "🚀 Navigating to Verification_Code activity")
+                                    val intent = Intent(this@Forgot_Password, Verification_Code::class.java)
+                                    intent.putExtra("RESET_TOKEN", resetToken)
+                                    intent.putExtra("EMAIL", email)
+                                    startActivity(intent)
+                                    finish()
+                                } else {
+                                    Log.e(TAG, "❌ Missing resetToken or email in response data")
+                                    Toast.makeText(
+                                        this@Forgot_Password,
+                                        "Invalid response from server. Please try again.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            } else {
+                                // HTTP 200 but success = false (shouldn't happen with your backend)
+                                val message = body?.message ?: "Request failed"
+                                Log.e(TAG, "❌ HTTP 200 but success=false")
+                                Log.e(TAG, "  - Message: $message")
 
-                        Toast.makeText(
-                            this@Forgot_Password,
-                            errorMessage,
-                            Toast.LENGTH_LONG
-                        ).show()
+                                Toast.makeText(
+                                    this@Forgot_Password,
+                                    message,
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+
+                        400 -> {
+                            // Bad Request - Parse error from body
+                            handleErrorFromBody(
+                                response.errorBody()?.string(),
+                                400,
+                                "Please provide email, username, or user ID"
+                            )
+                        }
+
+                        404 -> {
+                            // User Not Found - Parse error from body
+                            handleErrorFromBody(
+                                response.errorBody()?.string(),
+                                404,
+                                "User not found. Please check your email, username, or user ID."
+                            )
+                        }
+
+                        422 -> {
+                            // Unprocessable Entity
+                            handleErrorFromBody(
+                                response.errorBody()?.string(),
+                                422,
+                                "Cannot process request. Please check your input."
+                            )
+                        }
+
+                        500 -> {
+                            // Server Error
+                            handleErrorFromBody(
+                                response.errorBody()?.string(),
+                                500,
+                                "Server error. Please try again later."
+                            )
+                        }
+
+                        else -> {
+                            // Other HTTP codes
+                            val code = response.code()
+                            val message = response.message()
+
+                            Log.e(TAG, "❌ HTTP ERROR ($code)")
+                            Log.e(TAG, "  - Message: $message")
+
+                            Toast.makeText(
+                                this@Forgot_Password,
+                                "Error ($code). Please try again.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
                     }
                 }
-            }
+            } catch (e: HttpException) {
+                Log.e(TAG, "❌ HTTP Exception occurred!")
+                Log.e(TAG, "  - Message: ${e.message}")
+                Log.e(TAG, "  - Code: ${e.code()}")
 
-            catch (e: HttpException) {
-            Log.e(TAG, "HTTP Exception occurred!")
-            Log.e(TAG, "  - Message: ${e.message}")
-            Log.e(TAG, "  - Code: ${e.code()}")
+                withContext(Dispatchers.Main) {
+                    dismissLoadingDialog()
 
-            var parsedErrorMessage: String? = null
-            try {
-                val errorBody = e.response()?.errorBody()?.string()
-                Log.e(TAG, "  - Error body: $errorBody")
+                    // Try to parse error body
+                    val errorBody = try {
+                        e.response()?.errorBody()?.string()
+                    } catch (ex: Exception) {
+                        null
+                    }
 
-                // Try to parse error body as JSON
-                errorBody?.let {
-                    val jsonObject = org.json.JSONObject(it)
-                    parsedErrorMessage = jsonObject.optString("message")
+                    handleErrorFromBody(
+                        errorBody,
+                        e.code(),
+                        when (e.code()) {
+                            400 -> "Please provide email, username, or user ID"
+                            404 -> "User not found. Please check your email, username, or user ID."
+                            422 -> "Cannot process request. Please check your input."
+                            500 -> "Server error. Please try again later."
+                            else -> "Error (${e.code()}). Please try again."
+                        }
+                    )
                 }
-            }
-
-            catch (ex: Exception) {
-                Log.e(TAG, "  - Could not parse error body: ${ex.message}")
-            }
-
-            withContext(Dispatchers.Main) {
-                dismissLoadingDialog()
-
-                // Handle specific HTTP error codes
-                val errorMessage = parsedErrorMessage ?: when (e.code()) {
-                    404 -> "User not found. Please check your input."
-                    400 -> "Invalid input. Please try again."
-                    422 -> "Cannot process request. Please check your input."
-                    else -> "HTTP error (${e.code()}). Please try again."
-                }
-
-                Toast.makeText(
-                    this@Forgot_Password,
-                    errorMessage,
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
-
-            catch (e: IOException) {
-                Log.e(TAG, "IO Exception occurred!")
+            } catch (e: IOException) {
+                Log.e(TAG, "❌ IO Exception occurred!")
                 Log.e(TAG, "  - Message: ${e.message}")
                 Log.e(TAG, "  - Cause: ${e.cause}")
                 e.printStackTrace()
@@ -205,13 +257,11 @@ class Forgot_Password : AppCompatActivity() {
                     Toast.makeText(
                         this@Forgot_Password,
                         "Network error. Check your internet connection.",
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_LONG
                     ).show()
                 }
-            }
-
-            catch (e: Exception) {
-                Log.e(TAG, "Unexpected Exception occurred!")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Unexpected Exception occurred!")
                 Log.e(TAG, "  - Type: ${e.javaClass.simpleName}")
                 Log.e(TAG, "  - Message: ${e.message}")
                 Log.e(TAG, "  - Cause: ${e.cause}")
@@ -226,6 +276,46 @@ class Forgot_Password : AppCompatActivity() {
                     ).show()
                 }
             }
+        }
+    }
+
+    /**
+     * Handles error response from body by parsing JSON
+     */
+    private fun handleErrorFromBody(errorBody: String?, statusCode: Int, fallbackMessage: String) {
+        try {
+            errorBody?.let {
+                val jsonObject = org.json.JSONObject(it)
+                val success = jsonObject.optBoolean("success", false)
+                val message = jsonObject.optString("message", fallbackMessage)
+                val code = jsonObject.optInt("statusCode", statusCode)
+
+                Log.e(TAG, "❌ ERROR ($statusCode)")
+                Log.e(TAG, "  - Success: $success")
+                Log.e(TAG, "  - Message: $message")
+                Log.e(TAG, "  - StatusCode: $code")
+
+                Toast.makeText(
+                    this@Forgot_Password,
+                    message,
+                    Toast.LENGTH_LONG
+                ).show()
+            } ?: run {
+                // No error body, use fallback
+                Log.e(TAG, "❌ ERROR ($statusCode) - No error body")
+                Toast.makeText(
+                    this@Forgot_Password,
+                    fallbackMessage,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing error response: ${e.message}")
+            Toast.makeText(
+                this@Forgot_Password,
+                fallbackMessage,
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
@@ -295,6 +385,4 @@ class Forgot_Password : AppCompatActivity() {
         dialog?.dismiss()
         dialog = null
     }
-
-
 }

@@ -124,17 +124,17 @@ interface IFlashapi {
     @POST("users/login")
     suspend fun loginUsers(@Body requestPost: LoginRequest): Response<LoginResponse>
 
-    @POST("users/reset-password")
-    suspend fun resetPassword(@Body requestPost: ResetPasswordRequest): Response<ResetPasswordResponse>
-
     @POST("users/google-login")
     suspend fun googleLogin(@Body requestPost: GoogleLoginRequest): Response<GoogleLoginResponse>
 
-    @POST("users/forgot-password")
+    @POST("users/forgot-password-otp")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<ForgotPasswordResponse>
 
     @POST("users/verify-otp")
     suspend fun verifyOTP(@Body request: VerifyOTPRequest): Response<VerifyOTPResponse>
+
+    @POST("users/reset-password-otp")
+    suspend fun resetPassword(@Body requestPost: ResetPasswordRequest): Response<ResetPasswordResponse>
 
     @POST("users/resend-email-verification")
     suspend fun resendEmailVerification(@Body request: ResendEmailRequest): Response<MainResponse>
