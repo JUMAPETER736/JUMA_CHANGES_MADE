@@ -23,7 +23,9 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-class NetworkConnectivityCallback(private val context: Context) :
+class NetworkConnectivityCallback(
+
+    private val context: Context) :
     ConnectivityManager.NetworkCallback() {
 
     private val WORKER_TAG = "flash_socket_worker"

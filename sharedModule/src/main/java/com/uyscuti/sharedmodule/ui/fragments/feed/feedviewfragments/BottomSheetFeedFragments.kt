@@ -36,7 +36,7 @@ class BottomSheetFragment : BottomSheetDialogFragment() {
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-//        val copyLink: Button = view.findViewById(R.id.copy_link)
+
         val copyLink : LinearLayout? = view.findViewById(R.id.copy_link)
         copyLink?.setOnClickListener {
 

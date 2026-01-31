@@ -10,7 +10,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.social.core.common.data.room.entity.CallLogEntity
 
-class CallLogAdapter(private val context: Context) : RecyclerView.Adapter<CallLogViewHolder>() {
+class CallLogAdapter(
+    private val context: Context) : RecyclerView.Adapter<CallLogViewHolder>() {
     private var callLogs: MutableList<CallLogEntity> = mutableListOf()
     private lateinit var callLogClickListener: CallLogClickListener
 

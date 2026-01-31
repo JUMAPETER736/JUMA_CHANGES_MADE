@@ -29,7 +29,7 @@ class CombinedWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         Log.d("CombinedWorker", "Combined Worker Started")
 
-//        return Result.success()
+
         return try {
             connect()
 
@@ -74,7 +74,7 @@ class CombinedWorker @AssistedInject constructor(
         } catch (e: Exception){
             e.printStackTrace()
         }
-//        createNotificationChannel(applicationContext)
+
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setContentTitle("Flash")
             .setContentText("Connecting...")

@@ -35,7 +35,7 @@ import com.uyscuti.social.network.api.response.posts.Post
 import java.io.IOException
 import java.util.Locale
 
-// TODO: Rename parameter arguments, choose names that match
+
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
@@ -48,7 +48,19 @@ private const val ARG_PARAM2 = "param2"
 private const val TAG = "FeedAudioViewFragment"
 
 class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
-    // TODO: Rename and change types of parameters
+
+    companion object {
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            FeedAudioViewFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
+
     private var param1: String? = null
     private var param2: String? = null
     private lateinit var data: Post
@@ -88,13 +100,7 @@ class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
         binding.playPauseButton.setOnClickListener {
             Log.d(TAG, "onCreateView: play button clicked ${mediaPlayer?.isPlaying}")
             Toast.makeText(requireContext(), "playbutton", Toast.LENGTH_SHORT).show()
-//            if(mediaPlayer?.isPlaying == true) {
-//                mediaPlayer?.pause()
-//                binding.playPauseButton.setImageResource(R.drawable.play_svgrepo_com)
-//            }else{
-//                mediaPlayer?.start()
-//                binding.playPauseButton.setImageResource(R.drawable.baseline_pause_24)
-//            }
+
         }
 
         binding = FragmentFeedAudioViewBinding.inflate(layoutInflater, container, false)
@@ -134,18 +140,16 @@ class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
 
         }
         binding.toolbar.backIcon.setOnClickListener {
-//            feedTextViewFragmentInterface.onBackPressed()
-//            navigateBack()
+
             releaseMediaPlayer()
-//            handler?.removeCallbacks(updateSeekBarRunnable) // Remove seekbar update runnable callbacks
-//            handler = null
+
             if (feedTextViewFragmentInterface != null) {
                 feedTextViewFragmentInterface?.backPressedFromFeedTextViewFragment()
             }
         }
         binding.comment.setOnClickListener {
             feedTextViewFragmentInterface?.onCommentClickFromFeedTextViewFragment(position, data)
-//            binding.feedCommentsCount.text = (data.comments.size + 1).toString()
+
             EventBus.getDefault().post(FeedCommentClicked(position, data))
         }
 
@@ -156,7 +160,7 @@ class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
         } else {
             binding.likesCount.text = data.likes.toString()
         }
-//        binding.feedCommentsCount.text = data.comments.size.toString()
+
         if (data.isLiked) {
             binding.like.setImageResource(R.drawable.filled_favorite_like)
         } else {
@@ -246,13 +250,13 @@ class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
         val audioList: MutableList<String> = mutableListOf()
         if (data.files.isNotEmpty()) {
             for (audio in data.files) {
-//                Log.d(TAG, "render: images ${audio.url}")
+
                 audioList.add(audio.url)
             }
         } else {
             Log.d(TAG, "render: data files is empty")
         }
-//        videoUrl = data.files[0].url
+
         adapter = MultipleFeedAudiosAdapter(requireContext(), audioList, this@FeedAudioViewFragment)
         binding.viewPager.adapter = adapter
         binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
@@ -293,7 +297,7 @@ class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
                         pause()
                         stop()
                         release()
-//                      removeListener(playbackStateListener)
+
                     }
                     mediaPlayer = null
                 }
@@ -307,25 +311,25 @@ class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
                 when (state) {
                     ViewPager2.SCROLL_STATE_IDLE -> {
                         // The pager is in an idle, settled state.
-//                        Log.d("ViewPager2", "Page selected: SCROLL_STATE_IDLE")
+
                     }
 
                     ViewPager2.SCROLL_STATE_DRAGGING -> {
                         // The user is dragging the pager.
-//                        Log.d("ViewPager2", "Page selected: SCROLL_STATE_DRAGGING")
+
                     }
 
-//                    ViewPager2.
+
                     ViewPager2.SCROLL_STATE_SETTLING -> {
                         // The pager is settling to a final position.
-//                        Log.d("ViewPager2", "Page selected: SCROLL_STATE_SETTLING")
+
                     }
                 }
             }
         })
         adapter?.setAudioData(data)
         // Setup CircleIndicator for ViewPager2
-//        val indicator = findViewById<CircleIndicator3>(R.id.circleIndicator)
+
         binding.circleIndicator.setViewPager(binding.viewPager)
 
         binding.seekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -350,45 +354,10 @@ class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-//        setupMediaPlayer()
-//        setupPlaybackControls()
+
     }
 
-    //    private fun setupMediaPlayer() {
-//        mediaPlayer = MediaPlayer().apply {
-//            setAudioAttributes(
-//                AudioAttributes.Builder()
-//                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-//                    .build()
-//            )
-//            try {
-//                setDataSource(data.files[0].url) // Assuming url is valid
-//                prepareAsync()
-//            } catch (e: IOException) {
-//                Log.e(TAG, "Failed to prepare MediaPlayer", e)
-//            }
-//
-//            setOnPreparedListener {
-//                binding.seekbar.max = mediaPlayer?.duration!!
-//                handler = Handler()
-//                updateSeekBarRunnable = object : Runnable {
-//                    override fun run() {
-//                        binding.seekbar.progress = mediaPlayer!!.currentPosition
-//                        updateCounterTextView(mediaPlayer!!.currentPosition)
-//                        handler!!.postDelayed(this, 1000) // Update seekbar every second
-//                    }
-//                }
-//                handler!!.postDelayed(updateSeekBarRunnable, 0)
-//            }
-//
-//            setOnCompletionListener {
-//                // Handle completion of audio playback if needed
-//                this@FeedAudioViewFragment.isPlaying = false
-//                resetUI()
-//                binding.playPauseButton.setImageResource(R.drawable.play_svgrepo_com)
-//            }
-//        }
-//    }
+
     private fun setupMediaPlayer(
         audioUrl: String,
         seekBar: SeekBar,
@@ -504,29 +473,10 @@ class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
         }
         mediaPlayer = null
 
-//        mediaPlayer?.stop()
-//        mediaPlayer?.release()
+
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment FeedAudioViewFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            FeedAudioViewFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
+
 
     override fun onResume() {
         Log.d(TAG, "onResume: ")
@@ -536,7 +486,7 @@ class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
         backPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Handle back press
-//                navigateBack()
+
                 if (mediaPlayer?.isPlaying == true) {
                     mediaPlayer!!.stop()
                 }
@@ -553,9 +503,7 @@ class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
     override fun onPause() {
         super.onPause()
         releaseMediaPlayer()
-//        if(mediaPlayer?.isPlaying == true) {
-//            mediaPlayer!!.pause()
-//        }
+
     }
 
     override fun onDestroy() {
@@ -573,7 +521,7 @@ class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
         feedTextViewFragmentInterface = listener
     }
 
-    //    var isPlaying = false
+
     override fun onAudioPlayClickListener(
         audioUrl: String,
         playImageView: ImageView,
@@ -581,7 +529,7 @@ class FeedAudioViewFragment : Fragment(), PlayFeedAudioInterface {
         currentDuration: TextView
     ) {
         Log.d(TAG, "onAudioPlayClickListener: start playing audio")
-//        isPlaying = true
+
         this.pausePlayButton = playImageView
         this.seekBar = seekBar
         this.currentDuration = currentDuration

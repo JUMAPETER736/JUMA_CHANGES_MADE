@@ -6,8 +6,10 @@ import android.util.Log
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 
-class MobileDataWork(val context: Context, params: WorkerParameters) : Worker(context, params) {
-//    val context: Context = context
+class MobileDataWork(
+    val context: Context,
+    params: WorkerParameters) : Worker(context, params) {
+
     override fun doWork(): Result {
         // Your logic to check mobile data state or perform desired tasks (e.g., logging, sending notifications)
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
