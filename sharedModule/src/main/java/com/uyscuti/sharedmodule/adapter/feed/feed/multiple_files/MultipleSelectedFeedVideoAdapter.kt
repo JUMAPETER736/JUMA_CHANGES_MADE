@@ -64,7 +64,7 @@ class MultipleSelectedFeedVideoAdapter(
     ) {
 
         val videoData = videos[position]
-        
+
         multipleVideosListener.onVideoDisplay(videos[position])
         if (videoData.thumbnail != null) {
             Glide.with(context)

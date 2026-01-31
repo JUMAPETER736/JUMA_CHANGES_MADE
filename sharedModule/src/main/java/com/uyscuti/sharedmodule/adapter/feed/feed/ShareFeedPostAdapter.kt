@@ -16,9 +16,11 @@ import com.uyscuti.sharedmodule.R
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
 
 class ShareFeedPostAdapter(
+
     private val appsList: List<ResolveInfo>,
     private val context: Context,
     private val postContent: com.uyscuti.social.network.api.response.posts.Post
+
 ) : RecyclerView.Adapter<ShareFeedPostAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {

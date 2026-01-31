@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.uyscuti.sharedmodule.R
 
 class ShareVideoAdapter(
+
     private val appsList: List<ResolveInfo>,
     private val context: Context,
     position: Int,

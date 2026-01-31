@@ -13,10 +13,12 @@ import com.uyscuti.sharedmodule.R
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
 
 class TrendingVideosFeedAdapter(
+
     private var videos: MutableList<ShortsEntity>
 ) : RecyclerView.Adapter<TrendingVideosFeedAdapter.VideoViewHolder>() {
 
     class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
         val thumbnail: ImageView = itemView.findViewById(R.id.ivThumbnail)
         val duration: TextView = itemView.findViewById(R.id.tvDuration)
         val title: TextView = itemView.findViewById(R.id.tvVideoTitle)

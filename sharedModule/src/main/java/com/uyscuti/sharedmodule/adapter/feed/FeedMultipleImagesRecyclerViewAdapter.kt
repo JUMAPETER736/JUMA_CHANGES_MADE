@@ -14,11 +14,9 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.adapter.FeedPaginatedAdapter
 
-class FeedMultipleImagesRecyclerViewAdapter(private val imageList: List<String>?) : RecyclerView.Adapter<FeedMultipleImagesRecyclerViewAdapter.ViewHolder>() {
+class FeedMultipleImagesRecyclerViewAdapter(
+    private val imageList: List<String>?) : RecyclerView.Adapter<FeedMultipleImagesRecyclerViewAdapter.ViewHolder>() {
     private var onMultipleImagesClickListener: OnMultipleImagesClickListener? = null
-    fun setOnMultipleImagesClickListener(l: OnMultipleImagesClickListener) {
-        onMultipleImagesClickListener = l
-    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.feed_multiple_images_item, parent, false)
@@ -45,7 +43,7 @@ class FeedMultipleImagesRecyclerViewAdapter(private val imageList: List<String>?
 
         @SuppressLint("ResourceAsColor", "SetTextI18n")
         fun bind(imageItem: String) {
-//            imageView.setImageResource()
+
             cardView.setOnClickListener {
                 if (onMultipleImagesClickListener != null) {
 
@@ -60,7 +58,7 @@ class FeedMultipleImagesRecyclerViewAdapter(private val imageList: List<String>?
                 val layoutParams = cardView.layoutParams
                 val newWidthInPixels = 320  // for example, 300 pixels
                 val newHeightInPixels = 180 // for example, 200 pixels
-//                val layoutParams = holder.cardView.layoutParams as RecyclerView.LayoutParams
+
                 when (absoluteAdapterPosition) {
                     0 -> {
                         layoutParams.width = newWidthInPixels
