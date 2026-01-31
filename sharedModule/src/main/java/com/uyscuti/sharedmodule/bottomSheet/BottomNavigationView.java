@@ -755,10 +755,6 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
         this.animationType = animationType;
     }
 
-    public int getAnimateDrawablesEnterDuration() {
-        return animateDrawablesEnterDuration;
-    }
-
     public void setAnimateDrawablesEnterDuration(int animateDrawablesEnterDuration) {
         this.animateDrawablesEnterDuration = animateDrawablesEnterDuration;
     }
@@ -767,59 +763,12 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
         return animateTextsEnterDuration;
     }
 
-    public void setAnimateSelectorDuration(int animateSelectorDuration) {
-        this.animateSelectorDuration = animateSelectorDuration;
-    }
-
     public int getAnimateDrawablesExitDuration() {
         return animateDrawablesExitDuration;
     }
 
-    public void setAnimateDrawablesExitDuration(int animateDrawablesExitDuration) {
-        this.animateDrawablesExitDuration = animateDrawablesExitDuration;
-    }
-
-    public int getAnimateTextsExit() {
-        return animateTextsExit;
-    }
-
-    public void setAnimateTextsExit(int animateTextsExit) {
-        this.animateTextsExit = animateTextsExit;
-    }
-
     public int getAnimateTextsExitDuration() {
         return animateTextsExitDuration;
-    }
-
-    public void setAnimateTextsExitDuration(int animateTextsExitDuration) {
-        this.animateTextsExitDuration = animateTextsExitDuration;
-    }
-
-    private void setButtonsPadding(int left, int top, int right, int bottom) {
-        buttonPaddingLeft = left;
-        buttonPaddingTop = top;
-        buttonPaddingRight = right;
-        buttonPaddingBottom = bottom;
-
-        for (NavigationItem button : buttons) {
-            setButtonPadding(button);
-        }
-    }
-
-    public int getButtonsPadding() {
-        return buttonPadding;
-    }
-
-    public int getButtonsPaddingLeft() {
-        return buttonPaddingLeft;
-    }
-
-    public int getButtonsPaddingRight() {
-        return buttonPaddingRight;
-    }
-
-    public int getButtonsPaddingTop() {
-        return buttonPaddingTop;
     }
 
     private void updateViewBottomLine() {
