@@ -2018,61 +2018,6 @@ class NewRepostedPostFragment(
     }
 
 
-    @SuppressLint("SetTextI18n")
-    private fun handleDocumentUriToUpload(uri: Uri) {
-        // Handle the selected document URI here
-        // For example, you can retrieve the file name
-        documentUriListToUpload.add(uri.toString())
-        val contentResolver = context.contentResolver
-        val recyclerView2: RecyclerView = requireView().findViewById(R.id.recyclerView2)
-
-        contentResolver.query(
-            uri, null, null, null, null)?.use { cursor ->
-
-            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-            cursor.moveToFirst()
-            val fileName = cursor.getString(nameIndex)
-            val fileSize = cursor.getLong(sizeIndex)
-
-            var numberOfPages = 0
-            val formattedFileSize = formatFileSize(fileSize)
-            fileType = "mixed_files"
-
-            val fileSizes = isFileSizeGreaterThan2MB(fileSize)
-            val documentType = fileType(fileName)
-            Log.d("handleDocumentUri", ": $fileName")
-            Log.d("handleDocumentUri", "uri $uri")
-            Log.d("handleDocumentUri", "formattedFileSize $formattedFileSize")
-
-            recyclerView2.visibility = View.INVISIBLE
-
-            numberOfPages = when (documentType) {
-                "doc" -> {
-                    getNumberOfPagesFromUriForDoc(uri)
-                }
-
-                "docx", "xlsx", "pptx" -> {
-                    getNumberOfPagesFromUriForDocx(uri)
-                }
-
-                else -> {
-                    getNumberOfPagesFromUriForPDF(context, uri)
-                }
-            }
-
-
-
-            documentFileNamesToUpload.add(fileName)
-            documentNumberOfPagesToUpload.add(numberOfPages.toString())
-            documentTypesToUpload.add(documentType)
-            if (documentType == "pdf") {
-                retrieveFirstPageAndSaveAsImage(context, uri)
-            }
-
-        }
-    }
-
     override fun handleDocumentUriToUploadReturn(uri: Uri): FeedMultipleDocumentsDataClass {
         // Handle the selected document URI here
         // For example, you can retrieve the file name
@@ -2176,65 +2121,6 @@ class NewRepostedPostFragment(
 
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun handleDocumentUri(uri: Uri) {
-        // Handle the selected document URI here
-        // For example, you can retrieve the file name
-        val contentResolver = context.contentResolver
-
-        contentResolver.query(
-            uri, null, null, null, null)?.use { cursor ->
-
-            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-            cursor.moveToFirst()
-            val fileName = cursor.getString(nameIndex)
-            val fileSize = cursor.getLong(sizeIndex)
-
-
-            val shortThumbNail: ImageView = requireView().findViewById(R.id.shortThumbNail)
-            shortThumbNail.setImageResource(R.drawable.documents)
-            val recyclerView2: RecyclerView = requireView().findViewById(R.id.recyclerView2)
-
-            var numberOfPages = 0
-            val formattedFileSize = formatFileSize(fileSize)
-            fileType = "mixed_files"
-
-            val fileSizes = isFileSizeGreaterThan2MB(fileSize)
-            val documentType = fileType(fileName)
-            Log.d("handleDocumentUri", ": $fileName")
-            Log.d("handleDocumentUri", "uri $uri")
-            Log.d("handleDocumentUri", "formattedFileSize $formattedFileSize")
-            recyclerView2.visibility = View.INVISIBLE
-
-            numberOfPages = when (documentType) {
-                "doc" -> {
-                    getNumberOfPagesFromUriForDoc(uri)
-                }
-
-                "docx", "xlsx", "pptx" -> {
-                    getNumberOfPagesFromUriForDocx(uri)
-                }
-
-                else -> {
-                    getNumberOfPagesFromUriForPDF(context, uri)
-                }
-            }
-
-            shortThumbNail.setPadding(0)
-            shortThumbNail.colorFilter = null
-            feedUploadViewModel.setText(
-                "File name: $fileName \nFile size: " +
-                        "$formattedFileSize \nDocument Type: $documentType \n$numberOfPages pages")
-
-            this.numberOfPages = numberOfPages.toString()
-            this.fileName = fileName
-            this.docType = documentType
-            this.docFilePath = uri.toString()
-
-        }
-    }
-
     private fun retrieveFirstPageAsBitmap(context: Context, uri: Uri): Bitmap? {
         val contentResolver = context.contentResolver
 
@@ -2270,42 +2156,6 @@ class NewRepostedPostFragment(
             Log.e(TAG, "retrieveFirstPageAsBitmap: error retrieving bitmap")
             e.printStackTrace()
             null
-        }
-    }
-
-    private fun retrieveFirstPageAndSaveAsImage(context: Context, uri: Uri) {
-        val contentResolver = context.contentResolver
-
-        Log.i(TAG, "retrieveFirstPageAndSaveAsImage: save to bitmap")
-        try {
-            // Open a ParcelFileDescriptor from the URI
-            val parcelFileDescriptor = contentResolver.openFileDescriptor(uri, "r")
-
-            parcelFileDescriptor?.use { pfd ->
-                // Create a PdfRenderer from the ParcelFileDescriptor
-                val pdfRenderer = PdfRenderer(pfd)
-
-                // Open the first page
-                val page = pdfRenderer.openPage(0)
-
-                // Create a bitmap of the page
-                val bitmap = Bitmap.createBitmap(
-                    page.width, page.height, Bitmap.Config.ARGB_8888)
-
-                // Render the page content into the bitmap
-                page.render(bitmap, null,
-                    null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-
-                // Close the page and the PdfRenderer
-                page.close()
-                pdfRenderer.close()
-
-                // Save bitmap to cache directory
-                saveBitmapToCache(context, bitmap)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "retrieveFirstPageAndSaveAsImage: not saved to bitmap")
-            e.printStackTrace()
         }
     }
 

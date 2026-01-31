@@ -10,7 +10,7 @@ import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.databinding.TappedPostedFilesViewersBinding
 
 
-// TODO: Rename parameter arguments, choose names that match
+
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
@@ -23,6 +23,19 @@ private const val ARG_PARAM2 = "param2"
 private const val  TAG = "PostRepostedFragment"
 
 class  PostRepostedFragment : Fragment() {
+
+    companion object {
+
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            PostRepostedFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+    }
 
     private var param1: String? = null
     private var param2: String? = null
@@ -54,16 +67,5 @@ class  PostRepostedFragment : Fragment() {
 
     }
 
-    companion object {
 
-
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            PostRepostedFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
 }
