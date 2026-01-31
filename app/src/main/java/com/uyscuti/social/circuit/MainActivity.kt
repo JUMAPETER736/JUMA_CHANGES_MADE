@@ -43,7 +43,6 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AnimationUtils
 import android.view.animation.LinearInterpolator
 import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SeekBar
@@ -6901,7 +6900,6 @@ class MainActivity : AppCompatActivity(),
                     }
                 }
 
-
             }
 
         } else {
@@ -7404,7 +7402,6 @@ class MainActivity : AppCompatActivity(),
                             }
                         }
 
-
                     }
 
 
@@ -7740,56 +7737,7 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
-    private fun likeFeedCommentReplyFromViewsActivity(event: LikeCommentReply) {
-
-        val TAG = "likeFeedCommentReplyFromViewsActivity"
-
-        Log.d(
-            "likeFeedCommentReplyFromViewsActivity",
-            "likeCommentReplyFromViewsActivity: is liked count is ${event.commentReply.isLiked} is feed comment $isFeedComment"
-        )
-
-        val itemToUpdate = event.comment.replies.find { it._id == event.commentReply._id }
-        itemToUpdate!!.isLiked = event.commentReply.isLiked
-        if (event.commentReply.isLiked) {
-            itemToUpdate.likes += 1
-        } else {
-            itemToUpdate.likes -= 1
-        }
-
-        if (event.commentReply._id == itemToUpdate._id) {
-            Log.d(TAG, "likeCommentReplyFromViewsActivity: ids are equal")
-        } else {
-            Log.d(TAG, "likeCommentReplyFromViewsActivity: ids not equal")
-        }
-
-
-        Log.d(
-            "likeCommentReplyFromViewsActivity",
-            "likeCommentReplyFromViewsActivity: is liked count is ${event.commentReply}"
-        )
-        adapter?.updateItem(event.position, event.comment)
-        var result by Delegates.notNull<Boolean>()
-        if (isInternetAvailable(this)) {
-            Log.d(
-                TAG,
-                "likeCommentReplyFromViewsActivity: item to update id ${itemToUpdate._id} and comment reply id ${event.commentReply._id}"
-            )
-            lifecycleScope.launch {
-                result = if (isFeedComment) {
-                    commentReplyLikeUnLike(itemToUpdate._id)
-                } else {
-                    commentReplyLikeUnLike(itemToUpdate._id)
-                }
-                Log.d(TAG, "likeCommentReplyFromViewsActivity server result: $result")
-
-            }
-        } else {
-            Log.d(TAG, "likeCommentReplyFromViewsActivity: cant like offline")
-        }
-    }
-
-    private val selectGifLauncher =
+         private val selectGifLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
                 val data: Intent? = result.data
@@ -7808,28 +7756,7 @@ class MainActivity : AppCompatActivity(),
             }
         }
 
-    private fun uploadGifToServer(gifPath: String, gifType: String) {
-        val TAG = "uploadGifToServer"
-        Log.d("uploadGifToServer", "uploadGifToServer: is reply $isReply")
-
-        Log.d(TAG, "url $gifPath type $gifType")
-        if (isFileExists(this, gifPath.toUri())) {
-
-            val gif = createMultipartBody(this, gifPath.toUri(), "gif")
-
-            addGif(
-                gif!!,
-                gifType,
-            )
-
-        } else {
-            Log.d(TAG, "File does not exist")
-
-        }
-
-    }
-
-    @kotlin.OptIn(DelicateCoroutinesApi::class)
+         @kotlin.OptIn(DelicateCoroutinesApi::class)
     fun addGif(
         gif: MultipartBody.Part,
         fileType: String,
@@ -7896,30 +7823,8 @@ class MainActivity : AppCompatActivity(),
 
     private var gifUrlType = ""
 
-    private fun showInputBoxForGifSelection() {
-        // Create and show a dialog box for input
-        val inputDialog = AlertDialog.Builder(this)
-        val inputEditText = EditText(this)
-        inputDialog.setTitle("Enter Gif URL")
-        inputDialog.setView(inputEditText)
-        inputDialog.setPositiveButton("OK") { dialog, _ ->
-            val gifUrl = inputEditText.text.toString()
-            if (gifUrl.isNotEmpty()) {
-                // If URL is not empty, proceed with file selection
-                gifUrlType = gifUrl
-                selectGifFile()
-            } else {
-                // Handle case when URL is empty
-                Toast.makeText(this, "Please enter a valid GIF URL", Toast.LENGTH_SHORT).show()
-            }
-            dialog.dismiss()
-        }
-        inputDialog.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
-        inputDialog.show()
-    }
 
-
-    private fun addGifComment() {
+         private fun addGifComment() {
         val TAG = "addGifComment"
         Log.d("addGifComment", "addGifComment: is reply $isReply")
 
