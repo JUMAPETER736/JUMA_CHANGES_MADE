@@ -21,15 +21,15 @@ import java.io.IOException
 
 @HiltWorker
 class CombinedWorker @AssistedInject constructor(
-     val callHelper: CallHelper,
-     val chatSocketClient: CoreChatSocketClient,
+    val callHelper: CallHelper,
+    val chatSocketClient: CoreChatSocketClient,
     @Assisted context: Context,
     @Assisted params: WorkerParameters
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         Log.d("CombinedWorker", "Combined Worker Started")
 
-
+//        return Result.success()
         return try {
             connect()
 
@@ -74,7 +74,7 @@ class CombinedWorker @AssistedInject constructor(
         } catch (e: Exception){
             e.printStackTrace()
         }
-
+//        createNotificationChannel(applicationContext)
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setContentTitle("Flash")
             .setContentText("Connecting...")
