@@ -18,6 +18,7 @@ import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.model.AddShortsTopicModel
 
 class AddShortsTopicAdapter(
+
     private val context: Context,
     private val shortsTopics: List<AddShortsTopicModel>,
 ) :
@@ -40,7 +41,7 @@ class AddShortsTopicAdapter(
         val layoutInflater = LayoutInflater.from(parent.context)
         return if (viewType == FASHION_BEAUTY_VIEW) {
             val fashionBeautyItemView = layoutInflater.inflate(R.layout.shorts_fashion_beauty_topic, parent, false)
-//            FashionBeautyItemViewHolder(fashionBeautyItemView)
+
             AnimalsItemViewHolder(fashionBeautyItemView)
 
         }else if (viewType == ANIMALS_VIEW) {
@@ -119,6 +120,7 @@ class AddShortsTopicAdapter(
         }
 
         private fun createSubtopicCardView(subtopic: String, context: Context): CardView {
+
             val cardView = CardView(context)
             val cardLayoutParams = FlexboxLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -218,8 +220,7 @@ class AddShortsTopicAdapter(
                 hideTopics.setImageResource(if (isTopicsVisible) R.drawable.up_arrow_svgrepo_com else R.drawable.down_arrow_backup_2_svgrepo_com)
 
                 // Display the first 12 elements initially when hiding topics
-//                val itemsToDisplay = if (isTopicsVisible) maxItemsToShowInitially else topic.subTopics.size
-                // Display the first 12 elements initially when hiding topics
+
                 val itemsToDisplay = if (isTopicsVisible) maxItemsToShowInitially else 0
                 flexBoxLayout.removeAllViews()
                 for (i in 0 until itemsToDisplay) {

@@ -18,8 +18,13 @@ import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.model.Catalogue
 import com.uyscuti.sharedmodule.popupDialog.AdsServiceAgreementDialog
 
-class CatalogueAdapter(val context: Activity, private val items: ArrayList<Catalogue>) :
+class CatalogueAdapter(
+
+    val context: Activity,
+    private val items: ArrayList<Catalogue>) :
+
     RecyclerView.Adapter<CatalogueAdapter.CatalogueItemViewHolder>() {
+
     var adapterPosition = -1
 
     private val OPEN_IMAGE_VIEW_ACTIVITY = "com.uyscuti.social.circuit.ImageViewActivity"
@@ -76,9 +81,7 @@ class CatalogueAdapter(val context: Activity, private val items: ArrayList<Catal
             catalogueItemHolder.product_description.text=item.description
             val itemPrice = item.price // Convert the price to string
             catalogueItemHolder.price_text.text = itemPrice // Set the price to the TextView
-//            catalogueItemHolder.addItem.text = item.name
-//
-//            // Set the image resource for the ImageView
+
 
             holder.itemView.isSelected = item.isSelected
 
@@ -96,12 +99,7 @@ class CatalogueAdapter(val context: Activity, private val items: ArrayList<Catal
         }
 
             catalogueItemHolder.itemContainer.setOnClickListener {
-//
-//                if (selectedItems.isNotEmpty()) {
-//                    toggleSelection(item)
-//
-//                    return@setOnClickListener
-//                }
+
                 val intent = Intent(OPEN_IMAGE_VIEW_ACTIVITY)
                 intent.putExtra("catalogue", item)
                 intent.setPackage(context.packageName)
@@ -112,8 +110,6 @@ class CatalogueAdapter(val context: Activity, private val items: ArrayList<Catal
                 toggleSelection(item)
                 true
             }
-
-            // Implement other logic or event handling for com.example.payment.adapter.CatalogueItemViewHolder
 
     }
 

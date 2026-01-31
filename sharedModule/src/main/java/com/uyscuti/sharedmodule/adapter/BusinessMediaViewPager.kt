@@ -1,6 +1,5 @@
 package com.uyscuti.sharedmodule.adapter
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.drawable.GradientDrawable
 import android.media.MediaMetadataRetriever
@@ -24,9 +23,11 @@ import com.uyscuti.sharedmodule.R
 import java.util.concurrent.TimeUnit
 
 class BusinessMediaViewPager(
+
     private val context: Context,
     private var urlList: List<String>,
     private val onItemClicked: (Int) -> Unit
+
 ): RecyclerView.Adapter<BusinessMediaViewPager.BusinessMediaViewPagerViewHolder>() {
 
     companion object {
@@ -54,31 +55,25 @@ class BusinessMediaViewPager(
         return if (urlList.size > 4) 4 else urlList.size
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    fun updateMediaUrl(newMediaUrl: List<String>) {
-        urlList = newMediaUrl
-        notifyDataSetChanged()
-    }
-
     inner class BusinessMediaViewPagerViewHolder(itemView: View):
+
             RecyclerView.ViewHolder(itemView) {
 
         private val ivMedia: ImageView = itemView.findViewById(R.id.iv_media)
         private val vvMedia: VideoView = itemView.findViewById(R.id.vv_media)
         private val ivVideoThumbnail: ImageView = itemView.findViewById(R.id.iv_video_thumbnail)
         private val ivPlayButton: ImageView = itemView.findViewById(R.id.iv_play_button)
+
         private val llVideoControls: LinearLayout = itemView.findViewById(R.id.ll_video_controls)
         private val ivPlayPause: ImageView = itemView.findViewById(R.id.iv_play_pause)
         private val sbProgress: SeekBar = itemView.findViewById(R.id.sb_progress)
         private val tvDuration: TextView = itemView.findViewById(R.id.tv_duration)
+
         private val ivMute: ImageView = itemView.findViewById(R.id.iv_mute)
         private val tvVideoIndicator: TextView = itemView.findViewById(R.id.tv_video_indicator)
         private val pbLoading: ProgressBar = itemView.findViewById(R.id.pb_loading)
         private val llErrorState: LinearLayout = itemView.findViewById(R.id.ll_error_state)
         private val tvRetry: TextView = itemView.findViewById(R.id.tv_retry)
-
-
-
 
 
 
@@ -158,7 +153,7 @@ class BusinessMediaViewPager(
             layoutParams.height = dimensions.height
 
             // Set margins
-           // layoutParams.setMargins(marginPx, marginPx, marginPx, marginPx)
+
 
             if(urlList.size >= 2) {
 
@@ -272,10 +267,6 @@ class BusinessMediaViewPager(
             }
         }
 
-        private fun Int.dpToPx(): Float {
-            return this * context.resources.displayMetrics.density
-        }
-
         private fun calculateSingleItemHeight(screenHeight: Int, context: Context): Int {
             return when {
                 isTablet(context) -> (screenHeight * 0.45).toInt()
@@ -333,20 +324,6 @@ class BusinessMediaViewPager(
             }
         }
 
-        private fun calculateUniformItemHeight(screenHeight: Int, context: Context, itemCount: Int): Int {
-            val baseHeight = when {
-                isTablet(context) -> (screenHeight * 0.6).toInt()
-                screenHeight > 2000 -> (screenHeight * 0.5).toInt()
-                screenHeight > 1500 -> (screenHeight * 0.45).toInt()
-                else -> (screenHeight * 0.45).toInt()
-            }
-
-            // Divide available height by number of items, accounting for margins
-            val marginPx = ITEM_MARGIN.dpToPx(context)
-            val totalMargins = marginPx * (itemCount + 1)
-            return (baseHeight - totalMargins) / itemCount
-        }
-
         private fun isTablet(context: Context): Boolean {
             val displayMetrics = context.resources.displayMetrics
             val screenWidth = displayMetrics.widthPixels
@@ -380,10 +357,11 @@ class BusinessMediaViewPager(
         }
 
         private fun setupVideoView(mediaItem: String) {
+
             tvVideoIndicator.visibility = View.VISIBLE
             ivVideoThumbnail.visibility = View.VISIBLE
             ivPlayButton.visibility = View.VISIBLE
-           // pbLoading.visibility = View.VISIBLE
+
 
             // Load video thumbnail
             loadVideoThumbnail(mediaItem)
@@ -510,14 +488,11 @@ class BusinessMediaViewPager(
 
             ivMedia.setOnClickListener { onItemClicked(position) }
 
-           // ivPlayPause.setOnClickListener { onItemClicked(position) }
-
             ivPlayButton.setOnClickListener { onItemClicked(position) }
 
 
             if (isVideoUrl(mediaItem)) {
 
-                // ivVideoThumbnail.setOnClickListener { togglePlayPause() }
                 vvMedia.setOnClickListener {
                     llVideoControls.visibility = if (llVideoControls.visibility == View.VISIBLE)
                         View.GONE else View.VISIBLE
@@ -542,22 +517,8 @@ class BusinessMediaViewPager(
                     vvMedia.start()
                 }
             } else {
-               // ivMedia.setOnClickListener { onVideoClick(mediaItem) }
-            }
-        }
 
-        private fun togglePlayPause() {
-            if (isPlaying) {
-                vvMedia.pause()
-                handler.removeCallbacks(updateProgressRunnable)
-            } else {
-                vvMedia.start()
-                handler.post(updateProgressRunnable)
-                showVideoControls()
             }
-            isPlaying = !isPlaying
-            updatePlayPauseButton()
-            updateVideoViewVisibility()
         }
 
         private fun toggleMute() {

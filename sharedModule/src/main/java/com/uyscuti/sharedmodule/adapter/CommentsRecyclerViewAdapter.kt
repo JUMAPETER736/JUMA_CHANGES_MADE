@@ -38,7 +38,6 @@ import com.uyscuti.sharedmodule.model.ToggleReplyToTextView
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper.reverseFormattedDuration
 import com.uyscuti.sharedmodule.utils.COMMENT_VIDEO_CODE
 import com.uyscuti.sharedmodule.utils.R_CODE
-import com.uyscuti.sharedmodule.utils.TimeUtils
 import com.uyscuti.sharedmodule.utils.TimeUtils.formatMongoTimestamp
 import com.uyscuti.sharedmodule.utils.TrimVideoUtils
 import com.uyscuti.sharedmodule.utils.WaveFormExtractor
@@ -48,14 +47,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
-import kotlin.apply
-import kotlin.collections.get
-import kotlin.compareTo
-import kotlin.text.toFloat
 
 
 private const val TAG = "CommentsRecyclerViewAdapter"
@@ -68,7 +59,9 @@ private const val VIEW_TYPE_DOCUMENT_COMMENT = 4
 private const val VIEW_TYPE_GIF = 5
 private const val VIEW_TYPE_EMPTY = 10
 
+
 class CommentsRecyclerViewAdapter(
+
     private val context: Context,
     private val onViewReplies: OnViewRepliesClickListener,
 
@@ -108,7 +101,6 @@ class CommentsRecyclerViewAdapter(
 
         private val imageView: ImageView = itemView.findViewById(R.id.profilePic)
         private val imageComment: ImageView = itemView.findViewById(R.id.imageComment)
-        //private val likeUnLikeCommentImageView: ImageView = itemView.findViewById(R.id.likeUnLikeComment)
         private val likeButton: TextView = itemView.findViewById(R.id.likeButton)
         private val username: TextView = itemView.findViewById(R.id.username)
 
@@ -116,13 +108,12 @@ class CommentsRecyclerViewAdapter(
         private val time: TextView = itemView.findViewById(R.id.time)
         private val reply: TextView = itemView.findViewById(R.id.reply)
         private val commentReplies: TextView = itemView.findViewById(R.id.commentReplies)
+
         private val hideCommentReplies: TextView = itemView.findViewById(R.id.hideCommentReplies)
         private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
         private val viewRepliesContainer: LinearLayout = itemView.findViewById(R.id.viewRepliesContainer)
         private val repliesRecyclerView: RecyclerView =
             itemView.findViewById(R.id.repliesRecyclerView)
-
-        private var isReplyCount = false
 
         @SuppressLint("SetTextI18n")
         fun render(data: Comment, position: Int) {

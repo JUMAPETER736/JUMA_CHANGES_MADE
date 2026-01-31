@@ -66,6 +66,7 @@ private const val VIEW_TYPE_DOCUMENT = 4
 private const val VIEW_TYPE_GIF = 5
 private const val VIEW_TYPE_EMPTY = 10
 
+
 class ReplyCommentAdapter(
     private val context: Context,
     private val data: com.uyscuti.sharedmodule.data.model.Comment,
@@ -95,9 +96,6 @@ class ReplyCommentAdapter(
 
     private lateinit var listener: OnViewRepliesClickListener
     private var isPlay: Boolean = false
-    private lateinit var waveRunnable: Runnable
-
-    private val mWaveForms: ArrayList<WaveformSeekBar> = arrayListOf()
 
     init {
         cachePath = context.cacheDir.path
@@ -295,9 +293,6 @@ class ReplyCommentAdapter(
         }
 
     }
-
-
-
 
 
     private fun setCacheSample(sample: IntArray, path: String) {
@@ -991,7 +986,7 @@ class ReplyCommentAdapter(
                 Log.d("currentItemData", "currentItemContent ${currentItem.content}")
                 username.text = currentItem.author!!.account.username
 
-                val timeFormatter = MongoDBTimeFormatter()
+                MongoDBTimeFormatter()
 
                 time.text = TimeUtils.formatMongoTimestamp(currentItem.createdAt)
 

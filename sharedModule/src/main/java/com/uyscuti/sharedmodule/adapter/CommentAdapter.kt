@@ -35,6 +35,7 @@ import java.time.Instant
  * Adapter for displaying comments in a RecyclerView with comment count tracking
  */
 class CommentAdapter(
+
     private var commentList: ArrayList<Comment> = ArrayList()
 ) : RecyclerView.Adapter<CommentAdapter.ViewHolder>() {
 
@@ -160,13 +161,16 @@ class CommentAdapter(
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
         private val profilePic: ImageView = itemView.findViewById(R.id.profilePic)
         private val username: TextView = itemView.findViewById(R.id.username)
         private val time: TextView = itemView.findViewById(R.id.time)
+
         private val content: TextView = itemView.findViewById(R.id.content)
         private val likeUnLikeComment: ImageView = itemView.findViewById(R.id.likeUnLikeComment)
         private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
         private val reply: TextView = itemView.findViewById(R.id.reply)
+
         private val repliesRecyclerView: RecyclerView = itemView.findViewById(R.id.repliesRecyclerView)
         private val commentReplies: TextView = itemView.findViewById(R.id.commentReplies)
         private val hideCommentReplies: TextView = itemView.findViewById(R.id.hideCommentReplies)
