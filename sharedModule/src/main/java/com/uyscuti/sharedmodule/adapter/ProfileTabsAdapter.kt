@@ -22,12 +22,13 @@ import com.uyscuti.sharedmodule.ui.fragments.FragmentFactoryRegistry
 
 
 private val TAB_ICONS = arrayOf(
+
     R.drawable.play_svgrepo_com,
     R.drawable.scroll_text_line_svgrepo_com,
-//    R.drawable.favorite_black,
     R.drawable.business_bag_svgrepo_com,
 )
-class ProfileTabsAdapter(private val context: Context, fm: FragmentManager, private val user: User) :
+class ProfileTabsAdapter(
+    private val context: Context, fm: FragmentManager, private val user: User) :
     FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
 
     val TAG = "ProfileTabsAdapter"
@@ -50,12 +51,10 @@ class ProfileTabsAdapter(private val context: Context, fm: FragmentManager, priv
         return when (position) {
             0 ->{
                 shortFragment = OtherUsersShortsProfileFragment.newInstance(this.username!!)
-//                val args = Bundle().apply {
-//                    putString("username", username)
-//                }
+
 
                 onShortThumbnailClickListener?.let { shortFragment.setListener(it) }
-                //  shortFragment.arguments = args
+
                 return shortFragment
 
             }

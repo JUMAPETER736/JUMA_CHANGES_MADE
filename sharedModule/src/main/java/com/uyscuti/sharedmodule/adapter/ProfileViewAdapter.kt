@@ -12,41 +12,27 @@ import androidx.viewpager2.widget.ViewPager2
 import com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
 import com.uyscuti.sharedmodule.model.Catalogue
 import com.uyscuti.sharedmodule.R
-import com.uyscuti.social.network.api.request.business.catalogue.GetCatalogueByUserId
 import com.uyscuti.social.network.api.request.business.users.GetBusinessProfileById
 
 
-class ProfileViewAdapter(private var context: Activity) :
+class ProfileViewAdapter(
+
+    private var context: Activity) :
+
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val catalogueItems: ArrayList<Catalogue> = arrayListOf()
     private lateinit var sellerCatalogueAdapter: SellerCatalogueAdapter
     private var businessProfile: GetBusinessProfileById? = null
 
-    var onInvokeCatalogue: ((Catalogue) -> Unit)? = null
-
     private var username: String? = null
     private var userAvatar: String? = null
-
-    private var pagerPosition = 0
-
-    private var showIndicator = false
-
-    private var images = arrayListOf<String>()
-
     private var businessName: String? = null
     private var businessLocation: String? = null
     private var businessContact: String? = null
     private var businessDescription: String? = null
     private var businessEmail: String? = null
     private var businessType: String? = null
-
-
-
-
-
-
-    private val image0 = "https://www.nla.gov.au/sites/default/files/pic-1.jpg"
 
 
     companion object {
@@ -120,11 +106,11 @@ class ProfileViewAdapter(private var context: Activity) :
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is ProfileViewHolder -> {
-                val profileViewHolder = holder as ProfileViewHolder
+
+                holder as ProfileViewHolder
                 val viewPager: ViewPager2 = holder.viewPager
                 val wormDotsIndicator: WormDotsIndicator = holder.wormDotsIndicator
 
-//                holder.wormDotsIndicator.visibility = if (showIndicator) View.VISIBLE else View.GONE
 
                 val mediaUrls = arrayListOf<String>()
                 var videoThumbnail: String? = null
@@ -197,8 +183,4 @@ class ProfileViewAdapter(private var context: Activity) :
         notifyItemChanged(2)
     }
 
-    fun setBusinessCatalogue(userBusinessCatalogue: GetCatalogueByUserId) {
-        this.catalogueItems.clear()
-        this.catalogueItems.addAll(catalogueItems)
-    }
 }

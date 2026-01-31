@@ -26,17 +26,6 @@ public abstract class PaginatedAdapter<ITEM, VH extends RecyclerView.ViewHolder>
 
     public LoadMoreListener loadMoreListener;
 
-    public void setLoadMoreListener(LoadMoreListener loadMoreListener) {
-        this.loadMoreListener = loadMoreListener;
-    }
-
-
-    public void loadMoreIfNeeded(int position) {
-        if (position == getItemCount() - 1 && loadMoreListener != null) {
-            int nextPageNumber = getItemCount() / 10 + 1;
-            loadMoreListener.onLoadMore(nextPageNumber);
-        }
-    }
 
     @NonNull
     public abstract VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType);
@@ -116,10 +105,6 @@ public abstract class PaginatedAdapter<ITEM, VH extends RecyclerView.ViewHolder>
         mRecyclerView.setAdapter(this);
     }
 
-    public void setPageSize(int pageSize) {
-        this.mPageSize = pageSize;
-    }
-
     private void initPaginating() {
         mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -171,7 +156,6 @@ public abstract class PaginatedAdapter<ITEM, VH extends RecyclerView.ViewHolder>
 
 
     public interface LoadMoreListener {
-        void onLoadMore(int pageNumber);
     }
 
 }

@@ -3,7 +3,6 @@ package com.uyscuti.sharedmodule.adapter
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,13 +18,16 @@ import com.uyscuti.sharedmodule.eventbus.BusinessCommentsClicked
 import com.uyscuti.sharedmodule.model.Catalogue
 import org.greenrobot.eventbus.EventBus
 
-class SellerCatalogueAdapter(private val context: Activity, private val items: ArrayList<Catalogue>, val username: String, val  userAvatar: String) :
+class SellerCatalogueAdapter(
+
+    private val context: Activity,
+    private val items: ArrayList<Catalogue>,
+    val username: String,
+    val  userAvatar: String) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val CATALOGUE_DISPLAY_TYPE_VIEW  = 0
 
-
-    private val catalogueImages: ArrayList<Uri> = arrayListOf()
 
     private var adapterPosition = -1
 
@@ -41,6 +43,7 @@ class SellerCatalogueAdapter(private val context: Activity, private val items: A
     }
 
     class CatalogueItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
         val imageView: ImageView = itemView.findViewById(R.id.add_item7)
         val businessComments: ImageView = itemView.findViewById(R.id.businessComments)
         val productName: TextView = itemView.findViewById(R.id.product_name)
@@ -95,8 +98,7 @@ class SellerCatalogueAdapter(private val context: Activity, private val items: A
 
 
             holder.businessComments.setOnClickListener {
-// Post an event from Module A
-//                EventBus.getDefault().post(new MyEvent("Data from Module A"));
+
                 EventBus.getDefault().post(
                     BusinessCommentsClicked(position, item)
                 )

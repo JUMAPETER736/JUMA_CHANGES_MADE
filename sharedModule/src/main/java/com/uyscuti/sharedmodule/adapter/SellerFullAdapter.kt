@@ -25,26 +25,19 @@ import com.bumptech.glide.Glide
 import com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.model.Catalogue
-import com.uyscuti.social.network.api.request.business.users.GetBusinessProfileById
 
-class SellerFullAdapter(private val context: Activity, private val catalogue: Catalogue) :
+class SellerFullAdapter(
+    private val context: Activity,
+    private val catalogue: Catalogue) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
 
 
     private var images = arrayListOf<String>()
-    private var businessProfile: GetBusinessProfileById? = null
-
-    private var pagerPosition = 0
-    private var showIndicator = false
-
     private var userAvatar: String? = null
     private var username: String? = null
-
     private var priceText: String? = null
     private var descriptionText: String? = null
-
-    private var spinner: Spinner? = null
 
 
     companion object {
@@ -150,8 +143,6 @@ class SellerFullAdapter(private val context: Activity, private val catalogue: Ca
         val wormDotsIndicator: WormDotsIndicator = itemView.findViewById(R.id.worm_dots_indicator)
 
     }
-
-    inner class Seller
 
     override fun getItemCount(): Int {
         return 4
@@ -312,11 +303,9 @@ class SellerFullAdapter(private val context: Activity, private val catalogue: Ca
 
             holder.messageText.hint = "Enter message here..."
             holder.messageText.requestFocus()
-//                Toast.makeText(context, "Message Sent", Toast.LENGTH_SHORT).show()
-//                holder.messageText.text.clear()
+
         }
-//            holder.messageText.hint = "Type your message here..."
-//            holder.messageText.requestFocus()
+
         if (holder is SellerInformationViewHolder) {
             val holder = holder as SellerInformationViewHolder
 

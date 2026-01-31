@@ -31,24 +31,15 @@ class RecyclerViewAdapter: PagingDataAdapter<UserShortsEntity, RecyclerViewAdapt
     class MyViewHolder(view: View): RecyclerView.ViewHolder(view) {
 
         val imageView: ImageView = view.findViewById(R.id.thumbnailImageView)
-//        val tvName: TextView = view.findViewById(R.id.tvName)
-//        val tvDesc: TextView = view.findViewById(R.id.tvDesc)
+
 
         fun bind(data: UserShortsEntity) {
-//            tvName.text = data.name
-//            tvDesc.text = data.species
 
-//            Glide.with(imageView)
-//                .load(data.image)
-//                .circleCrop()
-//                .into(imageView)
             Glide.with(imageView.context)
                 .load(data.thumbnail[0].thumbnailUrl)
                 .apply(RequestOptions.centerCropTransform())
                 .placeholder(R.drawable.flash21)
-//                    .diskCacheStrategy(
-//                        DiskCacheStrategy.ALL
-//                    )
+
                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                 .into(imageView)
         }
