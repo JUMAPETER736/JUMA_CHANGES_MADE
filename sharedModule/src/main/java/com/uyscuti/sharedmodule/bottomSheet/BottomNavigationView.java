@@ -743,44 +743,12 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
         return interpolatorText;
     }
 
-    public void setInterpolatorText(Interpolator interpolatorText) {
-        this.interpolatorText = interpolatorText;
-    }
-
-    public Interpolator getInterpolatorSelector() {
-        return interpolatorSelector;
-    }
-
-    public void setInterpolatorSelector(Interpolator interpolatorSelector) {
-        this.interpolatorSelector = interpolatorSelector;
-    }
-
-    public Interpolator getInterpolatorDrawablesExit() {
-        return interpolatorDrawablesExit;
-    }
-
     public void setInterpolatorDrawablesExit(Interpolator interpolatorDrawablesExit) {
         this.interpolatorDrawablesExit = interpolatorDrawablesExit;
     }
 
-    public Interpolator getInterpolatorTextExit() {
-        return interpolatorTextExit;
-    }
-
     public void setInterpolatorTextExit(Interpolator interpolatorTextExit) {
         this.interpolatorTextExit = interpolatorTextExit;
-    }
-
-    public int getAnimateTextsEnter() {
-        return animateTextsEnter;
-    }
-
-    public void setAnimateTextsEnter(int animateTextsEnter) {
-        this.animateTextsEnter = animateTextsEnter;
-    }
-
-    public int getAnimationType() {
-        return animationType;
     }
 
     public void setAnimationType(int animationType) {
@@ -799,32 +767,8 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
         return animateTextsEnterDuration;
     }
 
-    public void setAnimateTextsEnterDuration(int animateTextsEnterDuration) {
-        this.animateTextsEnterDuration = animateTextsEnterDuration;
-    }
-
-    public int getAnimateSelector() {
-        return animateSelector;
-    }
-
-    public void setAnimateSelector(int animateSelector) {
-        this.animateSelector = animateSelector;
-    }
-
-    public int getAnimateSelectorDuration() {
-        return animateSelectorDuration;
-    }
-
     public void setAnimateSelectorDuration(int animateSelectorDuration) {
         this.animateSelectorDuration = animateSelectorDuration;
-    }
-
-    public int getAnimateSelectorDelay() {
-        return animateSelectorDelay;
-    }
-
-    public void setAnimateSelectorDelay(int animateSelectorDelay) {
-        this.animateSelectorDelay = animateSelectorDelay;
     }
 
     public int getAnimateDrawablesExitDuration() {
@@ -1129,11 +1073,4 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
         return enabled;
     }
 
-    public boolean hasDeselection() {
-        return enableDeselection;
-    }
-
-    public void setDeselection(boolean deselection) {
-        this.enableDeselection = deselection;
-    }
 }
