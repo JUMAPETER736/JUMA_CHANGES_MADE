@@ -24,7 +24,6 @@ class FeedRepostMultipleAudioAdapter (
     inner class Pager2ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         val playPauseButton: ImageView = itemView.findViewById(R.id.playPauseButton)
-        //        private val videoItemLayout: ConstraintLayout = itemView.findViewById(R.id.videoItemLayout)
         val audioDuration: TextView = itemView.findViewById(R.id.audioDuration)
         val leftAudioDuration: TextView = itemView.findViewById(R.id.leftAudioDuration)
         val seekBar: SeekBar = itemView.findViewById(R.id.seekBar)
@@ -56,7 +55,7 @@ class FeedRepostMultipleAudioAdapter (
         position: Int
     ) {
 
-//        holder.images.setImageResource(images[position])
+
 
         if(data != null) {
             val durationString = data?.duration?.let { commaSeparatedStringToList(it.toString()) }

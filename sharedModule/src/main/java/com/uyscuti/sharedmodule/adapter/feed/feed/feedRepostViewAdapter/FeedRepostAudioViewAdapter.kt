@@ -68,7 +68,7 @@ class FeedRepostAudioViewAdapter (private val imageList: List<String>?, val cont
             private val audioPlayButton : ImageView = itemView.findViewById(R.id.playAudio)
             @SuppressLint("ResourceAsColor", "SetTextI18n")
             fun bind(imageItem: String) {
-//            imageView.setImageResource()
+
                 if(data != null) {
                     Log.d(TAG, "bind: audio data duration ${data!!.duration}")
                     if(data!!.duration?.isNotEmpty() == true) {
@@ -199,8 +199,6 @@ class FeedRepostAudioViewAdapter (private val imageList: List<String>?, val cont
                     // Apply the changes to the ImageView
                     cardView.layoutParams = params
                 }
-
-
 
 
                 // You can also add click listeners or other bindings here if needed

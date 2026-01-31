@@ -23,7 +23,9 @@ private var isPlaying = false
 @SuppressLint("StaticFieldLeak")
 private var pausePlayButton: ImageView? = null
 
-class FeedAudiosViewAdapter(private val imageList: List<String>?) :
+class FeedAudiosViewAdapter(
+
+    private val imageList: List<String>?) :
     RecyclerView.Adapter<FeedAudiosViewAdapter.ViewHolder>() {
     private var onMultipleImagesClickListener: OnMultipleImagesClickListener? = null
     fun setOnMultipleImagesClickListener(l: OnMultipleImagesClickListener) {
@@ -55,7 +57,7 @@ class FeedAudiosViewAdapter(private val imageList: List<String>?) :
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-//        private val artworkImageView: ImageView = itemView.findViewById(R.id.artworkImageView)
+
         private val imageView2: ImageView = itemView.findViewById(R.id.imageView2)
         private val cardView: CardView = itemView.findViewById(R.id.cardView)
         private val countTextView: TextView = itemView.findViewById(R.id.textView)
@@ -63,7 +65,7 @@ class FeedAudiosViewAdapter(private val imageList: List<String>?) :
         private val audioPlayButton : ImageView = itemView.findViewById(R.id.playAudio)
         @SuppressLint("ResourceAsColor", "SetTextI18n")
         fun bind(imageItem: String) {
-//            imageView.setImageResource()
+
             if(data != null) {
                 Log.d(TAG, "bind: audio data duration ${data!!.duration}")
                 if(data!!.duration?.isNotEmpty() == true) {
@@ -103,14 +105,11 @@ class FeedAudiosViewAdapter(private val imageList: List<String>?) :
             if (imageList?.size!! <= 2) {
                 Log.d("TAG", "bind: more")
             } else if (imageList.size == 3) {
-//                val layoutParams = cardView.layoutParams as ViewGroup.MarginLayoutParams
-//                layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
-//                holder.cardView.layoutParams = layoutParams
-//                imageList[0]
+
                 val layoutParams = cardView.layoutParams
                 val newWidthInPixels = 320  // for example, 300 pixels
                 val newHeightInPixels = 180 // for example, 200 pixels
-//                val layoutParams = holder.cardView.layoutParams as RecyclerView.LayoutParams
+
                 when (absoluteAdapterPosition) {
                     0 -> {
                         layoutParams.width = newWidthInPixels
@@ -142,7 +141,7 @@ class FeedAudiosViewAdapter(private val imageList: List<String>?) :
                 val layoutParams = cardView.layoutParams
                 val newWidthInPixels = 320  // for example, 300 pixels
                 val newHeightInPixels = 185 // for example, 200 pixels
-//                val layoutParams = holder.cardView.layoutParams as RecyclerView.LayoutParams
+
                 when (absoluteAdapterPosition) {
                     0 -> {
                         layoutParams.width = newWidthInPixels
@@ -164,7 +163,7 @@ class FeedAudiosViewAdapter(private val imageList: List<String>?) :
 
                     3 -> {
                         Log.d("TAG", "bind: load 4th")
-//                        transparentView.visibility = View.VISIBLE
+
                         imageView2.visibility = View.VISIBLE
                         countTextView.visibility = View.VISIBLE
 

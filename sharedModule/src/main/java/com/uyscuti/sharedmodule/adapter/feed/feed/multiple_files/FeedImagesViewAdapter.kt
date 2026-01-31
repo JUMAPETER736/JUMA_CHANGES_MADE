@@ -31,6 +31,7 @@ import java.io.File
 private const val TAG = "FeedImageViewAdapter"
 
 class FeedImagesViewAdapter(
+
     private val imageList: List<String>?,
     val context: Context) :
     RecyclerView.Adapter<FeedImagesViewAdapter.ViewHolder>() {
@@ -75,7 +76,7 @@ class FeedImagesViewAdapter(
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        //        private val feedThumbnail: ImageView = itemView.findViewById(R.id.feedThumbnail)
+
         private val imageView2: ImageView = itemView.findViewById(R.id.imageView2)
         private val pdfImageView: ImageView = itemView.findViewById(R.id.pdfImageView)
         private val documentIcon: ImageView = itemView.findViewById(R.id.documentIcon)
@@ -83,19 +84,16 @@ class FeedImagesViewAdapter(
         private val countTextView: TextView = itemView.findViewById(R.id.textView)
         private val docName: TextView = itemView.findViewById(R.id.docName)
         private val numberOfPages: TextView = itemView.findViewById(R.id.docInfo)
-
-        //        private val transparentView: View = itemView.findViewById(R.id.transparentView)
         private val pdfView: PdfRendererView = itemView.findViewById(R.id.pdfView)
-
         private val feedDocLayout: ConstraintLayout = itemView.findViewById(R.id.feedDocLayout)
 
         @SuppressLint("ResourceAsColor", "SetTextI18n")
         fun bind(imageItem: String) {
-//            imageView.setImageResource()
+
             Log.d(TAG, "bind: data $data")
             if (data != null) {
                 val layoutParams = feedDocLayout.layoutParams
-//                Log.d(TAG, "bind: doc data duration ${data!!.fileName}")
+
 
                 val fileName = data!!.fileNames?.let { commaSeparatedStringToList(it.toString()) }
                 val noOfPages = data!!.numberOfPages?.let { commaSeparatedStringToList(it.toString()) }
@@ -142,7 +140,7 @@ class FeedImagesViewAdapter(
                     layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
                     layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
                     feedDocLayout.layoutParams = layoutParams
-//                pdfViewContainer.visibility = View.GONE
+
                     documentIcon.visibility = View.VISIBLE
                 }
                 docName.text = fileName?.get(absoluteAdapterPosition)
@@ -195,7 +193,7 @@ class FeedImagesViewAdapter(
                 val layoutParams = cardView.layoutParams
                 val newWidthInPixels = 320  // for example, 300 pixels
                 val newHeightInPixels = 185 // for example, 200 pixels
-//                val layoutParams = holder.cardView.layoutParams as RecyclerView.LayoutParams
+
                 when (absoluteAdapterPosition) {
                     0 -> {
                         layoutParams.width = newWidthInPixels
@@ -217,7 +215,7 @@ class FeedImagesViewAdapter(
 
                     3 -> {
                         Log.d("TAG", "bind: load 4th")
-//                        transparentView.visibility = View.VISIBLE
+
                         imageView2.visibility = View.VISIBLE
                         countTextView.visibility = View.VISIBLE
 
@@ -250,8 +248,6 @@ class FeedImagesViewAdapter(
                 // Apply the changes to the ImageView
                 cardView.layoutParams = params
             }
-
-
 
         }
     }

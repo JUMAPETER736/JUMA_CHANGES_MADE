@@ -483,7 +483,7 @@ class FeedMixedFilesViewAdapter(
 
                     itemView.layoutParams = layoutParams
 
-                    // 🟣 Show +X overlay only on 4th item
+                    //  Show +X overlay only on 4th item
                     if (absoluteAdapterPosition == 3) {
                         countTextView.visibility = View.VISIBLE
                         countTextView.text = "+${fileSize - 4}"
@@ -517,7 +517,7 @@ class FeedMixedFilesViewAdapter(
                     val preferredSquareHeight = screenWidth / 2
                     layoutParams.height = getConstrainedHeight(context, preferredSquareHeight)
 
-                    // 🟢 Default spacing
+                    //  Default spacing
                     val isLeftColumn = (absoluteAdapterPosition % 2 == 0)
                     layoutParams.leftMargin = if (isLeftColumn) 0 else spaceBetweenRows
                     layoutParams.rightMargin = if (isLeftColumn) spaceBetweenRows else 0
@@ -528,7 +528,7 @@ class FeedMixedFilesViewAdapter(
 
                     itemView.layoutParams = layoutParams
 
-                    // 🟣 Show +X overlay only on 4th item
+                    //  Show +X overlay only on 4th item
                     if (absoluteAdapterPosition == 3) {
                         countTextView.visibility = View.VISIBLE
                         countTextView.text = "+${fileSize - 4}"
@@ -627,7 +627,7 @@ class FeedMixedFilesViewAdapter(
                     putStringArrayList("file_urls", fileUrls)
                     putStringArrayList("file_ids", ArrayList(fileIds))
 
-                    // ✅ PASS FOLLOWING LIST FROM ADAPTER
+                    // PASS FOLLOWING LIST FROM ADAPTER
                     val cachedFollowingIds = FeedAdapter.getCachedFollowingList()
                     putStringArrayList("following_ids", ArrayList(cachedFollowingIds))
 

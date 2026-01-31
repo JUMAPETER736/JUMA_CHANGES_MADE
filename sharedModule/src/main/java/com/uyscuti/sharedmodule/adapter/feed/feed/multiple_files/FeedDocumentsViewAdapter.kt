@@ -27,7 +27,9 @@ import java.io.File
 import com.uyscuti.social.network.api.response.posts.Post
 
 private const val TAG = "FeedImageViewAdapter"
-class FeedDocumentsViewAdapter(imageList: MutableList<String>, context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class FeedDocumentsViewAdapter(
+    imageList: MutableList<String>,
+    context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val documentList = ArrayList<String>()
 
