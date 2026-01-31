@@ -284,8 +284,9 @@ class CommentsRecyclerViewAdapter(
 
                 (context as Activity).startActivityForResult(intent, R_CODE)
             }
-            val inputString = data.content
-            val regex = Regex("@\\w+")
+
+            data.content
+            Regex("@\\w+")
 
             time.text = formatMongoTimestamp(data.createdAt)
 
@@ -399,17 +400,17 @@ class CommentsRecyclerViewAdapter(
         private val imageComment: ImageView = itemView.findViewById(R.id.imageComment)
         private val username: TextView = itemView.findViewById(R.id.username)
         private val captionContent: TextView = itemView.findViewById(R.id.content)
+
         private val time: TextView = itemView.findViewById(R.id.time)
         private val reply: TextView = itemView.findViewById(R.id.reply)
         private val commentReplies: TextView = itemView.findViewById(R.id.commentReplies)
         private val hideCommentReplies: TextView = itemView.findViewById(R.id.hideCommentReplies)
         private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
+
         private val likeCountContainer: LinearLayout = itemView.findViewById(R.id.likeCountContainer)
         private val likeButton: TextView = itemView.findViewById(R.id.likeButton)
         private val repliesRecyclerView: RecyclerView = itemView.findViewById(R.id.repliesRecyclerView)
         private val viewRepliesContainer: LinearLayout = itemView.findViewById(R.id.viewRepliesContainer)
-
-        private var isReplyCount = false
 
 
         @SuppressLint("SetTextI18n")
@@ -671,14 +672,17 @@ class CommentsRecyclerViewAdapter(
         private val username: TextView = itemView.findViewById(R.id.username)
         private val time: TextView = itemView.findViewById(R.id.time)
         private val reply: TextView = itemView.findViewById(R.id.reply)
+
         private val commentReplies: TextView = itemView.findViewById(R.id.commentReplies)
         private val hideCommentReplies: TextView = itemView.findViewById(R.id.hideCommentReplies)
         private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
         private val likeUnLikeComment: TextView = itemView.findViewById(R.id.likeUnLikeComment)
+
         private val likeCountContainer: LinearLayout = itemView.findViewById(R.id.likeCountContainer)
         private val repliesRecyclerView: RecyclerView = itemView.findViewById(R.id.repliesRecyclerView)
         private val docTitle: TextView = itemView.findViewById(R.id.docTitle)
         private val docInfo: TextView = itemView.findViewById(R.id.docInfo)
+
         private val documentLayout: RelativeLayout = itemView.findViewById(R.id.documentLayout)
         private val documentImageView: ImageView = itemView.findViewById(R.id.documentImageView)
         private  val captionContent: TextView = itemView.findViewById(R.id.content)
@@ -954,17 +958,19 @@ class CommentsRecyclerViewAdapter(
         private val imageView: ImageView = itemView.findViewById(R.id.profilePic)
         private val videoThumbnail: ImageView = itemView.findViewById(R.id.videoThumbnail)
         private val likeButton: TextView = itemView.findViewById(R.id.likeButton) // Updated to use likeButton
+
         private val likeCountContainer: LinearLayout = itemView.findViewById(R.id.likeCountContainer) // Updated to use likeCountContainer
         private val username: TextView = itemView.findViewById(R.id.username)
         private val time: TextView = itemView.findViewById(R.id.time)
+
         private val reply: TextView = itemView.findViewById(R.id.reply)
         private val commentReplies: TextView = itemView.findViewById(R.id.commentReplies)
         private val hideCommentReplies: TextView = itemView.findViewById(R.id.hideCommentReplies)
         private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
+
         private val commentVideoDurationTextView: TextView = itemView.findViewById(R.id.commentVideoDurationTextView)
         private val repliesRecyclerView: RecyclerView = itemView.findViewById(R.id.repliesRecyclerView)
         private val viewRepliesContainer: LinearLayout = itemView.findViewById(R.id.viewRepliesContainer)
-        private var isReplyCount = false
 
 
         @SuppressLint("SetTextI18n")
@@ -1252,28 +1258,29 @@ class CommentsRecyclerViewAdapter(
         val TAG = "Comment Audio ViewHolder"
 
         private val imageView: ImageView = itemView.findViewById(R.id.profilePic)
-        // Use likeButton TextView instead of likeUnLikeCommentImageView
         private val likeButton: TextView = itemView.findViewById(R.id.likeButton)
         private val captionContent: TextView = itemView.findViewById(R.id.content)
         private val likeCountContainer: LinearLayout = itemView.findViewById(R.id.likeCountContainer)
+
         private val username: TextView = itemView.findViewById(R.id.username)
         private val time: TextView = itemView.findViewById(R.id.time)
         private val reply: TextView = itemView.findViewById(R.id.reply)
         private val commentReplies: TextView = itemView.findViewById(R.id.commentReplies)
+
         private val hideCommentReplies: TextView = itemView.findViewById(R.id.hideCommentReplies)
         private val likesCount: TextView = itemView.findViewById(R.id.likesCount)
         private val audioDurationTextView: TextView = itemView.findViewById(R.id.audioDurationTV)
         private val secondAudioDurationTextView: TextView = itemView.findViewById(R.id.secondAudioDurationTVCount)
+
         private val audioDurationTVCount: TextView = itemView.findViewById(R.id.audioDurationTVCount)
         private val audioWave: WaveformSeekBar = itemView.findViewById(R.id.wave)
         private val secondAudioWave: WaveformSeekBar = itemView.findViewById(R.id.secondWave)
         private val commentAudioSeekBar: SeekBar = itemView.findViewById(R.id.commentAudioSeekBar)
+
         private val secondCommentAudioSeekBar: SeekBar = itemView.findViewById(R.id.secondCommentAudioSeekBar)
         val repliesRecyclerView: RecyclerView = itemView.findViewById(R.id.repliesRecyclerView)
         private val playVnAudioBtn: ImageView = itemView.findViewById(R.id.playVnAudioBtn)
         private val viewRepliesContainer: LinearLayout = itemView.findViewById(R.id.viewRepliesContainer)
-
-        private var isReplyCount = false
 
         init {
             // Add null checks for critical views to prevent crashes
@@ -1284,7 +1291,7 @@ class CommentsRecyclerViewAdapter(
         @SuppressLint("SetTextI18n", "NotifyDataSetChanged", "DefaultLocale")
         fun render(data: Comment, position: Int) {
             var audioUrl = ""
-            var replyCount = data.replyCount
+            data.replyCount
 
             Log.d("DataIsPlaying", "Data is playing ${data.isPlaying}")
             Log.d("CommentAudioViewHolder", "audio type: ${data.fileType}")
@@ -1853,8 +1860,6 @@ class CommentsRecyclerViewAdapter(
         private val viewRepliesContainer: LinearLayout = itemView.findViewById(R.id.viewRepliesContainer)
         private val repliesRecyclerView: RecyclerView = itemView.findViewById(R.id.repliesRecyclerView)
 
-        private var isReplyCount = false
-
 
         @SuppressLint("SetTextI18n")
         fun render(data: Comment, position: Int) {
@@ -2046,17 +2051,6 @@ class CommentsRecyclerViewAdapter(
     }
 
 
-    fun getMentionedNames(): List<String> {
-        val inputString =
-            "Hello @user1, how are you? @user2 is also here. Mention @user3 in your reply."
-
-        val regex = Regex("@\\w+")
-        val matches = regex.findAll(inputString)
-
-        return matches.map { it.value }.toList()
-//        println("Mentioned users: $mentionedUsers")
-    }
-
     fun refreshMainComment(position: Int) {
         Log.d("refreshMainComment", "refreshMainComment position $position")
         this@CommentsRecyclerViewAdapter.refreshItem(position)
@@ -2154,7 +2148,7 @@ class CommentsRecyclerViewAdapter(
             CoroutineScope(Dispatchers.Main).launch {
                 mCurrentWaveForm!!.progress = progress
                 currentComment?.progress = progress
-//                Log.d("updateWaveProgress", "updateWaveProgress: $progress")
+
             }
         } else {
             mCurrentWaveForm?.progress = 0F
@@ -2184,7 +2178,7 @@ class CommentsRecyclerViewAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
 
-//        Log.d(TAG, "onCreateViewHolder: view type $viewType")
+
         return when (viewType) {
             VIEW_TYPE_TEXT_COMMENT -> {
                 val itemView = inflater.inflate(R.layout.comment_text_item, parent, false)
@@ -2265,20 +2259,20 @@ class CommentsRecyclerViewAdapter(
 
     override fun getItemViewType(position: Int): Int {
         val tag = "CommentType"
-//        Log.d(TAG, "getItemViewType: size $itemCount")
+
         return when (getItem(position).contentType) {
             "audio" -> {
-//                Log.d(TAG, "getItemViewType: audio type")
+
                 VIEW_TYPE_AUDIO_COMMENT
             }
 
             "text" -> {
-//                Log.d(TAG, "getItemViewType: text type")
+
                 VIEW_TYPE_TEXT_COMMENT
             }
 
             "image" -> {
-//                Log.d(tag, "getItemViewType: text type")
+
                 VIEW_TYPE_IMAGE_COMMENT
             }
 
@@ -2298,8 +2292,6 @@ class CommentsRecyclerViewAdapter(
             }
         }
     }
-
-    //
 }
 
 interface OnViewRepliesClickListener {

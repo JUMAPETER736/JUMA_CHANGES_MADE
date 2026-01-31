@@ -21,6 +21,7 @@ import com.uyscuti.sharedmodule.R
 import io.getstream.photoview.PhotoView
 
 class MediaPagerAdapter(
+
     private val mediaUrls: ArrayList<String>,
     private val context: Activity
 ) :

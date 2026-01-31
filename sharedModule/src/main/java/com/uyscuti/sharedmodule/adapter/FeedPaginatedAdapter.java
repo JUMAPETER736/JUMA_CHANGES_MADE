@@ -6,7 +6,6 @@ import android.util.Log;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -17,6 +16,7 @@ import java.util.Collection;
 import java.util.List;
 
 public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> {
+
     private final List<com.uyscuti.social.network.api.response.posts.Post> mDataSet = new ArrayList<>();
     private OnPaginationListener mListener;
     private int mStartPage = 1;
@@ -26,9 +26,6 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
     private boolean loadingNewItems = true;
     private int childItemPosition = -1;
     private int parentItemPosition = -1;
-
-
-    public LoadMoreListener loadMoreListener;
 
 
     @NonNull
@@ -61,7 +58,7 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
             }
         }
         mDataSet.addAll(itemsToAdd);
-//        notifyDataSetChanged();
+
         // Notify the adapter about the inserted items
         notifyItemRangeInserted(previousSize, collection.size());
         if (mListener != null) {
@@ -79,48 +76,6 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
         }
     }
 
-    public void submitItemsForFavoriteFragment(Collection<? extends com.uyscuti.social.network.api.response.posts.Post> collection) {
-        int previousSize = mDataSet.size();
-
-        // Filter out items from collection that have the same IDs as items in mDataSet
-        List<com.uyscuti.social.network.api.response.posts.Post> itemsToAdd = new ArrayList<>();
-        for (com.uyscuti.social.network.api.response.posts.Post newPost : collection) {
-            boolean found = false;
-            for (com.uyscuti.social.network.api.response.posts.Post existingPost : mDataSet) {
-                if (existingPost.get_id().equals(newPost.get_id())) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                // Check if newPost's ID is already present in itemsToAdd
-                found = itemsToAdd.stream().anyMatch(item -> item.get_id().equals(newPost.get_id()));
-                if (!found) {
-                    itemsToAdd.add(newPost);
-                }
-//                itemsToAdd.add(newPost);
-            }
-        }
-
-
-        mDataSet.addAll(itemsToAdd);
-//        notifyDataSetChanged();
-        // Notify the adapter about the inserted items
-        notifyItemRangeInserted(previousSize, collection.size());
-        if (mListener != null) {
-            mListener.onCurrentPage(mCurrentPage);
-            if (itemsToAdd.size() == mPageSize) {
-                loadingNewItems = false;
-            } else {
-                mListener.onFinish();
-            }
-        }
-        if (!itemsToAdd.isEmpty()) {
-            Log.d("submitItems", "Items added: " + itemsToAdd.size() + " collection size: " + collection.size());
-        }else {
-            Log.d("submitItems", "submitItems: items to add is empty");
-        }
-    }
     @SuppressLint("NotifyDataSetChanged")
     public void submitItem(com.uyscuti.social.network.api.response.posts.Post item) {
         mDataSet.add(item);
@@ -130,7 +85,7 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
     public void submitItem(com.uyscuti.social.network.api.response.posts.Post item, int position) {
         mDataSet.add(position, item);
         notifyItemChanged(position);
-//        notifyDataSetChanged();
+
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -172,12 +127,6 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
         return mDataSet.get(position);
     }
 
-    protected void setItem(int position, com.uyscuti.social.network.api.response.posts.Post commentItem) {
-
-        mDataSet.set(position, commentItem);
-
-    }
-
     public void setStartPage(int mFirstPage) {
         this.mStartPage = mFirstPage;
         this.mCurrentPage = mFirstPage;
@@ -213,10 +162,6 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
 
     private void setAdapter() {
         mRecyclerView.setAdapter(this);
-    }
-
-    public void setPageSize(int pageSize) {
-        this.mPageSize = pageSize;
     }
 
     private void initPaginating() {
@@ -260,11 +205,6 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
         }
     }
 
-    public int childAdapterItemToRefresh() {
-
-        return childItemPosition;
-    }
-
     public int parentAdapterItemToRefresh() {
 
         return parentItemPosition;
@@ -295,10 +235,6 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
         void onNextPage(int page);
 
         void onFinish();
-    }
-
-    public interface LoadMoreListener {
-        void onLoadMore(int pageNumber);
     }
 
 }

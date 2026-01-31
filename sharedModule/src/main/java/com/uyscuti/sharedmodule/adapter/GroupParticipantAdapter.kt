@@ -17,7 +17,8 @@ import com.uyscuti.sharedmodule.data.model.User
 private const val VIEW_TYPE_ADMIN = 0
 private const val VIEW_TYPE_NORMAL = 1
 
-class GroupParticipantAdapter(private val participantList: List<User>) :
+class GroupParticipantAdapter(
+    private val participantList: List<User>) :
     RecyclerView.Adapter<GroupParticipantAdapter.ViewHolder>() {
     //
     private var adminId: String? = null

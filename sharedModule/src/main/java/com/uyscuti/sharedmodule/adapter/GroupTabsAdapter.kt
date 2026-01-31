@@ -13,6 +13,7 @@ import com.uyscuti.sharedmodule.fragments.GroupParticipantsFragment
 import com.uyscuti.sharedmodule.fragments.GroupPlaceholderFragment
 
 private val TAB_ICONS = arrayOf(
+
     R.drawable.baseline_groups_24, // Replace with your icon resource for the first tab
     R.drawable.play_svgrepo_com, // Replace with your icon resource for the first tab
     R.drawable.scroll_text_line_svgrepo_com,  // Replace with your icon resource for the second tab

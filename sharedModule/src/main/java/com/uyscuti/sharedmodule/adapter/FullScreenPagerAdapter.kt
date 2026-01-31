@@ -13,7 +13,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.uyscuti.sharedmodule.R
 
-class FullScreenPagerAdapter(private val mediaUrls: List<String>, private val context: Context) :
+class FullScreenPagerAdapter(
+
+    private val mediaUrls: List<String>,
+    private val context: Context) :
     RecyclerView.Adapter<FullScreenPagerAdapter.ViewHolder>() {
 
     private lateinit var player: ExoPlayer
