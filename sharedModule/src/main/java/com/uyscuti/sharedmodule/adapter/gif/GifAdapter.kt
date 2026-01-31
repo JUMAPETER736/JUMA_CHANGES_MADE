@@ -13,6 +13,7 @@ import com.uyscuti.sharedmodule.R
 import com.uyscuti.social.network.api.response.gif.allgifs.GifModel
 
 class GifAdapter(private val clickListener: GifClickListener) :
+
     GifPaginatedAdapter<GifModel, GifAdapter.ViewHolder>() {
 
     interface GifClickListener {
@@ -44,9 +45,7 @@ class GifAdapter(private val clickListener: GifClickListener) :
                 .load(data.gifs[0].url)
                 .apply(RequestOptions.centerCropTransform())
                 .placeholder(R.drawable.flash21)
-//                    .diskCacheStrategy(
-//                        DiskCacheStrategy.ALL
-//                    )
+
                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                 .into(imageView)
 

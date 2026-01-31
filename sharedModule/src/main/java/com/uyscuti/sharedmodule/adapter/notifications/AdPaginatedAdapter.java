@@ -15,9 +15,9 @@ import com.uyscuti.sharedmodule.data.model.Comment;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> {
+
     private final List<Comment> mDataSet = new ArrayList<>();
     private OnPaginationListener mListener;
     private int mStartPage = 1;
@@ -60,25 +60,7 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
         }
     }
 
-    //    public void submitItems(Collection<? extends Comment> collection) {
-//
-//        int previousSize = mDataSet.size();
-//        mDataSet.addAll(collection);
-////        notifyDataSetChanged();
-//        // Notify the adapter about the inserted items
-//        CommentsDiffUtil diffUtil = new CommentsDiffUtil(mDataSet, (List<Comment>) collection);
-//        DiffUtil.DiffResult diffResults = DiffUtil.calculateDiff(diffUtil);
-//        mDataSet = (List<Comment>) collection;
-////        notifyItemRangeInserted(previousSize, collection.size());
-//        if (mListener != null) {
-//            mListener.onCurrentPage(mCurrentPage);
-//            if (collection.size() == mPageSize) {
-//                loadingNewItems = false;
-//            } else {
-//                mListener.onFinish();
-//            }
-//        }
-//    }
+
     @SuppressLint("NotifyDataSetChanged")
     public void submitItem(Comment item) {
         mDataSet.add(item);
@@ -100,15 +82,6 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
 
     protected Comment getItem(int position) {
         return mDataSet.get(position);
-    }
-
-    public int getPositionByUploadId(String itemId) {
-        for (int i = 0; i < mDataSet.size(); i++) {
-            if (Objects.equals(mDataSet.get(i).getUploadId(), itemId)) {
-                return i; // Return position if ID matches
-            }
-        }
-        return -1; // Return -1 if item with given ID is not found
     }
 
     protected void setItem(int position, Comment commentItem) {
@@ -147,7 +120,7 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
 
         Log.d("setDefaultRecyclerView", "setDefaultRecyclerView: activity: "+ activity+" re id: "+ recyclerViewId);
         RecyclerView recyclerView = activity.findViewById(recyclerViewId);
-//        activity.setAdapter();
+
         Log.d(TAG, "setDefaultRecyclerView: 1");
         recyclerView.setLayoutManager(new LinearLayoutManager(activity));
         Log.d(TAG, "setDefaultRecyclerView: 2");
@@ -172,38 +145,10 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
     public RecyclerView.LayoutManager getLayoutManager() {
         return mRecyclerView.getLayoutManager();
     }
-    @SuppressLint("NotifyDataSetChanged")
-    public void setLayoutManager(Activity activity, int recyclerViewId) {
-        String TAG = "setDefaultRecyclerView";
 
-        Log.d("setDefaultRecyclerView", "setDefaultRecyclerView: activity: "+ activity+" re id: "+ recyclerViewId);
-        RecyclerView recyclerView = activity.findViewById(recyclerViewId);
-//        activity.setAdapter();
-        Log.d(TAG, "setDefaultRecyclerView: 1");
-//        recyclerView.setLayoutManager(new LinearLayoutManager(activity));
-//        Log.d(TAG, "setDefaultRecyclerView: 2");
-//        recyclerView.setHasFixedSize(true);
-//        Log.d(TAG, "setDefaultRecyclerView: 3");
-//        this.mRecyclerView = recyclerView;
-        this.mRecyclerView.setLayoutManager(new LinearLayoutManager(activity));
-        Log.d(TAG, "setDefaultRecyclerView: 4");
-        notifyDataSetChanged();
-        initPaginating();
-    }
-//    public RecyclerView.LayoutManager getLayoutManager() {
-//        return mRecyclerView.getLayoutManager();
-//    }
-
-    public RecyclerView getmRecyclerView() {
-        return mRecyclerView;
-    }
 
     public void setPagination() {
         initPaginating();
-    }
-    public void setAdapterManually(){mRecyclerView.setAdapter(this);}
-    public void setPageSize(int pageSize) {
-        this.mPageSize = pageSize;
     }
 
     private void initPaginating() {
@@ -245,7 +190,7 @@ public abstract class AdPaginatedAdapter<VH extends RecyclerView.ViewHolder> ext
             for(int i = 0; i < updatedItem.getReplies().size(); i++) {
                 Log.d("updateItem", "updated item position " + position + " is liked "+ updatedItem.getReplies().get(i).isLiked() + " position " +i);
             }
-//            Log.d("updateItem", "updated item audios" + updatedItem.getAudios());
+
             // Notify the adapter about the change
             notifyItemChanged(position);
         }

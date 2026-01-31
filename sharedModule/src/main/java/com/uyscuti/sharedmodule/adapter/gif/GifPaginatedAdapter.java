@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.List;
 
 public abstract class GifPaginatedAdapter<ITEM, VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> {
+
     private final List<ITEM> mDataSet = new ArrayList<>();
     private OnPaginationListener mListener;
     private int mStartPage = 1;
@@ -21,19 +22,6 @@ public abstract class GifPaginatedAdapter<ITEM, VH extends RecyclerView.ViewHold
     private int mPageSize = 10;
     private RecyclerView mRecyclerView;
     private boolean loadingNewItems = true;
-
-    public LoadMoreListener loadMoreListener;
-
-    public void setLoadMoreListener(LoadMoreListener loadMoreListener) {
-        this.loadMoreListener = loadMoreListener;
-    }
-
-    public void loadMoreIfNeeded(int position) {
-        if (position == getItemCount() - 1 && loadMoreListener != null) {
-            int nextPageNumber = getItemCount() / 10 + 1;
-            loadMoreListener.onLoadMore(nextPageNumber);
-        }
-    }
 
     @NonNull
     public abstract VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType);
@@ -114,10 +102,6 @@ public abstract class GifPaginatedAdapter<ITEM, VH extends RecyclerView.ViewHold
         mRecyclerView.setAdapter(this);
     }
 
-    public void setPageSize(int pageSize) {
-        this.mPageSize = pageSize;
-    }
-
     private void initPaginating() {
         mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -165,10 +149,5 @@ public abstract class GifPaginatedAdapter<ITEM, VH extends RecyclerView.ViewHold
         void onFinish();
     }
 
-
-
-    public interface LoadMoreListener {
-        void onLoadMore(int pageNumber);
-    }
 
 }
