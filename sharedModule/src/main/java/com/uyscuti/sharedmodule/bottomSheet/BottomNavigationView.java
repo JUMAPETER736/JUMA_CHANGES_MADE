@@ -822,110 +822,12 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
         return buttonPaddingTop;
     }
 
-    public int getButtonsPaddingBottom() {
-        return buttonPaddingBottom;
-    }
-
-    public int getDividerPadding() {
-        return dividerPadding;
-    }
-
-    public void setDividerPadding(int dividerPadding) {
-        this.dividerPadding = dividerPadding;
-
-        container.setDividerPadding(dividerPadding);
-    }
-
-    public int getDividerSize() {
-        return dividerSize;
-    }
-
-    public void setDividerSize(int dividerSize) {
-        this.dividerSize = dividerSize;
-        Helper.makeDividerRound(container, dividerColor, dividerRadius, dividerSize);
-    }
-
-    public int getDividerRadius() {
-        return dividerRadius;
-    }
-
-    public void setDividerRadius(int dividerRadius) {
-        this.dividerRadius = dividerRadius;
-        Helper.makeDividerRound(container, dividerColor, dividerRadius, dividerSize);
-    }
-
-    public int getBottomLineSize() {
-        return bottomLineSize;
-    }
-
-    public void setBottomLineSize(int bottomLineSize) {
-        this.bottomLineSize = bottomLineSize;
-        setBottomLineAttrs();
-    }
-
-    public int getBottomLineRadius() {
-        return bottomLineRadius;
-    }
-
-    public void setBottomLineRadius(int bottomLineRadius) {
-        this.bottomLineRadius = bottomLineRadius;
-        updateViewBottomLine();
-    }
-
-    public int getBorderSize() {
-        return borderSize;
-    }
-
-    public void setBorderSize(int borderSize) {
-        this.borderSize = borderSize;
-        setBorderAttrs();
-    }
-
-    public int getBorderColor() {
-        return borderColor;
-    }
-
-    public void setBorderColor(int borderColor) {
-        this.borderColor = borderColor;
-        setBorderAttrs();
-    }
-
-    public int getDividerColor() {
-        return dividerColor;
-    }
-
-    public void setDividerColor(int dividerColor) {
-        this.dividerColor = dividerColor;
-        Helper.makeDividerRound(container, dividerColor, dividerRadius, dividerSize);
-    }
-
-    public int getBottomLineColor() {
-        return bottomLineColor;
-    }
-
-    public void setBottomLineColor(int bottomLineColor) {
-        this.bottomLineColor = bottomLineColor;
-        updateViewBottomLine();
-    }
-
     private void updateViewBottomLine() {
         Helper.makeRound(v_bottomLine, bottomLineColor, bottomLineRadius, bottomLineRadius);
     }
 
-    public int getSelectorColor() {
-        return selectorColor;
-    }
-
     private void updateViewSelectorColor(View view, int color) {
         updateViewSelector(view, color, selectorRadius, selectorSize);
-    }
-
-    public void setSelectorColor(int selectorColor) {
-        this.selectorColor = selectorColor;
-
-        for (View selector : v_selectors) {
-            updateViewSelectorColor(selector, selectorColor);
-        }
     }
 
     @Override
@@ -946,10 +848,6 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
         updateViewSelector(view, selectorColor, selectorRadius, selectorSize);
     }
 
-    public int getSelectorSize() {
-        return selectorSize;
-    }
-
     public void setSelectorSize(int selectorSize) {
         this.selectorSize = selectorSize;
 
@@ -960,18 +858,6 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
 
             selector.getLayoutParams().height = selectorSize;
             selector.requestLayout();
-        }
-    }
-
-    public int getSelectorRadius() {
-        return selectorRadius;
-    }
-
-    public void setSelectorRadius(int selectorRadius) {
-        this.selectorRadius = selectorRadius;
-
-        for (View selector : v_selectors) {
-            updateViewSelector(selector);
         }
     }
 
@@ -988,79 +874,8 @@ public class  BottomNavigationView extends RoundedCornerLayout implements Naviga
         return animateDrawablesScale;
     }
 
-    public void setAnimateDrawablesScale(float animateDrawablesScale) {
-        this.animateDrawablesScale = animateDrawablesScale;
-    }
-
     public float getAnimateTextsScale() {
         return animateTextsScale;
-    }
-
-    public void setAnimateTextsScale(float animateTextsScale) {
-        this.animateTextsScale = animateTextsScale;
-    }
-
-    public boolean isBottomLineOnFront() {
-        return bottomLineBringToFront;
-    }
-
-    public void setBottomLineToFront(boolean bottomLineBringToFront) {
-        this.bottomLineBringToFront = bottomLineBringToFront;
-        setBottomLineAttrs();
-    }
-
-    public boolean isSelectorOnFront() {
-        return selectorBringToFront;
-    }
-
-    public void setSelectorToFront(boolean selectorBringToFront) {
-        this.selectorBringToFront = selectorBringToFront;
-        setSelectorAttrs();
-    }
-
-    public boolean isSelectorAboveOfBottomLine() {
-        return selectorAboveOfBottomLine;
-    }
-
-    public void setSelectorAboveOfBottomLine(boolean selectorAboveOfBottomLine) {
-        this.selectorAboveOfBottomLine = selectorAboveOfBottomLine;
-        setSelectorAttrs();
-    }
-
-    public boolean isSelectorTop() {
-        return selectorTop;
-    }
-
-    public void setSelectorTop(boolean selectorTop) {
-        this.selectorTop = selectorTop;
-    }
-
-    public boolean isSelectorBottom() {
-        return selectorBottom;
-    }
-
-    public void setSelectorBottom(boolean selectorBottom) {
-        this.selectorBottom = selectorBottom;
-    }
-
-    public boolean hasPadding() {
-        return hasPadding;
-    }
-
-    public boolean hasPaddingLeft() {
-        return hasPaddingLeft;
-    }
-
-    public boolean hasPaddingRight() {
-        return hasPaddingRight;
-    }
-
-    public boolean hasPaddingTop() {
-        return hasPaddingTop;
-    }
-
-    public boolean hasPaddingBottom() {
-        return hasPaddingBottom;
     }
 
     @Override
