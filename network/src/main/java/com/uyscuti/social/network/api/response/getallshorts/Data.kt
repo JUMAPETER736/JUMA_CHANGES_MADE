@@ -9,7 +9,6 @@ data class Data(
     val nextPage: Int,
     val page: Int,
     val posts: List<Post>,
-//    val followList: List<FollowListItem>,
     val prevPage: Any,
     val serialNumberStartFrom: Int,
     val totalPages: Int,
