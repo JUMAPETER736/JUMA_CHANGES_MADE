@@ -2993,14 +2993,10 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 }
             } catch (e: HttpException) {
                 Log.d(TAG, "Http Exception ${e.message}")
-//            requireActivity().runOnUiThread {
-//                showToast("Failed to connect try again...")
-//            }
+
             } catch (e: IOException) {
                 Log.d(TAG, "IOException ${e.message}")
-//            requireActivity().runOnUiThread {
-//                showToast("Failed to connect try again...")
-//            }
+
             }
         }
     }
@@ -3200,7 +3196,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     val response = retrofitInterface.apiService.getPostById(postId)
                     if (response.isSuccessful) {
                         Log.d("PostDetails", "Network request successful for postId: $postId")
-//                        "Shorts List in page $postId ${response.body()!!}"
+
                         Log.d("PostDetails", "Fetched post post: ${response.body()!!.data}")
                         response.body()?.let { post ->
                             Log.d("PostDetails", "Post details retrieved: $response")
@@ -3213,7 +3209,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                         "CommentNavigation",
                                         "Successfully navigated to commentId: $commentId"
                                     )
-//                                    scrollToComment(it)
+
                                 }
                             }
                         } ?: Log.d("PostDetails", "Response body is null for postId: $postId")
@@ -3226,52 +3222,12 @@ class PostDetailsActivity2 : AppCompatActivity(),
             }
         }
     }
-    private fun fetchCommentsDetails(comments: List<Comment>) {
-        coroutineScope.launch {
-            Log.d("commentDetails", "Fetching details for postId: $comments")
-            withContext(Dispatchers.IO) {
-                try {
-                    Log.d("commentDetails", "Making network request for postId: $comments")
 
-                    val response = retrofitInterface.apiService.getPostById(comments.toString())
-
-                    if (response.isSuccessful) {
-                        Log.d("commentDetails", "Network request successful for postId: $comments")
-//                        "Shorts List in page $postId ${response.body()!!}"
-                        Log.d("commentDetails", "Fetched post post: ${response.body()!!.data}")
-
-                        response.body()?.let { post ->
-                            Log.d("commentDetails", "Post details retrieved: $response")
-                            val commentNotificationResponse =
-                                response                            /* Obtain this from response or adapt your response model */
-                            withContext(Dispatchers.Main) {
-                                updateNotification(post)
-
-//                                val comments = post.data.comments // Assuming your post data contains a list of comments
-                                commentIdToNavigate?.let {
-                                    Log.d("positionDetails", "position is working ")
-
-                                }
-                            }
-                        } ?: Log.d("PostDetails", "Response body is null for postId: $comments")
-                    } else {
-                        Log.e("PostDetails", "Error fetching post: ${response.errorBody()}")
-                    }
-                } catch (e: Exception) {
-                    Log.e("PostDetails", "Failure fetching post", e)
-                }
-            }
-        }
-    }
     @SuppressLint("NotifyDataSetChanged")
-//    private fun updateComments(comments: List<com.uyscuti.social.circuit.data.model.Comment>) {
-//        commentsRecyclerViewAdapter.submitList(comments) // Assuming you are using ListAdapter
-//        commentsRecyclerViewAdapter = CommentsRecyclerViewAdapter(this, this@PostDetailsActivity2)
-//        commentsRecyclerViewAdapter.notifyDataSetChanged()
-//    }
+
     private fun scrollToComment(commentId: String) {
         // This method will not throw an exception now, since commentsRecyclerView is initialized
-//        val position = commentsRecyclerViewAdapter.getCommentPositionById(commentId)
+
         Log.d("ScrollToComment", "scrollToComment called with commentId: $commentId")
 
         if (position != null) {
@@ -3288,7 +3244,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         val TAG = "observeComments"
         commentsViewModel.commentsLiveData.observe(this) { it ->
             Log.d(TAG, "observeComments comments size: ${it.size}")
-//            val commentsWithReplies = it.find{it.}
+
             val commentsWithReplies = it.filter { it.replyCount > 0 }
             Log.d(TAG, "observeComments comments with replies size: ${commentsWithReplies.size}")
 
@@ -3341,7 +3297,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         } catch (e: HttpException) {
             Log.d(TAG, "Http Exception ${e.message}")
             withContext(Dispatchers.Main) {
-//                showToast(this@MainActivity, "Check Internet Connection")
+
             }
             return false
         } catch (e: IOException) {
@@ -3370,7 +3326,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             cursor.moveToFirst()
             val fileName = cursor.getString(nameIndex)
             val fileSize = cursor.getLong(sizeIndex)
-//            val numberOfPages = getNumberOfPagesFromUri(this, uri)
+
             var numberOfPages = 0
             val formattedFileSize = formatFileSize(fileSize)
 
@@ -3413,9 +3369,9 @@ class PostDetailsActivity2 : AppCompatActivity(),
                         fileName, placeholder = true
                     )
                 }
-//                                if (vUri != null) {
+
                 toCompressUris.add(uri)
-//                                }
+
                 compressShorts(
                     "",
                     fileType = "doc",
@@ -3500,25 +3456,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
         return numberOfPages
 
-    }
-
-    private fun getNumberOfPagesFromUri(context: Context, uri: Uri): Int {
-        var inputStream: InputStream? = null
-        var numberOfPages = 0
-        try {
-            inputStream = context.contentResolver.openInputStream(uri)
-            if (inputStream != null) {
-                val document = PDDocument.load(inputStream)
-                numberOfPages = document.numberOfPages
-                document.close()
-            }
-        } catch (e: Exception) {
-            // Handle exceptions
-            e.printStackTrace()
-        } finally {
-            inputStream?.close()
-        }
-        return numberOfPages
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -3611,16 +3548,14 @@ class PostDetailsActivity2 : AppCompatActivity(),
             }
 
             Log.d("uploadDocumentComment", "uploadDocumentComment: comment $comment")
-//        adapter.submitItems(listOf(comment) )
-//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
-//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
+
 
             recordedAudioFiles.clear()
             if (!update) {
                 listOfReplies.add(comment)
 
                 adapter!!.submitItem(comment, adapter!!.itemCount)
-//            addCommentVN()
+
                 shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
                 Log.d(
                     "uploadDocumentComment",
@@ -3683,7 +3618,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         )
 
         Log.d("uploadReplyDocumentComment", "uploadReplyDocumentComment: handle reply to a comment")
-//        isReply = false
+
 
         if (!placeholder) {
             val newCommentReplyEntity =
@@ -3723,7 +3658,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             commentId = commentId,
             updatedAt = mongoDbTimeStamp,
             docs = mutableListOf(documentReplyFile),
-//            audios = mutableListOf(vnFile),
+
             contentType = "docs",
             fileName = fileName,
             fileSize = fileSize,
@@ -3743,7 +3678,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -3805,7 +3740,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         documentType: String = ""
 
     ) {
-//        binding.mainContents.visibility = View.VISIBLE
+
         val uniqueId = UniqueIdGenerator.generateUniqueId()
         Log.d("progress id", uniqueId)
 
@@ -3818,14 +3753,12 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     saveAt = SaveLocation.movies,
                     subFolderName = "flash_comments_compresses"
                 ),
-//                appSpecificStorageConfiguration = AppSpecificStorageConfiguration(
-//
-//                ),
+
                 configureWith = Configuration(
                     quality = VideoQuality.MEDIUM,
-//                    videoNames = uris.map { uri -> uri.pathSegments.last() },
+
                     videoNames = toCompressUris.map { uri -> uri.pathSegments.last() },
-//                    videoNames = listOf("compressed_short"),
+
                     isMinBitrateCheckEnabled = false,
                 ),
 
@@ -3835,7 +3768,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                         //Update UI
                         if (percent <= 100) {
                             Log.d("Compress", "Progress: $percent")
-//                            EventBus.getDefault().post(ProgressEvent(uniqueId, percent.toInt()))
+
 
                         }
                     }
@@ -4076,7 +4009,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -4223,7 +4156,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             } catch (e: Exception) {
                 Log.e("UserProfileShortsViewModel", "Exception: ${e.message}")
                 lifecycleScope.launch {
-//                    hideShimmer()
+
                     if (page == 1) {
                         hideShimmer()
                     } else {
@@ -4243,55 +4176,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
         return itemList
     }
 
-    private fun onDownLoadClick(url: String, fileLocation: String) {
-        Log.d(
-            "Download",
-            "OnDownload $url  \nto path : $fileLocation"
-        )
-
-        val permissions = arrayOf(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
-
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(this, permissions, requestCode)
-        } else {
-            // You have permission, proceed with your file operations
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-
-                // Check if the permission is not granted
-                if (ContextCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    // Request the permission
-                    ActivityCompat.requestPermissions(
-                        this,
-                        arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                        WRITE_EXTERNAL_STORAGE_REQUEST_CODE
-                    )
-                } else {
-                    // Permission already granted, proceed with your code
-//                                    downloadFile(mUrl)
-//                    downld(url, fileLocation)
-                    download(url, fileLocation)
-                }
-
-//                                downlod(url, progressbar, fileDisplay, fileLocation, message)
-            } else {
-                download(url, fileLocation)
-            }
-        }
-    }
-
     @kotlin.OptIn(DelicateCoroutinesApi::class)
     private fun download(
         mUrl: String,
@@ -4306,7 +4190,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         }
         //STORAGE_FOLDER += fileLocation
         val STORAGE_FOLDER = "/Download/Flash/$fileLocation"
-//        val fileName = mUrl.split("/").last()
+
         val fileName = generateUniqueFileName(mUrl)
         val storageDirectory =
             Environment.getExternalStorageDirectory().toString() + STORAGE_FOLDER + "/$fileName"
@@ -4334,11 +4218,9 @@ class PostDetailsActivity2 : AppCompatActivity(),
                         val downloadProgress =
                             (bytesCopied.toFloat() / fileSize.toFloat() * 100).toInt()
                         runOnUiThread {
-                            //progressbar.visibility = View.VISIBLE
-//                            progressbar.progress = downloadProgress
-//                        progressCountTv.text = "$downloadProgress%"
+
                             binding.downloadProgressBarLayout.visibility = View.VISIBLE
-                            shortsDownloadImageView.setBackgroundResource(R.drawable.shorts_download_animation)
+
                             wifiAnimation =
                                 shortsDownloadImageView.background as AnimationDrawable
                             wifiAnimation!!.start()
@@ -4348,13 +4230,10 @@ class PostDetailsActivity2 : AppCompatActivity(),
                         outputStream.write(buffer, 0, bytes)
                         bytes = inputStream.read(buffer)
                     }
-                    // progressbar.visibility = View.GONE
-                    //progressCountTv.visibility = View.GONE
+
                     runOnUiThread {
                         // Update the UI components here
-//                        progressbar.visibility = View.GONE
 
-//                        coreChatSocketClient.sendDownLoadedEvent(myId,message.id)
 
                         Log.d("Download", "File Downloaded : $storageDirectory")
                         binding.downloadProgressBarLayout.visibility = View.GONE
@@ -4369,11 +4248,10 @@ class PostDetailsActivity2 : AppCompatActivity(),
                             generateRandomNotificationId(),
                             storageDirectory
                         )
-                        val downloadedFile = File(storageDirectory)
+                        File(storageDirectory)
 
 
-//                    progressCountTv.visibility = View.GONE
-                        //videoHolder.progressCountTv.visibility = View.VISIBLE
+
 
                     }
 
@@ -4393,7 +4271,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
                 e.printStackTrace()
                 runOnUiThread {
-//                    progressbar.visibility = View.GONE
+
                     binding.downloadProgressBarLayout.visibility = View.GONE
                 }
             }
@@ -4476,37 +4354,35 @@ class PostDetailsActivity2 : AppCompatActivity(),
         adapter?.setDefaultRecyclerView(this, R.id.recyclerView)
 
         if (adapter?.itemCount == 0) {
-//            adapter.
+
         }
         toggleMotionLayoutVisibility()
         adapter!!.setOnPaginationListener(object : AdPaginatedAdapter.OnPaginationListener {
             override fun onCurrentPage(page: Int) {
-//                Toast.makeText(requireContext(), "Page $page loaded!", Toast.LENGTH_SHORT).show()
+
                 Log.d(TAG, "currentPage: page number $page")
 
             }
 
             override fun onNextPage(page: Int) {
                 lifecycleScope.launch(Dispatchers.Main) {
-//                    loadMoreShorts(page)
+
                     Log.d(TAG, "onNextPage: page number $page")
                     allShortComments(page)
                 }
             }
 
             override fun onFinish() {
-//
-//                commentIdToNavigate?.let { commentId ->
-//                    Log.d("position", "position working")
+
                 Log.d(TAG, "finished: page number")
-//                    scrollToComment(commentId)
+
 
             }
         })
 
         lifecycleScope.launch(Dispatchers.Main) {
             allShortComments(adapter!!.startPage)
-//            allCommentReplies(adapter!!.startPage)
+
         }
         observeComments()
     }
@@ -4553,7 +4429,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             TAG,
             "toggleReplyToTextView: comment id $commentId data comment id ${data._id} comment position $position"
         )
-//        Log.d(TAG, "toggleReplyToTextView: data ${event.comment}")
+
         val username = data.author!!.account.username
 
         binding.replyToLayout.visibility = View.VISIBLE
@@ -4585,11 +4461,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             val updateReplyLikes = data.getBooleanExtra("updateReplyLikes", false)
             val updateLike = data.getBooleanExtra("updateLike", false)
 
-////            Log.d("onActivityResult", "data $data")
-//            Log.d("onActivityResult", "reply data is liked ${currentReplyData?.isLiked}")
-//            Log.d("onActivityResult", "position $position")
-//            Log.d("onActivityResult", "reply $reply")
-//            Log.d("onActivityResult", "updateReplyLike $updateReplyLikes")
+
             if (reply) {
                 toggleReplyFromViewsActivity(modifiedData, position)
             }
@@ -4602,7 +4474,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 likeCommentReplyFromViewsActivity(likeCommentReply)
             }
 
-//            EventBus.getDefault().post(ToggleReplyToTextView(modifiedData, position))
+
 
         } else if (requestCode == COMMENT_VIDEO_CODE && resultCode == RESULT_OK && data != null) {
             // Handle the result from the adapter
@@ -4629,7 +4501,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 likeCommentReplyFromViewsActivity(likeCommentReply)
             }
 
-//            EventBus.getDefault().post(ToggleReplyToTextView(modifiedData, position))
 
         } else if (requestCode == GIF_CODE && resultCode == RESULT_OK && data != null) {
 
@@ -4679,12 +4550,12 @@ class PostDetailsActivity2 : AppCompatActivity(),
         adapter?.updateItem(event.position, event.comment)
 
         if (isInternetAvailable(this)) {
-//            Log.d(TAG, "likeUnLikeComment: internet is available")
+
             Log.d(
                 TAG,
                 "likeUnLikeComment: item to update id ${itemToUpdate?._id} and comment reply id ${event.commentReply._id}"
             )
-//            Log.d(TAG, "likeUnLikeComment: internet is available")
+
             lifecycleScope.launch {
                 val result = commentReplyLikeUnLike(itemToUpdate!!._id)
                 Log.d(TAG, "likeUnLikeComment server result: $result")
@@ -4717,11 +4588,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 _id = "12", account = account, firstName = "", lastName = "",
                 avatar = TODO()
             )
-//            val gifFile = CommentFiles(
-//                _id = "124",
-//                url = gifFilePathToUpload,
-//                localPath = gifFilePathToUpload
-//            )
+
             val comment = Comment(
                 __v = 1,
                 _id = adapter!!.itemCount.toString(),
@@ -4757,7 +4624,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
             Log.d("uploadGifComment", "uploadGifComment: comment $comment")
             listOfReplies.add(comment)
-//            recordedAudioFiles.clear()
+
             adapter!!.submitItem(comment, adapter!!.itemCount)
             shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
             if (shortToComment != null) {
@@ -4777,7 +4644,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 EventBus.getDefault().post(ShortAdapterNotifyDatasetChanged())
             }
         } else {
-//            Log.e( "File does not exist")
+
         }
     }
 
