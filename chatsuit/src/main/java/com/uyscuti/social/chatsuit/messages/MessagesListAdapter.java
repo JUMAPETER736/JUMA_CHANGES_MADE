@@ -255,8 +255,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         items.addAll(newItems);
         generateDateHeaders(messages);
 
-//        notifyItemRangeInserted(0, items.size());
-//        notifyDataSetChanged();
     }
 
 
@@ -266,7 +264,6 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
     public void modifyMessageStatus(MESSAGE message) {
         if (message != null) {
             // Modify the status of the message
-//            message.(newStatus); // Assuming a setStatus method exists in the Message class
 
             // Notify the adapter that the data has changed
 
@@ -1250,17 +1247,14 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         @Override
         public void onBind(Date date) {
 
-//            Log.d("Formatter", "Binding Date Header Before Checking Text");
+
 
             if (text != null) {
 
-//                Log.d("Formatter", "Binding Date Header After Checking Text");
 
                 String formattedDate = null;
-//                if (dateHeadersFormatter != null) formattedDate = dateHeadersFormatter.format(date);
 
                 if(dateListener != null ) formattedDate = dateListener.onFormatDate(date);
-//                text.setText(formattedDate == null ? DateFormatter.format(date, dateFormat) : formattedDate);
 
                 Log.d("Formatter", "Binding Date Header");
                 text.setText(R.string.app_name);

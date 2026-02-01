@@ -225,24 +225,11 @@ class MessageInputStyle extends Style {
     }
 
 
-//    protected Drawable getAttachmentButtonIcon() {
-//        if (attachmentButtonIcon == -1) {
-//            return getSelector(attachmentButtonDefaultIconColor, attachmentButtonDefaultIconPressedColor,
-//                    attachmentButtonDefaultIconDisabledColor, R.drawable.ic_add_attachment);
-//        } else {
-//            return getDrawable(attachmentButtonIcon);
-//        }
-//    }
-
     protected Drawable getVoiceMessageButtonIcon() {
         return getSelector(attachmentButtonDefaultIconColor, attachmentButtonDefaultIconPressedColor,
                 attachmentButtonDefaultIconDisabledColor, R.drawable.mic_1);
     }
 
-//    protected Drawable getStopVoiceMessageButtonIcon() {
-//        return getSelector(attachmentButtonDefaultIconColor, attachmentButtonDefaultIconPressedColor,
-//                attachmentButtonDefaultIconDisabledColor, R.drawable.baseline_stop_24);
-//    }
 
 
     protected int getAttachmentButtonWidth() {
@@ -275,11 +262,7 @@ class MessageInputStyle extends Style {
         }
     }
 
-//    protected Drawable getEmojiButtonIcon() {
-//        return getSelector(emojiButtonDefaultIconColor, emojiButtonDefaultBgPressedColor,
-//                emojiButtonDefaultBgDisabledColor, R.drawable.baseline_insert_emoticon_24);
-//
-//    }
+
     protected Drawable getEmojiButtonIcon() {
         return getSelector(inputButtonDefaultIconColor, inputButtonDefaultBgPressedColor,
                 inputButtonDefaultBgDisabledColor, R.drawable.baseline_insert_emoticon_24);
@@ -291,11 +274,7 @@ class MessageInputStyle extends Style {
                 inputButtonDefaultBgDisabledColor, R.drawable.baseline_keyboard_24);
 
     }
-//    protected Drawable getKeyBoardButtonIcon() {
-//        return getSelector(emojiButtonDefaultIconColor, emojiButtonDefaultBgPressedColor,
-//                inputButtonDefaultBgDisabledColor, R.drawable.baseline_keyboard_24);
-//
-//    }
+
 
 
 

@@ -64,8 +64,6 @@ public class MessageInput extends RelativeLayout
 
     protected boolean isVnRecording;
 
-//    protected Context con;
-
     MessageInputStyle style;
 
     protected ImageButton emojiButton;
@@ -98,7 +96,7 @@ public class MessageInput extends RelativeLayout
     public MessageInput(Context context) {
         super(context);
 
-//        con = context;
+
         init(context);
     }
 
@@ -258,7 +256,7 @@ public class MessageInput extends RelativeLayout
     }
 
     private void onAddAttachments() {
-//        Log.d("Attachment", "Attachment Listener");
+
         if (attachmentsListener != null) attachmentsListener.onAddAttachments();
     }
 
@@ -310,14 +308,14 @@ public class MessageInput extends RelativeLayout
         ViewCompat.setBackground(this.emojiButton, style.getAttachmentButtonBackground());
 
 
-//        this.messageSendButton.setVisibility(GONE);
+
         this.messageSendButton.setImageDrawable(style.getInputButtonIcon());
         this.messageSendButton.getLayoutParams().width = style.getInputButtonWidth();
         this.messageSendButton.getLayoutParams().height = style.getInputButtonHeight();
         ViewCompat.setBackground(messageSendButton, style.getInputButtonBackground());
         this.sendButtonSpace.getLayoutParams().width = style.getInputButtonMargin();
 
-//        this.gifButton.setImag
+
         if (getPaddingLeft() == 0
                 && getPaddingRight() == 0
                 && getPaddingTop() == 0
