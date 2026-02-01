@@ -241,6 +241,15 @@ class PostDetailsActivity2 : AppCompatActivity(),
     CommentsInput.VoiceListener, CommentsInput.GifListener, CommentsInput.InputListener,
     CommentsInput.AttachmentsListener, Timer.OnTimeTickListener, OnViewRepliesClickListener,
     OnClickListeners {
+
+    companion object {
+        const val EXTRA_POST_ID = "post_id"
+        const val EXTRA_COMMENT_ID = "comment_id"
+        const val EXTRA_COMMENT = "show_comments"
+        const val EXTRA_COMMENT_REPLY_ID = "comment_reply_id"
+        private const val COMMENT_SECTION = 1
+    }
+
     @Inject
     lateinit var retrofitInterface: RetrofitInstance
     lateinit var localStorage: LocalStorage
@@ -375,19 +384,13 @@ class PostDetailsActivity2 : AppCompatActivity(),
     private fun updateRecordWaveProgress(progress: Float) {
         CoroutineScope(Dispatchers.Main).launch {
             binding.wave.progress = progress
-//            currentComment?.progress = progress
+
             Log.d("updateWaveProgress", "updateWaveProgress: $progress")
         }
     }
-//    private val showComments = intent.getBooleanExtra("show_comments", false)
 
-    companion object {
-        const val EXTRA_POST_ID = "post_id"
-        const val EXTRA_COMMENT_ID = "comment_id"
-        const val EXTRA_COMMENT = "show_comments"
-        const val EXTRA_COMMENT_REPLY_ID = "comment_reply_id"
-        private const val COMMENT_SECTION = 1
-    }
+
+
 
     private lateinit var commentsRecyclerView: RecyclerView
 
@@ -398,8 +401,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         context = this
         binding = ActivityPostDetails2Binding.inflate(layoutInflater)
         setContentView(binding.root)
-//        val bottomSheet1Binding = BottomSheet1Binding.inflate(layoutInflater)
-//        binding.root.addView(BottomSheet1Binding.root)
+
         permissionGranted = ActivityCompat.checkSelfPermission(
             this, permissions[0]
         ) == PackageManager.PERMISSION_GRANTED
@@ -423,7 +425,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             ActivityCompat.requestPermissions(this, permissions, IMAGES_REQUEST_CODE)
         }
 
-//        setContentView(R.layout.activity_post_details2)
+
         notificationCountViewModel = ViewModelProvider(this)[NotificationCountViewModel::class.java]
 
         commentViewModel = ViewModelProvider(this)[CommentsViewModel::class.java]
@@ -472,7 +474,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             Log.d("PostDetailsActivity2", "Comments are not displayed.")
         }
         if (postId != null) {
-//            fetchPostDetails(postId)
+
             Log.d("ApiService", "Received commentId $commentId")
             if (commentId != null) {
                 getPageComment(commentId)
@@ -513,7 +515,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             showLogoutConfirmationDialog()
             true
         }
-//        shortSeekBar.progress = 0
+
         shortSeekBar = binding.shortsSeekBar
         playerView = binding.videoView
         shortPlayer = ExoPlayer.Builder(this).build()
@@ -526,8 +528,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         shortsDownloadImageView = binding.shortsDownloadImageView
 
         val shortsViewPager = binding.shortsViewPager
-//        toggleMotionLayoutVisibility()
-//        downloadProgressBarLayout = binding.downloadProgressBarLayout
+
         shortsDownloadImageView = binding.shortsDownloadImageView
         shortsDownloadProgressBar = binding.shortsDownloadProgressBar
         val playerView = binding.videoView
@@ -555,10 +556,10 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     val data = result.data
                     // Process the selected image data
                     val audioPath = data?.getStringExtra("audio_url")
-//                    val aUri = data?.getStringExtra("aUri")
+
                     val uriString = data?.getStringExtra("aUri")
                     val aUri = Uri.parse(uriString)
-//                    val vUri = Uri.parse(uriString)
+
                     if (audioPath != null) {
                         Log.d("AudioPicker", "File path: $audioPath")
                         Log.d("AudioPicker", "File path: $isReply")
@@ -571,7 +572,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                         Log.d("AudioPicker", "reverseDurationString: $reverseDurationString")
                         val file = File(audioPath)
                         if (isReply) {
-//                                    uploadReplyVideoComment(videoPath, durationString, true)
+
                             uploadReplyVnComment(
                                 audioPath,
                                 fileName,
@@ -580,7 +581,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                 true
                             )
                         } else {
-//                                   uploadVideoComment(videoPath, durationString, true)
+
                             uploadVnComment(
                                 audioPath,
                                 fileName,
@@ -589,8 +590,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                 true
                             )
                         }
-//                        val inputFilePath = "path_to_your_input_audio_file"
-//                        val outputFilePath = "path_to_your_output_compressed_audio_file"
+
                         val outputFileName =
                             "compressed_audio_${System.currentTimeMillis()}.mp3" // Example output file name
                         val outputFilePath = File(cacheDir, outputFileName)
@@ -600,7 +600,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
                             val isCompressionSuccessful =
                                 compressor.compress(audioPath, outputFilePath.absolutePath)
 
-//                            val compressedFile = compressAudio(audioPath, outputFilePath.absolutePath)
                             if (isCompressionSuccessful) {
                                 Log.d("AudioPicker", "AudioPicker: Compression successful ")
 
@@ -613,7 +612,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                 )
 
                                 val fileSizeInGB = fileSizeInMB / 1024 // Conversion from MB to GB
-//                            Log.d("VideoPicker", "File size: $fileSizeInGB GB")
+
                                 withContext(Dispatchers.Main) {
                                     if (!isReply) {
                                         uploadVnComment(
@@ -693,7 +692,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     // Process the selected image data
                     val docPath = data?.getStringExtra("doc_url")
 
-//                    Log.d("Document Results", "Picked Document : $docPath")
 
                     if (docPath != null) {
 
@@ -717,7 +715,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
                             Log.d("Document File", "Document File Exists : $file")
                             val absolutePath = file.absolutePath
-//                            Log.d(TAG, "image absolute path $absolutePath")
+
                             val fileUri = Uri.fromFile(file)
                             val fileUrl = fileUri.toString()
                         }
@@ -748,7 +746,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                             Log.d("VideoPicker", "File size: $fileSizeInMB MB")
 
                             val fileSizeInGB = fileSizeInMB / 1024 // Conversion from MB to GB
-//                            Log.d("VideoPicker", "File size: $fileSizeInGB GB")
+
 
                             if (fileSizeInGB.toInt() == 1) {
                                 showToast(this, "File size too large")
@@ -776,7 +774,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                         } else {
                             Log.d("VideoPicker", "File does not exists ")
                         }
-//                        toCompressUris
+
                     } else {
                         Log.d("PhotoPicker", "No media selected")
                     }
@@ -821,7 +819,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             this, onBackPressedCallback
         )
         initializeCommentsBottomSheet()
-//
+
         shortSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 // Update playback position when user drags the SeekBar
@@ -845,7 +843,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         binding.VNLinearLayout.setOnClickListener {
             Log.d(TAG, "onCreate: vn linear layout touched")
         }
-//        audioRecorderClickListeners()
+
         if (binding.motionLayout.visibility == View.GONE) {
             binding.VNLayout.visibility = View.GONE
         } else {
@@ -857,12 +855,12 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 isPaused -> resumeRecording()
                 isRecording -> pauseRecording()
                 else -> Log.d("recordVN", "onCreate: else in vn record btn on click")
-//                else->startRecording()
+
             }
         }
         binding.deleteVN.setOnClickListener {
             if (mediaRecorder != null) {
-//                timer.stop()
+
                 Log.d(TAG, "onCreate: media recorder not null")
             } else {
                 Log.d(TAG, "onCreate: media recorder null")
@@ -894,7 +892,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     delay(500)
                     stopRecording()
                 }
-//                stopRecording() // Stop recording after mixVN finishes executing or immediately if wasPaused is true
+
             }
         }
     }
@@ -907,7 +905,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             Log.d("stopRecording", "vn deleted")
             stopRecording()
 
-//            onTimerTick(0.toString())
+
         }
     }
 
@@ -920,7 +918,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         exoPlayer.let { player ->
             audioSeekBar.max = maxDuration.toInt()
             audioSeekBar.progress = position
-//            currentHandler?.postDelayed(this ,1000)
+
             if (!isUserSeeking) {
                 val currentPosition = player.currentPosition.toInt()
                 audioSeekBar.progress = currentPosition
@@ -935,7 +933,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         shortPlayer.let { player ->
             shortSeekBar.max = maxDuration.toInt()
             shortSeekBar.progress = position
-//            currentHandler?.postDelayed(this ,1000)
+
             if (!isUserSeeking) {
                 val currentPosition = player.currentPosition.toInt()
                 shortSeekBar.progress = currentPosition
@@ -986,7 +984,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
     @RequiresApi(Build.VERSION_CODES.R)
     private fun pauseRecording() {
         val TAG = "pauseRecording"
-//        firstTimeSendVn = true
+
         if (isRecording && !isPaused) {
 
             try {
@@ -1072,7 +1070,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         }
 
         video?.setOnClickListener {
-//            val intent = Intent(this@ChatActivity, DisplayVideosActivity::class.java)
+
             val intent = Intent(this@PostDetailsActivity2, VideosActivity::class.java)
             dialog.dismiss()
             videoPickerLauncher.launch(intent)
@@ -1092,7 +1090,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         }
         camera?.setOnClickListener {
             val intent = Intent(this@PostDetailsActivity2, CameraActivity::class.java)
-//            startActivity(intent)
+
             cameraLauncher.launch(intent)
             dialog.dismiss()
         }
@@ -1177,11 +1175,8 @@ class PostDetailsActivity2 : AppCompatActivity(),
         )
 
         Log.d("uploadReplyImageComment", "uploadReplyImageComment: handle reply to a comment")
-//        isReply = false
 
-//        val newCommentReplyEntity = CommentsFilesEntity(commentId, vnToUpload, vnToUpload, isReply = 1)
-
-        //if it clash on upload un comment the line below//
+      //if it clash on upload un comment the line below//
         if (!placeholder) {
             val newCommentReplyEntity =
                 CommentsFilesEntity(
@@ -1213,7 +1208,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             commentId = commentId,
             updatedAt = mongoDbTimeStamp,
             images = mutableListOf(imageFile),
-//            audios = mutableListOf(vnFile),
+
             contentType = "image"
         )
 
@@ -1229,7 +1224,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -1352,16 +1347,12 @@ class PostDetailsActivity2 : AppCompatActivity(),
             }
 
             Log.d("uploadImageComment", "uploadImageComment: comment $comment")
-//        adapter.submitItems(listOf(comment) )
-//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
-//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
-
             recordedAudioFiles.clear()
             if (!update) {
                 listOfReplies.add(comment)
 
                 adapter!!.submitItem(comment, adapter!!.itemCount)
-//            addCommentVN()
+
                 shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
 
 
@@ -1452,7 +1443,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     Log.d("AudioPicker", "File name: $fileName")
                     Log.d("AudioPicker", "durationString: $durationString")
                     uploadVnComment(outputVnFile, fileName, durationString, "vnAudio")
-//                    firstTimeSendVn = false
+
                 } else {
                     val durationString = getFormattedDuration(outputFile)
                     val fileName = getFileNameFromLocalPath(outputFile)
@@ -1472,7 +1463,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     Log.d("AudioPicker", "durationString: $durationString")
                     Log.d("AudioPicker", "reverseDurationString: $reverseDurationString")
                     uploadReplyVnComment(outputVnFile, fileName, durationString, "vnAudio")
-//                    firstTimeSendVn = false
+
                 } else {
                     val durationString = getFormattedDuration(outputFile)
                     val fileName = getFileNameFromLocalPath(outputFile)
@@ -1494,8 +1485,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "application/*"
-//            type = "*/*"
-//            type = "images/*" // Set MIME type to select all types of documents
+
         }
         getDocumentContent.launch(intent)
     }
@@ -1532,9 +1522,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         Log.d(TAG, "onSubmit: handle reply to a comment")
         isReply = false
 
-//        val newCommentReplyEntity = CommentsFilesEntity(commentId, vnToUpload, vnToUpload, isReply = 1)
-
-        //if it clash on upload un comment the line below//
+       //if it clash on upload un comment the line below//
         if (!placeholder) {
             val newCommentReplyEntity =
                 CommentsFilesEntity(
@@ -1572,7 +1560,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             __v = data!!.__v,
             _id = data!!._id,
             author = data!!.author,
-//            content = data!!.author?.account?.username!!,
+
             content = data!!.content,
             createdAt = data!!.createdAt,
             isLiked = data!!.isLiked,
@@ -1580,7 +1568,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -1704,7 +1692,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             if (!update) {
                 listOfReplies.add(comment)
                 adapter!!.submitItem(comment, adapter!!.itemCount)
-//            addCommentVN()
+
                 shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
                 if (shortToComment != null) {
                     Log.d(TAG, "uploadVnComment: count before ${shortToComment!!.comments}")
@@ -1834,9 +1822,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             Log.d("TAG", "deleteRecording: recorded files size ${recordedAudioFiles.size}")
             deleteVn()
 
-//            if()
-            // Add any UI changes or notifications indicating recording has stopped
-//            showSaveConfirmationDialog(outputFile)
+
         } catch (e: Exception) {
             e.printStackTrace()
             // Handle exceptions as needed

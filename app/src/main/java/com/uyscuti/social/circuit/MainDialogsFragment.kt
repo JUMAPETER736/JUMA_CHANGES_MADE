@@ -20,7 +20,7 @@ abstract class MainDialogsFragment : Fragment(), DialogsListAdapter.OnDialogClic
     DialogsListAdapter.OnDialogLongClickListener<Dialog> {
     protected lateinit var imageLoader: ImageLoader
     protected lateinit var dialogsAdapter: DialogsListAdapter<Dialog>
-//    private lateinit var dialogRepository: DialogRepository
+
     var isGroup = false
 
     private var selectedDialogs = 1
@@ -29,11 +29,10 @@ abstract class MainDialogsFragment : Fragment(), DialogsListAdapter.OnDialogClic
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        dialogRepository = DialogRepository(ChatDatabase.getInstance(requireContext()).dialogDao())
 
         imageLoader = ImageLoader { imageView, url, _ ->
             if (url!!.isNotEmpty()) {
-//                Picasso.get().load(url).into(imageView)
+
 
                 var radius = 0f
 
@@ -57,7 +56,7 @@ abstract class MainDialogsFragment : Fragment(), DialogsListAdapter.OnDialogClic
                         ) {
                             val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
 
-//                            drawable.cornerRadius = radius
+
                             drawable.isCircular = true
 
                             val marginDrawable = InsetDrawable(drawable, 0, 0, 10, 0)
@@ -65,9 +64,7 @@ abstract class MainDialogsFragment : Fragment(), DialogsListAdapter.OnDialogClic
                         }
                     })
             } else {
-//                Log.d("Dialogs", "No Images Found For Dialog")
 
-//                val holder = if (di)
 
                 Glide.with(this)
                     .asBitmap()
@@ -83,7 +80,6 @@ abstract class MainDialogsFragment : Fragment(), DialogsListAdapter.OnDialogClic
                         ) {
                             val drawable = RoundedBitmapDrawableFactory.create(resources, resource)
 
-//                            drawable.cornerRadius = radius
                             drawable.isCircular = true
 
                             val marginDrawable = InsetDrawable(drawable, 0, 0, 10, 0)
