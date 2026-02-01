@@ -5605,7 +5605,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         handler.postDelayed(object : Runnable {
             override fun run() {
                 try {
-//                    updating shortseekbar is added here
+                  //  updating shortseekbar is added here
                     if (shortPlayer.isPlaying) {
                         val currentPosition = shortPlayer.currentPosition.toFloat()
                         Log.d("ShortSeekBar", "Position $currentPosition")
@@ -5634,7 +5634,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
     fun commentAudioSeekBar(event: CommentAudioPlayerHandler) {
         val TAG = "commentAudioSeekBar"
         audioSeekBar = event.audioSeekBar
-//        event.audioWave.setSampleFrom(event.audioPath)
+
         audioDurationTVCount = event.leftDuration
         seekPosition = event.position
         maxDuration = event.maxDuration
@@ -5645,7 +5645,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
     fun audioWave(event: AudioPlayerHandler) {
         val TAG = "audioWave"
         audioFormWave = event.audioWave
-//        event.audioWave.setSampleFrom(event.audioPath)
+
         audioDurationTVCount = event.leftDuration
         wavePosition = event.position
         Log.d(TAG, "audioWave: position $wavePosition ")
@@ -5656,7 +5656,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         override fun onPlaybackStateChanged(state: Int) {
             when (state) {
                 ExoPlayer.STATE_ENDED -> {
-//                     The video playback ended. Move to the next video if available.
+                    // The video playback ended. Move to the next video if available.
                     Log.d(
                         "playbackStateListener",
                         "commentAudioStartPlaying: comment audio completed"
@@ -5672,13 +5672,12 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
                 Player.STATE_READY -> {
                     Log.d("TAG", "STATE_READY_VIDEO")
-//                    have added the code that initialises shortseekbar
+                  //  have added the code that initialises shortseekbar
                     shortPlayer.let {
                         initializeShortSeekBar(it)
                     }
                     Log.d("TAG", "STATE_READY_VIDEO")
-//                    startUpdatingShortSeekBar()
-//                    updateShortSeekBar()
+
                 }
 
                 else -> {
@@ -5690,22 +5689,21 @@ class PostDetailsActivity2 : AppCompatActivity(),
         }
 
         override fun onIsPlayingChanged(isVideoPlaying: Boolean) {
-//        super.onIsPlayingChanged(isPlaying)
+
 
         }
 
         override fun onEvents(player: Player, events: Player.Events) {
-//        super.onEvents(player, events)
+
             if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
                 events.contains(Player.EVENT_IS_PLAYING_CHANGED)
             ) {
 
-//                progressBar.visibility = View.GONE
             }
 
             if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)
             ) {
-//                player.seekTo(5000L)
+
             }
         }
     }
@@ -5715,12 +5713,12 @@ class PostDetailsActivity2 : AppCompatActivity(),
         override fun onPlaybackStateChanged(state: Int) {
             when (state) {
                 ExoPlayer.STATE_ENDED -> {
-//                     The video playback ended. Move to the next video if available.
+                   //  The video playback ended. Move to the next video if available.
                     Log.d(
                         "playbackStateListener",
                         "commentAudioStartPlaying: comment audio completed"
                     )
-//                    audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
+
                     if (isVnAudioToPlay) {
                         if (::audioDurationTVCount.isInitialized) {
                             audioDurationTVCount.text = "00:00"
@@ -5752,8 +5750,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
                     adapter?.refreshMainComment(position)
                     adapter?.changePlayingStatus()
-//                    adapter?.resetWaveForm()
-//                    adapter?.notifyDataSetChanged()
+
                     if (isVnAudioToPlay) {
                         stopWaveRunnable()
                     }
@@ -5776,7 +5773,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     }
                     Log.d("TAG", "STATE_READY")
                     startUpdatingSeekBar()
-//                    shortsAdapter.setSeekBarProgress(exoPlayer!!.currentPosition.toInt())
 
                 }
 
@@ -5789,21 +5785,20 @@ class PostDetailsActivity2 : AppCompatActivity(),
         }
 
         override fun onIsPlayingChanged(isVideoPlaying: Boolean) {
-//        super.onIsPlayingChanged(isPlaying)
 
         }
 
         override fun onEvents(player: Player, events: Player.Events) {
-//        super.onEvents(player, events)
+
             if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
                 events.contains(Player.EVENT_IS_PLAYING_CHANGED)
             ) {
-//                progressBar.visibility = View.GONE
+
             }
 
             if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)
             ) {
-//                player.seekTo(5000L)
+
             }
         }
     }
@@ -5816,24 +5811,9 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 // Update seek bar based on current playback position
                 exoPlayer.let { player ->
                     // Update seek bar based on current playback position
-                    //                        shortsAdapter.setSeekBarProgress(20)
+
                 }
                 updateSeekBar()
-                delay(50) // Update seek bar every second (adjust as needed)
-            }
-        }
-    }
-
-    private fun startUpdatingShortSeekBar() {
-        updateSeekBarJob = CoroutineScope(Dispatchers.Main).launch {
-            while (true) {
-
-                // Update seek bar based on current playback position
-                shortPlayer.let { player ->
-                    // Update seek bar based on current playback position
-//                                    shortsAdapter.setSeekBarProgress(20)
-                }
-                updateShortSeekBar()
                 delay(50) // Update seek bar every second (adjust as needed)
             }
         }
@@ -5907,7 +5887,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     fileType = data.fileType,
                     numberOfPages = data.numberOfPages
 
-//                    pageNumber =
                 )
 
 
@@ -5916,7 +5895,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     "onViewRepliesClick: has next page ${commentReplies.hasNextPage} page number ${commentReplies.pageNumber}"
                 )
                 val updatedComment = commentWithReplies.copy(
-//                        replies = commentReplies.comments,
+
                     replies = data.replies.toMutableList().apply {
                         // Assuming newReply is the new reply you want to add
                         addAll(commentReplies.comments)
@@ -5928,7 +5907,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
                 withContext(Dispatchers.Main) {
                     adapter?.updateItem(position, updatedComment)
-//                commentRepliesTV.text = "Hide replies"
+
                     hideCommentReplies.visibility = View.VISIBLE
                 }
             }
@@ -5950,7 +5929,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         val TAG = "likeUnLikeComment"
 
         Log.d("CommentsRecyclerViewAdapter", "likeUnLikeComment: data.isLiked ${data.isLiked}")
-//        var updatedComment : com.uyscuti.social.circuit.data.model.Comment? = null
+
         val updatedComment = if (data.isLiked) {
             data.copy(
                 likes = data.likes + 1,
@@ -5965,7 +5944,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
         if (isInternetAvailable(this)) {
             Log.d(TAG, "likeUnLikeComment: internet is available")
-//            Log.d(TAG, "likeUnLikeComment: internet is available")
+
             lifecycleScope.launch {
                 val result = commentLikeUnLike(data._id)
                 Log.d(TAG, "likeUnLikeComment server result: $result")
@@ -5985,7 +5964,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         mainCommentPosition: Int,
         mainComment: Comment
     ) {
-        TODO("Not yet implemented")
+
     }
 
 
@@ -6005,7 +5984,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
         imm.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun generateMongoDBTimestamp(): String {
         val timestamp = OffsetDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
@@ -6062,7 +6040,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         val TAG = "updateAdapter"
         Log.d("updateItem", "updated main item images" + data.images)
         Log.d("UpdateItem", "reply count visible ${data.replyCountVisible}")
-//        isReply = false
+
 
         adapter?.updateItem(position, data)
     }
@@ -6083,7 +6061,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         } catch (e: HttpException) {
             Log.d(TAG, "Http Exception ${e.message}")
             withContext(Dispatchers.Main) {
-//                showToast(this@MainActivity, "Check Internet Connection")
+
             }
             return false
         } catch (e: IOException) {
@@ -6173,7 +6151,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             binding.input.inputEditText.setText("")
             isReply = false
             commentsViewModel.resetLiveData()
-//          hideKeyboard()
+
             hideKeyboard(binding.input.inputEditText)
             deleteRecording()
             stopPlaying()
@@ -6249,22 +6227,18 @@ class PostDetailsActivity2 : AppCompatActivity(),
     ) {
         isReplyVnPlaying = isReply
         isVnAudioToPlay = isVnAudio
-//        Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
+
         Log.d(
             "toggleAudioPlayer",
             "progress received from adapter $progress is reply $isReply    is seeking $isSeeking is vn audio $isVnAudio"
         )
-//
+
         if (currentCommentAudioPath == audioToPlayPath) {
-//            Log.d(TAG, "toggleAudioPlayer: currentCommentAudioPosition == position")
             if (seekTo) {
                 Log.d("SeekTo", "Seek to $progress")
                 EventBus.getDefault().post(PauseShort(true))
                 isDurationOnPause = false
-//                Log.d(
-//                    "isDurationOnPause",
-//                    " in play toggle audio player isDurationOnPause is $isDurationOnPause"
-//                )
+
                 exoPlayer.seekTo(progress.toLong())
                 exoPlayer.play()
             } else if (isSeeking) {
@@ -6275,7 +6249,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     "toggleAudioPlayer",
                     "toggleAudioPlayer: current player is playing then pause"
                 )
-//                audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
+
 
                 if (isVnAudio) {
                     Log.d("waveProgress", "toggleAudioPlayer: $waveProgress")
@@ -6293,28 +6267,20 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 isDurationOnPause = true
 
 
-//                Log.d(
-//                    "toggleAudioPlayer",
-//                    " in pause toggle audio player isDurationOnPause is $isDurationOnPause"
-//                )
-
             } else {
                 Log.d(
                     "toggleAudioPlayer",
                     "toggleAudioPlayer: current player is not playing then play"
                 )
-//                audioPlayPauseBtn.setImageResource(R.drawable.baseline_pause_black)
+
                 EventBus.getDefault().post(PauseShort(true))
                 isDurationOnPause = false
-//                Log.d(
-//                    "isDurationOnPause",
-//                    " in play toggle audio player isDurationOnPause is $isDurationOnPause"
-//                )
+
                 exoPlayer.seekTo(progress.toLong())
                 exoPlayer.play()
             }
         } else {
-//            Log.d(TAG, "toggleAudioPlayer: currentCommentAudioPosition != position")
+
 
             // If a new item is clicked, stop the currently playing item (if any)
             if (exoPlayer.isPlaying == true) {
@@ -6324,12 +6290,10 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
             if (isReply) {
                 Log.d("IsReply", "is reply position $position")
-//                adapter?.refreshMainComment(position)
+
             }
             // Start playing the new audio
-//            if(!isReply) {
-//                commentAudioStartPlaying(audioToPlayPath, audioPlayPauseBtn)
-//            }
+
             commentAudioStartPlaying(audioToPlayPath, audioPlayPauseBtn, progress, position)
             currentCommentAudioPosition = position
             currentCommentAudioPath = audioToPlayPath
@@ -6353,11 +6317,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
         if (isVnAudioToPlay) {
             startWaveRunnable()
         }
-//        Log.d(
-//            "isDurationOnPause",
-//            " in comment audio start isDurationOnPause is $isDurationOnPause"
-//        )
-//        Log.d("TAG", "commentAudioStartPlaying: start playing and change to pause icon")
 
         audioPlayPauseBtn.setImageResource(R.drawable.baseline_pause_black)
 
@@ -6365,7 +6324,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             val file = File(vnAudio)
             if (file.exists()) {
                 val fileUrl = Uri.fromFile(file)
-//                val fileUrl = "file://$vnAudio"
+
                 exoPlayer = ExoPlayer.Builder(this)
                     .build()
                 Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: Local file $fileUrl")
