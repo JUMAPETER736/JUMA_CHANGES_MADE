@@ -16,9 +16,7 @@ import com.uyscuti.sharedmodule.model.LoadMoreShorts
 import com.uyscuti.sharedmodule.model.ShortsCacheEvent
 import com.uyscuti.sharedmodule.model.ShortsViewModel
 import com.uyscuti.sharedmodule.service.VideoPreLoadingService
-import com.uyscuti.social.circuit.RegisterActivity
 import com.uyscuti.sharedmodule.utils.Constants
-import com.uyscuti.sharedmodule.utils.removeDuplicateFollowers
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.core.common.data.room.database.ChatDatabase
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
@@ -37,8 +35,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
-import retrofit2.HttpException
-import java.io.IOException
 import javax.inject.Inject
 import kotlin.properties.Delegates
 
@@ -74,8 +70,6 @@ class SplashScreen : AppCompatActivity() {
     private var chatIdList = ArrayList<String>()
     private var groupIdList = ArrayList<String>()
     private var shortsList = ArrayList<String>()
-
-//    private lateinit var shortsViewModel: ShortsViewModel
 
     private val shortsViewModel: ShortsViewModel by viewModels()
     private val followShortsViewModel: FollowListItemViewModel by viewModels()
@@ -115,20 +109,11 @@ class SplashScreen : AppCompatActivity() {
 
         val database = ChatDatabase.Companion.getInstance(applicationContext)
         val personDao = database.shortsDao()
-//        val repository = ShortsRepository(personDao)
-//        shortsViewModel = ViewModelProvider(this)[ShortsViewModel::class.java]
 
-//        shortsViewModel.allShorts.observe(this, Observer { persons ->
-//            // Handle the updated list of persons
-//
-//        })
 
         Log.d(TAG, "onCreate token: ${LocalStorage.Companion.getInstance(this).getToken()}")
         lifecycleScope.launch {
-//            getAllShort()
-//            getAllShort2()
-//            getAllShort3()
-//            loadMoreShorts()
+
 
         }
     }
@@ -189,149 +174,6 @@ class SplashScreen : AppCompatActivity() {
             )
         }
     }
-
-    private suspend fun getAllShort3(){
-        Log.d("AllShorts3", "getAllShort2: In Get shorts 2")
-
-        try {
-            Log.d(TAG, "getAllShort3: In Get shorts 2")
-
-            val response = retrofitInstance.apiService.getAllPosts3()
-
-            Log.d("allShorts3", "getAllShort3: $response")
-            Log.d("allShorts3", "getAllShort3: ${response.body()}")
-            if (response.isSuccessful) {
-                val responseBody = response.body()
-                Log.d("AllShorts3", "Shorts List ${responseBody?.data?.posts?.posts}")
-                Log.d("AllShorts3", "Shorts List ${responseBody?.data?.followList}")
-
-
-//                responseBody.data.posts.
-//                val hasMoreShorts = responseBody!!.data.data.hasNextPage
-//                Log.d("AllShorts2", "Has more shorts: $hasMoreShorts")
-
-//                if(hasMoreShorts) {
-////                    loadMoreShorts()
-//                    EventBus.getDefault().post(LoadMoreShorts(true))
-//                }
-                val shortsEntity = responseBody!!.data.posts.posts.let { serverResponseToEntity(it) }
-                val followListItem = responseBody.data.followList.let { serverResponseToFollowEntity(it) }
-//                val followListItem = responseBody.data.followList
-
-// Now, insert yourEntity into the Room database
-                lifecycleScope.launch(Dispatchers.IO) {
-                    shortsViewModel.addAllShorts(shortsEntity)
-                    val uniqueFollowList = removeDuplicateFollowers(followListItem)
-                    Log.d(TAG, "getAllShort3: Inserted uniqueFollowList $uniqueFollowList")
-                    followShortsViewModel.insertFollowListItems(uniqueFollowList)
-
-//                    followShortsViewModel.insertFollowListItems(followListItem)
-//                    shortsViewModel.addAllFollowListShorts(followListItem)
-
-                    for (entity in shortsEntity) {
-                        // Access the list of images for each entity
-                        val images = entity.images
-
-                        // Iterate through the list of images
-                        for (image in images) {
-                            // Access individual image properties or perform any desired actions
-                            val imageUrl = image.url
-//                                Log.d(TAG, "imageUrl - $imageUrl")
-                            shortsList.add(imageUrl)
-//                                EventBus.getDefault().post(ShortsCacheEvent(shortsList))
-
-                            // Do something with the imageUrl...
-                        }
-                    }
-                    startPreLoadingService()
-                }
-//                Log.d(TAG, "Handle the updated list of persons")
-//                shortsViewModel.addAllShorts(personList)
-
-            } else {
-                Log.d("AllShorts3", "Error: ${response.message()}")
-                showToast(response.message())
-            }
-
-        } catch (e: HttpException) {
-            Log.d("AllShorts3", "Http Exception ${e.message}")
-            Toast.makeText(this, "Failed to connect try again...", Toast.LENGTH_SHORT).show()
-        } catch (e: IOException) {
-            Log.d("AllShorts3", "IOException ${e.message}")
-                Toast.makeText(
-                    this@SplashScreen,
-                    "Failed to connect try again...",
-                    Toast.LENGTH_SHORT
-                ).show()
-        }
-    }
-
-//    private suspend fun loadMoreShorts(){
-//        Log.d("AllShorts", "Loading more shorts")
-//        val nextPage = 2
-//        try {
-//            Log.d("AllShorts", "Loading more shorts in try block")
-//
-//            val response = retrofitInstance.apiService.getShorts(nextPage.toString())
-//
-//            Log.d("All shorts", "response page 2 message: ${response.message()}")
-//            if (response.isSuccessful) {
-//                val responseBody = response.body()
-//                Log.d("AllShorts", "Shorts List in page 2 ${responseBody?.data}")
-//
-//
-//                val shortsEntity = responseBody?.data?.posts?.let { serverResponseToEntity(it) }
-//
-//// Now, insert yourEntity into the Room database
-//                if (shortsEntity != null) {
-//
-//
-//                    lifecycleScope.launch(Dispatchers.IO) {
-//                        shortsViewModel.addAllShorts(shortsEntity)
-//
-//                        for (entity in shortsEntity) {
-//                            // Access the list of images for each entity
-//                            val images = entity.images
-//
-//                            // Iterate through the list of images
-//                            for (image in images) {
-//                                // Access individual image properties or perform any desired actions
-//                                val imageUrl = image.url
-////                                Log.d(SHORTS, "imageUrl - $imageUrl")
-//                                shortsList.add(imageUrl)
-////                                EventBus.getDefault().post(ShortsCacheEvent(shortsList))
-//
-//                                // Do something with the imageUrl...
-//                            }
-//                        }
-////                        viewPager.offscreenPageLimit = 21
-//                        startPreLoadingService()
-//                        withContext(Dispatchers.Main) {
-////                            shortsAdapter.addData(shortsEntity)
-//                        }
-//
-//                    }
-////
-//                    Log.d(SHORTS, "Data from page 2 added to local database - $shortsEntity")
-//                }else {
-//                    Log.d(SHORTS, "failed to add shorts to local database")
-//                }
-////                Log.d(SHORTS, "Handle the updated list of persons")
-////                shortsViewModel.addAllShorts(personList)
-//
-//            } else {
-//                Log.d("AllShorts", "Error: ${response.message()}")
-//                showToast(response.message())
-//            }
-//
-//        } catch (e: HttpException) {
-//            Log.d("AllShorts", "Http Exception ${e.message}")
-//            showToast("Failed to connect try again...")
-//        } catch (e: IOException) {
-//            Log.d("AllShorts", "IOException ${e.message}")
-//            showToast("Failed to connect try again...")
-//        }
-//    }
 
 
     @OptIn(UnstableApi::class)

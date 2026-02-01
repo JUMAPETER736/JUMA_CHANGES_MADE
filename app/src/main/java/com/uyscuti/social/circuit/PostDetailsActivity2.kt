@@ -31,7 +31,6 @@ import android.view.View
 import android.view.animation.AnimationUtils
 import android.view.inputmethod.InputMethodManager
 import android.webkit.MimeTypeMap
-import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -6328,7 +6327,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 exoPlayer = ExoPlayer.Builder(this)
                     .build()
                 Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: Local file $fileUrl")
-//                val dataSourceFactory = DefaultDataSourceFactory(this, Util.getUserAgent(this, "yourApplicationName"))
 
                 val localFileUri =
                     Uri.parse(fileUrl.toString()) // Replace with the path to your local file
@@ -6373,9 +6371,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     playbackState: Int
                 ) {
                     if (playbackState == Player.STATE_READY && exoPlayer.duration != C.TIME_UNSET) {
-//                                    shortsSeekBar.max = exoPlayer.duration.toInt()
-//                                    shortsAdapter.setSeekBarMax(exoPlayer!!.currentPosition.toInt())
-//                    shortSeekBar.max = exoPlayer.duration.toInt()
+//
                     }
                 }
 
@@ -6389,10 +6385,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     ).show()
                 }
 //
-//                @Deprecated("Deprecated in Java")
-//                override fun onPositionDiscontinuity(reason: Int) {
-//                    updateSeekBar()
-//                }
+//
             })
             shortPlayer.addListener(object : Player.Listener {
                 @Deprecated("Deprecated in Java")
@@ -6406,16 +6399,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                         shortSeekBar.max = exoPlayer.duration.toInt()
                     }
                 }
-
-//                override fun onPlayerError(error: PlaybackException) {
-//                    super.onPlayerError(error)
-//                    error.printStackTrace()
-//                    Toast.makeText(
-//                        this@PostDetailsActivity2,
-//                        "Can't play this audio",
-//                        Toast.LENGTH_SHORT
-//                    ).show()
-//                }
+//
 
                 @Deprecated("Deprecated in Java")
                 override fun onPositionDiscontinuity(reason: Int) {
@@ -6424,18 +6408,16 @@ class PostDetailsActivity2 : AppCompatActivity(),
             })
 
             if (isReplyVnPlaying) {
-//                Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
+//
                 val handler = Handler()
 
                 handler.postDelayed({
                     adapter?.refreshMainComment(position)
                 }, 200)
             } else {
-//                Log.d("isReplyVnPlaying", "isReplyVnPlaying $isReplyVnPlaying")
-            }
-//            if (isVnAudioToPlay) {
 //
-//            }
+            }
+//
 
         } catch (e: Exception) {
             Log.d("commentAudioStartPlaying", "commentAudioStartPlaying: error: ${e.message}")
@@ -6455,9 +6437,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
         audioPlayPauseBtn.setImageResource(R.drawable.play_svgrepo_com)
         adapter!!.updatePlaybackButton(currentCommentAudioPosition, isReply, audioPlayPauseBtn)
-//        val replyAdapter = ReplyCommentAdapter()
-//        ReplyCommentAdapter.update
-//        player?.pause()
+//
         exoPlayer.pause()
     }
 
@@ -6542,7 +6522,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         }
     }
 
-    ///ended here
+    //ended here
     @RequiresApi(Build.VERSION_CODES.O)
     private fun selectGifFile() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
@@ -6554,13 +6534,10 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
     override fun onAddGif() {
         Log.d("onAddGif", "onAddGif: Gif Button Clicked")
-//        showInputBoxForGifSelection()
-//        selectGifFile()
-// Create an intent to navigate to ActivityB
-        // Create an intent to navigate to ActivityB
+
         val intent = Intent(this, GifActivity::class.java)
         startActivityForResult(intent, GIF_CODE)
-//        startActivity(intent)
+
 
     }
 
@@ -6574,29 +6551,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
         return fileName
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun showInputBoxForGifSelection() {
-        // Create and show a dialog box for input
-        val inputDialog = AlertDialog.Builder(this)
-        val inputEditText = EditText(this)
-        inputDialog.setTitle("Enter Gif URL")
-        inputDialog.setView(inputEditText)
-        inputDialog.setPositiveButton("OK") { dialog, _ ->
-            val gifUrl = inputEditText.text.toString()
-            if (gifUrl.isNotEmpty()) {
-                // If URL is not empty, proceed with file selection
-                gifUrlType = gifUrl
-                selectGifFile()
-            } else {
-                // Handle case when URL is empty
-                Toast.makeText(this, "Please enter a valid GIF URL", Toast.LENGTH_SHORT).show()
-            }
-            dialog.dismiss()
-        }
-        inputDialog.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
-        inputDialog.show()
-    }
-
     override fun onTimerTick(duration: String) {
         binding.timerTv.text = duration
         if (mediaRecorder == null) {
@@ -6607,10 +6561,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
             binding.waveForm.addAmplitude(amplitude)
         }
     }
-
-//    override fun onNotificationLongClick(count: Int) {
-//        TODO("Not yet implemented")
-//    }
 
 }
 
