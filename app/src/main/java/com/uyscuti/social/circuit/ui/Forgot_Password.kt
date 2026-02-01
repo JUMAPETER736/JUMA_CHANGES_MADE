@@ -44,7 +44,7 @@ class Forgot_Password : AppCompatActivity() {
         USER_ID
     }
 
-    
+
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,6 +80,7 @@ class Forgot_Password : AppCompatActivity() {
         showLoadingDialog()
 
         CoroutineScope(Dispatchers.IO).launch {
+
             try {
                 // Determine input type: email, username, or userId
                 val inputType = determineInputType(input)
@@ -151,49 +152,49 @@ class Forgot_Password : AppCompatActivity() {
                         ).show()
                     }
                 }
-            } catch (e: HttpException) {
-                Log.e(TAG, "HTTP Exception occurred!")
-                Log.e(TAG, "  - Message: ${e.message}")
-                Log.e(TAG, "  - Code: ${e.code()}")
-                Log.e(TAG, "  - Response: ${e.response()}")
+            }
 
-                try {
-                    val errorBody = e.response()?.errorBody()?.string()
-                    Log.e(TAG, "  - Error body: $errorBody")
-                } catch (ex: Exception) {
-                    Log.e(TAG, "  - Could not read error body: ${ex.message}")
+            catch (e: HttpException) {
+            Log.e(TAG, "HTTP Exception occurred!")
+            Log.e(TAG, "  - Message: ${e.message}")
+            Log.e(TAG, "  - Code: ${e.code()}")
+
+            var parsedErrorMessage: String? = null
+            try {
+                val errorBody = e.response()?.errorBody()?.string()
+                Log.e(TAG, "  - Error body: $errorBody")
+
+                // Try to parse error body as JSON
+                errorBody?.let {
+                    val jsonObject = org.json.JSONObject(it)
+                    parsedErrorMessage = jsonObject.optString("message")
+                }
+            }
+
+            catch (ex: Exception) {
+                Log.e(TAG, "  - Could not parse error body: ${ex.message}")
+            }
+
+            withContext(Dispatchers.Main) {
+                dismissLoadingDialog()
+
+                // Handle specific HTTP error codes
+                val errorMessage = parsedErrorMessage ?: when (e.code()) {
+                    404 -> "User not found. Please check your input."
+                    400 -> "Invalid input. Please try again."
+                    422 -> "Cannot process request. Please check your input."
+                    else -> "HTTP error (${e.code()}). Please try again."
                 }
 
-                withContext(Dispatchers.Main) {
-                    dismissLoadingDialog()
+                Toast.makeText(
+                    this@Forgot_Password,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
 
-                    // Handle specific HTTP error codes
-                    val errorMessage = when (e.code()) {
-                        404 -> {
-                            Log.e(TAG, "404 - User not found")
-                            "User not found. Please check your input."
-                        }
-                        400 -> {
-                            Log.e(TAG, "400 - Bad request")
-                            "Invalid input. Please try again."
-                        }
-                        422 -> {
-                            Log.e(TAG, "422 - Unprocessable entity")
-                            "Cannot process request. Please check your input."
-                        }
-                        else -> {
-                            Log.e(TAG, "HTTP error code: ${e.code()}")
-                            "HTTP error (${e.code()}). Please try again."
-                        }
-                    }
-
-                    Toast.makeText(
-                        this@Forgot_Password,
-                        errorMessage,
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            } catch (e: IOException) {
+            catch (e: IOException) {
                 Log.e(TAG, "IO Exception occurred!")
                 Log.e(TAG, "  - Message: ${e.message}")
                 Log.e(TAG, "  - Cause: ${e.cause}")
@@ -207,7 +208,9 @@ class Forgot_Password : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
                 }
-            } catch (e: Exception) {
+            }
+
+            catch (e: Exception) {
                 Log.e(TAG, "Unexpected Exception occurred!")
                 Log.e(TAG, "  - Type: ${e.javaClass.simpleName}")
                 Log.e(TAG, "  - Message: ${e.message}")
