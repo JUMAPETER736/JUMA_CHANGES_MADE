@@ -89,7 +89,7 @@ class CallInfoActivity: AppCompatActivity(){
         val title = "Call Info"
 
         supportActionBar?.title = title
-//        supportActionBar?.subtitle = "me"
+
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.toolbar.setNavigationIcon(R.drawable.baseline_arrow_back_24)

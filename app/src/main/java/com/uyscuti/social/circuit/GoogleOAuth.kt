@@ -40,22 +40,6 @@ class GoogleOAuth : AppCompatActivity() {
 
         gsc = GoogleSignIn.getClient(this, gso!!)
 
-//        val acct = GoogleSignIn.getLastSignedInAccount(this)
-//        if (acct != null) {
-////            navigateToSecondActivity()
-//            // Before sending the ID token to the server
-//            Log.d("TAG", "Sending ID token to server: ${acct.idToken}")
-//            val username = acct.displayName
-//            val email = acct.email
-//            Log.d("TAG", "Account: ${acct.account}")
-//            Log.d("TAG", "ServerAuthCode: ${acct.serverAuthCode}")
-////            authenticateWithServer(acct.idToken)
-////            val registerData = RegisterRequest("google@gmail.com", "password", "username")
-////            registerUserWithServer(registerData)
-//        }
-
-        // Launch Chrome Custom Tab when the user wants to authenticate
-//        launchCustomTabForGoogleAuth()
 
         val google = findViewById<ImageView>(R.id.google_btn)
 
@@ -63,10 +47,7 @@ class GoogleOAuth : AppCompatActivity() {
             signIn()
         }
 
-//        val handler = Handler()
-//        handler.postDelayed({
-//            signIn()
-//        }, 1000)
+
     }
 
     private fun signIn() {
@@ -84,7 +65,7 @@ class GoogleOAuth : AppCompatActivity() {
                 val idToken = account?.idToken
                 Log.d("TAG", "Google Sign-In successful. ID Token: ${account?.idToken}")
                 Log.d("TAG", "account id:  ${account?.id}")
-//                Log.d("TAG", "account id:  $account")
+
                 Log.d("TAG", "Account: ${account.account}")
                 Log.d("TAG", "ServerAuthCode: ${account.serverAuthCode}")
 
@@ -93,10 +74,7 @@ class GoogleOAuth : AppCompatActivity() {
                     authenticateWithServer(idToken)
                 }
 
-//                authenticateWithServer(account?.idToken)
-//                val registerData = RegisterRequest("google@gmail.com", "password", "username")
-//                registerUserWithServer(registerData)`
-//                navigateToSecondActivity()
+
             } catch (e: ApiException) {
                 Log.e("TAG", "Google Sign-In failed. Status code: ${e.statusCode}")
                 Log.e("TAG", "Google Sign-In failed. Resolution: ${e.status.resolution}")
@@ -121,16 +99,7 @@ class GoogleOAuth : AppCompatActivity() {
         }
 
 
-//        if (requestCode == 1000) {
-//            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-//            try {
-//                task.getResult(ApiException::class.java)
-//                navigateToSecondActivity()
-//            } catch (e: ApiException) {
-//                Toast.makeText(applicationContext, "Something went wrong", Toast.LENGTH_SHORT)
-//                    .show()
-//            }
-//        }
+
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -143,9 +112,7 @@ class GoogleOAuth : AppCompatActivity() {
                 // Handle the successful sign-in
 
                 Log.d("GoogleLogin", "Google Login Success")
-//                if (idToken != null) {
-//                    authenticateWithServer(idToken)
-//                }
+
             } catch (e: ApiException) {
                 // Handle sign-in failure
                 Log.e("TAG", "Google Sign-In failed. Error code: ${e.statusCode}")
@@ -187,12 +154,8 @@ class GoogleOAuth : AppCompatActivity() {
 
     private fun navigateToSecondActivity() {
         finish()
-//        val intent = Intent(this@MainActivity, SecondActivity::class.java)
-//        startActivity(intent)
+
     }
 
-//    private fun launchCustomTabForGoogleAuth() {
-//        val customTabsIntent = CustomTabsIntent.Builder().build()
-//        customTabsIntent.launchUrl(this, Uri.parse(AUTH_URL))
-//    }
+
 }

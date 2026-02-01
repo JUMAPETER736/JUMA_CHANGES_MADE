@@ -16,7 +16,7 @@ class First3Fragment : Fragment() {
     private var _binding: FragmentFirst3Binding? = null
 
     // This property is only valid between onCreateView and
-    // onDestroyView.
+
     private val binding get() = _binding!!
 
     override fun onCreateView(
