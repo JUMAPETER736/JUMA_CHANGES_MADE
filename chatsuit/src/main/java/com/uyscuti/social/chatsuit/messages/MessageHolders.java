@@ -595,15 +595,7 @@ public class MessageHolders {
                 return getHolder(parent, outGoingDocConfig, messagesListStyle);
             case VIEW_TYPE_DOCUMENT_MESSAGE:
                 return getHolder(parent, inComingDocConfig, messagesListStyle);
-//            default:
-//                for (ContentTypeConfig typeConfig : customContentTypes) {
-//                    if (Math.abs(typeConfig.type) == Math.abs(viewType)) {
-//                        if (viewType > 0)
-//                            return getHolder(parent, typeConfig.incomingConfig, messagesListStyle);
-//                        else
-//                            return getHolder(parent, typeConfig.outcomingConfig, messagesListStyle);
-//                    }
-//                }
+
         }
         throw new IllegalStateException("Wrong message view type. Please, report this issue on GitHub with full stacktrace in description.");
     }
@@ -644,26 +636,14 @@ public class MessageHolders {
                 if (view != null) {
                     view.setOnClickListener(v ->
 
-                            // Check if the item is selected or not
-//                    if (isSelected) {
-//                        // Deselect the item
-//                        this.selectedItemsCount--;
-//                    } else {
-//                        // Select the item
-//                        this.selectedItemsCount++;
-//                    };
+
                             clickListenersArray.get(key).onMessageViewClick(view, (IMessage) item));
                 }
             }
         } else if (item instanceof Date) {
-//            Log.d("Formatter", "Found A Date Header in Message Holder " + item);
-//            ((DefaultDateHeaderViewHolder) holder).dateHeadersFormatter = dateHeadersFormatter;
+
             ((DefaultDateHeaderViewHolder) holder).dateListener = dateFormatterListener;
 
-//            final long dateString = System.currentTimeMillis();
-//            final Date date = new Date(dateString);
-
-//            ((DefaultDateHeaderViewHolder) holder).dateListener.onFormatDate(date);
         }
 
         holder.onBind(item);
@@ -721,18 +701,18 @@ public class MessageHolders {
 
         if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getImageUrl() != null) {
 
-//            Log.d("Holder Attachments", "IMage Found , Image Path : " + ((MessageContentType.Image) message).getImageUrl());
+
             return VIEW_TYPE_IMAGE_MESSAGE;
         } else if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getAudioUrl() != null) {
-//            Log.d("Holder Attachments", "Audio Found, Path : " + ((MessageContentType.Image) message).getAudioUrl());
+
             return VIEW_TYPE_AUDIO_MESSAGE;
         } else if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getVideoUrl() != null) {
-//            Log.d("Holder Attachments", "Video Found, Path : " + ((MessageContentType.Image) message).getVideoUrl());
+
             return VIEW_TYPE_VIDEO_MESSAGE;
         } else if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getVoiceUrl() != null) {
-//            Log.d("Holder Attachments", "Voice Found, Path : " + ((MessageContentType.Image) message).getVoiceUrl());
+
         } else if (message instanceof MessageContentType.Image && ((MessageContentType.Image) message).getDocUrl() != null) {
-//            Log.d("Holder Attachments", "Document Found, Path : " + ((MessageContentType.Image) message).getDocUrl());
+
             return VIEW_TYPE_DOCUMENT_MESSAGE;
         }
 
