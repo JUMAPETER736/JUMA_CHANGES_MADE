@@ -1841,7 +1841,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             Log.d(TAG, "cleanCache: inside clean cache bus in main activity try download")
 
             DownloadManager.getInstance(applicationContext).cleanCacheDir()
-//            MediaLoader.getInstance(this).
+
         } catch (e: IOException) {
             Toast.makeText(this@PostDetailsActivity2, "Error clean cache", Toast.LENGTH_LONG).show()
         }
@@ -1864,7 +1864,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
     private fun deleteVn() {
         recordedAudioFiles.clear()
-//        if (recordedAudioFiles.isNotEmpty()) {
+
         val isDeleted = deleteFiles(recordedAudioFiles)
         val outputVnFileList = mutableListOf<String>()
         outputVnFileList.add(outputVnFile)
@@ -1892,20 +1892,19 @@ class PostDetailsActivity2 : AppCompatActivity(),
         isAudioVNPaused = true
         isOnRecordDurationOnPause = true
 
-//        progressAnim.pause()
         binding.playVnAudioBtn.setImageResource(R.drawable.play_svgrepo_com)
     }
 
     private fun startPlaying(vnAudio: String) {
         binding.playVnAudioBtn.setImageResource(R.drawable.baseline_pause_white_24)
         EventBus.getDefault().post(PauseShort(true))
-//        player?.reset()
+
         isAudioVNPlaying = true
         vnRecordAudioPlaying = true
         isOnRecordDurationOnPause = false
         startRecordWaveRunnable()
         if (isAudioVNPaused) {
-//            progressAnim.resume()
+
             Log.d("startPlaying", "(isAudioVNPaused)->vnRecordProgress $vnRecordProgress")
 
             if (vnRecordProgress != 0) {
@@ -1916,7 +1915,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             player = MediaPlayer().apply {
                 try {
                     setDataSource(vnAudio)
-//                inputStream.close()
+
                     prepare()
                     Log.d("startPlaying", "vnRecordProgress $vnRecordProgress")
                     if (vnRecordProgress != 0) {
@@ -1953,8 +1952,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
     @SuppressLint("DefaultLocale")
     private fun inflateWave(outputVN: String) {
 
-//        outputVnFile = outputVN
-
         val TAG = "inflateWave"
         Log.d("playVnAudioBtn", "inflateWave: outputvn $outputVN")
 
@@ -1975,17 +1972,16 @@ class PostDetailsActivity2 : AppCompatActivity(),
             binding.thirdTimerTv.text = String.format("%02d:%02d", minutes, seconds)
         } else {
             // File does not exist or error retrieving duration
-//            println("Unable to retrieve audio duration.")
+
             Log.e(TAG, "render: failed to retrieve audio duration")
 
         }
-//        binding.wave.setSampleFrom(audioFile)
+
         CoroutineScope(Dispatchers.IO).launch {
             WaveFormExtractor.getSampleFrom(applicationContext, outputVN) {
 
                 CoroutineScope(Dispatchers.Main).launch {
-//                    binding.wave.progress = 0F
-//                    binding.wave.progress = currentItem.progress
+
 
                     if (locaAudioDuration != null) {
                         binding.wave.maxProgress = locaAudioDuration.toFloat()
@@ -1998,13 +1994,12 @@ class PostDetailsActivity2 : AppCompatActivity(),
                             progress: Float,
                             fromUser: Boolean
                         ) {
-//                                    wave.progress = progress
+
                             binding.secondTimerTv.text = String.format(
                                 "%s",
                                 TrimVideoUtils.stringForTime(progress)
                             )
 
-//                            currentItem.progress = progress
 
                             if (fromUser) {
                                 if (vnRecordAudioPlaying) {
@@ -2019,7 +2014,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
                         override fun onRelease(event: MotionEvent?, progress: Float) {
                             if (outputVN.isNotEmpty()) {
-//                                inflateWave(outputVN)
+
                                 if (vnRecordAudioPlaying) {
                                     Log.d(
                                         "onRelease",
@@ -2040,7 +2035,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 }
             }
         }
-//        binding.wave.setRawData(audioFile.readBytes()) { progressAnim.start() }
+
     }
 
     private val READ_EXTERNAL_STORAGE_REQUEST_CODE = 101 // Any integer value
@@ -2053,8 +2048,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
     private fun addCommentReply() {
         val TAG = "addCommentReply"
         Log.d(TAG, "addCommentReply: inside")
-//        Log.d(TAG, "addCommentReply: comment id $commentId")
-//        commentsReplyViewModel.commentReply(commentId, content)
 
         if (isInternetAvailable(this)) {
 
@@ -2092,17 +2085,13 @@ class PostDetailsActivity2 : AppCompatActivity(),
         val TAG = "addCommentVN"
         Log.d("addCommentReply", "addComment: is reply $isReply")
 
-//        commentsViewModel.commentAudio(postId, "", "audio", filePart, video, image, docs, gif, thumbnail)
-
         if (isInternetAvailable(this)) {
 
             commentFilesViewModel.allCommentFiles.observe(this) {
 
-//                if(it.isNotEmpty()) {
-//
-//                }
+
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -2115,7 +2104,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                 val requestFile =
                                     file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
 
-// Create MultipartBody.Part instance from RequestBody
+                                // Create MultipartBody.Part instance from RequestBody
                                 val filePart =
                                     MultipartBody.Part.createFormData(
                                         "audio",
@@ -2167,29 +2156,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                     isFeedComment = i.isFeedComment
 
                                 )
-//                                { data ->
-//                                    Log.d(
-//                                        "OnSuccess",
-//                                        "OnSuccess: addCommentVN id: ${data._id} parent position ${it[0].parentPosition}"
-//                                    )
-//
-//                                    val commentPosition = adapter?.getPositionByUploadId(i.uploadId)
-//
-//                                    val comment = commentPosition?.let { it1 ->
-//                                        adapter?.getComment(
-//                                            it1
-//                                        )
-//                                    }
-//                                    Log.d(
-//                                        TAG,
-//                                        "addCommentVN: comment get successful  $comment"
-//                                    )
-//                                    if (comment != null) {
-//                                        comment._id = data._id
-//                                    }
-//                                    adapter?.notifyItemChanged(commentPosition!!)
-//                                }
-//                    commentsViewModel.comment(it[0].postId, it[0].content, "text")
+
                                 commentFilesViewModel.viewModelScope.launch {
                                     val isDeleted = commentFilesViewModel.deleteCommentById(i.id)
                                     if (isDeleted) {
