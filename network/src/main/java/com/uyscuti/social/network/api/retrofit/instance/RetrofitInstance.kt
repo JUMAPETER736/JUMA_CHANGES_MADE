@@ -45,7 +45,7 @@ class RetrofitInstance @Inject constructor(private val localStorage: LocalStorag
 
     private val httpClient = OkHttpClient.Builder()
         .cache(cache)
-        .addInterceptor(loggingInterceptor)  // ✅ ADD THIS LINE (optional but recommended)
+        .addInterceptor(loggingInterceptor)  // ADD THIS LINE (optional but recommended)
         .addInterceptor(RetryInterceptor())
         .writeTimeout(200, TimeUnit.SECONDS)
         .readTimeout(200, TimeUnit.SECONDS)

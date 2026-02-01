@@ -29,8 +29,6 @@ class ChatSocketClient @Inject constructor(
     private var token: String = localStorage.getToken()
 
 
-//    private lateinit var messageRepository: MessageRepository
-
     val TAG = "ChatSocketClient"
 
     var chatListener: ChatSocketEvents? = null
@@ -66,12 +64,7 @@ class ChatSocketClient @Inject constructor(
 
         ChatSocketManager.connectSocket()
 
-//        socket.on(Socket.EVENT_CONNECT, onConnect)
-//        socket.on("messageReceived", onMessageReceived)
-    }
 
-    fun unregisterSocketObserver() {
-        ChatSocketManager.socketConnectedLiveData.removeObserver(socketConnectedObserver)
     }
 
 
@@ -159,15 +152,14 @@ class ChatSocketClient @Inject constructor(
             val notificationIntent = Intent(context, PushNotificationService::class.java)
             notificationIntent.putExtra("message", message)
             notificationIntent.putExtra("isGroup", chatId)
-//            ContextCompat.startForegroundService(context, notificationIntent)
+
             context.startService(notificationIntent)
 
         } catch (e: JSONException) {
             // Handle JSON parsing errors here
             e.printStackTrace()
         }
-//        val message = messageData.getString("message")
-//        chatListener?.onNewMessage("There is a New Message")
+
     }
 
     private fun convertIso8601ToUnixTimestamp(iso8601Date: String): Long {

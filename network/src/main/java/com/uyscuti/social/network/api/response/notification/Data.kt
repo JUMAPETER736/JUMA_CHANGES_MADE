@@ -11,6 +11,6 @@ data class Data(
     val read: Boolean,
     val sender: Sender,
     val updatedAt: String,
-//    val colorState: String
+
 
 )

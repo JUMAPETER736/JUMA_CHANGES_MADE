@@ -12,7 +12,7 @@ object ChatSocketManager {
     private const val SERVER_URL = "http://api.flashmobile.app:8080"
     private var socket: Socket? = null
 
-//    val socketConnectedLiveData = MutableLiveData<Boolean>()
+
 
     private val _socketConnectedLiveData = MutableLiveData<Boolean>()
     val socketConnectedLiveData: LiveData<Boolean>
@@ -38,15 +38,6 @@ object ChatSocketManager {
     fun connectSocket() {
         socket?.connect()
         _socketConnectedLiveData.postValue(true)
-    }
-    // Disconnect the socket
-    fun disconnectSocket() {
-        socket?.disconnect()
-    }
-
-    interface SocketEventListener {
-        fun onSocketConnect()
-        // Add more socket event listener methods here
     }
 
 }
