@@ -30,13 +30,12 @@ public final class DateFormatter {
 
     public static String format(Date date, Template template) {
 
-//        Log.d("Formatter", "Default Date Today "  + date.getDate());
+
         return format(date, template.get());
     }
 
     public static String format(Date date, String format) {
 
-//        Log.d("Formatter", "Formatting Date In Static Sting Format "  + date);
 
         if (date == null) return "";
         return new SimpleDateFormat(format, Locale.getDefault())
@@ -45,7 +44,6 @@ public final class DateFormatter {
 
     public static boolean isSameDay(Date date1, Date date2) {
 
-//        Log.d("Formatter", "Format Is Same Day Date");
 
         if (date1 == null || date2 == null) {
             throw new IllegalArgumentException("Dates must not be null");
@@ -62,7 +60,6 @@ public final class DateFormatter {
             throw new IllegalArgumentException("Dates must not be null");
         }
 
-//        Log.d("Formatter", "Format Is Same Day Calendar");
 
         return (cal1.get(Calendar.ERA) == cal2.get(Calendar.ERA) &&
                 cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
@@ -74,7 +71,6 @@ public final class DateFormatter {
             throw new IllegalArgumentException("Dates must not be null");
         }
 
-//        Log.d("Formatter", "Format Is Same Year Date");
 
         Calendar cal1 = Calendar.getInstance();
         cal1.setTime(date1);
@@ -88,7 +84,6 @@ public final class DateFormatter {
             throw new IllegalArgumentException("Dates must not be null");
         }
 
-//        Log.d("Formatter", "Format Is Same year Calendar");
 
         return (cal1.get(Calendar.ERA) == cal2.get(Calendar.ERA) &&
                 cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR));
@@ -100,8 +95,6 @@ public final class DateFormatter {
 
     public static boolean isToday(Date date) {
 
-//        Log.d("Formatter", "Format Is isToday Boolean");
-
         return isSameDay(date, Calendar.getInstance().getTime());
     }
 
@@ -112,8 +105,6 @@ public final class DateFormatter {
     }
 
     public static boolean isYesterday(Date date) {
-
-//        Log.d("Formatter", "Format Is Yesterday Boolean");
 
         Calendar yesterday = Calendar.getInstance();
         yesterday.add(Calendar.DAY_OF_MONTH, -1);
