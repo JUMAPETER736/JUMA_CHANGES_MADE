@@ -1087,9 +1087,6 @@ public class MessageHolders {
                 imageOverlay.setSelected(isSelected());
             }
 
-//        if (downOverlay != null){
-//            downOverlay.setSelected(true);
-//        }
 
             if (down != null) {
                 String imageUrl = message.getVideoUrl();
@@ -1334,7 +1331,7 @@ public class MessageHolders {
                             }
                         });
                     } else {
-//                        download.setVisibility(View.VISIBLE);
+
                     }
                 } else {
                     // It's a remote URL
@@ -1502,15 +1499,15 @@ public class MessageHolders {
                                     if (adapter.getSelectedItemsCount() == 0) {
                                         mediaClickListener.onMediaClick(message.getImageUrl(), v, message);
                                     } else {
-//                                       // Toggle the selected state when items are selected
+                                       // Toggle the selected state when items are selected
                                         itemView.performClick();
-//                                        imageOverlay.setSelected(!imageOverlay.isSelected());
+
                                     }
                                 }
                             });
                         } else {
                             // Disable the click listener
-//                            image.setOnClickListener(null);
+
                         }
                         // Rest of your code
                     } else {
@@ -1534,8 +1531,7 @@ public class MessageHolders {
                 }
             } else {
 //                // Your code here for other messages
-//                itemView.setVisibility(View.GONE);
-//                itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
+
                 Log.d("NotFromLocal", "Image");
             }
 
@@ -1749,8 +1745,6 @@ public class MessageHolders {
         protected TextView docTitle;
         protected ProgressBar progressBar;
 
-//    protected ImageView playAudio;
-//    protected View imageOverlay;
 
         @Deprecated
         public OutGoingDocMessageViewHolder(View itemView) {
@@ -1999,7 +1993,7 @@ public class MessageHolders {
     public static class OutGoingAudioMessageViewHolder<MESSAGE extends MessageContentType.Image>
             extends BaseOutcomingMessageViewHolder<MESSAGE> {
 
-//    protected ImageView video;
+
 
         protected ViewGroup bubble;
 
@@ -2010,7 +2004,6 @@ public class MessageHolders {
         protected ImageView playAudio;
         protected ProgressBar progressBar;
 
-//    protected View imageOverlay;
 
         @Deprecated
         public OutGoingAudioMessageViewHolder(View itemView) {
@@ -2198,9 +2191,7 @@ public class MessageHolders {
                     }
                 });
 
-//                video.setVideoURI(Uri.parse(message.getVideoUrl()));
 
-//                message.getVideoThumbUrl(this, message.getVideoUrl());
                 imageLoader.loadImage(video, message.getVideoUrl(), getPayloadForImageLoader(message));
             }
 
@@ -2271,9 +2262,6 @@ public class MessageHolders {
     public static class DefaultDateHeaderViewHolder extends ViewHolder<Date>
             implements DefaultMessageViewHolder {
 
-//        int {
-//            Log.d("Formatter", "Date Header View Holder");
-//        }
 
         protected TextView text;
         protected String dateFormat;
@@ -2290,15 +2278,14 @@ public class MessageHolders {
         @Override
         public void onBind(Date date) {
 
-//            Log.d("Formatter", "Binding Date Header Before Checking Text");
 
             if (text != null) {
                 String formattedDate = null;
                 if (dateListener != null) formattedDate = dateListener.onFormatDate(date);
 
-//                Log.d("Formatter", "Binding Date Header " +  formattedDate);
+
                 text.setText(formattedDate == null ? "Unknown Date" : formattedDate);
-//                text.setText(R.string.app_name);
+
             }
         }
 
@@ -2422,32 +2409,27 @@ public class MessageHolders {
                 time.setText(DateFormatter.format(message.getCreatedAt(), DateFormatter.Template.TIME));
             }
 
-//            Log.d("MessageStatus", "Status: " + message.getStatus());
-
 
             if (status != null) {
 
                 if (Objects.equals(message.getStatus(), "Sent")) {
                     status.setBackgroundResource(R.drawable.status___sent);
                 } else if (Objects.equals(message.getStatus(), "Seen")) {
-//                        status.text = "Seen";
-//                        status.setTextColor(Color.GREEN);
+
                     status.setBackgroundResource(R.drawable.status_____seen);
 
                 } else if (Objects.equals(message.getStatus(), "Sending")) {
-//                        status.text = "Sending";
-//                        status.setTextColor(Color.GRAY);
+
                     status.setBackgroundResource(R.drawable.status___sending);
 
                 } else if (Objects.equals(message.getStatus(), "Delivered")) {
-//                        status.text = "Delivered";
-//                        status.setTextColor(Color.MAGENTA);
+
                     status.setBackgroundResource(R.drawable.status___received);
 
                 } else {
-//                    status.setBackgroundResource(R.drawable.status___sending);
+
                     status.setBackgroundResource(R.drawable.status_seen);
-//                    Log.d("MessageStatus", "Unknown Status: " + message.getStatus());
+
                 }
             }
         }
