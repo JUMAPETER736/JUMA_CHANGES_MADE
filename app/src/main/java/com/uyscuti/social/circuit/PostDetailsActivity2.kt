@@ -4671,8 +4671,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
         Log.d("uploadGifImageComment", "uploadGifImageComment: handle reply to a comment")
         isReply = false
-//        val newCommentReplyEntity = CommentsFilesEntity(commentId, vnToUpload, vnToUpload, isReply = 1)
-        //if it clash on upload un comment the line below//
+
         val newCommentReplyEntity =
             CommentsFilesEntity(
                 postId,
@@ -4689,7 +4688,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             "uploadGifImageComment: inserted comment $newCommentReplyEntity"
         )
         lifecycleScope.launch {
-//                allCommentReplies2(1, commentId)
+
         }
         val mongoDbTimeStamp = generateMongoDBTimestamp()
         val gifFile = CommentFiles(_id = "", url = gifToUpload, localPath = "gif")
@@ -4705,7 +4704,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             commentId = commentId,
             updatedAt = mongoDbTimeStamp,
             gifs = gifToUpload,
-//            audios = mutableListOf(vnFile),
+
             contentType = "gif"
         )
 
@@ -4721,7 +4720,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             postId = data!!.postId,
             updatedAt = data!!.updatedAt,
             replyCount = replyCount,
-//                replies = data!!.replies
+
             replies = data?.replies?.toMutableList()?.apply {
                 // Assuming newReply is the new reply you want to add
                 add(0, newReply)
@@ -4770,7 +4769,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             "likeUnLikeCommentFromViewsActivity",
             "likeUnLikeComment: data.isLiked ${data.isLiked} position $position"
         )
-//        var updatedComment : com.uyscuti.social.circuit.data.model.Comment? = null
+
         val updatedComment = if (data.isLiked) {
             data.copy(
                 likes = data.likes + 1,
@@ -4788,7 +4787,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
         if (isInternetAvailable(this)) {
             Log.d(TAG, "likeUnLikeCommentFromViewsActivity: internet is available")
-//            Log.d(TAG, "likeUnLikeComment: internet is available")
+
             lifecycleScope.launch {
                 val result = commentLikeUnLike(data._id)
                 Log.d(TAG, "likeUnLikeCommentFromViewsActivity server result: $result")
@@ -4811,27 +4810,12 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     if (fileName?.endsWith(".gif") == true) {
                         // Handle the selected GIF file here
                         // For example, you can display it in an ImageView
-                        // val inputStream = contentResolver.openInputStream(uri)
-                        // val gifBitmap = BitmapFactory.decodeStream(inputStream)
-                        // imageView.setImageBitmap(gifBitmap)
+
                         Log.d(
                             "selectGifLauncher",
                             "selectGifLauncher: is reply $isReply gifUrlType $gifUrlType "
                         )
-//                        uploadGifToServer(uri.toString(), gifUrlType)
-//                        if (!isReply) {
-//                            uploadGifComment(uri.toString(), gifUrlType)
-//                        } else {
-////                        uploadGifComment(uri.toString(), "happy")
-//                            uploadGifReplyComment(uri.toString(), gifUrlType)
-//                        }
-//                        if (dialogDismissed) {
-//
-//                        } else {
-//                            Log.d("selectGifLauncher", "selectGifLauncher: dialog dismissed $dialogDismissed")
-//                        }
 
-//                        customDialog.dismiss()
                     } else {
                         // Not a GIF file, handle error or inform the user
                         Log.d("selectGifLauncher", "selectGifLauncher: Selected file is not GIF")
@@ -4858,10 +4842,10 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     retrofitInterface.apiService.getCommentReplies(commentId, page.toString())
                 val responseBody = response.body()
 
-//               val  comments = responseBody?.data?.comments ?: emptyList()
+
                 responseBody?.data?.comments?.let { comments.addAll(it) }
                 hasNextPage = responseBody?.data?.hasNextPage ?: false
-//                pageNumber = responseBody!!.data.page
+
                 Log.d(TAG, "allCommentRepliesOnce: has next page $hasNextPage")
                 val uniqueCommentsList = comments.distinctBy { it._id }
 
@@ -4877,11 +4861,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     }
                     commentsReplyViewModel.commentsReplyMutableList.addAll(filteredNewItems)
 
-//                    Log.d(TAG, "allCommentReplies: $comments")
-//                    Log.d(
-//                        TAG,
-//                        "allShortComments: total comments for this post: ${filteredNewItems.size}"
-//                    )
                     Log.d(
                         TAG, "allShortComments: total comments for this post: ${comments.size}"
                     )
@@ -4889,10 +4868,10 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 for (i in comments) {
                     Log.d(TAG, "All comments images ${i.images}")
                 }
-//                Log.d(TAG, "Comments $comments")
+
             }
             return CommentReplyResults(comments, hasNextPage, pageNumber)
-//            return CommentReplyResults(commentsReplyViewModel.commentsReplyMutableList, hasNextPage, pageNumber)
+
         } catch (e: Exception) {
             Log.e("UserProfileShortsViewModel", "Exception: ${e.message}")
             lifecycleScope.launch {
@@ -4921,7 +4900,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
         shortPlayer.repeatMode = Player.REPEAT_MODE_ONE
 
 
-//        exoPlayer.addListener(playbackStateListener)
         shortPlayer.addListener(shortPlaybackStateListener)
         exoPlayer.removeListener(playbackStateListener)
 
@@ -4996,13 +4974,13 @@ class PostDetailsActivity2 : AppCompatActivity(),
             if (videoUrl == null) {
                 throw RuntimeException("video data is null")
             }
-//            onDownLoadClick(videoUrl!!,"flashShorts")
+
 
             Log.d("downloadBtn", "Download : $videoUrl")
-//            downloadProgressBarLayout.visibility = View.VISIBLE
+
             shortsDownloadImageView.visibility = View.VISIBLE
             shortsDownloadProgressBar.visibility = View.VISIBLE
-//            download(videoUrl!!,"flashShorts")
+
             onClickListeners.onDownloadClick(videoUrl!!, "flashShorts")
             Log.d("downloadBtn", "Download is working")
 
@@ -5020,34 +4998,11 @@ class PostDetailsActivity2 : AppCompatActivity(),
         binding.favorite.setOnClickListener {
             handleFavoriteClick(postId, binding.favorite, post)
         }
-//        exoPlayer.addListener(object : Player.Listener {
-//            @Deprecated("Deprecated in Java")
-//            override fun onPlayerStateChanged(
-//                playWhenReady: Boolean,
-//                playbackState: Int
-//            ) {
-//                if (playbackState == Player.STATE_READY && exoPlayer.duration != C.TIME_UNSET) {
-////                                    binding.shortsSeekBar.max = exoPlayer.duration.toInt()
-//                    Log.d("onPlayerStateChanged", "onPlayerStateChanged: ${exoPlayer.duration}")
-////                                    shortsAdapter.setSeekBarMax(exoPlayer!!.currentPosition.toInt())
-////                    shortSeekBar.max = exoPlayer.duration.toInt()
-//                }
-//            }
-//
-//            override fun onPlayerError(error: PlaybackException) {
-//                super.onPlayerError(error)
-//                error.printStackTrace()
-//            }
-//
-//            @Deprecated("Deprecated in Java")
-//            override fun onPositionDiscontinuity(reason: Int) {
-//                updateSeekBar()
-//            }
-//        })
+
     }
 
     override fun onSeekBarChanged(progress: Int) {
-//        TODO("Not yet implemented")
+
     }
 
 
@@ -5091,7 +5046,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     download(url, fileLocation)
                 }
 
-//                                downlod(url, progressbar, fileDisplay, fileLocation, message)
             } else {
                 download(url, fileLocation)
             }
