@@ -53,7 +53,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
@@ -5074,7 +5073,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
         if (!shortsEntity.data.isLiked) {
 
-//                shortsViewModel.totalLikes += 1
+
             shortsEntity.data.likes += 1
             likeCount.text = shortsEntity.data.likes.toString()
 
@@ -5168,8 +5167,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             if (myFavoriteShorts != null) {
                 myFavoriteShorts.isBookmarked = true
             }
-//            val convertedShort = shortsEntityToUserShortsEntity(postId, shortsEn)
-//            userProfileShortsViewModel.mutableFavoriteShortsList.add(0, convertedShort)
+
         } else {
             button.setImageResource(R.drawable.favorite_svgrepo_com__1_)
             shortsEntity.data.isBookmarked = false
@@ -5190,15 +5188,14 @@ class PostDetailsActivity2 : AppCompatActivity(),
             if (myFavoriteShorts != null) {
                 Log.d("handleLikeClick", "handleLikeClick: short found id: ${myFavoriteShorts._id}")
                 myFavoriteShorts.isBookmarked = false
-//                val userShortsEntity = shortsEntityToUserShortsEntity(shortsEntity)
+
                 Log.d(
                     TAG,
                     "handleFavoriteClick: mutableFavoriteShortsList size before ${userProfileShortsViewModel.mutableFavoriteShortsList.size}"
                 )
-//                userProfileShortsViewModel.mutableFavoriteShortsList.add(userShortsEntity)
-                // Remove the item if it exists in the list
+
                 userProfileShortsViewModel.mutableFavoriteShortsList.removeIf { it._id == postId }
-//                myFavoriteShorts.f
+
                 Log.d(
                     TAG,
                     "handleFavoriteClick: mutableFavoriteShortsList size after ${userProfileShortsViewModel.mutableFavoriteShortsList.size}"
@@ -5215,32 +5212,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
         }
     }
 
-    private fun shortsEntityToUserShortsEntity(serverResponseItem: ShortsEntity): UserShortsEntity {
-        return UserShortsEntity(
-            __v = serverResponseItem.__v,
-            _id = serverResponseItem._id,
-            content = serverResponseItem.content,
-            author = serverResponseItem.author,
-            comments = serverResponseItem.comments,
-            createdAt = serverResponseItem.createdAt,
-            images = serverResponseItem.images,
-            isBookmarked = serverResponseItem.isBookmarked,
-            isLiked = serverResponseItem.isLiked,
-            likes = serverResponseItem.likes,
-            tags = serverResponseItem.tags,
-            updatedAt = serverResponseItem.updatedAt,
-            thumbnail = serverResponseItem.thumbnail,
-            // map other properties...
-        )
-    }
-
-    private fun replaceFragment(fragment: Fragment) {
-        val fragmentManager = supportFragmentManager
-        val fragmentTransaction = fragmentManager.beginTransaction()
-        fragmentTransaction.replace(R.id.frame_layout, fragment)
-        fragmentTransaction.commit()
-    }
-
     override fun onPause() {
         super.onPause()
         if (::exoPlayer.isInitialized) {
@@ -5251,7 +5222,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 exoPlayer.stop()
             }
         }
-//        if(mediaRecorder?.)
+
     }
 
     override fun onDestroy() {
@@ -5265,8 +5236,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
         exoPlayer.removeListener(playbackStateListener)
         shortPlayer.removeListener(shortPlaybackStateListener)
 
-//        shortPlayer.removeListener(shortPlaybackStateListener)
-// have added a short player here to remove when back pressed
         if (::shortPlayer.isInitialized) {
             Log.d("DestroyDetails", "onDestroy: shortPlayer initialized")
             if (shortPlayer.isPlaying) {
@@ -5300,9 +5269,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             e.printStackTrace()
         }
     }
-//    private val waveRunnable = Runnable {
-////                    TODO("Not yet implemented")
-//    }
+
 
     private lateinit var audioDurationTVCount: TextView
     private val waveRunnable = object : Runnable {
@@ -5351,21 +5318,13 @@ class PostDetailsActivity2 : AppCompatActivity(),
             adapter?.setSecondSeekBarProgress(0f, currentCommentAudioPosition)
             adapter?.setReplySecondSeekBarProgress(0f, currentCommentAudioPosition)
         }
-//        if (isReplyVnPlaying) {
-//        } else {
-//        }
+
         currentCommentAudioPosition = RecyclerView.NO_POSITION
         currentCommentAudioPath = ""
         adapter?.resetAudioPlay()
-//        player?.let { mediaPlayer ->
-//            if (mediaPlayer.isPlaying) {
-//                mediaPlayer.stop()
-//            }
-//            mediaPlayer.release()
-//        }
-//        player = null
+
         exoPlayer = ExoPlayer.Builder(this).build()
-//        playerView.player = exoPlayer
+
         exoPlayer.prepare()
         exoPlayer?.let { exoPlayer ->
             if (exoPlayer.isPlaying) {
@@ -5421,9 +5380,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
             listOfReplies.add(comment)
 
             Log.d(TAG, "onSubmit: comment $comment")
-//        adapter.submitItems(listOf(comment) )
-//            adapter!!.submitItem(comment, (adapter?.itemCount?.minus(1)!!))
-//            adapter!!.submitItem(commentsAndRepliesModel, adapter!!.itemCount)
 
             adapter!!.submitItem(comment, adapter!!.itemCount)
             shortToComment = shortsViewModel.mutableShortsList.find { it._id == postId }
@@ -5465,7 +5421,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             roomCommentReplyViewModel.insertCommentReply(newCommentReplyEntity)
             Log.d(TAG, "onSubmit: inserted comment $newCommentReplyEntity")
             lifecycleScope.launch {
-//                allCommentReplies2(1, commentId)
+
             }
             val mongoDbTimeStamp = generateMongoDBTimestamp()
             val newReply = com.uyscuti.social.network.api.response.commentreply.allreplies.Comment(
@@ -5493,7 +5449,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     postId = data!!.postId,
                     updatedAt = data!!.updatedAt,
                     replyCount = replyCount,
-//                replies = data!!.replies
+
                     replies = data?.replies?.toMutableList()?.apply {
                         // Assuming newReply is the new reply you want to add
                         add(0, newReply)
@@ -5510,7 +5466,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     localUpdateId = localUpdateId,
                     replyCountVisible = false
                 )
-//            val updatedComment = commentWithReplies.copy(replies = commentReplies.toMutableList(), isRepliesVisible = isRepliesVisible)
+
 
             listOfReplies.add(commentWithReplies)
 
@@ -5523,7 +5479,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                 "onSubmit: comment id = data is? $commentId = ${data!!._id} on position $position"
             )
             updateAdapter(commentWithReplies, position)
-//            addCommentReply(input.toString())
+
         }
         binding.replyToLayout.visibility = View.GONE
         return true
@@ -5564,7 +5520,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
 
     private val onRecordWaveRunnable = object : Runnable {
         override fun run() {
-//            Log.d("isDurationOnPause" , " in comment audio runnable isDurationOnPause is $isDurationOnPause")
+
             try {
                 if (!isOnRecordDurationOnPause) {
                     val currentPosition = player?.currentPosition?.toFloat()!!
@@ -5596,7 +5552,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
     private var currentHandler: Handler? = null
     private fun initializeSeekBar(exoPlayer: ExoPlayer) {
         audioSeekBar.max = exoPlayer.duration.toInt()
-// Remove callbacks from the current handler, if any
+       // Remove callbacks from the current handler, if any
         currentHandler?.removeCallbacksAndMessages(currentHandler)
         val handler = Handler(Looper.getMainLooper())
         handler.postDelayed(object : Runnable {
@@ -5615,14 +5571,9 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                     audioSeekBar
                                 )
 
-//                                audioSeekBar.progress = it.currentPosition.toInt()
-//                                seekBarProgress = it.currentPosition.toFloat()
-//                                audioDurationTVCount.text = String.format(
-//                                    "%s",
-//                                    TrimVideoUtils.stringForTime(it.currentPosition.toFloat())
-//                                )
+
                             } else {
-//                                adapter!!.updateWaveProgress(currentPosition, wavePosition)
+
                                 audioSeekBar.progress = it.currentPosition.toInt()
                                 seekBarProgress = it.currentPosition.toFloat()
                                 audioDurationTVCount.text = String.format(
@@ -5646,10 +5597,9 @@ class PostDetailsActivity2 : AppCompatActivity(),
     }
 
     private fun initializeShortSeekBar(shortPlayer: ExoPlayer) {
-//        shortSeekBar.max = shortPlayer.duration.toInt()
+
         Log.d("ShortSeekBar", "Short SeekBar initialized")
-//        audioSeekBar.max = exoPlayer.duration.toInt()
-// Remove callbacks from the current handler, if any
+
         currentHandler?.removeCallbacksAndMessages(currentHandler)
         val handler = Handler(Looper.getMainLooper())
         handler.postDelayed(object : Runnable {
