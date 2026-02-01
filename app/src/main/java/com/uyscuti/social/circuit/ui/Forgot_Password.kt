@@ -23,6 +23,7 @@ import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
 
 
+
 @AndroidEntryPoint
 class Forgot_Password : AppCompatActivity() {
 
@@ -34,6 +35,16 @@ class Forgot_Password : AppCompatActivity() {
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
 
+    /**
+     * Enum to represent different input types
+     */
+    enum class InputType {
+        EMAIL,
+        USERNAME,
+        USER_ID
+    }
+
+    
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,7 +65,7 @@ class Forgot_Password : AppCompatActivity() {
                 Log.w(TAG, "Input is empty")
                 Toast.makeText(
                     this,
-                    "Please enter your email or username",
+                    "Please enter your email, username, or user ID",
                     Toast.LENGTH_SHORT
                 ).show()
             } else {
@@ -70,17 +81,24 @@ class Forgot_Password : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Check if input is email or username
-                val isEmail = isValidEmail(input)
-                Log.d(TAG, "Input type detected - isEmail: $isEmail")
+                // Determine input type: email, username, or userId
+                val inputType = determineInputType(input)
+                Log.d(TAG, "Input type detected: $inputType")
 
-                // CREATE REQUEST DIFFERENTLY - ONLY INCLUDE NON-NULL FIELD
-                val request = if (isEmail) {
-                    Log.d(TAG, "Creating request with EMAIL: $input")
-                    ForgotPasswordRequest(email = input)
-                } else {
-                    Log.d(TAG, "Creating request with USERNAME: $input")
-                    ForgotPasswordRequest(username = input)
+                // Create request based on input type
+                val request = when (inputType) {
+                    InputType.EMAIL -> {
+                        Log.d(TAG, "Creating request with EMAIL: $input")
+                        ForgotPasswordRequest(email = input)
+                    }
+                    InputType.USER_ID -> {
+                        Log.d(TAG, "Creating request with USER ID: $input")
+                        ForgotPasswordRequest(userId = input)
+                    }
+                    InputType.USERNAME -> {
+                        Log.d(TAG, "Creating request with USERNAME: $input")
+                        ForgotPasswordRequest(username = input)
+                    }
                 }
 
                 Log.d(TAG, "Request object created: $request")
@@ -121,7 +139,7 @@ class Forgot_Password : AppCompatActivity() {
                         startActivity(intent)
                         finish()
                     } else {
-                        val errorMessage = response.body()?.message ?: "User not found. Please check your email or username."
+                        val errorMessage = response.body()?.message ?: "User not found. Please check your email, username, or user ID."
                         Log.e(TAG, "Password reset failed: $errorMessage")
                         Log.e(TAG, "  - Response code: ${response.code()}")
                         Log.e(TAG, "  - Success flag: ${response.body()?.success}")
@@ -153,11 +171,15 @@ class Forgot_Password : AppCompatActivity() {
                     val errorMessage = when (e.code()) {
                         404 -> {
                             Log.e(TAG, "404 - User not found")
-                            "User not found. Please check your email or username."
+                            "User not found. Please check your input."
                         }
                         400 -> {
                             Log.e(TAG, "400 - Bad request")
                             "Invalid input. Please try again."
+                        }
+                        422 -> {
+                            Log.e(TAG, "422 - Unprocessable entity")
+                            "Cannot process request. Please check your input."
                         }
                         else -> {
                             Log.e(TAG, "HTTP error code: ${e.code()}")
@@ -204,10 +226,47 @@ class Forgot_Password : AppCompatActivity() {
         }
     }
 
-    // Function to check if the entered input is a valid email
+    /**
+     * Determines the type of input provided by the user
+     * Priority: Email > User ID (MongoDB ObjectID) > Username
+     */
+    private fun determineInputType(input: String): InputType {
+        return when {
+            // Check if it's a valid email
+            isValidEmail(input) -> {
+                Log.d(TAG, "Input identified as EMAIL")
+                InputType.EMAIL
+            }
+            // Check if it's a MongoDB ObjectID (24 hex characters)
+            isValidObjectId(input) -> {
+                Log.d(TAG, "Input identified as USER_ID (ObjectID)")
+                InputType.USER_ID
+            }
+            // Otherwise treat as username
+            else -> {
+                Log.d(TAG, "Input identified as USERNAME")
+                InputType.USERNAME
+            }
+        }
+    }
+
+    /**
+     * Validates if the input is a valid email address
+     */
     private fun isValidEmail(input: String): Boolean {
         val result = Patterns.EMAIL_ADDRESS.matcher(input).matches()
         Log.d(TAG, "isValidEmail check for '$input': $result")
+        return result
+    }
+
+    /**
+     * Validates if the input is a valid MongoDB ObjectID
+     * MongoDB ObjectID is 24 hexadecimal characters
+     */
+    private fun isValidObjectId(input: String): Boolean {
+        val objectIdPattern = "^[a-fA-F0-9]{24}$".toRegex()
+        val result = objectIdPattern.matches(input)
+        Log.d(TAG, "isValidObjectId check for '$input': $result")
         return result
     }
 
@@ -233,4 +292,6 @@ class Forgot_Password : AppCompatActivity() {
         dialog?.dismiss()
         dialog = null
     }
+
+
 }
