@@ -1,6 +1,7 @@
 package com.uyscuti.social.network.api.retrofit.instance
 
 import android.content.Context
+import com.google.gson.GsonBuilder
 import com.uyscuti.social.network.api.retrofit.interfaces.IFlashapi
 import com.uyscuti.social.network.utils.LocalStorage
 import okhttp3.Cache
@@ -29,12 +30,22 @@ class RetrofitInstance @Inject constructor(private val localStorage: LocalStorag
         return localStorage.getToken() ?: ""
     }
 
+    private val gson = GsonBuilder()
+        .setLenient()
+        .create()
+
+    // OPTIONAL BUT RECOMMENDED - Enable logging to see requests
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
+
     private val cachedDir: File? = context.cacheDir
 
     private val cache = cachedDir?.let { Cache(it, 10 * 1024 * 1024) }
 
     private val httpClient = OkHttpClient.Builder()
         .cache(cache)
+        .addInterceptor(loggingInterceptor)  // ✅ ADD THIS LINE (optional but recommended)
         .addInterceptor(RetryInterceptor())
         .writeTimeout(200, TimeUnit.SECONDS)
         .readTimeout(200, TimeUnit.SECONDS)
@@ -57,7 +68,8 @@ class RetrofitInstance @Inject constructor(private val localStorage: LocalStorag
         val retrofit = Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(httpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))  // ✅ CHANGE THIS LINE - use custom gson
+          //  .addConverterFactory(GsonConverterFactory.create())
             .build()
 
         retrofit.create(IFlashapi::class.java)

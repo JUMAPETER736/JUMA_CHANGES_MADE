@@ -12,8 +12,17 @@ data class LoginResponse(
 
 data class ForgotPasswordRequest(
     val email: String? = null,
-    val username: String? = null
+    val username: String? = null,
+    val userId: String? = null
 )
+
+data class ForgotPasswordResponse(
+    val success: Boolean,
+    val message: String,
+    val statusCode: Int,
+    val data: ForgotPasswordData
+)
+
 
 data class VerifyOTPRequest(
     val resetToken: String,
@@ -31,12 +40,7 @@ data class ResendEmailRequest(
 )
 
 
-data class ForgotPasswordResponse(
-    val success: Boolean,
-    val message: String,
-    val statusCode: Int,
-    val data: ForgotPasswordData
-)
+
 
 data class ForgotPasswordData(
     val resetToken: String,
