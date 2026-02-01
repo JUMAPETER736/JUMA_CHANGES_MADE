@@ -44,13 +44,6 @@ data class MatchingUser(
     val updatedAt: String?
 )
 
-data class SearchShortsResponse(
-    val statusCode: Int,
-    val data: SearchDataWrapper,
-    val message: String,
-    val success: Boolean
-)
-
 data class SearchDataWrapper(
     val posts: com.uyscuti.social.network.api.response.getallshorts.Data,
     val followList: List<FollowListItem>
@@ -145,37 +138,4 @@ data class Follow(
     val isFollowing: Boolean
 )
 
-data class FeedData(
-    val data: PostsData
-)
 
-data class PostsData(
-    val posts: List<Post>,
-    val totalPosts: Int,
-    val limit: Int,
-    val page: Int,
-    val totalPages: Int,
-    val serialNumberStartFrom: Int,
-    val hasPrevPage: Boolean,
-    val hasNextPage: Boolean,
-    val prevPage: Int?,
-    val nextPage: Int?
-)
-
-
-data class UserDetails(
-    val username: String?,
-    val createdAt: String?,
-    val updatedAt: String?,
-    val avatar: String?
-)
-
-
-data class BusinessDetails(
-    val _id: String,
-    val itemName: String?,
-    val description: String?,
-    val price: String?,
-    val images: List<String>?,
-    val features: List<String>?
-)

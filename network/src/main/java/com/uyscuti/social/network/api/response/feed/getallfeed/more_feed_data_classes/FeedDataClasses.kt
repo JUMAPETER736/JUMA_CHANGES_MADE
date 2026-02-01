@@ -4,8 +4,6 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 import java.io.Serializable
 
-data class RefreshFeedData(val position: Int, val booleanValue: Boolean)
-
 @Parcelize
 data class FeedMultipleImages(
     var imagePath: String = "",
