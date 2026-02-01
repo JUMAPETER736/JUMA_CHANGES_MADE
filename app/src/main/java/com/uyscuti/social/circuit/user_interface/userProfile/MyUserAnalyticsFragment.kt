@@ -190,21 +190,7 @@ class MyUserAnalyticsFragment : Fragment() {
 
         // Load profile image if you have an ImageView in your layout
         // Uncomment if you add profileImageView to your layout
-        /*
-        avatarUrl?.let { url ->
-            if (url.isNotEmpty()) {
-                Glide.with(this)
-                    .load(url)
-                    .apply(
-                        RequestOptions()
-                            .circleCrop()
-                            .placeholder(R.drawable.flash21)
-                            .error(R.drawable.flash21)
-                    )
-                    .into(binding.profileImageView)
-            }
-        }
-        */
+
     }
 
     private fun getCacheKey(): String = "analytics_${userId}_${cleanUsername}"
@@ -261,7 +247,7 @@ class MyUserAnalyticsFragment : Fragment() {
 
         if (cached != null && cached.isValid()) {
             // INSTANT LOAD from cache
-            Log.d(TAG, "🚀 INSTANT LOAD - Displaying ${cached.posts.size} cached posts")
+            Log.d(TAG, "LOAD - Displaying ${cached.posts.size} cached posts")
 
             allUserPosts = cached.posts.toMutableList()
             displayAnalyticsData()
@@ -369,7 +355,7 @@ class MyUserAnalyticsFragment : Fragment() {
 
                         // Check if we hit limits
                         if (allUserPosts.size >= MAX_POSTS) {
-                            Log.d(TAG, "⚠️ Reached MAX_POSTS limit ($MAX_POSTS)")
+                            Log.d(TAG, "Reached MAX_POSTS limit ($MAX_POSTS)")
                             hasMoreData = false
                             break
                         }

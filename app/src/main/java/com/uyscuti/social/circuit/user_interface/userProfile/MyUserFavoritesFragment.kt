@@ -7,9 +7,11 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.OptIn
 import androidx.appcompat.widget.AppCompatButton
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
@@ -339,6 +341,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     // Replace the stub methods in MyUserFeedFragment with these implementations:
 
+    @OptIn(UnstableApi::class)
     override fun likeUnLikeFeed(position: Int, data: Post) {
         Log.d(TAG, "Like clicked at position $position - delegating to AllFragment")
 
@@ -352,6 +355,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedCommentClicked(position: Int, data: Post) {
         Log.d(TAG, "Comment clicked at position $position - delegating to AllFragment")
 
@@ -364,6 +368,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedFavoriteClick(position: Int, data: Post) {
         Log.d(TAG, "Favorite clicked at position $position - delegating to AllFragment")
 
@@ -376,6 +381,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun moreOptionsClick(position: Int, data: Post) {
         Log.d(TAG, "More options clicked at position $position - delegating to AllFragment")
 
@@ -388,6 +394,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedFileClicked(position: Int, data: Post) {
         Log.d(TAG, "File clicked at position $position - delegating to AllFragment")
 
@@ -400,6 +407,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
         Log.d(TAG, "Repost file clicked at position $position - delegating to AllFragment")
 
@@ -412,6 +420,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedShareClicked(position: Int, data: Post) {
         Log.d(TAG, "Share clicked at position $position - delegating to AllFragment")
 
@@ -424,6 +433,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun followButtonClicked(followUnFollowEntity: FollowUnFollowEntity, followButton: AppCompatButton) {
         Log.d(TAG, "Follow clicked for user ${followUnFollowEntity.userId} - delegating to AllFragment")
 
@@ -436,6 +446,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedRepostPost(position: Int, data: Post) {
         Log.d(TAG, "Repost clicked at position $position - delegating to AllFragment")
 
@@ -448,6 +459,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedRepostPostClicked(position: Int, data: Post) {
         Log.d(TAG, "Repost post clicked at position $position - delegating to AllFragment")
 
@@ -460,6 +472,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
         Log.d(TAG, "Original post clicked: $originalPostId - delegating to AllFragment")
 
@@ -472,6 +485,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun onImageClick() {
         Log.d(TAG, "Image clicked - delegating to AllFragment")
 
