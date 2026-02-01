@@ -2266,9 +2266,9 @@ class PostDetailsActivity2 : AppCompatActivity(),
                             Log.d("ThumbnailExtract", "ThumbnailExtract failed")
                         }
                         val outputStream = ByteArrayOutputStream()
-//                            // Compress the bitmap to a byte array
+                            // Compress the bitmap to a byte array
                         bitmapThumbnail?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-//                            // Convert the byte array to a RequestBody
+
                         val requestBody = outputStream.toByteArray()
                             .toRequestBody(
                                 "image/*".toMediaTypeOrNull(),
@@ -2340,7 +2340,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                             Log.e("CommentId", "Comment Id not initialized ")
                         }
                     } else if (it[0].localPath == "gif") {
-//                        val replyGif = createMultipartBody(this, it[0].url.toUri(), "gif")
+
                         Log.d("LocalPath", "is set to gif")
                         if (::commentId.isInitialized) {
                             commentsReplyViewModel.commentReply(
@@ -2405,7 +2405,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                 }
                                 replyToUpdate?._id = data._id
                                 adapter?.notifyItemChanged(it[0].parentPosition)
-//                                adapter?.updateItem(it[0].parentPosition, comment)
+
                             }
                         } else {
                             Log.e("CommentId", "Comment Id not initialized ")
@@ -2440,14 +2440,13 @@ class PostDetailsActivity2 : AppCompatActivity(),
         val TAG = "addImageComment"
         Log.d("addImageComment", "addImageComment: is reply $isReply")
 
-//        commentsViewModel.commentAudio(postId, "", "audio", filePart, video, image, docs, gif, thumbnail)
 
         if (isInternetAvailable(this)) {
 
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -2532,10 +2531,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                 }
                             }
                         }
-//                        else if(i.localPath == "video"){
-//                            Log.d("LocalPath","ready to upload video")
-//                            Log.d("LocalPath", "url ${i.url} type ${i.localPath}")
-//                        }
+
 
                     }
 
@@ -2556,14 +2552,12 @@ class PostDetailsActivity2 : AppCompatActivity(),
         val TAG = "addDocumentComment"
         Log.d("addDocumentComment", "addDocumentComment: is reply $isReply")
 
-//        commentsViewModel.commentAudio(postId, "", "audio", filePart, video, image, docs, gif, thumbnail)
-
         if (isInternetAvailable(this)) {
 
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -2594,12 +2588,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                         file.name,
                                         requestFile
                                     )
-//                                val docs =
-//                                    MultipartBody.Part.createFormData(
-//                                        "docs",
-//                                        file.name,
-//                                        requestFile
-//                                    )
+
                                 Log.d(
                                     "addDocumentComment",
                                     "addDocumentComment: uri ${i.url.toUri()} ::i.url:: ${i.url}"
@@ -2661,10 +2650,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                 }
                             }
                         }
-//                        else if(i.localPath == "video"){
-//                            Log.d("LocalPath","ready to upload video")
-//                            Log.d("LocalPath", "url ${i.url} type ${i.localPath}")
-//                        }
 
                     }
 
@@ -2685,14 +2670,13 @@ class PostDetailsActivity2 : AppCompatActivity(),
         val TAG = "addGifComment"
         Log.d("addGifComment", "addGifComment: is reply $isReply")
 
-//        commentsViewModel.commentAudio(postId, "", "audio", filePart, video, image, docs, gif, thumbnail)
 
         if (isInternetAvailable(this)) {
 
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -2729,9 +2713,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                         file.name,
                                         requestFile
                                     )
-//                                val gif = createMultipartBody(this, i.url.toUri(), "gif")
-//                                val gif =
-//                                    MultipartBody.Part.createFormData("gif", file.name, requestFile)
+
                                 val thumbnail =
                                     MultipartBody.Part.createFormData(
                                         "thumbnail",
@@ -2785,10 +2767,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                 }
                             }
                         }
-//                        else if(i.localPath == "video"){
-//                            Log.d("LocalPath","ready to upload video")
-//                            Log.d("LocalPath", "url ${i.url} type ${i.localPath}")
-//                        }
 
                     }
 
@@ -2808,7 +2786,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         commentsReplyViewModel.getReplyCommentsLiveData().observe(this) { data ->
             // Handle the response data here
             for (i in listOfReplies) {
-//                i._id
+
                 Log.d("observeCommentRepliesToRefresh", "list of replies id ${i.localUpdateId}")
             }
 
@@ -2828,7 +2806,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
             commentFilesViewModel.allCommentFiles.observe(this) {
 
                 Log.d(TAG, "Comments observed size:${it.size}")
-//
+
                 if (it.isNotEmpty()) {
 
                     for (i in it) {
@@ -2842,12 +2820,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
                             val externalStorageDir = Environment.getExternalStorageDirectory()
                             val fullPath = File(externalStorageDir, i.url)
 
-//                            Log.d(TAG, "Full path $fullPath")
-//                            val audioDuration = AudioDurationHelper.getLocalAudioDuration(i.url)!!
-//                            val minutes = (audioDuration / 1000) / 60
-//                            val seconds = (audioDuration / 1000) % 60
-//
-//                            val durationString = String.format("%02d:%02d", minutes, seconds)
                             val (success, bitmapThumbnail) = extractThumbnailFromVideo(i.url)
                             if (success) {
                                 // Thumbnail extraction successful, use the 'thumbnail' Bitmap
@@ -2857,9 +2829,9 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                 Log.d("ThumbnailExtract", "ThumbnailExtract failed")
                             }
                             val outputStream = ByteArrayOutputStream()
-//                            // Compress the bitmap to a byte array
+                            // Compress the bitmap to a byte array
                             bitmapThumbnail?.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-//                            // Convert the byte array to a RequestBody
+                            // Convert the byte array to a RequestBody
                             val requestBody = outputStream.toByteArray()
                                 .toRequestBody(
                                     "image/*".toMediaTypeOrNull(),
@@ -2901,11 +2873,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                     )
                                 val gif =
                                     MultipartBody.Part.createFormData("gif", file.name, requestFile)
-//                               val thumbnail =  MultipartBody.Part.createFormData(
-//                                    "thumbnail",
-//                                    file.name,
-//                                    requestFile
-//                                )
+
 
                                 Log.d(TAG, "addVideoComment: comments in room count is ${it.size}")
                                 if (::postId.isInitialized) {
@@ -2928,7 +2896,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                         isFeedComment = i.isFeedComment
                                     ) {
                                         Log.d(" onSuccess()", " onSuccess(): upload successful")
-//                                    deleteFile(i.url) addCommentFileReply
+
                                         val deleted = deleteFiled(i.url)
                                         if (deleted) {
                                             Log.d(
@@ -2966,10 +2934,6 @@ class PostDetailsActivity2 : AppCompatActivity(),
                                 }
                             }
                         }
-//                        else if(i.localPath == "video"){
-//                            Log.d("LocalPath","ready to upload video")
-//                            Log.d("LocalPath", "url ${i.url} type ${i.localPath}")
-//                        }
 
                     }
 
@@ -2990,7 +2954,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
         commentsViewModel.commentsObserver().observe(this) { data ->
             // Handle the response data here
             for (mainComment in listOfReplies) {
-//                i._id
+
                 Log.d(
                     "UpdateReplyData",
                     "list of replies id ${mainComment.localUpdateId} position ${mainComment._id}"
@@ -3025,9 +2989,7 @@ class PostDetailsActivity2 : AppCompatActivity(),
                     )
                 } else {
                     Log.d(TAG, "Error: ${response.message()}")
-//                requireActivity().runOnUiThread {
-//                    showToast(response.message())
-//                }
+
                 }
             } catch (e: HttpException) {
                 Log.d(TAG, "Http Exception ${e.message}")
