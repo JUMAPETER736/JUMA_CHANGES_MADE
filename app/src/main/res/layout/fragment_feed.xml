@@ -24,6 +24,8 @@
         android:paddingRight="0dp"
         android:layout_marginStart="0dp"
         android:layout_marginEnd="0dp"
+        android:layoutDirection="rtl"
+        android:rotation="180"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

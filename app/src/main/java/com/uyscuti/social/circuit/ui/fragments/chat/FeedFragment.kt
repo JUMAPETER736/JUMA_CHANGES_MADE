@@ -731,7 +731,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             Log.e(TAG, "feedVideoSuccessEvent: failed to delete file ")
         }
     }
-    
+
 
     override fun onGetLayoutInflater(
         savedInstanceState: Bundle?
