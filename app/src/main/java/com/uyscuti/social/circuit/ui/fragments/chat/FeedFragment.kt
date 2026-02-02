@@ -342,11 +342,12 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             decor.systemUiVisibility = 0
 
         val view = inflater.inflate(R.layout.fragment_feed, container, false)
+
         settings = requireActivity().getSharedPreferences(PREFS_NAME, 0)
         fabAction = view.findViewById(R.id.fabAction)
         fileFloatingActionButton = view.findViewById(R.id.fileFloatingActionButton)
         vnFloatingActionButton = view.findViewById(R.id.vnFloatingActionButton)
-
+        uploadSeekBar = view.findViewById(R.id.uploadSeekBar)
         feedUploadView = view.findViewById(R.id.feedUploadView)
         feedCancelView = view.findViewById(R.id.feedCancelView)
 
