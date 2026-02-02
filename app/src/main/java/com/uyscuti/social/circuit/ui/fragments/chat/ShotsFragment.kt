@@ -291,19 +291,7 @@ class ShortsAdapter(
         }
     }
 
-    fun incrementCommentCountForPosition(position: Int) {
-        if (position in 0 until shortsList.size) {
-            val newCount = shortsList[position].comments + 1
-            updateCommentCountForPosition(position, newCount)
-        }
-    }
 
-    fun decrementCommentCountForPosition(position: Int) {
-        if (position in 0 until shortsList.size) {
-            val newCount = maxOf(0, shortsList[position].comments - 1)
-            updateCommentCountForPosition(position, newCount)
-        }
-    }
 
     // Update in ShortsAdapter class
     fun refreshCommentCountFromDatabase(position: Int, isFeedComment: Boolean = false) {
@@ -359,10 +347,7 @@ class ShortsAdapter(
         }
     }
 
-    // UPLOAD PROGRESS METHODS
-    fun getCurrentViewHolderUploadSeekBar(): SeekBar? {
-        return currentViewHolder?.getUploadTopSeekBar()
-    }
+
 
     fun getCurrentViewHolder(): StringViewHolder? {
         return if (currentActivePosition in 0 until viewHolderList.size) {
@@ -373,15 +358,7 @@ class ShortsAdapter(
         }
     }
 
-    fun getCurrentViewHolderUploadCancelButton(): ImageButton? {
-        return try {
-            val currentViewHolder = getCurrentViewHolder()
-            currentViewHolder?.itemView?.findViewById(R.id.shortsUploadCancelButton)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error getting cancel button: ${e.message}")
-            null
-        }
-    }
+
 
     fun updateCurrentViewHolderUploadProgress(progress: Int) {
         currentViewHolder?.updateUploadProgress(progress)
@@ -398,19 +375,7 @@ class ShortsAdapter(
             ?: Log.w(TAG, "Current ViewHolder not available to hide upload progress")
     }
 
-    fun setCurrentViewHolderUploadCancelListener(listener: View.OnClickListener) {
-        currentViewHolder?.setUploadCancelClickListener(listener)
-            ?: Log.w(TAG, "Current ViewHolder not available to set cancel listener")
-    }
-
-    fun getViewHolderUploadSeekBar(position: Int): SeekBar? {
-        return if (position >= 0 && position < viewHolderList.size) {
-            viewHolderList[position].getUploadTopSeekBar()
-        } else {
-            Log.w(TAG, "Invalid position $position for ViewHolder list size ${viewHolderList.size}")
-            null
-        }
-    }
+ 
 
     fun getCurrentActivePosition(): Int {
         return currentActivePosition
