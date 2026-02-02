@@ -409,6 +409,7 @@ class ShortsAdapter(
 // VIEWHOLDER CLASS
 class StringViewHolder @OptIn(UnstableApi::class) constructor(
     itemView: View,
+
     private val commentsClickListener: OnCommentsClickListener,
     private var onClickListeners: OnClickListeners,
     private var exoplayer: ExoPlayer,
@@ -447,7 +448,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
     private val downloadCount: TextView = itemView.findViewById(R.id.downloadCounts)
     private val thumbnailImageView: ImageView = itemView.findViewById(R.id.videoThumbnail)
     private val shortsViewPager: FrameLayout = itemView.findViewById(R.id.shortsViewPager)
-    private val shortsUploadCancelButton: ImageButton = itemView.findViewById(R.id.shortsUploadCancelButton)
+
 
 
     private var currentThumbnailUrl: String? = null
