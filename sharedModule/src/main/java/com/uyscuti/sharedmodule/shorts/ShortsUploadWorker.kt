@@ -57,6 +57,7 @@ class ShortsUploadWorker @AssistedInject constructor(
 
     val TAG = "Worker"
     override suspend fun doWork(): Result {
+
         try {
             Log.d(TAG, "start do work")
             val firstUpdate = workDataOf(Progress to 0)
@@ -67,7 +68,7 @@ class ShortsUploadWorker @AssistedInject constructor(
             // Extract input data
             val filePath = inputData.getString(EXTRA_FILE_PATH)
             val caption = inputData.getString(CAPTION)
-//            val thumbNail = inputData.getString(CAPTION)
+
             val thumbnailFilePath = inputData.getString(THUMBNAIL)
             val tags = inputData.getString(TAGS)
             val fileId = inputData.getString(FILE_ID)
@@ -78,7 +79,7 @@ class ShortsUploadWorker @AssistedInject constructor(
                 return Result.failure()
             }
 
-//            Log.d(TAG, " Caption $caption")
+
 
             // Check if filePath is not null and not empty
             if (filePath.isNullOrEmpty()) {
@@ -99,9 +100,9 @@ class ShortsUploadWorker @AssistedInject constructor(
             val uploadResult = uploadShortToMongoDB(file, caption!!,fileId!!, feedShortsBusinessId!!, thumbnailFile) { bytesRead, totalBytes ->
                 val progress = (bytesRead * 100 / totalBytes).toInt()
 
-
+                // Post to both Feed and Shorts fragments
                 EventBus.getDefault().post(ProgressEvent(uniqueId, progress))
-
+                EventBus.getDefault().post(ProgressEvent("workerUniqueIdShorts", progress))
             }
 
 
