@@ -61,7 +61,7 @@ class Verification_Code : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_verification_code)
 
-        Log.d(TAG, "═══════════════════════════════════════")
+
         Log.d(TAG, "onCreate: Verification Code activity started")
 
         // GET DATA FROM INTENT
@@ -70,10 +70,10 @@ class Verification_Code : AppCompatActivity() {
 
         Log.d(TAG, "Reset Token: $resetToken")
         Log.d(TAG, "Email: $email")
-        Log.d(TAG, "═══════════════════════════════════════")
+
 
         if (resetToken.isNullOrEmpty()) {
-            Log.e(TAG, "❌ Invalid reset token - finishing activity")
+            Log.e(TAG, "Invalid reset token - finishing activity")
             Toast.makeText(this, "Invalid reset token", Toast.LENGTH_SHORT).show()
             finish()
             return
@@ -102,7 +102,7 @@ class Verification_Code : AppCompatActivity() {
         // Set OTP fields to move focus automatically
         setOTPFocusListener()
 
-        Log.d(TAG, "✅ View initialization complete")
+        Log.d(TAG, "View initialization complete")
     }
 
     private fun setOTPFocusListener() {
@@ -168,30 +168,30 @@ class Verification_Code : AppCompatActivity() {
     private fun onContinueClicked() {
         val otp = getOTP()
 
-        Log.d(TAG, "═══════════════════════════════════════")
+
         Log.d(TAG, "Continue button clicked")
         Log.d(TAG, "OTP entered: '$otp'")
         Log.d(TAG, "OTP length: ${otp.length}")
-        Log.d(TAG, "═══════════════════════════════════════")
+
 
         if (otp.length == 6) {
             verifyOTP(otp)
         } else {
-            Log.w(TAG, "⚠️ Invalid OTP length: ${otp.length}")
+            Log.w(TAG, "Invalid OTP length: ${otp.length}")
             Toast.makeText(this, "Please enter a valid 6-digit verification code", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // ✅ ENHANCED: Detailed logging for OTP verification
+    //Detailed logging for OTP verification
     private fun verifyOTP(otp: String) {
-        Log.d(TAG, "═══════════════════════════════════════")
-        Log.d(TAG, "🔐 VERIFY OTP CALLED")
-        Log.d(TAG, "  - OTP: '$otp'")
-        Log.d(TAG, "  - OTP Length: ${otp.length}")
-        Log.d(TAG, "  - OTP Type: String")
-        Log.d(TAG, "  - Reset Token: '$resetToken'")
-        Log.d(TAG, "  - Reset Token Length: ${resetToken?.length ?: 0}")
-        Log.d(TAG, "═══════════════════════════════════════")
+
+        Log.d(TAG, "VERIFY OTP CALLED")
+        Log.d(TAG, "  OTP: '$otp'")
+        Log.d(TAG, "  OTP Length: ${otp.length}")
+        Log.d(TAG, "  OTP Type: String")
+        Log.d(TAG, "  Reset Token: '$resetToken'")
+        Log.d(TAG, "  Reset Token Length: ${resetToken?.length ?: 0}")
+
 
         showLoadingDialog()
 
@@ -199,21 +199,21 @@ class Verification_Code : AppCompatActivity() {
             try {
                 val request = VerifyOTPRequest(resetToken!!, otp)
 
-                Log.d(TAG, "📤 Sending request to API")
-                Log.d(TAG, "  - Request: $request")
+                Log.d(TAG, "Sending request to API")
+                Log.d(TAG, "  Request: $request")
 
                 val response = retrofitInstance.apiService.verifyOTP(request)
 
-                Log.d(TAG, "📥 Response received")
-                Log.d(TAG, "  - HTTP Code: ${response.code()}")
-                Log.d(TAG, "  - Is Successful: ${response.isSuccessful}")
-                Log.d(TAG, "  - Response Message: ${response.message()}")
-                Log.d(TAG, "  - Response Body: ${response.body()}")
+                Log.d(TAG, "Response received")
+                Log.d(TAG, "  HTTP Code: ${response.code()}")
+                Log.d(TAG, "  Is Successful: ${response.isSuccessful}")
+                Log.d(TAG, "  Response Message: ${response.message()}")
+                Log.d(TAG, "  Response Body: ${response.body()}")
 
-                // ✅ ADDED: Log error body if present
+                //Log error body if present
                 if (!response.isSuccessful) {
                     val errorBody = response.errorBody()?.string()
-                    Log.e(TAG, "❌ Error Body: $errorBody")
+                    Log.e(TAG, "Error Body: $errorBody")
                 }
 
                 withContext(Dispatchers.Main) {
