@@ -36,7 +36,7 @@
         android:id="@+id/shortsViewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/progressBarLayout"
+        android:layout_below="@id/uploadShortsSeekBar"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
     <!-- Progress Bar at the very top, edge to edge -->
