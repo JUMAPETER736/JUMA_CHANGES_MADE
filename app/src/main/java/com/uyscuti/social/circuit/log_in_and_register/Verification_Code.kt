@@ -280,7 +280,7 @@ class Verification_Code : AppCompatActivity() {
                 Log.e(TAG, "  Message: ${e.message}")
                 Log.e(TAG, "  Cause: ${e.cause}")
                 e.printStackTrace()
-   
+
 
                 withContext(Dispatchers.Main) {
                     dismissLoadingDialog()
@@ -291,13 +291,13 @@ class Verification_Code : AppCompatActivity() {
                     ).show()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "═══════════════════════════════════════")
-                Log.e(TAG, "❌ UNEXPECTED EXCEPTION")
-                Log.e(TAG, "  - Type: ${e.javaClass.simpleName}")
-                Log.e(TAG, "  - Message: ${e.message}")
-                Log.e(TAG, "  - Cause: ${e.cause}")
+
+                Log.e(TAG, "UNEXPECTED EXCEPTION")
+                Log.e(TAG, " Type: ${e.javaClass.simpleName}")
+                Log.e(TAG, " Message: ${e.message}")
+                Log.e(TAG, " Cause: ${e.cause}")
                 e.printStackTrace()
-                Log.e(TAG, "═══════════════════════════════════════")
+
 
                 withContext(Dispatchers.Main) {
                     dismissLoadingDialog()
@@ -321,13 +321,13 @@ class Verification_Code : AppCompatActivity() {
     }
 
     private fun onResendCodeClicked() {
-        Log.d(TAG, "═══════════════════════════════════════")
+
         Log.d(TAG, "Resend Code button clicked")
         Log.d(TAG, "Email: $email")
-        Log.d(TAG, "═══════════════════════════════════════")
+
 
         if (email.isNullOrEmpty()) {
-            Log.e(TAG, "❌ Email not found")
+            Log.e(TAG, "Email not found")
             Toast.makeText(this, "Email not found", Toast.LENGTH_SHORT).show()
             return
         }
@@ -336,15 +336,15 @@ class Verification_Code : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                Log.d(TAG, "📤 Requesting new OTP for: $email")
+                Log.d(TAG, "Requesting new OTP for: $email")
 
                 val request = ForgotPasswordRequest(email = email!!)
                 val response = retrofitInstance.apiService.forgotPassword(request)
 
-                Log.d(TAG, "📥 Resend OTP response received")
-                Log.d(TAG, "  - HTTP Code: ${response.code()}")
-                Log.d(TAG, "  - Success: ${response.body()?.success}")
-                Log.d(TAG, "  - Message: ${response.body()?.message}")
+                Log.d(TAG, "Resend OTP response received")
+                Log.d(TAG, " HTTP Code: ${response.code()}")
+                Log.d(TAG, " Success: ${response.body()?.success}")
+                Log.d(TAG, " Message: ${response.body()?.message}")
 
                 withContext(Dispatchers.Main) {
                     dismissLoadingDialog()
@@ -352,8 +352,8 @@ class Verification_Code : AppCompatActivity() {
                     if (response.isSuccessful && response.body()?.success == true) {
                         resetToken = response.body()?.data?.resetToken ?: ""
 
-                        Log.d(TAG, "✅ New OTP sent successfully")
-                        Log.d(TAG, "  - New Reset Token: $resetToken")
+                        Log.d(TAG, "New OTP sent successfully")
+                        Log.d(TAG, " New Reset Token: $resetToken")
 
                         Toast.makeText(
                             this@Verification_Code,
@@ -368,7 +368,7 @@ class Verification_Code : AppCompatActivity() {
                         // Clear OTP fields
                         clearOTPFields()
                     } else {
-                        Log.e(TAG, "❌ Failed to resend OTP")
+                        Log.e(TAG, "Failed to resend OTP")
                         Toast.makeText(
                             this@Verification_Code,
                             "Failed to resend OTP. Please try again.",
@@ -377,7 +377,7 @@ class Verification_Code : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Exception while resending OTP: ${e.message}")
+                Log.e(TAG, "Exception while resending OTP: ${e.message}")
                 e.printStackTrace()
 
                 withContext(Dispatchers.Main) {
