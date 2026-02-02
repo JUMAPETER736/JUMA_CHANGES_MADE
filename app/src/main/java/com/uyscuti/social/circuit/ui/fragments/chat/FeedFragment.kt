@@ -638,7 +638,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         uploadSeekBar?.visibility = View.VISIBLE
         feedUploadView.visibility = View.VISIBLE
         feedCancelView.visibility = View.VISIBLE
-        feedUploadView.setBackgroundResource(R.drawable.feed_upload_animation)
         wifiAnimation = feedUploadView.background as AnimationDrawable
 
         val currentProgress = 100 + event.progress
