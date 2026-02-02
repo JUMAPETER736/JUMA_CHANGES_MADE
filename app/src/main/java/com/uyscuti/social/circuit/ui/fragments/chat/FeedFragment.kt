@@ -347,6 +347,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
         fabAction = view.findViewById(R.id.fabAction)
         fileFloatingActionButton = view.findViewById(R.id.fileFloatingActionButton)
         vnFloatingActionButton = view.findViewById(R.id.vnFloatingActionButton)
+
         uploadSeekBar = view.findViewById(R.id.uploadSeekBar)
         feedUploadView = view.findViewById(R.id.feedUploadView)
         feedCancelView = view.findViewById(R.id.feedCancelView)

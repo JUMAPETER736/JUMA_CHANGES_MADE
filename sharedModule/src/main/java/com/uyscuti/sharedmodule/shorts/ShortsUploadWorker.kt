@@ -96,46 +96,6 @@ class ShortsUploadWorker @AssistedInject constructor(
             val file = File(filePath)
 
 
-            // Perform your file upload logic here
-//            val uploadResult = uploadShortToMongoDB(file, caption!!)
-            // Example usage
-//            Log.d("progress id", uniqueId)
-//            if(!tags.isNullOrEmpty()) {
-//                val result = removeOuterBrackets(tags)
-//                val tagList = listOf(result)
-//                val uploadResult = uploadShortToMongoDBFromFeed(file, caption!!, tagList, thumbnailFile) { bytesRead, totalBytes ->
-//                    val progress = (bytesRead * 100 / totalBytes).toInt()
-////                    Log.d("UploadProgress", "Progress: $progress%")
-////                Log.d("progress id", uniqueId)
-//
-//                    EventBus.getDefault().post(ProgressEvent(uniqueId, progress))
-//
-//                }
-//
-//
-//                setProgress(lastUpdate)
-//
-//                // Check the result of the upload and return success or failure accordingly
-//                return if (uploadResult) {
-//                    Log.d(TAG, "Upload successful")
-//                    EventBus.getDefault().post(UploadSuccessful(success = true))
-//
-//                    deleteFiled(filePath)
-//                    Result.success()
-//
-//                } else {
-//                    Log.d(TAG, "Failed to upload short")
-//                    Result.failure()
-//                }
-//            }else {
-//
-//            }
-//            if (feedShortsBusinessId != null) {
-//                Log.d(TAG, "doWork(in short worker): failure feedShortsBusinessId $feedShortsBusinessId")
-//                if(feedShortsBusinessId.isNotEmpty()) {
-//                    return Result.failure()
-//                }
-//            }
             val uploadResult = uploadShortToMongoDB(file, caption!!,fileId!!, feedShortsBusinessId!!, thumbnailFile) { bytesRead, totalBytes ->
                 val progress = (bytesRead * 100 / totalBytes).toInt()
 //                    Log.d("UploadProgress", "Progress: $progress%")
