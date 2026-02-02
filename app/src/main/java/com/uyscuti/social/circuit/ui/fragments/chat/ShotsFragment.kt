@@ -282,16 +282,6 @@ class ShortsAdapter(
         }
     }
 
-    // Comment count management methods
-    fun updateCommentCountForPosition(position: Int, newCount: Int) {
-        if (position in 0 until shortsList.size) {
-            shortsList[position].comments = newCount
-            viewHolderList.getOrNull(position)?.updateCommentCount(newCount)
-            Log.d(TAG, "Updated comment count for position $position to $newCount")
-        }
-    }
-
-
 
     // Update in ShortsAdapter class
     fun refreshCommentCountFromDatabase(position: Int, isFeedComment: Boolean = false) {
@@ -375,7 +365,7 @@ class ShortsAdapter(
             ?: Log.w(TAG, "Current ViewHolder not available to hide upload progress")
     }
 
- 
+
 
     fun getCurrentActivePosition(): Int {
         return currentActivePosition
@@ -1452,7 +1442,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
         shortSeekBar = view.findViewById(R.id.shortSeekBar)
         shortsMenu = view.findViewById(R.id.shortsMenu)
         searchForAllShorts = view.findViewById(R.id.searchForAllShorts)
-        uploadShortsSeekBar = view.findViewById(R.id.uploadShortsSeekBar)
+    
 
         shortsMenu.setOnClickListener {
 
