@@ -283,6 +283,7 @@ class ShortsAdapter(
     }
 
 
+
     // Update in ShortsAdapter class
     fun refreshCommentCountFromDatabase(position: Int, isFeedComment: Boolean = false) {
         if (position in 0 until shortsList.size) {
@@ -347,24 +348,6 @@ class ShortsAdapter(
             null
         }
     }
-
-
-
-    fun updateCurrentViewHolderUploadProgress(progress: Int) {
-        currentViewHolder?.updateUploadProgress(progress)
-            ?: Log.w(TAG, "Current ViewHolder not available for progress update")
-    }
-
-    fun showCurrentViewHolderUploadProgress() {
-        currentViewHolder?.showUploadProgress()
-            ?: Log.w(TAG, "Current ViewHolder not available to show upload progress")
-    }
-
-    fun hideCurrentViewHolderUploadProgress() {
-        currentViewHolder?.hideUploadProgress()
-            ?: Log.w(TAG, "Current ViewHolder not available to hide upload progress")
-    }
-
 
 
     fun getCurrentActivePosition(): Int {
@@ -444,7 +427,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
     val videoView: PlayerView = itemView.findViewById(R.id.video_view)
     private val bottomVideoSeekBar: SeekBar = itemView.findViewById(R.id.bottomShortsVideoProgressSeekBar)
     private val btnPlayPause: ImageView = itemView.findViewById(R.id.btnPlayPause)
-    private var shortsUploadTopSeekBar: SeekBar? = null
 
     private val btnLike: ImageButton = itemView.findViewById(R.id.btnLike)
     private val favorite: ImageView = itemView.findViewById(R.id.favorite)
@@ -548,7 +530,7 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
 
     init {
         setupSeekBar()
-        setupUploadComponents()
+
 
         videoView.apply {
             useController = false
@@ -613,22 +595,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         }
     }
 
-    fun getUploadTopSeekBar(): SeekBar? = shortsUploadTopSeekBar
-
-    fun updateUploadProgress(progress: Int) {
-        shortsUploadTopSeekBar?.progress = progress
-    }
-
-    fun hideUploadProgress() {
-        shortsUploadTopSeekBar?.visibility = View.GONE
-        shortsUploadCancelButton.visibility = View.GONE
-    }
-
-    fun showUploadProgress() {
-        shortsUploadTopSeekBar?.visibility = View.VISIBLE
-        shortsUploadCancelButton.visibility = View.VISIBLE
-    }
-
 
     fun onViewAttached() {
         videoView.visibility = View.VISIBLE
@@ -643,9 +609,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
 
     fun getSurface(): PlayerView = videoView
 
-    fun setUploadCancelClickListener(listener: View.OnClickListener) {
-        shortsUploadCancelButton.setOnClickListener(listener)
-    }
 
     @OptIn(UnstableApi::class)
     @SuppressLint("SetTextI18n")
@@ -1137,14 +1100,6 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
         }
     }
 
-    private fun setupUploadComponents() {
-        shortsUploadTopSeekBar = itemView.findViewById(R.id.uploadTopSeekBar)
-        if (shortsUploadTopSeekBar == null) {
-            Log.w(TAG, "uploadTopSeekBar not found in layout")
-        }
-        shortsUploadTopSeekBar?.visibility = View.GONE
-    }
-
     private fun setupSeekBar() {
         bottomVideoSeekBar.apply {
             secondaryProgress = 0
@@ -1442,7 +1397,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
         shortSeekBar = view.findViewById(R.id.shortSeekBar)
         shortsMenu = view.findViewById(R.id.shortsMenu)
         searchForAllShorts = view.findViewById(R.id.searchForAllShorts)
-    
+        uploadShortsSeekBar = view.findViewById(R.id.uploadShortsSeekBar)
 
         shortsMenu.setOnClickListener {
 
@@ -1805,9 +1760,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
         uploadShortsSeekBar?.progress = currentProgress
 
-        // Also update the current ViewHolder's SeekBar
-        shortsAdapter.updateCurrentViewHolderUploadProgress(currentProgress)
-        shortsAdapter.showCurrentViewHolderUploadProgress()
+
 
         Log.d("ShortsUploadProgress", "Upload progress: $currentProgress")
     }
@@ -1816,8 +1769,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
     fun onShortsUploadSuccess(event: UploadSuccessful) {
         uploadShortsSeekBar?.visibility = View.GONE
         uploadShortsSeekBar?.progress = 0
-
-        shortsAdapter.hideCurrentViewHolderUploadProgress()
 
         val rootView: View = requireActivity().findViewById(android.R.id.content)
         val snackBar = Snackbar.make(rootView, "Shorts upload successful", Snackbar.LENGTH_LONG)

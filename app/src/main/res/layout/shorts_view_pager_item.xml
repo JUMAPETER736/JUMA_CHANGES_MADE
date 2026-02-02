@@ -27,44 +27,6 @@
         android:visibility="visible" />
 
 
-
-    <!-- Upload Progress SeekBar at the very top edge to edge -->
-    <SeekBar
-        android:id="@+id/uploadTopSeekBar"
-        android:layout_width="match_parent"
-        android:layout_height="4dp"
-        android:layout_gravity="top"
-        android:max="100"
-        android:maxHeight="4dp"
-        android:minHeight="4dp"
-        android:progress="0"
-        android:progressBackgroundTint="#AFADAD"
-        android:progressTint="#2196F3"
-        android:splitTrack="false"
-        android:thumb="@null"
-        android:visibility="gone"
-        android:paddingLeft="0dp"
-        android:paddingRight="0dp"
-        android:paddingStart="0dp"
-        android:paddingEnd="0dp"
-        android:layoutDirection="rtl"
-        android:rotation="180" />
-
-    <!-- Cancel button below the SeekBar -->
-    <ImageButton
-        android:id="@+id/shortsUploadCancelButton"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_gravity="top|start"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:background="?android:attr/selectableItemBackground"
-        android:src="@drawable/cancel_svgrepo_com"
-        android:visibility="gone"
-        android:scaleType="fitCenter"
-        app:tint="@color/white" />
-
-
     <!-- Play/Pause Button -->
     <ImageView
         android:id="@+id/btnPlayPause"
