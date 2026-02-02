@@ -185,7 +185,6 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     private lateinit var tabLayout: TabLayout
     private lateinit var viewPager2: ViewPager2
     private lateinit var adapter: FragmentPageAdapter
-    private var uploadSeekBar: SeekBar? = null
     private val feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
 
     //  UI COMPONENTS - FLOATING ACTION BUTTONS
@@ -196,6 +195,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
     //  UI COMPONENTS - UPLOAD
 
+    private var uploadSeekBar: SeekBar? = null
     private lateinit var feedUploadView: ImageView
     private lateinit var feedCancelView: ImageView
 
