@@ -222,7 +222,7 @@ class Verification_Code : AppCompatActivity() {
                     if (response.isSuccessful && response.body()?.success == true) {
                         val verifiedToken = response.body()?.data?.resetToken ?: ""
 
-                        Log.d(TAG, "✅ OTP VERIFIED SUCCESSFULLY")
+                        Log.d(TAG, "OTP VERIFIED SUCCESSFULLY")
                         Log.d(TAG, "  - Verified Token: $verifiedToken")
 
                         Toast.makeText(
@@ -232,7 +232,7 @@ class Verification_Code : AppCompatActivity() {
                         ).show()
 
                         // Navigate to Create New Password screen
-                        Log.d(TAG, "🚀 Navigating to Create_New_Password")
+                        Log.d(TAG, "Navigating to Create_New_Password")
                         val intent = Intent(this@Verification_Code, Create_New_Password::class.java)
                         intent.putExtra("RESET_TOKEN", verifiedToken)
                         startActivity(intent)
@@ -240,10 +240,10 @@ class Verification_Code : AppCompatActivity() {
                     } else {
                         val errorMessage = response.body()?.message ?: "Invalid or expired OTP"
 
-                        Log.e(TAG, "❌ OTP VERIFICATION FAILED")
-                        Log.e(TAG, "  - Error Message: $errorMessage")
-                        Log.e(TAG, "  - Success Flag: ${response.body()?.success}")
-                        Log.e(TAG, "  - Status Code: ${response.body()?.statusCode}")
+                        Log.e(TAG, "OTP VERIFICATION FAILED")
+                        Log.e(TAG, "  Error Message: $errorMessage")
+                        Log.e(TAG, "  Success Flag: ${response.body()?.success}")
+                        Log.e(TAG, "  Status Code: ${response.body()?.statusCode}")
 
                         Toast.makeText(
                             this@Verification_Code,
@@ -253,19 +253,18 @@ class Verification_Code : AppCompatActivity() {
                     }
                 }
             } catch (e: HttpException) {
-                Log.e(TAG, "═══════════════════════════════════════")
-                Log.e(TAG, "❌ HTTP EXCEPTION")
-                Log.e(TAG, "  - Message: ${e.message}")
-                Log.e(TAG, "  - Code: ${e.code()}")
+
+                Log.e(TAG, "HTTP EXCEPTION")
+                Log.e(TAG, " Message: ${e.message}")
+                Log.e(TAG, " Code: ${e.code()}")
 
                 try {
                     val errorBody = e.response()?.errorBody()?.string()
-                    Log.e(TAG, "  - Error Body: $errorBody")
+                    Log.e(TAG, "  Error Body: $errorBody")
                 } catch (ex: Exception) {
-                    Log.e(TAG, "  - Could not read error body: ${ex.message}")
+                    Log.e(TAG, "  Could not read error body: ${ex.message}")
                 }
 
-                Log.e(TAG, "═══════════════════════════════════════")
 
                 withContext(Dispatchers.Main) {
                     dismissLoadingDialog()
@@ -276,12 +275,12 @@ class Verification_Code : AppCompatActivity() {
                     ).show()
                 }
             } catch (e: IOException) {
-                Log.e(TAG, "═══════════════════════════════════════")
-                Log.e(TAG, "❌ IO EXCEPTION (Network Error)")
-                Log.e(TAG, "  - Message: ${e.message}")
-                Log.e(TAG, "  - Cause: ${e.cause}")
+
+                Log.e(TAG, "IO EXCEPTION (Network Error)")
+                Log.e(TAG, "  Message: ${e.message}")
+                Log.e(TAG, "  Cause: ${e.cause}")
                 e.printStackTrace()
-                Log.e(TAG, "═══════════════════════════════════════")
+   
 
                 withContext(Dispatchers.Main) {
                     dismissLoadingDialog()
