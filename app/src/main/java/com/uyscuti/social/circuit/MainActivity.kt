@@ -402,7 +402,7 @@ class MainActivity : AppCompatActivity(),
 
 
     private var actionMode: ActionMode? = null
-
+         private var uploadSeekBar: SeekBar? = null
 
     private lateinit var item: NavigationItem
     private lateinit var item1: NavigationItem

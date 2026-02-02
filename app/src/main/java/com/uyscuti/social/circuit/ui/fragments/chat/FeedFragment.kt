@@ -185,7 +185,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     private lateinit var tabLayout: TabLayout
     private lateinit var viewPager2: ViewPager2
     private lateinit var adapter: FragmentPageAdapter
-    private lateinit var uploadSeekBar: SeekBar
+    private var uploadSeekBar: SeekBar? = null
     private val feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
 
     //  UI COMPONENTS - FLOATING ACTION BUTTONS
@@ -1618,8 +1618,8 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
     private fun startUploadAnimation(uploadDurationMs: Long = 10000) {
-        uploadSeekBar.visibility = View.VISIBLE  // Changed from uploadSeekBar
-        uploadSeekBar.progress = 0
+        uploadSeekBar?.visibility = View.VISIBLE  // Changed from uploadSeekBar
+        uploadSeekBar?.progress = 0
 
         progressAnimator = ValueAnimator.ofInt(0, 100).apply {
             duration = uploadDurationMs
@@ -1627,7 +1627,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
 
             addUpdateListener { animator ->
                 val currentProgress = animator.animatedValue as Int
-                uploadSeekBar.progress = currentProgress  // Changed from uploadSeekBar
+                uploadSeekBar?.progress = currentProgress  // Changed from uploadSeekBar
             }
 
             addListener(object : AnimatorListenerAdapter() {
@@ -1641,8 +1641,8 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
     private fun hideUploadSeekBar() {
-        uploadSeekBar.visibility = View.GONE
-        uploadSeekBar.progress = 0
+        uploadSeekBar?.visibility = View.GONE
+        uploadSeekBar?.progress = 0
         isUploadInProgress = false
     }
 

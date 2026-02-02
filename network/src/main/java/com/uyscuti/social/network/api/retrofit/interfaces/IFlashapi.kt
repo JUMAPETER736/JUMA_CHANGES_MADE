@@ -136,8 +136,6 @@ interface IFlashapi {
     @POST("users/reset-password-otp")
     suspend fun resetPassword(@Body requestPost: ResetPasswordRequest): Response<ResetPasswordResponse>
 
-    @POST("users/resend-email-verification")
-    suspend fun resendEmailVerification(@Body request: ResendEmailRequest): Response<MainResponse>
 
 
     @Multipart
