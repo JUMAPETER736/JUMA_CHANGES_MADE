@@ -29,6 +29,8 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class Verification_Code : AppCompatActivity() {
 
+    private val TAG = "Verification_Code"
+
     private lateinit var tvTitle: TextView
     private lateinit var tvInstructions: TextView
     private lateinit var otp1: EditText
@@ -46,14 +48,12 @@ class Verification_Code : AppCompatActivity() {
     private val timerHandler = Handler()
     private var dialog: Dialog? = null
 
-    // ADD THESE VARIABLES
     private var resetToken: String? = null
     private var email: String? = null
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
 
-    //6 OTP fields (backend sends 6-digit OTP)
     val otpFields = arrayOf(R.id.otp1, R.id.otp2, R.id.otp3, R.id.otp4, R.id.otp5, R.id.otp6)
 
     @SuppressLint("MissingInflatedId")
@@ -61,11 +61,19 @@ class Verification_Code : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_verification_code)
 
+        Log.d(TAG, "═══════════════════════════════════════")
+        Log.d(TAG, "onCreate: Verification Code activity started")
+
         // GET DATA FROM INTENT
         resetToken = intent.getStringExtra("RESET_TOKEN")
         email = intent.getStringExtra("EMAIL")
 
+        Log.d(TAG, "Reset Token: $resetToken")
+        Log.d(TAG, "Email: $email")
+        Log.d(TAG, "═══════════════════════════════════════")
+
         if (resetToken.isNullOrEmpty()) {
+            Log.e(TAG, "❌ Invalid reset token - finishing activity")
             Toast.makeText(this, "Invalid reset token", Toast.LENGTH_SHORT).show()
             finish()
             return
@@ -93,9 +101,10 @@ class Verification_Code : AppCompatActivity() {
 
         // Set OTP fields to move focus automatically
         setOTPFocusListener()
+
+        Log.d(TAG, "✅ View initialization complete")
     }
 
-    //  Function to handle OTP field auto-move focus (6 fields)
     private fun setOTPFocusListener() {
         otp1.addTextChangedListener(createTextWatcher(otp1))
         otp2.addTextChangedListener(createTextWatcher(otp2))
@@ -105,7 +114,6 @@ class Verification_Code : AppCompatActivity() {
         otp6.addTextChangedListener(createTextWatcher(otp6))
     }
 
-    // : Helper function to create TextWatcher
     private fun createTextWatcher(currentField: EditText): TextWatcher {
         return object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
@@ -119,7 +127,6 @@ class Verification_Code : AppCompatActivity() {
         }
     }
 
-    //  Function to move to the next OTP field (6 fields)
     private fun moveToNextField(currentField: EditText) {
         val currentIndex = when (currentField.id) {
             R.id.otp1 -> 0
@@ -137,7 +144,6 @@ class Verification_Code : AppCompatActivity() {
         }
     }
 
-    // Start countdown timer
     private fun startCountdownTimer() {
         if (!timerRunning) {
             timerRunning = true
@@ -159,30 +165,65 @@ class Verification_Code : AppCompatActivity() {
         }
     }
 
-    //  Handle continue button click with API call
     private fun onContinueClicked() {
         val otp = getOTP()
-        if (otp.length == 6) { // Changed from 4 to 6
+
+        Log.d(TAG, "═══════════════════════════════════════")
+        Log.d(TAG, "Continue button clicked")
+        Log.d(TAG, "OTP entered: '$otp'")
+        Log.d(TAG, "OTP length: ${otp.length}")
+        Log.d(TAG, "═══════════════════════════════════════")
+
+        if (otp.length == 6) {
             verifyOTP(otp)
         } else {
+            Log.w(TAG, "⚠️ Invalid OTP length: ${otp.length}")
             Toast.makeText(this, "Please enter a valid 6-digit verification code", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // Verify OTP with backend
+    // ✅ ENHANCED: Detailed logging for OTP verification
     private fun verifyOTP(otp: String) {
+        Log.d(TAG, "═══════════════════════════════════════")
+        Log.d(TAG, "🔐 VERIFY OTP CALLED")
+        Log.d(TAG, "  - OTP: '$otp'")
+        Log.d(TAG, "  - OTP Length: ${otp.length}")
+        Log.d(TAG, "  - OTP Type: String")
+        Log.d(TAG, "  - Reset Token: '$resetToken'")
+        Log.d(TAG, "  - Reset Token Length: ${resetToken?.length ?: 0}")
+        Log.d(TAG, "═══════════════════════════════════════")
+
         showLoadingDialog()
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val request = VerifyOTPRequest(resetToken!!, otp)
+
+                Log.d(TAG, "📤 Sending request to API")
+                Log.d(TAG, "  - Request: $request")
+
                 val response = retrofitInstance.apiService.verifyOTP(request)
+
+                Log.d(TAG, "📥 Response received")
+                Log.d(TAG, "  - HTTP Code: ${response.code()}")
+                Log.d(TAG, "  - Is Successful: ${response.isSuccessful}")
+                Log.d(TAG, "  - Response Message: ${response.message()}")
+                Log.d(TAG, "  - Response Body: ${response.body()}")
+
+                // ✅ ADDED: Log error body if present
+                if (!response.isSuccessful) {
+                    val errorBody = response.errorBody()?.string()
+                    Log.e(TAG, "❌ Error Body: $errorBody")
+                }
 
                 withContext(Dispatchers.Main) {
                     dismissLoadingDialog()
 
                     if (response.isSuccessful && response.body()?.success == true) {
                         val verifiedToken = response.body()?.data?.resetToken ?: ""
+
+                        Log.d(TAG, "✅ OTP VERIFIED SUCCESSFULLY")
+                        Log.d(TAG, "  - Verified Token: $verifiedToken")
 
                         Toast.makeText(
                             this@Verification_Code,
@@ -191,30 +232,57 @@ class Verification_Code : AppCompatActivity() {
                         ).show()
 
                         // Navigate to Create New Password screen
+                        Log.d(TAG, "🚀 Navigating to Create_New_Password")
                         val intent = Intent(this@Verification_Code, Create_New_Password::class.java)
                         intent.putExtra("RESET_TOKEN", verifiedToken)
                         startActivity(intent)
                         finish()
                     } else {
+                        val errorMessage = response.body()?.message ?: "Invalid or expired OTP"
+
+                        Log.e(TAG, "❌ OTP VERIFICATION FAILED")
+                        Log.e(TAG, "  - Error Message: $errorMessage")
+                        Log.e(TAG, "  - Success Flag: ${response.body()?.success}")
+                        Log.e(TAG, "  - Status Code: ${response.body()?.statusCode}")
+
                         Toast.makeText(
                             this@Verification_Code,
-                            response.body()?.message ?: "Invalid or expired OTP",
-                            Toast.LENGTH_SHORT
+                            errorMessage,
+                            Toast.LENGTH_LONG
                         ).show()
                     }
                 }
             } catch (e: HttpException) {
-                Log.e("VerifyOTP", "HTTP Exception: ${e.message}")
+                Log.e(TAG, "═══════════════════════════════════════")
+                Log.e(TAG, "❌ HTTP EXCEPTION")
+                Log.e(TAG, "  - Message: ${e.message}")
+                Log.e(TAG, "  - Code: ${e.code()}")
+
+                try {
+                    val errorBody = e.response()?.errorBody()?.string()
+                    Log.e(TAG, "  - Error Body: $errorBody")
+                } catch (ex: Exception) {
+                    Log.e(TAG, "  - Could not read error body: ${ex.message}")
+                }
+
+                Log.e(TAG, "═══════════════════════════════════════")
+
                 withContext(Dispatchers.Main) {
                     dismissLoadingDialog()
                     Toast.makeText(
                         this@Verification_Code,
-                        "HTTP error. Please try again.",
+                        "HTTP error (${e.code()}). Please try again.",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             } catch (e: IOException) {
-                Log.e("VerifyOTP", "IO Exception: ${e.message}")
+                Log.e(TAG, "═══════════════════════════════════════")
+                Log.e(TAG, "❌ IO EXCEPTION (Network Error)")
+                Log.e(TAG, "  - Message: ${e.message}")
+                Log.e(TAG, "  - Cause: ${e.cause}")
+                e.printStackTrace()
+                Log.e(TAG, "═══════════════════════════════════════")
+
                 withContext(Dispatchers.Main) {
                     dismissLoadingDialog()
                     Toast.makeText(
@@ -224,20 +292,26 @@ class Verification_Code : AppCompatActivity() {
                     ).show()
                 }
             } catch (e: Exception) {
-                Log.e("VerifyOTP", "Exception: ${e.message}")
+                Log.e(TAG, "═══════════════════════════════════════")
+                Log.e(TAG, "❌ UNEXPECTED EXCEPTION")
+                Log.e(TAG, "  - Type: ${e.javaClass.simpleName}")
+                Log.e(TAG, "  - Message: ${e.message}")
+                Log.e(TAG, "  - Cause: ${e.cause}")
+                e.printStackTrace()
+                Log.e(TAG, "═══════════════════════════════════════")
+
                 withContext(Dispatchers.Main) {
                     dismissLoadingDialog()
                     Toast.makeText(
                         this@Verification_Code,
-                        "An error occurred. Please try again.",
-                        Toast.LENGTH_SHORT
+                        "An error occurred: ${e.message}",
+                        Toast.LENGTH_LONG
                     ).show()
                 }
             }
         }
     }
 
-    //  Get OTP value from all 6 input fields
     private fun getOTP(): String {
         return otp1.text.toString() +
                 otp2.text.toString() +
@@ -247,9 +321,14 @@ class Verification_Code : AppCompatActivity() {
                 otp6.text.toString()
     }
 
-    // Handle resend code with API call
     private fun onResendCodeClicked() {
+        Log.d(TAG, "═══════════════════════════════════════")
+        Log.d(TAG, "Resend Code button clicked")
+        Log.d(TAG, "Email: $email")
+        Log.d(TAG, "═══════════════════════════════════════")
+
         if (email.isNullOrEmpty()) {
+            Log.e(TAG, "❌ Email not found")
             Toast.makeText(this, "Email not found", Toast.LENGTH_SHORT).show()
             return
         }
@@ -258,14 +337,24 @@ class Verification_Code : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val request = ForgotPasswordRequest(email!!)
+                Log.d(TAG, "📤 Requesting new OTP for: $email")
+
+                val request = ForgotPasswordRequest(email = email!!)
                 val response = retrofitInstance.apiService.forgotPassword(request)
+
+                Log.d(TAG, "📥 Resend OTP response received")
+                Log.d(TAG, "  - HTTP Code: ${response.code()}")
+                Log.d(TAG, "  - Success: ${response.body()?.success}")
+                Log.d(TAG, "  - Message: ${response.body()?.message}")
 
                 withContext(Dispatchers.Main) {
                     dismissLoadingDialog()
 
                     if (response.isSuccessful && response.body()?.success == true) {
                         resetToken = response.body()?.data?.resetToken ?: ""
+
+                        Log.d(TAG, "✅ New OTP sent successfully")
+                        Log.d(TAG, "  - New Reset Token: $resetToken")
 
                         Toast.makeText(
                             this@Verification_Code,
@@ -274,12 +363,13 @@ class Verification_Code : AppCompatActivity() {
                         ).show()
 
                         // Reset the timer and restart
-                        timerValue = 120
+                        timerValue = 300
                         startCountdownTimer()
 
                         // Clear OTP fields
                         clearOTPFields()
                     } else {
+                        Log.e(TAG, "❌ Failed to resend OTP")
                         Toast.makeText(
                             this@Verification_Code,
                             "Failed to resend OTP. Please try again.",
@@ -288,7 +378,9 @@ class Verification_Code : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("ResendOTP", "Exception: ${e.message}")
+                Log.e(TAG, "❌ Exception while resending OTP: ${e.message}")
+                e.printStackTrace()
+
                 withContext(Dispatchers.Main) {
                     dismissLoadingDialog()
                     Toast.makeText(
@@ -301,8 +393,8 @@ class Verification_Code : AppCompatActivity() {
         }
     }
 
-    //  Clear all OTP fields
     private fun clearOTPFields() {
+        Log.d(TAG, "Clearing OTP fields")
         otp1.text.clear()
         otp2.text.clear()
         otp3.text.clear()
@@ -312,8 +404,8 @@ class Verification_Code : AppCompatActivity() {
         otp1.requestFocus()
     }
 
-    // : Loading dialog functions
     private fun showLoadingDialog() {
+        Log.d(TAG, "Showing loading dialog")
         if (dialog == null) {
             dialog = Dialog(this)
             dialog?.setContentView(R.layout.loading_dialog)
@@ -324,11 +416,13 @@ class Verification_Code : AppCompatActivity() {
     }
 
     private fun dismissLoadingDialog() {
+        Log.d(TAG, "Dismissing loading dialog")
         dialog?.dismiss()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        Log.d(TAG, "onDestroy: Cleaning up")
         timerHandler.removeCallbacksAndMessages(null)
         dialog?.dismiss()
         dialog = null
