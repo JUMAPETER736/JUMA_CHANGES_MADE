@@ -1266,6 +1266,8 @@ class StringViewHolder @OptIn(UnstableApi::class) constructor(
 class ShotsFragment : Fragment(), OnClickListeners {
 
 
+
+
     // Feed Business Data
     private var feedShortsBusinessId = ""
     private var feedShortsBusinessFileId = ""
@@ -1310,6 +1312,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
     private lateinit var progressBarLayout: LinearLayout
     private lateinit var downloadProgressBarLayout: LinearLayout
     private lateinit var searchForAllShorts: ImageView
+    private var uploadShortsSeekBar: SeekBar? = null
 
     // UI Components - Media & Controls
     private lateinit var shortSeekBar: SeekBar
