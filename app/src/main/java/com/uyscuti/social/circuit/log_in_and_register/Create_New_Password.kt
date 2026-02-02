@@ -11,6 +11,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
 import android.util.Log
+import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -97,18 +98,27 @@ class Create_New_Password : AppCompatActivity() {
             val newPassword = etNewPassword.text.toString()
             val confirmPassword = etConfirmPassword.text.toString()
 
+            // Reset visibility of eye toggles before validation
+            ivNewPasswordToggle.visibility = View.VISIBLE
+            ivConfirmPasswordToggle.visibility = View.VISIBLE
+
             // Check if the input fields are empty
             if (newPassword.isEmpty()) {
                 etNewPassword.error = "New password cannot be empty"
+                ivNewPasswordToggle.visibility = View.GONE
             } else if (confirmPassword.isEmpty()) {
                 etConfirmPassword.error = "Confirm password cannot be empty"
+                ivConfirmPasswordToggle.visibility = View.GONE
             } else if (newPassword != confirmPassword) {
                 // Check if the passwords match
                 etNewPassword.error = "Passwords do not match"
                 etConfirmPassword.error = "Passwords do not match"
+                ivNewPasswordToggle.visibility = View.GONE
+                ivConfirmPasswordToggle.visibility = View.GONE
             } else if (!isPasswordValid(newPassword)) {
                 // Check if the new password meets the criteria
                 etNewPassword.error = "Password must be at least 8 characters, contain one uppercase letter, one lowercase letter, one digit, and one special character."
+                ivNewPasswordToggle.visibility = View.GONE
             } else {
                 // Proceed with password reset logic
                 resetPassword(newPassword)
