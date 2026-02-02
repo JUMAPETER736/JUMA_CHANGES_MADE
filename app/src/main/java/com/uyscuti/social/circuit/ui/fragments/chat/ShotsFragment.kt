@@ -1485,6 +1485,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
         shortSeekBar = view.findViewById(R.id.shortSeekBar)
         shortsMenu = view.findViewById(R.id.shortsMenu)
         searchForAllShorts = view.findViewById(R.id.searchForAllShorts)
+        uploadShortsSeekBar = view.findViewById(R.id.uploadShortsSeekBar)
 
         shortsMenu.setOnClickListener {
 
@@ -1834,6 +1835,43 @@ class ShotsFragment : Fragment(), OnClickListeners {
         }
 
         return view
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onShortsProgressEvent(event: ShortsProgressEvent) {
+        uploadShortsSeekBar?.visibility = View.VISIBLE
+
+        val currentProgress = when (event.eventId) {
+            "workerUniqueIdShorts" -> 100 + event.progress
+            else -> event.progress
+        }
+
+        uploadShortsSeekBar?.progress = currentProgress
+
+        // Also update the current ViewHolder's SeekBar
+        shortsAdapter.updateCurrentViewHolderUploadProgress(currentProgress)
+        shortsAdapter.showCurrentViewHolderUploadProgress()
+
+        Log.d("ShortsUploadProgress", "Upload progress: $currentProgress")
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onShortsUploadSuccess(event: ShortsUploadSuccessful) {
+        uploadShortsSeekBar?.visibility = View.GONE
+        uploadShortsSeekBar?.progress = 0
+
+        shortsAdapter.hideCurrentViewHolderUploadProgress()
+
+        val rootView: View = requireActivity().findViewById(android.R.id.content)
+        val snackBar = Snackbar.make(rootView, "Shorts upload successful", Snackbar.LENGTH_LONG)
+        val snackBarBackgroundColor = ContextCompat.getColor(requireContext(), R.color.green)
+        val snackBarTextColor = ContextCompat.getColor(requireContext(), R.color.white)
+        val snackBarView = snackBar.view
+        snackBarView.setBackgroundColor(snackBarBackgroundColor)
+        snackBar.setTextColor(snackBarTextColor)
+        snackBar.show()
+
+        Log.d("ShortsUploadSuccess", "Upload completed successfully")
     }
 
     override fun onStart() {
