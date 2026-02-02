@@ -124,6 +124,7 @@ import retrofit2.Response
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.signature.ObjectKey
 import android.graphics.drawable.Drawable
+import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.sharedmodule.FlashApplication
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.sharedmodule.adapter.OnClickListeners
@@ -137,6 +138,7 @@ import com.uyscuti.sharedmodule.model.GoToFeedFragment
 import com.uyscuti.sharedmodule.model.GoToUserProfileFragment
 import com.uyscuti.sharedmodule.model.HideBottomNav
 import com.uyscuti.sharedmodule.model.PausePlayEvent
+import com.uyscuti.sharedmodule.model.ProgressEvent
 import com.uyscuti.sharedmodule.model.ProgressViewModel
 import com.uyscuti.sharedmodule.model.ShortsBookmarkButton
 import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
@@ -1838,7 +1840,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onShortsProgressEvent(event: ShortsProgressEvent) {
+    fun onShortsProgressEvent(event: ProgressEvent) {
         uploadShortsSeekBar?.visibility = View.VISIBLE
 
         val currentProgress = when (event.eventId) {
@@ -1856,7 +1858,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onShortsUploadSuccess(event: ShortsUploadSuccessful) {
+    fun onShortsUploadSuccess(event: UploadSuccessful) {
         uploadShortsSeekBar?.visibility = View.GONE
         uploadShortsSeekBar?.progress = 0
 

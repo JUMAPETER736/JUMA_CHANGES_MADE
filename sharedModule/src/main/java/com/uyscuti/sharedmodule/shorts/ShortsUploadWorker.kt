@@ -111,16 +111,16 @@ class ShortsUploadWorker @AssistedInject constructor(
 
             // Check the result of the upload and return success or failure accordingly
             return if (uploadResult) {
-                Log.d(TAG, "Upload successful")
+                Log.d(TAG, "Shorts Upload successful")
                 EventBus.getDefault().post(UploadSuccessful(success = true))
-                EventBus.getDefault().post(UploadSuccessful(success = true, message = "Shorts uploaded successfully"))
+                EventBus.getDefault().post(UploadSuccessful(success = true))
 
                 deleteFiled(filePath)
                 Result.success()
 
             } else {
                 Log.d(TAG, "Failed to upload short")
-                EventBus.getDefault().post(UploadSuccessful(success = false, message = "Upload failed"))
+                EventBus.getDefault().post(UploadSuccessful(success = false))
                 Result.failure()
             }
 
