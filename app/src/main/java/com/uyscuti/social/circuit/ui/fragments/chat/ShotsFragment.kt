@@ -186,6 +186,7 @@ data class MyData(
 
 // MAIN ADAPTER CLASS
 class ShortsAdapter(
+
     private val commentsClickListener: OnCommentsClickListener,
     private var clickListeners: OnClickListeners,
     private var exoplayer: ExoPlayer,
