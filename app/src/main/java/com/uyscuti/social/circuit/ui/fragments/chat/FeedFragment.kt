@@ -678,38 +678,33 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
 
-
     @SuppressLint("ShowToast")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun successEvent(event: UploadSuccessful) {
-
-
         val rootView: View = requireActivity().findViewById(android.R.id.content)
         wifiAnimation!!.stop()
 
+        uploadSeekBar?.visibility = View.GONE
+        uploadSeekBar?.progress = 0
         feedUploadView.visibility = View.GONE
         feedCancelView.visibility = View.GONE
         EventBus.getDefault().post(FeedUploadProgress(100, 0))
+
         if (!event.success) {
             Toast.makeText(
                 requireContext(),
                 "Failed to upload, Please try again!!",
                 Toast.LENGTH_LONG
             ).show()
-        }else {
-            // Create and show the SnackBar
+        } else {
             val snackBar = Snackbar.make(rootView, "Feed upload successful", Snackbar.LENGTH_LONG)
-            // Retrieve colors from resources
             val snackBarBackgroundColor = ContextCompat.getColor(requireContext(), R.color.green)
             val snackBarTextColor = ContextCompat.getColor(requireContext(), R.color.white)
             val snackBarActionColor = ContextCompat.getColor(requireContext(), R.color.gray_dark_transparent)
             val snackBarView = snackBar.view
             snackBarView.setBackgroundColor(snackBarBackgroundColor)
-            // Optional: Customize text color
             snackBar.setTextColor(snackBarTextColor)
-            // Optional: Customize action button color
             snackBar.setActionTextColor(snackBarActionColor)
-
             snackBar.show()
         }
     }
@@ -718,6 +713,8 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     fun feedVideoSuccessEvent(event: FeedUploadSuccessful) {
         wifiAnimation!!.stop()
 
+        uploadSeekBar?.visibility = View.GONE
+        uploadSeekBar?.progress = 0
         feedUploadView.visibility = View.GONE
         feedCancelView.visibility = View.GONE
         EventBus.getDefault().post(FeedUploadProgress(100, 0))
