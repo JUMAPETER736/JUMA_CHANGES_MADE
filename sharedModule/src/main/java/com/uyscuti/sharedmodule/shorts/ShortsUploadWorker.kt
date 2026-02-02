@@ -127,7 +127,7 @@ class ShortsUploadWorker @AssistedInject constructor(
             return Result.failure()
         }
     }
- 
+
 
 
     private suspend fun uploadShortToMongoDB(
@@ -144,7 +144,7 @@ class ShortsUploadWorker @AssistedInject constructor(
         // Convert file content to bytes
         val fileBytes = file.readBytes()
 
-//        val requestFile: RequestBody = RequestBody.create("image/*".toMediaTypeOrNull(), fileBytes)
+
         val requestFile: RequestBody =
             ProgressRequestBody(file, "image/*".toMediaTypeOrNull()!!, progressCallback)
 
@@ -175,12 +175,12 @@ class ShortsUploadWorker @AssistedInject constructor(
 
         val content = nonTags.joinToString(" ")
         val tagsString = topics.joinToString(", ")
-//        val tags = tagsString.split(",").map { it.trim() }
+
         val tags = if (tagsString.isNotEmpty()) {
             tagsString.split(",").map { it.trim() }
         } else {
             emptyList()
-//            tags
+
         }
 
         Log.d(TAG, "Tags: $tags $caption")
@@ -197,18 +197,14 @@ class ShortsUploadWorker @AssistedInject constructor(
             formData.addFormDataPart("tags[$index]", tag)
         }
 
-//        if (tags.isNotEmpty()) {
-//            tags.forEachIndexed { index, tag ->
-//                formData.addFormDataPart("tags[$index]", tag)
-//            }
-//        }
+
 
         val tagParts = tags.mapIndexed { index, tag ->
             tag.toRequestBody("text/plain".toMediaTypeOrNull())
         }.toTypedArray()
 
         if (content.isEmpty()) {
-//            content = "caption was empty"
+
         }
         val contentPart: RequestBody = content
             .toRequestBody("text/plain".toMediaTypeOrNull())
@@ -218,7 +214,7 @@ class ShortsUploadWorker @AssistedInject constructor(
 
         val fileIdPart: RequestBody = fileId
             .toRequestBody("text/plain".toMediaTypeOrNull())
-//            val response = retrofitIns.apiService.uploadShort(filePart, contentPart, tagsRequestBody)
+
         Log.d("Shorts", "content: $contentPart")
         Log.d("Shorts", "content: $tagParts")
         return try {
