@@ -91,7 +91,7 @@ class FeedUploadWorker @AssistedInject constructor(
     }
 
 
-    val TAG = "Worker"
+    val TAG = "FeedUploadWorker"
     override suspend fun doWork(): Result {
         try {
             Log.d(TAG, "start do work")

@@ -630,6 +630,55 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
     }
 
 
+    // For the uploading Processes
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onProgressEvent(event: ProgressEvent) {
+        uploadSeekBar?.visibility = View.VISIBLE
+        feedUploadView.visibility = View.VISIBLE
+        feedCancelView.visibility = View.VISIBLE
+        feedUploadView.setBackgroundResource(R.drawable.feed_upload_animation)
+        wifiAnimation = feedUploadView.background as AnimationDrawable
+
+        val currentProgress = 100 + event.progress
+
+        when (event.eventId) {
+            "uniqueIdAudio" -> {
+                uploadSeekBar?.progress = event.progress
+                EventBus.getDefault().post(FeedUploadProgress(200, event.progress))
+            }
+
+            "workerUniqueIdAudio" -> {
+                uploadSeekBar?.progress = currentProgress
+                EventBus.getDefault().post(FeedUploadProgress(200, currentProgress))
+            }
+
+            "uniqueIdVideo" -> {
+                uploadSeekBar?.progress = event.progress
+                EventBus.getDefault().post(FeedUploadProgress(200, event.progress))
+            }
+
+            "workerUniqueIdVideo" -> {
+                uploadSeekBar?.progress = currentProgress
+                EventBus.getDefault().post(FeedUploadProgress(200, currentProgress))
+            }
+
+            "mixed_files" -> {
+                uploadSeekBar?.progress = currentProgress
+                EventBus.getDefault().post(FeedUploadProgress(100, currentProgress))
+            }
+
+            else -> {
+                uploadSeekBar?.progress = event.progress
+                EventBus.getDefault().post(FeedUploadProgress(100, event.progress))
+            }
+        }
+
+        wifiAnimation!!.start()
+    }
+
+
+
     @SuppressLint("ShowToast")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun successEvent(event: UploadSuccessful) {
@@ -682,53 +731,7 @@ class FeedFragment() : Fragment(), Timer.OnTimeTickListener {
             Log.e(TAG, "feedVideoSuccessEvent: failed to delete file ")
         }
     }
-
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onProgressEvent(event: ProgressEvent) {
-
-
-        feedUploadView.visibility = View.VISIBLE
-        feedCancelView.visibility = View.VISIBLE
-        feedUploadView.setBackgroundResource(R.drawable.feed_upload_animation)
-        wifiAnimation = feedUploadView.background as AnimationDrawable
-        val currentProgress = 100 + event.progress
-
-        when (event.eventId) {
-            "uniqueIdAudio" -> {
-
-                EventBus.getDefault().post(FeedUploadProgress(200, event.progress))
-            }
-
-            "workerUniqueIdAudio" -> {
-
-                EventBus.getDefault().post(FeedUploadProgress(200, currentProgress))
-            }
-
-            "uniqueIdVideo" -> {
-
-                EventBus.getDefault().post(FeedUploadProgress(200, event.progress))
-            }
-
-            "workerUniqueIdVideo" -> {
-
-                EventBus.getDefault().post(FeedUploadProgress(200, currentProgress))
-            }
-
-            "mixed_files" -> {
-                EventBus.getDefault().post(FeedUploadProgress(100, currentProgress))
-            }
-
-            else -> {
-
-                EventBus.getDefault().post(FeedUploadProgress(100, event.progress))
-            }
-        }
-
-
-        wifiAnimation!!.start()
-    }
-
+    
 
     override fun onGetLayoutInflater(
         savedInstanceState: Bundle?
