@@ -53,7 +53,7 @@ class Verification_Code : AppCompatActivity() {
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
 
-    //: Changed to 6 OTP fields (backend sends 6-digit OTP)
+    //6 OTP fields (backend sends 6-digit OTP)
     val otpFields = arrayOf(R.id.otp1, R.id.otp2, R.id.otp3, R.id.otp4, R.id.otp5, R.id.otp6)
 
     @SuppressLint("MissingInflatedId")
@@ -169,7 +169,7 @@ class Verification_Code : AppCompatActivity() {
         }
     }
 
-    // : Verify OTP with backend
+    // Verify OTP with backend
     private fun verifyOTP(otp: String) {
         showLoadingDialog()
 
