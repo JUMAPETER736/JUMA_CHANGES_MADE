@@ -124,6 +124,7 @@ import retrofit2.Response
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.signature.ObjectKey
 import android.graphics.drawable.Drawable
+import androidx.cardview.widget.CardView
 import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
 import com.google.android.material.snackbar.Snackbar
@@ -1233,6 +1234,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
     // UI Components - Media & Controls
     private lateinit var shortSeekBar: SeekBar
     private lateinit var shortsDownloadImageView: ImageView
+    private lateinit var cancelShortsUploadCard: CardView
 
     // Data Collections
     private var shortsList = ArrayList<String>()
@@ -1394,15 +1396,20 @@ class ShotsFragment : Fragment(), OnClickListeners {
             ProfileRepository(ChatDatabase.getInstance(requireActivity()).profileDao())
         progressBar = view.findViewById(R.id.progressBar)
         shortsDownloadProgressBar = view.findViewById(R.id.shortsDownloadProgressBar)
+
         progressBarLayout = view.findViewById(R.id.progressBarLayout)
         downloadProgressBarLayout = view.findViewById(R.id.downloadProgressBarLayout)
         shortsDownloadImageView = view.findViewById(R.id.shortsDownloadImageView)
+
         cancelShortsUpload = view.findViewById(R.id.cancelShortsUpload)
         shortSeekBar = view.findViewById(R.id.shortSeekBar)
         shortsMenu = view.findViewById(R.id.shortsMenu)
         searchForAllShorts = view.findViewById(R.id.searchForAllShorts)
+
         uploadShortsSeekBar = view.findViewById(R.id.uploadShortsSeekBar)
         cancelShortsUpload = view.findViewById(R.id.cancelShortsUpload)
+        cancelShortsUploadCard = view.findViewById(R.id.cancelShortsUploadCard)
+        cancelShortsUploadCard.visibility = View.GONE
 
         shortsMenu.setOnClickListener {
 
@@ -1438,8 +1445,8 @@ class ShotsFragment : Fragment(), OnClickListeners {
             )
         }
 
-        cancelShortsUpload.visibility = View.GONE // hidden by default
 
+        // The click listener stays on the ImageView, but hide the card:
         cancelShortsUpload.setOnClickListener {
             if (uploadWorkRequest != null) {
                 val workManager = WorkManager.getInstance(requireContext())
@@ -1449,10 +1456,9 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
             uploadShortsSeekBar?.visibility = View.GONE
             uploadShortsSeekBar?.progress = 0
-            cancelShortsUpload.visibility = View.GONE
+            cancelShortsUploadCard.visibility = View.GONE
 
             EventBus.getDefault().post(CancelShortsUpload(cancel = true))
-
             Toast.makeText(requireContext(), "Upload cancelled", Toast.LENGTH_SHORT).show()
         }
 
@@ -1774,7 +1780,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
     fun onShortsProgressEvent(event: ProgressEvent) {
         uploadShortsSeekBar?.visibility = View.VISIBLE
         cancelShortsUpload.visibility = View.VISIBLE
-        // Only show progress, don't add 100
+        cancelShortsUploadCard.visibility = View.VISIBLE
         uploadShortsSeekBar?.progress = event.progress
 
         Log.d("ShortsUploadProgress", "Upload progress: ${event.progress} for eventId: ${event.eventId}")
@@ -1782,9 +1788,11 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onShortsUploadSuccess(event: UploadSuccessful) {
+
         uploadShortsSeekBar?.visibility = View.GONE
         uploadShortsSeekBar?.progress = 0
         cancelShortsUpload.visibility = View.GONE
+        cancelShortsUploadCard.visibility = View.VISIBLE
 
         val rootView: View = requireActivity().findViewById(android.R.id.content)
         val snackBar = Snackbar.make(rootView, "Shorts upload successful", Snackbar.LENGTH_LONG)
