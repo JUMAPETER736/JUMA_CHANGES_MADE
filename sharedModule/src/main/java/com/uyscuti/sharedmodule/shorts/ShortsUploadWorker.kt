@@ -52,19 +52,24 @@ class ShortsUploadWorker @AssistedInject constructor(
     val TAG = "ShotsUploadWorker"
 
     override suspend fun doWork(): Result {
-        Log.d(TAG, "===== WORKER STARTED =====")
+        Log.d(TAG, " WORKER STARTED ")
         Log.d(TAG, "Worker ID: $id")
         Log.d(TAG, "Unique ID: $uniqueId")
 
         try {
             // CRITICAL: Check if cancelled before starting
             if (isStopped) {
-                Log.w(TAG, "✗ Work cancelled before starting (isStopped)")
+                Log.w(TAG, "✗ Work cancelled")
+                cleanupFiles(
+                    inputData.getString(EXTRA_FILE_PATH),
+                    inputData.getString(THUMBNAIL)
+                )
+                EventBus.getDefault().post(CancelShortsUpload(cancel = true))
                 return Result.failure()
             }
 
             if (isCancelled) {
-                Log.w(TAG, "✗ Work cancelled before starting (isCancelled)")
+                Log.w(TAG, "Work cancelled before starting (isCancelled)")
                 return Result.failure()
             }
 
@@ -90,19 +95,23 @@ class ShortsUploadWorker @AssistedInject constructor(
             Log.d(TAG, "Feed Shorts Business ID: $feedShortsBusinessId")
 
             // CRITICAL: Check cancellation again after delay
-            if (isStopped || isCancelled) {
-                Log.w(TAG, "✗ Work cancelled after delay")
-                cleanupFiles(filePath, thumbnailFilePath)
+            if (isStopped) {
+                Log.w(TAG, "✗ Work cancelled")
+                cleanupFiles(
+                    inputData.getString(EXTRA_FILE_PATH),
+                    inputData.getString(THUMBNAIL)
+                )
+                EventBus.getDefault().post(CancelShortsUpload(cancel = true))
                 return Result.failure()
             }
 
             // Check if filePath is not null and not empty
             if (filePath.isNullOrEmpty()) {
-                Log.e(TAG, "✗ File path empty")
+                Log.e(TAG, "File path empty")
                 return Result.failure()
             }
             if (thumbnailFilePath.isNullOrEmpty()) {
-                Log.e(TAG, "✗ Thumbnail path empty")
+                Log.e(TAG, "Thumbnail path empty")
                 return Result.failure()
             }
 
@@ -111,22 +120,26 @@ class ShortsUploadWorker @AssistedInject constructor(
 
             // ADDED: Validate files exist
             if (!thumbnailFile.exists()) {
-                Log.e(TAG, "✗ Thumbnail file does not exist: $thumbnailFilePath")
+                Log.e(TAG, "Thumbnail file does not exist: $thumbnailFilePath")
                 return Result.failure()
             }
 
             val file = File(filePath)
             if (!file.exists()) {
-                Log.e(TAG, "✗ Video file does not exist: $filePath")
+                Log.e(TAG, "Video file does not exist: $filePath")
                 return Result.failure()
             }
 
             Log.d(TAG, "File size: ${getFileSize(file.length())}")
 
             // CRITICAL: Check cancellation before upload
-            if (isStopped || isCancelled) {
-                Log.w(TAG, "✗ Work cancelled before upload")
-                cleanupFiles(filePath, thumbnailFilePath)
+            if (isStopped) {
+                Log.w(TAG, "✗ Work cancelled")
+                cleanupFiles(
+                    inputData.getString(EXTRA_FILE_PATH),
+                    inputData.getString(THUMBNAIL)
+                )
+                EventBus.getDefault().post(CancelShortsUpload(cancel = true))
                 return Result.failure()
             }
 
@@ -140,7 +153,7 @@ class ShortsUploadWorker @AssistedInject constructor(
             ) { bytesRead, totalBytes ->
                 // CRITICAL: Check cancellation during upload
                 if (isStopped || isCancelled) {
-                    Log.w(TAG, "✗ Upload cancelled during progress")
+                    Log.w(TAG, "Upload cancelled during progress")
                     throw CancellationException("Upload cancelled by user")
                 }
 
@@ -159,15 +172,19 @@ class ShortsUploadWorker @AssistedInject constructor(
             setProgress(lastUpdate)
 
             // CRITICAL: Final cancellation check
-            if (isStopped || isCancelled) {
-                Log.w(TAG, "✗ Work cancelled after upload attempt")
-                cleanupFiles(filePath, thumbnailFilePath)
+            if (isStopped) {
+                Log.w(TAG, "✗ Work cancelled")
+                cleanupFiles(
+                    inputData.getString(EXTRA_FILE_PATH),
+                    inputData.getString(THUMBNAIL)
+                )
+                EventBus.getDefault().post(CancelShortsUpload(cancel = true))
                 return Result.failure()
             }
 
             // Check the result of the upload and return success or failure accordingly
             return if (uploadResult) {
-                Log.d(TAG, "✓ Shorts Upload successful")
+                Log.d(TAG, "Shorts Upload successful")
 
                 // Post success events
                 EventBus.getDefault().post(UploadSuccessful(success = true))
@@ -175,18 +192,18 @@ class ShortsUploadWorker @AssistedInject constructor(
                 // Cleanup files
                 cleanupFiles(filePath, thumbnailFilePath)
 
-                Log.d(TAG, "===== WORKER COMPLETED SUCCESSFULLY =====")
+                Log.d(TAG, " WORKER COMPLETED SUCCESSFULLY ")
                 Result.success()
 
             } else {
-                Log.e(TAG, "✗ Failed to upload short")
+                Log.e(TAG, "Failed to upload short")
                 EventBus.getDefault().post(UploadSuccessful(success = false))
                 Result.failure()
             }
 
         } catch (e: CancellationException) {
             // ADDED: Handle cancellation exception
-            Log.w(TAG, "✗ Upload cancelled via exception", e)
+            Log.w(TAG, "Upload cancelled via exception", e)
             val filePath = inputData.getString(EXTRA_FILE_PATH)
             val thumbnailFilePath = inputData.getString(THUMBNAIL)
             cleanupFiles(filePath, thumbnailFilePath)
@@ -203,7 +220,7 @@ class ShortsUploadWorker @AssistedInject constructor(
         }
     }
 
-    // MODIFIED: Your existing upload function with cancellation checks
+    //Your existing upload function with cancellation checks
     private suspend fun uploadShortToMongoDB(
         file: File,
         caption: String,
@@ -343,28 +360,8 @@ class ShortsUploadWorker @AssistedInject constructor(
         }
     }
 
-    // ADDED: Override onStopped to handle cancellation
-    override suspend fun onStopped() {
-        super.onStopped()
-        Log.d(TAG, "===== WORKER STOPPED =====")
-        Log.d(TAG, "Worker ID: $id")
 
-        // Set cancellation flag
-        isCancelled = true
-
-        // Clean up resources
-        val filePath = inputData.getString(EXTRA_FILE_PATH)
-        val thumbnailFilePath = inputData.getString(THUMBNAIL)
-
-        cleanupFiles(filePath, thumbnailFilePath)
-
-        // Post cancellation event
-        EventBus.getDefault().post(CancelShortsUpload(cancel = true))
-
-        Log.d(TAG, "✓ Cleanup completed")
-    }
-
-    // ADDED: Cleanup files helper
+    //Cleanup files helper
     private fun cleanupFiles(filePath: String?, thumbnailPath: String?) {
         try {
             filePath?.let {
