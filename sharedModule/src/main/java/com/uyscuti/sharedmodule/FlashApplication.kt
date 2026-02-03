@@ -66,7 +66,7 @@ open class FlashApplication : Application(), Configuration.Provider {
 
 
     class CompositeWorkerFactory @Inject constructor(
-//        private val combinedWorkerFactory: CombinedWorkerFactory,
+
         private val shortsUploadWorker: ShortsWorkerFactory,
         private val feedUploadWorker: FeedWorkerFactory
     ) : WorkerFactory() {
@@ -82,9 +82,7 @@ open class FlashApplication : Application(), Configuration.Provider {
                     shortsUploadWorker.createWorker(appContext, workerClassName, workerParameters)
                 FeedUploadWorker::class.java.name ->
                     feedUploadWorker.createWorker(appContext, workerClassName, workerParameters)
-//                CombinedWorkerFactory::class.java.name -> {
-//                    combinedWorkerFactory.createWorker(appContext, workerClassName, workerParameters)
-//                }
+
                 else -> null
             }
         }
@@ -93,28 +91,13 @@ open class FlashApplication : Application(), Configuration.Provider {
 
     override val workManagerConfiguration: Configuration
         get() {
-//            val compositeFactory = CompositeWorkerFactory(
-//                listOf(
-//                    combinedWorkerFactory,
-//                    feedUploadWorker,
-//                    shortsUploadWorker,
-//
-//                )
-//            )
 
-//            val compositeFactory = CompositeWorkerFactory(combinedWorkerFactory, shortsUploadWorker, feedUploadWorker, )
             val compositeFactory = CompositeWorkerFactory(shortsUploadWorker, feedUploadWorker, )
             return Configuration.Builder()
                 .setWorkerFactory(compositeFactory)
                 .build()
         }
-//    override val workManagerConfiguration: Configuration
-//        get() = Configuration.Builder()
-//            .setWorkerFactories(listOf(shortsUploadWorker, combinedWorkerFactory))
-//            .build()
 
-//    @Inject
-//    lateinit var combinedWorkerFactory: CombinedWorkerFactory
 
     @Inject
     lateinit var shortsUploadWorker: ShortsWorkerFactory
