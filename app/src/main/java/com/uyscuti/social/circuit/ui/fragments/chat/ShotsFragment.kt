@@ -124,6 +124,8 @@ import retrofit2.Response
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.signature.ObjectKey
 import android.graphics.drawable.Drawable
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
 import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.sharedmodule.FlashApplication
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
@@ -133,6 +135,7 @@ import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.eventbus.FeedFavoriteFollowUpdate
 import com.uyscuti.sharedmodule.eventbus.HideFeedFloatingActionButton
 import com.uyscuti.sharedmodule.eventbus.ShowFeedFloatingActionButton
+import com.uyscuti.sharedmodule.model.CancelShortsUpload
 import com.uyscuti.sharedmodule.model.FollowListItemViewModel
 import com.uyscuti.sharedmodule.model.GoToFeedFragment
 import com.uyscuti.sharedmodule.model.GoToUserProfileFragment
@@ -1265,7 +1268,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
     private val followShortsViewModel: FollowListItemViewModel by viewModels()
     private val followViewModel: FollowViewModel by viewModels()
     private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
-    private val userProfileShortsViewModel: UserProfileShortsViewModel by activityViewModels()
+    private var uploadWorkRequest: OneTimeWorkRequest? = null
 
     init {
         // Increase cache size for better performance
@@ -1399,6 +1402,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
         shortsMenu = view.findViewById(R.id.shortsMenu)
         searchForAllShorts = view.findViewById(R.id.searchForAllShorts)
         uploadShortsSeekBar = view.findViewById(R.id.uploadShortsSeekBar)
+        cancelShortsUpload = view.findViewById(R.id.cancelShortsUpload)
 
         shortsMenu.setOnClickListener {
 
@@ -1423,8 +1427,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
             popupMenu.show()
         }
 
-
-
         searchForAllShorts.setOnClickListener {
             val intent = Intent(requireContext(), UniversalSearchActivity::class.java)
             startActivity(intent)
@@ -1434,6 +1436,24 @@ class ShotsFragment : Fragment(), OnClickListeners {
                 R.anim.slide_in_up,
                 R.anim.stay
             )
+        }
+
+        cancelShortsUpload.visibility = View.GONE // hidden by default
+
+        cancelShortsUpload.setOnClickListener {
+            if (uploadWorkRequest != null) {
+                val workManager = WorkManager.getInstance(requireContext())
+                workManager.cancelWorkById(uploadWorkRequest!!.id)
+                uploadWorkRequest = null
+            }
+
+            uploadShortsSeekBar?.visibility = View.GONE
+            uploadShortsSeekBar?.progress = 0
+            cancelShortsUpload.visibility = View.GONE
+
+            EventBus.getDefault().post(CancelShortsUpload(cancel = true))
+
+            Toast.makeText(requireContext(), "Upload cancelled", Toast.LENGTH_SHORT).show()
         }
 
         shortSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -1753,7 +1773,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onShortsProgressEvent(event: ProgressEvent) {
         uploadShortsSeekBar?.visibility = View.VISIBLE
-
+        cancelShortsUpload.visibility = View.VISIBLE
         // Only show progress, don't add 100
         uploadShortsSeekBar?.progress = event.progress
 
@@ -1764,6 +1784,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
     fun onShortsUploadSuccess(event: UploadSuccessful) {
         uploadShortsSeekBar?.visibility = View.GONE
         uploadShortsSeekBar?.progress = 0
+        cancelShortsUpload.visibility = View.GONE
 
         val rootView: View = requireActivity().findViewById(android.R.id.content)
         val snackBar = Snackbar.make(rootView, "Shorts upload successful", Snackbar.LENGTH_LONG)

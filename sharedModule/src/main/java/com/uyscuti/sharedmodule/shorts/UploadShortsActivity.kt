@@ -15,7 +15,6 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -32,7 +31,6 @@ import com.uyscuti.sharedmodule.adapter.UriTypeAdapter
 import com.uyscuti.sharedmodule.databinding.ActivityUploadShortsBinding
 import com.uyscuti.sharedmodule.model.CancelShortsUpload
 import com.uyscuti.sharedmodule.model.ProgressEvent
-import com.uyscuti.sharedmodule.model.UploadSuccessful
 import com.uyscuti.sharedmodule.model.feed.multiple_files.FeedMultipleVideos
 import com.uyscuti.sharedmodule.model.feed.multiple_files.MixedFeedUploadDataClass
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
@@ -62,11 +60,11 @@ import org.greenrobot.eventbus.ThreadMode
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.UUID
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.ThumbnailClickListener {
+
 
     private lateinit var binding: ActivityUploadShortsBinding
     private lateinit var videoUri: Uri
@@ -76,11 +74,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
     private var imagePickLauncher: ActivityResultLauncher<Intent>? = null
 
-    // CRITICAL: Track upload state
     private var uploadWorkRequest: OneTimeWorkRequest? = null
-    private var isCompressing = false
-    private var isUploading = false
-    private var hasStartedUpload = false
 
     @Inject
     lateinit var retrofitIns: RetrofitInstance
@@ -95,15 +89,18 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         binding = ActivityUploadShortsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Register EventBus
-        if (!EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().register(this)
-        }
+
+        EventBus.getDefault().register(this)
+
 
         // Enable the Up button for back navigation
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
 
+
+
         videoUri = intent.getParcelableExtra(EXTRA_VIDEO_URI)!!
+
+
 
         imagePickLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -121,36 +118,52 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                             .load(selectedImageUri)
                             .into(binding.shortThumbNail)
                         thumbnail = bitmap
+                        // Now 'bitmap' contains the selected image as a Bitmap
+                        // Use the 'bitmap' as needed
+
+                        // For example, set the bitmap in an ImageView
+
                     }
                 }
             }
 
         // Display the video using Glide and VideoView
+
         videoUri.let {
             Glide.with(this)
                 .load(it)
                 .into(binding.shortThumbNail)
         }
-
         binding.postButton.setOnClickListener {
+
             if (isThumbnailClicked) {
+                // Execute function for when thumbnail is clicked
+                // For example, upload logic...
                 uploadThumbnail()
             } else {
+                // Execute another function when thumbnail is not clicked
+                // For example, set the first frame as the thumbnail
                 setFirstFrameAsThumbnail()
             }
+
+
         }
 
         binding.topicsLayout.setOnClickListener {
             val intent = Intent(this@UploadShortsActivity, TopicsActivity::class.java)
             startActivityForResult(intent, REQUEST_TOPICS_ACTIVITY)
+
         }
 
-        // CRITICAL: Setup cancel button
-        setupCancelButton()
+        cancelShortsUpload()
+        backFromShortsUpload()
+
+
 
         GlobalScope.launch(Dispatchers.IO) {
             val videoThumbnails = extractThumbnailsFromVideos()
 
+            // Switch to the main thread to update the RecyclerView
             withContext(Dispatchers.Main) {
                 setupRecyclerView(videoThumbnails)
             }
@@ -164,99 +177,12 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
     }
 
-    // CRITICAL: Proper cancel button setup
-    private fun setupCancelButton() {
-        binding.cancelButton.setOnClickListener {
-            if (hasStartedUpload) {
-                // Show confirmation dialog if upload has started
-                showCancelConfirmationDialog()
-            } else {
-                // Just finish if no upload has started
-                finish()
-            }
-        }
-    }
-
-    // CRITICAL: Show confirmation dialog before cancelling
-    private fun showCancelConfirmationDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Cancel Upload")
-            .setMessage("Are you sure you want to cancel the upload? Your progress will be lost.")
-            .setPositiveButton("Yes, Cancel") { _, _ ->
-                performCancel()
-            }
-            .setNegativeButton("No, Continue", null)
-            .setCancelable(false)
-            .show()
-    }
-
-    // CRITICAL: Comprehensive cancel handler
-    private fun performCancel() {
-        Log.d("CancelUpload", "===== CANCEL INITIATED =====")
-        Log.d("CancelUpload", "isCompressing: $isCompressing")
-        Log.d("CancelUpload", "isUploading: $isUploading")
-        Log.d("CancelUpload", "uploadWorkRequest: ${uploadWorkRequest?.id}")
-
-        var cancelledSomething = false
-
-        // 1. Cancel compression if in progress
-        if (isCompressing) {
-            Log.d("CancelUpload", "Cancelling video compression...")
-            try {
-                VideoCompressor.cancel()
-                isCompressing = false
-                cancelledSomething = true
-                Log.d("CancelUpload", "✓ Video compression cancelled")
-            } catch (e: Exception) {
-                Log.e("CancelUpload", "Error cancelling compression", e)
-            }
-        }
-
-        // 2. Cancel upload work if in progress
-        if (isUploading && uploadWorkRequest != null) {
-            Log.d("CancelUpload", "Cancelling upload work: ${uploadWorkRequest!!.id}")
-            try {
-                val workManager = WorkManager.getInstance(applicationContext)
-                workManager.cancelWorkById(uploadWorkRequest!!.id)
-                isUploading = false
-                cancelledSomething = true
-                Log.d("CancelUpload", "✓ Upload work cancelled")
-            } catch (e: Exception) {
-                Log.e("CancelUpload", "Error cancelling upload work", e)
-            }
-        }
-
-        // 3. Post cancellation event to notify other components
-        try {
-            EventBus.getDefault().post(CancelShortsUpload(cancel = true))
-            Log.d("CancelUpload", "✓ CancelShortsUpload event posted")
-        } catch (e: Exception) {
-            Log.e("CancelUpload", "Error posting cancel event", e)
-        }
-
-        // 4. Reset state
-        hasStartedUpload = false
-        isCompressing = false
-        isUploading = false
-
-        // 5. Show feedback
-        val message = if (cancelledSomething) {
-            "Upload cancelled successfully"
-        } else {
-            "Upload cancelled"
-        }
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-
-        Log.d("CancelUpload", "===== CANCEL COMPLETED =====")
-
-        // 6. Finish activity
-        finish()
-    }
-
     private fun loadBitmapFromUri(uri: Uri): Bitmap {
         return if (Build.VERSION.SDK_INT < 28) {
+            // For versions before Android 9 (API level 28)
             MediaStore.Images.Media.getBitmap(contentResolver, uri)
         } else {
+            // For Android 9 (API level 28) and above
             val source = ImageDecoder.createSource(contentResolver, uri)
             ImageDecoder.decodeBitmap(source)
         }
@@ -269,11 +195,17 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
         caption = binding.editTextText.text.toString().trim()
         uploadShorts(videoUri, caption)
+        val resultIntent = Intent()
+        setResult(RESULT_OK, resultIntent)
+        finish()
     }
 
     private fun uploadThumbnail() {
         caption = binding.editTextText.text.toString().trim()
         uploadShorts(videoUri, caption)
+        val resultIntent = Intent()
+        setResult(RESULT_OK, resultIntent)
+        finish()
     }
 
     private suspend fun extractThumbnail(videoUrl: Uri): List<Bitmap>? {
@@ -281,14 +213,17 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
             val retriever = MediaMetadataRetriever()
             retriever.setDataSource(this, videoUrl)
 
+            // Get the duration of the video in milliseconds
             val durationMs =
                 retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong()
                     ?: 0
 
+            // Set the frame interval to 1000ms (1 second)
             val frameIntervalMs = 1000L
 
             val thumbnails = mutableListOf<Bitmap>()
 
+            // Iterate through each second and retrieve the frame
             for (timeMs in 0 until durationMs step frameIntervalMs) {
                 val bitmap: Bitmap? = retriever.getFrameAtTime(
                     timeMs * 1000,
@@ -297,6 +232,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                 bitmap?.let { thumbnails.add(it) }
             }
 
+            // Release the MediaMetadataRetriever
             retriever.release()
 
             thumbnails
@@ -307,6 +243,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     }
 
     private suspend fun extractThumbnailsFromVideos(): List<Bitmap> {
+        // Replace this with your actual implementation to extract thumbnails
         val videoUrls = listOf(videoUri)
         val thumbnails = mutableListOf<Bitmap>()
 
@@ -318,13 +255,16 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         return thumbnails
     }
 
+
     private fun setupRecyclerView(videoThumbnails: List<Bitmap>) {
         val layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         val adapter = VideoThumbnailAdapter(videoThumbnails, this)
 
+
         binding.recyclerView2.layoutManager = layoutManager
         binding.recyclerView2.adapter = adapter
     }
+
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -332,9 +272,18 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
         if (requestCode == REQUEST_TOPICS_ACTIVITY) {
             if (resultCode == RESULT_OK) {
+                // Handle the result when TopicsActivity returns RESULT_OK
+                // You can use data to retrieve any additional information passed back
+                // For example, val resultValue = data?.getStringExtra("keyName")
                 val selectedSubtopics = data?.getStringArrayListExtra("selectedSubtopics")
+
+
                 val formattedSubtopics = selectedSubtopics?.joinToString(" ") { "#$it" }
+                // Get the current text from the EditText
                 val currentText = binding.editTextText.text?.toString() ?: ""
+
+
+                // Set the formatted subtopics to the EditText
 
                 val updatedText = if (currentText.isEmpty()) {
                     formattedSubtopics ?: ""
@@ -342,31 +291,39 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                     "$currentText \n\n$formattedSubtopics"
                 }
 
+                // Set the updated text to the EditText
                 binding.editTextText.setText(updatedText)
+
+            } else {
+                // Handle other result codes if needed
             }
         }
     }
 
     private fun uploadShorts(videoUri: Uri, caption: String) {
+
         uris.add(videoUri)
-        hasStartedUpload = true
+
+
+        // 1. compress shorts
         compressShorts()
     }
 
     @SuppressLint("SetTextI18n")
     private fun compressShorts() {
+
         val uniqueId = UniqueIdGenerator.generateUniqueId()
         Log.d("progress id", uniqueId)
 
         val uri = uris[0]
         val uriFileSize = getFileSizeFromUri(this, uri)
 
+
         val fileSizeInKB = uriFileSize?.div(1024)
         val fileSizeInMB = fileSizeInKB?.div(1024)
+
         val fileSizeInGb = fileSizeInMB?.div(1024)
-
         Log.d("uriFileSize", "uri.scheme ${uri.scheme} compressShorts:uriFileSize: $uriFileSize  fileSizeInKB $fileSizeInKB fileSizeInMB $fileSizeInMB fileSizeInGb $fileSizeInGb")
-
         val filePath = when (uri.scheme) {
             "content" -> getRealPathFromUri(this, uri) ?: getFilePathFromContentUri(this, uri)
             "file" -> getFilePathFromUri(uri)
@@ -374,254 +331,301 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
 
         Log.d("uriFileSize", "compressShorts: file path $filePath ")
-
         if (fileSizeInMB != null) {
             Log.d("uriFileSize", "compressShorts: file size in mb $fileSizeInMB")
-
             if (fileSizeInGb != null) {
-                Log.d("uriFileSize", "compressShorts: file size in gb $fileSizeInGb")
-
+                Log.d("uriFileSize", "compressShorts: file size in mb $fileSizeInGb")
                 if(fileSizeInGb > 1) {
-                    Toast.makeText(this, "File too large (max 1GB)", Toast.LENGTH_LONG).show()
-                    hasStartedUpload = false
+                    Toast.makeText(this, "File too large", Toast.LENGTH_LONG).show()
                 } else if(fileSizeInMB <= 10) {
-                    Log.d("uriFileSize", "compressShorts: less than 10mb - uploading directly")
-                    // Upload directly without compression
-                    uploadDirectly(filePath, uniqueId)
-                } else {
-                    Log.d("uriFileSize", "compressShorts: greater than 10mb - compressing first")
-                    // Compress then upload
-                    compressAndUpload(uniqueId)
+                    Log.d("uriFileSize", "compressShorts: less than 10mb ")
+
+                    val thumbnailFile = saveBitmapToFile(thumbnail, applicationContext)
+                    val thumbnailFilePath = thumbnailFile.absolutePath
+
+                    val fileId:String = generateRandomId()
+                    val feedShortsBusinessId:String = generateRandomId()
+
+                    val durationString = filePath?.let { getFormattedDuration(it) }
+                    val fileName = filePath?.let { getFileNameFromLocalPath(it) }
+                    val mixedFeedUploadDataClass: MutableList<MixedFeedUploadDataClass> =
+                        mutableListOf()
+                    mixedFeedUploadDataClass.add(
+                        MixedFeedUploadDataClass(
+                            videos = FeedMultipleVideos(
+                                videoPath = filePath!!,
+                                videoDuration = durationString ?: "00:00",
+                                fileName = fileName!!,
+                                videoUri = uris[0].toString(),
+                                thumbnail = thumbnail
+                            ), fileTypes = "video", fileId = fileId
+                        )
+                    )
+                    val words = caption.split("\\s+".toRegex())
+
+                    val topics = mutableListOf<String>()
+                    val nonTags = mutableListOf<String>()
+
+                    for (word in words) {
+                        if (word.startsWith("#")) {
+                            // It's a tag
+                            topics.add(word.substring(1)) // Remove the '#' and add to tags
+                        } else {
+                            // It's non-tag text
+                            nonTags.add(word)
+                        }
+                    }
+                    val tagS = mutableListOf<String>()
+                    val content = nonTags.joinToString(" ")
+                    val tagsString = topics.joinToString(", ")
+
+                    val tags = if (tagsString.isNotEmpty()) {
+                        tagsString.split(",").map { it.trim() }
+                    } else {
+                        tagS
+                    }
+
+
+                    uploadWorkRequest =
+                        OneTimeWorkRequestBuilder<ShortsUploadWorker>()
+
+                            .setInputData(
+                                Data.Builder()
+                                    .putString(ShortsUploadWorker.EXTRA_FILE_PATH, filePath)
+                                    .putString(ShortsUploadWorker.CAPTION, caption)
+                                    .putString(ShortsUploadWorker.FILE_ID, fileId)
+                                    .putString(ShortsUploadWorker.FEED_SHORTS_BUSINESS_ID, feedShortsBusinessId)
+                                    .putString(ShortsUploadWorker.THUMBNAIL, thumbnailFilePath)
+
+                                    .build()
+                            )
+                            .build()
+
+                    var workManager = WorkManager.getInstance(applicationContext)
+
+                    Log.d("Upload", "Enqueuing upload work request...")
+                    workManager.enqueue(uploadWorkRequest!!)
+
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        Log.d("Progress", "Progress ...scope")
+
+
+                        workManager = WorkManager.getInstance(applicationContext)
+                        workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+                            .observe(this@UploadShortsActivity) { workInfo ->
+                                Log.d("Progress", "Observer triggered!")
+                                if (workInfo != null) {
+                                    val progress =
+                                        workInfo.progress.getInt(ShortsUploadWorker.Progress, 0)
+                                    // Update your UI with the progress value
+                                    Log.d("Progress", "Progress $progress")
+                                } else {
+                                    Log.d("Progress", "Work info is null")
+                                }
+
+                                if (workInfo?.state == WorkInfo.State.RUNNING) {
+                                    // Access progress here
+                                    Log.d("Progress", "Running")
+                                }
+                                if (workInfo?.state == WorkInfo.State.SUCCEEDED) {
+                                    // Access progress here
+                                    Log.d("Progress", "SUCCEEDED")
+                                }
+                                if (workInfo?.state == WorkInfo.State.ENQUEUED) {
+                                    // Access progress here
+                                    Log.d("Progress", "ENQUEUED")
+                                }
+                                if (workInfo?.state == WorkInfo.State.BLOCKED) {
+                                    // Access progress here
+                                    Log.d("Progress", "BLOCKED")
+                                }
+
+                                if (workInfo?.state == WorkInfo.State.CANCELLED) {
+                                    // Access progress here
+                                    Log.d("Progress", "CANCELLED")
+                                }
+
+                            }
+                    }
+                }
+                else {
+                    Log.d("uriFileSize", "compressShorts: greater than 10mb ")
+                    lifecycleScope.launch {
+                        VideoCompressor.start(
+                            context = applicationContext,
+                            uris,
+                            isStreamable = true,
+                            sharedStorageConfiguration = SharedStorageConfiguration(
+                                saveAt = SaveLocation.movies,
+                                subFolderName = "flash_shorts"
+                            ),
+
+                            configureWith = Configuration(
+                                quality = VideoQuality.MEDIUM,
+
+                                videoNames = uris.map { uri -> uri.pathSegments.last() },
+
+                                isMinBitrateCheckEnabled = false,
+                            ),
+
+
+                            listener = object : CompressionListener {
+                                override fun onProgress(index: Int, percent: Float) {
+                                    // In another class or file
+
+
+                                    //Update UI
+                                    if (percent <= 100) {
+
+                                        EventBus.getDefault().post(
+                                            ProgressEvent(
+                                                uniqueId,
+                                                percent.toInt()
+                                            )
+                                        )
+
+                                    }
+                                }
+
+                                override fun onStart(index: Int) {
+
+
+
+                                }
+
+                                override fun onSuccess(index: Int, size: Long, path: String?) {
+
+                                    Log.d("Compress", "short compress successful")
+                                    Log.d("Compress", "short file size: ${getFileSize(size)}")
+                                    Log.d("Compress", "short path: $path")
+                                    val thumbnailFile = saveBitmapToFile(thumbnail, applicationContext)
+                                    val thumbnailFilePath = thumbnailFile.absolutePath
+
+                                    val fileId:String = generateRandomId()
+                                    val feedShortsBusinessId:String = generateRandomId()
+
+                                    val durationString = path?.let { getFormattedDuration(it) }
+                                    val fileName = path?.let { getFileNameFromLocalPath(it) }
+                                    val mixedFeedUploadDataClass: MutableList<MixedFeedUploadDataClass> =
+                                        mutableListOf()
+                                    mixedFeedUploadDataClass.add(
+                                        MixedFeedUploadDataClass(
+                                            videos = FeedMultipleVideos(
+                                                videoPath = path!!,
+                                                videoDuration = durationString ?: "00:00",
+                                                fileName = fileName!!,
+                                                videoUri = uris[0].toString(),
+                                                thumbnail = thumbnail
+                                            ), fileTypes = "video", fileId = fileId
+                                        )
+                                    )
+                                    val words = caption.split("\\s+".toRegex())
+
+                                    val topics = mutableListOf<String>()
+                                    val nonTags = mutableListOf<String>()
+
+                                    for (word in words) {
+                                        if (word.startsWith("#")) {
+                                            // It's a tag
+                                            topics.add(word.substring(1)) // Remove the '#' and add to tags
+                                        } else {
+                                            // It's non-tag text
+                                            nonTags.add(word)
+                                        }
+                                    }
+                                    val tagS = mutableListOf<String>()
+                                    val content = nonTags.joinToString(" ")
+                                    val tagsString = topics.joinToString(", ")
+
+                                    val tags = if (tagsString.isNotEmpty()) {
+                                        tagsString.split(",").map { it.trim() }
+                                    } else {
+                                        tagS
+                                    }
+
+                                    uploadWorkRequest =
+                                        OneTimeWorkRequestBuilder<ShortsUploadWorker>()
+
+                                            .setInputData(
+                                                Data.Builder()
+                                                    .putString(ShortsUploadWorker.EXTRA_FILE_PATH, path)
+                                                    .putString(ShortsUploadWorker.CAPTION, caption)
+                                                    .putString(ShortsUploadWorker.FILE_ID, fileId)
+                                                    .putString(ShortsUploadWorker.FEED_SHORTS_BUSINESS_ID, feedShortsBusinessId)
+                                                    .putString(ShortsUploadWorker.THUMBNAIL, thumbnailFilePath)
+
+                                                    .build()
+                                            )
+                                            .build()
+
+                                    var workManager = WorkManager.getInstance(applicationContext)
+
+                                    Log.d("Upload", "Enqueuing upload work request...")
+                                    workManager.enqueue(uploadWorkRequest!!)
+                                    // Inside compressShorts function, after enqueueing the work request
+
+                                    lifecycleScope.launch(Dispatchers.Main) {
+                                        Log.d("Progress", "Progress ...scope")
+
+
+                                        workManager = WorkManager.getInstance(applicationContext)
+                                        workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
+                                            .observe(this@UploadShortsActivity) { workInfo ->
+                                                Log.d("Progress", "Observer triggered!")
+                                                if (workInfo != null) {
+                                                    val progress =
+                                                        workInfo.progress.getInt(ShortsUploadWorker.Progress, 0)
+                                                    // Update your UI with the progress value
+                                                    Log.d("Progress", "Progress $progress")
+                                                } else {
+                                                    Log.d("Progress", "Work info is null")
+                                                }
+
+                                                if (workInfo?.state == WorkInfo.State.RUNNING) {
+                                                    // Access progress here
+                                                    Log.d("Progress", "Running")
+                                                }
+                                                if (workInfo?.state == WorkInfo.State.SUCCEEDED) {
+                                                    // Access progress here
+                                                    Log.d("Progress", "SUCCEEDED")
+                                                }
+                                                if (workInfo?.state == WorkInfo.State.ENQUEUED) {
+                                                    // Access progress here
+                                                    Log.d("Progress", "ENQUEUED")
+                                                }
+                                                if (workInfo?.state == WorkInfo.State.BLOCKED) {
+                                                    // Access progress here
+                                                    Log.d("Progress", "BLOCKED")
+                                                }
+
+                                                if (workInfo?.state == WorkInfo.State.CANCELLED) {
+                                                    // Access progress here
+                                                    Log.d("Progress", "CANCELLED")
+                                                }
+
+                                            }
+                                    }
+
+                                }
+
+                                override fun onFailure(index: Int, failureMessage: String) {
+                                    Log.wtf("failureMessage", failureMessage)
+                                }
+
+                                override fun onCancelled(index: Int) {
+                                    Log.wtf("TAG", "compression has been cancelled")
+                                    // make UI changes, cleanup, etc
+                                }
+
+                            },
+
+                            )
+                    }
                 }
             }
-        }
-    }
 
-    // CRITICAL: Upload without compression
-    private fun uploadDirectly(filePath: String?, uniqueId: String) {
-        if (filePath == null) {
-            Toast.makeText(this, "Invalid file path", Toast.LENGTH_SHORT).show()
-            return
         }
 
-        val thumbnailFile = saveBitmapToFile(thumbnail, applicationContext)
-        val thumbnailFilePath = thumbnailFile.absolutePath
-
-        val fileId: String = generateRandomId()
-        val feedShortsBusinessId: String = generateRandomId()
-
-        isUploading = true
-
-        uploadWorkRequest = OneTimeWorkRequestBuilder<ShortsUploadWorker>()
-            .setInputData(
-                Data.Builder()
-                    .putString(ShortsUploadWorker.EXTRA_FILE_PATH, filePath)
-                    .putString(ShortsUploadWorker.CAPTION, caption)
-                    .putString(ShortsUploadWorker.FILE_ID, fileId)
-                    .putString(ShortsUploadWorker.FEED_SHORTS_BUSINESS_ID, feedShortsBusinessId)
-                    .putString(ShortsUploadWorker.THUMBNAIL, thumbnailFilePath)
-                    .build()
-            )
-            .build()
-
-        val workManager = WorkManager.getInstance(applicationContext)
-
-        Log.d("Upload", "Enqueuing upload work request: ${uploadWorkRequest!!.id}")
-        workManager.enqueue(uploadWorkRequest!!)
-
-        observeWorkProgress(workManager)
-    }
-
-    // CRITICAL: Compress and upload with proper cancellation handling
-    private fun compressAndUpload(uniqueId: String) {
-        isCompressing = true
-
-        lifecycleScope.launch {
-            VideoCompressor.start(
-                context = applicationContext,
-                uris,
-                isStreamable = true,
-                sharedStorageConfiguration = SharedStorageConfiguration(
-                    saveAt = SaveLocation.movies,
-                    subFolderName = "flash_shorts"
-                ),
-                configureWith = Configuration(
-                    quality = VideoQuality.MEDIUM,
-                    videoNames = uris.map { uri -> uri.pathSegments.last() },
-                    isMinBitrateCheckEnabled = false,
-                ),
-                listener = object : CompressionListener {
-                    override fun onProgress(index: Int, percent: Float) {
-                        if (percent <= 100 && isCompressing) {
-                            EventBus.getDefault().post(
-                                ProgressEvent(
-                                    uniqueId,
-                                    percent.toInt()
-                                )
-                            )
-                            Log.d("Compress", "Compression progress: ${percent.toInt()}%")
-                        }
-                    }
-
-                    override fun onStart(index: Int) {
-                        Log.d("Compress", "Compression started for index: $index")
-                        runOnUiThread {
-                            Toast.makeText(
-                                this@UploadShortsActivity,
-                                "Compressing video...",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-
-                    override fun onSuccess(index: Int, size: Long, path: String?) {
-                        isCompressing = false
-                        Log.d("Compress", "✓ Compression successful")
-                        Log.d("Compress", "Compressed file size: ${getFileSize(size)}")
-                        Log.d("Compress", "Compressed file path: $path")
-
-                        if (path != null) {
-                            // Upload the compressed file
-                            uploadCompressedFile(path)
-                        } else {
-                            runOnUiThread {
-                                Toast.makeText(
-                                    this@UploadShortsActivity,
-                                    "Compression failed: Invalid path",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    }
-
-                    override fun onFailure(index: Int, failureMessage: String) {
-                        isCompressing = false
-                        Log.e("Compress", "✗ Compression failed: $failureMessage")
-                        runOnUiThread {
-                            Toast.makeText(
-                                this@UploadShortsActivity,
-                                "Compression failed: $failureMessage",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-
-                    override fun onCancelled(index: Int) {
-                        isCompressing = false
-                        Log.w("Compress", "✗ Compression cancelled for index: $index")
-                        runOnUiThread {
-                            Toast.makeText(
-                                this@UploadShortsActivity,
-                                "Compression cancelled",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-                },
-            )
-        }
-    }
-
-    // CRITICAL: Upload compressed file
-    private fun uploadCompressedFile(path: String) {
-        val thumbnailFile = saveBitmapToFile(thumbnail, applicationContext)
-        val thumbnailFilePath = thumbnailFile.absolutePath
-
-        val fileId: String = generateRandomId()
-        val feedShortsBusinessId: String = generateRandomId()
-
-        isUploading = true
-
-        uploadWorkRequest = OneTimeWorkRequestBuilder<ShortsUploadWorker>()
-            .setInputData(
-                Data.Builder()
-                    .putString(ShortsUploadWorker.EXTRA_FILE_PATH, path)
-                    .putString(ShortsUploadWorker.CAPTION, caption)
-                    .putString(ShortsUploadWorker.FILE_ID, fileId)
-                    .putString(ShortsUploadWorker.FEED_SHORTS_BUSINESS_ID, feedShortsBusinessId)
-                    .putString(ShortsUploadWorker.THUMBNAIL, thumbnailFilePath)
-                    .build()
-            )
-            .build()
-
-        val workManager = WorkManager.getInstance(applicationContext)
-
-        Log.d("Upload", "Enqueuing upload work request: ${uploadWorkRequest!!.id}")
-        workManager.enqueue(uploadWorkRequest!!)
-
-        observeWorkProgress(workManager)
-    }
-
-    // CRITICAL: Centralized work progress observation with proper cancellation handling
-    private fun observeWorkProgress(workManager: WorkManager) {
-        lifecycleScope.launch(Dispatchers.Main) {
-            Log.d("Progress", "Starting work progress observation")
-
-            workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
-                .observe(this@UploadShortsActivity) { workInfo ->
-
-                    if (workInfo != null) {
-                        val progress = workInfo.progress.getInt(ShortsUploadWorker.Progress, 0)
-
-                        Log.d("Progress", "Work state: ${workInfo.state}, Progress: $progress%")
-
-                        when (workInfo.state) {
-                            WorkInfo.State.ENQUEUED -> {
-                                Log.d("Progress", "Work ENQUEUED")
-                            }
-                            WorkInfo.State.RUNNING -> {
-                                Log.d("Progress", "Work RUNNING - Progress: $progress%")
-                            }
-                            WorkInfo.State.SUCCEEDED -> {
-                                Log.d("Progress", "✓ Work SUCCEEDED")
-                                isUploading = false
-                                hasStartedUpload = false
-
-                                Toast.makeText(
-                                    this@UploadShortsActivity,
-                                    "Upload successful!",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-
-                                // Post success event
-                                EventBus.getDefault().post(UploadSuccessful(success = true))
-
-                                // Return result and finish
-                                val resultIntent = Intent()
-                                setResult(RESULT_OK, resultIntent)
-                                finish()
-                            }
-                            WorkInfo.State.FAILED -> {
-                                Log.e("Progress", "✗ Work FAILED")
-                                isUploading = false
-                                hasStartedUpload = false
-
-                                Toast.makeText(
-                                    this@UploadShortsActivity,
-                                    "Upload failed. Please try again.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                            WorkInfo.State.BLOCKED -> {
-                                Log.w("Progress", "Work BLOCKED")
-                            }
-                            WorkInfo.State.CANCELLED -> {
-                                Log.w("Progress", "✗ Work CANCELLED")
-                                isUploading = false
-                                hasStartedUpload = false
-
-                                Toast.makeText(
-                                    this@UploadShortsActivity,
-                                    "Upload cancelled",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    } else {
-                        Log.w("Progress", "Work info is null")
-                    }
-                }
-        }
     }
 
     private fun createGson(): Gson {
@@ -630,79 +634,72 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
             .create()
     }
 
-    // CRITICAL: Handle cancel event from EventBus
+
+    private fun backFromShortsUpload() {
+        binding.cancelButton.setOnClickListener {
+            finish()
+        }
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onCancelShortsUploadEvent(event: CancelShortsUpload) {
-        Log.d("CancelUpload", "Received CancelShortsUpload event with cancel=${event.cancel}")
-        if (event.cancel) {
-            performCancel()
-        }
+    fun onProgressEvent(event: CancelShortsUpload) {
+        Log.d("CancelUpload", "Cancel Upload ${uploadWorkRequest!!.id}")
+        VideoCompressor.cancel()
+
+
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        if (EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().unregister(this)
-            Log.d("EventBus", "UploadShortsActivity unregistered from EventBus")
-        }
-    }
-
-    override fun onBackPressed() {
-        if (hasStartedUpload) {
-            // Show confirmation if upload is in progress
-            showCancelConfirmationDialog()
-        } else {
-            // Just finish if no upload
-            super.onBackPressed()
+    private fun cancelShortsUpload() {
+        binding.cancelButton.setOnClickListener {
+            finish()
         }
     }
 
     companion object {
         const val EXTRA_VIDEO_URI = "extra_video_uri"
-        const val REQUEST_TOPICS_ACTIVITY = 123
+        const val REQUEST_TOPICS_ACTIVITY = 123 // You can use any unique value
+
     }
 
     override fun onThumbnailClick(thumbnail: Bitmap) {
+
         isThumbnailClicked = true
         Glide.with(this)
             .load(thumbnail)
             .into(binding.shortThumbNail)
 
+
         this.thumbnail = thumbnail
+        // Set the bitmap
+
     }
 
     fun saveBitmapToFile(bitmap: Bitmap, context: Context): File {
+        // Get the directory for the app's private pictures directory.
         val fileDir = File(context.filesDir, "thumbnails")
 
+        // Create the directory if it doesn't exist
         if (!fileDir.exists()) {
             fileDir.mkdirs()
         }
 
-        val fileName = "thumbnail_${UUID.randomUUID()}.png"
+        // Create a unique filename for the thumbnail
+
+        val fileName = "thumbnail.png"
+
+        // Create the file object
         val file = File(fileDir, fileName)
 
         try {
+            // Save the bitmap to the file
             val stream = FileOutputStream(file)
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
             stream.close()
-            Log.d("Thumbnail", "Thumbnail saved: ${file.absolutePath}")
         } catch (e: IOException) {
-            Log.e("Thumbnail", "Error saving thumbnail", e)
             e.printStackTrace()
         }
 
         return file
     }
 
-    private fun getFileSize(size: Long): String {
-        val kb = size / 1024.0
-        val mb = kb / 1024.0
-        val gb = mb / 1024.0
-
-        return when {
-            gb >= 1 -> String.format("%.2f GB", gb)
-            mb >= 1 -> String.format("%.2f MB", mb)
-            else -> String.format("%.2f KB", kb)
-        }
-    }
 }
