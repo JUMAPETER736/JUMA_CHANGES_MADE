@@ -166,6 +166,7 @@ import com.uyscuti.social.circuit.databinding.BottomDialogForShareBinding
 import com.uyscuti.social.circuit.log_in_and_register.LoginActivity
 import com.uyscuti.social.circuit.settings.SettingsActivity
 import com.uyscuti.social.circuit.user_interface.UniversalSearchActivity
+import com.uyscuti.social.compressor.VideoCompressor
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
 import kotlin.jvm.java
 
@@ -1408,8 +1409,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
         uploadShortsSeekBar = view.findViewById(R.id.uploadShortsSeekBar)
         cancelShortsUpload = view.findViewById(R.id.cancelShortsUpload)
-        cancelShortsUploadCard = view.findViewById(R.id.cancelShortsUploadCard)
-        cancelShortsUploadCard.visibility = View.GONE
 
         shortsMenu.setOnClickListener {
 
@@ -1449,16 +1448,23 @@ class ShotsFragment : Fragment(), OnClickListeners {
         // The click listener stays on the ImageView, but hide the card:
         cancelShortsUpload.setOnClickListener {
             if (uploadWorkRequest != null) {
+                // Cancel the WorkManager upload task
                 val workManager = WorkManager.getInstance(requireContext())
                 workManager.cancelWorkById(uploadWorkRequest!!.id)
                 uploadWorkRequest = null
             }
 
+            // Cancel video compression
+            VideoCompressor.cancel()
+
+            // Update UI
             uploadShortsSeekBar?.visibility = View.GONE
             uploadShortsSeekBar?.progress = 0
-            cancelShortsUploadCard.visibility = View.GONE
+            cancelShortsUpload.visibility = View.GONE
 
+            // Send cancel event to UploadShortsActivity
             EventBus.getDefault().post(CancelShortsUpload(cancel = true))
+
             Toast.makeText(requireContext(), "Upload cancelled", Toast.LENGTH_SHORT).show()
         }
 
