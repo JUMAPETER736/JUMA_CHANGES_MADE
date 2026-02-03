@@ -44,7 +44,7 @@ class ShortsUploadWorker @AssistedInject constructor(
         const val FILE_ID = "fileId"
         const val FEED_SHORTS_BUSINESS_ID = "fileIds"
         const val COMPRESS_PROGRESS = "compress"
-
+        const val UNIQUE_ID = "unique_id"
         const val TAGS = "tags"
 //        var THUMBNAIL: Bitmap? = null
     }
@@ -60,7 +60,7 @@ class ShortsUploadWorker @AssistedInject constructor(
         try {
             Log.d(TAG, "start do work")
 
-            val firstUpdate = workDataOf(Progress to 0)
+            val firstUpdate = workDataOf(Progress to 50) // Start at 50%
             setProgress(firstUpdate)
 
             // Extract input data
@@ -69,8 +69,9 @@ class ShortsUploadWorker @AssistedInject constructor(
             val thumbnailFilePath = inputData.getString(THUMBNAIL)
             val fileId = inputData.getString(FILE_ID)
             val feedShortsBusinessId = inputData.getString(FEED_SHORTS_BUSINESS_ID)
+            val uniqueId = inputData.getString(UNIQUE_ID) ?: "default_id"
 
-            // Check for cancellation early
+            // Check for cancellation
             if (isStopped) {
                 Log.d(TAG, "Work cancelled before starting")
                 EventBus.getDefault().post(UploadSuccessful(success = false))
@@ -90,7 +91,8 @@ class ShortsUploadWorker @AssistedInject constructor(
                 caption!!,
                 fileId!!,
                 feedShortsBusinessId!!,
-                thumbnailFile
+                thumbnailFile,
+                uniqueId
             ) { bytesRead, totalBytes ->
                 // Check for cancellation during upload
                 if (isStopped) {
@@ -98,11 +100,14 @@ class ShortsUploadWorker @AssistedInject constructor(
                     return@uploadShortToMongoDB
                 }
 
-                val progress = (bytesRead * 100 / totalBytes).toInt()
+                // Upload takes 50-100% of total progress
+                val uploadProgress = (bytesRead * 100 / totalBytes).toInt()
+                val totalProgress = 50 + (uploadProgress / 2) // 50% + (0-50%)
 
-                // Post progress events
-                EventBus.getDefault().post(ProgressEvent(uniqueId, progress))
-                EventBus.getDefault().post(ProgressEvent("workerUniqueIdShorts", progress))
+                // Post progress event
+                EventBus.getDefault().post(ProgressEvent(uniqueId, totalProgress))
+
+                Log.d(TAG, "Upload progress: $uploadProgress%, Total progress: $totalProgress%")
             }
 
             // Final check before completion
@@ -114,6 +119,9 @@ class ShortsUploadWorker @AssistedInject constructor(
 
             val lastUpdate = workDataOf(Progress to 100)
             setProgress(lastUpdate)
+
+            // Post 100% progress
+            EventBus.getDefault().post(ProgressEvent(uniqueId, 100))
 
             return if (uploadResult) {
                 Log.d(TAG, "Shorts Upload successful")
@@ -141,6 +149,7 @@ class ShortsUploadWorker @AssistedInject constructor(
         fileId: String,
         feedShortsBusinessId: String,
         thumbnail: File,
+        uniqueId: String,
         progressCallback: (Long, Long) -> Unit
     ): Boolean {
 

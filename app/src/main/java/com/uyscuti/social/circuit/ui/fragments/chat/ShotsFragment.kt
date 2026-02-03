@@ -1427,6 +1427,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
                         performLogout()
                         true
                     }
+
                     else -> false
                 }
             }
@@ -1508,7 +1509,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
             .setAllowCrossProtocolRedirects(true)
             .setConnectTimeoutMs(8000)
             .setReadTimeoutMs(8000)
-
 
 
         val dataSourceFactory = DefaultDataSource.Factory(
@@ -1597,7 +1597,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
                     currentPosition = shortsViewModel.shortIndex
 
-                    if(feedShortsBusinessId != "default_value" ) {
+                    if (feedShortsBusinessId != "default_value") {
                         loadMoreShortsByFeedShortsBusinessId(feedShortsBusinessId)
 
                         val handler = Handler(Looper.getMainLooper())
@@ -1606,8 +1606,11 @@ class ShotsFragment : Fragment(), OnClickListeners {
                             playVideoAtPosition(shortsViewModel.mutableShortsList.size)
                         }, 200)
 
-                        for(i in shortsViewModel.mutableShortsList){
-                            Log.d("feedShortsBusinessId", "feedShortsBusinessId(i): ${i.feedShortsBusinessId}")
+                        for (i in shortsViewModel.mutableShortsList) {
+                            Log.d(
+                                "feedShortsBusinessId",
+                                "feedShortsBusinessId(i): ${i.feedShortsBusinessId}"
+                            )
                         }
                     } else {
                         viewPager.setCurrentItem(currentPosition, false)
@@ -1671,7 +1674,10 @@ class ShotsFragment : Fragment(), OnClickListeners {
                         Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
 
                         if (state == ViewPager.SCROLL_STATE_IDLE) {
-                            Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
+                            Log.d(
+                                "onPageScrollStateChanged",
+                                "onPageScrollStateChanged: state $state"
+                            )
                             playVideoAtPosition(currentPosition)
                             backPressCount = 0
                         }
@@ -1690,16 +1696,18 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
         val onBackPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if(feedOnBackPressedData) {
-                    Log.d("handleOnBackPressed", "handleOnBackPressed: feedPostPosition $feedPostPosition")
+                if (feedOnBackPressedData) {
+                    Log.d(
+                        "handleOnBackPressed",
+                        "handleOnBackPressed: feedPostPosition $feedPostPosition"
+                    )
                     EventBus.getDefault().post(GoToFeedFragment(feedPostPosition))
                 } else {
                     if (backPressCount == 0) {
                         EventBus.getDefault().post(ShowBottomNav(false))
                         backPressCount++
                         Log.d("handleOnBackPressed", "handleOnBackPressed: 1 - display bottom nav ")
-                    }
-                    else if (backPressCount == 1) {
+                    } else if (backPressCount == 1) {
                         backPressCount++
                         Log.d(
                             "handleOnBackPressed",
@@ -1720,8 +1728,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
                         playVideoAtPosition(currentPosition)
 
                         Log.d("handleOnBackPressed", "handleOnBackPressed: 2 - next short")
-                    }
-                    else if (backPressCount == 2) {
+                    } else if (backPressCount == 2) {
                         Log.d(
                             "handleOnBackPressed",
                             "handleOnBackPressed: last/prev position ${shortsViewModel.lastPosition}"
@@ -1733,8 +1740,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
                             backPressCount = 0
                             requireActivity().finish()
                         }
-                    }
-                    else {
+                    } else {
                         Log.d("handleOnBackPressed", "handleOnBackPressed: else")
                     }
                 }
@@ -1787,6 +1793,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
         }
 
         return view
+
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -1800,7 +1807,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
         // Show cancel button during upload
         cancelShortsUpload.visibility = View.VISIBLE
 
-        Log.d("ShortsUploadProgress", "Upload progress: ${event.progress} for eventId: ${event.eventId}")
+        Log.d("ShortsUploadProgress", "Upload progress: ${event.progress}% for eventId: ${event.eventId}")
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
