@@ -22,7 +22,6 @@ import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.work.Configuration
 import androidx.work.ListenableWorker
-import androidx.work.WorkManager
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import com.uyscuti.sharedmodule.callbacks.ChatSocketWorker
@@ -39,22 +38,32 @@ import javax.inject.Inject
 @UnstableApi
 open class FlashApplication : Application(), Configuration.Provider {
 
+    companion object {
+
+        lateinit var cache: SimpleCache
+        const val exoPlayerCacheSize: Long = 1024 * 1024 * 1024
+        lateinit var leastRecentlyUsedCacheEvictor: LeastRecentlyUsedCacheEvictor
+        lateinit var exoDatabaseProvider: ExoDatabaseProvider
+
+        private lateinit var instance: FlashApplication
+
+        // Method to get the instance
+        fun getInstance(): FlashApplication {
+            return instance
+        }
+        private lateinit var bInstance: FlashApplication
+
+        fun getAppContext(): Context {
+            return bInstance.applicationContext
+        }
+    }
+
+
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
 
-//    val applicationViewModel: UserProfileShortsViewModel by viewModels()
 
-//
-//    @Inject
-//    lateinit var flashWorkerFactory: FlashWorkerFactory
-//
-//    @Inject
-//    lateinit var chatSocketWorkerFactory: ChatSocketWorkerFactory
-
-//    override val workManagerConfiguration: Configuration get()  = Configuration.Builder()
-//        .setWorkerFactory(shortsUploadWorker)
-//        .build()
 
     class CompositeWorkerFactory @Inject constructor(
 //        private val combinedWorkerFactory: CombinedWorkerFactory,
@@ -113,25 +122,6 @@ open class FlashApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var feedUploadWorker: FeedWorkerFactory
 
-    companion object {
-//        lateinit var simpleCache: SimpleCache
-        lateinit var cache: SimpleCache
-        const val exoPlayerCacheSize: Long = 1024 * 1024 * 1024
-        lateinit var leastRecentlyUsedCacheEvictor: LeastRecentlyUsedCacheEvictor
-        lateinit var exoDatabaseProvider: ExoDatabaseProvider
-
-        private lateinit var instance: FlashApplication
-
-        // Method to get the instance
-        fun getInstance(): FlashApplication {
-            return instance
-        }
-        private lateinit var bInstance: FlashApplication
-
-        fun getAppContext(): Context {
-            return bInstance.applicationContext
-        }
-    }
 
     override fun attachBaseContext(base: Context?) {
         super.attachBaseContext(base)
@@ -141,23 +131,14 @@ open class FlashApplication : Application(), Configuration.Provider {
     @OptIn(UnstableApi::class) override fun onCreate() {
         super.onCreate()
         // Check if WorkManager is already initialized
-//        if (!isWorkManagerInitialized()) {
-//            initializeWorkManager()
-//        }
+
         instance = this
         leastRecentlyUsedCacheEvictor = LeastRecentlyUsedCacheEvictor(exoPlayerCacheSize)
         exoDatabaseProvider = ExoDatabaseProvider(this)
         cache = SimpleCache(cacheDir, leastRecentlyUsedCacheEvictor, exoDatabaseProvider)
         registerNetworkCallback(this)
         startSocketJob()
-//
-//        if (isWorkManagerInitialized()){
-//            registerNetworkCallback(this)
-//        }
 
-//        Handler().postDelayed({
-//            registerNetworkCallback(this)
-//        }, 5000)
     }
 
     @RequiresPermission(Manifest.permission.RECEIVE_BOOT_COMPLETED)
@@ -172,34 +153,12 @@ open class FlashApplication : Application(), Configuration.Provider {
             .setPeriodic(jobIntervalMillis,jobIntervalFlexMillis)
             .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
             .setPersisted(true)
-//            .setPriority(JobInfo.PRIORITY_HIGH)
+
             .build()
 
         // Schedule the job
         val jobScheduler = getSystemService(JobScheduler::class.java)
         jobScheduler.schedule(jobInfo)
-    }
-
-    private fun isWorkManagerInitialized(): Boolean {
-        return try {
-            // Try to get the WorkManager instance
-            WorkManager.getInstance(this)
-            true // If successful, WorkManager is already initialized
-        } catch (e: IllegalStateException) {
-            false // WorkManager is not initialized
-        }
-    }
-
-    private fun initializeWorkManager() {
-        val configuration = Configuration.Builder()
-            .setMinimumLoggingLevel(Log.VERBOSE)
-//            .setWorkerFactory(chatSocketWorkerFactory)
-//            .setWorkerFactory(flashWorkerFactory)
-//            .setWorkerFactory(workerFactory)
-//            .setWorkerFactory(combinedWorkerFactory)
-            .build()
-
-        WorkManager.initialize(this, configuration)
     }
 
     private fun registerNetworkCallback(context: Context) {
@@ -228,31 +187,6 @@ open class FlashApplication : Application(), Configuration.Provider {
 
 
 
-
-//class CompositeWorkerFactory @Inject constructor(
-//    private val factories: List<WorkerFactory>
-//) : WorkerFactory() {
-//
-//    override fun createWorker(
-//        appContext: Context,
-//        workerClassName: String,
-//        workerParameters: WorkerParameters
-//    ): ListenableWorker? {
-//        var createdWorker: ListenableWorker? = null
-//
-//        for (factory in factories) {
-//            val worker = factory.createWorker(appContext, workerClassName, workerParameters)
-//            if (worker != null) {
-//                Log.d("CompositeWorkerFactory", "Worker created by ${factory.javaClass.simpleName}")
-//                createdWorker = worker
-//            }
-//        }
-//
-//        return createdWorker
-//    }
-//}
-
-
 //@FlashWorkerScope
 class FlashWorkerFactory @Inject constructor(private val callHelper: CallHelper) : WorkerFactory() {
     override fun createWorker(
@@ -271,18 +205,7 @@ class ChatSocketWorkerFactory @Inject constructor(private val chatSocketClient: 
     ): ListenableWorker = ChatSocketWorker(chatSocketClient,appContext,workerParameters)
 }
 
-//class CombinedWorkerFactory @Inject constructor(
-//    private val callHelper: CallHelper,
-//    private val chatSocketClient: CoreChatSocketClient
-//) : WorkerFactory() {
-//    override fun createWorker(
-//        appContext: Context,
-//        workerClassName: String,
-//        workerParameters: WorkerParameters
-//    ): ListenableWorker {
-//        return CombinedWorker(callHelper, chatSocketClient, appContext, workerParameters)
-//    }
-//}
+
 class ShortsWorkerFactory @Inject constructor(
     private val retrofitInstance: RetrofitInstance
 ) : WorkerFactory() {

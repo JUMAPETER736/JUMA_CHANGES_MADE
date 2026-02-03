@@ -149,7 +149,7 @@ enum class ContentFilter {
 
 enum class SearchContext {
     GLOBAL,
-   
+
 }
 
 data class SearchResults(

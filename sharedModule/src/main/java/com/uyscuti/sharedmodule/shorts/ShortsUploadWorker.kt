@@ -46,16 +46,11 @@ class ShortsUploadWorker @AssistedInject constructor(
         const val COMPRESS_PROGRESS = "compress"
 
         const val TAGS = "tags"
-//        var THUMBNAIL: Bitmap? = null
-    }
 
-    // Inside ShortsUploadWorker class
-    fun cancelWork() {
-        isCancelled = true
     }
 
 
-    val TAG = "Worker"
+    val TAG = "ShotsUploadWorker"
     override suspend fun doWork(): Result {
 
         try {
