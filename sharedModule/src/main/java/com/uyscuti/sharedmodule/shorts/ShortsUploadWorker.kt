@@ -29,7 +29,6 @@ class ShortsUploadWorker @AssistedInject constructor(
 ) :
     CoroutineWorker(context, parameters) {
 
-    // Inside ShortsUploadWorker class
     private var isCancelled = false
     private val uniqueId = UniqueIdGenerator.generateUniqueId()
 
@@ -46,14 +45,11 @@ class ShortsUploadWorker @AssistedInject constructor(
         const val COMPRESS_PROGRESS = "compress"
         const val UNIQUE_ID = "unique_id"
         const val TAGS = "tags"
-//        var THUMBNAIL: Bitmap? = null
     }
 
-    // Inside ShortsUploadWorker class
     fun cancelWork() {
         isCancelled = true
     }
-
 
     val TAG = "UploadShotsWorker"
     override suspend fun doWork(): Result {
@@ -86,6 +82,9 @@ class ShortsUploadWorker @AssistedInject constructor(
             val thumbnailFile = File(thumbnailFilePath)
             val file = File(filePath)
 
+            var lastPostedProgress = -1
+            var lastUpdateTime = System.currentTimeMillis()
+
             val uploadResult = uploadShortToMongoDB(
                 file,
                 caption!!,
@@ -104,10 +103,15 @@ class ShortsUploadWorker @AssistedInject constructor(
                 val uploadProgress = (bytesRead * 100 / totalBytes).toInt()
                 val totalProgress = 50 + (uploadProgress / 2) // 50% + (0-50%)
 
-                // Post progress event
-                EventBus.getDefault().post(ProgressEvent(uniqueId, totalProgress))
-
-                Log.d(TAG, "Upload progress: $uploadProgress%, Total progress: $totalProgress%")
+                val currentTime = System.currentTimeMillis()
+                // Update at least every second OR when progress changes
+                if (totalProgress != lastPostedProgress || (currentTime - lastUpdateTime) >= 1000) {
+                    // Post progress event
+                    EventBus.getDefault().post(ProgressEvent(uniqueId, totalProgress))
+                    lastPostedProgress = totalProgress
+                    lastUpdateTime = currentTime
+                    Log.d(TAG, "Upload progress: $uploadProgress%, Total progress: $totalProgress%")
+                }
             }
 
             // Final check before completion
@@ -142,7 +146,6 @@ class ShortsUploadWorker @AssistedInject constructor(
         }
     }
 
-
     private suspend fun uploadShortToMongoDB(
         file: File,
         caption: String,
@@ -153,11 +156,9 @@ class ShortsUploadWorker @AssistedInject constructor(
         progressCallback: (Long, Long) -> Unit
     ): Boolean {
 
-
         Log.d(TAG, "Start uploading function")
         // Convert file content to bytes
         val fileBytes = file.readBytes()
-
 
         val requestFile: RequestBody =
             ProgressRequestBody(file, "image/*".toMediaTypeOrNull()!!, progressCallback)
@@ -194,7 +195,6 @@ class ShortsUploadWorker @AssistedInject constructor(
             tagsString.split(",").map { it.trim() }
         } else {
             emptyList()
-
         }
 
         Log.d(TAG, "Tags: $tags $caption")
@@ -210,8 +210,6 @@ class ShortsUploadWorker @AssistedInject constructor(
         tags.forEachIndexed { index, tag ->
             formData.addFormDataPart("tags[$index]", tag)
         }
-
-
 
         val tagParts = tags.mapIndexed { index, tag ->
             tag.toRequestBody("text/plain".toMediaTypeOrNull())
@@ -261,6 +259,5 @@ class ShortsUploadWorker @AssistedInject constructor(
             Log.d(TAG, "Failed to upload short because: ${e.printStackTrace()}")
             false
         }
-
     }
 }

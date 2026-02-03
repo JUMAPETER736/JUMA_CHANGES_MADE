@@ -1450,12 +1450,13 @@ class ShotsFragment : Fragment(), OnClickListeners {
         cancelShortsUpload.setOnClickListener {
             Log.d("CancelUpload", "Cancel button clicked")
 
-            // 1. Hide UI elements IMMEDIATELY
+            // 1. HIDE UI ELEMENTS IMMEDIATELY - This is the most important step!
             uploadShortsSeekBar?.apply {
                 visibility = View.GONE
                 progress = 0
             }
             cancelShortsUpload.visibility = View.GONE
+            Log.d("CancelUpload", "UI elements hidden")
 
             // 2. Cancel WorkManager upload
             uploadWorkRequest?.let { workRequest ->
@@ -1471,8 +1472,9 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
             // 4. Send cancel event to UploadShortsActivity
             EventBus.getDefault().post(CancelShortsUpload(cancel = true))
+            Log.d("CancelUpload", "Posted CancelShortsUpload event")
 
-            // 5. Show feedback
+            // 5. Show feedback to user
             Toast.makeText(requireContext(), "Upload cancelled", Toast.LENGTH_SHORT).show()
         }
 
@@ -1798,28 +1800,37 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onShortsProgressEvent(event: ProgressEvent) {
-        // Show and update progress UI
+        // Show upload UI elements when progress starts (first update)
         uploadShortsSeekBar?.apply {
-            visibility = View.VISIBLE
+            if (visibility != View.VISIBLE) {
+                visibility = View.VISIBLE
+                Log.d("ShortsUpload", "Progress bar now VISIBLE")
+            }
             progress = event.progress
         }
 
-        // Show cancel button during upload
-        cancelShortsUpload.visibility = View.VISIBLE
+        // Show cancel button when upload is active
+        if (cancelShortsUpload.visibility != View.VISIBLE) {
+            cancelShortsUpload.visibility = View.VISIBLE
+            Log.d("ShortsUpload", "Cancel button now VISIBLE")
+        }
 
-        Log.d("ShortsUploadProgress", "Upload progress: ${event.progress}% for eventId: ${event.eventId}")
+        Log.d("ShortsUploadProgress", "Progress: ${event.progress}%")
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onShortsUploadSuccess(event: UploadSuccessful) {
-        // Hide all upload UI elements
+        // Hide all upload UI elements immediately
         uploadShortsSeekBar?.apply {
             visibility = View.GONE
             progress = 0
+            Log.d("ShortsUpload", "Progress bar now HIDDEN")
         }
-        cancelShortsUpload.visibility = View.GONE
 
-        // Show success message only if upload was successful
+        cancelShortsUpload.visibility = View.GONE
+        Log.d("ShortsUpload", "Cancel button now HIDDEN")
+
+        // Show success/failure message
         if (event.success) {
             val rootView: View = requireActivity().findViewById(android.R.id.content)
             val snackBar = Snackbar.make(rootView, "Shorts upload successful", Snackbar.LENGTH_LONG)

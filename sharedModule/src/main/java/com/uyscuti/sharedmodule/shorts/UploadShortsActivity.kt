@@ -286,13 +286,14 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         if (fileSizeInMB != null && fileSizeInGb != null) {
             Log.d("uriFileSize", "compressShorts: file size in mb $fileSizeInMB")
 
-            if (fileSizeInGb > 1) {
-                Toast.makeText(this, "File too large", Toast.LENGTH_LONG).show()
-            } else if (fileSizeInMB <= 10) {
+            if (fileSizeInMB <= 10) {
                 Log.d("uriFileSize", "compressShorts: less than 10mb - no compression needed")
 
-                // Start at 50% since we're skipping compression
-                EventBus.getDefault().post(ProgressEvent(uniqueId, 50))
+                // ❌ OLD CODE - Started at 50%
+                // EventBus.getDefault().post(ProgressEvent(uniqueId, 50))
+
+                // ✅ NEW CODE - Start at 0% for smooth progress
+                EventBus.getDefault().post(ProgressEvent(uniqueId, 0))
 
                 val thumbnailFile = saveBitmapToFile(thumbnail, applicationContext)
                 val thumbnailFilePath = thumbnailFile.absolutePath
@@ -306,7 +307,10 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                                 .putString(ShortsUploadWorker.EXTRA_FILE_PATH, filePath)
                                 .putString(ShortsUploadWorker.CAPTION, caption)
                                 .putString(ShortsUploadWorker.FILE_ID, fileId)
-                                .putString(ShortsUploadWorker.FEED_SHORTS_BUSINESS_ID, feedShortsBusinessId)
+                                .putString(
+                                    ShortsUploadWorker.FEED_SHORTS_BUSINESS_ID,
+                                    feedShortsBusinessId
+                                )
                                 .putString(ShortsUploadWorker.THUMBNAIL, thumbnailFilePath)
                                 .putString(ShortsUploadWorker.UNIQUE_ID, uniqueId)
                                 .build()
@@ -317,25 +321,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                 Log.d("Upload", "Enqueuing upload work request...")
                 workManager.enqueue(uploadWorkRequest!!)
 
-                lifecycleScope.launch(Dispatchers.Main) {
-                    workManager = WorkManager.getInstance(applicationContext)
-                    workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
-                        .observe(this@UploadShortsActivity) { workInfo ->
-                            if (workInfo != null) {
-                                val progress = workInfo.progress.getInt(ShortsUploadWorker.Progress, 0)
-                                Log.d("Progress", "Progress $progress")
-                            }
-
-                            when (workInfo?.state) {
-                                WorkInfo.State.RUNNING -> Log.d("Progress", "Running")
-                                WorkInfo.State.SUCCEEDED -> Log.d("Progress", "SUCCEEDED")
-                                WorkInfo.State.ENQUEUED -> Log.d("Progress", "ENQUEUED")
-                                WorkInfo.State.BLOCKED -> Log.d("Progress", "BLOCKED")
-                                WorkInfo.State.CANCELLED -> Log.d("Progress", "CANCELLED")
-                                else -> {}
-                            }
-                        }
-                }
             } else {
                 Log.d("uriFileSize", "compressShorts: greater than 10mb - compression needed")
 
