@@ -88,19 +88,25 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onProgressEvent(event: CancelShortsUpload) {
-        if (uploadWorkRequest != null) {
-            Log.d("CancelUpload", "Cancelling WorkManager task: ${uploadWorkRequest!!.id}")
+        Log.d("CancelUpload", "Received cancel event in UploadShortsActivity")
+
+        // Cancel WorkManager
+        uploadWorkRequest?.let { workRequest ->
             val workManager = WorkManager.getInstance(applicationContext)
-            workManager.cancelWorkById(uploadWorkRequest!!.id)
+            workManager.cancelWorkById(workRequest.id)
+            Log.d("CancelUpload", "Cancelled WorkManager in Activity: ${workRequest.id}")
             uploadWorkRequest = null
         }
 
         // Cancel video compression
-        Log.d("CancelUpload", "Cancelling video compression")
         VideoCompressor.cancel()
+        Log.d("CancelUpload", "Cancelled VideoCompressor in Activity")
 
+        // Close the activity
         Toast.makeText(this, "Upload cancelled", Toast.LENGTH_SHORT).show()
+        finish()
     }
+
 
 
     @OptIn(DelicateCoroutinesApi::class)

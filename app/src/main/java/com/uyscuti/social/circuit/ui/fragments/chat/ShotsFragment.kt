@@ -1235,7 +1235,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
     // UI Components - Media & Controls
     private lateinit var shortSeekBar: SeekBar
     private lateinit var shortsDownloadImageView: ImageView
-    private lateinit var cancelShortsUploadCard: CardView
+
 
     // Data Collections
     private var shortsList = ArrayList<String>()
@@ -1447,23 +1447,27 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
         // The click listener stays on the ImageView, but hide the card:
         cancelShortsUpload.setOnClickListener {
-            if (uploadWorkRequest != null) {
-                // Cancel the WorkManager upload task
+            Log.d("CancelUpload", "Cancel button clicked")
+
+            // Cancel WorkManager upload
+            uploadWorkRequest?.let { workRequest ->
                 val workManager = WorkManager.getInstance(requireContext())
-                workManager.cancelWorkById(uploadWorkRequest!!.id)
+                workManager.cancelWorkById(workRequest.id)
+                Log.d("CancelUpload", "Cancelled WorkManager: ${workRequest.id}")
                 uploadWorkRequest = null
             }
 
             // Cancel video compression
             VideoCompressor.cancel()
-
-            // Update UI
-            uploadShortsSeekBar?.visibility = View.GONE
-            uploadShortsSeekBar?.progress = 0
-            cancelShortsUpload.visibility = View.GONE
+            Log.d("CancelUpload", "Cancelled VideoCompressor")
 
             // Send cancel event to UploadShortsActivity
             EventBus.getDefault().post(CancelShortsUpload(cancel = true))
+
+            // Hide UI immediately
+            uploadShortsSeekBar?.visibility = View.GONE
+            uploadShortsSeekBar?.progress = 0
+            cancelShortsUpload.visibility = View.GONE
 
             Toast.makeText(requireContext(), "Upload cancelled", Toast.LENGTH_SHORT).show()
         }
@@ -1784,10 +1788,14 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onShortsProgressEvent(event: ProgressEvent) {
-        uploadShortsSeekBar?.visibility = View.VISIBLE
+        // Only update UI if views are initialized
+        uploadShortsSeekBar?.apply {
+            visibility = View.VISIBLE
+            progress = event.progress
+        }
+
         cancelShortsUpload.visibility = View.VISIBLE
-        cancelShortsUploadCard.visibility = View.VISIBLE
-        uploadShortsSeekBar?.progress = event.progress
+
 
         Log.d("ShortsUploadProgress", "Upload progress: ${event.progress} for eventId: ${event.eventId}")
     }
@@ -1798,7 +1806,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
         uploadShortsSeekBar?.visibility = View.GONE
         uploadShortsSeekBar?.progress = 0
         cancelShortsUpload.visibility = View.GONE
-        cancelShortsUploadCard.visibility = View.GONE
+
 
         val rootView: View = requireActivity().findViewById(android.R.id.content)
         val snackBar = Snackbar.make(rootView, "Shorts upload successful", Snackbar.LENGTH_LONG)
