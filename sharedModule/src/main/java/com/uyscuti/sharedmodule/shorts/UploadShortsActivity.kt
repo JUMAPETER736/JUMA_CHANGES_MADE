@@ -72,7 +72,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
     }
 
-    
+
     @Inject
     lateinit var retrofitIns: RetrofitInstance
     private var isThumbnailClicked = false
