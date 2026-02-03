@@ -7,12 +7,14 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.uyscuti.sharedmodule.media.ProgressRequestBody
+import com.uyscuti.sharedmodule.model.CancelShortsUpload
 import com.uyscuti.sharedmodule.model.ProgressEvent
 import com.uyscuti.sharedmodule.model.UploadSuccessful
 import com.uyscuti.sharedmodule.utils.deleteFiled
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -29,7 +31,7 @@ class ShortsUploadWorker @AssistedInject constructor(
 ) :
     CoroutineWorker(context, parameters) {
 
-    // Inside ShortsUploadWorker class
+    // ADDED: Track cancellation state (kept your existing flag)
     private var isCancelled = false
     private val uniqueId = UniqueIdGenerator.generateUniqueId()
 
@@ -44,92 +46,164 @@ class ShortsUploadWorker @AssistedInject constructor(
         const val FILE_ID = "fileId"
         const val FEED_SHORTS_BUSINESS_ID = "fileIds"
         const val COMPRESS_PROGRESS = "compress"
-
         const val TAGS = "tags"
-
     }
 
-
     val TAG = "ShotsUploadWorker"
+
     override suspend fun doWork(): Result {
+        Log.d(TAG, "===== WORKER STARTED =====")
+        Log.d(TAG, "Worker ID: $id")
+        Log.d(TAG, "Unique ID: $uniqueId")
 
         try {
+            // CRITICAL: Check if cancelled before starting
+            if (isStopped) {
+                Log.w(TAG, "✗ Work cancelled before starting (isStopped)")
+                return Result.failure()
+            }
+
+            if (isCancelled) {
+                Log.w(TAG, "✗ Work cancelled before starting (isCancelled)")
+                return Result.failure()
+            }
+
             Log.d(TAG, "start do work")
             val firstUpdate = workDataOf(Progress to 0)
             val lastUpdate = workDataOf(Progress to 100)
             setProgress(firstUpdate)
             setProgressAsync(workDataOf(Progress to 50))
             delay(delayDuration)
+
             // Extract input data
             val filePath = inputData.getString(EXTRA_FILE_PATH)
             val caption = inputData.getString(CAPTION)
-
             val thumbnailFilePath = inputData.getString(THUMBNAIL)
             val tags = inputData.getString(TAGS)
             val fileId = inputData.getString(FILE_ID)
             val feedShortsBusinessId = inputData.getString(FEED_SHORTS_BUSINESS_ID)
 
-            if (isCancelled) {
-                Log.d(TAG, "Work cancelled")
+            Log.d(TAG, "File path: $filePath")
+            Log.d(TAG, "Caption: $caption")
+            Log.d(TAG, "Thumbnail path: $thumbnailFilePath")
+            Log.d(TAG, "File ID: $fileId")
+            Log.d(TAG, "Feed Shorts Business ID: $feedShortsBusinessId")
+
+            // CRITICAL: Check cancellation again after delay
+            if (isStopped || isCancelled) {
+                Log.w(TAG, "✗ Work cancelled after delay")
+                cleanupFiles(filePath, thumbnailFilePath)
                 return Result.failure()
             }
-
-
 
             // Check if filePath is not null and not empty
             if (filePath.isNullOrEmpty()) {
-                Log.d(TAG, "File path empty")
+                Log.e(TAG, "✗ File path empty")
                 return Result.failure()
             }
             if (thumbnailFilePath.isNullOrEmpty()) {
-                Log.d(TAG, "Thumbnail path empty")
+                Log.e(TAG, "✗ Thumbnail path empty")
                 return Result.failure()
             }
 
             val thumbnailFile = File(thumbnailFilePath)
-            Log.d(TAG, " Thumbnail file path $thumbnailFilePath")
+            Log.d(TAG, "Thumbnail file path: $thumbnailFilePath")
+
+            // ADDED: Validate files exist
+            if (!thumbnailFile.exists()) {
+                Log.e(TAG, "✗ Thumbnail file does not exist: $thumbnailFilePath")
+                return Result.failure()
+            }
 
             val file = File(filePath)
+            if (!file.exists()) {
+                Log.e(TAG, "✗ Video file does not exist: $filePath")
+                return Result.failure()
+            }
 
+            Log.d(TAG, "File size: ${getFileSize(file.length())}")
 
-            val uploadResult = uploadShortToMongoDB(file, caption!!,fileId!!, feedShortsBusinessId!!, thumbnailFile) { bytesRead, totalBytes ->
+            // CRITICAL: Check cancellation before upload
+            if (isStopped || isCancelled) {
+                Log.w(TAG, "✗ Work cancelled before upload")
+                cleanupFiles(filePath, thumbnailFilePath)
+                return Result.failure()
+            }
+
+            // MODIFIED: Upload with cancellation checks
+            val uploadResult = uploadShortToMongoDB(
+                file,
+                caption!!,
+                fileId!!,
+                feedShortsBusinessId!!,
+                thumbnailFile
+            ) { bytesRead, totalBytes ->
+                // CRITICAL: Check cancellation during upload
+                if (isStopped || isCancelled) {
+                    Log.w(TAG, "✗ Upload cancelled during progress")
+                    throw CancellationException("Upload cancelled by user")
+                }
+
                 val progress = (bytesRead * 100 / totalBytes).toInt()
+
+                // Update progress
+                setProgressAsync(workDataOf(Progress to progress))
 
                 // Post to both Feed and Shorts fragments
                 EventBus.getDefault().post(ProgressEvent(uniqueId, progress))
                 EventBus.getDefault().post(ProgressEvent("workerUniqueIdShorts", progress))
-            }
 
+                Log.d(TAG, "Upload progress: $progress% (${getFileSize(bytesRead)}/${getFileSize(totalBytes)})")
+            }
 
             setProgress(lastUpdate)
 
+            // CRITICAL: Final cancellation check
+            if (isStopped || isCancelled) {
+                Log.w(TAG, "✗ Work cancelled after upload attempt")
+                cleanupFiles(filePath, thumbnailFilePath)
+                return Result.failure()
+            }
 
             // Check the result of the upload and return success or failure accordingly
             return if (uploadResult) {
-                Log.d(TAG, "Shorts Upload successful")
-                EventBus.getDefault().post(UploadSuccessful(success = true))
+                Log.d(TAG, "✓ Shorts Upload successful")
+
+                // Post success events
                 EventBus.getDefault().post(UploadSuccessful(success = true))
 
-                deleteFiled(filePath)
+                // Cleanup files
+                cleanupFiles(filePath, thumbnailFilePath)
+
+                Log.d(TAG, "===== WORKER COMPLETED SUCCESSFULLY =====")
                 Result.success()
 
             } else {
-                Log.d(TAG, "Failed to upload short")
+                Log.e(TAG, "✗ Failed to upload short")
                 EventBus.getDefault().post(UploadSuccessful(success = false))
                 Result.failure()
             }
 
+        } catch (e: CancellationException) {
+            // ADDED: Handle cancellation exception
+            Log.w(TAG, "✗ Upload cancelled via exception", e)
+            val filePath = inputData.getString(EXTRA_FILE_PATH)
+            val thumbnailFilePath = inputData.getString(THUMBNAIL)
+            cleanupFiles(filePath, thumbnailFilePath)
+            EventBus.getDefault().post(CancelShortsUpload(cancel = true))
+            return Result.failure()
+
         } catch (e: Exception) {
             // Handle exceptions, log errors, etc.
-            Log.d(TAG, "doWork: ${e.message}")
-            Log.d(TAG, "doWork: ${e.printStackTrace()}")
-            Log.d(TAG, "doWork: $e")
+            Log.e(TAG, "✗ doWork exception", e)
+            Log.e(TAG, "doWork: ${e.message}")
+            Log.e(TAG, "doWork: ${e.printStackTrace()}")
+            Log.e(TAG, "doWork: $e")
             return Result.failure()
         }
     }
 
-
-
+    // MODIFIED: Your existing upload function with cancellation checks
     private suspend fun uploadShortToMongoDB(
         file: File,
         caption: String,
@@ -139,17 +213,25 @@ class ShortsUploadWorker @AssistedInject constructor(
         progressCallback: (Long, Long) -> Unit
     ): Boolean {
 
-
         Log.d(TAG, "Start uploading function")
+
+        // CRITICAL: Check cancellation at start
+        if (isStopped || isCancelled) {
+            Log.w(TAG, "✗ Upload cancelled at start")
+            throw CancellationException("Upload cancelled")
+        }
+
         // Convert file content to bytes
         val fileBytes = file.readBytes()
 
-
+        // Keep using your existing ProgressRequestBody
+        // The cancellation will be checked in the progress callback
         val requestFile: RequestBody =
             ProgressRequestBody(file, "image/*".toMediaTypeOrNull()!!, progressCallback)
 
         val requestFileThumbnail: RequestBody =
             ProgressRequestBody(thumbnail, "image/*".toMediaTypeOrNull()!!, progressCallback)
+
         val thumbnailFilePart: MultipartBody.Part =
             MultipartBody.Part.createFormData("thumbnail", thumbnail.name, requestFileThumbnail)
 
@@ -180,12 +262,12 @@ class ShortsUploadWorker @AssistedInject constructor(
             tagsString.split(",").map { it.trim() }
         } else {
             emptyList()
-
         }
 
         Log.d(TAG, "Tags: $tags $caption")
         Log.d(TAG, "Tags data type: ${tags::class.simpleName}")
         Log.d(TAG, "Tags: $tags")
+
         val formData = MultipartBody.Builder().setType(MultipartBody.FORM)
 
         // Add other form data appends
@@ -197,15 +279,10 @@ class ShortsUploadWorker @AssistedInject constructor(
             formData.addFormDataPart("tags[$index]", tag)
         }
 
-
-
         val tagParts = tags.mapIndexed { index, tag ->
             tag.toRequestBody("text/plain".toMediaTypeOrNull())
         }.toTypedArray()
 
-        if (content.isEmpty()) {
-
-        }
         val contentPart: RequestBody = content
             .toRequestBody("text/plain".toMediaTypeOrNull())
 
@@ -217,7 +294,14 @@ class ShortsUploadWorker @AssistedInject constructor(
 
         Log.d("Shorts", "content: $contentPart")
         Log.d("Shorts", "content: $tagParts")
+
         return try {
+            // CRITICAL: Check cancellation before API call
+            if (isStopped || isCancelled) {
+                Log.w(TAG, "✗ Upload cancelled before API call")
+                throw CancellationException("Upload cancelled")
+            }
+
             val response = retrofitInstance.apiService.uploadShort(
                 content = contentPart,
                 images = filePart,
@@ -226,27 +310,90 @@ class ShortsUploadWorker @AssistedInject constructor(
                 fileId = fileIdPart,
                 feedShortsBusinessId = feedShortsBusinessIdPart
             )
+
             Log.d("Shorts", "response b4 success check: $response")
+
+            // CRITICAL: Check cancellation after API call
+            if (isStopped || isCancelled) {
+                Log.w(TAG, "✗ Upload cancelled after API call")
+                throw CancellationException("Upload cancelled")
+            }
 
             if (response.isSuccessful) {
                 // Existing code for a successful response...
-                Log.i("Shorts", "Shorts upload successful")
+                Log.i("Shorts", "✓ Shorts upload successful")
                 Log.i("Shorts", "Shorts ${response.body()!!.data}")
                 true
             } else {
-                Log.i("Shorts", "Shorts upload failed ${response.message()}")
-                Log.i("Shorts", "Shorts upload failed ${response.code()}")
-                Log.i("Shorts", "Shorts upload failed ${response.body()?.message}")
-                Log.i("Shorts", "Shorts error response body: ${response.errorBody()?.string()}")
+                Log.e("Shorts", "✗ Shorts upload failed ${response.message()}")
+                Log.e("Shorts", "Shorts upload failed ${response.code()}")
+                Log.e("Shorts", "Shorts upload failed ${response.body()?.message}")
+                Log.e("Shorts", "Shorts error response body: ${response.errorBody()?.string()}")
                 false
             }
+        } catch (e: CancellationException) {
+            Log.w(TAG, "✗ Upload cancelled", e)
+            throw e
         } catch (e: Exception) {
             // Handle exceptions, log errors, etc.
-            Log.d(TAG, "Failed to upload short because: ${e.message}")
-            Log.d(TAG, "Failed to upload short because: $e")
-            Log.d(TAG, "Failed to upload short because: ${e.printStackTrace()}")
+            Log.e(TAG, "✗ Failed to upload short because: ${e.message}")
+            Log.e(TAG, "Failed to upload short because: $e")
+            Log.e(TAG, "Failed to upload short because: ${e.printStackTrace()}")
             false
         }
+    }
 
+    // ADDED: Override onStopped to handle cancellation
+    override suspend fun onStopped() {
+        super.onStopped()
+        Log.d(TAG, "===== WORKER STOPPED =====")
+        Log.d(TAG, "Worker ID: $id")
+
+        // Set cancellation flag
+        isCancelled = true
+
+        // Clean up resources
+        val filePath = inputData.getString(EXTRA_FILE_PATH)
+        val thumbnailFilePath = inputData.getString(THUMBNAIL)
+
+        cleanupFiles(filePath, thumbnailFilePath)
+
+        // Post cancellation event
+        EventBus.getDefault().post(CancelShortsUpload(cancel = true))
+
+        Log.d(TAG, "✓ Cleanup completed")
+    }
+
+    // ADDED: Cleanup files helper
+    private fun cleanupFiles(filePath: String?, thumbnailPath: String?) {
+        try {
+            filePath?.let {
+                val deleted = deleteFiled(it)
+                Log.d(TAG, if (deleted) "✓ Video file deleted: $it" else "⚠ Failed to delete video file: $it")
+            }
+
+            thumbnailPath?.let {
+                val thumbnailFile = File(it)
+                if (thumbnailFile.exists()) {
+                    val deleted = thumbnailFile.delete()
+                    Log.d(TAG, if (deleted) "✓ Thumbnail file deleted: $it" else "⚠ Failed to delete thumbnail: $it")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error cleaning up files", e)
+        }
+    }
+
+    // ADDED: File size formatting helper
+    private fun getFileSize(size: Long): String {
+        val kb = size / 1024.0
+        val mb = kb / 1024.0
+        val gb = mb / 1024.0
+
+        return when {
+            gb >= 1 -> String.format("%.2f GB", gb)
+            mb >= 1 -> String.format("%.2f MB", mb)
+            else -> String.format("%.2f KB", kb)
+        }
     }
 }
