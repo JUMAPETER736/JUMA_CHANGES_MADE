@@ -30,6 +30,7 @@ import com.google.gson.GsonBuilder
 import com.uyscuti.sharedmodule.adapter.UriTypeAdapter
 import com.uyscuti.sharedmodule.databinding.ActivityUploadShortsBinding
 import com.uyscuti.sharedmodule.model.CancelShortsUpload
+import com.uyscuti.sharedmodule.model.UploadSuccessful
 import com.uyscuti.sharedmodule.model.ProgressEvent
 import com.uyscuti.sharedmodule.model.feed.multiple_files.FeedMultipleVideos
 import com.uyscuti.sharedmodule.model.feed.multiple_files.MixedFeedUploadDataClass
@@ -101,7 +102,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         VideoCompressor.cancel()
         Log.d("CancelUpload", "Cancelled VideoCompressor in Activity")
 
-        // Finish the activity immediately - don't wait
+        // Finish activity immediately
         finish()
     }
 
@@ -668,6 +669,8 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
     private fun cancelShortsUpload() {
         binding.cancelButton.setOnClickListener {
+            Log.d("CancelUpload", "Cancel button in Activity clicked")
+
             // Cancel WorkManager
             uploadWorkRequest?.let { workRequest ->
                 val workManager = WorkManager.getInstance(applicationContext)
@@ -678,10 +681,13 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
             // Cancel video compression
             VideoCompressor.cancel()
 
-            // Send event
+            // Send event to hide UI in ShotsFragment
             EventBus.getDefault().post(CancelShortsUpload(cancel = true))
 
-            // Finish immediately
+            // Post upload unsuccessful event
+            EventBus.getDefault().post(UploadSuccessful(success = false))
+
+            // Finish activity
             finish()
         }
     }

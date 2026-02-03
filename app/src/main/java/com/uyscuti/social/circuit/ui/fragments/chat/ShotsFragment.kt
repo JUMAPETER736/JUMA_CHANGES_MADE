@@ -1449,12 +1449,14 @@ class ShotsFragment : Fragment(), OnClickListeners {
         cancelShortsUpload.setOnClickListener {
             Log.d("CancelUpload", "Cancel button clicked")
 
-            //  Hide UI FIRST (before cancelling)
-            uploadShortsSeekBar?.visibility = View.GONE
-            uploadShortsSeekBar?.progress = 0
+            // 1. Hide UI elements IMMEDIATELY
+            uploadShortsSeekBar?.apply {
+                visibility = View.GONE
+                progress = 0
+            }
             cancelShortsUpload.visibility = View.GONE
 
-            // Cancel WorkManager upload
+            // 2. Cancel WorkManager upload
             uploadWorkRequest?.let { workRequest ->
                 val workManager = WorkManager.getInstance(requireContext())
                 workManager.cancelWorkById(workRequest.id)
@@ -1462,14 +1464,14 @@ class ShotsFragment : Fragment(), OnClickListeners {
                 uploadWorkRequest = null
             }
 
-            // Cancel video compression
+            // 3. Cancel video compression
             VideoCompressor.cancel()
             Log.d("CancelUpload", "Cancelled VideoCompressor")
 
-            // Send cancel event to UploadShortsActivity (this will finish the activity)
+            // 4. Send cancel event to UploadShortsActivity
             EventBus.getDefault().post(CancelShortsUpload(cancel = true))
 
-            // Show toast
+            // 5. Show feedback
             Toast.makeText(requireContext(), "Upload cancelled", Toast.LENGTH_SHORT).show()
         }
 
@@ -1789,36 +1791,42 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onShortsProgressEvent(event: ProgressEvent) {
-        // Only update UI if views are initialized
+        // Show and update progress UI
         uploadShortsSeekBar?.apply {
             visibility = View.VISIBLE
             progress = event.progress
         }
 
+        // Show cancel button during upload
         cancelShortsUpload.visibility = View.VISIBLE
-
 
         Log.d("ShortsUploadProgress", "Upload progress: ${event.progress} for eventId: ${event.eventId}")
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onShortsUploadSuccess(event: UploadSuccessful) {
-
-        uploadShortsSeekBar?.visibility = View.GONE
-        uploadShortsSeekBar?.progress = 0
+        // Hide all upload UI elements
+        uploadShortsSeekBar?.apply {
+            visibility = View.GONE
+            progress = 0
+        }
         cancelShortsUpload.visibility = View.GONE
 
+        // Show success message only if upload was successful
+        if (event.success) {
+            val rootView: View = requireActivity().findViewById(android.R.id.content)
+            val snackBar = Snackbar.make(rootView, "Shorts upload successful", Snackbar.LENGTH_LONG)
+            val snackBarBackgroundColor = ContextCompat.getColor(requireContext(), R.color.green)
+            val snackBarTextColor = ContextCompat.getColor(requireContext(), R.color.white)
+            val snackBarView = snackBar.view
+            snackBarView.setBackgroundColor(snackBarBackgroundColor)
+            snackBar.setTextColor(snackBarTextColor)
+            snackBar.show()
 
-        val rootView: View = requireActivity().findViewById(android.R.id.content)
-        val snackBar = Snackbar.make(rootView, "Shorts upload successful", Snackbar.LENGTH_LONG)
-        val snackBarBackgroundColor = ContextCompat.getColor(requireContext(), R.color.green)
-        val snackBarTextColor = ContextCompat.getColor(requireContext(), R.color.white)
-        val snackBarView = snackBar.view
-        snackBarView.setBackgroundColor(snackBarBackgroundColor)
-        snackBar.setTextColor(snackBarTextColor)
-        snackBar.show()
-
-        Log.d("ShortsUploadSuccess", "Upload completed successfully")
+            Log.d("ShortsUploadSuccess", "Upload completed successfully")
+        } else {
+            Log.d("ShortsUploadSuccess", "Upload cancelled or failed")
+        }
     }
 
     override fun onStart() {
