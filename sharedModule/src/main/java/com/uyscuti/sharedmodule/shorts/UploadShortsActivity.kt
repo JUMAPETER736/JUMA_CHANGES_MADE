@@ -93,31 +93,15 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
         EventBus.getDefault().register(this)
 
-//        setSupportActionBar(binding.toolbar)
 
         // Enable the Up button for back navigation
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
 
-//        val selectedSubtopics = intent.getStringArrayListExtra("selectedSubtopics")
+
 
         videoUri = intent.getParcelableExtra(EXTRA_VIDEO_URI)!!
 
-//        imagePickLauncher = registerForActivityResult<Intent, ActivityResult>(
-//            ActivityResultContracts.StartActivityForResult()
-//        ) { result: ActivityResult ->
-//            if (result.resultCode == RESULT_OK) {
-//                val data = result.data
-//                if (data != null && data.data != null) {
-////                    thumbnail = data.data
-////                    imageURl = selectedImageUri?.path
-////                    AndroidUtil.setProfilePic(
-////                        this,
-////                        selectedImageUri,
-////                        binding.avatar
-////                    )
-//                }
-//            }
-//        }
+
 
         imagePickLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -139,7 +123,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                         // Use the 'bitmap' as needed
 
                         // For example, set the bitmap in an ImageView
-//                        binding.imageView.setImageBitmap(bitmap)
+
                     }
                 }
             }
@@ -163,30 +147,19 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                 setFirstFrameAsThumbnail()
             }
 
-//            resultIntent.putStringArrayListExtra("selectedSubtopics", ArrayList(selectedSubtopics)) // Optional: Include any data you want to pass back
-
 
         }
 
         binding.topicsLayout.setOnClickListener {
             val intent = Intent(this@UploadShortsActivity, TopicsActivity::class.java)
             startActivityForResult(intent, REQUEST_TOPICS_ACTIVITY)
-//            startActivity(intent)
+
         }
 
         cancelShortsUpload()
         backFromShortsUpload()
 
-//        GlobalScope.launch(Dispatchers.IO) {
-////            val videoThumbnails = extractThumbnailsFromVideos()
-//            val videoUri: Uri = videoUri// Your video URI
-//            val frameIntervalUs: Long = 1000000 // 1 second interval (adjust as needed)
-//            val thumbnails = extractThumbnails(videoUri, frameIntervalUs)
-//            // Switch to the main thread to update the RecyclerView
-//            withContext(Dispatchers.Main) {
-//                setupRecyclerView(thumbnails)
-//            }
-//        }
+
 
         GlobalScope.launch(Dispatchers.IO) {
             val videoThumbnails = extractThumbnailsFromVideos()
@@ -288,7 +261,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         val layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         val adapter = VideoThumbnailAdapter(videoThumbnails, this)
 
-//        val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
+
         binding.recyclerView2.layoutManager = layoutManager
         binding.recyclerView2.adapter = adapter
     }
@@ -304,8 +277,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                 // You can use data to retrieve any additional information passed back
                 // For example, val resultValue = data?.getStringExtra("keyName")
                 val selectedSubtopics = data?.getStringArrayListExtra("selectedSubtopics")
-//                Log.d("selectedSubtopics", selectedSubtopics.toString())
-//                binding.editTextText.setText(selectedSubtopics.toString())
+
 
                 val formattedSubtopics = selectedSubtopics?.joinToString(" ") { "#$it" }
                 // Get the current text from the EditText
@@ -313,7 +285,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
 
                 // Set the formatted subtopics to the EditText
-//                binding.editTextText.setText(formattedSubtopics)
+
                 val updatedText = if (currentText.isEmpty()) {
                     formattedSubtopics ?: ""
                 } else {
@@ -337,70 +309,10 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         // 1. compress shorts
         compressShorts()
     }
-//    private fun compressShorts() {
-//        val uniqueId = UniqueIdGenerator.generateUniqueId()
-//        Log.d("progress id", uniqueId)
-//
-//        lifecycleScope.launch {
-//            VideoCompressor.start(
-//                context = applicationContext,
-//                uris = uris,
-//                isStreamable = true,
-//                sharedStorageConfiguration = SharedStorageConfiguration(
-//                    saveAt = SaveLocation.movies,
-//                    subFolderName = "flash-shorts"
-//                ),
-//                configureWith = Configuration(
-//                    quality = VideoQuality.MEDIUM,
-//                    videoNames = uris.map { uri -> uri.pathSegments.last() },
-//                    isMinBitrateCheckEnabled = false
-//                ),
-//                listener = object : CompressionListener {
-//                    override fun onProgress(index: Int, percent: Float) {
-//                        if (percent <= 100) {
-//                            EventBus.getDefault().post(ProgressEvent(uniqueId, percent.toInt()))
-//                        }
-//                    }
-//
-//                    override fun onStart(index: Int) {
-//                        // Handle start if needed
-//                    }
-//
-//                    override fun onSuccess(index: Int, size: Long, path: String?) {
-//                        val thumbnailFile = saveBitmapToFile(thumbnail, applicationContext)
-//                        val thumbnailFilePath = thumbnailFile.absolutePath
-//
-//                        uploadWorkRequest = OneTimeWorkRequestBuilder<ShortsUploadWorker>()
-//                            .setInputData(
-//                                Data.Builder()
-//                                    .putString(ShortsUploadWorker.EXTRA_FILE_PATH, path)
-//                                    .putString(ShortsUploadWorker.CAPTION, caption)
-//                                    .putString(ShortsUploadWorker.THUMBNAIL, thumbnailFilePath)
-//                                    .build()
-//                            )
-//                            .build()
-//
-//                        val workManager = WorkManager.getInstance(applicationContext)
-//                        workManager.enqueue(uploadWorkRequest!!)
-//
-//                        observeWorkInfo(uploadWorkRequest!!.id)
-//                    }
-//
-//                    override fun onFailure(index: Int, failureMessage: String) {
-//                        Log.wtf("Compress", failureMessage)
-//                    }
-//
-//                    override fun onCancelled(index: Int) {
-//                        Log.wtf("Compress", "compression has been cancelled")
-//                    }
-//                }
-//            )
-//        }
-//    }
 
     @SuppressLint("SetTextI18n")
     private fun compressShorts() {
-//        binding.mainContents.visibility = View.VISIBLE
+
         val uniqueId = UniqueIdGenerator.generateUniqueId()
         Log.d("progress id", uniqueId)
 
@@ -428,14 +340,13 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                     Toast.makeText(this, "File too large", Toast.LENGTH_LONG).show()
                 } else if(fileSizeInMB <= 10) {
                     Log.d("uriFileSize", "compressShorts: less than 10mb ")
-//                uriToFile()
+
                     val thumbnailFile = saveBitmapToFile(thumbnail, applicationContext)
                     val thumbnailFilePath = thumbnailFile.absolutePath
 
                     val fileId:String = generateRandomId()
                     val feedShortsBusinessId:String = generateRandomId()
-//                        observeWorkProgress(path)
-//                        uploadShortToMongoDB(File(path))
+
                     val durationString = filePath?.let { getFormattedDuration(it) }
                     val fileName = filePath?.let { getFileNameFromLocalPath(it) }
                     val mixedFeedUploadDataClass: MutableList<MixedFeedUploadDataClass> =
@@ -501,7 +412,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                     lifecycleScope.launch(Dispatchers.Main) {
                         Log.d("Progress", "Progress ...scope")
 
-//                            val workManager = WorkManager.getInstance(applicationContext)
+
                         workManager = WorkManager.getInstance(applicationContext)
                         workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
                             .observe(this@UploadShortsActivity) { workInfo ->
@@ -551,8 +462,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                                 saveAt = SaveLocation.movies,
                                 subFolderName = "flash_shorts"
                             ),
-//                appSpecificStorageConfiguration = AppSpecificStorageConfiguration(
-//                ),
+
                             configureWith = Configuration(
                                 quality = VideoQuality.MEDIUM,
 //                    videoNames = uris.map { uri -> uri.pathSegments.last() },
