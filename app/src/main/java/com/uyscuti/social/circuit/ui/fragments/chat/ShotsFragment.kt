@@ -1754,16 +1754,10 @@ class ShotsFragment : Fragment(), OnClickListeners {
     fun onShortsProgressEvent(event: ProgressEvent) {
         uploadShortsSeekBar?.visibility = View.VISIBLE
 
-        val currentProgress = when (event.eventId) {
-            "workerUniqueIdShorts" -> 100 + event.progress
-            else -> event.progress
-        }
+        // Only show progress, don't add 100
+        uploadShortsSeekBar?.progress = event.progress
 
-        uploadShortsSeekBar?.progress = currentProgress
-
-
-
-        Log.d("ShortsUploadProgress", "Upload progress: $currentProgress")
+        Log.d("ShortsUploadProgress", "Upload progress: ${event.progress} for eventId: ${event.eventId}")
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
