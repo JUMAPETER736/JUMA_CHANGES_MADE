@@ -1449,6 +1449,11 @@ class ShotsFragment : Fragment(), OnClickListeners {
         cancelShortsUpload.setOnClickListener {
             Log.d("CancelUpload", "Cancel button clicked")
 
+            //  Hide UI FIRST (before cancelling)
+            uploadShortsSeekBar?.visibility = View.GONE
+            uploadShortsSeekBar?.progress = 0
+            cancelShortsUpload.visibility = View.GONE
+
             // Cancel WorkManager upload
             uploadWorkRequest?.let { workRequest ->
                 val workManager = WorkManager.getInstance(requireContext())
@@ -1461,14 +1466,10 @@ class ShotsFragment : Fragment(), OnClickListeners {
             VideoCompressor.cancel()
             Log.d("CancelUpload", "Cancelled VideoCompressor")
 
-            // Send cancel event to UploadShortsActivity
+            // Send cancel event to UploadShortsActivity (this will finish the activity)
             EventBus.getDefault().post(CancelShortsUpload(cancel = true))
 
-            // Hide UI immediately
-            uploadShortsSeekBar?.visibility = View.GONE
-            uploadShortsSeekBar?.progress = 0
-            cancelShortsUpload.visibility = View.GONE
-
+            // Show toast
             Toast.makeText(requireContext(), "Upload cancelled", Toast.LENGTH_SHORT).show()
         }
 

@@ -134,7 +134,7 @@ class ShortsUploadWorker @AssistedInject constructor(
         }
     }
 
-    
+
     private suspend fun uploadShortToMongoDB(
         file: File,
         caption: String,

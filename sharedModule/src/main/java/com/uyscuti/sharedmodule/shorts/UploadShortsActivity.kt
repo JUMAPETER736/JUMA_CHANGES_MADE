@@ -85,7 +85,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     private var uploadWorkRequest: OneTimeWorkRequest? = null
 
 
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onProgressEvent(event: CancelShortsUpload) {
         Log.d("CancelUpload", "Received cancel event in UploadShortsActivity")
@@ -102,8 +101,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         VideoCompressor.cancel()
         Log.d("CancelUpload", "Cancelled VideoCompressor in Activity")
 
-        // Close the activity
-        Toast.makeText(this, "Upload cancelled", Toast.LENGTH_SHORT).show()
+        // Finish the activity immediately - don't wait
         finish()
     }
 
@@ -116,7 +114,9 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         setContentView(binding.root)
 
 
-        EventBus.getDefault().register(this)
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this)
+        }
 
 
         // Enable the Up button for back navigation
@@ -280,7 +280,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
         return thumbnails
     }
-
 
     private fun setupRecyclerView(videoThumbnails: List<Bitmap>) {
         val layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
@@ -660,7 +659,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
             .create()
     }
 
-
     private fun backFromShortsUpload() {
         binding.cancelButton.setOnClickListener {
             finish()
@@ -670,7 +668,36 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
     private fun cancelShortsUpload() {
         binding.cancelButton.setOnClickListener {
+            // Cancel WorkManager
+            uploadWorkRequest?.let { workRequest ->
+                val workManager = WorkManager.getInstance(applicationContext)
+                workManager.cancelWorkById(workRequest.id)
+                uploadWorkRequest = null
+            }
+
+            // Cancel video compression
+            VideoCompressor.cancel()
+
+            // Send event
+            EventBus.getDefault().post(CancelShortsUpload(cancel = true))
+
+            // Finish immediately
             finish()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Cancel any ongoing operations
+        uploadWorkRequest?.let {
+            WorkManager.getInstance(applicationContext).cancelWorkById(it.id)
+        }
+        VideoCompressor.cancel()
+
+        // Unregister EventBus
+        if (EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().unregister(this)
         }
     }
 
