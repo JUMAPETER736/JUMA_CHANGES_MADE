@@ -1792,7 +1792,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
         uploadShortsSeekBar?.visibility = View.GONE
         uploadShortsSeekBar?.progress = 0
         cancelShortsUpload.visibility = View.GONE
-        cancelShortsUploadCard.visibility = View.VISIBLE
+        cancelShortsUploadCard.visibility = View.GONE
 
         val rootView: View = requireActivity().findViewById(android.R.id.content)
         val snackBar = Snackbar.make(rootView, "Shorts upload successful", Snackbar.LENGTH_LONG)

@@ -32,15 +32,16 @@
         android:rotation="180"
         android:splitTrack="false" />
 
+    <!-- Progress Bar at the very top, edge to edge -->
+    <!-- Progress Bar at the very top, edge to edge, no padding -->
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/shortsViewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/uploadShortsSeekBar"
+        android:layout_marginTop="1dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-    <!-- Progress Bar at the very top, edge to edge -->
-    <!-- Progress Bar at the very top, edge to edge, no padding -->
     <LinearLayout
         android:id="@+id/progressBarLayout"
         android:layout_width="match_parent"
@@ -82,23 +83,18 @@
         android:layout_marginTop="10dp">
 
         <!-- Cancel icon on the left -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/cancelShortsUploadCard"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
-            android:layout_marginStart="15dp"
-            android:layout_marginEnd="15dp"
-            android:layout_gravity="center"
-            android:visibility="gone">
+
 
             <ImageView
                 android:id="@+id/cancelShortsUpload"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_marginStart="15dp"
                 android:layout_gravity="center"
+                android:visibility="visible"
                 android:src="@drawable/cancel_svgrepo_com"
-                app:tint="@color/white" />
-        </androidx.cardview.widget.CardView>
+                app:tint="@color/white"/>
+
 
         <!-- Spacer to push icons to the right -->
         <View
