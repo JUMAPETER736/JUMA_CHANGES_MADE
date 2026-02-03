@@ -387,8 +387,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                     }
 
 
-
-                    uploadMixedFeed(mixedFeedUploadDataClass, content, tags.toMutableList(),feedShortsBusinessId)
                     uploadWorkRequest =
                         OneTimeWorkRequestBuilder<ShortsUploadWorker>()
 
@@ -545,10 +543,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                                     } else {
                                         tagS
                                     }
-
-
-
-                                    uploadMixedFeed(mixedFeedUploadDataClass, content, tags.toMutableList(),feedShortsBusinessId)
+                                    
                                     uploadWorkRequest =
                                         OneTimeWorkRequestBuilder<ShortsUploadWorker>()
 
