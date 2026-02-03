@@ -2229,8 +2229,9 @@ class ShotsFragment : Fragment(), OnClickListeners {
                     "loadMoreShortsByFeedShortsBusinessId: followItem:  ${responseBody.data.followList}"
                 )
 
-
-                val shortsEntity = serverResponseToEntity(responseBody.data.posts.posts)
+                // Sort by createdAt in descending order (newest first)
+                val sortedPosts = responseBody.data.posts.posts.sortedByDescending { it.createdAt }
+                val shortsEntity = serverResponseToEntity(sortedPosts)
 
                 val followListItem =
                     responseBody.data.followList.let { serverResponseToFollowEntity(it) }
