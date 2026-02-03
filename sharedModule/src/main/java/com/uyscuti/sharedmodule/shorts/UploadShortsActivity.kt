@@ -66,22 +66,42 @@ import javax.inject.Inject
 class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.ThumbnailClickListener {
 
 
+    companion object {
+        const val EXTRA_VIDEO_URI = "extra_video_uri"
+        const val REQUEST_TOPICS_ACTIVITY = 123 // You can use any unique value
+
+    }
+
+    
+    @Inject
+    lateinit var retrofitIns: RetrofitInstance
+    private var isThumbnailClicked = false
     private lateinit var binding: ActivityUploadShortsBinding
     private lateinit var videoUri: Uri
     private lateinit var caption: String
     private lateinit var thumbnail: Bitmap
     private val uris = mutableListOf<Uri>()
-
     private var imagePickLauncher: ActivityResultLauncher<Intent>? = null
-
     private var uploadWorkRequest: OneTimeWorkRequest? = null
 
-    @Inject
-    lateinit var retrofitIns: RetrofitInstance
 
-    private var isThumbnailSelected = false
-    private var isThumbnailClicked = false
-    private val getFeedViewModel: GetFeedViewModel by viewModels()
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onProgressEvent(event: CancelShortsUpload) {
+        if (uploadWorkRequest != null) {
+            Log.d("CancelUpload", "Cancelling WorkManager task: ${uploadWorkRequest!!.id}")
+            val workManager = WorkManager.getInstance(applicationContext)
+            workManager.cancelWorkById(uploadWorkRequest!!.id)
+            uploadWorkRequest = null
+        }
+
+        // Cancel video compression
+        Log.d("CancelUpload", "Cancelling video compression")
+        VideoCompressor.cancel()
+
+        Toast.makeText(this, "Upload cancelled", Toast.LENGTH_SHORT).show()
+    }
+
 
     @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -641,24 +661,11 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onProgressEvent(event: CancelShortsUpload) {
-        Log.d("CancelUpload", "Cancel Upload ${uploadWorkRequest!!.id}")
-        VideoCompressor.cancel()
-
-
-    }
 
     private fun cancelShortsUpload() {
         binding.cancelButton.setOnClickListener {
             finish()
         }
-    }
-
-    companion object {
-        const val EXTRA_VIDEO_URI = "extra_video_uri"
-        const val REQUEST_TOPICS_ACTIVITY = 123 // You can use any unique value
-
     }
 
     override fun onThumbnailClick(thumbnail: Bitmap) {
