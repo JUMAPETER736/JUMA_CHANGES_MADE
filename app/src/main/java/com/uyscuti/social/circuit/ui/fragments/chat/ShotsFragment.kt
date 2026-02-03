@@ -2045,11 +2045,14 @@ class ShotsFragment : Fragment(), OnClickListeners {
             if (response.isSuccessful) {
                 val responseBody = response.body()
 
+                // Filter for video posts that DON'T have feedShortsBusinessId
+                // This ensures only feed videos (not shorts) are shown
                 val videoPosts = responseBody?.data?.data?.posts?.filter { post ->
-                    post.contentType == "mixed_files" && post.fileTypes.any {
-                        //  Add null safety check
-                        it.fileType?.contains("video", ignoreCase = true) == true
-                    }
+                    post.contentType == "mixed_files" &&
+                            post.fileTypes.any {
+                                it.fileType?.contains("video", ignoreCase = true) == true
+                            } &&
+                            post.feedShortsBusinessId.isNullOrEmpty() // CRITICAL: Only show feed videos, not shorts
                 } ?: emptyList()
 
                 if (videoPosts.isNotEmpty()) {
