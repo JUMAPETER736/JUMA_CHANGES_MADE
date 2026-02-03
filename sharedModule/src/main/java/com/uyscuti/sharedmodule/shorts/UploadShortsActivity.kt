@@ -33,7 +33,6 @@ import com.uyscuti.sharedmodule.model.CancelShortsUpload
 import com.uyscuti.sharedmodule.model.ProgressEvent
 import com.uyscuti.sharedmodule.model.feed.multiple_files.FeedMultipleVideos
 import com.uyscuti.sharedmodule.model.feed.multiple_files.MixedFeedUploadDataClass
-import com.uyscuti.sharedmodule.ui.feed.FeedUploadWorker
 import com.uyscuti.sharedmodule.utils.AudioDurationHelper.getFormattedDuration
 import com.uyscuti.sharedmodule.utils.generateRandomId
 import com.uyscuti.sharedmodule.utils.getFileNameFromLocalPath
@@ -543,7 +542,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                                     } else {
                                         tagS
                                     }
-                                    
+
                                     uploadWorkRequest =
                                         OneTimeWorkRequestBuilder<ShortsUploadWorker>()
 
@@ -635,48 +634,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
             .create()
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun uploadMixedFeed(
-        mixedFiles: List<MixedFeedUploadDataClass>,
-        content: String,
-        tags: MutableList<String>,
-        feedShortsBusinessId: String
-    ) {
-
-
-        var uploadWorkRequest: OneTimeWorkRequest? = null
-        val gson = createGson()
-        val tag = "uploadMixedFeed"
-        val uploadDataJson = gson.toJson(mixedFiles)
-        Log.d(tag, "all feed size: ${getFeedViewModel.getAllFeedData().size}")
-
-        val inputData = Data.Builder()
-            .putString("upload_data", uploadDataJson)
-            .putString(FeedUploadWorker.CAPTION, content)
-            .putString(FeedUploadWorker.FEED_SHORTS_BUSINESS_ID, feedShortsBusinessId)
-            .putString(FeedUploadWorker.CONTENT_TYPE, "mixed_files")
-            .putStringArray(FeedUploadWorker.TAGS, tags.toTypedArray())
-            .build()
-
-        try {
-            GlobalScope.launch(Dispatchers.IO) {
-
-                uploadWorkRequest = OneTimeWorkRequestBuilder<FeedUploadWorker>()
-                    .setInputData(inputData)
-                    .build()
-
-
-                val workManager = WorkManager.getInstance(applicationContext)
-
-                workManager.enqueue(uploadWorkRequest!!)
-
-            }
-        } catch (e: Exception) {
-            Log.e(tag, "uploadVideoFeed: error because ${e.message}")
-            e.printStackTrace()
-        }
-    }
-
 
     private fun backFromShortsUpload() {
         binding.cancelButton.setOnClickListener {
@@ -702,20 +659,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         const val EXTRA_VIDEO_URI = "extra_video_uri"
         const val REQUEST_TOPICS_ACTIVITY = 123 // You can use any unique value
 
-    }
-
-    private fun addIdToFilePath(originalPath: String, id: String): String {
-        val file = File(originalPath)
-        val fileName = file.nameWithoutExtension
-        val fileExtension = file.extension
-
-        // Construct the new path with the ID inserted before the extension
-
-        return "${file.parent}/$fileName$id.$fileExtension"
-    }
-
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     override fun onThumbnailClick(thumbnail: Bitmap) {
