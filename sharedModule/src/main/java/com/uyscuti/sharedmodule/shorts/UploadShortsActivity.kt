@@ -465,39 +465,21 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
                             configureWith = Configuration(
                                 quality = VideoQuality.MEDIUM,
-//                    videoNames = uris.map { uri -> uri.pathSegments.last() },
+
                                 videoNames = uris.map { uri -> uri.pathSegments.last() },
-//                    videoNames = listOf("compressed_short"),
+
                                 isMinBitrateCheckEnabled = false,
                             ),
 
-//                videoNames = uris.map { uri ->
-//                    // Generate a random name using UUID
-//                    val randomName = UUID.randomUUID().toString()
-//
-//                    // You can also append the original file extension if needed
-//                    val originalName = uri.pathSegments.last()
-//                    val fileExtension = originalName.substringAfterLast('.', "")
-//                    val finalName = "$randomName.$fileExtension"
-//
-//                    finalName
-//                }
 
-//                videoNames = uris.map { uri ->
-//                    val fileNameWithExtension = uri.pathSegments.last()
-//                    val fileNameWithoutExtension = fileNameWithExtension.substringBeforeLast('.')
-//
-//                    // Use fileNameWithoutExtension as needed
-//                    fileNameWithoutExtension
-//                }
                             listener = object : CompressionListener {
                                 override fun onProgress(index: Int, percent: Float) {
                                     // In another class or file
-//                        println("Generated Unique ID: $uniqueId")
+
 
                                     //Update UI
                                     if (percent <= 100) {
-//                            Log.d("Compress", "Progress: $percent")
+
                                         EventBus.getDefault().post(
                                             ProgressEvent(
                                                 uniqueId,
@@ -510,7 +492,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
                                 override fun onStart(index: Int) {
 
-//                        Log.d("Compress", "short compress started")
+
 
                                 }
 
@@ -524,8 +506,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
                                     val fileId:String = generateRandomId()
                                     val feedShortsBusinessId:String = generateRandomId()
-//                        observeWorkProgress(path)
-//                        uploadShortToMongoDB(File(path))
+
                                     val durationString = path?.let { getFormattedDuration(it) }
                                     val fileName = path?.let { getFileNameFromLocalPath(it) }
                                     val mixedFeedUploadDataClass: MutableList<MixedFeedUploadDataClass> =
@@ -570,9 +551,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                                     uploadMixedFeed(mixedFeedUploadDataClass, content, tags.toMutableList(),feedShortsBusinessId)
                                     uploadWorkRequest =
                                         OneTimeWorkRequestBuilder<ShortsUploadWorker>()
-//                                .setInputData(workDataOf(ShortsUploadWorker.EXTRA_FILE_PATH to path))
-//                                .setInputData(Data.Builder().putString(ShortsUploadWorker.EXTRA_FILE_PATH, path).build())
-//                                .setInputData(Data.Builder().putString(ShortsUploadWorker.CAPTION, caption).build())
+
                                             .setInputData(
                                                 Data.Builder()
                                                     .putString(ShortsUploadWorker.EXTRA_FILE_PATH, path)
@@ -594,7 +573,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                                     lifecycleScope.launch(Dispatchers.Main) {
                                         Log.d("Progress", "Progress ...scope")
 
-//                            val workManager = WorkManager.getInstance(applicationContext)
+
                                         workManager = WorkManager.getInstance(applicationContext)
                                         workManager.getWorkInfoByIdLiveData(uploadWorkRequest!!.id)
                                             .observe(this@UploadShortsActivity) { workInfo ->
@@ -675,7 +654,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         val tag = "uploadMixedFeed"
         val uploadDataJson = gson.toJson(mixedFiles)
         Log.d(tag, "all feed size: ${getFeedViewModel.getAllFeedData().size}")
-//        Log.d(tag, "uploadMixedFeed: upload json data $uploadDataJson")
+
         val inputData = Data.Builder()
             .putString("upload_data", uploadDataJson)
             .putString(FeedUploadWorker.CAPTION, content)
@@ -686,9 +665,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
         try {
             GlobalScope.launch(Dispatchers.IO) {
-//                Log.d(tag, "uploadVideoFeed: step 3")
 
-//                    Log.d(TAG, "uploadVideoFeed: thumbnailFilePath $thumbnailFilePaths")
                 uploadWorkRequest = OneTimeWorkRequestBuilder<FeedUploadWorker>()
                     .setInputData(inputData)
                     .build()
@@ -696,7 +673,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
                 val workManager = WorkManager.getInstance(applicationContext)
 
-//                Log.d("Upload", "Enqueuing upload work request...")
                 workManager.enqueue(uploadWorkRequest!!)
 
             }
@@ -706,27 +682,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
     }
 
-    //    private fun observeWorkInfo(workRequestId: UUID) {
-//        val workManager = WorkManager.getInstance(applicationContext)
-//        workManager.getWorkInfoByIdLiveData(workRequestId)
-//            .observe(this@UploadShortsActivity) { workInfo ->
-//                if (workInfo != null) {
-//                    val progress = workInfo.progress.getInt(ShortsUploadWorker.Progress, 0)
-//                    Log.d("Progress", "Progress $progress")
-//
-//                    when (workInfo.state) {
-//                        WorkInfo.State.RUNNING -> Log.d("Progress", "Running")
-//                        WorkInfo.State.SUCCEEDED -> Log.d("Progress", "SUCCEEDED")
-//                        WorkInfo.State.ENQUEUED -> Log.d("Progress", "ENQUEUED")
-//                        WorkInfo.State.BLOCKED -> Log.d("Progress", "BLOCKED")
-//                        WorkInfo.State.CANCELLED -> Log.d("Progress", "CANCELLED")
-//                        WorkInfo.State.FAILED -> Log.d("Progress", "observeWorkInfo: Failed")
-//                    }
-//                } else {
-//                    Log.d("Progress", "Work info is null")
-//                }
-//            }
-//    }
+
     private fun backFromShortsUpload() {
         binding.cancelButton.setOnClickListener {
             finish()
@@ -737,10 +693,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     fun onProgressEvent(event: CancelShortsUpload) {
         Log.d("CancelUpload", "Cancel Upload ${uploadWorkRequest!!.id}")
         VideoCompressor.cancel()
-//        uploadWorkRequest?.id?.let { workRequestId ->
-//            WorkManager.getInstance(applicationContext).cancelWorkById(workRequestId)
-//        }
-//        finish()
+
 
     }
 
@@ -762,7 +715,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         val fileExtension = file.extension
 
         // Construct the new path with the ID inserted before the extension
-//        Log.i(offlineTag, "New file path - ${file.parent}/$fileName$id.$fileExtension")
+
         return "${file.parent}/$fileName$id.$fileExtension"
     }
 
@@ -771,22 +724,16 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     }
 
     override fun onThumbnailClick(thumbnail: Bitmap) {
-//        val selectedImageView: ImageView = findViewById(R.id.selectedImageView)
-//        selectedImageView.setImageBitmap(thumbnail)
+
         isThumbnailClicked = true
         Glide.with(this)
             .load(thumbnail)
             .into(binding.shortThumbNail)
 
-//        val data = Data.Builder()
-//            .putString("thumbnailFilePath", thumbnailFilePath)
-//            .build()
+
         this.thumbnail = thumbnail
         // Set the bitmap
-//        ShortsUploadWorker.THUMBNAIL = thumbnail
 
-// Get the bitmap
-//        val bitmap = ShortsUploadWorker.Companion.THUMBNAIL
     }
 
     fun saveBitmapToFile(bitmap: Bitmap, context: Context): File {
@@ -799,7 +746,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
 
         // Create a unique filename for the thumbnail
-//        val fileName = "thumbnail_${System.currentTimeMillis()}.png"
+
         val fileName = "thumbnail.png"
 
         // Create the file object
