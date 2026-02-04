@@ -92,7 +92,7 @@ class ShortsUploadWorker @AssistedInject constructor(
                 thumbnailFile,
                 uniqueId
             ) { bytesRead, totalBytes ->
-              
+
 
                 // Upload takes 50-100% of total progress
                 val uploadProgress = (bytesRead * 100 / totalBytes).toInt()

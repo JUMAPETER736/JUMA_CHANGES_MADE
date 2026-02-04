@@ -188,13 +188,24 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
     }
 
-    private fun loadBitmapFromUri(uri: Uri): Bitmap {
-        return if (Build.VERSION.SDK_INT < 28) {
-            MediaStore.Images.Media.getBitmap(contentResolver, uri)
-        } else {
-            val source = ImageDecoder.createSource(contentResolver, uri)
-            ImageDecoder.decodeBitmap(source)
+    private fun uploadThumbnail() {
+        caption = binding.editTextText.text.toString().trim()
+
+        // Generate uniqueId FIRST
+        currentUploadUniqueId = UniqueIdGenerator.generateUniqueId()
+
+        // Post the upload started event IMMEDIATELY so UI can prepare
+        EventBus.getDefault().post(UploadStarted(currentUploadUniqueId!!))
+
+        // Start upload
+        uploadShorts(videoUri, caption)
+
+        // Pass the uniqueId back to ShotsFragment
+        val resultIntent = Intent().apply {
+            putExtra("upload_unique_id", currentUploadUniqueId)
         }
+        setResult(RESULT_OK, resultIntent)
+        finish()
     }
 
     private fun setFirstFrameAsThumbnail() {
@@ -204,10 +215,16 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
         caption = binding.editTextText.text.toString().trim()
 
-        // Start upload - this will set currentUploadUniqueId
+        // Generate uniqueId FIRST
+        currentUploadUniqueId = UniqueIdGenerator.generateUniqueId()
+
+        // Post the upload started event IMMEDIATELY
+        EventBus.getDefault().post(UploadStarted(currentUploadUniqueId!!))
+
+        // Start upload
         uploadShorts(videoUri, caption)
 
-        // Pass the uniqueId back to ShotsFragment
+        // Pass the uniqueId back
         val resultIntent = Intent().apply {
             putExtra("upload_unique_id", currentUploadUniqueId)
         }
@@ -215,20 +232,20 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         finish()
     }
 
-    private fun uploadThumbnail() {
-        caption = binding.editTextText.text.toString().trim()
-
-        // Start upload - this will set currentUploadUniqueId
-        uploadShorts(videoUri, caption)
-
-        // Pass the uniqueId back to ShotsFragment
-        val resultIntent = Intent().apply {
-            putExtra("upload_unique_id", currentUploadUniqueId)
-        }
-        setResult(RESULT_OK, resultIntent)
-        finish()
+    private fun uploadShorts(videoUri: Uri, caption: String) {
+        uris.add(videoUri)
+        // Don't generate uniqueId here - it's already generated above
+        compressShorts(currentUploadUniqueId!!)
     }
 
+    private fun loadBitmapFromUri(uri: Uri): Bitmap {
+        return if (Build.VERSION.SDK_INT < 28) {
+            MediaStore.Images.Media.getBitmap(contentResolver, uri)
+        } else {
+            val source = ImageDecoder.createSource(contentResolver, uri)
+            ImageDecoder.decodeBitmap(source)
+        }
+    }
 
     private suspend fun extractThumbnail(videoUrl: Uri): List<Bitmap>? {
         return try {
@@ -291,18 +308,9 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
     }
 
-    private fun uploadShorts(videoUri: Uri, caption: String) {
-        uris.add(videoUri)
-
-        // Generate uniqueId here so we can pass it back immediately
-        currentUploadUniqueId = UniqueIdGenerator.generateUniqueId()
-
-        compressShorts(currentUploadUniqueId!!)
-    }
-
     @SuppressLint("SetTextI18n")
     private fun compressShorts(uniqueId: String) {
-        val uniqueId = UniqueIdGenerator.generateUniqueId()
+      
         Log.d("progress id", uniqueId)
 
         val uri = uris[0]
