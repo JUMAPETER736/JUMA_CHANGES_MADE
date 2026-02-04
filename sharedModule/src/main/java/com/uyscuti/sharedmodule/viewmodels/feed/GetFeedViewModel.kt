@@ -253,9 +253,7 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
         return allFeedRepostData[position]
     }
 
-//    fun getAllFeedDataByPosition(position: Int) : com.uyscut.network.api.response.getfeedreposts.Post {
-//        return getFeedRepostsData[position]
-//    }
+
     fun getAllFeedDataPositionById(itemId: String): Int {
         for (i in allFeedData.indices) {
             if (allFeedData[i]._id == itemId) {
@@ -300,28 +298,4 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
         allFeedData.clear()
     }
 
-
-
-//    private var follow: MutableList<com.uyscut.network.api.response.getfeedreposts.Follow> = mutableListOf()
-//    fun setFollowList(follow: List<com.uyscut.network.api.response.getfeedreposts.Follow>) {
-//        this.follow.addAll(follow)
-//    }
-//    fun addFollowToFollowList(follow: com.uyscut.network.api.response.getfeedreposts.Follow) {
-//        this.follow.add(follow)
-//    }
-//    fun getFollowList():List<com.uyscut.network.api.response.getfeedreposts.Follow> {
-//        return follow
-//    }
-//    private var followList: MutableList<Follow> = mutableListOf()
-//    fun addFollowList(follow: List<Follow>) {
-//        this.followList.addAll(follow)
-//    }
-//    fun getFollowList(): List<Follow> {
-//        return followList
-//    }
-//    @SuppressLint("NotifyDataSetChanged")
-//    fun addSingleFollowList(follow: Follow) {
-//        followList.add(follow)
-//        notifyDataSetChanged()
-//    }
 }
