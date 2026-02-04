@@ -9,12 +9,15 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.postDelayed
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.work.Data
@@ -193,14 +196,30 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
             thumbnail = firstFrame
         }
         caption = binding.editTextText.text.toString().trim()
-        uploadShorts(videoUri, caption)
 
+        //Set result and finish FIRST (returns to ShotsFragment)
+        val resultIntent = Intent()
+        setResult(RESULT_OK, resultIntent)
+        finish()
+
+        // Start upload AFTER a delay (giving fragment time to be visible and register EventBus)
+        Handler(Looper.getMainLooper()).postDelayed({
+            uploadShorts(videoUri, caption)
+        }, 500) // 500ms delay to ensure fragment is ready
     }
 
     private fun uploadThumbnail() {
         caption = binding.editTextText.text.toString().trim()
-        uploadShorts(videoUri, caption)
 
+        //Set result and finish FIRST (returns to ShotsFragment)
+        val resultIntent = Intent()
+        setResult(RESULT_OK, resultIntent)
+        finish()
+
+        //Start upload AFTER a delay (giving fragment time to be visible and register EventBus)
+        Handler(Looper.getMainLooper()).postDelayed({
+            uploadShorts(videoUri, caption)
+        }, 500) // 500ms delay to ensure fragment is ready
     }
 
     private suspend fun extractThumbnail(videoUrl: Uri): List<Bitmap>? {
@@ -488,4 +507,5 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
         return file
     }
+
 }
