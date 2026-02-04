@@ -92,21 +92,25 @@ class ShortsUploadWorker @AssistedInject constructor(
                 thumbnailFile,
                 uniqueId
             ) { bytesRead, totalBytes ->
-
-
-                // Upload takes 50-100% of total progress
                 val uploadProgress = (bytesRead * 100 / totalBytes).toInt()
-                val totalProgress = 50 + (uploadProgress / 2) // 50% + (0-50%)
+                val totalProgress = 50 + (uploadProgress / 2)
 
                 val currentTime = System.currentTimeMillis()
                 if (totalProgress != lastPostedProgress || (currentTime - lastUpdateTime) >= 1000) {
-                    EventBus.getDefault().post(ProgressEvent(uniqueId, totalProgress))
+                    // Change this:
+                    // EventBus.getDefault().post(ProgressEvent(uniqueId, totalProgress))
+
+                    // To this:
+                    EventBus.getDefault().postSticky(ProgressEvent(uniqueId, totalProgress))
+
                     lastPostedProgress = totalProgress
                     lastUpdateTime = currentTime
                     Log.d(TAG, "Upload progress: $uploadProgress%, Total progress: $totalProgress%")
                 }
             }
 
+
+            EventBus.getDefault().postSticky(ProgressEvent(uniqueId, 100))
             // Only check isStopped at key points, not in the progress callback
             if (isStopped) {
                 Log.d(TAG, "Work cancelled before completion")
