@@ -1186,6 +1186,49 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
 
 
+    companion object {
+        const val REQUEST_UPLOAD_SHORTS_ACTIVITY = 123
+        private const val FEED_ARG_DATA = "feed_arg_data"
+        private const val FEED_POST_POSITION = "feed_post_position"
+        private const val FEED_SHORT_BUSINESS_ID = "feed_short_business_id"
+        private const val FEED_SHORT_BUSINESS_FILE_ID = "feed_short_business_file_id"
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            ShotsFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+
+
+        fun willReturnToFeedInstance(
+            data: Boolean = false, feedPostPosition: Int = -1,
+            feedShortsBusinessId:String, feedShortsBusinessFileId: String
+        ): ShotsFragment {
+            Log.d("openShortsFragment", "willReturnToFeedInstance: feedPostPosition $feedPostPosition")
+            val fragment = ShotsFragment()
+            val args = Bundle()
+            data.let {
+                args.putBoolean(FEED_ARG_DATA, it)
+            }
+            feedPostPosition.let {
+                args.putInt(FEED_POST_POSITION, it)
+            }
+
+            feedShortsBusinessId.let {
+                args.putString(FEED_SHORT_BUSINESS_ID, feedShortsBusinessId)
+            }
+
+            feedShortsBusinessFileId.let {
+                args.putString(FEED_SHORT_BUSINESS_FILE_ID, it)
+            }
+
+            fragment.arguments = args
+            return fragment
+        }
+    }
 
     // Feed Business Data
     private var feedShortsBusinessId = ""
@@ -1282,50 +1325,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
     }
 
 
-    companion object {
-        const val REQUEST_UPLOAD_SHORTS_ACTIVITY = 123 // You can use any unique value
-        private const val FEED_ARG_DATA = "feed_arg_data"
-        private const val FEED_POST_POSITION = "feed_post_position"
-        private const val FEED_SHORT_BUSINESS_ID = "feed_short_business_id"
-        private const val FEED_SHORT_BUSINESS_FILE_ID = "feed_short_business_file_id"
-
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            ShotsFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-
-
-        //        fun willReturnToFeedInstance(data: String? = null): ShotsFragment {
-        fun willReturnToFeedInstance(
-            data: Boolean = false, feedPostPosition: Int = -1,
-            feedShortsBusinessId:String, feedShortsBusinessFileId: String
-        ): ShotsFragment {
-            Log.d("openShortsFragment", "willReturnToFeedInstance: feedPostPosition $feedPostPosition")
-            val fragment = ShotsFragment()
-            val args = Bundle()
-            data.let {
-                args.putBoolean(FEED_ARG_DATA, it)
-            }
-            feedPostPosition.let {
-                args.putInt(FEED_POST_POSITION, it)
-            }
-
-            feedShortsBusinessId.let {
-                args.putString(FEED_SHORT_BUSINESS_ID, feedShortsBusinessId)
-            }
-
-            feedShortsBusinessFileId.let {
-                args.putString(FEED_SHORT_BUSINESS_FILE_ID, it)
-            }
-
-            fragment.arguments = args
-            return fragment
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -1371,8 +1370,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
         videoUrl?.let { url ->
             setupVideoPlaybackInShots(url)
         }
-
-
 
 
         if (savedInstanceState == null) {
@@ -1897,6 +1894,14 @@ class ShotsFragment : Fragment(), OnClickListeners {
                 }
             }
         }
+    }
+
+    private fun openUploadShortsActivity(videoUri: Uri) {
+        val intent = Intent(requireContext(), UploadShortsActivity::class.java).apply {
+            putExtra(UploadShortsActivity.EXTRA_VIDEO_URI, videoUri)
+        }
+        startActivityForResult(intent, REQUEST_UPLOAD_SHORTS_ACTIVITY)
+
     }
 
     override fun onDestroy() {
@@ -2843,16 +2848,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
-    private fun openUploadShortsActivity(videoUri: Uri) {
-        val intent = Intent(requireContext(), UploadShortsActivity::class.java).apply {
-            putExtra(UploadShortsActivity.EXTRA_VIDEO_URI, videoUri)
-        }
-        startActivityForResult(intent, REQUEST_UPLOAD_SHORTS_ACTIVITY)
-
-    }
-
-
-
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedFavoriteFollowUpdate(event: FeedFavoriteFollowUpdate) {
@@ -2961,8 +2956,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
 
     }
-
-
 
     private fun startPreLoadingService() {
         Log.d(SHORTS, "Preloading called")
@@ -3557,6 +3550,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
         requireActivity().finish()
         startActivity(intent)
     }
+
 
 }
 

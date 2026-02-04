@@ -92,25 +92,26 @@ class ShortsUploadWorker @AssistedInject constructor(
                 thumbnailFile,
                 uniqueId
             ) { bytesRead, totalBytes ->
-                // Check for cancellation during upload
-                if (isStopped) {
-                    Log.d(TAG, "Upload cancelled during progress")
-                    return@uploadShortToMongoDB
-                }
+              
 
                 // Upload takes 50-100% of total progress
                 val uploadProgress = (bytesRead * 100 / totalBytes).toInt()
                 val totalProgress = 50 + (uploadProgress / 2) // 50% + (0-50%)
 
                 val currentTime = System.currentTimeMillis()
-                // Update at least every second OR when progress changes
                 if (totalProgress != lastPostedProgress || (currentTime - lastUpdateTime) >= 1000) {
-                    // Post progress event
                     EventBus.getDefault().post(ProgressEvent(uniqueId, totalProgress))
                     lastPostedProgress = totalProgress
                     lastUpdateTime = currentTime
                     Log.d(TAG, "Upload progress: $uploadProgress%, Total progress: $totalProgress%")
                 }
+            }
+
+            // Only check isStopped at key points, not in the progress callback
+            if (isStopped) {
+                Log.d(TAG, "Work cancelled before completion")
+                EventBus.getDefault().post(UploadSuccessful(success = false))
+                return Result.failure()
             }
 
             // Final check before completion
