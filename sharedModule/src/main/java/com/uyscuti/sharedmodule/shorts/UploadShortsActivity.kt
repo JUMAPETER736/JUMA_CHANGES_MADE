@@ -195,28 +195,22 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
         caption = binding.editTextText.text.toString().trim()
 
-        // Generate uniqueId
         currentUploadUniqueId = UniqueIdGenerator.generateUniqueId()
 
-        // Change this line:
-        // EventBus.getDefault().post(UploadStarted(currentUploadUniqueId!!))
-
-        // To this:
-        EventBus.getDefault().postSticky(UploadStarted(currentUploadUniqueId!!))
-
-        // Start upload
-        uploadShorts(videoUri, caption)
-
-        // Pass the uniqueId back to ShotsFragment
+        // Return result FIRST so fragment can prepare UI
         val resultIntent = Intent().apply {
             putExtra("upload_unique_id", currentUploadUniqueId)
         }
         setResult(RESULT_OK, resultIntent)
 
-        // Add delay before finishing
-        Handler(Looper.getMainLooper()).postDelayed({
-            finish()
-        }, 300)
+        // Post sticky event
+        EventBus.getDefault().postSticky(UploadStarted(currentUploadUniqueId!!))
+
+        // Start upload
+        uploadShorts(videoUri, caption)
+
+        // Finish immediately
+        finish()
     }
 
     private fun uploadThumbnail() {
