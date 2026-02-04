@@ -1327,6 +1327,10 @@ class ShotsFragment : Fragment(), OnClickListeners {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this)
+            Log.d("EventBus", "ShotsFragment registered in onCreate")
+        }
         // From the  Tapped Files Viewers Post fragment
         arguments?.let { bundle ->
             videoUrl = bundle.getString("video_url")
@@ -1847,6 +1851,58 @@ class ShotsFragment : Fragment(), OnClickListeners {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // ✅ Cancel any ongoing upload work
+        uploadWorkRequest?.let {
+            WorkManager.getInstance(requireContext()).cancelWorkById(it.id)
+            uploadWorkRequest = null
+        }
+
+        // ✅ Unregister EventBus
+        if (EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().unregister(this)
+            Log.d("EventBus", "ShotsFragment unregistered in onDestroy")
+        }
+
+        try {
+            exoPlayer?.apply {
+                removeListener(playbackStateListener)
+                currentPlayerListener?.let { removeListener(it) }
+                stop()
+                clearMediaItems()
+                release()
+            }
+            exoPlayer = null
+        } catch (e: Exception) {
+            Log.e("ShotsFragment", "Error destroying player", e)
+        }
+
+        if (exoPlayerItems.isNotEmpty()) {
+            for (item in exoPlayerItems) {
+                val player = item.exoPlayer
+                player.stop()
+                player.clearMediaItems()
+            }
+            exoPlayerItems.clear()
+        }
+
+        lifecycleScope.launch {
+            shortsViewModel.isResuming = true
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // Only pause, don't release
+        exoPlayer?.pause()
+
+        lifecycleScope.launch {
+            shortsViewModel.isResuming = true
+        }
+    }
+
     override fun onStart() {
         super.onStart()
         if (!EventBus.getDefault().isRegistered(this)) {
@@ -1885,45 +1941,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-
-        try {
-            exoPlayer?.apply {
-                removeListener(playbackStateListener)
-                currentPlayerListener?.let { removeListener(it) }
-                stop()
-                clearMediaItems()
-                release()
-            }
-            exoPlayer = null
-        } catch (e: Exception) {
-            Log.e("ShotsFragment", "Error destroying player", e)
-        }
-
-        if (exoPlayerItems.isNotEmpty()) {
-            for (item in exoPlayerItems) {
-                val player = item.exoPlayer
-                player.stop()
-                player.clearMediaItems()
-            }
-            exoPlayerItems.clear()
-        }
-
-        lifecycleScope.launch {
-            shortsViewModel.isResuming = true
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        // Only pause, don't release
-        exoPlayer?.pause()
-
-        lifecycleScope.launch {
-            shortsViewModel.isResuming = true
-        }
-    }
 
     fun loadMoreVideosIfNeeded(position: Int) {
 
