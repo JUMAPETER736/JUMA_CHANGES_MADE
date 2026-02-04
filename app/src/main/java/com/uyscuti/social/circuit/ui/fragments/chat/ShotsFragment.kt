@@ -1802,12 +1802,12 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     fun onUploadStarted(event: UploadStarted) {
         currentUploadUniqueId = event.uniqueId
         Log.d("ShortsUpload", "Tracking upload with ID: ${event.uniqueId}")
 
-        // ✅ SHOW UI IMMEDIATELY
+        // SHOW UI IMMEDIATELY
         uploadShortsSeekBar?.apply {
             visibility = View.VISIBLE
             progress = 0
@@ -1817,7 +1817,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
         Log.d("ShortsUpload", "Upload UI now visible")
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     fun onShortsProgressEvent(event: ProgressEvent) {
         // Only process if this is for our current upload
         if (currentUploadUniqueId == null || event.eventId != currentUploadUniqueId) {
@@ -1831,7 +1831,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
         Log.d("ShortsUploadProgress", "Progress: ${event.progress}% for ID: ${event.eventId}")
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     fun successEvent(event: UploadSuccessful) {
         if (event.success) {
             progressBarLayout.visibility = View.GONE
@@ -1852,7 +1852,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     fun onShortsUploadSuccess(event: UploadSuccessful) {
         // Clear the tracked ID
         currentUploadUniqueId = null
@@ -1876,24 +1876,50 @@ class ShotsFragment : Fragment(), OnClickListeners {
     }
 
 
-    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == REQUEST_UPLOAD_SHORTS_ACTIVITY) {
             if (resultCode == Activity.RESULT_OK) {
-                // Get the upload unique ID
                 val uploadUniqueId = data?.getStringExtra("upload_unique_id")
 
                 if (uploadUniqueId != null) {
                     currentUploadUniqueId = uploadUniqueId
-                    Log.d("ShortsUpload", "Started tracking upload with ID: $uploadUniqueId")
+                    Log.d("ShotsUpload", "Started tracking upload with ID: $uploadUniqueId")
 
-                    // Show the progress UI immediately
-                    uploadShortsSeekBar?.visibility = View.VISIBLE
+                    // SHOW UI IMMEDIATELY
+                    uploadShortsSeekBar?.apply {
+                        visibility = View.VISIBLE
+                        progress = 0
+                    }
                     cancelShortsUpload.visibility = View.VISIBLE
+
+                    Log.d("ShotsUpload", "UI shown immediately after activity result")
+
+                    // MANUALLY check for sticky events that were posted before we registered
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        checkAndConsumeStickyEvents(uploadUniqueId)
+                    }, 100) // Small delay to ensure EventBus is fully registered
                 }
             }
+        }
+    }
+
+    private fun checkAndConsumeStickyEvents(uploadUniqueId: String) {
+        Log.d("ShotsUpload", "Checking for sticky events...")
+
+        // Check for UploadStarted
+        val uploadStartedEvent = EventBus.getDefault().getStickyEvent(UploadStarted::class.java)
+        if (uploadStartedEvent != null && uploadStartedEvent.uniqueId == uploadUniqueId) {
+            Log.d("ShotsUpload", "Found sticky UploadStarted event: ${uploadStartedEvent.uniqueId}")
+            onUploadStarted(uploadStartedEvent)
+        }
+
+        // Check for ProgressEvent
+        val progressEvent = EventBus.getDefault().getStickyEvent(ProgressEvent::class.java)
+        if (progressEvent != null && progressEvent.eventId == uploadUniqueId) {
+            Log.d("ShotsUpload", "Found sticky ProgressEvent: ${progressEvent.progress}%")
+            onShortsProgressEvent(progressEvent)
         }
     }
 

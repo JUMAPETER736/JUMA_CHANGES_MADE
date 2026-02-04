@@ -188,14 +188,21 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
     }
 
-    private fun uploadThumbnail() {
+    private fun setFirstFrameAsThumbnail() {
+        val firstFrame: Bitmap? = VideoUtils.getFirstFrame(this, videoUri)
+        if (firstFrame != null) {
+            thumbnail = firstFrame
+        }
         caption = binding.editTextText.text.toString().trim()
 
-        // Generate uniqueId FIRST
+        // Generate uniqueId
         currentUploadUniqueId = UniqueIdGenerator.generateUniqueId()
 
-        // Post the upload started event IMMEDIATELY so UI can prepare
-        EventBus.getDefault().post(UploadStarted(currentUploadUniqueId!!))
+        // Change this line:
+        // EventBus.getDefault().post(UploadStarted(currentUploadUniqueId!!))
+
+        // To this:
+        EventBus.getDefault().postSticky(UploadStarted(currentUploadUniqueId!!))
 
         // Start upload
         uploadShorts(videoUri, caption)
@@ -205,31 +212,35 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
             putExtra("upload_unique_id", currentUploadUniqueId)
         }
         setResult(RESULT_OK, resultIntent)
-        finish()
+
+        // Add delay before finishing
+        Handler(Looper.getMainLooper()).postDelayed({
+            finish()
+        }, 300)
     }
 
-    private fun setFirstFrameAsThumbnail() {
-        val firstFrame: Bitmap? = VideoUtils.getFirstFrame(this, videoUri)
-        if (firstFrame != null) {
-            thumbnail = firstFrame
-        }
+    private fun uploadThumbnail() {
         caption = binding.editTextText.text.toString().trim()
 
-        // Generate uniqueId FIRST
         currentUploadUniqueId = UniqueIdGenerator.generateUniqueId()
 
-        // Post the upload started event IMMEDIATELY
-        EventBus.getDefault().post(UploadStarted(currentUploadUniqueId!!))
+        // Change this:
+        // EventBus.getDefault().post(UploadStarted(currentUploadUniqueId!!))
 
-        // Start upload
+        // To this:
+        EventBus.getDefault().postSticky(UploadStarted(currentUploadUniqueId!!))
+
         uploadShorts(videoUri, caption)
 
-        // Pass the uniqueId back
         val resultIntent = Intent().apply {
             putExtra("upload_unique_id", currentUploadUniqueId)
         }
         setResult(RESULT_OK, resultIntent)
-        finish()
+
+        // Add delay before finishing
+        Handler(Looper.getMainLooper()).postDelayed({
+            finish()
+        }, 300)
     }
 
     private fun uploadShorts(videoUri: Uri, caption: String) {
