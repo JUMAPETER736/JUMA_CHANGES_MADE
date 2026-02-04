@@ -1803,6 +1803,35 @@ class ShotsFragment : Fragment(), OnClickListeners {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onUploadStarted(event: UploadStarted) {
+        currentUploadUniqueId = event.uniqueId
+        Log.d("ShortsUpload", "Tracking upload with ID: ${event.uniqueId}")
+
+        // ✅ SHOW UI IMMEDIATELY
+        uploadShortsSeekBar?.apply {
+            visibility = View.VISIBLE
+            progress = 0
+        }
+        cancelShortsUpload.visibility = View.VISIBLE
+
+        Log.d("ShortsUpload", "Upload UI now visible")
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onShortsProgressEvent(event: ProgressEvent) {
+        // Only process if this is for our current upload
+        if (currentUploadUniqueId == null || event.eventId != currentUploadUniqueId) {
+            Log.d("ShortsUpload", "Ignoring event for different upload: ${event.eventId}")
+            return
+        }
+
+        // Update progress (UI should already be visible from onUploadStarted)
+        uploadShortsSeekBar?.progress = event.progress
+
+        Log.d("ShortsUploadProgress", "Progress: ${event.progress}% for ID: ${event.eventId}")
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
     fun successEvent(event: UploadSuccessful) {
         if (event.success) {
             progressBarLayout.visibility = View.GONE
@@ -1821,29 +1850,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
             playVideo()
         }
 
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onShortsProgressEvent(event: ProgressEvent) {
-        // Only process if this is for our current upload
-        if (currentUploadUniqueId == null || event.eventId != currentUploadUniqueId) {
-            Log.d("ShortsUpload", "Ignoring event for different upload: ${event.eventId}")
-            return
-        }
-
-        // Update progress
-        uploadShortsSeekBar?.apply {
-            if (visibility != View.VISIBLE) {
-                visibility = View.VISIBLE
-            }
-            progress = event.progress
-        }
-
-        if (cancelShortsUpload.visibility != View.VISIBLE) {
-            cancelShortsUpload.visibility = View.VISIBLE
-        }
-
-        Log.d("ShortsUploadProgress", "Progress: ${event.progress}% for ID: ${event.eventId}")
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -1869,11 +1875,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onUploadStarted(event: UploadStarted) {
-        currentUploadUniqueId = event.uniqueId
-        Log.d("ShortsUpload", "Tracking upload with ID: ${event.uniqueId}")
-    }
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

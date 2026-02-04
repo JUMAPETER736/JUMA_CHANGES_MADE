@@ -310,7 +310,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
     @SuppressLint("SetTextI18n")
     private fun compressShorts(uniqueId: String) {
-      
+
         Log.d("progress id", uniqueId)
 
         val uri = uris[0]
