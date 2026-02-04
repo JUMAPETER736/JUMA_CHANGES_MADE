@@ -64,6 +64,11 @@ import java.io.FileOutputStream
 import java.io.IOException
 import javax.inject.Inject
 
+
+// In your events file
+data class UploadStarted(val uniqueId: String)
+
+
 @AndroidEntryPoint
 class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.ThumbnailClickListener {
 
@@ -197,10 +202,10 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
         caption = binding.editTextText.text.toString().trim()
 
-        // ✅ Start upload FIRST (but don't wait for it)
+        // Start upload FIRST (but don't wait for it)
         uploadShorts(videoUri, caption)
 
-        // ✅ Then finish immediately - returns to ShotsFragment
+        // Then finish immediately - returns to ShotsFragment
         val resultIntent = Intent()
         setResult(RESULT_OK, resultIntent)
         finish()
@@ -209,10 +214,10 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     private fun uploadThumbnail() {
         caption = binding.editTextText.text.toString().trim()
 
-        // ✅ Start upload FIRST (but don't wait for it)
+        // Start upload FIRST (but don't wait for it)
         uploadShorts(videoUri, caption)
 
-        // ✅ Then finish immediately - returns to ShotsFragment
+        // Then finish immediately - returns to ShotsFragment
         val resultIntent = Intent()
         setResult(RESULT_OK, resultIntent)
         finish()
@@ -295,6 +300,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         val fileSizeInMB = fileSizeInKB?.div(1024)
         val fileSizeInGb = fileSizeInMB?.div(1024)
 
+        EventBus.getDefault().post(UploadStarted(uniqueId))
         Log.d("uriFileSize", "uri.scheme ${uri.scheme} compressShorts:uriFileSize: $uriFileSize  fileSizeInKB $fileSizeInKB fileSizeInMB $fileSizeInMB fileSizeInGb $fileSizeInGb")
 
         val filePath = when (uri.scheme) {

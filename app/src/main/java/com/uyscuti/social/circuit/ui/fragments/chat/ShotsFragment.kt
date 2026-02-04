@@ -155,6 +155,7 @@ import com.uyscuti.sharedmodule.model.UserProfileShortsViewModel
 import com.uyscuti.sharedmodule.service.VideoPreLoadingService
 import com.uyscuti.sharedmodule.shorts.ExoPlayerItem
 import com.uyscuti.sharedmodule.shorts.UploadShortsActivity
+import com.uyscuti.sharedmodule.shorts.UploadStarted
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.utils.Constants
 import com.uyscuti.sharedmodule.utils.removeDuplicateFollowers
@@ -1218,6 +1219,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
     // UI Components - ViewPager & Adapter
     private lateinit var viewPager: ViewPager2
     private lateinit var shortsAdapter: ShortsAdapter
+    private var currentUploadUniqueId: String? = null
 
     // UI Components - Buttons & Actions
     private lateinit var fabAction: FloatingActionButton
@@ -1804,11 +1806,17 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onShortsProgressEvent(event: ProgressEvent) {
-        // Show upload UI elements when progress starts (first update)
+        // Only process if this is for our current upload
+        if (currentUploadUniqueId == null || event.eventId != currentUploadUniqueId) {
+            Log.d("ShortsUpload", "Ignoring event for different upload: ${event.eventId}")
+            return
+        }
+
+        // Show upload UI elements when progress starts
         uploadShortsSeekBar?.apply {
             if (visibility != View.VISIBLE) {
                 visibility = View.VISIBLE
-                Log.d("ShortsUpload", "Progress bar now VISIBLE")
+                Log.d("ShortsUpload", "Progress bar now VISIBLE for ID: ${event.eventId}")
             }
             progress = event.progress
         }
@@ -1819,19 +1827,20 @@ class ShotsFragment : Fragment(), OnClickListeners {
             Log.d("ShortsUpload", "Cancel button now VISIBLE")
         }
 
-        Log.d("ShortsUploadProgress", "Progress: ${event.progress}%")
+        Log.d("ShortsUploadProgress", "Progress: ${event.progress}% for ID: ${event.eventId}")
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onShortsUploadSuccess(event: UploadSuccessful) {
         // Hide all upload UI elements immediately
+        currentUploadUniqueId = null
+
+        // Hide all upload UI elements immediately
         uploadShortsSeekBar?.apply {
             visibility = View.GONE
-            progress = 0
-            Log.d("ShortsUpload", "Progress bar now HIDDEN")
         }
 
-        cancelShortsUpload.visibility = View.GONE
+            cancelShortsUpload.visibility = View.GONE
         Log.d("ShortsUpload", "Cancel button now HIDDEN")
 
         // Show success/failure message
@@ -1851,6 +1860,11 @@ class ShotsFragment : Fragment(), OnClickListeners {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onUploadStarted(event: UploadStarted) {
+        currentUploadUniqueId = event.uniqueId
+        Log.d("ShortsUpload", "Tracking upload with ID: ${event.uniqueId}")
+    }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -1941,8 +1955,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
             }
         }
     }
-
-
     fun loadMoreVideosIfNeeded(position: Int) {
 
         if (position >= 5 && (position - 5) % 5 == 0) {
