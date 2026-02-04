@@ -124,9 +124,6 @@ import retrofit2.Response
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.signature.ObjectKey
 import android.graphics.drawable.Drawable
-import androidx.cardview.widget.CardView
-import androidx.work.OneTimeWorkRequest
-import androidx.work.WorkManager
 import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.sharedmodule.FlashApplication
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
@@ -136,7 +133,6 @@ import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.eventbus.FeedFavoriteFollowUpdate
 import com.uyscuti.sharedmodule.eventbus.HideFeedFloatingActionButton
 import com.uyscuti.sharedmodule.eventbus.ShowFeedFloatingActionButton
-import com.uyscuti.sharedmodule.model.CancelShortsUpload
 import com.uyscuti.sharedmodule.model.FollowListItemViewModel
 import com.uyscuti.sharedmodule.model.GoToFeedFragment
 import com.uyscuti.sharedmodule.model.GoToUserProfileFragment
@@ -155,7 +151,6 @@ import com.uyscuti.sharedmodule.model.UserProfileShortsViewModel
 import com.uyscuti.sharedmodule.service.VideoPreLoadingService
 import com.uyscuti.sharedmodule.shorts.ExoPlayerItem
 import com.uyscuti.sharedmodule.shorts.UploadShortsActivity
-import com.uyscuti.sharedmodule.shorts.UploadStarted
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.utils.Constants
 import com.uyscuti.sharedmodule.utils.removeDuplicateFollowers
@@ -167,7 +162,6 @@ import com.uyscuti.social.circuit.databinding.BottomDialogForShareBinding
 import com.uyscuti.social.circuit.log_in_and_register.LoginActivity
 import com.uyscuti.social.circuit.settings.SettingsActivity
 import com.uyscuti.social.circuit.user_interface.UniversalSearchActivity
-import com.uyscuti.social.compressor.VideoCompressor
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
 import kotlin.jvm.java
 
@@ -1186,49 +1180,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
 
 
-    companion object {
-        const val REQUEST_UPLOAD_SHORTS_ACTIVITY = 123
-        private const val FEED_ARG_DATA = "feed_arg_data"
-        private const val FEED_POST_POSITION = "feed_post_position"
-        private const val FEED_SHORT_BUSINESS_ID = "feed_short_business_id"
-        private const val FEED_SHORT_BUSINESS_FILE_ID = "feed_short_business_file_id"
-
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            ShotsFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-
-
-        fun willReturnToFeedInstance(
-            data: Boolean = false, feedPostPosition: Int = -1,
-            feedShortsBusinessId:String, feedShortsBusinessFileId: String
-        ): ShotsFragment {
-            Log.d("openShortsFragment", "willReturnToFeedInstance: feedPostPosition $feedPostPosition")
-            val fragment = ShotsFragment()
-            val args = Bundle()
-            data.let {
-                args.putBoolean(FEED_ARG_DATA, it)
-            }
-            feedPostPosition.let {
-                args.putInt(FEED_POST_POSITION, it)
-            }
-
-            feedShortsBusinessId.let {
-                args.putString(FEED_SHORT_BUSINESS_ID, feedShortsBusinessId)
-            }
-
-            feedShortsBusinessFileId.let {
-                args.putString(FEED_SHORT_BUSINESS_FILE_ID, it)
-            }
-
-            fragment.arguments = args
-            return fragment
-        }
-    }
 
     // Feed Business Data
     private var feedShortsBusinessId = ""
@@ -1262,8 +1213,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
     // UI Components - ViewPager & Adapter
     private lateinit var viewPager: ViewPager2
     private lateinit var shortsAdapter: ShortsAdapter
-    private var currentUploadUniqueId: String? = null
-
 
     // UI Components - Buttons & Actions
     private lateinit var fabAction: FloatingActionButton
@@ -1281,7 +1230,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
     // UI Components - Media & Controls
     private lateinit var shortSeekBar: SeekBar
     private lateinit var shortsDownloadImageView: ImageView
-
 
     // Data Collections
     private var shortsList = ArrayList<String>()
@@ -1317,7 +1265,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
     private val followShortsViewModel: FollowListItemViewModel by viewModels()
     private val followViewModel: FollowViewModel by viewModels()
     private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
-    private var uploadWorkRequest: OneTimeWorkRequest? = null
+    private val userProfileShortsViewModel: UserProfileShortsViewModel by activityViewModels()
 
     init {
         // Increase cache size for better performance
@@ -1325,14 +1273,54 @@ class ShotsFragment : Fragment(), OnClickListeners {
     }
 
 
+    companion object {
+        const val REQUEST_UPLOAD_SHORTS_ACTIVITY = 123 // You can use any unique value
+        private const val FEED_ARG_DATA = "feed_arg_data"
+        private const val FEED_POST_POSITION = "feed_post_position"
+        private const val FEED_SHORT_BUSINESS_ID = "feed_short_business_id"
+        private const val FEED_SHORT_BUSINESS_FILE_ID = "feed_short_business_file_id"
+
+        @JvmStatic
+        fun newInstance(param1: String, param2: String) =
+            ShotsFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                    putString(ARG_PARAM2, param2)
+                }
+            }
+
+
+        //        fun willReturnToFeedInstance(data: String? = null): ShotsFragment {
+        fun willReturnToFeedInstance(
+            data: Boolean = false, feedPostPosition: Int = -1,
+            feedShortsBusinessId:String, feedShortsBusinessFileId: String
+        ): ShotsFragment {
+            Log.d("openShortsFragment", "willReturnToFeedInstance: feedPostPosition $feedPostPosition")
+            val fragment = ShotsFragment()
+            val args = Bundle()
+            data.let {
+                args.putBoolean(FEED_ARG_DATA, it)
+            }
+            feedPostPosition.let {
+                args.putInt(FEED_POST_POSITION, it)
+            }
+
+            feedShortsBusinessId.let {
+                args.putString(FEED_SHORT_BUSINESS_ID, feedShortsBusinessId)
+            }
+
+            feedShortsBusinessFileId.let {
+                args.putString(FEED_SHORT_BUSINESS_FILE_ID, it)
+            }
+
+            fragment.arguments = args
+            return fragment
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (!EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().register(this)
-            Log.d("EventBus", "ShotsFragment registered in onCreate")
-        }
         // From the  Tapped Files Viewers Post fragment
         arguments?.let { bundle ->
             videoUrl = bundle.getString("video_url")
@@ -1372,6 +1360,8 @@ class ShotsFragment : Fragment(), OnClickListeners {
         }
 
 
+
+
         if (savedInstanceState == null) {
 
             Log.d("ViewModel", "onViewCreated: view not created")
@@ -1401,18 +1391,14 @@ class ShotsFragment : Fragment(), OnClickListeners {
             ProfileRepository(ChatDatabase.getInstance(requireActivity()).profileDao())
         progressBar = view.findViewById(R.id.progressBar)
         shortsDownloadProgressBar = view.findViewById(R.id.shortsDownloadProgressBar)
-
         progressBarLayout = view.findViewById(R.id.progressBarLayout)
         downloadProgressBarLayout = view.findViewById(R.id.downloadProgressBarLayout)
         shortsDownloadImageView = view.findViewById(R.id.shortsDownloadImageView)
-
         cancelShortsUpload = view.findViewById(R.id.cancelShortsUpload)
         shortSeekBar = view.findViewById(R.id.shortSeekBar)
         shortsMenu = view.findViewById(R.id.shortsMenu)
         searchForAllShorts = view.findViewById(R.id.searchForAllShorts)
-
         uploadShortsSeekBar = view.findViewById(R.id.uploadShortsSeekBar)
-        cancelShortsUpload = view.findViewById(R.id.cancelShortsUpload)
 
         shortsMenu.setOnClickListener {
 
@@ -1431,12 +1417,13 @@ class ShotsFragment : Fragment(), OnClickListeners {
                         performLogout()
                         true
                     }
-
                     else -> false
                 }
             }
             popupMenu.show()
         }
+
+
 
         searchForAllShorts.setOnClickListener {
             val intent = Intent(requireContext(), UniversalSearchActivity::class.java)
@@ -1447,39 +1434,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
                 R.anim.slide_in_up,
                 R.anim.stay
             )
-        }
-
-
-        // The click listener stays on the ImageView, but hide the card:
-        cancelShortsUpload.setOnClickListener {
-            Log.d("CancelUpload", "Cancel button clicked")
-
-            // 1. HIDE UI ELEMENTS IMMEDIATELY - This is the most important step!
-            uploadShortsSeekBar?.apply {
-                visibility = View.GONE
-                progress = 0
-            }
-            cancelShortsUpload.visibility = View.GONE
-            Log.d("CancelUpload", "UI elements hidden")
-
-            // 2. Cancel WorkManager upload
-            uploadWorkRequest?.let { workRequest ->
-                val workManager = WorkManager.getInstance(requireContext())
-                workManager.cancelWorkById(workRequest.id)
-                Log.d("CancelUpload", "Cancelled WorkManager: ${workRequest.id}")
-                uploadWorkRequest = null
-            }
-
-            // 3. Cancel video compression
-            VideoCompressor.cancel()
-            Log.d("CancelUpload", "Cancelled VideoCompressor")
-
-            // 4. Send cancel event to UploadShortsActivity
-            EventBus.getDefault().post(CancelShortsUpload(cancel = true))
-            Log.d("CancelUpload", "Posted CancelShortsUpload event")
-
-            // 5. Show feedback to user
-            Toast.makeText(requireContext(), "Upload cancelled", Toast.LENGTH_SHORT).show()
         }
 
         shortSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -1515,6 +1469,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
             .setAllowCrossProtocolRedirects(true)
             .setConnectTimeoutMs(8000)
             .setReadTimeoutMs(8000)
+
 
 
         val dataSourceFactory = DefaultDataSource.Factory(
@@ -1603,7 +1558,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
                     currentPosition = shortsViewModel.shortIndex
 
-                    if (feedShortsBusinessId != "default_value") {
+                    if(feedShortsBusinessId != "default_value" ) {
                         loadMoreShortsByFeedShortsBusinessId(feedShortsBusinessId)
 
                         val handler = Handler(Looper.getMainLooper())
@@ -1612,11 +1567,8 @@ class ShotsFragment : Fragment(), OnClickListeners {
                             playVideoAtPosition(shortsViewModel.mutableShortsList.size)
                         }, 200)
 
-                        for (i in shortsViewModel.mutableShortsList) {
-                            Log.d(
-                                "feedShortsBusinessId",
-                                "feedShortsBusinessId(i): ${i.feedShortsBusinessId}"
-                            )
+                        for(i in shortsViewModel.mutableShortsList){
+                            Log.d("feedShortsBusinessId", "feedShortsBusinessId(i): ${i.feedShortsBusinessId}")
                         }
                     } else {
                         viewPager.setCurrentItem(currentPosition, false)
@@ -1680,10 +1632,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
                         Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
 
                         if (state == ViewPager.SCROLL_STATE_IDLE) {
-                            Log.d(
-                                "onPageScrollStateChanged",
-                                "onPageScrollStateChanged: state $state"
-                            )
+                            Log.d("onPageScrollStateChanged", "onPageScrollStateChanged: state $state")
                             playVideoAtPosition(currentPosition)
                             backPressCount = 0
                         }
@@ -1702,18 +1651,16 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
         val onBackPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (feedOnBackPressedData) {
-                    Log.d(
-                        "handleOnBackPressed",
-                        "handleOnBackPressed: feedPostPosition $feedPostPosition"
-                    )
+                if(feedOnBackPressedData) {
+                    Log.d("handleOnBackPressed", "handleOnBackPressed: feedPostPosition $feedPostPosition")
                     EventBus.getDefault().post(GoToFeedFragment(feedPostPosition))
                 } else {
                     if (backPressCount == 0) {
                         EventBus.getDefault().post(ShowBottomNav(false))
                         backPressCount++
                         Log.d("handleOnBackPressed", "handleOnBackPressed: 1 - display bottom nav ")
-                    } else if (backPressCount == 1) {
+                    }
+                    else if (backPressCount == 1) {
                         backPressCount++
                         Log.d(
                             "handleOnBackPressed",
@@ -1734,7 +1681,8 @@ class ShotsFragment : Fragment(), OnClickListeners {
                         playVideoAtPosition(currentPosition)
 
                         Log.d("handleOnBackPressed", "handleOnBackPressed: 2 - next short")
-                    } else if (backPressCount == 2) {
+                    }
+                    else if (backPressCount == 2) {
                         Log.d(
                             "handleOnBackPressed",
                             "handleOnBackPressed: last/prev position ${shortsViewModel.lastPosition}"
@@ -1746,7 +1694,8 @@ class ShotsFragment : Fragment(), OnClickListeners {
                             backPressCount = 0
                             requireActivity().finish()
                         }
-                    } else {
+                    }
+                    else {
                         Log.d("handleOnBackPressed", "handleOnBackPressed: else")
                     }
                 }
@@ -1799,195 +1748,33 @@ class ShotsFragment : Fragment(), OnClickListeners {
         }
 
         return view
-
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    fun onUploadStarted(event: UploadStarted) {
-        currentUploadUniqueId = event.uniqueId
-        Log.d("ShortsUpload", "Tracking upload with ID: ${event.uniqueId}")
-
-        // SHOW UI IMMEDIATELY
-        uploadShortsSeekBar?.apply {
-            visibility = View.VISIBLE
-            progress = 0
-        }
-        cancelShortsUpload.visibility = View.VISIBLE
-
-        Log.d("ShortsUpload", "Upload UI now visible")
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    fun onShortsProgressEvent(event: ProgressEvent) {
-        // Only process if this is for our current upload
-        if (currentUploadUniqueId == null || event.eventId != currentUploadUniqueId) {
-            Log.d("ShortsUpload", "Ignoring event for different upload: ${event.eventId}")
-            return
-        }
-
-        // Update progress (UI should already be visible from onUploadStarted)
-        uploadShortsSeekBar?.progress = event.progress
-
-        Log.d("ShortsUploadProgress", "Progress: ${event.progress}% for ID: ${event.eventId}")
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    fun successEvent(event: UploadSuccessful) {
-        if (event.success) {
-            progressBarLayout.visibility = View.GONE
-            progressViewModel.totalProgress = 0
-        } else {
-            progressBarLayout.visibility = View.VISIBLE
-        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    fun pausePlayEvent(event: PausePlayEvent) {
-        Log.d("pausePlayEvent", "pausePlayEvent ${count + 1}")
-        if (exoPlayer?.isPlaying == true) {
-            pauseVideo()
-        } else {
-            playVideo()
-        }
+    fun onShortsProgressEvent(event: ProgressEvent) {
+        uploadShortsSeekBar?.visibility = View.VISIBLE
 
+        // Only show progress, don't add 100
+        uploadShortsSeekBar?.progress = event.progress
+
+        Log.d("ShortsUploadProgress", "Upload progress: ${event.progress} for eventId: ${event.eventId}")
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
+    @Subscribe(threadMode = ThreadMode.MAIN)
     fun onShortsUploadSuccess(event: UploadSuccessful) {
-        // Only process if this matches our tracked upload
-        if (currentUploadUniqueId == null) {
-            return
-        }
+        uploadShortsSeekBar?.visibility = View.GONE
+        uploadShortsSeekBar?.progress = 0
 
-        currentUploadUniqueId = null
+        val rootView: View = requireActivity().findViewById(android.R.id.content)
+        val snackBar = Snackbar.make(rootView, "Shorts upload successful", Snackbar.LENGTH_LONG)
+        val snackBarBackgroundColor = ContextCompat.getColor(requireContext(), R.color.green)
+        val snackBarTextColor = ContextCompat.getColor(requireContext(), R.color.white)
+        val snackBarView = snackBar.view
+        snackBarView.setBackgroundColor(snackBarBackgroundColor)
+        snackBar.setTextColor(snackBarTextColor)
+        snackBar.show()
 
-        // Hide UI
-        uploadShortsSeekBar?.apply {
-            visibility = View.GONE
-            progress = 0
-        }
-        cancelShortsUpload.visibility = View.GONE
-
-        // Clean up ALL sticky events
-        EventBus.getDefault().apply {
-            removeStickyEvent(ProgressEvent::class.java)
-            removeStickyEvent(UploadStarted::class.java)
-            removeStickyEvent(UploadSuccessful::class.java)
-        }
-
-        if (event.success) {
-            Toast.makeText(requireContext(), "Upload successful!", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(requireContext(), "Upload failed", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == REQUEST_UPLOAD_SHORTS_ACTIVITY) {
-            if (resultCode == Activity.RESULT_OK) {
-                val uploadUniqueId = data?.getStringExtra("upload_unique_id")
-
-                if (uploadUniqueId != null) {
-                    currentUploadUniqueId = uploadUniqueId
-                    Log.d("ShotsUpload", "Received upload ID: $uploadUniqueId")
-
-                    // SHOW UI IMMEDIATELY - This is critical!
-                    uploadShortsSeekBar?.apply {
-                        visibility = View.VISIBLE
-                        progress = 0
-                    }
-                    cancelShortsUpload.visibility = View.VISIBLE
-
-                    Log.d("ShotsUpload", "UI shown immediately in onActivityResult")
-
-                    // Process any sticky events that were already posted
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        checkAndConsumeStickyEvents(uploadUniqueId)
-                    }, 50)
-                }
-            }
-        }
-    }
-
-    private fun checkAndConsumeStickyEvents(uploadUniqueId: String) {
-        Log.d("ShotsUpload", "Checking for sticky events...")
-
-        // Check for UploadStarted
-        val uploadStartedEvent = EventBus.getDefault().getStickyEvent(UploadStarted::class.java)
-        if (uploadStartedEvent != null && uploadStartedEvent.uniqueId == uploadUniqueId) {
-            Log.d("ShotsUpload", "Found sticky UploadStarted event: ${uploadStartedEvent.uniqueId}")
-            onUploadStarted(uploadStartedEvent)
-        }
-
-        // Check for ProgressEvent
-        val progressEvent = EventBus.getDefault().getStickyEvent(ProgressEvent::class.java)
-        if (progressEvent != null && progressEvent.eventId == uploadUniqueId) {
-            Log.d("ShotsUpload", "Found sticky ProgressEvent: ${progressEvent.progress}%")
-            onShortsProgressEvent(progressEvent)
-        }
-    }
-
-    private fun openUploadShortsActivity(videoUri: Uri) {
-        val intent = Intent(requireContext(), UploadShortsActivity::class.java).apply {
-            putExtra(UploadShortsActivity.EXTRA_VIDEO_URI, videoUri)
-        }
-        startActivityForResult(intent, REQUEST_UPLOAD_SHORTS_ACTIVITY)
-
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        // ✅ Cancel any ongoing upload work
-        uploadWorkRequest?.let {
-            WorkManager.getInstance(requireContext()).cancelWorkById(it.id)
-            uploadWorkRequest = null
-        }
-
-        // ✅ Unregister EventBus
-        if (EventBus.getDefault().isRegistered(this)) {
-            EventBus.getDefault().unregister(this)
-            Log.d("EventBus", "ShotsFragment unregistered in onDestroy")
-        }
-
-        try {
-            exoPlayer?.apply {
-                removeListener(playbackStateListener)
-                currentPlayerListener?.let { removeListener(it) }
-                stop()
-                clearMediaItems()
-                release()
-            }
-            exoPlayer = null
-        } catch (e: Exception) {
-            Log.e("ShotsFragment", "Error destroying player", e)
-        }
-
-        if (exoPlayerItems.isNotEmpty()) {
-            for (item in exoPlayerItems) {
-                val player = item.exoPlayer
-                player.stop()
-                player.clearMediaItems()
-            }
-            exoPlayerItems.clear()
-        }
-
-        lifecycleScope.launch {
-            shortsViewModel.isResuming = true
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        // Only pause, don't release
-        exoPlayer?.pause()
-
-        lifecycleScope.launch {
-            shortsViewModel.isResuming = true
-        }
+        Log.d("ShortsUploadSuccess", "Upload completed successfully")
     }
 
     override fun onStart() {
@@ -2025,6 +1812,46 @@ class ShotsFragment : Fragment(), OnClickListeners {
                 val currentPosition = player.currentPosition.toInt()
                 shortSeekBar.progress = currentPosition
             }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        try {
+            exoPlayer?.apply {
+                removeListener(playbackStateListener)
+                currentPlayerListener?.let { removeListener(it) }
+                stop()
+                clearMediaItems()
+                release()
+            }
+            exoPlayer = null
+        } catch (e: Exception) {
+            Log.e("ShotsFragment", "Error destroying player", e)
+        }
+
+        if (exoPlayerItems.isNotEmpty()) {
+            for (item in exoPlayerItems) {
+                val player = item.exoPlayer
+                player.stop()
+                player.clearMediaItems()
+            }
+            exoPlayerItems.clear()
+        }
+
+        lifecycleScope.launch {
+            shortsViewModel.isResuming = true
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // Only pause, don't release
+        exoPlayer?.pause()
+
+        lifecycleScope.launch {
+            shortsViewModel.isResuming = true
         }
     }
 
@@ -2218,14 +2045,11 @@ class ShotsFragment : Fragment(), OnClickListeners {
             if (response.isSuccessful) {
                 val responseBody = response.body()
 
-                // Filter for video posts that DON'T have feedShortsBusinessId
-                // This ensures only feed videos (not shorts) are shown
                 val videoPosts = responseBody?.data?.data?.posts?.filter { post ->
-                    post.contentType == "mixed_files" &&
-                            post.fileTypes.any {
-                                it.fileType?.contains("video", ignoreCase = true) == true
-                            } &&
-                            post.feedShortsBusinessId.isNullOrEmpty() // CRITICAL: Only show feed videos, not shorts
+                    post.contentType == "mixed_files" && post.fileTypes.any {
+                        //  Add null safety check
+                        it.fileType?.contains("video", ignoreCase = true) == true
+                    }
                 } ?: emptyList()
 
                 if (videoPosts.isNotEmpty()) {
@@ -2785,6 +2609,27 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun successEvent(event: UploadSuccessful) {
+        if (event.success) {
+            progressBarLayout.visibility = View.GONE
+            progressViewModel.totalProgress = 0
+        } else {
+            progressBarLayout.visibility = View.VISIBLE
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun pausePlayEvent(event: PausePlayEvent) {
+        Log.d("pausePlayEvent", "pausePlayEvent ${count + 1}")
+        if (exoPlayer?.isPlaying == true) {
+            pauseVideo()
+        } else {
+            playVideo()
+        }
+
+    }
+
     @SuppressLint("SetTextI18n")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
@@ -2880,6 +2725,28 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
     fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun openUploadShortsActivity(videoUri: Uri) {
+        val intent = Intent(requireContext(), UploadShortsActivity::class.java).apply {
+            putExtra(UploadShortsActivity.EXTRA_VIDEO_URI, videoUri)
+        }
+        startActivityForResult(intent, REQUEST_UPLOAD_SHORTS_ACTIVITY)
+
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == REQUEST_UPLOAD_SHORTS_ACTIVITY) {
+            if (resultCode == Activity.RESULT_OK) {
+
+
+            } else {
+
+            }
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -2990,6 +2857,8 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
 
     }
+
+
 
     private fun startPreLoadingService() {
         Log.d(SHORTS, "Preloading called")
@@ -3584,7 +3453,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
         requireActivity().finish()
         startActivity(intent)
     }
-
 
 }
 
