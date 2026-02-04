@@ -289,11 +289,8 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
             if (fileSizeInMB <= 10) {
                 Log.d("uriFileSize", "compressShorts: less than 10mb - no compression needed")
 
-                // ❌ OLD CODE - Started at 50%
-                // EventBus.getDefault().post(ProgressEvent(uniqueId, 50))
-
-                // ✅ NEW CODE - Start at 0% for smooth progress
-                EventBus.getDefault().post(ProgressEvent(uniqueId, 0))
+                // ✅ REMOVED - Don't post 0% for non-compressed videos
+                // This prevents UI from showing before upload actually starts
 
                 val thumbnailFile = saveBitmapToFile(thumbnail, applicationContext)
                 val thumbnailFilePath = thumbnailFile.absolutePath
@@ -352,6 +349,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
                             override fun onStart(index: Int) {
                                 Log.d("Compress", "Compression started")
+                                // ✅ KEEP THIS - Show UI immediately when compression starts
                                 EventBus.getDefault().post(ProgressEvent(uniqueId, 0))
                             }
 
