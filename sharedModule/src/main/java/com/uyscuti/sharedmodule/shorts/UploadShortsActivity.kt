@@ -229,6 +229,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         finish()
     }
 
+
     private suspend fun extractThumbnail(videoUrl: Uri): List<Bitmap>? {
         return try {
             val retriever = MediaMetadataRetriever()
@@ -296,11 +297,11 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         // Generate uniqueId here so we can pass it back immediately
         currentUploadUniqueId = UniqueIdGenerator.generateUniqueId()
 
-        compressShorts() // Pass it to compressShorts
+        compressShorts(currentUploadUniqueId!!)
     }
 
     @SuppressLint("SetTextI18n")
-    private fun compressShorts() {
+    private fun compressShorts(uniqueId: String) {
         val uniqueId = UniqueIdGenerator.generateUniqueId()
         Log.d("progress id", uniqueId)
 

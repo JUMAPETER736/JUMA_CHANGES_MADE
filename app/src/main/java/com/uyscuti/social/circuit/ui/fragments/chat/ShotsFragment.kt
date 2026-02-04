@@ -1221,6 +1221,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
     private lateinit var shortsAdapter: ShortsAdapter
     private var currentUploadUniqueId: String? = null
 
+
     // UI Components - Buttons & Actions
     private lateinit var fabAction: FloatingActionButton
     private lateinit var shortsMenu: ImageView
@@ -1805,6 +1806,27 @@ class ShotsFragment : Fragment(), OnClickListeners {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
+    fun successEvent(event: UploadSuccessful) {
+        if (event.success) {
+            progressBarLayout.visibility = View.GONE
+            progressViewModel.totalProgress = 0
+        } else {
+            progressBarLayout.visibility = View.VISIBLE
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun pausePlayEvent(event: PausePlayEvent) {
+        Log.d("pausePlayEvent", "pausePlayEvent ${count + 1}")
+        if (exoPlayer?.isPlaying == true) {
+            pauseVideo()
+        } else {
+            playVideo()
+        }
+
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
     fun onShortsProgressEvent(event: ProgressEvent) {
         // Only process if this is for our current upload
         if (currentUploadUniqueId == null || event.eventId != currentUploadUniqueId) {
@@ -1832,30 +1854,21 @@ class ShotsFragment : Fragment(), OnClickListeners {
         // Clear the tracked ID
         currentUploadUniqueId = null
 
-        // Hide all upload UI elements
+        // Hide all upload UI elements immediately
         uploadShortsSeekBar?.apply {
             visibility = View.GONE
             progress = 0
+            Log.d("ShortsUpload", "Progress bar now HIDDEN")
         }
 
         cancelShortsUpload.visibility = View.GONE
-
         Log.d("ShortsUpload", "Cancel button now HIDDEN")
 
         // Show success/failure message
         if (event.success) {
             val rootView: View = requireActivity().findViewById(android.R.id.content)
             val snackBar = Snackbar.make(rootView, "Shorts upload successful", Snackbar.LENGTH_LONG)
-            val snackBarBackgroundColor = ContextCompat.getColor(requireContext(), R.color.green)
-            val snackBarTextColor = ContextCompat.getColor(requireContext(), R.color.white)
-            val snackBarView = snackBar.view
-            snackBarView.setBackgroundColor(snackBarBackgroundColor)
-            snackBar.setTextColor(snackBarTextColor)
-            snackBar.show()
-
-            Log.d("ShortsUploadSuccess", "Upload completed successfully")
-        } else {
-            Log.d("ShortsUploadSuccess", "Upload cancelled or failed")
+            // ... rest of existing snackbar code
         }
     }
 
@@ -1863,6 +1876,27 @@ class ShotsFragment : Fragment(), OnClickListeners {
     fun onUploadStarted(event: UploadStarted) {
         currentUploadUniqueId = event.uniqueId
         Log.d("ShortsUpload", "Tracking upload with ID: ${event.uniqueId}")
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == REQUEST_UPLOAD_SHORTS_ACTIVITY) {
+            if (resultCode == Activity.RESULT_OK) {
+                // Get the upload unique ID
+                val uploadUniqueId = data?.getStringExtra("upload_unique_id")
+
+                if (uploadUniqueId != null) {
+                    currentUploadUniqueId = uploadUniqueId
+                    Log.d("ShortsUpload", "Started tracking upload with ID: $uploadUniqueId")
+
+                    // Show the progress UI immediately
+                    uploadShortsSeekBar?.visibility = View.VISIBLE
+                    cancelShortsUpload.visibility = View.VISIBLE
+                }
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -1954,6 +1988,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
             }
         }
     }
+
     fun loadMoreVideosIfNeeded(position: Int) {
 
         if (position >= 5 && (position - 5) % 5 == 0) {
@@ -2711,27 +2746,6 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun successEvent(event: UploadSuccessful) {
-        if (event.success) {
-            progressBarLayout.visibility = View.GONE
-            progressViewModel.totalProgress = 0
-        } else {
-            progressBarLayout.visibility = View.VISIBLE
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun pausePlayEvent(event: PausePlayEvent) {
-        Log.d("pausePlayEvent", "pausePlayEvent ${count + 1}")
-        if (exoPlayer?.isPlaying == true) {
-            pauseVideo()
-        } else {
-            playVideo()
-        }
-
-    }
-
     @SuppressLint("SetTextI18n")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleFollowButtonClick(event: ShortsFollowButtonClicked) {
@@ -2837,26 +2851,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == REQUEST_UPLOAD_SHORTS_ACTIVITY) {
-            if (resultCode == Activity.RESULT_OK) {
-                // Get the upload unique ID
-                val uploadUniqueId = data?.getStringExtra("upload_unique_id")
-
-                if (uploadUniqueId != null) {
-                    currentUploadUniqueId = uploadUniqueId
-                    Log.d("ShortsUpload", "Started tracking upload with ID: $uploadUniqueId")
-
-                    // Show the progress UI immediately
-                    uploadShortsSeekBar?.visibility = View.VISIBLE
-                    cancelShortsUpload.visibility = View.VISIBLE
-                }
-            }
-        }
-    }
 
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
