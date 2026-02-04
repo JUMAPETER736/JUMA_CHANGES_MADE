@@ -101,6 +101,17 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         finish()
     }
 
+    // ✅ NEW: Subscribe to upload success/failure events
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onUploadComplete(event: UploadSuccessful) {
+        Log.d("UploadActivity", "Upload completed: success=${event.success}")
+
+        // Now finish the activity after upload completes
+        val resultIntent = Intent()
+        setResult(RESULT_OK, resultIntent)
+        finish()
+    }
+
     @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -183,17 +194,13 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
         caption = binding.editTextText.text.toString().trim()
         uploadShorts(videoUri, caption)
-        val resultIntent = Intent()
-        setResult(RESULT_OK, resultIntent)
-        finish()
+
     }
 
     private fun uploadThumbnail() {
         caption = binding.editTextText.text.toString().trim()
         uploadShorts(videoUri, caption)
-        val resultIntent = Intent()
-        setResult(RESULT_OK, resultIntent)
-        finish()
+
     }
 
     private suspend fun extractThumbnail(videoUrl: Uri): List<Bitmap>? {
@@ -289,9 +296,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
             if (fileSizeInMB <= 10) {
                 Log.d("uriFileSize", "compressShorts: less than 10mb - no compression needed")
 
-                // ✅ REMOVED - Don't post 0% for non-compressed videos
-                // This prevents UI from showing before upload actually starts
-
                 val thumbnailFile = saveBitmapToFile(thumbnail, applicationContext)
                 val thumbnailFilePath = thumbnailFile.absolutePath
                 val fileId: String = generateRandomId()
@@ -338,7 +342,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                         listener = object : CompressionListener {
                             override fun onProgress(index: Int, percent: Float) {
                                 if (percent <= 100) {
-                                    // Compression takes 0-50% of total progress
                                     val compressionProgress = (percent / 2).toInt()
                                     EventBus.getDefault().post(
                                         ProgressEvent(uniqueId, compressionProgress)
@@ -349,7 +352,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
                             override fun onStart(index: Int) {
                                 Log.d("Compress", "Compression started")
-                                // ✅ KEEP THIS - Show UI immediately when compression starts
                                 EventBus.getDefault().post(ProgressEvent(uniqueId, 0))
                             }
 
@@ -358,7 +360,6 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                                 Log.d("Compress", "short file size: ${getFileSize(size)}")
                                 Log.d("Compress", "short path: $path")
 
-                                // Compression done at 50%
                                 EventBus.getDefault().post(ProgressEvent(uniqueId, 50))
 
                                 val thumbnailFile = saveBitmapToFile(thumbnail, applicationContext)
@@ -436,23 +437,16 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         binding.cancelButton.setOnClickListener {
             Log.d("CancelUpload", "Cancel button in Activity clicked")
 
-            // Cancel WorkManager
             uploadWorkRequest?.let { workRequest ->
                 val workManager = WorkManager.getInstance(applicationContext)
                 workManager.cancelWorkById(workRequest.id)
                 uploadWorkRequest = null
             }
 
-            // Cancel video compression
             VideoCompressor.cancel()
-
-            // Send event to hide UI in ShotsFragment
             EventBus.getDefault().post(CancelShortsUpload(cancel = true))
-
-            // Post upload unsuccessful event
             EventBus.getDefault().post(UploadSuccessful(success = false))
 
-            // Finish activity
             finish()
         }
     }
@@ -460,13 +454,11 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     override fun onDestroy() {
         super.onDestroy()
 
-        // Cancel any ongoing operations
         uploadWorkRequest?.let {
             WorkManager.getInstance(applicationContext).cancelWorkById(it.id)
         }
         VideoCompressor.cancel()
 
-        // Unregister EventBus
         if (EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().unregister(this)
         }
