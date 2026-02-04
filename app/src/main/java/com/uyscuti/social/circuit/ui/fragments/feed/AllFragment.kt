@@ -169,30 +169,15 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     private lateinit var progressBar: ProgressBar
     private lateinit var frameLayout: FrameLayout
     private val requestCode = 2024
-    private val PICK_VIDEO_REQUEST = "video/*"
     private val WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 12
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
-    private var feedTextViewFragment: FeedTextViewFragment? = null
-    private var feedImageViewFragment: FeedImageViewFragment? = null
-    private var feedVideoViewFragment: FeedVideoViewFragment? = null
-    private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
-    private var feedDocsViewFragment: FeedDocumentViewFragment? = null
-    private var feedAudioViewFragment: FeedAudioViewFragment? = null
-    private var fragmentOriginalPostWithRepostInside: Fragment_Original_Post_With_Repost_Inside? = null
-    private var feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
-    private var feedRepostDocFragment: FeedRepostDocFragment? = null
-    private var feedRepostTextFragment: FeedRepostTextFragment? = null
-    private var feedRepostVideoViewFragment: FeedRepostVideoViewFragment? = null
-    private var feedRepostAudioViewFragment: FeedRepostAudioViewFragment? = null
-    private var feedRepostImageFragment: FeedRepostImageFragment? = null
     private val feedShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
     private val dialogViewModel: DialogViewModel by activityViewModels()
     private var currentAdapterPosition = -1
     private lateinit var feedUploadRepository: FeedUploadRepository
     private var positionFromShorts: SetAllFragmentScrollPosition? = null
-    private var feedRepostMultipleImageFragment: FeedRepostMultipleImageFragment? = null
     private var blockedUserIds = mutableSetOf<String>()
     private var isFragmentOpen = false
 
@@ -333,11 +318,11 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
 
         })
-        //      allFeedAdapterRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+
         lifecycleScope.launch(Dispatchers.Main) {
-            //            Log.d(TAG, "onCreateView: ${getFeedViewModel.getAllFeedData()}")
+
             if (getFeedViewModel.getAllFeedData().isEmpty()) {
-                //              Log.d(TAG, "onCreateView: get all feed data is empty")
+              
                 getAllFeed(allFeedAdapter.startPage)
             } else {
                 Log.d(TAG, "onCreateView: get all feed data is not empty")
@@ -792,7 +777,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedUploadResponseEvent(event: FeedUploadResponseEvent) {
         Log.d("feedUploadResponseEvent", "feedUploadResponseEvent: ")
-//        val feedPosition = allFeedAdapter.getPositionById(event.data._id)
+
         val feedPost = getFeedViewModel.getSingleAllFeedData()
 
         feedPost._id = event.id
