@@ -124,8 +124,7 @@ interface MessageDao {
     @Query("DELETE FROM messages WHERE chatId = :chatId")
     suspend fun deleteMessagesByChatId(chatId: String)
 
-//    @Query("SELECT * FROM messages WHERE chatId = :chatId AND createdAt > :startDate ORDER BY createdAt")
-//    fun getMessagesAfter(chatId: String, startDate: Date): List<MessageEntity>
+
 
     // Other query and update methods as needed
 }

@@ -13,7 +13,6 @@ data class NotificationEntity (
     val notificationTime: String,
     val owner: String,
     val isRead : Boolean = false,
-//    val colorState: String,
     @PrimaryKey val _id : String,
 
 )

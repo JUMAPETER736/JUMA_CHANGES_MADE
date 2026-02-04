@@ -16,8 +16,6 @@ interface ShortsDao {
     @Insert(onConflict =  OnConflictStrategy.REPLACE)
     suspend fun storeShorts(shorts: List<ShortsEntity>)
 
-//    @Insert(onConflict =  OnConflictStrategy.REPLACE)
-//    suspend fun storeFollowListShorts(shorts: List<FollowListItem>)
 
     @Insert(onConflict =  OnConflictStrategy.IGNORE)
     suspend fun storeUserProfileShorts(shorts: List<UserShortsEntity>)
@@ -31,13 +29,10 @@ interface ShortsDao {
     @Query("SELECT * FROM shorts")
     suspend fun getAllShortsList(): List<ShortsEntity>
 
-//    @Query("SELECT * FROM userShorts")
-//   suspend fun getUserAllShortsList(): List<UserShortsEntity>
+
 
     @Query("SELECT * FROM userShorts LIMIT :pageSize OFFSET :offset")
     suspend fun getShortsForPage(pageSize: Int, offset: Int): List<UserShortsEntity>
-//    @Query("SELECT * FROM shorts_table")
-//    fun getAllUserShorts(): LiveData<List<ShortsEntity>>
 
 
     @Query("SELECT * FROM local_user LIMIT 1")

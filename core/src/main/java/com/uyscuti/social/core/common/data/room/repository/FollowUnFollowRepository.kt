@@ -23,9 +23,6 @@ class FollowUnFollowRepository(private val followDao: FollowUnFollowDao) {
 
     }
 
-//    suspend fun deleteFollowById(userId: String) {
-//        followDao.deleteFollowById(userId)
-//    }
     suspend fun deleteFollowById(userId: String): Boolean {
         val rowsDeleted = followDao.deleteFollowById(userId)
         return rowsDeleted > 0

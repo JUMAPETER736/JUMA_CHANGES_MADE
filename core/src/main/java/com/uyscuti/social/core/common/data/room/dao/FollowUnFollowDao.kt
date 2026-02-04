@@ -11,9 +11,7 @@ import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 interface FollowUnFollowDao {
     @Query("SELECT * FROM follow_table")
     fun getAllFollows(): LiveData<List<FollowUnFollowEntity>>
-//
-//    @Query("SELECT * FROM follow_table WHERE userId = :userId")
-//    fun getFollowUnFollowById(userId: String): LiveData<FollowUnFollowEntity?>
+
 
     @Query("SELECT * FROM follow_table WHERE userId = :userId")
     fun getFollowStatus(userId: String): LiveData<FollowUnFollowEntity?>

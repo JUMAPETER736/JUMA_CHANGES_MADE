@@ -12,9 +12,7 @@ interface ShortCommentsDao {
 
     @Query("SELECT * FROM comments_table")
     fun getAllComments(): LiveData<List<ShortCommentEntity>>
-//
-//    @Query("SELECT * FROM follow_table WHERE userId = :userId")
-//    fun getFollowUnFollowById(userId: String): LiveData<FollowUnFollowEntity?>
+
 
     @Query("SELECT * FROM comments_table WHERE postId = :postId")
     fun getCommentStatus(postId: String): LiveData<ShortCommentEntity?>

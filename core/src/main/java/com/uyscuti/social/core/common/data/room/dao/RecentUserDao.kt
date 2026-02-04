@@ -16,8 +16,6 @@ interface RecentUserDao {
     @Query("SELECT * FROM recent_users ORDER BY dateAdded DESC")
     fun getRecentUsers(): List<RecentUser>
 
-//    @Query("SELECT * FROM recent_users")
-//    fun getRecentUsers(): List<RecentUser>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertRecentUser(dialog: RecentUser)

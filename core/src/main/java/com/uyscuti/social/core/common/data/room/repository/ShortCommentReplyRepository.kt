@@ -23,9 +23,6 @@ class ShortCommentReplyRepository(private val commentReplyDao: ShortCommentReply
 
     }
 
-    //    suspend fun deleteFollowById(userId: String) {
-//        followDao.deleteFollowById(userId)
-//    }
     suspend fun deleteCommentReplyById(commentReplyId: String): Boolean {
         val rowsDeleted = commentReplyDao.deleteCommentReplyById(commentReplyId)
         return rowsDeleted > 0
