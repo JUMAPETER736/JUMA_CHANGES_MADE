@@ -197,29 +197,25 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
         caption = binding.editTextText.text.toString().trim()
 
-        //Set result and finish FIRST (returns to ShotsFragment)
+        // ✅ Start upload FIRST (but don't wait for it)
+        uploadShorts(videoUri, caption)
+
+        // ✅ Then finish immediately - returns to ShotsFragment
         val resultIntent = Intent()
         setResult(RESULT_OK, resultIntent)
         finish()
-
-        // Start upload AFTER a delay (giving fragment time to be visible and register EventBus)
-        Handler(Looper.getMainLooper()).postDelayed({
-            uploadShorts(videoUri, caption)
-        }, 500) // 500ms delay to ensure fragment is ready
     }
 
     private fun uploadThumbnail() {
         caption = binding.editTextText.text.toString().trim()
 
-        //Set result and finish FIRST (returns to ShotsFragment)
+        // ✅ Start upload FIRST (but don't wait for it)
+        uploadShorts(videoUri, caption)
+
+        // ✅ Then finish immediately - returns to ShotsFragment
         val resultIntent = Intent()
         setResult(RESULT_OK, resultIntent)
         finish()
-
-        //Start upload AFTER a delay (giving fragment time to be visible and register EventBus)
-        Handler(Looper.getMainLooper()).postDelayed({
-            uploadShorts(videoUri, caption)
-        }, 500) // 500ms delay to ensure fragment is ready
     }
 
     private suspend fun extractThumbnail(videoUrl: Uri): List<Bitmap>? {

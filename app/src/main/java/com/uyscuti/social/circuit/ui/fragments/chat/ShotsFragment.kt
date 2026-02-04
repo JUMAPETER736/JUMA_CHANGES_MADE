@@ -1850,6 +1850,7 @@ class ShotsFragment : Fragment(), OnClickListeners {
             Log.d("ShortsUploadSuccess", "Upload cancelled or failed")
         }
     }
+    
 
     override fun onDestroy() {
         super.onDestroy()
