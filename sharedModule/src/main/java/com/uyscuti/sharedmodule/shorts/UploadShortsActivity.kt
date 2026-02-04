@@ -88,6 +88,8 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     private val uris = mutableListOf<Uri>()
     private var imagePickLauncher: ActivityResultLauncher<Intent>? = null
     private var uploadWorkRequest: OneTimeWorkRequest? = null
+    private var currentUploadUniqueId: String? = null
+
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onProgressEvent(event: CancelShortsUpload) {
@@ -109,7 +111,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         finish()
     }
 
-    // ✅ NEW: Subscribe to upload success/failure events
+    // Subscribe to upload success/failure events
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onUploadComplete(event: UploadSuccessful) {
         Log.d("UploadActivity", "Upload completed: success=${event.success}")
@@ -202,11 +204,13 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         }
         caption = binding.editTextText.text.toString().trim()
 
-        // Start upload FIRST (but don't wait for it)
+        // Start upload - this will set currentUploadUniqueId
         uploadShorts(videoUri, caption)
 
-        // Then finish immediately - returns to ShotsFragment
-        val resultIntent = Intent()
+        // Pass the uniqueId back to ShotsFragment
+        val resultIntent = Intent().apply {
+            putExtra("upload_unique_id", currentUploadUniqueId)
+        }
         setResult(RESULT_OK, resultIntent)
         finish()
     }
@@ -214,11 +218,13 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
     private fun uploadThumbnail() {
         caption = binding.editTextText.text.toString().trim()
 
-        // Start upload FIRST (but don't wait for it)
+        // Start upload - this will set currentUploadUniqueId
         uploadShorts(videoUri, caption)
 
-        // Then finish immediately - returns to ShotsFragment
-        val resultIntent = Intent()
+        // Pass the uniqueId back to ShotsFragment
+        val resultIntent = Intent().apply {
+            putExtra("upload_unique_id", currentUploadUniqueId)
+        }
         setResult(RESULT_OK, resultIntent)
         finish()
     }
@@ -286,7 +292,11 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
     private fun uploadShorts(videoUri: Uri, caption: String) {
         uris.add(videoUri)
-        compressShorts()
+
+        // Generate uniqueId here so we can pass it back immediately
+        currentUploadUniqueId = UniqueIdGenerator.generateUniqueId()
+
+        compressShorts() // Pass it to compressShorts
     }
 
     @SuppressLint("SetTextI18n")
@@ -300,6 +310,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
         val fileSizeInMB = fileSizeInKB?.div(1024)
         val fileSizeInGb = fileSizeInMB?.div(1024)
 
+        this.currentUploadUniqueId = uniqueId
         EventBus.getDefault().post(UploadStarted(uniqueId))
         Log.d("uriFileSize", "uri.scheme ${uri.scheme} compressShorts:uriFileSize: $uriFileSize  fileSizeInKB $fileSizeInKB fileSizeInMB $fileSizeInMB fileSizeInGb $fileSizeInGb")
 

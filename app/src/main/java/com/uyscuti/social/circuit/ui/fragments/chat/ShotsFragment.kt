@@ -1812,19 +1812,16 @@ class ShotsFragment : Fragment(), OnClickListeners {
             return
         }
 
-        // Show upload UI elements when progress starts
+        // Update progress
         uploadShortsSeekBar?.apply {
             if (visibility != View.VISIBLE) {
                 visibility = View.VISIBLE
-                Log.d("ShortsUpload", "Progress bar now VISIBLE for ID: ${event.eventId}")
             }
             progress = event.progress
         }
 
-        // Show cancel button when upload is active
         if (cancelShortsUpload.visibility != View.VISIBLE) {
             cancelShortsUpload.visibility = View.VISIBLE
-            Log.d("ShortsUpload", "Cancel button now VISIBLE")
         }
 
         Log.d("ShortsUploadProgress", "Progress: ${event.progress}% for ID: ${event.eventId}")
@@ -1832,15 +1829,17 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onShortsUploadSuccess(event: UploadSuccessful) {
-        // Hide all upload UI elements immediately
+        // Clear the tracked ID
         currentUploadUniqueId = null
 
-        // Hide all upload UI elements immediately
+        // Hide all upload UI elements
         uploadShortsSeekBar?.apply {
             visibility = View.GONE
+            progress = 0
         }
 
-            cancelShortsUpload.visibility = View.GONE
+        cancelShortsUpload.visibility = View.GONE
+
         Log.d("ShortsUpload", "Cancel button now HIDDEN")
 
         // Show success/failure message
@@ -2844,10 +2843,17 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
         if (requestCode == REQUEST_UPLOAD_SHORTS_ACTIVITY) {
             if (resultCode == Activity.RESULT_OK) {
+                // Get the upload unique ID
+                val uploadUniqueId = data?.getStringExtra("upload_unique_id")
 
+                if (uploadUniqueId != null) {
+                    currentUploadUniqueId = uploadUniqueId
+                    Log.d("ShortsUpload", "Started tracking upload with ID: $uploadUniqueId")
 
-            } else {
-
+                    // Show the progress UI immediately
+                    uploadShortsSeekBar?.visibility = View.VISIBLE
+                    cancelShortsUpload.visibility = View.VISIBLE
+                }
             }
         }
     }
