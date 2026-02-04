@@ -39,6 +39,15 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
     val isMineFeedDataAvailable: LiveData<Boolean>
         get() = isMyFeedDataAvailable
 
+
+    private var allFeedRepostData: MutableList<com.uyscuti.social.network.api.response.posts.OriginalPost> = mutableListOf()
+    private var allFeedData: MutableList<com.uyscuti.social.network.api.response.posts.Post> = mutableListOf()
+    private var allFavoriteFeedData: MutableList<com.uyscuti.social.network.api.response.posts.Post> = mutableListOf()
+    private var myFeedData: MutableList<com.uyscuti.social.network.api.response.posts.Post> = mutableListOf()
+    private var follow: MutableList< com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList> = mutableListOf()
+    private val _myData = MutableLiveData<RefreshFeedData>()
+    val myData: LiveData<RefreshFeedData> get() = _myData
+
     // Function to update the value of isResuming
     fun setIsDataAvailable(resuming: Boolean) {isDataAvailable.value = resuming
 
@@ -49,16 +58,6 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
 
     fun setIsFeedDataAvailable(resuming: Boolean) {isFavoriteFeedDataAvailable.value = resuming
     }
-
-    fun setIsMyFeedDataAvailable(resuming: Boolean) {isMyFeedDataAvailable.value = resuming
-    }
-
-    private var allFeedRepostData: MutableList<com.uyscuti.social.network.api.response.posts.OriginalPost> = mutableListOf()
-    private var allFeedData: MutableList<com.uyscuti.social.network.api.response.posts.Post> = mutableListOf()
-    private var allFavoriteFeedData: MutableList<com.uyscuti.social.network.api.response.posts.Post> = mutableListOf()
-    private var myFeedData: MutableList<com.uyscuti.social.network.api.response.posts.Post> = mutableListOf()
-
-    private var allFollowingFeedData: MutableList<com.uyscuti.social.network.api.response.posts.Post> = mutableListOf()
 
     fun getAllFeedData(): MutableList<com.uyscuti.social.network.api.response.posts.Post> {
         return allFeedData
@@ -201,15 +200,14 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
         return -1 // Return -1 if item with given ID is not found
     }
 
-    private val _myData = MutableLiveData<RefreshFeedData>()
-    val myData: LiveData<RefreshFeedData> get() = _myData
+
 
     // Method to set the values
     fun setRefreshMyData(position: Int, booleanValue: Boolean) {
         _myData.value = RefreshFeedData(position, booleanValue)
     }
 
-    private var follow: MutableList< com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList> = mutableListOf()
+
 
     fun getFollowList():List<com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList> {
         return follow
