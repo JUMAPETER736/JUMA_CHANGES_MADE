@@ -1550,13 +1550,13 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         val customTitleView: View = inflater.inflate(
             R.layout.delete_title_custom_layout, null)
         val builder = AlertDialog.Builder(requireContext())
-//        builder.setTitle("Delete Feed Confirmation")
+
         builder.setCustomTitle(customTitleView)
         builder.setMessage("Are you sure you want to delete this feed?")
 
         // Positive Button
         builder.setPositiveButton("Delete") { dialog, which ->
-//             Handle delete action
+
 
             handleDeleteAction(feedId = feedId, position) { isSuccess, message ->
                 if (isSuccess) {
@@ -1646,7 +1646,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                         } catch (e: Exception) {
                             e.printStackTrace()
                         }
-//                        getFeedViewModel.setRefreshMyData(pos, true)
+
                     } else {
                         Log.d(TAG, "handleDeleteAction: feed data not found for all fragment")
                     }
@@ -1713,7 +1713,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         tappedFilesFragment.arguments = args
 
         // Set listener if your fragment implements one
-        // tappedFilesFragment.setListener(this)
+
 
         // Replace fragment
         requireActivity().supportFragmentManager.beginTransaction()
@@ -2105,7 +2105,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         EventBus.getDefault().post(FeedFavoriteClick(position, data))
-//        EventBus.getDefault().post(FromFavoriteFragmentFeedFavoriteClick(position, data))
+
         val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
         if (!isMyFeedEmpty) {
             val myFeedData = getFeedViewModel.getMyFeedData()
@@ -2152,16 +2152,16 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         dialog.show()
         val reportOptionLayout: LinearLayout = view.findViewById(R.id.reportOption)
         val hidePostLayout: LinearLayout = view.findViewById(R.id.hidePostOption)
-//        val muteOptionLayout : LinearLayout = view.findViewById(R.id.muteOptionLayout)
+
         val followUnfollowLayout: LinearLayout = view.findViewById(R.id.followUnfollowOption)
         val notInterestedLayout: LinearLayout = view.findViewById(R.id.notInterestedOption)
         notInterestedLayout.visibility = View.GONE
         hidePostLayout.visibility = View.GONE
         followUnfollowLayout.visibility = View.GONE
-//        muteOptionLayout.visibility = View.GONE
+
         hidePostLayout.setOnClickListener {
             Log.d("HideLayout", "has been clicked")
-//            showDeleteConfirmationDialog(data._id, position)
+
         }
         reportOptionLayout.setOnClickListener {
             Log.d("reportUser", "has been clicked")
