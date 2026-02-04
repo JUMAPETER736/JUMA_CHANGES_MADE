@@ -129,46 +129,6 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
         }
     }
 
-    fun addFollowingFeedData(allFeedData: MutableList<com.uyscuti.social.network.api.response.posts.Post>) {
-        Log.d(TAG, "addAllFeedData: $allFeedData")
-
-        allFeedData.let { newData ->
-            for (post in newData) {
-                // Check if post with the same ID already exists in allFeedData
-                val existingPost = this.allFollowingFeedData.find { it._id == post._id }
-                if (existingPost == null) {
-                    Log.d(TAG, "addAllFeedData: post not in all")
-                    this.allFollowingFeedData.add(post)
-
-                } else {
-                    Log.d(TAG, "addAllFeedData: feed already exists ${existingPost._id}")
-                }
-            }
-        }
-        CoroutineScope(Dispatchers.Main).launch {
-            setIsFeedDataAvailable(true)
-        }
-    }
-    fun addMyFeedData(allFeedData: MutableList<com.uyscuti.social.network.api.response.posts.Post>) {
-        Log.d(TAG, "addAllFeedData: $allFeedData")
-
-        allFeedData.let { newData ->
-            for (post in newData) {
-                // Check if post with the same ID already exists in allFeedData
-                val existingPost = this.myFeedData.find { it._id == post._id }
-                if (existingPost == null) {
-                    Log.d(TAG, "addAllFeedData: post not in all")
-                    this.myFeedData.add(post)
-                } else {
-                    Log.d(TAG, "addAllFeedData: feed already exists ${existingPost._id}")
-                }
-            }
-        }
-        CoroutineScope(Dispatchers.Main).launch {
-            setIsMyFeedDataAvailable(true)
-        }
-    }
-
     fun addFavoriteFeed(position: Int, feed: com.uyscuti.social.network.api.response.posts.Post):Boolean {
 
         try {
@@ -180,16 +140,7 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
             return false  // Return false if an exception occurred
         }
     }
-    fun addSingleFeedToAllFeed(position: Int, feed: com.uyscuti.social.network.api.response.posts.Post):Boolean {
-        try {
-            Log.d(TAG, "addFavoriteFeed: add ${allFeedData.size}")
-            this.allFeedData.add(0, feed)
-            return true  // Return true if adding feed was successful
-        } catch (e: Exception) {
-            Log.e(TAG, "Error adding favorite feed", e)
-            return false  // Return false if an exception occurred
-        }
-    }
+
     fun removeFavoriteFeed(position: Int) {
         this.allFavoriteFeedData.removeAt(position)
     }
@@ -199,9 +150,6 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
     }
     fun removeMyFeed(position: Int) {
         this.myFeedData.removeAt(position)
-    }
-    fun clearFavoriteData() {
-        allFavoriteFeedData.clear()
     }
 
     fun updateForFavoriteFragment(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
