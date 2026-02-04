@@ -1890,21 +1890,21 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
                 if (uploadUniqueId != null) {
                     currentUploadUniqueId = uploadUniqueId
-                    Log.d("ShotsUpload", "Started tracking upload with ID: $uploadUniqueId")
+                    Log.d("ShotsUpload", "Received upload ID: $uploadUniqueId")
 
-                    // SHOW UI IMMEDIATELY
+                    // SHOW UI IMMEDIATELY - This is critical!
                     uploadShortsSeekBar?.apply {
                         visibility = View.VISIBLE
                         progress = 0
                     }
                     cancelShortsUpload.visibility = View.VISIBLE
 
-                    Log.d("ShotsUpload", "UI shown immediately after activity result")
+                    Log.d("ShotsUpload", "UI shown immediately in onActivityResult")
 
-                    // MANUALLY check for sticky events that were posted before we registered
+                    // Process any sticky events that were already posted
                     Handler(Looper.getMainLooper()).postDelayed({
                         checkAndConsumeStickyEvents(uploadUniqueId)
-                    }, 100) // Small delay to ensure EventBus is fully registered
+                    }, 50)
                 }
             }
         }
