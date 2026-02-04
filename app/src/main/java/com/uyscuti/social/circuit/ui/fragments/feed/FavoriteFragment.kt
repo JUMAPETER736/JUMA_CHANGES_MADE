@@ -685,8 +685,6 @@ class FavoriteFragment : Fragment(),
         }
     }
 
-
-
     private fun getAllFeed(page: Int) {
         CoroutineScope(Dispatchers.IO).launch {
             try {

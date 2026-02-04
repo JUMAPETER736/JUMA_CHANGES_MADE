@@ -26,6 +26,7 @@ import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
 import com.uyscuti.social.network.api.request.register.RegisterRequest
 import com.uyscuti.social.network.api.response.MainResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.AllFeedRepostsPost
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostRequest
 import com.uyscuti.social.network.api.response.business.response.background.BackgroundImageResponse
 import com.uyscuti.social.network.api.response.business.response.businesslocation.AdvertisementResponse
@@ -650,6 +651,12 @@ interface IFlashapi {
 
     @GET("feed/bookmarks/")
     suspend fun getFavoriteFeed(@Query("page") page: String): Response<FeedFavoriteResponse>
+
+    @POST("feed/bookmark/{postId}")
+    suspend fun bookmarkPost(@Path("postId") postId: String): Response<BookmarkResponse>
+
+    @DELETE("feed/bookmark/{postId}")
+    suspend fun unbookmarkPost(@Path("postId") postId: String): Response<BookmarkResponse>
 
 
     // ==================== FEED - COMMENTS ====================
