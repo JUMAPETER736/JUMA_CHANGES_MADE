@@ -1867,11 +1867,16 @@ class ShotsFragment : Fragment(), OnClickListeners {
         cancelShortsUpload.visibility = View.GONE
         Log.d("ShortsUpload", "Cancel button now HIDDEN")
 
+        // Clean up sticky events
+        EventBus.getDefault().removeStickyEvent(ProgressEvent::class.java)
+        EventBus.getDefault().removeStickyEvent(UploadStarted::class.java)
+        EventBus.getDefault().removeStickyEvent(UploadSuccessful::class.java)
+
         // Show success/failure message
         if (event.success) {
-            val rootView: View = requireActivity().findViewById(android.R.id.content)
-            val snackBar = Snackbar.make(rootView, "Shorts upload successful", Snackbar.LENGTH_LONG)
-            // ... rest of existing snackbar code
+            Toast.makeText(requireContext(), "Upload successful!", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(requireContext(), "Upload failed", Toast.LENGTH_SHORT).show()
         }
     }
 
