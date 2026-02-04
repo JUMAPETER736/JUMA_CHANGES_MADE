@@ -749,15 +749,17 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         Log.d(TAG, "feedFavoriteClick: favorite clicked")
         EventBus.getDefault().post(FeedFavoriteClick(position, data))
 
-
+        // Update local data in ViewModel
         val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
         if (!isMyFeedEmpty) {
             val myFeedData = getFeedViewModel.getMyFeedData()
             val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
             if (feedToUpdate != null) {
                 feedToUpdate.isBookmarked = data.isBookmarked
+                feedToUpdate.bookmarkCount = data.bookmarkCount
                 val myFeedDataPosition = getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
                 getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
+                Log.d(TAG, "feedFavoriteClick: Updated feed bookmark status in ViewModel")
             } else {
                 Log.d(TAG, "feedFavoriteClick: feed to update is not available in the list")
             }
@@ -765,9 +767,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             Log.i(TAG, "feedFavoriteClick: my feed data is empty")
         }
 
-        lifecycleScope.launch {
-            feedUploadViewModel.favoriteFeed(data._id)
-        }
+
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
