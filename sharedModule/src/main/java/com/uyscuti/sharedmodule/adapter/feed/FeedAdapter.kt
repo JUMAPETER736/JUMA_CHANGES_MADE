@@ -94,10 +94,6 @@ import com.uyscuti.social.network.api.response.posts.AuthorX
 import com.uyscuti.social.network.api.response.posts.Avatar
 import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.utils.LocalStorage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import retrofit2.Call
 import retrofit2.Callback
@@ -428,9 +424,6 @@ class FeedAdapter(
 
 
         private val TAG = "FeedTextOnlyViewHolder"
-
-        private val retrofitInterface = this@FeedAdapter.retrofitInterface
-        private val context = this@FeedAdapter.context
 
         // UI Components
         // Header Section Views
@@ -951,14 +944,13 @@ class FeedAdapter(
         }
 
         private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+
             Log.d(TAG, "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
             updateBookmarkButtonUI(data.isBookmarked ?: false)
             updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
 
             favoriteButton.setOnClickListener {
                 if (!favoriteButton.isEnabled) return@setOnClickListener
-
-                it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
                 Log.d(TAG, "Bookmark clicked for post: ${data._id}")
                 Log.d(TAG, "Current state before toggle: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
@@ -988,80 +980,60 @@ class FeedAdapter(
                 favoriteButton.isEnabled = false
                 favoriteButton.alpha = 0.8f
 
-                // ✅ USE COROUTINE WITH SUSPEND FUNCTIONS
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        val response = if (newBookmarkStatus) {
-                            Log.d(TAG, "Calling POST /feed/bookmark/${data._id}")
-                            retrofitInterface.apiService.bookmarkPost(data._id)
-                        } else {
-                            Log.d(TAG, "Calling DELETE /feed/bookmark/${data._id}")
-                            retrofitInterface.apiService.unbookmarkPost(data._id)
-                        }
-
-                        withContext(Dispatchers.Main) {
+                val bookmarkRequest = BookmarkRequest(newBookmarkStatus)
+                RetrofitClient.bookmarkService.toggleBookmark(data._id, bookmarkRequest)
+                    .enqueue(object : Callback<BookmarkResponse> {
+                        override fun onResponse(call: Call<BookmarkResponse>, response: Response<BookmarkResponse>) {
                             favoriteButton.alpha = 1f
                             favoriteButton.isEnabled = true
 
                             if (response.isSuccessful) {
                                 response.body()?.let { bookmarkResponse ->
-                                    Log.d(TAG, "Bookmark API success - isBookmarked: ${bookmarkResponse.isBookmarked}, Server count: ${bookmarkResponse.bookmarkCount}")
-
-                                    // Update with server values
-                                    data.isBookmarked = bookmarkResponse.isBookmarked
-                                    data.bookmarkCount = bookmarkResponse.bookmarkCount
-                                    totalTextBookMarkCounts = bookmarkResponse.bookmarkCount
-
-                                    updateBookmarkButtonUI(data.isBookmarked ?: false)
-                                    updateMetricDisplay(favoriteCounts, bookmarkResponse.bookmarkCount, "bookmark")
-
-                                    Log.d(TAG, "Updated bookmark from server: isBookmarked=${data.isBookmarked}, count=${bookmarkResponse.bookmarkCount}")
+                                    Log.d(TAG, "Bookmark API success - Server count: ${bookmarkResponse.bookmarkCount}")
+                                    if (abs(bookmarkResponse.bookmarkCount - data.bookmarkCount) > 1) {
+                                        data.bookmarkCount = bookmarkResponse.bookmarkCount
+                                        totalTextBookMarkCounts = data.bookmarkCount
+                                        updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+                                        Log.d(TAG, "Updated bookmark count from server: ${data.bookmarkCount}")
+                                    }
                                 }
                             } else {
-                                val errorBody = response.errorBody()?.string()
-                                Log.e(TAG, "Bookmark sync failed: ${response.code()} - $errorBody")
-
-                                // Revert on HTTP errors
+                                Log.e(TAG, "Bookmark sync failed: ${response.code()}")
+                                // Only revert on actual HTTP errors (not 2xx status codes)
                                 if (response.code() >= 400) {
                                     data.isBookmarked = previousBookmarkStatus
                                     data.bookmarkCount = previousBookmarkCount
-                                    totalTextBookMarkCounts = previousBookmarkCount
+                                    totalTextBookMarkCounts = data.bookmarkCount
                                     updateBookmarkButtonUI(data.isBookmarked ?: false)
-                                    updateMetricDisplay(favoriteCounts, previousBookmarkCount, "bookmark")
+                                    updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
                                     Log.d(TAG, "Reverted to previous state due to HTTP error: ${response.code()}")
-
-                                    withContext(Dispatchers.Main) {
-                                        Toast.makeText(context, "Bookmark failed: ${response.code()}", Toast.LENGTH_SHORT).show()
-                                    }
                                 }
                             }
                         }
-                    } catch (e: Exception) {
-                        withContext(Dispatchers.Main) {
+
+                        override fun onFailure(call: Call<BookmarkResponse>, t: Throwable) {
                             favoriteButton.alpha = 1f
                             favoriteButton.isEnabled = true
 
-                            // Handle JSON parsing errors separately
-                            if (e is MalformedJsonException ||
-                                e.message?.contains("MalformedJsonException") == true ||
-                                e.message?.contains("JsonReader.setStrictness") == true) {
+                            // Handle JSON parsing errors separately - don't revert UI
+                            if (t is MalformedJsonException ||
+                                t.message?.contains("MalformedJsonException") == true ||
+                                t.message?.contains("JsonReader.setStrictness") == true) {
                                 Log.w(TAG, "Bookmark API returned malformed JSON but operation likely succeeded - keeping UI state")
-                                return@withContext
+                                // Don't revert the UI changes as the operation likely succeeded on the server
+                                return
                             }
 
-                            // Revert for actual network failures
-                            Log.e(TAG, "Bookmark network error - reverting changes", e)
+                            // Only revert for actual network failures
+                            Log.e(TAG, "Bookmark network error - reverting changes", t)
                             data.isBookmarked = previousBookmarkStatus
                             data.bookmarkCount = previousBookmarkCount
-                            totalTextBookMarkCounts = previousBookmarkCount
+                            totalTextBookMarkCounts = data.bookmarkCount
                             updateBookmarkButtonUI(data.isBookmarked ?: false)
-                            updateMetricDisplay(favoriteCounts, previousBookmarkCount, "bookmark")
-
-                            Toast.makeText(context, "Network error: ${e.message}", Toast.LENGTH_SHORT).show()
-                            Log.d(TAG, "Reverted to previous state after network error")
+                            updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+                            Log.d(TAG, "Reverted to previous state after network error: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
                         }
-                    }
-                }
+                    })
 
                 // Always notify the listener regardless of API status
                 feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
@@ -1730,10 +1702,6 @@ class FeedAdapter(
     inner class FeedPostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         val TAG = "FeedPostViewHolder"
-
-        private val retrofitInterface = this@FeedAdapter.retrofitInterface
-        private val context = this@FeedAdapter.context
-
         // Profile and Header Elements
         private val profileImageView: ImageView = itemView.findViewById(R.id.profileImageView)
         private val textView: TextView = itemView.findViewById(R.id.textView)
@@ -2324,9 +2292,10 @@ class FeedAdapter(
         }
 
         private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-            Log.d(TAG, "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
+
+            Log.d(TAG, "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}, bookmarkCount=${totalMixedBookMarkCounts}")
             updateBookmarkButtonUI(data.isBookmarked ?: false)
-            updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+            updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
 
             favoriteButton.setOnClickListener {
                 if (!favoriteButton.isEnabled) return@setOnClickListener
@@ -2334,22 +2303,22 @@ class FeedAdapter(
                 it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
                 Log.d(TAG, "Bookmark clicked for post: ${data._id}")
-                Log.d(TAG, "Current state before toggle: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
+                Log.d(TAG, "Current state before toggle: isBookmarked=${data.isBookmarked}, bookmarkCount=${totalMixedBookMarkCounts}")
 
                 val newBookmarkStatus = !(data.isBookmarked ?: false)
                 val previousBookmarkStatus = data.isBookmarked ?: false
-                val previousBookmarkCount = data.bookmarkCount
+                val previousBookmarkCount = totalMixedBookMarkCounts
 
                 // Update data immediately
                 data.isBookmarked = newBookmarkStatus
-                data.bookmarkCount = if (newBookmarkStatus) data.bookmarkCount + 1 else maxOf(0, data.bookmarkCount - 1)
-                totalMixedBookMarkCounts = data.bookmarkCount
+                totalMixedBookMarkCounts = if (newBookmarkStatus) totalMixedBookMarkCounts + 1 else maxOf(0, totalMixedBookMarkCounts - 1)
+                data.bookmarkCount = totalMixedBookMarkCounts
 
-                Log.d(TAG, "New state after toggle: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
+                Log.d(TAG, "New state after toggle: isBookmarked=${data.isBookmarked}, bookmarkCount=${totalMixedBookMarkCounts}")
 
                 // Update UI immediately for better UX
                 updateBookmarkButtonUI(data.isBookmarked ?: false)
-                updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+                updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
 
                 // Animation
                 YoYo.with(if (newBookmarkStatus) Techniques.Tada else Techniques.Pulse)
@@ -2361,80 +2330,60 @@ class FeedAdapter(
                 favoriteButton.isEnabled = false
                 favoriteButton.alpha = 0.8f
 
-                // ✅ USE COROUTINE WITH SUSPEND FUNCTIONS
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        val response = if (newBookmarkStatus) {
-                            Log.d(TAG, "Calling POST /feed/bookmark/${data._id}")
-                            retrofitInterface.apiService.bookmarkPost(data._id)
-                        } else {
-                            Log.d(TAG, "Calling DELETE /feed/bookmark/${data._id}")
-                            retrofitInterface.apiService.unbookmarkPost(data._id)
-                        }
-
-                        withContext(Dispatchers.Main) {
+                val bookmarkRequest = BookmarkRequest(newBookmarkStatus)
+                RetrofitClient.bookmarkService.toggleBookmark(data._id, bookmarkRequest)
+                    .enqueue(object : Callback<BookmarkResponse> {
+                        override fun onResponse(call: Call<BookmarkResponse>, response: Response<BookmarkResponse>) {
                             favoriteButton.alpha = 1f
                             favoriteButton.isEnabled = true
 
                             if (response.isSuccessful) {
                                 response.body()?.let { bookmarkResponse ->
-                                    Log.d(TAG, "Bookmark API success - isBookmarked: ${bookmarkResponse.isBookmarked}, Server count: ${bookmarkResponse.bookmarkCount}")
-
-                                    // Update with server values
-                                    data.isBookmarked = bookmarkResponse.isBookmarked
-                                    data.bookmarkCount = bookmarkResponse.bookmarkCount
-                                    totalMixedBookMarkCounts = bookmarkResponse.bookmarkCount
-
-                                    updateBookmarkButtonUI(data.isBookmarked ?: false)
-                                    updateMetricDisplay(favoriteCounts, bookmarkResponse.bookmarkCount, "bookmark")
-
-                                    Log.d(TAG, "Updated bookmark from server: isBookmarked=${data.isBookmarked}, count=${bookmarkResponse.bookmarkCount}")
+                                    Log.d(TAG, "Bookmark API success - Server count: ${bookmarkResponse.bookmarkCount}")
+                                    if (abs(bookmarkResponse.bookmarkCount - totalMixedBookMarkCounts) > 1) {
+                                        data.bookmarkCount = bookmarkResponse.bookmarkCount
+                                        totalMixedBookMarkCounts = data.bookmarkCount
+                                        updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
+                                        Log.d(TAG, "Updated bookmark count from server: ${totalMixedBookMarkCounts}")
+                                    }
                                 }
                             } else {
-                                val errorBody = response.errorBody()?.string()
-                                Log.e(TAG, "Bookmark sync failed: ${response.code()} - $errorBody")
-
-                                // Revert on HTTP errors
+                                Log.e(TAG, "Bookmark sync failed: ${response.code()}")
+                                // Only revert on actual HTTP errors (not 2xx status codes)
                                 if (response.code() >= 400) {
                                     data.isBookmarked = previousBookmarkStatus
                                     data.bookmarkCount = previousBookmarkCount
-                                    totalMixedBookMarkCounts = previousBookmarkCount
+                                    totalMixedBookMarkCounts = data.bookmarkCount
                                     updateBookmarkButtonUI(data.isBookmarked ?: false)
-                                    updateMetricDisplay(favoriteCounts, previousBookmarkCount, "bookmark")
+                                    updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
                                     Log.d(TAG, "Reverted to previous state due to HTTP error: ${response.code()}")
-
-                                    withContext(Dispatchers.Main) {
-                                        Toast.makeText(context, "Bookmark failed: ${response.code()}", Toast.LENGTH_SHORT).show()
-                                    }
                                 }
                             }
                         }
-                    } catch (e: Exception) {
-                        withContext(Dispatchers.Main) {
+
+                        override fun onFailure(call: Call<BookmarkResponse>, t: Throwable) {
                             favoriteButton.alpha = 1f
                             favoriteButton.isEnabled = true
 
-                            // Handle JSON parsing errors separately
-                            if (e is MalformedJsonException ||
-                                e.message?.contains("MalformedJsonException") == true ||
-                                e.message?.contains("JsonReader.setStrictness") == true) {
+                            // Handle JSON parsing errors separately - don't revert UI
+                            if (t is MalformedJsonException ||
+                                t.message?.contains("MalformedJsonException") == true ||
+                                t.message?.contains("JsonReader.setStrictness") == true) {
                                 Log.w(TAG, "Bookmark API returned malformed JSON but operation likely succeeded - keeping UI state")
-                                return@withContext
+                                // Don't revert the UI changes as the operation likely succeeded on the server
+                                return
                             }
 
-                            // Revert for actual network failures
-                            Log.e(TAG, "Bookmark network error - reverting changes", e)
+                            // Only revert for actual network failures
+                            Log.e(TAG, "Bookmark network error - reverting changes", t)
                             data.isBookmarked = previousBookmarkStatus
                             data.bookmarkCount = previousBookmarkCount
-                            totalMixedBookMarkCounts = previousBookmarkCount
+                            totalMixedBookMarkCounts = data.bookmarkCount
                             updateBookmarkButtonUI(data.isBookmarked ?: false)
-                            updateMetricDisplay(favoriteCounts, previousBookmarkCount, "bookmark")
-
-                            Toast.makeText(context, "Network error: ${e.message}", Toast.LENGTH_SHORT).show()
-                            Log.d(TAG, "Reverted to previous state after network error")
+                            updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
+                            Log.d(TAG, "Reverted to previous state after network error: isBookmarked=${data.isBookmarked}, bookmarkCount=${totalMixedBookMarkCounts}")
                         }
-                    }
-                }
+                    })
 
                 // Always notify the listener regardless of API status
                 feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)

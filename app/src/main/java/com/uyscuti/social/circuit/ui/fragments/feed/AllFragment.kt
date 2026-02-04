@@ -169,15 +169,30 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     private lateinit var progressBar: ProgressBar
     private lateinit var frameLayout: FrameLayout
     private val requestCode = 2024
+    private val PICK_VIDEO_REQUEST = "video/*"
     private val WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 12
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
+    private var feedTextViewFragment: FeedTextViewFragment? = null
+    private var feedImageViewFragment: FeedImageViewFragment? = null
+    private var feedVideoViewFragment: FeedVideoViewFragment? = null
+    private var feedMixedFilesViewFragment: FeedMixedFilesViewFragment? = null
+    private var feedDocsViewFragment: FeedDocumentViewFragment? = null
+    private var feedAudioViewFragment: FeedAudioViewFragment? = null
+    private var fragmentOriginalPostWithRepostInside: Fragment_Original_Post_With_Repost_Inside? = null
+    private var feedMultipleImageViewFragment: FeedMultipleImageViewFragment? = null
+    private var feedRepostDocFragment: FeedRepostDocFragment? = null
+    private var feedRepostTextFragment: FeedRepostTextFragment? = null
+    private var feedRepostVideoViewFragment: FeedRepostVideoViewFragment? = null
+    private var feedRepostAudioViewFragment: FeedRepostAudioViewFragment? = null
+    private var feedRepostImageFragment: FeedRepostImageFragment? = null
     private val feedShortsSharedViewModel: FeedShortsViewModel by activityViewModels()
     private val dialogViewModel: DialogViewModel by activityViewModels()
     private var currentAdapterPosition = -1
     private lateinit var feedUploadRepository: FeedUploadRepository
     private var positionFromShorts: SetAllFragmentScrollPosition? = null
+    private var feedRepostMultipleImageFragment: FeedRepostMultipleImageFragment? = null
     private var blockedUserIds = mutableSetOf<String>()
     private var isFragmentOpen = false
 
@@ -318,11 +333,11 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
 
         })
-
+        //      allFeedAdapterRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         lifecycleScope.launch(Dispatchers.Main) {
-
+            //            Log.d(TAG, "onCreateView: ${getFeedViewModel.getAllFeedData()}")
             if (getFeedViewModel.getAllFeedData().isEmpty()) {
-
+                //              Log.d(TAG, "onCreateView: get all feed data is empty")
                 getAllFeed(allFeedAdapter.startPage)
             } else {
                 Log.d(TAG, "onCreateView: get all feed data is not empty")
@@ -734,17 +749,15 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         Log.d(TAG, "feedFavoriteClick: favorite clicked")
         EventBus.getDefault().post(FeedFavoriteClick(position, data))
 
-        // Update local data in ViewModel
+
         val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
         if (!isMyFeedEmpty) {
             val myFeedData = getFeedViewModel.getMyFeedData()
             val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
             if (feedToUpdate != null) {
                 feedToUpdate.isBookmarked = data.isBookmarked
-                feedToUpdate.bookmarkCount = data.bookmarkCount
                 val myFeedDataPosition = getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
                 getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
-                Log.d(TAG, "feedFavoriteClick: Updated feed bookmark status in ViewModel")
             } else {
                 Log.d(TAG, "feedFavoriteClick: feed to update is not available in the list")
             }
@@ -752,7 +765,9 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             Log.i(TAG, "feedFavoriteClick: my feed data is empty")
         }
 
-
+        lifecycleScope.launch {
+            feedUploadViewModel.favoriteFeed(data._id)
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -777,7 +792,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedUploadResponseEvent(event: FeedUploadResponseEvent) {
         Log.d("feedUploadResponseEvent", "feedUploadResponseEvent: ")
-
+//        val feedPosition = allFeedAdapter.getPositionById(event.data._id)
         val feedPost = getFeedViewModel.getSingleAllFeedData()
 
         feedPost._id = event.id
@@ -1535,13 +1550,13 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         val customTitleView: View = inflater.inflate(
             R.layout.delete_title_custom_layout, null)
         val builder = AlertDialog.Builder(requireContext())
-
+//        builder.setTitle("Delete Feed Confirmation")
         builder.setCustomTitle(customTitleView)
         builder.setMessage("Are you sure you want to delete this feed?")
 
         // Positive Button
         builder.setPositiveButton("Delete") { dialog, which ->
-
+//             Handle delete action
 
             handleDeleteAction(feedId = feedId, position) { isSuccess, message ->
                 if (isSuccess) {
@@ -1631,7 +1646,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                         } catch (e: Exception) {
                             e.printStackTrace()
                         }
-
+//                        getFeedViewModel.setRefreshMyData(pos, true)
                     } else {
                         Log.d(TAG, "handleDeleteAction: feed data not found for all fragment")
                     }
@@ -1698,7 +1713,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         tappedFilesFragment.arguments = args
 
         // Set listener if your fragment implements one
-
+        // tappedFilesFragment.setListener(this)
 
         // Replace fragment
         requireActivity().supportFragmentManager.beginTransaction()
@@ -2090,7 +2105,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         EventBus.getDefault().post(FeedFavoriteClick(position, data))
-
+//        EventBus.getDefault().post(FromFavoriteFragmentFeedFavoriteClick(position, data))
         val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
         if (!isMyFeedEmpty) {
             val myFeedData = getFeedViewModel.getMyFeedData()
@@ -2137,16 +2152,16 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         dialog.show()
         val reportOptionLayout: LinearLayout = view.findViewById(R.id.reportOption)
         val hidePostLayout: LinearLayout = view.findViewById(R.id.hidePostOption)
-
+//        val muteOptionLayout : LinearLayout = view.findViewById(R.id.muteOptionLayout)
         val followUnfollowLayout: LinearLayout = view.findViewById(R.id.followUnfollowOption)
         val notInterestedLayout: LinearLayout = view.findViewById(R.id.notInterestedOption)
         notInterestedLayout.visibility = View.GONE
         hidePostLayout.visibility = View.GONE
         followUnfollowLayout.visibility = View.GONE
-
+//        muteOptionLayout.visibility = View.GONE
         hidePostLayout.setOnClickListener {
             Log.d("HideLayout", "has been clicked")
-
+//            showDeleteConfirmationDialog(data._id, position)
         }
         reportOptionLayout.setOnClickListener {
             Log.d("reportUser", "has been clicked")
