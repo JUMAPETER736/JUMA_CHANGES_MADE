@@ -155,9 +155,7 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
     fun updateForFavoriteFragment(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         allFavoriteFeedData[position] = data
     }
-    fun updateForFavoritesFragment(position: Int, data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
-        allFollowingFeedData
-    }
+
     fun updateForAllFeedFragment(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         allFeedData[position] = data
     }
@@ -167,14 +165,6 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
     }
 
     fun getPositionById(itemId: String): Int {
-        for (i in allFavoriteFeedData.indices) {
-            if (allFavoriteFeedData[i]._id == itemId) {
-                return i // Return position if ID matches
-            }
-        }
-        return -1 // Return -1 if item with given ID is not found
-    }
-    fun getPositionsById(itemId: String): Int {
         for (i in allFavoriteFeedData.indices) {
             if (allFavoriteFeedData[i]._id == itemId) {
                 return i // Return position if ID matches
@@ -220,12 +210,7 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
     }
 
     private var follow: MutableList< com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList> = mutableListOf()
-    fun setFollowList(follow: List< com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList>) {
-        this.follow.addAll(follow)
-    }
-    fun addFollowToFollowList(follow:  com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList) {
-        this.follow.add(follow)
-    }
+
     fun getFollowList():List<com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList> {
         return follow
     }
