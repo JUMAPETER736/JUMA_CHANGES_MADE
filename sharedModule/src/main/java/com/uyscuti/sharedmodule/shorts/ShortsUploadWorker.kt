@@ -29,6 +29,7 @@ class ShortsUploadWorker @AssistedInject constructor(
 ) :
     CoroutineWorker(context, parameters) {
 
+    // Inside ShortsUploadWorker class
     private var isCancelled = false
     private val uniqueId = UniqueIdGenerator.generateUniqueId()
 
@@ -43,99 +44,80 @@ class ShortsUploadWorker @AssistedInject constructor(
         const val FILE_ID = "fileId"
         const val FEED_SHORTS_BUSINESS_ID = "fileIds"
         const val COMPRESS_PROGRESS = "compress"
-        const val UNIQUE_ID = "unique_id"
+
         const val TAGS = "tags"
+//        var THUMBNAIL: Bitmap? = null
     }
 
+    // Inside ShortsUploadWorker class
     fun cancelWork() {
         isCancelled = true
     }
 
-    val TAG = "UploadShotsWorker"
+
+    val TAG = "Worker"
     override suspend fun doWork(): Result {
 
         try {
             Log.d(TAG, "start do work")
-
-
+            val firstUpdate = workDataOf(Progress to 0)
+            val lastUpdate = workDataOf(Progress to 100)
+            setProgress(firstUpdate)
+            setProgressAsync(workDataOf(Progress to 50))
+            delay(delayDuration)
             // Extract input data
             val filePath = inputData.getString(EXTRA_FILE_PATH)
             val caption = inputData.getString(CAPTION)
+
             val thumbnailFilePath = inputData.getString(THUMBNAIL)
+            val tags = inputData.getString(TAGS)
             val fileId = inputData.getString(FILE_ID)
             val feedShortsBusinessId = inputData.getString(FEED_SHORTS_BUSINESS_ID)
-            val uniqueId = inputData.getString(UNIQUE_ID) ?: "default_id"
 
-            // Check for cancellation
-            if (isStopped) {
-                Log.d(TAG, "Work cancelled before starting")
-                EventBus.getDefault().post(UploadSuccessful(success = false))
+            if (isCancelled) {
+                Log.d(TAG, "Work cancelled")
                 return Result.failure()
             }
 
-            if (filePath.isNullOrEmpty() || thumbnailFilePath.isNullOrEmpty()) {
-                Log.d(TAG, "File path or thumbnail empty")
+
+
+            // Check if filePath is not null and not empty
+            if (filePath.isNullOrEmpty()) {
+                Log.d(TAG, "File path empty")
+                return Result.failure()
+            }
+            if (thumbnailFilePath.isNullOrEmpty()) {
+                Log.d(TAG, "Thumbnail path empty")
                 return Result.failure()
             }
 
             val thumbnailFile = File(thumbnailFilePath)
+            Log.d(TAG, " Thumbnail file path $thumbnailFilePath")
+
             val file = File(filePath)
 
-            var lastPostedProgress = -1
-            var lastUpdateTime = System.currentTimeMillis()
 
-            val uploadResult = uploadShortToMongoDB(
-                file,
-                caption!!,
-                fileId!!,
-                feedShortsBusinessId!!,
-                thumbnailFile,
-                uniqueId
-            ) { bytesRead, totalBytes ->
-                val uploadProgress = (bytesRead * 100 / totalBytes).toInt()
-                val totalProgress = 50 + (uploadProgress / 2)
+            val uploadResult = uploadShortToMongoDB(file, caption!!,fileId!!, feedShortsBusinessId!!, thumbnailFile) { bytesRead, totalBytes ->
+                val progress = (bytesRead * 100 / totalBytes).toInt()
 
-                val currentTime = System.currentTimeMillis()
-                if (totalProgress != lastPostedProgress || (currentTime - lastUpdateTime) >= 1000) {
-                    // Change this:
-                    // EventBus.getDefault().post(ProgressEvent(uniqueId, totalProgress))
-
-                    // To this:
-                    EventBus.getDefault().postSticky(ProgressEvent(uniqueId, totalProgress))
-
-                    lastPostedProgress = totalProgress
-                    lastUpdateTime = currentTime
-                    Log.d(TAG, "Upload progress: $uploadProgress%, Total progress: $totalProgress%")
-                }
+                // Post to both Feed and Shorts fragments
+                EventBus.getDefault().post(ProgressEvent(uniqueId, progress))
+                EventBus.getDefault().post(ProgressEvent("workerUniqueIdShorts", progress))
             }
 
 
-            EventBus.getDefault().postSticky(ProgressEvent(uniqueId, 100))
-            // Only check isStopped at key points, not in the progress callback
-            if (isStopped) {
-                Log.d(TAG, "Work cancelled before completion")
-                EventBus.getDefault().post(UploadSuccessful(success = false))
-                return Result.failure()
-            }
-
-            // Final check before completion
-            if (isStopped) {
-                Log.d(TAG, "Work cancelled before completion")
-                EventBus.getDefault().post(UploadSuccessful(success = false))
-                return Result.failure()
-            }
-
-            val lastUpdate = workDataOf(Progress to 100)
             setProgress(lastUpdate)
 
-            // Post 100% progress
-            EventBus.getDefault().post(ProgressEvent(uniqueId, 100))
 
+            // Check the result of the upload and return success or failure accordingly
             return if (uploadResult) {
                 Log.d(TAG, "Shorts Upload successful")
                 EventBus.getDefault().post(UploadSuccessful(success = true))
+                EventBus.getDefault().post(UploadSuccessful(success = true))
+
                 deleteFiled(filePath)
                 Result.success()
+
             } else {
                 Log.d(TAG, "Failed to upload short")
                 EventBus.getDefault().post(UploadSuccessful(success = false))
@@ -143,12 +125,15 @@ class ShortsUploadWorker @AssistedInject constructor(
             }
 
         } catch (e: Exception) {
-            Log.d(TAG, "doWork exception: ${e.message}")
-            e.printStackTrace()
-            EventBus.getDefault().post(UploadSuccessful(success = false))
+            // Handle exceptions, log errors, etc.
+            Log.d(TAG, "doWork: ${e.message}")
+            Log.d(TAG, "doWork: ${e.printStackTrace()}")
+            Log.d(TAG, "doWork: $e")
             return Result.failure()
         }
     }
+
+
 
     private suspend fun uploadShortToMongoDB(
         file: File,
@@ -156,13 +141,14 @@ class ShortsUploadWorker @AssistedInject constructor(
         fileId: String,
         feedShortsBusinessId: String,
         thumbnail: File,
-        uniqueId: String,
         progressCallback: (Long, Long) -> Unit
     ): Boolean {
+
 
         Log.d(TAG, "Start uploading function")
         // Convert file content to bytes
         val fileBytes = file.readBytes()
+
 
         val requestFile: RequestBody =
             ProgressRequestBody(file, "image/*".toMediaTypeOrNull()!!, progressCallback)
@@ -199,6 +185,7 @@ class ShortsUploadWorker @AssistedInject constructor(
             tagsString.split(",").map { it.trim() }
         } else {
             emptyList()
+
         }
 
         Log.d(TAG, "Tags: $tags $caption")
@@ -214,6 +201,8 @@ class ShortsUploadWorker @AssistedInject constructor(
         tags.forEachIndexed { index, tag ->
             formData.addFormDataPart("tags[$index]", tag)
         }
+
+
 
         val tagParts = tags.mapIndexed { index, tag ->
             tag.toRequestBody("text/plain".toMediaTypeOrNull())
@@ -263,5 +252,6 @@ class ShortsUploadWorker @AssistedInject constructor(
             Log.d(TAG, "Failed to upload short because: ${e.printStackTrace()}")
             false
         }
+
     }
 }
