@@ -1854,25 +1854,27 @@ class ShotsFragment : Fragment(), OnClickListeners {
 
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     fun onShortsUploadSuccess(event: UploadSuccessful) {
-        // Clear the tracked ID
+        // Only process if this matches our tracked upload
+        if (currentUploadUniqueId == null) {
+            return
+        }
+
         currentUploadUniqueId = null
 
-        // Hide all upload UI elements immediately
+        // Hide UI
         uploadShortsSeekBar?.apply {
             visibility = View.GONE
             progress = 0
-            Log.d("ShortsUpload", "Progress bar now HIDDEN")
+        }
+        cancelShortsUpload.visibility = View.GONE
+
+        // Clean up ALL sticky events
+        EventBus.getDefault().apply {
+            removeStickyEvent(ProgressEvent::class.java)
+            removeStickyEvent(UploadStarted::class.java)
+            removeStickyEvent(UploadSuccessful::class.java)
         }
 
-        cancelShortsUpload.visibility = View.GONE
-        Log.d("ShortsUpload", "Cancel button now HIDDEN")
-
-        // Clean up sticky events
-        EventBus.getDefault().removeStickyEvent(ProgressEvent::class.java)
-        EventBus.getDefault().removeStickyEvent(UploadStarted::class.java)
-        EventBus.getDefault().removeStickyEvent(UploadSuccessful::class.java)
-
-        // Show success/failure message
         if (event.success) {
             Toast.makeText(requireContext(), "Upload successful!", Toast.LENGTH_SHORT).show()
         } else {

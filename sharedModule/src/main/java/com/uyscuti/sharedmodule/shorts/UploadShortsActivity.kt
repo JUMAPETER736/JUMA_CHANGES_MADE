@@ -385,11 +385,13 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
                             videoNames = uris.map { uri -> uri.pathSegments.last() },
                             isMinBitrateCheckEnabled = false,
                         ),
+
                         listener = object : CompressionListener {
                             override fun onProgress(index: Int, percent: Float) {
                                 if (percent <= 100) {
                                     val compressionProgress = (percent / 2).toInt()
-                                    EventBus.getDefault().post(
+                                    // Use postSticky so fragment can catch up
+                                    EventBus.getDefault().postSticky(
                                         ProgressEvent(uniqueId, compressionProgress)
                                     )
                                     Log.d("Compress", "Compression progress: $compressionProgress%")
@@ -398,7 +400,7 @@ class UploadShortsActivity : AppCompatActivity(), VideoThumbnailAdapter.Thumbnai
 
                             override fun onStart(index: Int) {
                                 Log.d("Compress", "Compression started")
-                                EventBus.getDefault().post(ProgressEvent(uniqueId, 0))
+                                EventBus.getDefault().postSticky(ProgressEvent(uniqueId, 0))
                             }
 
                             override fun onSuccess(index: Int, size: Long, path: String?) {
