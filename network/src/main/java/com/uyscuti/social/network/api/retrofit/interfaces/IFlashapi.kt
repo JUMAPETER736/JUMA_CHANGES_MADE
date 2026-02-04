@@ -651,12 +651,7 @@ interface IFlashapi {
 
     @GET("feed/bookmarks/")
     suspend fun getFavoriteFeed(@Query("page") page: String): Response<FeedFavoriteResponse>
-
-    @POST("feed/bookmark/{postId}")
-    suspend fun bookmarkPost(@Path("postId") postId: String): Response<BookmarkResponse>
-
-    @DELETE("feed/bookmark/{postId}")
-    suspend fun unbookmarkPost(@Path("postId") postId: String): Response<BookmarkResponse>
+    
 
 
     // ==================== FEED - COMMENTS ====================

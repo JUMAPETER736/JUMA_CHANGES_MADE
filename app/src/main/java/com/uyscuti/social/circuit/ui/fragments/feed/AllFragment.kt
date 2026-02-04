@@ -152,7 +152,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     private var param1: String? = null
     private var param2: String? = null
     var bitmap: Bitmap? = null
-    
+
     private val getFeedViewModel: GetFeedViewModel by activityViewModels()
     private val feedUploadViewModel: FeedUploadViewModel by activityViewModels()
     private val followUnFollowViewModel: FollowUnfollowViewModel by viewModels()
