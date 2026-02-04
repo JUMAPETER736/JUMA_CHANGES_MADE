@@ -322,7 +322,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         lifecycleScope.launch(Dispatchers.Main) {
 
             if (getFeedViewModel.getAllFeedData().isEmpty()) {
-              
+
                 getAllFeed(allFeedAdapter.startPage)
             } else {
                 Log.d(TAG, "onCreateView: get all feed data is not empty")
