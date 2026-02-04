@@ -53,11 +53,10 @@ class ShortsUploadWorker @AssistedInject constructor(
 
     val TAG = "UploadShotsWorker"
     override suspend fun doWork(): Result {
+
         try {
             Log.d(TAG, "start do work")
 
-            val firstUpdate = workDataOf(Progress to 50) // Start at 50%
-            setProgress(firstUpdate)
 
             // Extract input data
             val filePath = inputData.getString(EXTRA_FILE_PATH)
