@@ -43,11 +43,11 @@ data class Post(
     // Favorites related fields
     var isFavorited: Boolean? = null,
     val favorites: List<String>? = null,
-
     val bookmarkId: String? = null,
     val bookmarkedBy: String? = null,
     val bookmarkedAt: String? = null,
     val bookmarkedByUserIds: List<String>? = null,
+    val likedByUserIds: List<String> = emptyList(),
 
     // Privacy / relationship flags
     var isInCloseFriends: Boolean? = null,

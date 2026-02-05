@@ -87,6 +87,7 @@ import com.uyscuti.social.network.api.response.shorts.ShortsUploadResponse
 import com.uyscuti.social.network.api.response.updateavatar.UpdateAvatarResponse
 import com.uyscuti.social.network.api.response.userstatus.UserStatusResponse
 import com.uyscuti.social.network.api.response.getallshorts.ApiResponse
+import com.uyscuti.social.network.api.response.likeUnlikeFeedPost.LikeUnLikeFeedPostResponse
 import com.uyscuti.social.network.api.response.login.ForgotPasswordRequest
 import com.uyscuti.social.network.api.response.login.ForgotPasswordResponse
 import com.uyscuti.social.network.api.response.login.ResendEmailRequest
@@ -640,7 +641,7 @@ interface IFlashapi {
     // ==================== FEED - LIKES & BOOKMARKS ====================
 
     @POST("feed/like/{postId}")
-    suspend fun likeUnLikeFeed(@Path("postId") postId: String): Response<LikeUnLikeShortResponse>
+    suspend fun likeUnLikeFeed(@Path("postId") postId: String): Response<LikeUnLikeFeedPostResponse>
 
     @POST("feed/like/comment/{commentId}")
     suspend fun likeUnLikeFeedComment(@Path("commentId") commentId: String): Response<LikeUnLikeCommentResponse>

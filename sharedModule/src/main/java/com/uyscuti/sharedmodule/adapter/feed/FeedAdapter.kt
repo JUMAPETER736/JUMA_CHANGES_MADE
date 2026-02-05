@@ -2213,109 +2213,95 @@ class FeedAdapter(
             setupMoreOptionsButton(data)
         }
 
-        private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-
-            Log.d(TAG, "Setting up like button - Initial state: isLiked=${data.isLiked}, likes=${totalMixedLikesCounts}")
-            updateLikeButtonUI(data.isLiked ?: false)
-            updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
+        private fun setupLikeButton(data: Post) {
+            updateLikeButtonUI(data.isLiked)
+            updateMetricDisplay(likesCount, data.likes, "like")
 
             likeButton.setOnClickListener {
                 if (!likeButton.isEnabled) return@setOnClickListener
 
                 it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                Log.d(TAG, "Like clicked for post: ${data._id}")
-                Log.d(TAG, "Current state before toggle: isLiked=${data.isLiked}, likes=${totalMixedLikesCounts}")
+                val previousLikeStatus = data.isLiked
+                val previousLikeCount = data.likes
 
-                val newLikeStatus = !(data.isLiked ?: false)
-                val previousLikeStatus = data.isLiked ?: false
-                val previousLikesCount = totalMixedLikesCounts
+                // Optimistic UI update
+                data.isLiked = !previousLikeStatus
+                data.likes = if (data.isLiked) previousLikeCount + 1 else maxOf(0, previousLikeCount - 1)
 
-                // Update data immediately for optimistic UI update
-                data.isLiked = newLikeStatus
-                totalMixedLikesCounts = if (newLikeStatus) totalMixedLikesCounts + 1 else maxOf(0, totalMixedLikesCounts - 1)
-                data.likes = totalMixedLikesCounts
+                updateLikeButtonUI(data.isLiked)
+                updateMetricDisplay(likesCount, data.likes, "like")
 
-                Log.d(TAG, "New state after toggle: isLiked=${data.isLiked}, likes=${totalMixedLikesCounts}")
-
-                // Update UI immediately for better UX
-                updateLikeButtonUI(newLikeStatus)
-                updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
-
-                // Animation for like/unlike
-                YoYo.with(if (newLikeStatus) Techniques.Tada else Techniques.Pulse)
-                    .duration(300)
+                YoYo.with(if (data.isLiked) Techniques.Tada else Techniques.Pulse)
+                    .duration(500)
                     .repeat(1)
                     .playOn(likeButton)
 
-                // Disable button during network call
                 likeButton.isEnabled = false
                 likeButton.alpha = 0.8f
 
-                // Call feedClickListener safely
-                try {
-                    feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error calling likeUnLikeFeed: ${e.message}")
+                CoroutineScope(Dispatchers.Main).launch {
+                    try {
+                        val response = retrofitInterface.apiService.likeUnLikeFeed(data._id)
+
+                        likeButton.alpha = 1f
+                        likeButton.isEnabled = true
+
+                        if (response.isSuccessful) {
+                            response.body()?.let { likeResponse ->
+                                if (likeResponse.success) {
+                                    // Sync with server data
+                                    data.isLiked = likeResponse.data.isLiked
+                                    data.likes = likeResponse.data.likeCounts
+
+                                    updateLikeButtonUI(data.isLiked)
+                                    updateMetricDisplay(likesCount, data.likes, "like")
+
+                                    Log.d(TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=${likeResponse.data.likedByUserIds.size} users")
+
+                                    // Notify adapter
+                                    feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
+                                } else {
+                                    Log.e(TAG, "Like failed - success=false")
+                                    revertLikeState(data, previousLikeStatus, previousLikeCount)
+                                }
+                            } ?: run {
+                                Log.e(TAG, "Like response body is null")
+                                revertLikeState(data, previousLikeStatus, previousLikeCount)
+                            }
+                        } else {
+                            Log.e(TAG, "Like API error: ${response.code()} - ${response.message()}")
+                            revertLikeState(data, previousLikeStatus, previousLikeCount)
+
+                            Toast.makeText(
+                                likeButton.context,
+                                "Failed to update like",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } catch (e: Exception) {
+                        likeButton.alpha = 1f
+                        likeButton.isEnabled = true
+
+                        Log.e(TAG, "Like network error", e)
+                        revertLikeState(data, previousLikeStatus, previousLikeCount)
+
+                        Toast.makeText(
+                            likeButton.context,
+                            "Network error. Please check your connection.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
-
-                // Make network call to sync like status
-                val likeRequest = LikeRequest(newLikeStatus)
-                RetrofitClient.likeService.toggleLike(data._id, likeRequest)
-                    .enqueue(object : Callback<LikeResponse> {
-                        override fun onResponse(call: Call<LikeResponse>, response: Response<LikeResponse>) {
-                            likeButton.alpha = 1f
-                            likeButton.isEnabled = true
-
-                            if (response.isSuccessful) {
-                                response.body()?.let { likeResponse ->
-                                    Log.d(TAG, "Like API success - Server count: ${likeResponse.likesCount}")
-                                    // Update likes count if significantly different
-                                    if (likeResponse.likesCount != null &&
-                                        abs(likeResponse.likesCount - totalMixedLikesCounts) > 1
-                                    ) {
-                                        data.likes = likeResponse.likesCount
-                                        totalMixedLikesCounts = data.likes
-                                        updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
-                                        Log.d(TAG, "Updated likes count from server: ${totalMixedLikesCounts}")
-                                    }
-                                }
-                            } else {
-                                Log.e(TAG, "Like sync failed: ${response.code()}")
-                                // Revert on actual API errors
-                                if (response.code() != 200) {
-                                    data.isLiked = previousLikeStatus
-                                    data.likes = previousLikesCount
-                                    totalMixedLikesCounts = previousLikesCount
-                                    updateLikeButtonUI(previousLikeStatus)
-                                    updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
-                                    Log.d(TAG, "Reverted to previous state: isLiked=${data.isLiked}, likes=${totalMixedLikesCounts}")
-                                }
-                            }
-                        }
-
-                        override fun onFailure(call: Call<LikeResponse>, t: Throwable) {
-                            likeButton.alpha = 1f
-                            likeButton.isEnabled = true
-
-                            // Handle JSON parsing errors separately
-                            if (t is MalformedJsonException ||
-                                t.message?.contains("MalformedJsonException") == true) {
-                                Log.w(TAG, "Like API returned malformed JSON but operation likely succeeded - keeping UI state")
-                                return
-                            }
-
-                            Log.e(TAG, "Like network error - reverting changes", t)
-                            // Revert for network failures
-                            data.isLiked = previousLikeStatus
-                            data.likes = previousLikesCount
-                            totalMixedLikesCounts = previousLikesCount
-                            updateLikeButtonUI(previousLikeStatus)
-                            updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
-                            Log.d(TAG, "Reverted to previous state after network error: isLiked=${data.isLiked}, likes=${totalMixedLikesCounts}")
-                        }
-                    })
             }
+        }
+
+        private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
+            data.isLiked = previousStatus
+            data.likes = previousCount
+            updateLikeButtonUI(data.isLiked)
+            updateMetricDisplay(likeCounts, data.likes, "like")
+            Log.d(TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
         }
 
         private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
