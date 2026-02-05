@@ -126,8 +126,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
-
-
+    
     // Views from header_toolbar.xml
     private lateinit var backButton: ImageButton
     private lateinit var headerTitle: TextView

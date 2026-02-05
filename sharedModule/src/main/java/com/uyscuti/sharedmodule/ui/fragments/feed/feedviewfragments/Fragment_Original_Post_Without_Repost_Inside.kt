@@ -161,9 +161,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
 
-    private val retrofitInstance: RetrofitInterface by lazy {
-        RetrofitInterface.getInstance()
-    }
 
     // Data
     private var post: Post? = null
