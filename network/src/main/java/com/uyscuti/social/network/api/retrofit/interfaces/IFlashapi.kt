@@ -654,7 +654,7 @@ interface IFlashapi {
     @GET("feed/bookmarks/")
     suspend fun getFavoriteFeed(@Query("page") page: String): Response<FeedFavoriteResponse>
 
-    @POST("feed/bookmark/{postId}")
+    @POST("feed/bookmarks/{postId}")
     suspend fun toggleBookmark(@Path("postId") postId: String, @Body request: BookmarkRequest): Response<BookmarkResponse>
     
 

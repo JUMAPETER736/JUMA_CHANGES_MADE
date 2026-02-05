@@ -256,7 +256,7 @@ data class BookmarkRequest(
 )
 
 interface BookmarkService {
-    @POST("feed/bookmark/{postId}")
+    @POST("feed/bookmarks/{postId}")
     suspend fun toggleBookmark(
         @Path("postId") postId: String,
         @Body request: BookmarkRequest
