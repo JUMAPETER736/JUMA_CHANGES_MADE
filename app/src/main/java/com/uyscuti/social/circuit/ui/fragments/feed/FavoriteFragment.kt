@@ -792,22 +792,18 @@ class FavoriteFragment : Fragment(),
         )
     }
 
-    // Remove the incorrectly implemented feedFavoriteClick and replace
-
+    // feedFavoriteClick - removes duplicate API call
     override fun feedFavoriteClick(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
-        Log.d(TAG, "feedFavoriteClick in FavoriteFragment")
+        Log.d(TAG, "feedFavoriteClick in FavoriteFragment: postId=${data._id}, isBookmarked=${data.isBookmarked}")
 
-        // Update local adapter UI immediately
-        favoriteFeedAdapter.updateItem(position, data)
-
-        // Use centralized sync method
+        // Use centralized sync method (API call already happened in adapter)
         getFeedViewModel.toggleBookmarkInAllFeeds(
             postId = data._id,
             isBookmarked = data.isBookmarked,
             bookmarkCount = data.bookmarkCount
         )
 
-        // Notify other fragments
+        // Notify other fragments to sync their UI
         EventBus.getDefault().post(FromFavoriteFragmentFeedFavoriteClick(position, data))
 
         // If unbookmarked, remove from favorites list after animation
@@ -816,74 +812,67 @@ class FavoriteFragment : Fragment(),
                 val currentPosition = favoriteFeedAdapter.getPositionById(data._id)
                 if (currentPosition != -1) {
                     favoriteFeedAdapter.removeItem(currentPosition)
+                    getFeedViewModel.removeFavoriteFeed(currentPosition)
+                    Log.d(TAG, "Removed post from favorites at position: $currentPosition")
                 }
             }, 500)
         }
 
-        // Make API call
-        lifecycleScope.launch {
-            feedUploadViewModel.favoriteFeed(data._id)
-        }
     }
 
-    // EventBus subscriber for updates from AllFragment
+    // EventBus subscriber for updates from AllFeedFragment
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onFeedFavoriteClick(event: FeedFavoriteClick) {
-        Log.d(TAG, "Received FeedFavoriteClick in FavoriteFragment")
+        Log.d(TAG, "Received FeedFavoriteClick in FavoriteFragment: postId=${event.data._id}, isBookmarked=${event.data.isBookmarked}")
 
-        // If bookmarked, add to list
+        // Sync bookmark state through ViewModel
+        getFeedViewModel.toggleBookmarkInAllFeeds(
+            postId = event.data._id,
+            isBookmarked = event.data.isBookmarked,
+            bookmarkCount = event.data.bookmarkCount
+        )
+
         if (event.data.isBookmarked == true) {
             // Add to favorite feed if not already present
             val existingPosition = favoriteFeedAdapter.getPositionById(event.data._id)
             if (existingPosition == -1) {
-                favoriteFeedAdapter.addItemAtTop(event.data)
+                // Check if it exists in ViewModel's favorite list
+                val viewModelPosition = getFeedViewModel.getPositionById(event.data._id)
+                if (viewModelPosition == -1) {
+                    // Add to ViewModel
+                    val added = getFeedViewModel.addFavoriteFeed(0, event.data)
+                    if (added) {
+                        // Add to adapter
+                        favoriteFeedAdapter.addItemAtTop(event.data)
+                        Log.d(TAG, "Added post to favorites: ${event.data._id}")
+                    }
+                } else {
+                    // Already in ViewModel, just add to adapter
+                    favoriteFeedAdapter.addItemAtTop(event.data)
+                    Log.d(TAG, "Post already in ViewModel, added to adapter: ${event.data._id}")
+                }
+            } else {
+                // Already in adapter, just update it
+                favoriteFeedAdapter.updateItem(existingPosition, event.data)
+                Log.d(TAG, "Updated existing favorite at position: $existingPosition")
             }
         } else {
             // Remove from favorite feed
-            val position = favoriteFeedAdapter.getPositionById(event.data._id)
-            if (position != -1) {
-                favoriteFeedAdapter.removeItem(position)
+            val adapterPosition = favoriteFeedAdapter.getPositionById(event.data._id)
+            if (adapterPosition != -1) {
+                favoriteFeedAdapter.removeItem(adapterPosition)
+                Log.d(TAG, "Removed post from favorites adapter at position: $adapterPosition")
+            }
+
+            val viewModelPosition = getFeedViewModel.getPositionById(event.data._id)
+            if (viewModelPosition != -1) {
+                getFeedViewModel.removeFavoriteFeed(viewModelPosition)
+                Log.d(TAG, "Removed post from favorites ViewModel at position: $viewModelPosition")
             }
         }
     }
 
-    // Keep your existing favoriteFeedClick EventBus subscriber
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun favoriteFeedClick(event: FeedFavoriteClick) {
-        Log.d(TAG, "favoriteFeedClick: ${getFeedViewModel.getFollowList()}")
 
-        if (event.data.isBookmarked) {
-            // Check if the feed already exists in the viewModel
-            val existingFeed = getFeedViewModel.getPositionById(event.data._id)
-            Log.d(TAG, "favoriteFeedClick: existing feed $existingFeed")
-
-            if (existingFeed == -1) {
-                getFeedViewModel.addFavoriteFeed(0, event.data)
-                favoriteFeedAdapter.addFollowList(getFeedViewModel.getFollowList())
-                favoriteFeedAdapter.notifyDataSetChanged()
-            } else {
-                Log.e(TAG, "favoriteFeedClick: feed already exists")
-            }
-
-            favoriteFeedAdapter.submitItem(event.data, 0)
-
-        } else {
-            val existingFeedPosition = getFeedViewModel.getPositionById(event.data._id)
-            Log.d(TAG, "favoriteFeedClick: existingFeedPosition $existingFeedPosition")
-
-            if (existingFeedPosition != -1) {
-                getFeedViewModel.removeFavoriteFeed(existingFeedPosition)
-            } else {
-                Log.e(TAG, "favoriteFeedClick: you can't delete if there is no existing feed position")
-            }
-
-            val feedPosition = favoriteFeedAdapter.getPositionById(event.data._id)
-
-            Log.d(TAG, "favoriteFeedClick: item to remove on position $feedPosition")
-            favoriteFeedAdapter.removeItem(feedPosition)
-        }
-    }
 
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
