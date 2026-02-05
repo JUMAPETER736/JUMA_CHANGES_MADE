@@ -817,6 +817,39 @@ class FavoriteFragment : Fragment(),
         }
     }
 
+    // In your FavoriteFragment
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onFeedFavoriteClick(event: FeedFavoriteClick) {
+        Log.d(TAG, "Received FeedFavoriteClick in FavoriteFragment")
+
+        // If bookmarked, add to list
+        if (event.data.isBookmarked == true) {
+            // Add to favorite feed if not already present
+            val existingPosition = favoriteAdapter.getPositionById(event.data._id)
+            if (existingPosition == -1) {
+                favoriteAdapter.addItemAtTop(event.data)
+            }
+        } else {
+            // Remove from favorite feed
+            val position = favoriteAdapter.getPositionById(event.data._id)
+            if (position != -1) {
+                favoriteAdapter.removeItem(position)
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this)
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        EventBus.getDefault().unregister(this)
+    }
+    
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedAdapterNotifyDatasetChanged(event: FeedAdapterNotifyDatasetChanged) {
@@ -826,6 +859,19 @@ class FavoriteFragment : Fragment(),
         )
         favoriteFeedAdapter.notifyDataSetChanged()
 
+    }
+
+
+    override fun onStart() {
+        super.onStart()
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this)
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        EventBus.getDefault().unregister(this)
     }
 
     @SuppressLint("NotifyDataSetChanged")
