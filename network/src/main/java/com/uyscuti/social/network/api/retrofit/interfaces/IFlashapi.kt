@@ -61,8 +61,6 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 import com.uyscuti.social.network.api.response.createchat.CreateChatResponse
 import com.uyscuti.social.network.api.response.favoritefeed.FeedFavoriteResponse
-import com.uyscuti.social.network.api.response.favoritefeed.FeedPostBookmarkRequest
-import com.uyscuti.social.network.api.response.favoritefeed.FeedPostBookmarkResponse
 import com.uyscuti.social.network.api.response.favoriteshort.ShortsFavoriteResponse
 import com.uyscuti.social.network.api.response.feed.FeedUploadResponse
 import com.uyscuti.social.network.api.response.feed.deletefeed.DeleteFeedResponse

@@ -110,12 +110,17 @@ data class DeleteResponse(
 
 
 data class BookmarkResponse(
-    val success: Boolean,
+    val statusCode: Int,
+    val data: BookmarkData,
     val message: String,
-    val isBookmarked: Boolean,
-    val bookmarkCount: Int
+    val success: Boolean
 )
 
+data class BookmarkData(
+    val isBookmarked: Boolean,
+    val bookmarkCount: Int,
+    val postId: String
+)
 
 
 data class RepostRequest(
@@ -157,15 +162,13 @@ data class LikeRequest(
     val isLiked: Boolean
 )
 
-//interface BookmarkService {
-//
-//    @POST("feed/post/{postId}/bookmark")
-//    fun toggleBookmark(
-//        @Path("postId") postId: String,
-//        @Body bookmarkRequest: BookmarkRequest
-//    ): Call<BookmarkResponse>
-//
-//}
+interface BookmarkService {
+    @POST("feed/bookmark/{postId}")
+    suspend fun toggleBookmark(
+        @Path("postId") postId: String,
+        @Body request: BookmarkRequest
+    ): Response<BookmarkResponse>
+}
 
 interface ShareService {
     @POST("posts/{postId}/share")
@@ -267,7 +270,7 @@ object RetrofitClient {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-   // val bookmarkService: BookmarkService = retrofit.create(BookmarkService::class.java)
+    val bookmarkService: BookmarkService = retrofit.create(BookmarkService::class.java)
     val repostService: RepostService = retrofit.create(RepostService::class.java)
     val likeService: LikeService = retrofit.create(LikeService::class.java)
     val shareService: ShareService = retrofit.create(ShareService::class.java)
