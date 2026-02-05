@@ -727,49 +727,58 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        Log.d(TAG, "feedFavoriteClick: favorite clicked")
+        Log.d(TAG, "feedFavoriteClick: favorite clicked - postId=${data._id}, isBookmarked=${data.isBookmarked}")
 
-        // Use centralized sync method
+        //  Use centralized sync method (API call already happened in adapter)
         getFeedViewModel.toggleBookmarkInAllFeeds(
             postId = data._id,
             isBookmarked = data.isBookmarked,
             bookmarkCount = data.bookmarkCount
         )
 
-        // Post event for other fragments
+        //  Post event for other fragments to sync
         EventBus.getDefault().post(FeedFavoriteClick(position, data))
 
-        // Make API call
-        lifecycleScope.launch {
-            feedUploadViewModel.favoriteFeed(data._id)
-        }
+
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun favoriteFeedClick(event: FromFavoriteFragmentFeedFavoriteClick) {
+        Log.d(TAG, "favoriteFeedClick from FavoriteFragment: postId=${event.data._id}")
+
+        // Sync the bookmark state from favorite fragment
+        getFeedViewModel.toggleBookmarkInAllFeeds(
+            postId = event.data._id,
+            isBookmarked = event.data.isBookmarked,
+            bookmarkCount = event.data.bookmarkCount
+        )
+
+        // Update adapter
         val feedPosition = allFeedAdapter.getPositionById(event.data._id)
         if (feedPosition != -1) {
             allFeedAdapter.updateItem(feedPosition, event.data)
-            getFeedViewModel.updateForAllFeedFragment(feedPosition, event.data)
         }
     }
 
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    fun favoriteFeedClick(event: FromFavoriteFragmentFeedFavoriteClick) {
-//        Log.d("FromFavoriteFragmentFeedFavoriteClick",
-//            "FromFavoriteFragmentFeedFavoriteClick: ")
-//        val feedPosition = allFeedAdapter.getPositionById(event.data._id)
-//        allFeedAdapter.updateItem(feedPosition, event.data)
-//        getFeedViewModel.updateForAllFeedFragment(feedPosition, event.data)
-//    }
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun favoriteFromOtherUsersFeedFavoriteClick(event: FromOtherUsersFeedFavoriteClick) {
-        Log.d("FromOtherUsersFeedFavoriteClick", "FromOtherUsersFeedFavoriteClick: ")
+        Log.d(TAG, "favoriteFromOtherUsersFeedFavoriteClick: postId=${event.data._id}")
+
+        // Sync the bookmark state
+        getFeedViewModel.toggleBookmarkInAllFeeds(
+            postId = event.data._id,
+            isBookmarked = event.data.isBookmarked,
+            bookmarkCount = event.data.bookmarkCount
+        )
+
+        // Update adapter
         val feedPosition = allFeedAdapter.getPositionById(event.data._id)
-        EventBus.getDefault().post(FeedFavoriteClick(event.position, event.data))
-        allFeedAdapter.updateItem(feedPosition, event.data)
-        getFeedViewModel.updateForAllFeedFragment(feedPosition, event.data)
+        if (feedPosition != -1) {
+            allFeedAdapter.updateItem(feedPosition, event.data)
+        }
+
+        // Propagate event to other fragments
+        EventBus.getDefault().post(FeedFavoriteClick(feedPosition, event.data))
     }
 
 
