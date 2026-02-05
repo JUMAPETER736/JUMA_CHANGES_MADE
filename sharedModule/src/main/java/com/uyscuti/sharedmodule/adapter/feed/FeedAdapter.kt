@@ -6051,7 +6051,7 @@ class FeedAdapter(
             Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
 
             updateBookmarkButtonUI(data.isBookmarked)
-            updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+            updateMetricDisplay(favoritesCount, data.bookmarkCount, "bookmark")
 
             favoriteButton.setOnClickListener {
                 if (!favoriteButton.isEnabled) return@setOnClickListener
@@ -6068,7 +6068,7 @@ class FeedAdapter(
                 data.bookmarkCount = if (newBookmarkStatus) previousBookmarkCount + 1 else maxOf(0, previousBookmarkCount - 1)
 
                 updateBookmarkButtonUI(data.isBookmarked)
-                updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+                updateMetricDisplay(favoritesCount, data.bookmarkCount, "bookmark")
 
                 YoYo.with(if (newBookmarkStatus) Techniques.Tada else Techniques.Pulse)
                     .duration(500)
@@ -6099,7 +6099,7 @@ class FeedAdapter(
                                     data.bookmarkCount = serverData.bookmarkCount
 
                                     updateBookmarkButtonUI(data.isBookmarked)
-                                    updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+                                    updateMetricDisplay(favoritesCount, data.bookmarkCount, "bookmark")
 
                                     feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
 
@@ -6161,7 +6161,7 @@ class FeedAdapter(
             data.isBookmarked = previousBookmarkStatus
             data.bookmarkCount = previousBookmarkCount
             updateBookmarkButtonUI(data.isBookmarked)
-            updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+            updateMetricDisplay(favoritesCount, data.bookmarkCount, "bookmark")
             Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted to previous state: isBookmarked=$previousBookmarkStatus, count=$previousBookmarkCount")
         }
 
