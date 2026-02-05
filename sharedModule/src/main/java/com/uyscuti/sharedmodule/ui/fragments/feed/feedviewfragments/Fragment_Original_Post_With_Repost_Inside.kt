@@ -1613,7 +1613,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         updateMetricDisplay(likesCount, data.likes, "like")
         Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
     }
-    
+
     private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
         Log.d(TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
 
