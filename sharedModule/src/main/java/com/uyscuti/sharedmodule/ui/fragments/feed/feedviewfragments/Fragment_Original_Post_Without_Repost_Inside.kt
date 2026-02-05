@@ -220,7 +220,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
     private val followingUserIds = mutableSetOf<String>()
     private val relationshipsViewModel: UserRelationshipsViewModel by activityViewModels()
-    lateinit var retrofitInstance: RetrofitInstance
     private lateinit var allFeedAdapter: FeedAdapter
     private var blockedUserIds = mutableSetOf<String>()
     private val getFeedViewModel: GetFeedViewModel by activityViewModels()
@@ -2124,9 +2123,9 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
-    // Modified
     private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
+
+        Log.d(TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
 
         updateBookmarkButtonUI(data.isBookmarked)
         updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
@@ -2140,8 +2139,9 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             val previousBookmarkStatus = data.isBookmarked
             val previousBookmarkCount = data.bookmarkCount
 
-            Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark clicked - Post: ${data._id}, Current: $previousBookmarkStatus → New: $newBookmarkStatus")
+            Log.d(TAG, "Bookmark clicked - Post: ${data._id}, Current: $previousBookmarkStatus → New: $newBookmarkStatus")
 
+            // Optimistic UI update
             data.isBookmarked = newBookmarkStatus
             data.bookmarkCount = if (newBookmarkStatus) previousBookmarkCount + 1 else maxOf(0, previousBookmarkCount - 1)
 
@@ -2160,8 +2160,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                 try {
                     val bookmarkRequest = BookmarkRequest(newBookmarkStatus)
 
-                    // Use the apiService from your injected RetrofitInstance
-                    val response = retrofitInterface.apiService.toggleBookmark(data._id, bookmarkRequest)
+                    // ✅ FIXED: Use retrofitInstance.apiService instead of retrofitInterface.apiService
+                    val response = retrofitInstance.apiService.toggleBookmark(data._id, bookmarkRequest)
 
                     favoritesButton.alpha = 1f
                     favoritesButton.isEnabled = true
@@ -2171,7 +2171,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                             if (bookmarkResponse.success) {
                                 val serverData = bookmarkResponse.data
 
-                                Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark success - Server: isBookmarked=${serverData.isBookmarked}, count=${serverData.bookmarkCount}")
+                                Log.d(TAG, "Bookmark success - Server: isBookmarked=${serverData.isBookmarked}, count=${serverData.bookmarkCount}")
 
                                 data.isBookmarked = serverData.isBookmarked
                                 data.bookmarkCount = serverData.bookmarkCount
@@ -2181,34 +2181,35 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
                                 feedClickListener.feedFavoriteClick(0, data)
 
+                                // ✅ FIXED: Use requireContext() or context
                                 Toast.makeText(
-                                    favoritesButton.context,
+                                    requireContext(),
                                     bookmarkResponse.message,
                                     Toast.LENGTH_SHORT
                                 ).show()
                             } else {
-                                Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark failed - success=false")
+                                Log.e(TAG, "Bookmark failed - success=false")
                                 revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
                                 Toast.makeText(
-                                    favoritesButton.context,
+                                    requireContext(),
                                     "Failed to update bookmark",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
                         } ?: run {
-                            Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark response body is null")
+                            Log.e(TAG, "Bookmark response body is null")
                             revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
                             Toast.makeText(
-                                favoritesButton.context,
+                                requireContext(),
                                 "Failed to update bookmark",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
                     } else {
-                        Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark API error: ${response.code()} - ${response.message()}")
+                        Log.e(TAG, "Bookmark API error: ${response.code()} - ${response.message()}")
                         revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
                         Toast.makeText(
-                            favoritesButton.context,
+                            requireContext(),
                             "Failed to update bookmark",
                             Toast.LENGTH_SHORT
                         ).show()
@@ -2217,11 +2218,11 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
                     favoritesButton.alpha = 1f
                     favoritesButton.isEnabled = true
 
-                    Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark network error", e)
+                    Log.e(TAG, "Bookmark network error", e)
                     revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
 
                     Toast.makeText(
-                        favoritesButton.context,
+                        requireContext(),
                         "Network error. Please check your connection.",
                         Toast.LENGTH_SHORT
                     ).show()
@@ -2240,9 +2241,8 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         data.bookmarkCount = previousBookmarkCount
         updateBookmarkButtonUI(data.isBookmarked)
         updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
-        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted to previous state: isBookmarked=$previousBookmarkStatus, count=$previousBookmarkCount")
+        Log.d(TAG, "Reverted to previous state: isBookmarked=$previousBookmarkStatus, count=$previousBookmarkCount")
     }
-
 
     private fun setupShareButton(data: Post) {
         updateMetricDisplay(shareCount, data.shareCount, "share")

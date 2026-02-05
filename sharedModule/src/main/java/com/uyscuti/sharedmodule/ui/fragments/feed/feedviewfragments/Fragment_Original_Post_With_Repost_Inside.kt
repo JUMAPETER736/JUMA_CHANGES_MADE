@@ -14,6 +14,8 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.TextUtils
 import android.util.Log
 import android.view.Gravity
@@ -62,10 +64,15 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.sharedmodule.ReportNotificationActivity2
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
+import com.uyscuti.sharedmodule.adapter.feed.TAG
 import com.uyscuti.sharedmodule.databinding.FragmentOriginalPostWithRepostInsideBinding
+import com.uyscuti.sharedmodule.model.FeedCommentClicked
 import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
 import com.uyscuti.sharedmodule.model.ShowAppBar
 import com.uyscuti.sharedmodule.model.ShowBottomNav
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside.CommentCountUpdatedEvent
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside.CommentsLoadedEvent
+import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside.OnFeedClickListener
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
@@ -74,6 +81,9 @@ import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.AudioDuration
 import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.Duration
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -83,6 +93,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import javax.inject.Inject
 import kotlin.getValue
 
@@ -172,6 +187,19 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private lateinit var share: ImageView
     private lateinit var shareCount: TextView
 
+
+    private var currentPost: com.uyscuti.social.network.api.response.posts.Post? = null
+    private var currentPosition: Int = 0
+
+
+    // Counters
+
+    private var totalMixedComments = 0
+    private var totalMixedLikesCounts = 0
+    private var totalMixedBookMarkCounts = 0
+    private var totalMixedShareCounts = 0
+    private var totalMixedRePostCounts = 0
+
     // Data
     private var originalPost: OriginalPost? = null
     private var post: Post? = null
@@ -188,6 +216,299 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private val getFeedViewModel: GetFeedViewModel by activityViewModels()
     private lateinit var feedListView: RecyclerView
 
+
+    private val feedClickListener: OnFeedClickListener by lazy {
+        (activity as? OnFeedClickListener) ?:
+        object : OnFeedClickListener {
+
+            override fun likeUnLikeFeed(position: Int, post: com.uyscuti.social.network.api.response.posts.Post) {
+                Log.d(TAG, "feedClickListener: likeUnLikeFeed position $position for post ${post._id}")
+            }
+
+            override fun feedCommentClicked(
+                position: Int,
+                data: com.uyscuti.social.network.api.response.posts.Post
+            ) {
+                Log.d(TAG, "feedClickListener: feedCommentClicked position $position for post ${post?._id}")
+                handleFeedCommentClicked(position, data)
+            }
+
+            override fun feedFavoriteClick(position: Int, post: com.uyscuti.social.network.api.response.posts.Post) {
+                Log.d(TAG, "feedClickListener: feedFavoriteClick position $position for post ${post._id}")
+            }
+
+            override fun moreOptionsClick(
+                position: Int,
+                data: com.uyscuti.social.network.api.response.posts.Post
+            ) {
+                Log.d(TAG, "feedClickListener: moreOptionsClick position $position for post ${data._id}")
+            }
+
+            override fun feedFileClicked(
+                position: Int,
+                data: com.uyscuti.social.network.api.response.posts.Post
+            ) {
+                Log.d(TAG, "feedClickListener: feedFileClicked position $position for post ${data._id}")
+            }
+
+            override fun feedRepostFileClicked(position: Int, data: com.uyscuti.social.network.api.response.posts.OriginalPost) {
+                Log.d(TAG, "feedClickListener: feedRepostFileClicked position $position")
+            }
+
+            override fun feedShareClicked(
+                position: Int,
+                data: com.uyscuti.social.network.api.response.posts.Post
+            ) {
+                Log.d(TAG, "feedClickListener: feedShareClicked position $position for post ${post?._id}")
+            }
+
+            override fun followButtonClicked(
+                followUnFollowEntity: FollowUnFollowEntity,
+                followButton: AppCompatButton
+            ) {
+                Log.d(TAG, "feedClickListener: followButtonClicked")
+            }
+
+            override fun feedRepostPost(position: Int, post: com.uyscuti.social.network.api.response.posts.Post) {
+                Log.d(TAG, "feedClickListener: feedRepostPost position $position for post ${post._id}")
+            }
+
+            override fun feedRepostPostClicked(
+                position: Int,
+                data: com.uyscuti.social.network.api.response.posts.Post
+            ) {
+                Log.d(TAG, "feedClickListener: feedRepostPostClicked position $position for post ${data._id}")
+            }
+
+            override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
+                Log.d(TAG, "feedClickListener: feedClickedToOriginalPost position $position, originalPostId $originalPostId")
+            }
+
+            override fun onImageClick() {
+                Log.d(TAG, "feedClickListener: onImageClick")
+            }
+        }
+    }
+
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onCommentsLoaded(event: CommentsLoadedEvent) {
+        Log.d(TAG, "onCommentsLoaded: Received comments loaded event with ${event.commentCount} comments for post ${event.postId}")
+
+        // Check if this event is for the current post
+        val currentPostId = if (currentPost?.originalPost?.isNotEmpty() == true) {
+            currentPost?.originalPost?.get(0)?._id
+        } else {
+            currentPost?._id
+        }
+
+        if (currentPostId == event.postId) {
+            Log.d(TAG, "onCommentsLoaded: Updating UI for matching post")
+            updateCommentCount(event.commentCount)
+        } else {
+            Log.d(TAG, "onCommentsLoaded: Event for different post, ignoring")
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onCommentCountUpdated(event: CommentCountUpdatedEvent) {
+        Log.d(TAG, "onCommentCountUpdated: Received count ${event.commentCount} for post ${event.postId}")
+
+        // Check if this event is for the current post
+        val currentPostId = if (currentPost?.originalPost?.isNotEmpty() == true) {
+            currentPost?.originalPost?.get(0)?._id
+        } else {
+            currentPost?._id
+        }
+
+        if (currentPostId == event.postId) {
+            Log.d(TAG, "onCommentCountUpdated: Updating UI for matching post")
+            updateCommentCount(event.commentCount)
+        }
+    }
+
+
+    private fun loadCommentsAndUpdateCount(postId: String) {
+        Log.d(TAG, "loadCommentsAndUpdateCount: Loading comments to get count for post: $postId")
+
+        RetrofitClient.commentService.getCommentsForPost(postId)
+            .enqueue(object : Callback<CommentsResponse> {
+                override fun onResponse(call: Call<CommentsResponse>, response: Response<CommentsResponse>) {
+                    if (response.isSuccessful) {
+                        response.body()?.let { commentsResponse ->
+                            if (commentsResponse.success) {
+                                val actualCount = commentsResponse.comments.size
+                                Log.d(TAG, "loadCommentsAndUpdateCount: Counted ${actualCount} comments")
+                                updateCommentCount(actualCount)
+                                currentPost?.comments = actualCount
+                            } else {
+                                Log.e(TAG, "loadCommentsAndUpdateCount: API returned error: ${commentsResponse.message}")
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "loadCommentsAndUpdateCount: Failed with code: ${response.code()}")
+                    }
+                }
+
+                override fun onFailure(call: Call<CommentsResponse>, t: Throwable) {
+                    Log.e(TAG, "loadCommentsAndUpdateCount: Network error", t)
+                }
+            })
+    }
+
+    private fun fetchAndUpdateCommentCount(postId: String) {
+        Log.d(TAG, "fetchAndUpdateCommentCount: Fetching current comment count for post: $postId")
+
+        RetrofitClient.commentService.getCommentCount(postId)
+            .enqueue(object : Callback<CommentCountResponse> {
+                override fun onResponse(call: Call<CommentCountResponse>, response: Response<CommentCountResponse>) {
+                    if (response.isSuccessful && isAdded) {
+                        response.body()?.let { countResponse ->
+                            val actualCount = countResponse.count
+                            Log.d(TAG, "fetchAndUpdateCommentCount: API returned count: $actualCount for post: $postId")
+
+                            // Check if this is still the current post
+                            val currentPostId = if (currentPost?.originalPost?.isNotEmpty() == true) {
+                                currentPost?.originalPost?.get(0)?._id
+                            } else {
+                                currentPost?._id
+                            }
+
+                            if (currentPostId == postId) {
+                                // Only update if the count has changed to avoid unnecessary UI updates
+                                if (totalMixedComments != actualCount) {
+                                    Log.d(TAG, "fetchAndUpdateCommentCount: Count changed from $totalMixedComments to $actualCount")
+
+                                    totalMixedComments = actualCount
+                                    currentPost?.comments = actualCount
+                                    currentPost?.comments = actualCount
+
+                                    updateMetricDisplay(commentCount, actualCount, "comment")
+
+                                    // Add a subtle animation to indicate the count was updated
+                                    YoYo.with(Techniques.Pulse)
+                                        .duration(300)
+                                        .playOn(commentCount)
+                                } else {
+                                    Log.d(TAG, "fetchAndUpdateCommentCount: Count unchanged at $actualCount")
+                                }
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "fetchAndUpdateCommentCount: Failed with code: ${response.code()}")
+                        if (response.code() == 404) {
+                            // Post might not exist or have no comments
+                            updateMetricDisplay(commentCount, 0, "comment")
+                        } else {
+                            // Fallback to loading comments
+                            loadCommentsAndUpdateCount(postId)
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<CommentCountResponse>, t: Throwable) {
+                    Log.e(TAG, "fetchAndUpdateCommentCount: Network error", t)
+                    // Don't override existing count on network failure
+                    Log.d(TAG, "fetchAndUpdateCommentCount: Keeping existing count: $totalMixedComments")
+                }
+            })
+    }
+
+    fun decrementCommentCount() {
+        val newCount = maxOf(0, totalMixedComments - 1)
+        Log.d(tag, "decrementCommentCount: Decrementing from $totalMixedComments to $newCount")
+        updateCommentCount(newCount)
+    }
+
+
+    fun incrementCommentCount() {
+        val newCount = totalMixedComments + 1
+        Log.d(tag, "incrementCommentCount: Incrementing from $totalMixedComments to $newCount")
+        updateCommentCount(newCount)
+    }
+
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onCommentAdded(event: CommentAddedEvent) {
+        Log.d(TAG, "onCommentAdded: Received event for post ${event.postId}")
+        if (currentPost?._id == event.postId) {
+            incrementCommentCount()
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onCommentDeleted(event: CommentDeletedEvent) {
+        Log.d(TAG, "onCommentDeleted: Received event for post ${event.postId}")
+        if (currentPost?._id == event.postId) {
+            decrementCommentCount()
+        }
+    }
+
+    // 6. Create these event classes if they don't exist
+    data class CommentAddedEvent(val postId: String)
+    data class CommentDeletedEvent(val postId: String)
+
+    fun updateCommentCount(newCount: Int) {
+        Log.d(TAG, "updateCommentCount: Updating comment count from $totalMixedComments to $newCount")
+
+        val previousCount = totalMixedComments
+        totalMixedComments = if (newCount < 0) {
+            Log.w(TAG, "updateCommentCount: Negative count received, setting to 0")
+            0
+        } else {
+            newCount
+        }
+
+        // Update the post object
+        currentPost?.let { post ->
+            post.comments = totalMixedComments
+            post.comments = totalMixedComments
+            Log.d(TAG, "updateCommentCount: Updated post object with count $totalMixedComments")
+        }
+
+        // CRITICAL: Always update UI display on main thread
+        if (Thread.currentThread() != Looper.getMainLooper().thread) {
+            Handler(Looper.getMainLooper()).post {
+                updateMetricDisplay(commentCount, totalMixedComments, "comment")
+            }
+        } else {
+            updateMetricDisplay(commentCount, totalMixedComments, "comment")
+        }
+
+        // Animate only if count actually changed
+        if (previousCount != totalMixedComments) {
+            YoYo.with(Techniques.Pulse)
+                .duration(500)
+                .playOn(commentCount)
+        }
+
+        Log.d(TAG, "updateCommentCount: Successfully updated UI to $totalMixedComments")
+    }
+
+    private fun handleFeedCommentClicked(position: Int, post: com.uyscuti.social.network.api.response.posts.Post?) {
+        Log.d(TAG, "handleFeedCommentClicked: Posting comment event for post ${post?._id}")
+        try {
+            EventBus.getDefault().post(FeedCommentClicked(position,
+                post as com.uyscuti.social.network.api.response.posts.Post
+            ))
+
+            // Immediately try to refresh comment count from server
+            val postIdToFetch = if (post?.originalPost?.isNotEmpty() == true) {
+                post?.originalPost[0]?._id ?: 0
+            } else {
+                post?._id ?: 0
+            }
+
+            // Delay the fetch slightly to allow UI to settle
+            Handler(Looper.getMainLooper()).postDelayed({
+                fetchAndUpdateCommentCount(postIdToFetch.toString())
+            }, 500)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error posting comment event: ${e.message}")
+            e.printStackTrace()
+        }
+    }
 
     // Helper function to get AppCompatActivity from context
     private fun getActivityFromContext(context: Context): AppCompatActivity? {
@@ -1185,15 +1506,14 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
 
-    // Modified
     private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
+        Log.d(TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
 
         updateBookmarkButtonUI(data.isBookmarked)
-        updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+        updateMetricDisplay(favCount, data.bookmarkCount, "bookmark")
 
-        favoriteButton.setOnClickListener {
-            if (!favoriteButton.isEnabled) return@setOnClickListener
+        fav.setOnClickListener {
+            if (!fav.isEnabled) return@setOnClickListener
 
             it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
@@ -1201,88 +1521,90 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             val previousBookmarkStatus = data.isBookmarked
             val previousBookmarkCount = data.bookmarkCount
 
-            Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark clicked - Post: ${data._id}, Current: $previousBookmarkStatus → New: $newBookmarkStatus")
+            Log.d(TAG, "Bookmark clicked - Post: ${data._id}, Current: $previousBookmarkStatus → New: $newBookmarkStatus")
 
+            // Optimistic UI update
             data.isBookmarked = newBookmarkStatus
             data.bookmarkCount = if (newBookmarkStatus) previousBookmarkCount + 1 else maxOf(0, previousBookmarkCount - 1)
 
             updateBookmarkButtonUI(data.isBookmarked)
-            updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+            updateMetricDisplay(favCount, data.bookmarkCount, "bookmark")
 
             YoYo.with(if (newBookmarkStatus) Techniques.Tada else Techniques.Pulse)
                 .duration(500)
                 .repeat(1)
-                .playOn(favoriteButton)
+                .playOn(fav)
 
-            favoriteButton.isEnabled = false
-            favoriteButton.alpha = 0.8f
+            fav.isEnabled = false
+            fav.alpha = 0.8f
 
             CoroutineScope(Dispatchers.Main).launch {
                 try {
                     val bookmarkRequest = BookmarkRequest(newBookmarkStatus)
 
-                    // Use the apiService from your injected RetrofitInstance
-                    val response = retrofitInterface.apiService.toggleBookmark(data._id, bookmarkRequest)
+                    // ✅ FIXED: Use retrofitInstance.apiService instead of retrofitInterface.apiService
+                    val response = retrofitInstance.apiService.toggleBookmark(data._id, bookmarkRequest)
 
-                    favoriteButton.alpha = 1f
-                    favoriteButton.isEnabled = true
+                    fav.alpha = 1f
+                    fav.isEnabled = true
 
                     if (response.isSuccessful) {
                         response.body()?.let { bookmarkResponse ->
                             if (bookmarkResponse.success) {
                                 val serverData = bookmarkResponse.data
 
-                                Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark success - Server: isBookmarked=${serverData.isBookmarked}, count=${serverData.bookmarkCount}")
+                                Log.d(TAG, "Bookmark success - Server: isBookmarked=${serverData.isBookmarked}, count=${serverData.bookmarkCount}")
 
                                 data.isBookmarked = serverData.isBookmarked
                                 data.bookmarkCount = serverData.bookmarkCount
 
                                 updateBookmarkButtonUI(data.isBookmarked)
-                                updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+                                updateMetricDisplay(favCount, data.bookmarkCount, "bookmark")
 
-                                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
+                                feedClickListener.feedFavoriteClick(0, data)
 
+                                // ✅ FIXED: Use requireContext() or context
                                 Toast.makeText(
-                                    favoriteButton.context,
+                                    requireContext(),
                                     bookmarkResponse.message,
                                     Toast.LENGTH_SHORT
                                 ).show()
                             } else {
-                                Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark failed - success=false")
+                                Log.e(TAG, "Bookmark failed - success=false")
                                 revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
                                 Toast.makeText(
-                                    favoriteButton.context,
+                                    requireContext(),
                                     "Failed to update bookmark",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
                         } ?: run {
-                            Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark response body is null")
+                            Log.e(TAG, "Bookmark response body is null")
                             revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
                             Toast.makeText(
-                                favoriteButton.context,
+                                requireContext(),
                                 "Failed to update bookmark",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
                     } else {
-                        Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark API error: ${response.code()} - ${response.message()}")
+                        Log.e(TAG, "Bookmark API error: ${response.code()} - ${response.message()}")
                         revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
                         Toast.makeText(
-                            favoriteButton.context,
+                            requireContext(),
                             "Failed to update bookmark",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
                 } catch (e: Exception) {
-                    favoriteButton.alpha = 1f
-                    favoriteButton.isEnabled = true
+                    fav.alpha = 1f
+                    fav.isEnabled = true
 
-                    Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark network error", e)
+                    Log.e(TAG, "Bookmark network error", e)
                     revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
 
                     Toast.makeText(
-                        favoriteButton.context,
+                        requireContext(),
                         "Network error. Please check your connection.",
                         Toast.LENGTH_SHORT
                     ).show()
@@ -1300,9 +1622,39 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         data.isBookmarked = previousBookmarkStatus
         data.bookmarkCount = previousBookmarkCount
         updateBookmarkButtonUI(data.isBookmarked)
-        updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
-        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted to previous state: isBookmarked=$previousBookmarkStatus, count=$previousBookmarkCount")
+        updateMetricDisplay(favCount, data.bookmarkCount, "bookmark")
+        Log.d(TAG, "Reverted to previous state: isBookmarked=$previousBookmarkStatus, count=$previousBookmarkCount")
     }
+
+
+    private fun updateBookmarkButtonUI(isBookmarked: Boolean) {
+        Log.d(tag, "Updating bookmark button UI: isBookmarked=$isBookmarked")
+        try {
+            if (isBookmarked) {
+                fav.setImageResource(R.drawable.filled_favorite)
+            } else {
+                fav.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                fav.clearColorFilter()
+            }
+        } catch (e: Exception) {
+            Log.e(tag, "Error updating bookmark button UI", e)
+        }
+    }
+
+    private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
+        Log.d(TAG, "updateMetricDisplay: Updating $metricType with count: $count")
+        textView.text = formatCount(count)
+        textView.visibility = View.VISIBLE
+        textView.contentDescription = when (metricType) {
+            "like" -> "$count ${if (count == 1) "like" else "likes"}"
+            "comment" -> "$count ${if (count == 1) "comment" else "comments"}"
+            "bookmark" -> "$count ${if (count == 1) "bookmark" else "bookmarks"}"
+            "repost" -> "$count ${if (count == 1) "repost" else "reposts"}"
+            "share" -> "$count ${if (count == 1) "share" else "shares"}"
+            else -> "$count $metricType"
+        }
+    }
+
 
 
     private fun setupRecyclerViews() {
