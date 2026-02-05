@@ -210,6 +210,8 @@ class FeedAdapter(
             cachedFollowingUserIds = cachedFollowingList.toSet()
             Log.d("FeedAdapter", "Removed $userId from global following cache (Total: ${cachedFollowingList.size})")
         }
+
+
     }
 
     init {
@@ -279,6 +281,7 @@ class FeedAdapter(
         cachedFollowingUsernames.addAll(usernames)
         Log.d(TAG, "Following usernames updated: ${usernames.size} users")
     }
+
 
     fun clearItems() {
         submitItems(mutableListOf())

@@ -9,8 +9,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -26,7 +24,6 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
     private boolean loadingNewItems = true;
     private int childItemPosition = -1;
     private int parentItemPosition = -1;
-
 
     @NonNull
     public abstract VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType);
@@ -71,7 +68,7 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
         }
         if (!itemsToAdd.isEmpty()) {
             Log.d("submitItems", "Items added: " + itemsToAdd.size() + " collection size: " + collection.size());
-        }else {
+        } else {
             Log.d("submitItems", "submitItems: items to add is empty");
         }
     }
@@ -85,7 +82,29 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
     public void submitItem(com.uyscuti.social.network.api.response.posts.Post item, int position) {
         mDataSet.add(position, item);
         notifyItemChanged(position);
+    }
 
+    // ✅ NEW METHOD: Add item at the top of the list
+    public void addItemAtTop(com.uyscuti.social.network.api.response.posts.Post item) {
+        // Check if item already exists
+        boolean exists = false;
+        for (com.uyscuti.social.network.api.response.posts.Post existingPost : mDataSet) {
+            if (existingPost.get_id().equals(item.get_id())) {
+                exists = true;
+                Log.d("addItemAtTop", "Item already exists: " + item.get_id());
+                break;
+            }
+        }
+
+        if (!exists) {
+            mDataSet.add(0, item);
+            notifyItemInserted(0);
+            // Scroll to top to show the new item
+            if (mRecyclerView != null) {
+                mRecyclerView.scrollToPosition(0);
+            }
+            Log.d("addItemAtTop", "Item added at top: " + item.get_id());
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -96,13 +115,17 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
 
     public void removeItem(int position) {
         try {
-            mDataSet.remove(position);
-            notifyItemRemoved(position);
-        }catch (Exception exception) {
-            Log.e("FeedPaginatedAdapter", "removeItem failed because: "+exception.getMessage());
+            if (position >= 0 && position < mDataSet.size()) {
+                mDataSet.remove(position);
+                notifyItemRemoved(position);
+                Log.d("FeedPaginatedAdapter", "Item removed at position: " + position);
+            } else {
+                Log.e("FeedPaginatedAdapter", "Invalid position: " + position);
+            }
+        } catch (Exception exception) {
+            Log.e("FeedPaginatedAdapter", "removeItem failed because: " + exception.getMessage());
             exception.printStackTrace();
         }
-
     }
 
     public int getPositionById(String itemId) {
@@ -131,7 +154,6 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
         this.mStartPage = mFirstPage;
         this.mCurrentPage = mFirstPage;
     }
-
 
     public int getStartPage() {
         return mStartPage;
@@ -196,17 +218,18 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
         this.mListener = onPaginationListener;
     }
 
-    public void updateItem(int position,com.uyscuti.social.network.api.response.posts. Post updatedItem) {
+    public void updateItem(int position, com.uyscuti.social.network.api.response.posts.Post updatedItem) {
         if (position >= 0 && position < mDataSet.size()) {
             // Update the data in the dataset
             mDataSet.set(position, updatedItem);
-
             notifyItemChanged(position);
+            Log.d("FeedPaginatedAdapter", "Item updated at position: " + position);
+        } else {
+            Log.e("FeedPaginatedAdapter", "Invalid position for update: " + position);
         }
     }
 
     public int parentAdapterItemToRefresh() {
-
         return parentItemPosition;
     }
 
@@ -219,22 +242,17 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
     }
 
     public void refreshParent(int position) {
-        Log.d("refreshParent", "invoke refreshParent  position " + position);
+        Log.d("refreshParent", "invoke refreshParent position " + position);
         notifyItemChanged(position);
-
     }
+
     public void changePlayingStatus() {
         Log.d("changePlayingStatus", "invoke changePlayingStatus ");
-
     }
-
 
     public interface OnPaginationListener {
         void onCurrentPage(int page);
-
         void onNextPage(int page);
-
         void onFinish();
     }
-
 }

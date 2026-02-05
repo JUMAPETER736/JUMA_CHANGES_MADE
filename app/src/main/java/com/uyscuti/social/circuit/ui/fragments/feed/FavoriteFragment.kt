@@ -792,7 +792,7 @@ class FavoriteFragment : Fragment(),
         )
     }
 
-    // Remove the incorrectly implemented feedFavoriteClick and replace with:
+    // Remove the incorrectly implemented feedFavoriteClick and replace
 
     override fun feedFavoriteClick(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
         Log.d(TAG, "feedFavoriteClick in FavoriteFragment")
@@ -909,46 +909,6 @@ class FavoriteFragment : Fragment(),
         EventBus.getDefault().unregister(this)
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun favoriteFeedClick(event: FeedFavoriteClick) {
-
-        Log.d(TAG, "favoriteFeedClick: ${getFeedViewModel.getFollowList()}")
-        if (event.data.isBookmarked) {
-            // Check if the feed already exists in the viewModel
-            val existingFeed = getFeedViewModel.getPositionById(event.data._id)
-            Log.d(TAG, "favoriteFeedClick: existing feed $existingFeed")
-            if (existingFeed == -1) {
-                getFeedViewModel.addFavoriteFeed(0, event.data)
-                favoriteFeedAdapter.addFollowList(getFeedViewModel.getFollowList())
-                favoriteFeedAdapter.notifyDataSetChanged()
-            } else {
-                Log.e(TAG, "favoriteFeedClick: feed already exists")
-            }
-
-            favoriteFeedAdapter.submitItem(event.data, 0)
-
-        } else {
-            val existingFeedPosition = getFeedViewModel.getPositionById(event.data._id)
-            Log.d(TAG, "favoriteFeedClick: existingFeedPosition $existingFeedPosition")
-            if (existingFeedPosition != -1) {
-
-                getFeedViewModel.removeFavoriteFeed(existingFeedPosition)
-            } else {
-                Log.e(
-                    TAG,
-                    "favoriteFeedClick: you can't delete if there is no existing feed position"
-                )
-            }
-            val feedPosition = favoriteFeedAdapter.getPositionById(event.data._id)
-
-            Log.d(
-                TAG,
-                "favoriteFeedClick: item to remove on position $feedPosition"
-            )
-            favoriteFeedAdapter.removeItem(feedPosition)
-        }
-    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun likeFeedClick(event: FeedLikeClick) {
