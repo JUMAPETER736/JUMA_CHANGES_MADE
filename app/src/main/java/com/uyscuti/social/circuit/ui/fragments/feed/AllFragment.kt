@@ -723,20 +723,21 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         EventBus.getDefault().post(HideBottomNav())
     }
 
+
     override fun feedFavoriteClick(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
-        Log.d(TAG, "feedFavoriteClick: favorite clicked - postId=${data._id}, isBookmarked=${data.isBookmarked}")
+        Log.d(TAG, "feedFavoriteClick in AllFeedFragment: postId=${data._id}, isBookmarked=${data.isBookmarked}")
 
-        //  Use centralized sync method (API call already happened in adapter)
+        // Use centralized sync method
         getFeedViewModel.toggleBookmarkInAllFeeds(
             postId = data._id,
             isBookmarked = data.isBookmarked,
             bookmarkCount = data.bookmarkCount
         )
 
-        //  Post event for other fragments to sync
+        // Post event for other fragments
         EventBus.getDefault().post(FeedFavoriteClick(position, data))
 
 
@@ -744,21 +745,23 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun favoriteFeedClick(event: FromFavoriteFragmentFeedFavoriteClick) {
-        Log.d(TAG, "favoriteFeedClick from FavoriteFragment: postId=${event.data._id}")
+        Log.d(TAG, "Received FromFavoriteFragmentFeedFavoriteClick: postId=${event.data._id}")
 
-        // Sync the bookmark state from favorite fragment
+        // Sync through ViewModel
         getFeedViewModel.toggleBookmarkInAllFeeds(
             postId = event.data._id,
             isBookmarked = event.data.isBookmarked,
             bookmarkCount = event.data.bookmarkCount
         )
 
-        // Update adapter
+        // Update adapter if post exists
         val feedPosition = allFeedAdapter.getPositionById(event.data._id)
         if (feedPosition != -1) {
             allFeedAdapter.updateItem(feedPosition, event.data)
+            Log.d(TAG, "Updated post in AllFeed at position: $feedPosition")
         }
     }
+
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun favoriteFromOtherUsersFeedFavoriteClick(event: FromOtherUsersFeedFavoriteClick) {
