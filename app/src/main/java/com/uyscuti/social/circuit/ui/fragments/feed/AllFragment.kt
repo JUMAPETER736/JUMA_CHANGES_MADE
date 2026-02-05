@@ -545,6 +545,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             Log.e(TAG, "Error loading blocked users: ${e.message}", e)
         }
     }
+    
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun successEvent(event: FeedUploadProgress) {
@@ -711,7 +712,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         //implemented in main activity kt
         Log.d(TAG, "feedCommentClick: this is the one listening")
         EventBus.getDefault().post(
-            FeedCommentClicked(
+            FedCommentClicked(
                 position,
                 data
             )
@@ -727,24 +728,18 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         Log.d(TAG, "feedFavoriteClick: favorite clicked")
+
+        // Use centralized sync method
+        getFeedViewModel.toggleBookmarkInAllFeeds(
+            postId = data._id,
+            isBookmarked = data.isBookmarked,
+            bookmarkCount = data.bookmarkCount
+        )
+
+        // Post event for other fragments
         EventBus.getDefault().post(FeedFavoriteClick(position, data))
 
-
-        val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
-        if (!isMyFeedEmpty) {
-            val myFeedData = getFeedViewModel.getMyFeedData()
-            val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
-            if (feedToUpdate != null) {
-                feedToUpdate.isBookmarked = data.isBookmarked
-                val myFeedDataPosition = getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
-                getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
-            } else {
-                Log.d(TAG, "feedFavoriteClick: feed to update is not available in the list")
-            }
-        } else {
-            Log.i(TAG, "feedFavoriteClick: my feed data is empty")
-        }
-
+        // Make API call
         lifecycleScope.launch {
             feedUploadViewModel.favoriteFeed(data._id)
         }
