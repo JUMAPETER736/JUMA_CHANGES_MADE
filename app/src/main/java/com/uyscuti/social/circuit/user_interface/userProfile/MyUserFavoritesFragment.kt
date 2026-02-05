@@ -137,11 +137,11 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
             // Load fresh data in background only if cache is old
             if (!isCacheValid()) {
-                loadBookmarkedFeedPosts()
+                loadAllMyBookmarkedFeedPosts()
             }
         } else {
             // No cache - load data
-            loadBookmarkedFeedPosts()
+            loadAllMyBookmarkedFeedPosts()
         }
     }
 
@@ -162,7 +162,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         Log.d(TAG, "Refreshing bookmarks")
         isDataLoaded = false
         // Don't clear cache - let old data show while loading new
-        loadBookmarkedFeedPosts()
+        loadAllMyBookmarkedFeedPosts()
     }
 
     private fun setupRecyclerView() {
@@ -204,15 +204,16 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
         return System.currentTimeMillis() - timestamp < CACHE_VALIDITY_MS
     }
 
-    private fun loadBookmarkedFeedPosts() {
+    private fun loadAllMyBookmarkedFeedPosts() {
         if (isDataLoaded) return
 
         isDataLoaded = true
 
-        // Don't show loading immediately - let cache show first
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Fetching bookmarked posts for user: $userId")
+                val currentUserId = userId ?: LocalStorage.getInstance(requireContext()).getUserId()
+
+                Log.d(TAG, "Fetching bookmarked posts for logged-in user: $currentUserId")
 
                 // Show loading only if we don't have cache
                 if (!isCacheValid()) {
@@ -233,77 +234,41 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 }
 
                 val responseBody = response.body()
-                Log.d(TAG, "Response body: ${responseBody?.message}")
+                Log.d(TAG, "Response received - success: ${responseBody?.success}, message: ${responseBody?.message}")
 
+                // ✅ CORRECT: Based on your JSON structure
+                // The response has: statusCode, data { data { bookmarkedPosts: [...] } }, message, success
+                // But your Data class has bookmarkedPosts directly, so the nested data wrapper is handled in your backend
                 val bookmarkedPosts = responseBody?.data?.bookmarkedPosts.orEmpty()
-                Log.d(TAG, "Received ${bookmarkedPosts.size} bookmarked posts from server")
+                Log.d(TAG, "Total bookmarked posts received: ${bookmarkedPosts.size}")
 
-                // Transform bookmarked posts to regular posts with proper field mapping
-                val transformedPosts = bookmarkedPosts
-                    .asSequence() // Use sequence for better performance
-                    .filter { it.bookmarkedBy == userId }
-                    .mapNotNull { bookmarkedPost ->
-                        try {
-                            Post(
-                                _id = bookmarkedPost._id,
-                                content = bookmarkedPost.content ?: "",
-                                duration = bookmarkedPost.duration,
-                                feedShortsBusinessId = bookmarkedPost.feedShortsBusinessId,
-                                tags = bookmarkedPost.tags,
-                                contentType = bookmarkedPost.contentType,
-                                numberOfPages = bookmarkedPost.numberOfPages,
-                                fileNames = bookmarkedPost.fileNames,
-                                fileTypes = bookmarkedPost.fileTypes,
-                                fileSizes = bookmarkedPost.fileSizes,
-                                files = bookmarkedPost.files,
-                                fileIds = bookmarkedPost.fileIds,
-                                thumbnail = bookmarkedPost.thumbnail,
-                                author = bookmarkedPost.author,
-                                isReposted = bookmarkedPost.isReposted,
-                                repostedByUserId = bookmarkedPost.repostedByUserId ?: "",
-                                repostedUsers = bookmarkedPost.repostedUsers,
-                                createdAt = bookmarkedPost.createdAt,
-                                updatedAt = bookmarkedPost.updatedAt,
-                                __v = bookmarkedPost.__v,
-                                comments = bookmarkedPost.comments,
-                                likes = bookmarkedPost.likes,
-                                isLiked = bookmarkedPost.isLiked,
-                                isFollowing = bookmarkedPost.isFollowing,
-                                isBookmarked = true,
-                                bookmarkCount = bookmarkedPost.bookmarkCount,
-                                isInCloseFriends = bookmarkedPost.isInCloseFriends,
-                                isPostsMuted = bookmarkedPost.isPostsMuted,
-                                isStoriesMuted = bookmarkedPost.isStoriesMuted,
-                                isFavorite = bookmarkedPost.isFavorite,
-                                isRestricted = bookmarkedPost.isRestricted,
-                                originalPost = bookmarkedPost.originalPost,
-                                isExpanded = false,
-                                isLocal = false,
-                                repostCount = 0,
-                                shareCount = 0,
-                                repostedUser = bookmarkedPost.repostedUser ?: emptyRepostedUser(),
-                                isBusinessPost = false
-                            )
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error transforming post ${bookmarkedPost._id}: ${e.message}")
-                            null
-                        }
-                    }
-                    .toList()
+                // ✅ FILTER: Only show posts bookmarked by the logged-in user
+                val filteredPosts = bookmarkedPosts.filter { post ->
+                    val isMatch = post.bookmarkedBy == currentUserId
+                    Log.d(TAG, "Post ${post._id}: bookmarkedBy=${post.bookmarkedBy}, currentUser=$currentUserId, match=$isMatch")
+                    isMatch
+                }
+
+                Log.d(TAG, "Filtered ${filteredPosts.size} posts for logged-in user: $currentUserId")
 
                 withContext(Dispatchers.Main) {
-                    if (transformedPosts.isNotEmpty()) {
+                    if (filteredPosts.isNotEmpty()) {
                         allUserFavorites.clear()
-                        allUserFavorites.addAll(transformedPosts)
+                        allUserFavorites.addAll(filteredPosts)
                         submitToAdapter(allUserFavorites)
                         showContent()
 
                         // Update cache
-                        userId?.let { uid ->
+                        currentUserId?.let { uid ->
                             favoritesCache[uid] = allUserFavorites.toMutableList()
                             cacheTimestamp[uid] = System.currentTimeMillis()
                         }
+
+                        Log.d(TAG, "Successfully displayed ${filteredPosts.size} bookmarked posts")
                     } else {
+                        Log.d(TAG, "No bookmarked posts found for user: $currentUserId")
+                        allUserFavorites.clear()
+                        submitToAdapter(allUserFavorites)
                         showEmptyState()
                     }
                     isDataLoaded = false

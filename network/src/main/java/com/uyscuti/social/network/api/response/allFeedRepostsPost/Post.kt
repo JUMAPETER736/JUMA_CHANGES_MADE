@@ -315,7 +315,6 @@ object RetrofitClient {
         .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
 
-    val bookmarkService: BookmarkService = retrofit.create(BookmarkService::class.java)
     val repostService: RepostService = retrofit.create(RepostService::class.java)
     val likeService: LikeService = retrofit.create(LikeService::class.java)
     val shareService: ShareService = retrofit.create(ShareService::class.java)
