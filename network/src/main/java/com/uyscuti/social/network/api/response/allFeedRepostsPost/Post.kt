@@ -158,7 +158,7 @@ data class LikeRequest(
 )
 
 interface BookmarkService {
-    
+
     @POST("feed/post/{postId}/bookmark")
     fun toggleBookmark(
         @Path("postId") postId: String,

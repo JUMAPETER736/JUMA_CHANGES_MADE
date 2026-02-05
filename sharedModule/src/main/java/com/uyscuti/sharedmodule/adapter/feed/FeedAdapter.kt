@@ -2295,7 +2295,6 @@ class FeedAdapter(
         }
 
         private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-
             Log.d(TAG, "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}, bookmarkCount=${totalMixedBookMarkCounts}")
             updateBookmarkButtonUI(data.isBookmarked ?: false)
             updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
@@ -2304,9 +2303,6 @@ class FeedAdapter(
                 if (!favoriteButton.isEnabled) return@setOnClickListener
 
                 it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-
-                Log.d(TAG, "Bookmark clicked for post: ${data._id}")
-                Log.d(TAG, "Current state before toggle: isBookmarked=${data.isBookmarked}, bookmarkCount=${totalMixedBookMarkCounts}")
 
                 val newBookmarkStatus = !(data.isBookmarked ?: false)
                 val previousBookmarkStatus = data.isBookmarked ?: false
@@ -2317,9 +2313,7 @@ class FeedAdapter(
                 totalMixedBookMarkCounts = if (newBookmarkStatus) totalMixedBookMarkCounts + 1 else maxOf(0, totalMixedBookMarkCounts - 1)
                 data.bookmarkCount = totalMixedBookMarkCounts
 
-                Log.d(TAG, "New state after toggle: isBookmarked=${data.isBookmarked}, bookmarkCount=${totalMixedBookMarkCounts}")
-
-                // Update UI immediately for better UX
+                // Update UI immediately
                 updateBookmarkButtonUI(data.isBookmarked ?: false)
                 updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
 
@@ -2343,23 +2337,24 @@ class FeedAdapter(
                             if (response.isSuccessful) {
                                 response.body()?.let { bookmarkResponse ->
                                     Log.d(TAG, "Bookmark API success - Server count: ${bookmarkResponse.bookmarkCount}")
-                                    if (abs(bookmarkResponse.bookmarkCount - totalMixedBookMarkCounts) > 1) {
-                                        data.bookmarkCount = bookmarkResponse.bookmarkCount
-                                        totalMixedBookMarkCounts = data.bookmarkCount
-                                        updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
-                                        Log.d(TAG, "Updated bookmark count from server: ${totalMixedBookMarkCounts}")
-                                    }
+
+                                    // Update bookmark count from server
+                                    data.bookmarkCount = bookmarkResponse.bookmarkCount
+                                    totalMixedBookMarkCounts = data.bookmarkCount
+                                    updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
+
+                                    // ✅ NOTIFY THE LISTENER TO UPDATE VIEWMODEL
+                                    feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
                                 }
                             } else {
                                 Log.e(TAG, "Bookmark sync failed: ${response.code()}")
-                                // Only revert on actual HTTP errors (not 2xx status codes)
                                 if (response.code() >= 400) {
+                                    // Revert on error
                                     data.isBookmarked = previousBookmarkStatus
                                     data.bookmarkCount = previousBookmarkCount
                                     totalMixedBookMarkCounts = data.bookmarkCount
                                     updateBookmarkButtonUI(data.isBookmarked ?: false)
                                     updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
-                                    Log.d(TAG, "Reverted to previous state due to HTTP error: ${response.code()}")
                                 }
                             }
                         }
@@ -2368,28 +2363,25 @@ class FeedAdapter(
                             favoriteButton.alpha = 1f
                             favoriteButton.isEnabled = true
 
-                            // Handle JSON parsing errors separately - don't revert UI
+                            // Handle JSON parsing errors - don't revert UI
                             if (t is MalformedJsonException ||
                                 t.message?.contains("MalformedJsonException") == true ||
                                 t.message?.contains("JsonReader.setStrictness") == true) {
-                                Log.w(TAG, "Bookmark API returned malformed JSON but operation likely succeeded - keeping UI state")
-                                // Don't revert the UI changes as the operation likely succeeded on the server
+                                Log.w(TAG, "Bookmark API returned malformed JSON but operation likely succeeded")
+                                // ✅ STILL NOTIFY LISTENER
+                                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
                                 return
                             }
 
-                            // Only revert for actual network failures
+                            // Revert for actual network failures
                             Log.e(TAG, "Bookmark network error - reverting changes", t)
                             data.isBookmarked = previousBookmarkStatus
                             data.bookmarkCount = previousBookmarkCount
                             totalMixedBookMarkCounts = data.bookmarkCount
                             updateBookmarkButtonUI(data.isBookmarked ?: false)
                             updateMetricDisplay(favoriteCounts, totalMixedBookMarkCounts, "bookmark")
-                            Log.d(TAG, "Reverted to previous state after network error: isBookmarked=${data.isBookmarked}, bookmarkCount=${totalMixedBookMarkCounts}")
                         }
                     })
-
-                // Always notify the listener regardless of API status
-                feedClickListener.feedFavoriteClick(absoluteAdapterPosition, data)
             }
         }
 
