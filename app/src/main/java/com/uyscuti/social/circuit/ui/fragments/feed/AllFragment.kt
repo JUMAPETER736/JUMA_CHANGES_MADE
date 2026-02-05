@@ -545,7 +545,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             Log.e(TAG, "Error loading blocked users: ${e.message}", e)
         }
     }
-    
+
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun successEvent(event: FeedUploadProgress) {
