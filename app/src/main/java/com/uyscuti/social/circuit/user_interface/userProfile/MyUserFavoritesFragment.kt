@@ -206,7 +206,6 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
     private fun loadAllMyBookmarkedFeedPosts() {
         if (isDataLoaded) return
-
         isDataLoaded = true
 
         lifecycleScope.launch(Dispatchers.IO) {
@@ -215,7 +214,6 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
 
                 Log.d(TAG, "Fetching bookmarked posts for logged-in user: $currentUserId")
 
-                // Show loading only if we don't have cache
                 if (!isCacheValid()) {
                     withContext(Dispatchers.Main) {
                         showLoading()
@@ -225,7 +223,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 val response = retrofitInstance.apiService.getFavoriteFeed(page = "1")
 
                 if (!response.isSuccessful) {
-                    Log.e(TAG, "API call failed with code: ${response.code()}")
+                    Log.e(TAG, "API call failed with code: ${response.code()}, message: ${response.message()}")
                     withContext(Dispatchers.Main) {
                         showEmptyState()
                         isDataLoaded = false
@@ -234,27 +232,34 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                 }
 
                 val responseBody = response.body()
-                Log.d(TAG, "Response received - success: ${responseBody?.success}, message: ${responseBody?.message}")
 
-                // ✅ CORRECT: Based on your JSON structure
-                // The response has: statusCode, data { data { bookmarkedPosts: [...] } }, message, success
-                // But your Data class has bookmarkedPosts directly, so the nested data wrapper is handled in your backend
-                val bookmarkedPosts = responseBody?.data?.bookmarkedPosts.orEmpty()
-                Log.d(TAG, "Total bookmarked posts received: ${bookmarkedPosts.size}")
-
-                // ✅ FILTER: Only show posts bookmarked by the logged-in user
-                val filteredPosts = bookmarkedPosts.filter { post ->
-                    val isMatch = post.bookmarkedBy == currentUserId
-                    Log.d(TAG, "Post ${post._id}: bookmarkedBy=${post.bookmarkedBy}, currentUser=$currentUserId, match=$isMatch")
-                    isMatch
+                if (responseBody == null) {
+                    Log.e(TAG, "Response body is null")
+                    withContext(Dispatchers.Main) {
+                        showEmptyState()
+                        isDataLoaded = false
+                    }
+                    return@launch
                 }
 
-                Log.d(TAG, "Filtered ${filteredPosts.size} posts for logged-in user: $currentUserId")
+                Log.d(TAG, "Response received - success: ${responseBody.success}, statusCode: ${responseBody.statusCode}, message: ${responseBody.message}")
+
+                // ✅ Your backend already filters by logged-in user in the aggregation
+                // The $match stage uses bookmarkedBy: userId (the logged-in user)
+                // So ALL posts returned are already for the current user - no need to filter again!
+                val bookmarkedPosts = responseBody.data.bookmarkedPosts
+
+                Log.d(TAG, "Bookmarked posts received: ${bookmarkedPosts.size}")
+
+                // Debug: Log first few posts to verify data
+                bookmarkedPosts.take(3).forEach { post ->
+                    Log.d(TAG, "Post: ${post._id}, bookmarkedBy: ${post.bookmarkedBy}, isBookmarked: ${post.isBookmarked}")
+                }
 
                 withContext(Dispatchers.Main) {
-                    if (filteredPosts.isNotEmpty()) {
+                    if (bookmarkedPosts.isNotEmpty()) {
                         allUserFavorites.clear()
-                        allUserFavorites.addAll(filteredPosts)
+                        allUserFavorites.addAll(bookmarkedPosts)
                         submitToAdapter(allUserFavorites)
                         showContent()
 
@@ -264,7 +269,7 @@ class MyUserFavoritesFragment : Fragment(), OnFeedClickListener {
                             cacheTimestamp[uid] = System.currentTimeMillis()
                         }
 
-                        Log.d(TAG, "Successfully displayed ${filteredPosts.size} bookmarked posts")
+                        Log.d(TAG, "Successfully displayed ${bookmarkedPosts.size} bookmarked posts")
                     } else {
                         Log.d(TAG, "No bookmarked posts found for user: $currentUserId")
                         allUserFavorites.clear()
