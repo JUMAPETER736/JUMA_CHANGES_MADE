@@ -732,9 +732,20 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         quotedPostCard.setOnClickListener { handleOriginalPostClick() }
 
         // Action button click listeners
-        likeSection.setOnClickListener { setupLikeButton() }
+        likeSection.setOnClickListener {
+            currentPost?.let { post ->
+                setupLikeButton(post)
+            }
+        }
+
+        favoriteSection.setOnClickListener {
+            currentPost?.let { post ->
+                setupBookmarkButton(post)
+            }
+        }
+
         commentSection.setOnClickListener { handleCommentClick() }
-        favoriteSection.setOnClickListener { setupBookmarkButton() }
+
         retweetSection.setOnClickListener { handleRetweetClick() }
         shareSection.setOnClickListener { handleShareClick() }
 
@@ -1535,7 +1546,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
             CoroutineScope(Dispatchers.Main).launch {
                 try {
-                    val response = retrofitInterface.apiService.likeUnLikeFeed(data._id)
+                    val response = retrofitInstance.apiService.likeUnLikeFeed(data._id)
 
                     like.alpha = 1f
                     like.isEnabled = true
@@ -1546,7 +1557,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                                 // Sync with server data
                                 data.isLiked = likeResponse.data.isLiked
 
-                                // ✅ FIX: Handle potential null likeCount from server
+                                // Handle potential null likeCount from server
                                 // Since your server only returns { isLiked: true/false }
                                 // We keep our optimistic count
                                 // data.likes stays as is (our optimistic update)
@@ -1554,7 +1565,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                                 updateLikeButtonUI(data.isLiked)
                                 updateMetricDisplay(likesCount, data.likes, "like")
 
-                                // ✅ FIX: Safely access likedByUserIds (it might be null)
+                                // Safely access likedByUserIds (it might be null)
                                 val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
                                 Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
 
@@ -1602,8 +1613,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         updateMetricDisplay(likesCount, data.likes, "like")
         Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
     }
-
-
+    
     private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
         Log.d(TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
 
