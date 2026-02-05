@@ -1716,6 +1716,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             .addToBackStack(null)
             .commit()
     }
+
     override fun feedRepostFileClicked(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.OriginalPost

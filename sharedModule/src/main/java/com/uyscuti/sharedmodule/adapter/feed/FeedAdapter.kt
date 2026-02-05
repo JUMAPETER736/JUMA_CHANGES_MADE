@@ -2213,6 +2213,8 @@ class FeedAdapter(
             setupMoreOptionsButton(data)
         }
 
+        // Fixed setupLikeButton - Replace in your FeedAdapter.kt
+
         private fun setupLikeButton(data: Post) {
             updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, data.likes, "like")
@@ -2252,12 +2254,18 @@ class FeedAdapter(
                                 if (likeResponse.success) {
                                     // Sync with server data
                                     data.isLiked = likeResponse.data.isLiked
-                                    data.likes = likeResponse.data.likeCount
+
+                                    // ✅ FIX: Handle potential null likeCount from server
+                                    // Since your server only returns { isLiked: true/false }
+                                    // We keep our optimistic count
+                                    // data.likes stays as is (our optimistic update)
 
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
 
-                                    Log.d(TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=${likeResponse.data.likedByUserIds.size} users")
+                                    // ✅ FIX: Safely access likedByUserIds (it might be null)
+                                    val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
+                                    Log.d(TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
 
                                     // Notify adapter
                                     feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
