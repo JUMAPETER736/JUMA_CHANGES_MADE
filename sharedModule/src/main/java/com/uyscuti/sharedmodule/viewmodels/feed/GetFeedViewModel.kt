@@ -18,7 +18,6 @@ private const val TAG = "GetFeedViewModel"
 class GetFeedViewModel @Inject constructor(private val retrofitInstance: RetrofitInstance) :
     ViewModel() {
 
-
     private val isDataAvailable = MutableLiveData<Boolean>()
     private val singleFeed = MutableLiveData<Boolean>()
     private val isFavoriteFeedDataAvailable = MutableLiveData<Boolean>()
@@ -26,7 +25,7 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
 
     var allFeedDataLastViewPosition = -1
     var totalFeed = 0
-    // Expose a LiveData object to observe changes externally
+
     val isFeedDataAvailable: LiveData<Boolean>
         get() = isDataAvailable
 
@@ -39,24 +38,26 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
     val isMineFeedDataAvailable: LiveData<Boolean>
         get() = isMyFeedDataAvailable
 
-
     private var allFeedRepostData: MutableList<com.uyscuti.social.network.api.response.posts.OriginalPost> = mutableListOf()
     private var allFeedData: MutableList<com.uyscuti.social.network.api.response.posts.Post> = mutableListOf()
     private var allFavoriteFeedData: MutableList<com.uyscuti.social.network.api.response.posts.Post> = mutableListOf()
     private var myFeedData: MutableList<com.uyscuti.social.network.api.response.posts.Post> = mutableListOf()
-    private var follow: MutableList< com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList> = mutableListOf()
+    private var follow: MutableList<com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList> = mutableListOf()
     private val _myData = MutableLiveData<RefreshFeedData>()
     val myData: LiveData<RefreshFeedData> get() = _myData
 
-    // Function to update the value of isResuming
-    fun setIsDataAvailable(resuming: Boolean) {isDataAvailable.value = resuming
+    var isResuming = false
 
+    fun setIsDataAvailable(resuming: Boolean) {
+        isDataAvailable.value = resuming
     }
 
-    fun setSingleFeedAvailable(resuming: Boolean) {singleFeed.value = resuming
+    fun setSingleFeedAvailable(resuming: Boolean) {
+        singleFeed.value = resuming
     }
 
-    fun setIsFeedDataAvailable(resuming: Boolean) {isFavoriteFeedDataAvailable.value = resuming
+    fun setIsFeedDataAvailable(resuming: Boolean) {
+        isFavoriteFeedDataAvailable.value = resuming
     }
 
     fun getAllFeedData(): MutableList<com.uyscuti.social.network.api.response.posts.Post> {
@@ -67,34 +68,27 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
         return allFavoriteFeedData
     }
 
-
     fun getMyFeedData(): MutableList<com.uyscuti.social.network.api.response.posts.Post> {
         return myFeedData
     }
-
-    var isResuming = false
 
     fun addAllFeedData(allFeedData: MutableList<com.uyscuti.social.network.api.response.posts.Post>) {
         Log.d(TAG, "addAllFeedData: $allFeedData")
         allFeedData.let { newData ->
             for (post in newData) {
-                // Check if post with the same ID already exists in allFeedData
                 val existingPost = this.allFeedData.find { it._id == post._id }
                 if (existingPost == null) {
                     Log.d(TAG, "addAllFeedData: post not in all")
                     this.allFeedData.add(post)
                 } else {
-
                     Log.d(TAG, "addAllFeedData: feed already exists ${existingPost._id}")
                 }
             }
         }
         CoroutineScope(Dispatchers.Main).launch {
             setIsDataAvailable(true)
-
         }
     }
-
 
     fun addSingleAllFeedData(allFeedData: com.uyscuti.social.network.api.response.posts.Post) {
         Log.d(TAG, "addAllFeedData: $allFeedData")
@@ -112,12 +106,10 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
         Log.d(TAG, "addAllFeedData: $allFeedData")
         allFeedData.let { newData ->
             for (post in newData) {
-                // Check if post with the same ID already exists in allFeedData
                 val existingPost = this.allFavoriteFeedData.find { it._id == post._id }
                 if (existingPost == null) {
                     Log.d(TAG, "addAllFeedData: post not in all")
                     this.allFavoriteFeedData.add(post)
-
                 } else {
                     Log.d(TAG, "addAllFeedData: feed already exists ${existingPost._id}")
                 }
@@ -128,61 +120,156 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
         }
     }
 
-    fun addFavoriteFeed(position: Int, feed: com.uyscuti.social.network.api.response.posts.Post):Boolean {
+    // Synchronized bookmark toggle across all feeds
+    fun toggleBookmarkInAllFeeds(postId: String, isBookmarked: Boolean, bookmarkCount: Int) {
+        Log.d(TAG, "toggleBookmarkInAllFeeds: postId=$postId, isBookmarked=$isBookmarked, count=$bookmarkCount")
 
-        try {
-            Log.d(TAG, "addFavoriteFeed: add ${allFavoriteFeedData.size}")
-            this.allFavoriteFeedData.add(0, feed)
-            return true  // Return true if adding feed was successful
-        } catch (e: Exception) {
-            Log.e(TAG, "Error adding favorite feed", e)
-            return false  // Return false if an exception occurred
+        // Update in allFeedData
+        allFeedData.find { it._id == postId }?.let { post ->
+            post.isBookmarked = isBookmarked
+            post.bookmarkCount = bookmarkCount
+            Log.d(TAG, "Updated bookmark in allFeedData for post: $postId")
+        }
+
+        // Update in myFeedData
+        myFeedData.find { it._id == postId }?.let { post ->
+            post.isBookmarked = isBookmarked
+            post.bookmarkCount = bookmarkCount
+            Log.d(TAG, "Updated bookmark in myFeedData for post: $postId")
+        }
+
+        // Handle allFavoriteFeedData
+        if (isBookmarked) {
+            // Check if it's already in favorites
+            val existsInFavorites = allFavoriteFeedData.any { it._id == postId }
+            if (!existsInFavorites) {
+                // Find post from allFeedData or myFeedData to add to favorites
+                val postToAdd = allFeedData.find { it._id == postId }
+                    ?: myFeedData.find { it._id == postId }
+
+                postToAdd?.let { post ->
+                    post.isBookmarked = true
+                    post.bookmarkCount = bookmarkCount
+                    allFavoriteFeedData.add(0, post.copy()) // Add copy to avoid reference issues
+                    Log.d(TAG, "Added post to favorites: $postId")
+                }
+            } else {
+                // Update existing favorite
+                allFavoriteFeedData.find { it._id == postId }?.let { post ->
+                    post.isBookmarked = true
+                    post.bookmarkCount = bookmarkCount
+                    Log.d(TAG, "Updated existing favorite: $postId")
+                }
+            }
+        } else {
+            // Remove from favorites if unbookmarked
+            val position = allFavoriteFeedData.indexOfFirst { it._id == postId }
+            if (position != -1) {
+                allFavoriteFeedData.removeAt(position)
+                Log.d(TAG, "Removed post from favorites at position $position: $postId")
+            }
         }
     }
 
+    //  Get post by ID from any feed
+    fun getPostById(postId: String): com.uyscuti.social.network.api.response.posts.Post? {
+        return allFeedData.find { it._id == postId }
+            ?: allFavoriteFeedData.find { it._id == postId }
+            ?: myFeedData.find { it._id == postId }
+    }
+
+    // Add to favorites with duplicate check
+    fun addFavoriteFeed(position: Int, feed: com.uyscuti.social.network.api.response.posts.Post): Boolean {
+        try {
+            // Check if already exists
+            val exists = allFavoriteFeedData.any { it._id == feed._id }
+            if (exists) {
+                Log.w(TAG, "addFavoriteFeed: Feed already exists in favorites: ${feed._id}")
+                return false
+            }
+
+            Log.d(TAG, "addFavoriteFeed: add ${allFavoriteFeedData.size}")
+            this.allFavoriteFeedData.add(0, feed)
+
+            // Also update in other feeds
+            toggleBookmarkInAllFeeds(feed._id, true, feed.bookmarkCount)
+
+            return true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adding favorite feed", e)
+            return false
+        }
+    }
+
+    // Remove from favorites and sync
     fun removeFavoriteFeed(position: Int) {
-        this.allFavoriteFeedData.removeAt(position)
+        if (position in allFavoriteFeedData.indices) {
+            val post = allFavoriteFeedData[position]
+            this.allFavoriteFeedData.removeAt(position)
+
+            // Update bookmark status in other feeds
+            toggleBookmarkInAllFeeds(post._id, false, maxOf(0, post.bookmarkCount - 1))
+
+            Log.d(TAG, "removeFavoriteFeed: Removed and synced post: ${post._id}")
+        }
     }
 
     fun removeAllFeedFragment(position: Int) {
         this.allFeedData.removeAt(position)
     }
+
     fun removeMyFeed(position: Int) {
         this.myFeedData.removeAt(position)
     }
 
+    // Update with sync
     fun updateForFavoriteFragment(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
-        allFavoriteFeedData[position] = data
+        if (position in allFavoriteFeedData.indices) {
+            allFavoriteFeedData[position] = data
+
+            // Sync bookmark state across all feeds
+            toggleBookmarkInAllFeeds(data._id, data.isBookmarked, data.bookmarkCount)
+        }
     }
 
+    // Update with sync
     fun updateForAllFeedFragment(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
-        allFeedData[position] = data
+        if (position in allFeedData.indices) {
+            allFeedData[position] = data
+
+            // Sync bookmark state across all feeds
+            toggleBookmarkInAllFeeds(data._id, data.isBookmarked, data.bookmarkCount)
+        }
     }
 
     fun updateMyFeedData(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
-        myFeedData[position] = data
+        if (position in myFeedData.indices) {
+            myFeedData[position] = data
+
+            // Sync bookmark state across all feeds
+            toggleBookmarkInAllFeeds(data._id, data.isBookmarked, data.bookmarkCount)
+        }
     }
 
     fun getPositionById(itemId: String): Int {
         for (i in allFavoriteFeedData.indices) {
             if (allFavoriteFeedData[i]._id == itemId) {
-                return i // Return position if ID matches
+                return i
             }
         }
-        return -1 // Return -1 if item with given ID is not found
+        return -1
     }
-
 
     fun getMyFeedPositionById(itemId: String): Int {
         for (i in myFeedData.indices) {
             if (myFeedData[i]._id == itemId) {
-                return i // Return position if ID matches
+                return i
             }
         }
-        return -1 // Return -1 if item with given ID is not found
+        return -1
     }
 
-    fun getAllFeedDataByPosition(position: Int) : com.uyscuti.social.network.api.response.posts.Post {
+    fun getAllFeedDataByPosition(position: Int): com.uyscuti.social.network.api.response.posts.Post {
         return allFeedData[position]
     }
 
@@ -190,26 +277,20 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
         return allFeedRepostData[position]
     }
 
-
     fun getAllFeedDataPositionById(itemId: String): Int {
         for (i in allFeedData.indices) {
             if (allFeedData[i]._id == itemId) {
-                return i // Return position if ID matches
+                return i
             }
         }
-        return -1 // Return -1 if item with given ID is not found
+        return -1
     }
 
-
-
-    // Method to set the values
     fun setRefreshMyData(position: Int, booleanValue: Boolean) {
         _myData.value = RefreshFeedData(position, booleanValue)
     }
 
-
-
-    fun getFollowList():List<com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList> {
+    fun getFollowList(): List<com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList> {
         return follow
     }
 
@@ -228,5 +309,4 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
     fun clearAllFeedData() {
         allFeedData.clear()
     }
-
 }
