@@ -26,6 +26,7 @@ import com.uyscuti.social.network.api.request.profile.UpdateSocialProfileRequest
 import com.uyscuti.social.network.api.request.register.RegisterRequest
 import com.uyscuti.social.network.api.response.MainResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.AllFeedRepostsPost
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostRequest
 import com.uyscuti.social.network.api.response.business.response.background.BackgroundImageResponse
@@ -60,6 +61,8 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 import com.uyscuti.social.network.api.response.createchat.CreateChatResponse
 import com.uyscuti.social.network.api.response.favoritefeed.FeedFavoriteResponse
+import com.uyscuti.social.network.api.response.favoritefeed.FeedPostBookmarkRequest
+import com.uyscuti.social.network.api.response.favoritefeed.FeedPostBookmarkResponse
 import com.uyscuti.social.network.api.response.favoriteshort.ShortsFavoriteResponse
 import com.uyscuti.social.network.api.response.feed.FeedUploadResponse
 import com.uyscuti.social.network.api.response.feed.deletefeed.DeleteFeedResponse
@@ -651,6 +654,9 @@ interface IFlashapi {
 
     @GET("feed/bookmarks/")
     suspend fun getFavoriteFeed(@Query("page") page: String): Response<FeedFavoriteResponse>
+
+    @POST("feed/bookmark/{postId}")
+    suspend fun toggleBookmark(@Path("postId") postId: String, @Body request: BookmarkRequest): Response<BookmarkResponse>
     
 
 

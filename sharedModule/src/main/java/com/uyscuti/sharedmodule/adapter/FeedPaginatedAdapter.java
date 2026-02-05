@@ -84,7 +84,7 @@ public abstract class FeedPaginatedAdapter<VH extends RecyclerView.ViewHolder> e
         notifyItemChanged(position);
     }
 
-    // ✅ NEW METHOD: Add item at the top of the list
+    // Add item at the top of the list
     public void addItemAtTop(com.uyscuti.social.network.api.response.posts.Post item) {
         // Check if item already exists
         boolean exists = false;

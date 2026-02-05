@@ -8,3 +8,5 @@ data class FeedFavoriteResponse(
     val statusCode: Int,
     val success: Boolean
 )
+
+
