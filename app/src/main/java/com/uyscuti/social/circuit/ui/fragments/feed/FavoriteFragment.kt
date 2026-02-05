@@ -792,26 +792,52 @@ class FavoriteFragment : Fragment(),
         )
     }
 
+//    override fun feedFavoriteClick(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
+//        EventBus.getDefault().post(FromFavoriteFragmentFeedFavoriteClick(position, data))
+//        val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
+//        if (!isMyFeedEmpty) {
+//            val myFeedData = getFeedViewModel.getMyFeedData()
+//            val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
+//            if (feedToUpdate != null) {
+//                feedToUpdate.isBookmarked = data.isBookmarked
+//                val myFeedDataPosition = getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
+//                getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
+//            } else {
+//                Log.d(TAG, "feedFavoriteClick: feed to update is not available in the list")
+//            }
+//        } else {
+//            Log.i(TAG, "feedFavoriteClick: my feed data is empty")
+//        }
+//        if (!data.isBookmarked) {
+//            favoriteFeedAdapter.removeItem(position)
+//            getFeedViewModel.removeFavoriteFeed(position)
+//        }
+//        lifecycleScope.launch {
+//            feedUploadViewModel.favoriteFeed(data._id)
+//        }
+//    }
+
+    // In FavoriteFragment's feedFavoriteClick
     override fun feedFavoriteClick(position: Int, data: com.uyscuti.social.network.api.response.posts.Post) {
+        Log.d(TAG, "feedFavoriteClick in FavoriteFragment")
+
+        // Update local adapter
+        feedAdapter.updateItem(position, data)
+
+        // Notify AllFragment about the change
         EventBus.getDefault().post(FromFavoriteFragmentFeedFavoriteClick(position, data))
-        val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
-        if (!isMyFeedEmpty) {
-            val myFeedData = getFeedViewModel.getMyFeedData()
-            val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
-            if (feedToUpdate != null) {
-                feedToUpdate.isBookmarked = data.isBookmarked
-                val myFeedDataPosition = getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
-                getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
-            } else {
-                Log.d(TAG, "feedFavoriteClick: feed to update is not available in the list")
-            }
-        } else {
-            Log.i(TAG, "feedFavoriteClick: my feed data is empty")
+
+        // If unbookmarked, remove from list after a delay
+        if (data.isBookmarked == false) {
+            Handler(Looper.getMainLooper()).postDelayed({
+                val currentPosition = feedAdapter.getPositionById(data._id)
+                if (currentPosition != -1) {
+                    feedAdapter.removeItem(currentPosition)
+                }
+            }, 500) // Small delay for better UX
         }
-        if (!data.isBookmarked) {
-            favoriteFeedAdapter.removeItem(position)
-            getFeedViewModel.removeFavoriteFeed(position)
-        }
+
+        // Make API call
         lifecycleScope.launch {
             feedUploadViewModel.favoriteFeed(data._id)
         }
