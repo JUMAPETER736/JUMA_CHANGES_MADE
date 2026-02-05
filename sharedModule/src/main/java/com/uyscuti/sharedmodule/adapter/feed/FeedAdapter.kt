@@ -2165,7 +2165,6 @@ class FeedAdapter(
             }
         }
 
-
         private fun setupPostInfo(data: com.uyscuti.social.network.api.response.posts.Post) {
             // Date and time
             dateTime.text = formattedMongoDateTime(data.createdAt)
@@ -2215,6 +2214,7 @@ class FeedAdapter(
         }
 
         private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+
             Log.d(TAG, "Setting up like button - Initial state: isLiked=${data.isLiked}, likes=${totalMixedLikesCounts}")
             updateLikeButtonUI(data.isLiked ?: false)
             updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
@@ -2317,7 +2317,6 @@ class FeedAdapter(
                     })
             }
         }
-
 
         private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
