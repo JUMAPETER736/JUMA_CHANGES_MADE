@@ -12,6 +12,13 @@ import retrofit2.*
 import retrofit2.http.*
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.Serializable
+import android.content.Context
+import com.google.gson.GsonBuilder
+import com.uyscuti.social.network.utils.LocalStorage
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import java.util.concurrent.TimeUnit
+
 
 data class Post(
     val __v: Int,
@@ -109,18 +116,6 @@ data class DeleteResponse(
 )
 
 
-data class BookmarkResponse(
-    val statusCode: Int,
-    val data: BookmarkData,
-    val message: String,
-    val success: Boolean
-)
-
-data class BookmarkData(
-    val isBookmarked: Boolean,
-    val bookmarkCount: Int,
-    val postId: String
-)
 
 
 data class RepostRequest(
@@ -153,22 +148,7 @@ data class CommentCountResponse(
 )
 
 
-data class BookmarkRequest(
-    val isBookmarked: Boolean
-)
 
-
-data class LikeRequest(
-    val isLiked: Boolean
-)
-
-interface BookmarkService {
-    @POST("feed/bookmark/{postId}")
-    suspend fun toggleBookmark(
-        @Path("postId") postId: String,
-        @Body request: BookmarkRequest
-    ): Response<BookmarkResponse>
-}
 
 interface ShareService {
     @POST("posts/{postId}/share")
@@ -246,7 +226,9 @@ interface CommentService {
     ): Call<LikeResponse>
 }
 
-
+data class LikeRequest(
+    val isLiked: Boolean
+)
 
 data class ShareResponse(
     val success: Boolean,
@@ -256,18 +238,81 @@ data class ShareResponse(
 
 
 
+data class BookmarkResponse(
+    val statusCode: Int,
+    val data: BookmarkData,
+    val message: String,
+    val success: Boolean
+)
 
+data class BookmarkData(
+    val isBookmarked: Boolean,
+    val bookmarkCount: Int,
+    val postId: String
+)
 
+data class BookmarkRequest(
+    val isBookmarked: Boolean
+)
 
+interface BookmarkService {
+    @POST("feed/bookmark/{postId}")
+    suspend fun toggleBookmark(
+        @Path("postId") postId: String,
+        @Body request: BookmarkRequest
+    ): Response<BookmarkResponse>
+}
 
 
 
 object RetrofitClient {
-    private const val BASE_URL =  "http://192.168.1.103:8080/api/v1/"
+    private const val BASE_URL = "http://192.168.1.103:8080/api/v1/"
+
+    // Add localStorage for auth token
+    private var localStorage: LocalStorage? = null
+
+    fun initialize(context: Context, storage: LocalStorage) {
+        localStorage = storage
+    }
+
+    private fun getToken(): String {
+        return localStorage?.getToken() ?: ""
+    }
+
+    // Create lenient Gson
+    private val gson = GsonBuilder()
+        .setLenient()
+        .create()
+
+    // Add logging interceptor
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
+
+    // Configure OkHttpClient with auth and logging
+    private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
+        .connectTimeout(200, TimeUnit.SECONDS)
+        .readTimeout(200, TimeUnit.SECONDS)
+        .writeTimeout(200, TimeUnit.SECONDS)
+        .addInterceptor { chain ->
+            val originalRequest = chain.request()
+            val accessToken = getToken()
+            if (accessToken.isNotEmpty()) {
+                val requestWithAuth = originalRequest.newBuilder()
+                    .header("Authorization", "Bearer $accessToken")
+                    .build()
+                chain.proceed(requestWithAuth)
+            } else {
+                chain.proceed(originalRequest)
+            }
+        }
+        .build()
 
     private val retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)
-        .addConverterFactory(GsonConverterFactory.create())
+        .client(okHttpClient)
+        .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
 
     val bookmarkService: BookmarkService = retrofit.create(BookmarkService::class.java)
@@ -277,8 +322,8 @@ object RetrofitClient {
     val commentService: CommentService by lazy {
         retrofit.create(CommentService::class.java)
     }
-}
 
+}
 
 
 

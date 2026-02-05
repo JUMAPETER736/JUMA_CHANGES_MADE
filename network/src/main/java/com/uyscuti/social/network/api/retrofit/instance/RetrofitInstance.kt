@@ -20,11 +20,7 @@ import javax.inject.Inject
 class RetrofitInstance @Inject constructor(private val localStorage: LocalStorage, context: Context) {
 
     private val BASE_URL = "http://192.168.1.103:8080/api/v1/"
-//private val BASE_URL = "http://api.flashmobile.app:8080/api/v1/"
 
-//    val loggingInterceptor = HttpLoggingInterceptor().apply {
-//        level = HttpLoggingInterceptor.Level.BODY
-//    }
 
     private fun getToken(): String {
         return localStorage.getToken() ?: ""
