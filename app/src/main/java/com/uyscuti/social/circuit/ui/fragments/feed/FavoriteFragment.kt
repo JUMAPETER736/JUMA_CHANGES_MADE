@@ -849,7 +849,7 @@ class FavoriteFragment : Fragment(),
         super.onStop()
         EventBus.getDefault().unregister(this)
     }
-    
+
     @SuppressLint("NotifyDataSetChanged")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedAdapterNotifyDatasetChanged(event: FeedAdapterNotifyDatasetChanged) {

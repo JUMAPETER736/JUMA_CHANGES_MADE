@@ -752,12 +752,21 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun favoriteFeedClick(event: FromFavoriteFragmentFeedFavoriteClick) {
-        Log.d("FromFavoriteFragmentFeedFavoriteClick",
-            "FromFavoriteFragmentFeedFavoriteClick: ")
         val feedPosition = allFeedAdapter.getPositionById(event.data._id)
-        allFeedAdapter.updateItem(feedPosition, event.data)
-        getFeedViewModel.updateForAllFeedFragment(feedPosition, event.data)
+        if (feedPosition != -1) {
+            allFeedAdapter.updateItem(feedPosition, event.data)
+            getFeedViewModel.updateForAllFeedFragment(feedPosition, event.data)
+        }
     }
+
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    fun favoriteFeedClick(event: FromFavoriteFragmentFeedFavoriteClick) {
+//        Log.d("FromFavoriteFragmentFeedFavoriteClick",
+//            "FromFavoriteFragmentFeedFavoriteClick: ")
+//        val feedPosition = allFeedAdapter.getPositionById(event.data._id)
+//        allFeedAdapter.updateItem(feedPosition, event.data)
+//        getFeedViewModel.updateForAllFeedFragment(feedPosition, event.data)
+//    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun favoriteFromOtherUsersFeedFavoriteClick(event: FromOtherUsersFeedFavoriteClick) {
