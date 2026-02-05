@@ -2252,7 +2252,7 @@ class FeedAdapter(
                                 if (likeResponse.success) {
                                     // Sync with server data
                                     data.isLiked = likeResponse.data.isLiked
-                                    data.likes = likeResponse.data.likeCounts
+                                    data.likes = likeResponse.data.likeCount
 
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
@@ -2300,7 +2300,7 @@ class FeedAdapter(
             data.isLiked = previousStatus
             data.likes = previousCount
             updateLikeButtonUI(data.isLiked)
-            updateMetricDisplay(likeCounts, data.likes, "like")
+            updateMetricDisplay(likesCount, data.likes, "like")
             Log.d(TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
         }
 
