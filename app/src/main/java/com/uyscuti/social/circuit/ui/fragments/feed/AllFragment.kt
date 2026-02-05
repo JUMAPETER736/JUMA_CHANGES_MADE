@@ -712,7 +712,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         //implemented in main activity kt
         Log.d(TAG, "feedCommentClick: this is the one listening")
         EventBus.getDefault().post(
-            FedCommentClicked(
+            FeedCommentClicked(
                 position,
                 data
             )

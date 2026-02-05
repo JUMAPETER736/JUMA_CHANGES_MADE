@@ -158,11 +158,13 @@ data class LikeRequest(
 )
 
 interface BookmarkService {
-    @POST("posts/{postId}/bookmark")
+    
+    @POST("feed/post/{postId}/bookmark")
     fun toggleBookmark(
         @Path("postId") postId: String,
         @Body bookmarkRequest: BookmarkRequest
     ): Call<BookmarkResponse>
+
 }
 
 interface ShareService {
