@@ -3602,15 +3602,15 @@ class FeedAdapter(
 
         @SuppressLint("ClickableViewAccessibility")
         private fun setupRepostedUserProfileClicks(data: com.uyscuti.social.network.api.response.posts.Post) {
-            // Extract ACCOUNT ID (owner field) for profile navigation
             var feedOwnerId = ""
             var feedOwnerName = ""
             var feedOwnerUsername = ""
             var profilePicUrl = ""
 
+            // Store in local variable
             val repostedUser = data.repostedUser
             if (repostedUser != null) {
-                feedOwnerId = repostedUser.owner  //Use owner field (account ID)
+                feedOwnerId = repostedUser.owner
                 feedOwnerName = when {
                     repostedUser.firstName.isNotBlank() && repostedUser.lastName.isNotBlank() ->
                         "${repostedUser.firstName} ${repostedUser.lastName}"
