@@ -120,7 +120,9 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
         }
     }
 
-    // Synchronized share toggle across all feeds
+
+     //Synchronize share state across all feeds
+
     fun toggleShareInAllFeeds(postId: String, isShared: Boolean, shareCount: Int) {
         Log.d(TAG, "toggleShareInAllFeeds: postId=$postId, isShared=$isShared, count=$shareCount")
 
@@ -146,7 +148,9 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
         }
     }
 
-    // Synchronized repost toggle across all feeds
+
+     // Synchronize repost state across all feeds Called when user reposts/un-reposts a post
+
     fun toggleRepostInAllFeeds(postId: String, isReposted: Boolean, repostCount: Int) {
         Log.d(TAG, "toggleRepostInAllFeeds: postId=$postId, isReposted=$isReposted, count=$repostCount")
 
