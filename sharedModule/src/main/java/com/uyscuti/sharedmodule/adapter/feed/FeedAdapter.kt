@@ -794,14 +794,6 @@ class FeedAdapter(
             }
         }
 
-        private fun getRepostCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
-            return data.repostCount
-        }
-
-        private fun getShareCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
-            return data.shareCount
-        }
-
         private fun setupInteractionButtons(data: com.uyscuti.social.network.api.response.posts.Post) {
             setupLikeButton(data)
             setupBookmarkButton(data)
@@ -1092,6 +1084,10 @@ class FeedAdapter(
             }
         }
 
+
+        // CORRECTED SHARE IMPLEMENTATION
+// This matches your actual flow: Click share → Show bottom sheet → Track when user actually shares
+
         private fun setupShareButton(data: Post) {
             updateShareButtonUI(data.isShared)
             updateMetricDisplay(shareCount, data.shareCount, "share")
@@ -1101,172 +1097,110 @@ class FeedAdapter(
 
                 it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                val previousShareStatus = data.isShared
-                val previousShareCount = data.shareCount
-
-                // Optimistic UI update
-                data.isShared = true
-                data.shareCount = previousShareCount + 1
-
-                updateShareButtonUI(data.isShared)
-                updateMetricDisplay(shareCount, data.shareCount, "share")
-
-                YoYo.with(Techniques.Tada)
-                    .duration(500)
-                    .repeat(1)
+                // Just show animation - DON'T increment count yet
+                YoYo.with(Techniques.Pulse)
+                    .duration(300)
                     .playOn(feedShare)
 
-                feedShare.isEnabled = false
-                feedShare.alpha = 0.8f
+                // Show share bottom sheet
+                // Count only increments when user actually shares to a platform
+                showShareBottomSheet(data, onShareConfirmed = {
+                    // Called when user actually shares to a platform (WhatsApp, SMS, etc.)
 
-                CoroutineScope(Dispatchers.Main).launch {
-                    try {
-                        val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
+                    val previousShareStatus = data.isShared
+                    val previousShareCount = data.shareCount
 
-                        feedShare.alpha = 1f
-                        feedShare.isEnabled = true
+                    // Optimistic UI update
+                    data.isShared = true
+                    data.shareCount = previousShareCount + 1
 
-                        if (response.isSuccessful) {
-                            response.body()?.let { shareResponse ->
-                                if (shareResponse.success) {
-                                    val serverData = shareResponse.data
+                    updateShareButtonUI(data.isShared)
+                    updateMetricDisplay(shareCount, data.shareCount, "share")
 
-                                    Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
+                    YoYo.with(Techniques.Tada)
+                        .duration(500)
+                        .repeat(1)
+                        .playOn(feedShare)
 
-                                    data.isShared = serverData.isShared
-                                    data.shareCount = serverData.shareCount
+                    feedShare.isEnabled = false
+                    feedShare.alpha = 0.8f
 
-                                    updateShareButtonUI(data.isShared)
-                                    updateMetricDisplay(shareCount, data.shareCount, "share")
+                    CoroutineScope(Dispatchers.Main).launch {
+                        try {
+                            val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
 
-                                    // Notify adapter
-                                    feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+                            feedShare.alpha = 1f
+                            feedShare.isEnabled = true
 
-                                    // Show share bottom sheet
-                                    showShareBottomSheet(data, onShareConfirmed = {
-                                        // Called when user actually shares to a platform
+                            if (response.isSuccessful) {
+                                response.body()?.let { shareResponse ->
+                                    if (shareResponse.success) {
+                                        val serverData = shareResponse.data
 
-                                        // Optimistic UI update
-                                        data.isShared = true
-                                        data.shareCount = previousShareCount + 1
+                                        Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
+
+                                        data.isShared = serverData.isShared
+                                        data.shareCount = serverData.shareCount
 
                                         updateShareButtonUI(data.isShared)
                                         updateMetricDisplay(shareCount, data.shareCount, "share")
 
-                                        YoYo.with(Techniques.Tada)
-                                            .duration(500)
-                                            .repeat(1)
-                                            .playOn(feedShare)
+                                        // Sync across all feeds
+                                        feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
 
-                                        feedShare.isEnabled = false
-                                        feedShare.alpha = 0.8f
-
-                                        CoroutineScope(Dispatchers.Main).launch {
-                                            try {
-                                                val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
-
-                                                feedShare.alpha = 1f
-                                                feedShare.isEnabled = true
-
-                                                if (response.isSuccessful) {
-                                                    response.body()?.let { shareResponse ->
-                                                        if (shareResponse.success) {
-                                                            val serverData = shareResponse.data
-
-                                                            Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
-
-                                                            data.isShared = serverData.isShared
-                                                            data.shareCount = serverData.shareCount
-
-                                                            updateShareButtonUI(data.isShared)
-                                                            updateMetricDisplay(shareCount, data.shareCount, "share")
-
-                                                            // Notify adapter
-                                                            feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
-
-                                                            Toast.makeText(
-                                                                feedShare.context,
-                                                                shareResponse.message,
-                                                                Toast.LENGTH_SHORT
-                                                            ).show()
-                                                        } else {
-                                                            Log.e(TAG, "Share failed - success=false")
-                                                            revertShareState(data, previousShareStatus, previousShareCount)
-                                                        }
-                                                    } ?: run {
-                                                        Log.e(TAG, "Share response body is null")
-                                                        revertShareState(data, previousShareStatus, previousShareCount)
-                                                    }
-                                                } else {
-                                                    Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
-                                                    revertShareState(data, previousShareStatus, previousShareCount)
-
-                                                    Toast.makeText(
-                                                        feedShare.context,
-                                                        "Failed to update share",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-                                            } catch (e: Exception) {
-                                                feedShare.alpha = 1f
-                                                feedShare.isEnabled = true
-
-                                                Log.e(TAG, "Share network error", e)
-                                                revertShareState(data, previousShareStatus, previousShareCount)
-
-                                                Toast.makeText(
-                                                    feedShare.context,
-                                                    "Network error. Please check your connection.",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                        }
-                                    })
-
+                                        Toast.makeText(
+                                            feedShare.context,
+                                            "Shared successfully!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        Log.e(TAG, "Share failed - success=false")
+                                        revertShareState(data, previousShareStatus, previousShareCount)
+                                        Toast.makeText(
+                                            feedShare.context,
+                                            "Failed to share post",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                } ?: run {
+                                    Log.e(TAG, "Share response body is null")
+                                    revertShareState(data, previousShareStatus, previousShareCount)
                                     Toast.makeText(
                                         feedShare.context,
-                                        "Shared successfully!",
+                                        "Failed to share post",
                                         Toast.LENGTH_SHORT
                                     ).show()
-                                } else {
-                                    Log.e(TAG, "Share failed - success=false")
-                                    revertShareState(data, previousShareStatus, previousShareCount)
                                 }
-                            } ?: run {
-                                Log.e(TAG, "Share response body is null")
+                            } else {
+                                Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
                                 revertShareState(data, previousShareStatus, previousShareCount)
+                                Toast.makeText(
+                                    feedShare.context,
+                                    "Failed to share post",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
-                        } else {
-                            Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
+                        } catch (e: Exception) {
+                            feedShare.alpha = 1f
+                            feedShare.isEnabled = true
+
+                            Log.e(TAG, "Share network error", e)
                             revertShareState(data, previousShareStatus, previousShareCount)
 
                             Toast.makeText(
                                 feedShare.context,
-                                "Failed to update share",
+                                "Network error. Please check your connection.",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
-                    } catch (e: Exception) {
-                        feedShare.alpha = 1f
-                        feedShare.isEnabled = true
-
-                        Log.e(TAG, "Share network error", e)
-                        revertShareState(data, previousShareStatus, previousShareCount)
-
-                        Toast.makeText(
-                            feedShare.context,
-                            "Network error. Please check your connection.",
-                            Toast.LENGTH_SHORT
-                        ).show()
                     }
-                }
+                })
             }
         }
 
         private fun revertShareState(data: Post, previousStatus: Boolean, previousCount: Int) {
             data.isShared = previousStatus
             data.shareCount = previousCount
-            totalTextShareCounts = previousCount
             updateShareButtonUI(data.isShared)
             updateMetricDisplay(shareCount, data.shareCount, "share")
             Log.d(TAG, "Reverted to previous state: isShared=$previousStatus, shareCount=$previousCount")
@@ -1301,10 +1235,10 @@ class FeedAdapter(
             val postUrl = data.files?.firstOrNull()?.url
             val fullShareText = if (postUrl != null) "$shareText\n$postUrl" else shareText
 
-            // Setup share buttons
+            // Setup share buttons - these WILL increment the share count
             binding.btnWhatsApp.setOnClickListener {
                 shareToWhatsApp(context, fullShareText)
-                onShareConfirmed()
+                onShareConfirmed() // This triggers the API call and count increment
                 bottomSheetDialog.dismiss()
             }
 
@@ -1338,7 +1272,7 @@ class FeedAdapter(
                 bottomSheetDialog.dismiss()
             }
 
-            // Setup action buttons (these don't count as shares)
+            // Setup action buttons - these DON'T count as shares
             binding.btnReport.setOnClickListener {
                 Toast.makeText(context, "Report functionality", Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
@@ -1377,114 +1311,84 @@ class FeedAdapter(
             bottomSheetDialog.show()
         }
 
-        private fun incrementShareCount(data: com.uyscuti.social.network.api.response.posts.Post) {
-            val previousShareCount = data.safeShareCount
-
-            // Update immediately for better UX
-            data.shareCount += 1
-            totalTextShareCounts = data.safeShareCount
-            updateMetricDisplay(shareCount, data.safeShareCount, "share")
-
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(feedShare)
-
-            feedShare.isEnabled = false
-            feedShare.alpha = 0.8f
-
-            // Make API call to sync with server
-            RetrofitClient.shareService.incrementShare(data._id)
-                .enqueue(object : Callback<ShareResponse> {
-                    override fun onResponse(call: Call<ShareResponse>, response: Response<ShareResponse>) {
-                        feedShare.alpha = 1f
-                        feedShare.isEnabled = true
-
-                        if (response.isSuccessful) {
-                            response.body()?.let { shareResponse ->
-                                if (abs(shareResponse.shareCount - data.safeShareCount) > 1) {
-                                    data.safeShareCount = shareResponse.shareCount
-                                    totalTextShareCounts = data.safeShareCount
-                                    updateMetricDisplay(shareCount, data.safeShareCount, "share")
-                                    Log.d(TAG, "Updated share count from server: ${data.safeShareCount}")
-                                }
-                            }
-                        } else {
-                            Log.e(TAG, "Share sync failed: ${response.code()}")
-                            // Revert on failure
-                            data.safeShareCount = previousShareCount
-                            totalTextShareCounts = data.safeShareCount
-                            updateMetricDisplay(shareCount, data.safeShareCount, "share")
-                        }
-                    }
-
-                    override fun onFailure(call: Call<ShareResponse>, t: Throwable) {
-                        feedShare.alpha = 1f
-                        feedShare.isEnabled = true
-                        Log.e(TAG, "Share network error - will sync later", t)
-                        // Revert on network failure
-                        data.safeShareCount = previousShareCount
-                        totalTextShareCounts = data.safeShareCount
-                        updateMetricDisplay(shareCount, data.safeShareCount, "share")
-                    }
-                })
-
-            feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
-        }
-
-        // Share helper functions with multiple package name variants
+        // Share helper methods (implement these if not already present)
         private fun shareToWhatsApp(context: Context, text: String) {
-            val packages = listOf(
-                "com.whatsapp",
-                "com.whatsapp.w4b"
-            )
-            shareToApp(context, text, packages, "WhatsApp")
+            try {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    `package` = "com.whatsapp"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
+            }
         }
 
         private fun shareViaSMS(context: Context, text: String) {
             try {
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = "smsto:".toUri()
+                    data = Uri.parse("smsto:")
                     putExtra("sms_body", text)
                 }
                 context.startActivity(intent)
             } catch (e: Exception) {
-                Toast.makeText(context, "SMS app not available", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Cannot open SMS", Toast.LENGTH_SHORT).show()
             }
         }
 
         private fun shareToInstagram(context: Context, text: String) {
-            val packages = listOf(
-                "com.instagram.android"
-            )
-            shareToApp(context, text, packages, "Instagram")
+            try {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    `package` = "com.instagram.android"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Instagram not installed", Toast.LENGTH_SHORT).show()
+            }
         }
 
         private fun shareToMessenger(context: Context, text: String) {
-            val packages = listOf(
-                "com.facebook.orca",
-                "com.facebook.mlite"
-            )
-            shareToApp(context, text, packages, "Messenger")
+            try {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    `package` = "com.facebook.orca"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Messenger not installed", Toast.LENGTH_SHORT).show()
+            }
         }
 
         private fun shareToFacebook(context: Context, text: String) {
-            val packages = listOf(
-                "com.facebook.katana",
-                "com.facebook.lite"
-            )
-            shareToApp(context, text, packages, "Facebook")
+            try {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    `package` = "com.facebook.katana"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Facebook not installed", Toast.LENGTH_SHORT).show()
+            }
         }
 
         private fun shareToTelegram(context: Context, text: String) {
-            val packages = listOf(
-                "org.telegram.messenger",
-                "org.telegram.messenger.web",
-                "org.thunderdog.challegram"
-            )
-            shareToApp(context, text, packages, "Telegram")
+            try {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    `package` = "org.telegram.messenger"
+                    putExtra(Intent.EXTRA_TEXT, text)
+                }
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Telegram not installed", Toast.LENGTH_SHORT).show()
+            }
         }
-
+        
         // Generic function to try multiple package names
         private fun shareToApp(context: Context, text: String, packages: List<String>, appName: String) {
             try {

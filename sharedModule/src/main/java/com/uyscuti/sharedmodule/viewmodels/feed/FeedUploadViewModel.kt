@@ -302,9 +302,7 @@ class FeedUploadViewModel @Inject constructor(private val retrofitInstance: Retr
             tag.toRequestBody("text/plain".toMediaTypeOrNull())
         }.toTypedArray()
 
-//        if (content.isEmpty()) {
-//            content = ""
-//        }
+
         val contentPart: RequestBody = content
             .toRequestBody("text/plain".toMediaTypeOrNull())
         val contentTypePart: RequestBody = contentType
@@ -371,6 +369,7 @@ class FeedUploadViewModel @Inject constructor(private val retrofitInstance: Retr
             Log.d(TAG, "IOException ${e.message}")
         }
     }
+
     suspend fun favoriteFeed(shortOwnerId: String) {
         val TAG = "favoriteFeed"
         try {
@@ -392,9 +391,47 @@ class FeedUploadViewModel @Inject constructor(private val retrofitInstance: Retr
         }
     }
 
-//    fun uploadRetweet(postData: Any, onSuccess: Any, onError: Any) {
-//
-//    }
+    suspend fun getSharedFeed(shortOwnerId: String) {
+        val TAG = "getSharedFeed"
+        try {
+            val response = retrofitInstance.apiService.likeUnLikeFeed(shortOwnerId)
+            if (response.isSuccessful) {
+                val responseBody = response.body()
+                Log.d(
+                    TAG,
+                    "likeUnLikeFeed ${responseBody?.data!!.isLiked}"
+                )
+            } else {
+                Log.d(TAG, "Error: ${response.message()}")
+            }
+        } catch (e: HttpException) {
+            Log.d(TAG, "Http Exception ${e.message}")
+
+        } catch (e: IOException) {
+            Log.d(TAG, "IOException ${e.message}")
+        }
+    }
+
+    suspend fun getRepostedFeed(shortOwnerId: String) {
+        val TAG = "getRepostedFeed"
+        try {
+            val response = retrofitInstance.apiService.likeUnLikeFeed(shortOwnerId)
+            if (response.isSuccessful) {
+                val responseBody = response.body()
+                Log.d(
+                    TAG,
+                    "likeUnLikeFeed ${responseBody?.data!!.isLiked}"
+                )
+            } else {
+                Log.d(TAG, "Error: ${response.message()}")
+            }
+        } catch (e: HttpException) {
+            Log.d(TAG, "Http Exception ${e.message}")
+
+        } catch (e: IOException) {
+            Log.d(TAG, "IOException ${e.message}")
+        }
+    }
 
 
     var mixedFeedFilesClass: MutableList<MixedFeedFilesClass> = mutableListOf()

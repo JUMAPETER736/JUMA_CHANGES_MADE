@@ -678,7 +678,7 @@ interface IFlashapi {
     suspend fun shareUnShareFeed(@Path("postId") postId: String): Response<ShareUnShareFeedPostResponse>
 
     @POST("feed/share/{postId}")
-    suspend fun shareUnShareFeedWithData(@Path("postId") postId: String, @Body request: ShareRequest): Response<ShareUnShareFeedPostResponse>
+    suspend fun toggleFeedShare(@Path("postId") postId: String, @Body request: ShareRequest): Response<ShareUnShareFeedPostResponse>
 
 
     // ==================== FEED POSTS - REPOST ====================
@@ -690,7 +690,7 @@ interface IFlashapi {
     suspend fun repostUnRepostFeed(@Path("postId") postId: String): Response<RepostUnRepostFeedPostResponse>
 
     @POST("feed/repost/{postId}")
-    suspend fun repostUnRepostFeedWithData(@Path("postId") postId: String, @Body request: RepostRequest): Response<RepostUnRepostFeedPostResponse>
+    suspend fun toggleFeedRepost(@Path("postId") postId: String, @Body request: RepostRequest): Response<RepostUnRepostFeedPostResponse>
 
 
 
