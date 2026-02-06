@@ -2326,7 +2326,7 @@ class FeedAdapter(
 
         // Fixed setupLikeButton - Replace in your FeedAdapter.kt
 
-        private fun setupLikeButton(data: Post) {
+        private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, data.likes, "like")
 

@@ -45,6 +45,7 @@ import android.view.WindowManager
 import android.view.animation.AnimationUtils
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.webkit.WebView
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageButton
@@ -228,7 +229,10 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     private var totalMixedBookMarkCounts = 0
     private var totalMixedShareCounts = 0
 
+    private var currentVideoPosition = 0
     private lateinit var videoView: VideoView
+    private var documentWebView: WebView? = null
+    private var isVideoPlaying = false
     private var mediaPlayer: MediaPlayer? = null
 
     private val Post.safeRepostCount: Int
@@ -246,6 +250,9 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     private val Post.safeShareCount: Int
         get() = shareCount ?: 0
 
+    // Media adapter for displaying files
+    private lateinit var mediaAdapter: OriginalPostMediaAdapter
+
     // Activity result launchers
     private lateinit var pickMultipleMedia: ActivityResultLauncher<PickVisualMediaRequest>
     private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
@@ -253,6 +260,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     private lateinit var audioPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var videoPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var documentPickerLauncher: ActivityResultLauncher<Intent>
+    private lateinit var attachmentFile: CardView
 
     // Additional media for repost
     private val additionalMediaUris = mutableListOf<Uri>()
@@ -390,6 +398,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         render(data)
         setupClickListeners()
         setupTextWatcher()
+        // setupBackNavigation()
         initializeMediaHandling()
         setupLikeButton(data)
         setupBookmarkButton(data)
@@ -512,7 +521,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         shareButtonIcon.setOnClickListener { handleShareClick() }
 
 
-        // Reposter Profile Image Click
+        // FIXED: Reposter Profile Image Click
         userReposterProfile.setOnClickListener { view ->
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
@@ -570,7 +579,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
             }
         }
 
-        //  Original Poster Profile Image Click
+        // FIXED: Original Poster Profile Image Click
         originalPostProfileImage.setOnClickListener { view ->
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
@@ -641,754 +650,21 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
     }
 
-
-    private fun setupEngagementButtons(data: Post) {
-        setupLikeButton(data)
-        setupCommentButton(data)
-        setupBookmarkButton(data)
-        setupShareButton(data)
-        setupRepostButton(data)
-    }
-
-    private fun setupLikeButton(data: Post) {
-        updateLikeButtonUI(data.isLiked)
-        updateMetricDisplay(likesCount, data.likes, "like")
-
-        likeButtonIcon.setOnClickListener {
-            if (!likeButtonIcon.isEnabled) return@setOnClickListener
-
-            it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-
-            val previousLikeStatus = data.isLiked
-            val previousLikeCount = data.likes
-
-            // Optimistic UI update
-            data.isLiked = !previousLikeStatus
-            data.likes = if (data.isLiked) previousLikeCount + 1 else maxOf(0, previousLikeCount - 1)
-
-            updateLikeButtonUI(data.isLiked)
-            updateMetricDisplay(likesCount, data.likes, "like")
-
-            YoYo.with(if (data.isLiked) Techniques.Tada else Techniques.Pulse)
-                .duration(500)
-                .repeat(1)
-                .playOn(likeButtonIcon)
-
-            likeButtonIcon.isEnabled = false
-            likeButtonIcon.alpha = 0.8f
-
-            CoroutineScope(Dispatchers.Main).launch {
-                try {
-                    val response = retrofitInterface.apiService.likeUnLikeFeed(data._id)
-
-                    likeButtonIcon.alpha = 1f
-                    likeButtonIcon.isEnabled = true
-
-                    if (response.isSuccessful) {
-                        response.body()?.let { likeResponse ->
-                            if (likeResponse.success) {
-                                // Sync with server data
-                                data.isLiked = likeResponse.data.isLiked
-
-                                updateLikeButtonUI(data.isLiked)
-                                updateMetricDisplay(likesCount, data.likes, "like")
-
-                                val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
-                                Log.d(TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
-                            } else {
-                                Log.e(TAG, "Like failed - success=false")
-                                revertLikeState(data, previousLikeStatus, previousLikeCount)
-                            }
-                        } ?: run {
-                            Log.e(TAG, "Like response body is null")
-                            revertLikeState(data, previousLikeStatus, previousLikeCount)
-                        }
-                    } else {
-                        Log.e(TAG, "Like API error: ${response.code()} - ${response.message()}")
-                        revertLikeState(data, previousLikeStatus, previousLikeCount)
-
-                        Toast.makeText(
-                            requireContext(),
-                            "Failed to update like",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } catch (e: Exception) {
-                    likeButtonIcon.alpha = 1f
-                    likeButtonIcon.isEnabled = true
-
-                    Log.e(TAG, "Like network error", e)
-                    revertLikeState(data, previousLikeStatus, previousLikeCount)
-
-                    Toast.makeText(
-                        requireContext(),
-                        "Network error. Please check your connection.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
-    private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
-        data.isLiked = previousStatus
-        data.likes = previousCount
-        updateLikeButtonUI(data.isLiked)
-        updateMetricDisplay(likesCount, data.likes, "like")
-        Log.d(TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
-    }
-
-    private fun setupCommentButton(data: Post) {
-        updateMetricDisplay(commentCount, data.comments, "comment")
-
-        commentButtonIcon.setOnClickListener {
-            if (!commentButtonIcon.isEnabled) return@setOnClickListener
-            Log.d(TAG, "Comment button clicked for post ${data._id}")
-
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(commentButtonIcon)
-
-            // Navigate to comments or open comment sheet
-            Toast.makeText(requireContext(), "Open comments", Toast.LENGTH_SHORT).show()
-            commentButtonIcon.isEnabled = true
-        }
-    }
-
-    private fun setupBookmarkButton(data: Post) {
-        Log.d(TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
-
-        updateBookmarkButtonUI(data.isBookmarked)
-        updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
-
-        favoritesButton.setOnClickListener {
-            if (!favoritesButton.isEnabled) return@setOnClickListener
-
-            it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-
-            val newBookmarkStatus = !data.isBookmarked
-            val previousBookmarkStatus = data.isBookmarked
-            val previousBookmarkCount = data.bookmarkCount
-
-            Log.d(TAG, "Bookmark clicked - Post: ${data._id}, Current: $previousBookmarkStatus → New: $newBookmarkStatus")
-
-            data.isBookmarked = newBookmarkStatus
-            data.bookmarkCount = if (newBookmarkStatus) previousBookmarkCount + 1 else maxOf(0, previousBookmarkCount - 1)
-
-            updateBookmarkButtonUI(data.isBookmarked)
-            updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
-
-            YoYo.with(if (newBookmarkStatus) Techniques.Tada else Techniques.Pulse)
-                .duration(500)
-                .repeat(1)
-                .playOn(favoritesButton)
-
-            favoritesButton.isEnabled = false
-            favoritesButton.alpha = 0.8f
-
-            CoroutineScope(Dispatchers.Main).launch {
-                try {
-                    val bookmarkRequest = BookmarkRequest(newBookmarkStatus)
-                    val response = retrofitInterface.apiService.toggleBookmark(data._id, bookmarkRequest)
-
-                    favoritesButton.alpha = 1f
-                    favoritesButton.isEnabled = true
-
-                    if (response.isSuccessful) {
-                        response.body()?.let { bookmarkResponse ->
-                            if (bookmarkResponse.success) {
-                                val serverData = bookmarkResponse.data
-
-                                Log.d(TAG, "Bookmark success - Server: isBookmarked=${serverData.isBookmarked}, count=${serverData.bookmarkCount}")
-
-                                data.isBookmarked = serverData.isBookmarked
-                                data.bookmarkCount = serverData.bookmarkCount
-
-                                updateBookmarkButtonUI(data.isBookmarked)
-                                updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
-
-                                Toast.makeText(
-                                    requireContext(),
-                                    bookmarkResponse.message,
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                Log.e(TAG, "Bookmark failed - success=false")
-                                revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
-                                Toast.makeText(
-                                    requireContext(),
-                                    "Failed to update bookmark",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        } ?: run {
-                            Log.e(TAG, "Bookmark response body is null")
-                            revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
-                            Toast.makeText(
-                                requireContext(),
-                                "Failed to update bookmark",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    } else {
-                        Log.e(TAG, "Bookmark API error: ${response.code()} - ${response.message()}")
-                        revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
-                        Toast.makeText(
-                            requireContext(),
-                            "Failed to update bookmark",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } catch (e: Exception) {
-                    favoritesButton.alpha = 1f
-                    favoritesButton.isEnabled = true
-
-                    Log.e(TAG, "Bookmark network error", e)
-                    revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
-
-                    Toast.makeText(
-                        requireContext(),
-                        "Network error. Please check your connection.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
-    private fun revertBookmarkState(data: Post, previousStatus: Boolean, previousCount: Int) {
-        data.isBookmarked = previousStatus
-        data.bookmarkCount = previousCount
-        updateBookmarkButtonUI(data.isBookmarked)
-        updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
-        Log.d(TAG, "Reverted to previous state: isBookmarked=$previousStatus, count=$previousCount")
-    }
-
-    private fun setupShareButton(data: Post) {
-        updateShareButtonUI(data.isShared)
-        updateMetricDisplay(shareCount, data.shareCount, "share")
-
-        shareButtonIcon.setOnClickListener {
-            if (!shareButtonIcon.isEnabled) return@setOnClickListener
-
-            it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-
-            val previousShareStatus = data.isShared
-            val previousShareCount = data.shareCount
-
-            // Show share bottom sheet
-            showShareBottomSheet(data, onShareConfirmed = {
-                // Called when user actually shares to a platform
-
-                // Optimistic UI update
-                data.isShared = true
-                data.shareCount = previousShareCount + 1
-
-                updateShareButtonUI(data.isShared)
-                updateMetricDisplay(shareCount, data.shareCount, "share")
-
-                YoYo.with(Techniques.Tada)
-                    .duration(500)
-                    .repeat(1)
-                    .playOn(shareButtonIcon)
-
-                shareButtonIcon.isEnabled = false
-                shareButtonIcon.alpha = 0.8f
-
-                CoroutineScope(Dispatchers.Main).launch {
-                    try {
-                        val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
-
-                        shareButtonIcon.alpha = 1f
-                        shareButtonIcon.isEnabled = true
-
-                        if (response.isSuccessful) {
-                            response.body()?.let { shareResponse ->
-                                if (shareResponse.success) {
-                                    val serverData = shareResponse.data
-
-                                    Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
-
-                                    data.isShared = serverData.isShared
-                                    data.shareCount = serverData.shareCount
-
-                                    updateShareButtonUI(data.isShared)
-                                    updateMetricDisplay(shareCount, data.shareCount, "share")
-
-                                    Toast.makeText(
-                                        requireContext(),
-                                        shareResponse.message,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                } else {
-                                    Log.e(TAG, "Share failed - success=false")
-                                    revertShareState(data, previousShareStatus, previousShareCount)
-                                }
-                            } ?: run {
-                                Log.e(TAG, "Share response body is null")
-                                revertShareState(data, previousShareStatus, previousShareCount)
-                            }
-                        } else {
-                            Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
-                            revertShareState(data, previousShareStatus, previousShareCount)
-
-                            Toast.makeText(
-                                requireContext(),
-                                "Failed to update share",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    } catch (e: Exception) {
-                        shareButtonIcon.alpha = 1f
-                        shareButtonIcon.isEnabled = true
-
-                        Log.e(TAG, "Share network error", e)
-                        revertShareState(data, previousShareStatus, previousShareCount)
-
-                        Toast.makeText(
-                            requireContext(),
-                            "Network error. Please check your connection.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            })
-        }
-    }
-
-    private fun showShareBottomSheet(data: Post, onShareConfirmed: () -> Unit) {
-        val context = shareButtonIcon.context
-        val bottomSheetDialog = BottomSheetDialog(context)
-        val binding = BottomDialogForShareBinding.inflate(LayoutInflater.from(context))
-        bottomSheetDialog.setContentView(binding.root)
-
-        // Prepare share content
-        val shareText = "Check out this post on Flash!\n" +
-                "By: ${data.author?.account?.username ?: "Unknown"}\n" +
-                "${data.content ?: ""}"
-        val postUrl = data.files?.firstOrNull()?.url
-        val fullShareText = if (postUrl != null) "$shareText\n$postUrl" else shareText
-
-        // Setup share buttons
-        binding.btnWhatsApp.setOnClickListener {
-            shareToWhatsApp(context, fullShareText)
-            onShareConfirmed()
-            bottomSheetDialog.dismiss()
-        }
-
-        binding.btnSMS.setOnClickListener {
-            shareViaSMS(context, fullShareText)
-            onShareConfirmed()
-            bottomSheetDialog.dismiss()
-        }
-
-        binding.btnInstagram.setOnClickListener {
-            shareToInstagram(context, fullShareText)
-            onShareConfirmed()
-            bottomSheetDialog.dismiss()
-        }
-
-        binding.btnMessenger.setOnClickListener {
-            shareToMessenger(context, fullShareText)
-            onShareConfirmed()
-            bottomSheetDialog.dismiss()
-        }
-
-        binding.btnFacebook.setOnClickListener {
-            shareToFacebook(context, fullShareText)
-            onShareConfirmed()
-            bottomSheetDialog.dismiss()
-        }
-
-        binding.btnTelegram.setOnClickListener {
-            shareToTelegram(context, fullShareText)
-            onShareConfirmed()
-            bottomSheetDialog.dismiss()
-        }
-
-        // Setup action buttons (these don't count as shares)
-        binding.btnReport.setOnClickListener {
-            Toast.makeText(context, "Report functionality", Toast.LENGTH_SHORT).show()
-            bottomSheetDialog.dismiss()
-        }
-
-        binding.btnNotInterested.setOnClickListener {
-            Toast.makeText(context, "Not interested", Toast.LENGTH_SHORT).show()
-            bottomSheetDialog.dismiss()
-        }
-
-        binding.btnSaveVideo.setOnClickListener {
-            Toast.makeText(context, "Save post functionality", Toast.LENGTH_SHORT).show()
-            bottomSheetDialog.dismiss()
-        }
-
-        binding.btnDuet.setOnClickListener {
-            Toast.makeText(context, "Duet functionality", Toast.LENGTH_SHORT).show()
-            bottomSheetDialog.dismiss()
-        }
-
-        binding.btnReact.setOnClickListener {
-            Toast.makeText(context, "React functionality", Toast.LENGTH_SHORT).show()
-            bottomSheetDialog.dismiss()
-        }
-
-        binding.btnAddToFavorites.setOnClickListener {
-            Toast.makeText(context, "Add to favorites", Toast.LENGTH_SHORT).show()
-            bottomSheetDialog.dismiss()
-        }
-
-        // Setup cancel button
-        binding.btnCancel.setOnClickListener {
-            bottomSheetDialog.dismiss()
-        }
-
-        bottomSheetDialog.show()
-    }
-
-
-    // Share helper functions with multiple package name variants
-    private fun shareToWhatsApp(context: Context, text: String) {
-        val packages = listOf(
-            "com.whatsapp",
-            "com.whatsapp.w4b"
-        )
-        shareToApp(context, text, packages, "WhatsApp")
-    }
-
-    private fun shareViaSMS(context: Context, text: String) {
-        try {
-            val intent = Intent(Intent.ACTION_SENDTO).apply {
-                data = "smsto:".toUri()
-                putExtra("sms_body", text)
-            }
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Toast.makeText(context, "SMS app not available", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun shareToInstagram(context: Context, text: String) {
-        val packages = listOf(
-            "com.instagram.android"
-        )
-        shareToApp(context, text, packages, "Instagram")
-    }
-
-    private fun shareToMessenger(context: Context, text: String) {
-        val packages = listOf(
-            "com.facebook.orca",
-            "com.facebook.mlite"
-        )
-        shareToApp(context, text, packages, "Messenger")
-    }
-
-    private fun shareToFacebook(context: Context, text: String) {
-        val packages = listOf(
-            "com.facebook.katana",
-            "com.facebook.lite"
-        )
-        shareToApp(context, text, packages, "Facebook")
-    }
-
-    private fun shareToTelegram(context: Context, text: String) {
-        val packages = listOf(
-            "org.telegram.messenger",
-            "org.telegram.messenger.web",
-            "org.thunderdog.challegram"
-        )
-        shareToApp(context, text, packages, "Telegram")
-    }
-
-    // Generic function to try multiple package names
-    private fun shareToApp(context: Context, text: String, packages: List<String>, appName: String) {
-        try {
-            for (packageName in packages) {
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    setPackage(packageName)
-                    putExtra(Intent.EXTRA_TEXT, text)
-                }
-
-                if (intent.resolveActivity(context.packageManager) != null) {
-                    context.startActivity(intent)
-                    return
-                }
-            }
-
-            Toast.makeText(context, "$appName not installed", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Toast.makeText(context, "$appName not available", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun revertShareState(data: Post, previousStatus: Boolean, previousCount: Int) {
-        data.isShared = previousStatus
-        data.shareCount = previousCount
-        updateShareButtonUI(data.isShared)
-        updateMetricDisplay(shareCount, data.shareCount, "share")
-        Log.d(TAG, "Reverted to previous state: isShared=$previousStatus, shareCount=$previousCount")
-    }
-
-    private fun setupRepostButton(data: Post) {
-        updateRepostButtonUI(data.isReposted)
-        updateMetricDisplay(repostCount, data.repostCount, "repost")
-
-        repostButton.setOnClickListener { view ->
-            if (!repostButton.isEnabled) return@setOnClickListener
-
-            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-
-            val previousRepostStatus = data.isReposted
-            val previousRepostCount = data.repostCount
-
-            Log.d(TAG, "Repost clicked - Post: ${data._id}, Current: $previousRepostStatus → New: ${!previousRepostStatus}")
-
-            // Optimistic UI update
-            data.isReposted = !previousRepostStatus
-            data.repostCount = if (data.isReposted) previousRepostCount + 1 else maxOf(0, previousRepostCount - 1)
-
-            updateRepostButtonUI(data.isReposted)
-            updateMetricDisplay(repostCount, data.repostCount, "repost")
-
-            YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
-                .duration(500)
-                .repeat(1)
-                .playOn(repostButton)
-
-            repostButton.isEnabled = false
-            repostButton.alpha = 0.8f
-
-            CoroutineScope(Dispatchers.Main).launch {
-                try {
-                    val response = retrofitInterface.apiService.repostUnRepostFeed(data._id)
-
-                    repostButton.alpha = 1f
-                    repostButton.isEnabled = true
-
-                    if (response.isSuccessful) {
-                        response.body()?.let { repostResponse ->
-                            if (repostResponse.success) {
-                                val serverData = repostResponse.data
-
-                                Log.d(TAG, "Repost success - Server: isReposted=${serverData.isReposted}, count=${serverData.repostCount}")
-
-                                data.isReposted = serverData.isReposted
-                                data.repostCount = serverData.repostCount
-
-                                updateRepostButtonUI(data.isReposted)
-                                updateMetricDisplay(repostCount, data.repostCount, "repost")
-
-                                Toast.makeText(
-                                    requireContext(),
-                                    repostResponse.message,
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                Log.e(TAG, "Repost failed - success=false")
-                                revertRepostState(data, previousRepostStatus, previousRepostCount)
-                            }
-                        } ?: run {
-                            Log.e(TAG, "Repost response body is null")
-                            revertRepostState(data, previousRepostStatus, previousRepostCount)
-                        }
-                    } else {
-                        Log.e(TAG, "Repost API error: ${response.code()} - ${response.message()}")
-                        revertRepostState(data, previousRepostStatus, previousRepostCount)
-
-                        Toast.makeText(
-                            requireContext(),
-                            "Failed to update repost",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } catch (e: Exception) {
-                    repostButton.alpha = 1f
-                    repostButton.isEnabled = true
-
-                    Log.e(TAG, "Repost network error", e)
-                    revertRepostState(data, previousRepostStatus, previousRepostCount)
-
-                    Toast.makeText(
-                        requireContext(),
-                        "Network error. Please check your connection.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
-    private fun revertRepostState(data: Post, previousStatus: Boolean, previousCount: Int) {
-        data.isReposted = previousStatus
-        data.repostCount = previousCount
-        updateRepostButtonUI(data.isReposted)
-        updateMetricDisplay(repostCount, data.repostCount, "repost")
-        Log.d(TAG, "Reverted to previous state: isReposted=$previousStatus, repostCount=$previousCount")
-    }
-
-    // UI Update Functions
-    private fun updateLikeButtonUI(isLiked: Boolean) {
-        Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
-        try {
-            if (isLiked) {
-                likeButtonIcon.setImageResource(R.drawable.filled_favorite_like)
-                likeButtonIcon.drawable?.setColorFilter(
-                    ContextCompat.getColor(requireContext(), R.color.bluejeans),
-                    PorterDuff.Mode.SRC_IN
-                )
-            } else {
-                likeButtonIcon.setImageResource(R.drawable.heart_svgrepo_com)
-                likeButtonIcon.drawable?.clearColorFilter()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating like button UI", e)
-        }
-    }
-
-    private fun updateBookmarkButtonUI(isBookmarked: Boolean) {
-        Log.d(TAG, "Updating bookmark button UI: isBookmarked=$isBookmarked")
-        try {
-            if (isBookmarked) {
-                favoritesButton.setImageResource(R.drawable.filled_favorite)
-            } else {
-                favoritesButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
-                favoritesButton.drawable?.clearColorFilter()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating bookmark button UI", e)
-        }
-    }
-
-    private fun updateShareButtonUI(isShared: Boolean) {
-        Log.d(TAG, "Updating share button UI: isShared=$isShared")
-        try {
-            if (isShared) {
-                shareButtonIcon.drawable?.setColorFilter(
-                    ContextCompat.getColor(requireContext(), R.color.bluejeans),
-                    PorterDuff.Mode.SRC_IN
-                )
-            } else {
-                shareButtonIcon.drawable?.clearColorFilter()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating share button UI", e)
-        }
-    }
-
-
-    private fun updateRepostButtonUI(isReposted: Boolean) {
-        Log.d(TAG, "Updating repost button UI: isReposted=$isReposted")
-        try {
-            if (isReposted) {
-                // Change text color to indicate reposted state
-                repostButton.setTextColor(
-                    ContextCompat.getColor(requireContext(), R.color.bluejeans)
-                )
-                //  Change text to show it's reposted
-                repostButton.text = "Reposted"
-                // Make it slightly larger
-                repostButton.scaleX = 1.05f
-                repostButton.scaleY = 1.05f
-            } else {
-                // Reset to default white color
-                repostButton.setTextColor(
-                    ContextCompat.getColor(requireContext(), R.color.white)
-                )
-                repostButton.text = "Repost"
-                repostButton.scaleX = 1.0f
-                repostButton.scaleY = 1.0f
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating repost button UI", e)
-        }
-    }
-
-    private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
-        Log.d(TAG, "updateMetricDisplay: Updating $metricType with count: $count")
-        textView.text = formatCount(count)
-        textView.visibility = View.VISIBLE
-        textView.contentDescription = when (metricType) {
-            "like" -> "$count ${if (count == 1) "like" else "likes"}"
-            "comment" -> "$count ${if (count == 1) "comment" else "comments"}"
-            "bookmark" -> "$count ${if (count == 1) "bookmark" else "bookmarks"}"
-            "repost" -> "$count ${if (count == 1) "repost" else "reposts"}"
-            "share" -> "$count ${if (count == 1) "share" else "shares"}"
-            else -> "$count $metricType"
-        }
-    }
-
-    @SuppressLint("DefaultLocale")
-    private fun formatCount(count: Int): String {
-        return when {
-            count >= 1_000_000 -> {
-                val millions = count / 1_000_000.0
-                if (millions == millions.toInt().toDouble()) {
-                    "${millions.toInt()}M"
-                } else {
-                    String.format("%.1fM", millions)
-                }
-            }
-            count >= 1_000 -> {
-                val thousands = count / 1_000.0
-                if (thousands == thousands.toInt().toDouble()) {
-                    "${thousands.toInt()}K"
-                } else {
-                    String.format("%.1fK", thousands)
-                }
-            }
-            else -> count.toString()
-        }
-    }
-
-    // Update the updateEngagementCounts function
-    private fun updateEngagementCounts(data: Post) {
-        try {
-            updateMetricDisplay(likesCount, data.likes, "like")
-            updateMetricDisplay(commentCount, data.comments, "comment")
-            updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
-            updateMetricDisplay(repostCount, data.repostCount, "repost")
-            updateMetricDisplay(shareCount, data.shareCount, "share")
-
-            Log.d(TAG, "Updated all engagement counts")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating engagement counts", e)
-        }
-    }
-
-    // Update the render function to call setupEngagementButtons
-    private fun render(data: Post) {
-        try {
-            Log.d(TAG, "Render: Starting comprehensive DATA display for Post ${data._id}")
-
-            currentPost = data
-
-            setupPostInfo(data)
-            setupUserInfo(data)
-            setupEngagementButtons(data)  // Add this line
-
-            // Collect files from both main post and original post
-            val allFiles = mutableListOf<com.uyscuti.social.network.api.response.posts.File>()
-            if (data.originalPost.isNotEmpty()) {
-                allFiles.addAll(data.originalPost[0].files)
-            }
-            if (data.files.isNotEmpty()) {
-                allFiles.addAll(data.files)
-            }
-
-            // Pass collected files
-            setupContentAndMedia(data)
-
-            Log.d(TAG, "render: Completed comprehensive setup for Post ${data._id}")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in comprehensive render method", e)
-        }
-    }
-
     @OptIn(UnstableApi::class)
     private fun cleanupAndGoBack() {
-        // Restore UI elements BEFORE navigation
+        // IMMEDIATE: Go back first - this is the priority
         try {
+            if (isAdded && !parentFragmentManager.isStateSaved) {
+                parentFragmentManager.popBackStackImmediate()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error popping back stack", e)
+            // If immediate fails, try regular popBackStack
+            parentFragmentManager.popBackStack()
+        }
+
+        // Everything else happens AFTER we're already going back
+        view?.post {
             // Clear focus
             _binding?.replyInput?.clearFocus()
 
@@ -1401,36 +677,11 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                 WindowCompat.setDecorFitsSystemWindows(act.window, true)
                 WindowInsetsControllerCompat(act.window, act.window.decorView)
                     .show(WindowInsetsCompat.Type.systemBars())
+
+                EventBus.getDefault().post(ShowAppBar(true))
+                EventBus.getDefault().post(ShowBottomNav(true))
             }
-
-            //  Show AppBar and BottomNav BEFORE going back
-            EventBus.getDefault().post(ShowAppBar(true))
-            EventBus.getDefault().post(ShowBottomNav(true))
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error during cleanup", e)
         }
-
-        // THEN: Navigate back AFTER UI is restored
-        view?.postDelayed({
-            try {
-                if (isAdded && !parentFragmentManager.isStateSaved) {
-                    parentFragmentManager.popBackStackImmediate()
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error popping back stack", e)
-                parentFragmentManager.popBackStack()
-            }
-        }, 50) // Small delay to ensure UI updates are processed
-    }
-
-    override fun onDestroyView() {
-        // Make sure you're showing them here too
-        EventBus.getDefault().post(ShowAppBar(true))
-        EventBus.getDefault().post(ShowBottomNav(true))
-
-        super.onDestroyView()
-        _binding = null
     }
 
     private fun getAvatarUrl(context: Context): String {
@@ -2572,6 +1823,16 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         }
     }
 
+    private fun handleUserProfileClick() {
+        Toast.makeText(context, "Navigate to your profile", Toast.LENGTH_SHORT).show()
+    }
+
+
+    private fun handleOriginalUserProfileClick() {
+        val username = data.author.account?.username ?: "Unknown User"
+        Toast.makeText(context, "View $username's profile", Toast.LENGTH_SHORT).show()
+    }
+
     private fun handleMediaClick() {
         Toast.makeText(context, "Open media viewer", Toast.LENGTH_SHORT).show()
     }
@@ -2582,6 +1843,33 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
     private fun handleOriginalHashtagsClick() {
         Toast.makeText(context, "View hashtag feed", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun render(data: Post) {
+        try {
+            Log.d(TAG, "Render: Starting comprehensive DATA display for Post ${data._id}")
+
+            currentPost = data
+
+            setupPostInfo(data)
+            setupUserInfo(data)
+
+            // Collect files from both main post and original post
+            val allFiles = mutableListOf<com.uyscuti.social.network.api.response.posts.File>()
+            if (data.originalPost.isNotEmpty()) {
+                allFiles.addAll(data.originalPost[0].files)
+            }
+            if (data.files.isNotEmpty()) {
+                allFiles.addAll(data.files)
+            }
+
+            // Pass collected files
+            setupContentAndMedia(data)
+
+            Log.d(TAG, "render: Completed comprehensive setup for Post ${data._id}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in comprehensive render method", e)
+        }
     }
 
     private fun setupPostInfo(data: Post) {
@@ -2907,6 +2195,37 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
         }
     }
 
+    private fun updateEngagementCounts(data: Post) {
+        try {
+            // Prioritize original post engagement counts, fallback to main post
+            val actualData = if (data.originalPost.isNotEmpty()) {
+                data.originalPost[0]
+            } else {
+                data
+            }
+
+
+            likesCount.visibility = View.VISIBLE
+
+
+            this.commentCount.visibility = View.VISIBLE
+
+
+            this.shareCount.visibility = View.VISIBLE
+
+
+            this.favoriteCounts.visibility = View.VISIBLE
+
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating engagement counts", e)
+            // Still show zeros on error
+            likesCount.text = "0"
+            commentCount.text = "0"
+            shareCount.text = "0"
+            favoriteCounts.text = "0"
+        }
+    }
 
     private fun setupMainPostMedia(data: Post) {
         try {
@@ -2933,6 +2252,65 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
     }
 
 
+    @SuppressLint("DefaultLocale")
+    private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
+        Log.d(TAG, "updateMetricDisplay: Updating $metricType display to $count")
+
+        val displayText = when {
+            count == 0 -> "0"
+            count < 1000 -> count.toString()
+            count < 1000000 -> {
+                val formatted = count / 1000.0
+                if (formatted == formatted.toInt().toDouble()) {
+                    "${formatted.toInt()}K"
+                } else {
+                    String.format("%.1fK", formatted)
+                }
+            }
+            else -> {
+                val formatted = count / 1000000.0
+                if (formatted == formatted.toInt().toDouble()) {
+                    "${formatted.toInt()}M"
+                } else {
+                    String.format("%.1fM", formatted)
+                }
+            }
+        }
+
+        val updateUI = {
+            try {
+                textView.text = displayText
+                textView.visibility = View.VISIBLE
+
+                // Force layout refresh
+                textView.requestLayout()
+                textView.invalidate()
+
+                // Force parent to refresh
+                (textView.parent as? View)?.requestLayout()
+
+                Log.d(TAG, "updateMetricDisplay: Set $metricType text to '$displayText' - TextView ID: ${textView.id}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating $metricType display", e)
+            }
+        }
+
+        if (Thread.currentThread() != Looper.getMainLooper().thread) {
+
+        } else {
+            updateUI()
+        }
+
+        // Double-check the UI was actually updated
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (textView.text.toString() != displayText) {
+                Log.w(TAG, "UI update failed for $metricType, retrying...")
+                textView.text = displayText
+                textView.requestLayout()
+            }
+        }, 100)
+    }
+
     private fun forceRefreshAllMetrics() {
         currentPost?.let { post ->
             Log.d(TAG, "forceRefreshAllMetrics: Forcing refresh of all metric displays")
@@ -2951,6 +2329,350 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                     Log.e(TAG, "Error in forceRefreshAllMetrics", e)
                 }
             }
+        }
+    }
+
+
+    private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        updateLikeButtonUI(data.isLiked)
+        updateMetricDisplay(likesCount, data.likes, "like")
+
+        likeButtonIcon.setOnClickListener {
+            if (!likeButtonIcon.isEnabled) return@setOnClickListener
+
+            it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+
+            val previousLikeStatus = data.isLiked
+            val previousLikeCount = data.likes
+
+            // Optimistic UI update
+            data.isLiked = !previousLikeStatus
+            data.likes = if (data.isLiked) previousLikeCount + 1 else maxOf(0, previousLikeCount - 1)
+
+            updateLikeButtonUI(data.isLiked)
+            updateMetricDisplay(likesCount, data.likes, "like")
+
+            YoYo.with(if (data.isLiked) Techniques.Tada else Techniques.Pulse)
+                .duration(500)
+                .repeat(1)
+                .playOn(likeButtonIcon)
+
+            likeButtonIcon.isEnabled = false
+            likeButtonIcon.alpha = 0.8f
+
+            CoroutineScope(Dispatchers.Main).launch {
+                try {
+                    val response = retrofitInterface.apiService.likeUnLikeFeed(data._id)
+
+                    likeButtonIcon.alpha = 1f
+                    likeButtonIcon.isEnabled = true
+
+                    if (response.isSuccessful) {
+                        response.body()?.let { likeResponse ->
+                            if (likeResponse.success) {
+                                // Sync with server data
+                                data.isLiked = likeResponse.data.isLiked
+
+
+                                updateLikeButtonUI(data.isLiked)
+                                updateMetricDisplay(likesCount, data.likes, "like")
+
+                                // Safely access likedByUserIds (it might be null)
+                                val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
+                                Log.d(TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
+
+                                // Notify adapter
+                                feedClickListener.likeUnLikeFeed(0, data)
+                            } else {
+                                Log.e(TAG, "Like failed - success=false")
+                                revertLikeState(data, previousLikeStatus, previousLikeCount)
+                            }
+                        } ?: run {
+                            Log.e(TAG, "Like response body is null")
+                            revertLikeState(data, previousLikeStatus, previousLikeCount)
+                        }
+                    } else {
+                        Log.e(TAG, "Like API error: ${response.code()} - ${response.message()}")
+                        revertLikeState(data, previousLikeStatus, previousLikeCount)
+
+                        Toast.makeText(
+                            likeButtonIcon.context,
+                            "Failed to update like",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                } catch (e: Exception) {
+                    likeButtonIcon.alpha = 1f
+                    likeButtonIcon.isEnabled = true
+
+                    Log.e(TAG, "Like network error", e)
+                    revertLikeState(data, previousLikeStatus, previousLikeCount)
+
+                    Toast.makeText(
+                        likeButtonIcon.context,
+                        "Network error. Please check your connection.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
+        data.isLiked = previousStatus
+        data.likes = previousCount
+        updateLikeButtonUI(data.isLiked)
+        updateMetricDisplay(likesCount, data.likes, "like")
+        Log.d(TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
+    }
+
+    private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
+
+        updateBookmarkButtonUI(data.isBookmarked)
+        updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+
+        favoritesButton.setOnClickListener {
+            if (!favoritesButton.isEnabled) return@setOnClickListener
+
+            it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+
+            val newBookmarkStatus = !data.isBookmarked
+            val previousBookmarkStatus = data.isBookmarked
+            val previousBookmarkCount = data.bookmarkCount
+
+            Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark clicked - Post: ${data._id}, Current: $previousBookmarkStatus → New: $newBookmarkStatus")
+
+            data.isBookmarked = newBookmarkStatus
+            data.bookmarkCount = if (newBookmarkStatus) previousBookmarkCount + 1 else maxOf(0, previousBookmarkCount - 1)
+
+            updateBookmarkButtonUI(data.isBookmarked)
+            updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+
+            YoYo.with(if (newBookmarkStatus) Techniques.Tada else Techniques.Pulse)
+                .duration(500)
+                .repeat(1)
+                .playOn(favoritesButton)
+
+            favoritesButton.isEnabled = false
+            favoritesButton.alpha = 0.8f
+
+            CoroutineScope(Dispatchers.Main).launch {
+                try {
+                    val bookmarkRequest = BookmarkRequest(newBookmarkStatus)
+
+                    // Use the apiService from your injected RetrofitInstance
+                    val response = retrofitInterface.apiService.toggleBookmark(data._id, bookmarkRequest)
+
+                    favoritesButton.alpha = 1f
+                    favoritesButton.isEnabled = true
+
+                    if (response.isSuccessful) {
+                        response.body()?.let { bookmarkResponse ->
+                            if (bookmarkResponse.success) {
+                                val serverData = bookmarkResponse.data
+
+                                Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark success - Server: isBookmarked=${serverData.isBookmarked}, count=${serverData.bookmarkCount}")
+
+                                data.isBookmarked = serverData.isBookmarked
+                                data.bookmarkCount = serverData.bookmarkCount
+
+                                updateBookmarkButtonUI(data.isBookmarked)
+                                updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+
+                                feedClickListener.feedFavoriteClick(0, data)
+
+                                Toast.makeText(
+                                    favoritesButton.context,
+                                    bookmarkResponse.message,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark failed - success=false")
+                                revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
+                                Toast.makeText(
+                                    favoritesButton.context,
+                                    "Failed to update bookmark",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        } ?: run {
+                            Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark response body is null")
+                            revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
+                            Toast.makeText(
+                                favoritesButton.context,
+                                "Failed to update bookmark",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } else {
+                        Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark API error: ${response.code()} - ${response.message()}")
+                        revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
+                        Toast.makeText(
+                            favoritesButton.context,
+                            "Failed to update bookmark",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                } catch (e: Exception) {
+                    favoritesButton.alpha = 1f
+                    favoritesButton.isEnabled = true
+
+                    Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark network error", e)
+                    revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
+
+                    Toast.makeText(
+                        favoritesButton.context,
+                        "Network error. Please check your connection.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    // Helper function to revert bookmark state on error
+    private fun revertBookmarkState(
+        data: com.uyscuti.social.network.api.response.posts.Post,
+        previousBookmarkStatus: Boolean,
+        previousBookmarkCount: Int
+    ) {
+        data.isBookmarked = previousBookmarkStatus
+        data.bookmarkCount = previousBookmarkCount
+        updateBookmarkButtonUI(data.isBookmarked)
+        updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted to previous state: isBookmarked=$previousBookmarkStatus, count=$previousBookmarkCount")
+    }
+
+    private fun setupCommentButton(data: Post) {
+        commentButtonIcon.setOnClickListener {
+            if (!commentButtonIcon.isEnabled) return@setOnClickListener
+
+            Log.d(TAG, "setupCommentButton: Comment button clicked for post ${data._id}")
+
+            // Animate the comment button
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(commentButtonIcon)
+
+            // Post event to MainActivity via EventBus
+            handleFeedCommentClicked(0, data)
+
+            commentButtonIcon.isEnabled = true
+        }
+
+        commentCount.setOnClickListener {
+            if (!commentCount.isEnabled) return@setOnClickListener
+
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(commentCount)
+
+            handleFeedCommentClicked(0, data)
+            commentCount.isEnabled = true
+        }
+    }
+
+    private fun setupShareButton(data: Post) {
+        updateMetricDisplay(shareCount, data.shareCount, "share")
+        shareButtonIcon.setOnClickListener {
+            if (!shareButtonIcon.isEnabled) return@setOnClickListener
+
+            Log.d(TAG, "Share clicked for post: ${data._id}")
+            val previousShareCount = data.shareCount
+
+            // Update immediately for better UX
+            data.shareCount += 1
+            totalMixedShareCounts = data.shareCount
+            updateMetricDisplay(shareCount, data.shareCount, "share")
+
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(shareButtonIcon)
+
+            shareButtonIcon.isEnabled = false
+            shareButtonIcon.alpha = 0.8f
+
+            // Make API call to sync with server
+            RetrofitClient.shareService.incrementShare(data._id)
+                .enqueue(object : Callback<ShareResponse> {
+                    override fun onResponse(call: Call<ShareResponse>, response: Response<ShareResponse>) {
+                        shareButtonIcon.alpha = 1f
+                        shareButtonIcon.isEnabled = true
+
+                        if (response.isSuccessful) {
+                            response.body()?.let { shareResponse ->
+                                if (abs(shareResponse.shareCount - data.shareCount) > 1) {
+                                    data.shareCount = shareResponse.shareCount
+                                    totalMixedShareCounts = data.shareCount
+                                    updateMetricDisplay(shareCount, data.shareCount, "share")
+                                    Log.d(TAG, "Updated share count from server: ${data.shareCount}")
+                                }
+                            }
+                        } else {
+                            Log.e(TAG, "Share sync failed: ${response.code()}")
+                            // Only revert on actual API errors, not JSON parsing issues
+                            if (response.code() != 200) {
+                                data.shareCount = previousShareCount
+                                totalMixedShareCounts = data.shareCount
+                                updateMetricDisplay(shareCount, data.shareCount, "share")
+                            }
+                        }
+                    }
+
+                    override fun onFailure(call: Call<ShareResponse>, t: Throwable) {
+                        shareButtonIcon.alpha = 1f
+                        shareButtonIcon.isEnabled = true
+
+                        // Check if it's a JSON parsing error
+                        if (t is MalformedJsonException ||
+                            t.message?.contains("MalformedJsonException") == true) {
+                            Log.w(TAG, "Share API returned malformed JSON but operation likely succeeded - keeping UI state")
+                            // Don't revert UI changes for JSON parsing errors as the operation likely succeeded
+                            return
+                        }
+
+                        Log.e(TAG, "Share network error - reverting changes", t)
+                        // Only revert for actual network failures
+                        data.shareCount = previousShareCount
+                        totalMixedShareCounts = data.shareCount
+                        updateMetricDisplay(shareCount, data.shareCount, "share")
+                    }
+                })
+
+            // Show the share dialog
+            feedShareClicked(0, data)
+        }
+    }
+
+    private fun updateLikeButtonUI(isLiked: Boolean) {
+        Log.d(tag, "Updating like button UI: isLiked=$isLiked")
+        try {
+            if (isLiked) {
+                likeButtonIcon.setImageResource(R.drawable.filled_favorite_like)
+            } else {
+                likeButtonIcon.setImageResource(R.drawable.heart_svgrepo_com)
+                likeButtonIcon.clearColorFilter()
+            }
+        } catch (e: Exception) {
+            Log.e(tag, "Error updating like button UI", e)
+        }
+    }
+
+    private fun updateBookmarkButtonUI(isBookmarked: Boolean) {
+        Log.d(tag, "Updating bookmark button UI: isBookmarked=$isBookmarked")
+        try {
+            if (isBookmarked) {
+                favoritesButton.setImageResource(R.drawable.filled_favorite)
+            } else {
+                favoritesButton.setImageResource(R.drawable.favorite_svgrepo_com__1_)
+                favoritesButton.clearColorFilter()
+            }
+        } catch (e: Exception) {
+            Log.e(tag, "Error updating bookmark button UI", e)
         }
     }
 
@@ -6496,7 +6218,11 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                     }
                 }
             }
+
+
         }
+
+
     }
 
 }
