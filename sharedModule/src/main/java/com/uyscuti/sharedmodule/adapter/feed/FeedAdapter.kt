@@ -540,8 +540,8 @@ class FeedAdapter(
                     totalTextLikesCounts = getLikesCount(data)
                     totalTextComments = getCommentCount(data)
                     totalTextBookMarkCounts = getBookmarkCount(data)
-                    totalTextShareCounts = getShareCount(data)
-                    totalTextRePostCounts = getRepostCount(data)
+                    totalTextShareCounts = data.shareCount
+                    totalTextRePostCounts = data.repostCount
 
                     Log.d(
                         TAG,
@@ -797,19 +797,11 @@ class FeedAdapter(
         }
 
         private fun getRepostCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
-            return when {
-                data.safeRepostCount != null -> data.safeRepostCount!!
-                data.safeRepostCount >= 0 -> data.safeRepostCount
-                else -> 0
-            }
+            return data.repostCount
         }
 
         private fun getShareCount(data: com.uyscuti.social.network.api.response.posts.Post): Int {
-            return when {
-                data.safeShareCount >= 0 -> data.safeShareCount
-                data.safeShareCount >= 0 -> data.safeShareCount
-                else -> 0
-            }
+            return data.shareCount
         }
 
         private fun setupInteractionButtons(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -1533,6 +1525,8 @@ class FeedAdapter(
                 feedClickListener.moreOptionsClick(absoluteAdapterPosition, data)
             }
         }
+
+
 
         private fun updateLikeButtonUI(isLiked: Boolean) {
             Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
@@ -3120,7 +3114,34 @@ class FeedAdapter(
             bottomSheetDialog.show()
         }
 
-       // Share helper functions with multiple package name variants
+        private fun incrementShareCount(data: com.uyscuti.social.network.api.response.posts.Post, targetPostId: String) {
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(feedShare)
+
+            feedShare.isEnabled = false
+            feedShare.alpha = 0.8f
+
+            // Use targetPostId for API call
+            RetrofitClient.shareService.incrementShare(targetPostId)
+                .enqueue(object : Callback<ShareResponse> {
+                    override fun onResponse(call: Call<ShareResponse>, response: Response<ShareResponse>) {
+                        feedShare.alpha = 1f
+                        feedShare.isEnabled = true
+                    }
+
+                    override fun onFailure(call: Call<ShareResponse>, t: Throwable) {
+                        feedShare.alpha = 1f
+                        feedShare.isEnabled = true
+                        Log.e(TAG, "Share network error", t)
+                    }
+                })
+
+            feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+        }
+
+        // Share helper functions with multiple package name variants
         private fun shareToWhatsApp(context: Context, text: String) {
             val packages = listOf(
                 "com.whatsapp",
