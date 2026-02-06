@@ -637,11 +637,6 @@ interface IFlashapi {
     @DELETE("feed/post/{postId}")
     suspend fun deleteFeed(@Path("postId") postId: String): Response<DeleteFeedResponse>
 
-    @POST("feed/post/repost/{postId}")
-    suspend fun repostsFeed(
-        @Path("postId") postId: String,
-        @Body request: RepostRequest
-    ): Response<CreateRepostFeedPost>
 
 
     // ==================== FEED POSTS - LIKES ====================
@@ -1023,5 +1018,10 @@ interface IFlashapi {
     @PUT("notifications/read/{notificationId}")
     suspend fun markNotificationRead(@Path("notificationId") notificationId: String): Response<ReadNotificationResponse>
 
+
+
+//    @POST("feed/post/repost/{postId}")
+//    suspend fun repostsFeed(@Path("postId") postId: String, @Body request: RepostRequest): Response<CreateRepostFeedPost>
+//
 
 }

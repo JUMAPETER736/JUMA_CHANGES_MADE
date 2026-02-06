@@ -1512,14 +1512,23 @@ class NewRepostedPostFragment(
         CoroutineScope(Dispatchers.IO).launch {
             try {
 
+                //ORIGINAL
+//                val requestResponse = RepostRequest(
+//                    true,
+//                    "",
+//                    null,
+//                    null
+//                )
+
                 val requestResponse = RepostRequest(
-                    true,
-                    "",
-                    null,
-                    null
+                    comment = "",
+                    isReposted = null,
+                    files = null,
+                    tags = null
                 )
 
-                val response = retrofitInstance.apiService.repostsFeed(
+
+                val response = retrofitInstance.apiService.toggleFeedRepost(
                     postId = data._id,
                     request = requestResponse
                 )

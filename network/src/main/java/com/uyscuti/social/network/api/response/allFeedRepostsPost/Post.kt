@@ -117,10 +117,19 @@ data class DeleteResponse(
 
 
 
+//// Original
+//data class RepostRequest(
+//    val isReposted: Boolean,
+//    val comment: String,
+//    val files: List<File>? = null,
+//    val tags: List<String>? = null
+//)
 
+
+//// New
 data class RepostRequest(
-    val isReposted: Boolean,
-    val comment: String,
+    val comment: String = "",
+    val isReposted: Boolean? = null,
     val files: List<File>? = null,
     val tags: List<String>? = null
 )

@@ -106,6 +106,7 @@ import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.databinding.BottomDialogForShareBinding
 import com.uyscuti.sharedmodule.databinding.FragmentEditPostToRepostViewBinding
+import com.uyscuti.sharedmodule.eventbus.RepostSuccessEvent
 import com.uyscuti.sharedmodule.model.FeedCommentClicked
 import com.uyscuti.sharedmodule.model.GoToUserProfileFragment
 import com.uyscuti.sharedmodule.model.HideAppBar
@@ -652,7 +653,7 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
     @OptIn(UnstableApi::class)
     private fun cleanupAndGoBack() {
-        // IMMEDIATE: Go back first - this is the priority
+        //  Go back first - this is the priority
         try {
             if (isAdded && !parentFragmentManager.isStateSaved) {
                 parentFragmentManager.popBackStackImmediate()
@@ -941,26 +942,21 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
 
     @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     @SuppressLint("SetTextI18n")
-    private fun performRepost(comment: String, newFiles: List<File>? = null) {
+    private fun performRepost(comment: String, newFiles: List<java.io.File>? = null) {
+        Log.d(TAG, "═══════════════════════════════════════")
+        Log.d(TAG, "PERFORM REPOST STARTED")
+        Log.d(TAG, "PostId: ${currentPost?._id}")
+        Log.d(TAG, "Comment: $comment")
+        Log.d(TAG, "Files: ${newFiles?.size}")
+        Log.d(TAG, "═══════════════════════════════════════")
 
-        Log.d(
-            TAG,
-            "performRepost called, currentPost=${currentPost?._id}, comment=$comment, newFiles=${newFiles?.size}"
-        )
-
-        // Check network connectivity
         if (!isNetworkAvailable()) {
             Log.e(TAG, "No network connectivity detected")
-            Toast.makeText(
-                context,
-                "No internet connection. Please check your network.",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(context, "No internet connection. Please check your network.", Toast.LENGTH_SHORT).show()
             return
         }
 
         currentPost?.let { post ->
-            // Prevent duplicate requests
             if (isReposting) {
                 Log.d(TAG, "Repost already in progress, ignoring")
                 return
@@ -973,112 +969,118 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                 try {
                     Log.d(TAG, "Initiating repost API call for postId: ${post._id}")
 
-                    // Create repost request
+                    // Create repost request - comment is the only important field
                     val repostRequest = RepostRequest(
-                        isReposted = true,
                         comment = comment,
-                        files = newFiles as List<com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File>?,
+                        files = null,
                         tags = null
                     )
 
-                    // Make API call
-                    val response = retrofitInterface.apiService.repostsFeed(post._id, repostRequest)
-                    Log.d(
-                        TAG,
-                        "Repost API response: code=${response.code()}, success=${response.isSuccessful}"
-                    )
+                    Log.d(TAG, "Request body: $repostRequest")
+
+                    // Make API call using the toggle endpoint
+                    val response = withContext(Dispatchers.IO) {
+                        retrofitInterface.apiService.toggleFeedRepost(post._id, repostRequest)
+                    }
+
+                    Log.d(TAG, "───────────────────────────────────────")
+                    Log.d(TAG, "API RESPONSE")
+                    Log.d(TAG, "Code: ${response.code()}")
+                    Log.d(TAG, "Success: ${response.isSuccessful}")
+                    Log.d(TAG, "Message: ${response.message()}")
 
                     if (response.isSuccessful) {
-                        val repostResponse = response.body()
-                        if (repostResponse != null) {
-                            post.isReposted = true
+                        val responseBody = response.body()
+                        Log.d(TAG, "Body: $responseBody")
 
-                            Log.d(TAG, "Reposting successful")
+                        if (responseBody != null && responseBody.success) {
+                            Log.d(TAG, "✓ Repost toggle successful")
 
-                            // Show success message and navigate back immediately
+                            // Update post state from API response
+                            post.isReposted = responseBody.data.isReposted
+                            post.repostCount = responseBody.data.repostCount
+
+                            Log.d(TAG, "Updated state - isReposted: ${post.isReposted}, count: ${post.repostCount}")
+
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Reposting successful!", Toast.LENGTH_SHORT).show()
+                                val message = if (post.isReposted) "Reposted successfully!" else "Repost removed"
+                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 
-                                // Navigate back immediately - no delay needed
-                                if (isAdded && !isNavigatingBack) {
-                                    //safeNavigateBack()
+                                // Post event to update all feeds
+                                Log.d(TAG, "Posting RepostSuccessEvent to EventBus")
+                                EventBus.getDefault().post(RepostSuccessEvent(post))
+
+                                // Navigate back only if we created a repost
+                                if (post.isReposted && isAdded && !isNavigatingBack) {
+                                    Log.d(TAG, "Navigating back...")
+                                    cleanupAndGoBack()
                                 }
                             }
 
+
+                            Log.d(TAG, "REPOST COMPLETED SUCCESSFULLY")
+
+
                         } else {
-                            Log.d(TAG, "Repost failed: Response body is null")
+                            Log.e(TAG, "✗ Response unsuccessful or body is null")
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(context, "Failed to repost", Toast.LENGTH_SHORT).show()
                             }
                         }
                     } else {
-                        // Handle API error codes
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(TAG, "API Error - Code: ${response.code()}")
+                        Log.e(TAG, "Error Body: $errorBody")
+
                         val errorMessage = when (response.code()) {
-                            400 -> "Invalid request. Please check your input."
+                            400 -> "You have already reposted this content."
                             401 -> "Authentication required. Please log in again."
                             403 -> "You don't have permission to repost this content."
                             404 -> "The original post was not found."
-                            409 -> "You have already reposted this content."
                             429 -> "Too many requests. Please try again later."
                             500 -> "Server error. Please try again later."
                             else -> "Failed to repost. Please try again."
                         }
-                        Log.e(
-                            TAG,
-                            "Repost failed with code: ${response.code()}, message: ${response.message()}"
-                        )
+
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
                         }
                     }
+
+
+
                 } catch (t: Throwable) {
-                    Log.e(TAG, "Reposting exception - Exception type: ${t.javaClass.simpleName}")
-                    Log.e(TAG, "Reposting exception - Message: ${t.message}")
-                    Log.e(TAG, "Reposting exception - Stack trace:", t)
 
-                    // Handle different exception types
+                    Log.e(TAG, "EXCEPTION CAUGHT")
+                    Log.e(TAG, "Type: ${t.javaClass.simpleName}")
+                    Log.e(TAG, "Message: ${t.message}")
+                    Log.e(TAG, "Stack trace:", t)
+
+
                     val errorMessage = when (t) {
-                        is UnknownHostException -> {
-                            Log.e(
-                                TAG,
-                                "UnknownHostException - DNS resolution failed or no internet"
-                            )
-                            "No internet connection or server unreachable. Please check your network."
-                        }
-
-                        is SocketTimeoutException -> {
-                            Log.e(TAG, "SocketTimeoutException - Request timed out")
-                            "Request timed out. Please try again."
-                        }
-
-                        is ConnectException -> {
-                            Log.e(TAG, "ConnectException - Connection failed")
-                            "Connection failed. Please check your internet connection."
-                        }
-
-                        is SSLException -> {
-                            Log.e(TAG, "SSLException - SSL/TLS error")
-                            "Security error. Please try again."
-                        }
-
-                        else -> {
-                            Log.e(TAG, "Unknown network error: ${t.javaClass.simpleName}")
-                            "Network error: ${t.message}"
-                        }
+                        is UnknownHostException -> "No internet connection or server unreachable."
+                        is SocketTimeoutException -> "Request timed out. Please try again."
+                        is ConnectException -> "Connection failed. Please check your internet."
+                        is SSLException -> "Security error. Please try again."
+                        else -> "Network error: ${t.message}"
                     }
+
                     withContext(Dispatchers.Main) {
                         Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                     }
                 } finally {
                     isReposting = false
+                    Log.d(TAG, "Repost flag reset")
                 }
             }
         } ?: run {
-            Log.d(TAG, "performRepost: No post selected")
+            Log.e(TAG, "performRepost: No post selected")
             Toast.makeText(context, "No post selected", Toast.LENGTH_SHORT).show()
             isReposting = false
         }
     }
+
+
 
     override fun onDestroy() {
         try {

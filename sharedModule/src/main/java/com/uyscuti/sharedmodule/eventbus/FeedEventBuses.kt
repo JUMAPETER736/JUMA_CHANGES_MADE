@@ -67,3 +67,6 @@ class InformFeedFragment(
     val isFollowing: Boolean
 )
 
+data class RepostSuccessEvent(
+    val post: com.uyscuti.social.network.api.response.posts.Post
+)

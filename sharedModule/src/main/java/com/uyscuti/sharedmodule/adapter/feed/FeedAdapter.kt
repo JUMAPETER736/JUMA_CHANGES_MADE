@@ -82,6 +82,7 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkReques
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
 import android.content.res.ColorStateList
+import android.net.Uri
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File
@@ -1042,7 +1043,7 @@ class FeedAdapter(
             Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted to previous state: isBookmarked=$previousBookmarkStatus, count=$previousBookmarkCount")
         }
 
-        private fun setupRepostButton(data: Post) {
+        private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             updateRepostButtonUI(data.isReposted)
             updateMetricDisplay(repostCount, data.repostCount, "repost")
 
@@ -1051,44 +1052,45 @@ class FeedAdapter(
 
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                // Just show a quick animation - DON'T change state yet
+                // Optimistic UI update with animation
+                val willBeReposted = !data.isReposted
+
+                // Show quick animation
                 YoYo.with(Techniques.Pulse)
                     .duration(300)
                     .playOn(repostedPost)
 
-                // Navigate to edit fragment WITHOUT changing any state
+                // Navigate to edit fragment WITHOUT changing server state
                 // The actual repost happens when user confirms in the fragment
                 feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
             }
         }
 
         private fun updateRepostButtonUI(isReposted: Boolean) {
-            Log.d(TAG, "Updating repost button UI: isReposted=$isReposted")
-            try {
-                if (isReposted) {
-                    repostedPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostedPost.setColorFilter(
-                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
-                        PorterDuff.Mode.SRC_IN
-                    )
-                    repostedPost.scaleX = 1.1f
-                    repostedPost.scaleY = 1.1f
-                } else {
-                    repostedPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostedPost.clearColorFilter()
-                    repostedPost.scaleX = 1.0f
-                    repostedPost.scaleY = 1.0f
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating repost button UI", e)
+            if (isReposted) {
+                repostedPost.setColorFilter(
+                    ContextCompat.getColor(itemView.context, R.color.bluejeans),
+                    PorterDuff.Mode.SRC_IN
+                )
+            } else {
+                repostedPost.setColorFilter(
+                    ContextCompat.getColor(itemView.context, R.color.bluejeans),
+                    PorterDuff.Mode.SRC_IN
+                )
             }
         }
 
+        // Make sure this method updates the count display properly
+        private fun updateMetricDisplay(textView: TextView, count: Int, type: String) {
+            textView.text = when {
+                count == 0 -> ""
+                count < 1000 -> count.toString()
+                count < 1000000 -> String.format("%.1fK", count / 1000.0)
+                else -> String.format("%.1fM", count / 1000000.0)
+            }
+        }
 
-        // CORRECTED SHARE IMPLEMENTATION
-// This matches your actual flow: Click share → Show bottom sheet → Track when user actually shares
-
-        private fun setupShareButton(data: Post) {
+        private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             updateShareButtonUI(data.isShared)
             updateMetricDisplay(shareCount, data.shareCount, "share")
 
@@ -1388,7 +1390,7 @@ class FeedAdapter(
                 Toast.makeText(context, "Telegram not installed", Toast.LENGTH_SHORT).show()
             }
         }
-        
+
         // Generic function to try multiple package names
         private fun shareToApp(context: Context, text: String, packages: List<String>, appName: String) {
             try {
@@ -1503,21 +1505,6 @@ class FeedAdapter(
             updateCommentCount(newCount)
         }
 
-
-
-        private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
-            Log.d(TAG, "updateMetricDisplay: Updating $metricType with count: $count")
-            textView.text = formatCount(count)
-            textView.visibility = View.VISIBLE
-            textView.contentDescription = when (metricType) {
-                "like" -> "$count ${if (count == 1) "like" else "likes"}"
-                "comment" -> "$count ${if (count == 1) "comment" else "comments"}"
-                "bookmark" -> "$count ${if (count == 1) "bookmark" else "bookmarks"}"
-                "repost" -> "$count ${if (count == 1) "repost" else "reposts"}"
-                "share" -> "$count ${if (count == 1) "share" else "shares"}"
-                else -> "$count $metricType"
-            }
-        }
 
         private fun updateAllMetricDisplays(
             data: com.uyscuti.social.network.api.response.posts.Post,

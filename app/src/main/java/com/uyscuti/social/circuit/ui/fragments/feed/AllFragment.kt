@@ -66,6 +66,7 @@ import com.uyscuti.sharedmodule.eventbus.FromFavoriteFragmentFeedFavoriteClick
 import com.uyscuti.sharedmodule.eventbus.FromFavoriteFragmentFeedLikeClick
 import com.uyscuti.sharedmodule.eventbus.FromOtherUsersFeedFavoriteClick
 import com.uyscuti.sharedmodule.eventbus.HideFeedFloatingActionButton
+import com.uyscuti.sharedmodule.eventbus.RepostSuccessEvent
 import com.uyscuti.sharedmodule.eventbus.ShowFeedFloatingActionButton
 import com.uyscuti.sharedmodule.interfaces.feedinterfaces.FeedTextViewFragmentInterface
 import com.uyscuti.sharedmodule.interfaces.feedinterfaces.ToggleFeedFloatingActionButton
@@ -856,6 +857,37 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         EventBus.getDefault().post(FeedFavoriteClick(feedPosition, event.data))
     }
 
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onRepostSuccess(event: RepostSuccessEvent) {
+
+        Log.d(TAG, "REPOST SUCCESS EVENT RECEIVED")
+        Log.d(TAG, "PostId: ${event.post._id}")
+        Log.d(TAG, "IsReposted: ${event.post.isReposted}")
+        Log.d(TAG, "RepostCount: ${event.post.repostCount}")
+
+
+        // Step 1: Sync data across all feeds in ViewModel
+        getFeedViewModel.toggleRepostInAllFeeds(
+            postId = event.post._id,
+            isReposted = event.post.isReposted,
+            repostCount = event.post.repostCount
+        )
+
+        // Step 2: Update UI in current fragment's adapter
+        val feedPosition = allFeedAdapter.getPositionById(event.post._id)
+        if (feedPosition != -1) {
+            // Get updated post from ViewModel
+            val updatedPost = getFeedViewModel.getPostById(event.post._id)
+            if (updatedPost != null) {
+                allFeedAdapter.updateItem(feedPosition, updatedPost)
+                Log.d(TAG, "✓ Updated UI in AllFeed at position: $feedPosition")
+            }
+        } else {
+            Log.d(TAG, "✗ Post not found in AllFeed adapter")
+        }
+
+    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun feedUploadResponseEvent(event: FeedUploadResponseEvent) {

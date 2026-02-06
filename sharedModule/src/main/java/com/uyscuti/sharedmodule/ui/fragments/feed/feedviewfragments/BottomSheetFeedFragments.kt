@@ -75,14 +75,26 @@ class BottomSheetFragment : BottomSheetDialogFragment() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
 
+
+                // ORIGINAL CODE
+//                val repostRequest = RepostRequest(
+//                    true,
+//                    "",
+//                    null,
+//                    null
+//                )
+
+                // NEW CODE
+
                 val repostRequest = RepostRequest(
-                    true,
-                    "",
-                    null,
-                    null
+                    comment = "",
+                    isReposted = null,
+                    files = null,
+                    tags = null
                 )
 
-                val response = retrofitInstance.apiService.repostsFeed(
+
+                val response = retrofitInstance.apiService.toggleFeedRepost(
                     postId = data._id,
                     request = repostRequest
                 )
