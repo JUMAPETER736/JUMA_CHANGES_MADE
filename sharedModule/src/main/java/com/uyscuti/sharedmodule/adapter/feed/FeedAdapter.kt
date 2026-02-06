@@ -6903,62 +6903,100 @@ class FeedAdapter(
             }
         }
 
-        private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-
-            totalMixedShareCounts = data.shareCount ?: data.shareCount ?: 0
-            updateMetricDisplay(shareCountTextView, totalMixedShareCounts, "share")
+        private fun setupShareButton(data: Post) {
+            updateShareButtonUI(data.isShared)
+            updateMetricDisplay(shareCountTextView, data.shareCount, "share")
 
             shareImageView.setOnClickListener {
                 if (!shareImageView.isEnabled) return@setOnClickListener
 
-                Log.d(TAG, "Share clicked for Post: ${data._id}")
-                val previousShareCount = totalMixedShareCounts
+                it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                // Update immediately for better UX
-                totalMixedShareCounts += 1
-                data.shareCount = totalMixedShareCounts
-                updateMetricDisplay(shareCountTextView, totalMixedShareCounts, "share")
+                val previousShareStatus = data.isShared
+                val previousShareCount = data.shareCount
 
-                YoYo.with(Techniques.Tada)
-                    .duration(700)
-                    .repeat(1)
-                    .playOn(shareImageView)
+                // Show share bottom sheet
+                showShareBottomSheet(data, onShareConfirmed = {
+                    // Called when user actually shares to a platform
 
-                shareImageView.isEnabled = false
-                shareImageView.alpha = 0.8f
+                    // Optimistic UI update
+                    data.isShared = true
+                    data.shareCount = previousShareCount + 1
+                    totalMixedShareCounts = data.shareCount
 
-                // Make API call to sync with server
-                RetrofitClient.shareService.incrementShare(data._id)
-                    .enqueue(object : Callback<ShareResponse> {
-                        override fun onResponse(call: Call<ShareResponse>, response: Response<ShareResponse>) {
+                    updateShareButtonUI(data.isShared)
+                    updateMetricDisplay(shareCountTextView, data.shareCount, "share")
+
+                    YoYo.with(Techniques.Tada)
+                        .duration(500)
+                        .repeat(1)
+                        .playOn(shareImageView)
+
+                    shareImageView.isEnabled = false
+                    shareImageView.alpha = 0.8f
+
+                    CoroutineScope(Dispatchers.Main).launch {
+                        try {
+                            val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
+
                             shareImageView.alpha = 1f
                             shareImageView.isEnabled = true
 
                             if (response.isSuccessful) {
                                 response.body()?.let { shareResponse ->
-                                    if (abs(shareResponse.shareCount - 0) > 1) {
-                                        data.shareCount = shareResponse.shareCount
+                                    if (shareResponse.success) {
+                                        val serverData = shareResponse.data
+
+                                        Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
+
+                                        data.isShared = serverData.isShared
+                                        data.shareCount = serverData.shareCount
                                         totalMixedShareCounts = data.shareCount
+
+                                        updateShareButtonUI(data.isShared)
                                         updateMetricDisplay(shareCountTextView, data.shareCount, "share")
+
+                                        // Notify adapter
+                                        feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+
+                                        Toast.makeText(
+                                            shareImageView.context,
+                                            shareResponse.message,
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        Log.e(TAG, "Share failed - success=false")
+                                        revertShareState(data, previousShareStatus, previousShareCount)
                                     }
+                                } ?: run {
+                                    Log.e(TAG, "Share response body is null")
+                                    revertShareState(data, previousShareStatus, previousShareCount)
                                 }
                             } else {
-                                data.shareCount = previousShareCount
-                                totalMixedShareCounts = data.shareCount
-                                updateMetricDisplay(shareCountTextView, data.shareCount, "share")
-                            }
-                        }
+                                Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
+                                revertShareState(data, previousShareStatus, previousShareCount)
 
-                        override fun onFailure(call: Call<ShareResponse>, t: Throwable) {
+                                Toast.makeText(
+                                    shareImageView.context,
+                                    "Failed to update share",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        } catch (e: Exception) {
                             shareImageView.alpha = 1f
                             shareImageView.isEnabled = true
-                            data.shareCount = previousShareCount
-                            totalMixedShareCounts = data.shareCount
-                            updateMetricDisplay(shareCountTextView, data.shareCount, "share")
-                        }
-                    })
 
-                feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+                            Log.e(TAG, "Share network error", e)
+                            revertShareState(data, previousShareStatus, previousShareCount)
+
+                            Toast.makeText(
+                                shareImageView.context,
+                                "Network error. Please check your connection.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                })
             }
         }
 
