@@ -3129,10 +3129,10 @@ class FeedAdapter(
                     val feedReposterUsername: String
 
                     when {
-                        // Someone reposted - use their OWNER field (account ID) and username
+                        // Case 1: Someone reposted - use their OWNER field (account ID) and username
                         data.repostedUser != null -> {
-                            // Store in local variable to enable smart cast
-                            val repostedUser = data.repostedUser
+                            // ✅ Store in local variable - now Kotlin knows it's non-null
+                            val repostedUser = data.repostedUser!!  // Use !! since we checked != null
                             feedReposterOwnerId = repostedUser.owner
                             feedReposterUsername = repostedUser.username
                             Log.d(TAG, "RepostedUser account ID (owner): $feedReposterOwnerId")
@@ -3143,11 +3143,11 @@ class FeedAdapter(
                         // Case 2: Original post - use author.owner (the account ID!)
                         data.originalPost != null && data.originalPost.isNotEmpty() -> {
                             val originalAuthor = data.originalPost[0].author
-                            feedReposterOwnerId = originalAuthor.owner  // This is the account ID!
+                            feedReposterOwnerId = originalAuthor.owner
                             feedReposterUsername = originalAuthor.account.username
                             Log.d(TAG, "Using author.owner (account ID): $feedReposterOwnerId")
                             Log.d(TAG, " Username: @$feedReposterUsername")
-                            Log.d(TAG, "NOT using author._id which is: ${originalAuthor._id})")
+                            Log.d(TAG, "NOT using author._id which is: ${originalAuthor._id}")
                         }
 
                         // Case 3: Regular post - use main author's account ID
@@ -3167,7 +3167,6 @@ class FeedAdapter(
                             cachedFollowingList.contains(feedReposterOwnerId) ||
                             cachedFollowingUsernames.contains(feedReposterUsername)
 
-
                     Log.d(TAG, "REPOST FOLLOW CHECK - Post ID: ${data._id}")
                     Log.d(TAG, "Account ID (for follow check): $feedReposterOwnerId")
                     Log.d(TAG, "Username (for follow check): @$feedReposterUsername")
@@ -3176,7 +3175,6 @@ class FeedAdapter(
                     Log.d(TAG, "Match in cachedList: ${cachedFollowingList.contains(feedReposterOwnerId)}")
                     Log.d(TAG, "Match by username: ${cachedFollowingUsernames.contains(feedReposterUsername)}")
                     Log.d(TAG, "Following list (${followingUserIds.size} users): ${followingUserIds.joinToString(", ")}")
-
 
                     totalMixedComments = data.comments
                     totalMixedLikesCounts = data.likes
@@ -3208,11 +3206,8 @@ class FeedAdapter(
                     finalizeClickSetup(data)
                     setupRepostedUserProfileClicks(data)
                     setupOriginalPostAuthorClicks(data)
-
                 }
             }
-
-
         }
 
 
@@ -3666,7 +3661,6 @@ class FeedAdapter(
                 }
             }
         }
-
 
         @SuppressLint("ClickableViewAccessibility")
         private fun setupOriginalPostAuthorClicks(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -4349,40 +4343,15 @@ class FeedAdapter(
             }
         }
 
-        private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-            totalMixedRePostCounts = data.repostCount  // Use actual count, not 0
-            updateMetricDisplay(repostCounts, totalMixedRePostCounts, "repost")
-            updateRepostButtonAppearance(data.isReposted)
-
-            repostButton.setOnClickListener { view ->
-                if (!repostButton.isEnabled) return@setOnClickListener
-
-                // Haptic feedback
-                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-
-                // Simple animation feedback
-                YoYo.with(Techniques.Pulse)
-                    .duration(300)
-                    .playOn(repostButton)
-
-                // Navigate to Fragment_Edit_Post_To_Repost WITHOUT changing any state
-                // The actual repost logic will happen in that fragment
-                navigateToEditPostToRepost(data)
-
-                // Also notify the listener if needed
-                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
-            }
-        }
-
         // Update setupShareButton in FeedPostViewHolder
         //Replace your existing setupShareButton and incrementShareCount
 
         private fun setupShareButton(data: Post) {
             updateShareButtonUI(data.isShared)
-            updateMetricDisplay(shareCountText, data.shareCount, "share")
+            updateMetricDisplay(shareCounts, data.shareCount, "share")
 
-            feedShare.setOnClickListener {
-                if (!feedShare.isEnabled) return@setOnClickListener
+            shareButton.setOnClickListener {
+                if (!shareButton.isEnabled) return@setOnClickListener
 
                 it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
@@ -4398,22 +4367,22 @@ class FeedAdapter(
                     data.shareCount = previousShareCount + 1
 
                     updateShareButtonUI(data.isShared)
-                    updateMetricDisplay(shareCountText, data.shareCount, "share")
+                    updateMetricDisplay(shareCounts, data.shareCount, "share")
 
                     YoYo.with(Techniques.Tada)
                         .duration(500)
                         .repeat(1)
-                        .playOn(feedShare)
+                        .playOn(shareButton)
 
-                    feedShare.isEnabled = false
-                    feedShare.alpha = 0.8f
+                    shareButton.isEnabled = false
+                    shareButton.alpha = 0.8f
 
                     CoroutineScope(Dispatchers.Main).launch {
                         try {
                             val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
 
-                            feedShare.alpha = 1f
-                            feedShare.isEnabled = true
+                            shareButton.alpha = 1f
+                            shareButton.isEnabled = true
 
                             if (response.isSuccessful) {
                                 response.body()?.let { shareResponse ->
@@ -4426,13 +4395,13 @@ class FeedAdapter(
                                         data.shareCount = serverData.shareCount
 
                                         updateShareButtonUI(data.isShared)
-                                        updateMetricDisplay(shareCountText, data.shareCount, "share")
+                                        updateMetricDisplay(shareCounts, data.shareCount, "share")
 
                                         // Notify adapter
                                         feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
 
                                         Toast.makeText(
-                                            feedShare.context,
+                                            shareButton.context,
                                             shareResponse.message,
                                             Toast.LENGTH_SHORT
                                         ).show()
@@ -4449,20 +4418,20 @@ class FeedAdapter(
                                 revertShareState(data, previousShareStatus, previousShareCount)
 
                                 Toast.makeText(
-                                    feedShare.context,
+                                    shareButton.context,
                                     "Failed to update share",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
                         } catch (e: Exception) {
-                            feedShare.alpha = 1f
-                            feedShare.isEnabled = true
+                            shareButton.alpha = 1f
+                            shareButton.isEnabled = true
 
                             Log.e(TAG, "Share network error", e)
                             revertShareState(data, previousShareStatus, previousShareCount)
 
                             Toast.makeText(
-                                feedShare.context,
+                                shareButton.context,
                                 "Network error. Please check your connection.",
                                 Toast.LENGTH_SHORT
                             ).show()
@@ -4476,7 +4445,7 @@ class FeedAdapter(
             data.isShared = previousStatus
             data.shareCount = previousCount
             updateShareButtonUI(data.isShared)
-            updateMetricDisplay(shareCountText, data.shareCount, "share")
+            updateMetricDisplay(shareCounts, data.shareCount, "share")
             Log.d(TAG, "Reverted to previous state: isShared=$previousStatus, shareCount=$previousCount")
         }
 
@@ -4484,12 +4453,12 @@ class FeedAdapter(
             Log.d(TAG, "Updating share button UI: isShared=$isShared")
             try {
                 if (isShared) {
-                    feedShare.setColorFilter(
+                    shareButton.setColorFilter(
                         ContextCompat.getColor(itemView.context, R.color.bluejeans),
                         PorterDuff.Mode.SRC_IN
                     )
                 } else {
-                    feedShare.clearColorFilter()
+                    shareButton.clearColorFilter()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating share button UI", e)
@@ -4497,7 +4466,7 @@ class FeedAdapter(
         }
 
         private fun showShareBottomSheet(data: Post, onShareConfirmed: () -> Unit) {
-            val context = feedShare.context
+            val context = shareButton.context
             val bottomSheetDialog = BottomSheetDialog(context)
             val binding = BottomDialogForShareBinding.inflate(LayoutInflater.from(context))
             bottomSheetDialog.setContentView(binding.root)
@@ -4587,10 +4556,10 @@ class FeedAdapter(
 
         private fun setupRepostButton(data: Post) {
             updateRepostButtonUI(data.isReposted)
-            updateMetricDisplay(repostCount, data.repostCount, "repost")
+            updateMetricDisplay(repostCounts, data.repostCount, "repost")
 
-            repostPost.setOnClickListener { view ->
-                if (!repostPost.isEnabled) return@setOnClickListener
+            repostButton.setOnClickListener { view ->
+                if (!repostButton.isEnabled) return@setOnClickListener
 
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
@@ -4604,22 +4573,22 @@ class FeedAdapter(
                 data.repostCount = if (data.isReposted) previousRepostCount + 1 else maxOf(0, previousRepostCount - 1)
 
                 updateRepostButtonUI(data.isReposted)
-                updateMetricDisplay(repostCount, data.repostCount, "repost")
+                updateMetricDisplay(repostCounts, data.repostCount, "repost")
 
                 YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
                     .duration(500)
                     .repeat(1)
-                    .playOn(repostPost)
+                    .playOn(repostButton)
 
-                repostPost.isEnabled = false
-                repostPost.alpha = 0.8f
+                repostButton.isEnabled = false
+                repostButton.alpha = 0.8f
 
                 CoroutineScope(Dispatchers.Main).launch {
                     try {
                         val response = retrofitInterface.apiService.repostUnRepostFeed(data._id)
 
-                        repostPost.alpha = 1f
-                        repostPost.isEnabled = true
+                        repostButton.alpha = 1f
+                        repostButton.isEnabled = true
 
                         if (response.isSuccessful) {
                             response.body()?.let { repostResponse ->
@@ -4632,13 +4601,13 @@ class FeedAdapter(
                                     data.repostCount = serverData.repostCount
 
                                     updateRepostButtonUI(data.isReposted)
-                                    updateMetricDisplay(repostCount, data.repostCount, "repost")
+                                    updateMetricDisplay(repostCounts, data.repostCount, "repost")
 
                                     // Notify adapter
                                     feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
 
                                     Toast.makeText(
-                                        repostPost.context,
+                                        repostButton.context,
                                         repostResponse.message,
                                         Toast.LENGTH_SHORT
                                     ).show()
@@ -4655,20 +4624,20 @@ class FeedAdapter(
                             revertRepostState(data, previousRepostStatus, previousRepostCount)
 
                             Toast.makeText(
-                                repostPost.context,
+                                repostButton.context,
                                 "Failed to update repost",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
                     } catch (e: Exception) {
-                        repostPost.alpha = 1f
-                        repostPost.isEnabled = true
+                        repostButton.alpha = 1f
+                        repostButton.isEnabled = true
 
                         Log.e(TAG, "Repost network error", e)
                         revertRepostState(data, previousRepostStatus, previousRepostCount)
 
                         Toast.makeText(
-                            repostPost.context,
+                            repostButton.context,
                             "Network error. Please check your connection.",
                             Toast.LENGTH_SHORT
                         ).show()
@@ -4681,7 +4650,7 @@ class FeedAdapter(
             data.isReposted = previousStatus
             data.repostCount = previousCount
             updateRepostButtonUI(data.isReposted)
-            updateMetricDisplay(repostCount, data.repostCount, "repost")
+            updateMetricDisplay(repostCounts, data.repostCount, "repost")
             Log.d(TAG, "Reverted to previous state: isReposted=$previousStatus, repostCount=$previousCount")
         }
 
@@ -4689,18 +4658,18 @@ class FeedAdapter(
             Log.d(TAG, "Updating repost button UI: isReposted=$isReposted")
             try {
                 if (isReposted) {
-                    repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostPost.setColorFilter(
+                    repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
+                    repostButton.setColorFilter(
                         ContextCompat.getColor(itemView.context, R.color.green),
                         PorterDuff.Mode.SRC_IN
                     )
-                    repostPost.scaleX = 1.1f
-                    repostPost.scaleY = 1.1f
+                    repostButton.scaleX = 1.1f
+                    repostButton.scaleY = 1.1f
                 } else {
-                    repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostPost.clearColorFilter()
-                    repostPost.scaleX = 1.0f
-                    repostPost.scaleY = 1.0f
+                    repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
+                    repostButton.clearColorFilter()
+                    repostButton.scaleX = 1.0f
+                    repostButton.scaleY = 1.0f
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating repost button UI", e)
@@ -4709,19 +4678,6 @@ class FeedAdapter(
 
         /////////////////////////////////
 
-        private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-            totalMixedShareCounts = data.shareCount ?: 0
-            updateMetricDisplay(shareCounts, totalMixedShareCounts, "share")
-
-            shareButton.setOnClickListener {
-                if (!shareButton.isEnabled) return@setOnClickListener
-
-                Log.d(TAG, "Share clicked for Post: ${data._id}")
-
-                // Show share bottom sheet
-                showShareBottomSheet(data)
-            }
-        }
 
         private fun showShareBottomSheet(data: com.uyscuti.social.network.api.response.posts.Post) {
             val context = shareButton.context
@@ -5575,11 +5531,11 @@ class FeedAdapter(
                     when {
                         // Case 1: Someone reposted - use their OWNER field (account ID) and username
                         data.repostedUser != null -> {
-                            feedReposterOwnerId = data.repostedUser.owner  // Use owner field, not _id!
-                            feedReposterUsername = data.repostedUser.username
+                            feedReposterOwnerId = data.repostedUser!!.owner  // Use owner field, not _id!
+                            feedReposterUsername = data.repostedUser!!.username
                             Log.d(TAG, "Case 1: RepostedUser account ID (owner): $feedReposterOwnerId")
                             Log.d(TAG, "Case 1: RepostedUser username: @$feedReposterUsername")
-                            Log.d(TAG, "Case 1: (NOT using repostedUser._id which is: ${data.repostedUser._id})")
+                            Log.d(TAG, "Case 1: (NOT using repostedUser._id which is: ${data.repostedUser!!._id})")
                         }
 
                         // Case 2: Original post - use author.owner (the account ID!)
