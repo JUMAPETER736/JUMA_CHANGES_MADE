@@ -3129,13 +3129,15 @@ class FeedAdapter(
                     val feedReposterUsername: String
 
                     when {
-                        // Case 1: Someone reposted - use their OWNER field (account ID) and username
+                        // Someone reposted - use their OWNER field (account ID) and username
                         data.repostedUser != null -> {
-                            feedReposterOwnerId = data.repostedUser.owner  // Use owner field, not _id!
-                            feedReposterUsername = data.repostedUser.username
+                            // Store in local variable to enable smart cast
+                            val repostedUser = data.repostedUser
+                            feedReposterOwnerId = repostedUser.owner
+                            feedReposterUsername = repostedUser.username
                             Log.d(TAG, "RepostedUser account ID (owner): $feedReposterOwnerId")
                             Log.d(TAG, "RepostedUser username: @$feedReposterUsername")
-                            Log.d(TAG, "NOT using repostedUser._id which is: ${data.repostedUser._id})")
+                            Log.d(TAG, "NOT using repostedUser._id which is: ${repostedUser._id}")
                         }
 
                         // Case 2: Original post - use author.owner (the account ID!)
