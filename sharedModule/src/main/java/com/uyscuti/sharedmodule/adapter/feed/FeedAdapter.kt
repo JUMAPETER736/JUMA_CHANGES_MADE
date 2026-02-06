@@ -856,15 +856,12 @@ class FeedAdapter(
                                     // Sync with server data
                                     data.isLiked = likeResponse.data.isLiked
 
-                                    // ✅ FIX: Handle potential null likeCount from server
-                                    // Since your server only returns { isLiked: true/false }
-                                    // We keep our optimistic count
-                                    // data.likes stays as is (our optimistic update)
+
 
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
 
-                                    // ✅ FIX: Safely access likedByUserIds (it might be null)
+                                    // Safely access likedByUserIds (it might be null)
                                     val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
                                     Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
 
@@ -1164,7 +1161,7 @@ class FeedAdapter(
                 if (isReposted) {
                     repostedPost.setImageResource(R.drawable.repeat_svgrepo_com)
                     repostedPost.setColorFilter(
-                        ContextCompat.getColor(itemView.context, R.color.green),
+                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
                         PorterDuff.Mode.SRC_IN
                     )
                     repostedPost.scaleX = 1.1f
@@ -2452,15 +2449,11 @@ class FeedAdapter(
                                     // Sync with server data
                                     data.isLiked = likeResponse.data.isLiked
 
-                                    // ✅ FIX: Handle potential null likeCount from server
-                                    // Since your server only returns { isLiked: true/false }
-                                    // We keep our optimistic count
-                                    // data.likes stays as is (our optimistic update)
 
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
 
-                                    // ✅ FIX: Safely access likedByUserIds (it might be null)
+                                    // Safely access likedByUserIds (it might be null)
                                     val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
                                     Log.d(TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
 
@@ -2801,7 +2794,7 @@ class FeedAdapter(
                 if (isReposted) {
                     repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
                     repostPost.setColorFilter(
-                        ContextCompat.getColor(itemView.context, R.color.green),
+                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
                         PorterDuff.Mode.SRC_IN
                     )
                     repostPost.scaleX = 1.1f
@@ -3100,17 +3093,6 @@ class FeedAdapter(
             }
         }
 
-        private fun updateRepostButtonAppearance(isReposted: Boolean) {
-            if (isReposted) {
-                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                repostPost.scaleX = 1.1f
-                repostPost.scaleY = 1.1f
-            } else {
-                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                repostPost.scaleX = 1.0f
-                repostPost.scaleY = 1.0f
-            }
-        }
 
 
         fun updateCommentCount(newCount: Int) {
@@ -3506,7 +3488,7 @@ class FeedAdapter(
                     when {
                         // Case 1: Someone reposted - use their OWNER field (account ID) and username
                         data.repostedUser != null -> {
-                            // ✅ Store in local variable - now Kotlin knows it's non-null
+                            // Store in local variable - now Kotlin knows it's non-null
                             val repostedUser = data.repostedUser!!  // Use !! since we checked != null
                             feedReposterOwnerId = repostedUser.owner
                             feedReposterUsername = repostedUser.username
@@ -4519,15 +4501,12 @@ class FeedAdapter(
                                     // Sync with server data
                                     data.isLiked = likeResponse.data.isLiked
 
-                                    // ✅ FIX: Handle potential null likeCount from server
-                                    // Since your server only returns { isLiked: true/false }
-                                    // We keep our optimistic count
-                                    // data.likes stays as is (our optimistic update)
+
 
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
 
-                                    // ✅ FIX: Safely access likedByUserIds (it might be null)
+                                    // Safely access likedByUserIds (it might be null)
                                     val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
                                     Log.d(TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
 
@@ -4719,7 +4698,6 @@ class FeedAdapter(
         }
 
         // Update setupShareButton in FeedPostViewHolder
-        //Replace your existing setupShareButton and incrementShareCount
 
         private fun setupShareButton(data: Post) {
             updateShareButtonUI(data.isShared)
