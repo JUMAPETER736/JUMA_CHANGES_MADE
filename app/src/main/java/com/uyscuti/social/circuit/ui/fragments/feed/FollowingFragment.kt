@@ -486,9 +486,9 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
 
                         if (post.repostedUser != null) {
                             // This is a REPOST - check who REPOSTED it (not original author)
-                            posterAccountId = post.repostedUser.owner
-                            posterUsername = post.repostedUser.username.trim().lowercase()
-                            Log.d(TAG, "  REPOST by @${post.repostedUser.username} (ID: $posterAccountId)")
+                            posterAccountId = post.repostedUser!!.owner
+                            posterUsername = post.repostedUser!!.username.trim().lowercase()
+                            Log.d(TAG, "  REPOST by @${post.repostedUser!!.username} (ID: $posterAccountId)")
                         } else {
                             // This is an ORIGINAL POST - check the author
                             posterAccountId = post.author?.account?._id ?: return@mapNotNull null
@@ -612,8 +612,8 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                         val posterUsername: String
 
                         if (post.repostedUser != null) {
-                            posterAccountId = post.repostedUser.owner
-                            posterUsername = post.repostedUser.username.trim().lowercase()
+                            posterAccountId = post.repostedUser!!.owner
+                            posterUsername = post.repostedUser!!.username.trim().lowercase()
                         } else {
                             posterAccountId = post.author?.account?._id ?: return@mapNotNull null
                             posterUsername = post.author.account.username.trim().lowercase()
@@ -885,7 +885,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                 try {
                     // WHO POSTED THIS?
                     val posterAccountId: String = if (post.repostedUser != null) {
-                        post.repostedUser.owner
+                        post.repostedUser!!.owner
                     } else {
                         post.author?.account?._id ?: return@filter false
                     }
@@ -930,13 +930,13 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
             try {
                 // WHO POSTED THIS?
                 val posterAccountId: String = if (post.repostedUser != null) {
-                    post.repostedUser.owner
+                    post.repostedUser!!.owner
                 } else {
                     post.author?.account?._id ?: return@filter false
                 }
 
                 val posterUsername: String = if (post.repostedUser != null) {
-                    post.repostedUser.username.trim().lowercase()
+                    post.repostedUser!!.username.trim().lowercase()
                 } else {
                     post.author?.account?.username?.trim()?.lowercase() ?: return@filter false
                 }
@@ -1854,7 +1854,7 @@ class FollowingFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentI
                     val filteredPosts = currentPosts.filter { post ->
                         try {
                             val posterAccountId: String = if (post.repostedUser != null) {
-                                post.repostedUser.owner
+                                post.repostedUser!!.owner
                             } else {
                                 post.author?.account?._id ?: return@filter false
                             }
