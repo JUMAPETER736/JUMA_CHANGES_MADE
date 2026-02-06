@@ -3536,6 +3536,7 @@ class FeedAdapter(
             var feedOwnerUsername = ""
             var userHandle = ""
 
+            // Store in local variable
             val repostedUser = data.repostedUser
             if (repostedUser != null) {
                 // Use owner field (account ID), not _id (profile ID)
@@ -5010,7 +5011,6 @@ class FeedAdapter(
                 else -> "$count $metricType"
             }
         }
-
 
         private fun getActivityFromContext(context: Context?): AppCompatActivity? {
             return when (context) {
