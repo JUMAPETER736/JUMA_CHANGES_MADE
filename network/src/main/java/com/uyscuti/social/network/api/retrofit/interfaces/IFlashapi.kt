@@ -638,7 +638,7 @@ interface IFlashapi {
     ): Response<CreateRepostFeedPost>
 
 
-    // ==================== FEED - LIKES & BOOKMARKS ====================
+    // ==================== FEED - LIKES ====================
 
     @POST("feed/like/{postId}")
     suspend fun likeUnLikeFeed(@Path("postId") postId: String): Response<LikeUnLikeFeedPostResponse>
@@ -650,6 +650,7 @@ interface IFlashapi {
     suspend fun likeUnLikeFeedCommentReply(@Path("commentReplyId") commentReplyId: String): Response<LikeUnLikeCommentResponse>
 
 
+    // ==================== FEED - BOOKMARKS ====================
 
     @POST("feed/bookmarks/{postId}")
     suspend fun favoriteFeed(@Path("postId") postId: String): Response<ShortsFavoriteResponse>
@@ -659,7 +660,31 @@ interface IFlashapi {
 
     @POST("feed/bookmarks/{postId}")
     suspend fun toggleBookmark(@Path("postId") postId: String, @Body request: BookmarkRequest): Response<BookmarkResponse>
-    
+
+
+    // ==================== FEED - SHARE ====================
+
+    @POST("feed/share/{postId}")
+    suspend fun shareUnShareFeed(@Path("postId") postId: String): Response<ShareUnShareFeedPostResponse>
+
+    @POST("feed/share/{postId}")
+    suspend fun shareUnShareFeedWithData(@Path("postId") postId: String, @Body request: ShareRequest): Response<ShareUnShareFeedPostResponse>
+
+    @GET("feed/shares/")
+    suspend fun getSharedFeed(@Query("page") page: String): Response<FeedShareResponse>
+
+
+    // ==================== FEED - REPOST ====================
+
+    @POST("feed/repost/{postId}")
+    suspend fun repostUnRepostFeed(@Path("postId") postId: String): Response<RepostUnRepostFeedPostResponse>
+
+    @POST("feed/repost/{postId}")
+    suspend fun repostUnRepostFeedWithData(@Path("postId") postId: String, @Body request: RepostRequest): Response<RepostUnRepostFeedPostResponse>
+
+    @GET("feed/reposts/")
+    suspend fun getRepostedFeed(@Query("page") page: String): Response<FeedRepostResponse>
+
 
 
     // ==================== FEED - COMMENTS ====================
