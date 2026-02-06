@@ -1070,8 +1070,6 @@ class FeedAdapter(
             }
         }
 
-
-
         private fun updateRepostButtonUI(isReposted: Boolean) {
             Log.d(TAG, "Updating repost button UI: isReposted=$isReposted")
             try {
@@ -1106,87 +1104,162 @@ class FeedAdapter(
                 val previousShareStatus = data.isShared
                 val previousShareCount = data.shareCount
 
-                // Show share bottom sheet
-                showShareBottomSheet(data, onShareConfirmed = {
-                    // Called when user actually shares to a platform
+                // Optimistic UI update
+                data.isShared = true
+                data.shareCount = previousShareCount + 1
 
-                    // Optimistic UI update
-                    data.isShared = true
-                    data.shareCount = previousShareCount + 1
+                updateShareButtonUI(data.isShared)
+                updateMetricDisplay(shareCount, data.shareCount, "share")
 
-                    updateShareButtonUI(data.isShared)
-                    updateMetricDisplay(shareCount, data.shareCount, "share")
+                YoYo.with(Techniques.Tada)
+                    .duration(500)
+                    .repeat(1)
+                    .playOn(feedShare)
 
-                    YoYo.with(Techniques.Tada)
-                        .duration(500)
-                        .repeat(1)
-                        .playOn(feedShare)
+                feedShare.isEnabled = false
+                feedShare.alpha = 0.8f
 
-                    feedShare.isEnabled = false
-                    feedShare.alpha = 0.8f
+                CoroutineScope(Dispatchers.Main).launch {
+                    try {
+                        val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
 
-                    CoroutineScope(Dispatchers.Main).launch {
-                        try {
-                            val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
+                        feedShare.alpha = 1f
+                        feedShare.isEnabled = true
 
-                            feedShare.alpha = 1f
-                            feedShare.isEnabled = true
+                        if (response.isSuccessful) {
+                            response.body()?.let { shareResponse ->
+                                if (shareResponse.success) {
+                                    val serverData = shareResponse.data
 
-                            if (response.isSuccessful) {
-                                response.body()?.let { shareResponse ->
-                                    if (shareResponse.success) {
-                                        val serverData = shareResponse.data
+                                    Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
 
-                                        Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
+                                    data.isShared = serverData.isShared
+                                    data.shareCount = serverData.shareCount
 
-                                        data.isShared = serverData.isShared
-                                        data.shareCount = serverData.shareCount
-                                        totalTextShareCounts = data.shareCount
+                                    updateShareButtonUI(data.isShared)
+                                    updateMetricDisplay(shareCount, data.shareCount, "share")
+
+                                    // Notify adapter
+                                    feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+
+                                    // Show share bottom sheet
+                                    showShareBottomSheet(data, onShareConfirmed = {
+                                        // Called when user actually shares to a platform
+
+                                        // Optimistic UI update
+                                        data.isShared = true
+                                        data.shareCount = previousShareCount + 1
 
                                         updateShareButtonUI(data.isShared)
                                         updateMetricDisplay(shareCount, data.shareCount, "share")
 
-                                        // Notify adapter
-                                        feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+                                        YoYo.with(Techniques.Tada)
+                                            .duration(500)
+                                            .repeat(1)
+                                            .playOn(feedShare)
 
-                                        Toast.makeText(
-                                            feedShare.context,
-                                            shareResponse.message,
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    } else {
-                                        Log.e(TAG, "Share failed - success=false")
-                                        revertShareState(data, previousShareStatus, previousShareCount)
-                                    }
-                                } ?: run {
-                                    Log.e(TAG, "Share response body is null")
+                                        feedShare.isEnabled = false
+                                        feedShare.alpha = 0.8f
+
+                                        CoroutineScope(Dispatchers.Main).launch {
+                                            try {
+                                                val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
+
+                                                feedShare.alpha = 1f
+                                                feedShare.isEnabled = true
+
+                                                if (response.isSuccessful) {
+                                                    response.body()?.let { shareResponse ->
+                                                        if (shareResponse.success) {
+                                                            val serverData = shareResponse.data
+
+                                                            Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
+
+                                                            data.isShared = serverData.isShared
+                                                            data.shareCount = serverData.shareCount
+
+                                                            updateShareButtonUI(data.isShared)
+                                                            updateMetricDisplay(shareCount, data.shareCount, "share")
+
+                                                            // Notify adapter
+                                                            feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+
+                                                            Toast.makeText(
+                                                                feedShare.context,
+                                                                shareResponse.message,
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        } else {
+                                                            Log.e(TAG, "Share failed - success=false")
+                                                            revertShareState(data, previousShareStatus, previousShareCount)
+                                                        }
+                                                    } ?: run {
+                                                        Log.e(TAG, "Share response body is null")
+                                                        revertShareState(data, previousShareStatus, previousShareCount)
+                                                    }
+                                                } else {
+                                                    Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
+                                                    revertShareState(data, previousShareStatus, previousShareCount)
+
+                                                    Toast.makeText(
+                                                        feedShare.context,
+                                                        "Failed to update share",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            } catch (e: Exception) {
+                                                feedShare.alpha = 1f
+                                                feedShare.isEnabled = true
+
+                                                Log.e(TAG, "Share network error", e)
+                                                revertShareState(data, previousShareStatus, previousShareCount)
+
+                                                Toast.makeText(
+                                                    feedShare.context,
+                                                    "Network error. Please check your connection.",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        }
+                                    })
+
+                                    Toast.makeText(
+                                        feedShare.context,
+                                        "Shared successfully!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    Log.e(TAG, "Share failed - success=false")
                                     revertShareState(data, previousShareStatus, previousShareCount)
                                 }
-                            } else {
-                                Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
+                            } ?: run {
+                                Log.e(TAG, "Share response body is null")
                                 revertShareState(data, previousShareStatus, previousShareCount)
-
-                                Toast.makeText(
-                                    feedShare.context,
-                                    "Failed to update share",
-                                    Toast.LENGTH_SHORT
-                                ).show()
                             }
-                        } catch (e: Exception) {
-                            feedShare.alpha = 1f
-                            feedShare.isEnabled = true
-
-                            Log.e(TAG, "Share network error", e)
+                        } else {
+                            Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
                             revertShareState(data, previousShareStatus, previousShareCount)
 
                             Toast.makeText(
                                 feedShare.context,
-                                "Network error. Please check your connection.",
+                                "Failed to update share",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
+                    } catch (e: Exception) {
+                        feedShare.alpha = 1f
+                        feedShare.isEnabled = true
+
+                        Log.e(TAG, "Share network error", e)
+                        revertShareState(data, previousShareStatus, previousShareCount)
+
+                        Toast.makeText(
+                            feedShare.context,
+                            "Network error. Please check your connection.",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
-                })
+                }
             }
         }
 
@@ -2647,7 +2720,7 @@ class FeedAdapter(
             }
         }
 
-        private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+        private fun setupShareButton(data: Post) {
             updateShareButtonUI(data.isShared)
             updateMetricDisplay(shareCountText, data.shareCount, "share")
 
@@ -2659,86 +2732,162 @@ class FeedAdapter(
                 val previousShareStatus = data.isShared
                 val previousShareCount = data.shareCount
 
-                // Show share bottom sheet
-                showShareBottomSheet(data, onShareConfirmed = {
-                    // Called when user actually shares to a platform
+                // Optimistic UI update
+                data.isShared = true
+                data.shareCount = previousShareCount + 1
 
-                    // Optimistic UI update
-                    data.isShared = true
-                    data.shareCount = previousShareCount + 1
+                updateShareButtonUI(data.isShared)
+                updateMetricDisplay(shareCountText, data.shareCount, "share")
 
-                    updateShareButtonUI(data.isShared)
-                    updateMetricDisplay(shareCountText, data.shareCount, "share")
+                YoYo.with(Techniques.Tada)
+                    .duration(500)
+                    .repeat(1)
+                    .playOn(feedShare)
 
-                    YoYo.with(Techniques.Tada)
-                        .duration(500)
-                        .repeat(1)
-                        .playOn(feedShare)
+                feedShare.isEnabled = false
+                feedShare.alpha = 0.8f
 
-                    feedShare.isEnabled = false
-                    feedShare.alpha = 0.8f
+                CoroutineScope(Dispatchers.Main).launch {
+                    try {
+                        val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
 
-                    CoroutineScope(Dispatchers.Main).launch {
-                        try {
-                            val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
+                        feedShare.alpha = 1f
+                        feedShare.isEnabled = true
 
-                            feedShare.alpha = 1f
-                            feedShare.isEnabled = true
+                        if (response.isSuccessful) {
+                            response.body()?.let { shareResponse ->
+                                if (shareResponse.success) {
+                                    val serverData = shareResponse.data
 
-                            if (response.isSuccessful) {
-                                response.body()?.let { shareResponse ->
-                                    if (shareResponse.success) {
-                                        val serverData = shareResponse.data
+                                    Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
 
-                                        Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
+                                    data.isShared = serverData.isShared
+                                    data.shareCount = serverData.shareCount
 
-                                        data.isShared = serverData.isShared
-                                        data.shareCount = serverData.shareCount
+                                    updateShareButtonUI(data.isShared)
+                                    updateMetricDisplay(shareCountText, data.shareCount, "share")
+
+                                    // Notify adapter
+                                    feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+
+                                    // Show share bottom sheet
+                                    showShareBottomSheet(data, onShareConfirmed = {
+                                        // Called when user actually shares to a platform
+
+                                        // Optimistic UI update
+                                        data.isShared = true
+                                        data.shareCount = previousShareCount + 1
 
                                         updateShareButtonUI(data.isShared)
                                         updateMetricDisplay(shareCountText, data.shareCount, "share")
 
-                                        // Notify adapter
-                                        feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+                                        YoYo.with(Techniques.Tada)
+                                            .duration(500)
+                                            .repeat(1)
+                                            .playOn(feedShare)
 
-                                        Toast.makeText(
-                                            feedShare.context,
-                                            shareResponse.message,
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    } else {
-                                        Log.e(TAG, "Share failed - success=false")
-                                        revertShareState(data, previousShareStatus, previousShareCount)
-                                    }
-                                } ?: run {
-                                    Log.e(TAG, "Share response body is null")
+                                        feedShare.isEnabled = false
+                                        feedShare.alpha = 0.8f
+
+                                        CoroutineScope(Dispatchers.Main).launch {
+                                            try {
+                                                val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
+
+                                                feedShare.alpha = 1f
+                                                feedShare.isEnabled = true
+
+                                                if (response.isSuccessful) {
+                                                    response.body()?.let { shareResponse ->
+                                                        if (shareResponse.success) {
+                                                            val serverData = shareResponse.data
+
+                                                            Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
+
+                                                            data.isShared = serverData.isShared
+                                                            data.shareCount = serverData.shareCount
+
+                                                            updateShareButtonUI(data.isShared)
+                                                            updateMetricDisplay(shareCountText, data.shareCount, "share")
+
+                                                            // Notify adapter
+                                                            feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+
+                                                            Toast.makeText(
+                                                                feedShare.context,
+                                                                shareResponse.message,
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        } else {
+                                                            Log.e(TAG, "Share failed - success=false")
+                                                            revertShareState(data, previousShareStatus, previousShareCount)
+                                                        }
+                                                    } ?: run {
+                                                        Log.e(TAG, "Share response body is null")
+                                                        revertShareState(data, previousShareStatus, previousShareCount)
+                                                    }
+                                                } else {
+                                                    Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
+                                                    revertShareState(data, previousShareStatus, previousShareCount)
+
+                                                    Toast.makeText(
+                                                        feedShare.context,
+                                                        "Failed to update share",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            } catch (e: Exception) {
+                                                feedShare.alpha = 1f
+                                                feedShare.isEnabled = true
+
+                                                Log.e(TAG, "Share network error", e)
+                                                revertShareState(data, previousShareStatus, previousShareCount)
+
+                                                Toast.makeText(
+                                                    feedShare.context,
+                                                    "Network error. Please check your connection.",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        }
+                                    })
+
+                                    Toast.makeText(
+                                        feedShare.context,
+                                        "Shared successfully!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    Log.e(TAG, "Share failed - success=false")
                                     revertShareState(data, previousShareStatus, previousShareCount)
                                 }
-                            } else {
-                                Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
+                            } ?: run {
+                                Log.e(TAG, "Share response body is null")
                                 revertShareState(data, previousShareStatus, previousShareCount)
-
-                                Toast.makeText(
-                                    feedShare.context,
-                                    "Failed to update share",
-                                    Toast.LENGTH_SHORT
-                                ).show()
                             }
-                        } catch (e: Exception) {
-                            feedShare.alpha = 1f
-                            feedShare.isEnabled = true
-
-                            Log.e(TAG, "Share network error", e)
+                        } else {
+                            Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
                             revertShareState(data, previousShareStatus, previousShareCount)
 
                             Toast.makeText(
                                 feedShare.context,
-                                "Network error. Please check your connection.",
+                                "Failed to update share",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
+                    } catch (e: Exception) {
+                        feedShare.alpha = 1f
+                        feedShare.isEnabled = true
+
+                        Log.e(TAG, "Share network error", e)
+                        revertShareState(data, previousShareStatus, previousShareCount)
+
+                        Toast.makeText(
+                            feedShare.context,
+                            "Network error. Please check your connection.",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
-                })
+                }
             }
         }
 
@@ -4548,86 +4697,162 @@ class FeedAdapter(
                 val previousShareStatus = data.isShared
                 val previousShareCount = data.shareCount
 
-                // Show share bottom sheet
-                showShareBottomSheet(data, onShareConfirmed = {
-                    // Called when user actually shares to a platform
+                // Optimistic UI update
+                data.isShared = true
+                data.shareCount = previousShareCount + 1
 
-                    // Optimistic UI update
-                    data.isShared = true
-                    data.shareCount = previousShareCount + 1
+                updateShareButtonUI(data.isShared)
+                updateMetricDisplay(shareCounts, data.shareCount, "share")
 
-                    updateShareButtonUI(data.isShared)
-                    updateMetricDisplay(shareCounts, data.shareCount, "share")
+                YoYo.with(Techniques.Tada)
+                    .duration(500)
+                    .repeat(1)
+                    .playOn(shareButton)
 
-                    YoYo.with(Techniques.Tada)
-                        .duration(500)
-                        .repeat(1)
-                        .playOn(shareButton)
+                shareButton.isEnabled = false
+                shareButton.alpha = 0.8f
 
-                    shareButton.isEnabled = false
-                    shareButton.alpha = 0.8f
+                CoroutineScope(Dispatchers.Main).launch {
+                    try {
+                        val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
 
-                    CoroutineScope(Dispatchers.Main).launch {
-                        try {
-                            val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
+                        shareButton.alpha = 1f
+                        shareButton.isEnabled = true
 
-                            shareButton.alpha = 1f
-                            shareButton.isEnabled = true
+                        if (response.isSuccessful) {
+                            response.body()?.let { shareResponse ->
+                                if (shareResponse.success) {
+                                    val serverData = shareResponse.data
 
-                            if (response.isSuccessful) {
-                                response.body()?.let { shareResponse ->
-                                    if (shareResponse.success) {
-                                        val serverData = shareResponse.data
+                                    Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
 
-                                        Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
+                                    data.isShared = serverData.isShared
+                                    data.shareCount = serverData.shareCount
 
-                                        data.isShared = serverData.isShared
-                                        data.shareCount = serverData.shareCount
+                                    updateShareButtonUI(data.isShared)
+                                    updateMetricDisplay(shareCounts, data.shareCount, "share")
+
+                                    // Notify adapter
+                                    feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+
+                                    // Show share bottom sheet
+                                    showShareBottomSheet(data, onShareConfirmed = {
+                                        // Called when user actually shares to a platform
+
+                                        // Optimistic UI update
+                                        data.isShared = true
+                                        data.shareCount = previousShareCount + 1
 
                                         updateShareButtonUI(data.isShared)
                                         updateMetricDisplay(shareCounts, data.shareCount, "share")
 
-                                        // Notify adapter
-                                        feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+                                        YoYo.with(Techniques.Tada)
+                                            .duration(500)
+                                            .repeat(1)
+                                            .playOn(shareButton)
 
-                                        Toast.makeText(
-                                            shareButton.context,
-                                            shareResponse.message,
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    } else {
-                                        Log.e(TAG, "Share failed - success=false")
-                                        revertShareState(data, previousShareStatus, previousShareCount)
-                                    }
-                                } ?: run {
-                                    Log.e(TAG, "Share response body is null")
+                                        shareButton.isEnabled = false
+                                        shareButton.alpha = 0.8f
+
+                                        CoroutineScope(Dispatchers.Main).launch {
+                                            try {
+                                                val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
+
+                                                shareButton.alpha = 1f
+                                                shareButton.isEnabled = true
+
+                                                if (response.isSuccessful) {
+                                                    response.body()?.let { shareResponse ->
+                                                        if (shareResponse.success) {
+                                                            val serverData = shareResponse.data
+
+                                                            Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
+
+                                                            data.isShared = serverData.isShared
+                                                            data.shareCount = serverData.shareCount
+
+                                                            updateShareButtonUI(data.isShared)
+                                                            updateMetricDisplay(shareCounts, data.shareCount, "share")
+
+                                                            // Notify adapter
+                                                            feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+
+                                                            Toast.makeText(
+                                                                shareButton.context,
+                                                                shareResponse.message,
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        } else {
+                                                            Log.e(TAG, "Share failed - success=false")
+                                                            revertShareState(data, previousShareStatus, previousShareCount)
+                                                        }
+                                                    } ?: run {
+                                                        Log.e(TAG, "Share response body is null")
+                                                        revertShareState(data, previousShareStatus, previousShareCount)
+                                                    }
+                                                } else {
+                                                    Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
+                                                    revertShareState(data, previousShareStatus, previousShareCount)
+
+                                                    Toast.makeText(
+                                                        shareButton.context,
+                                                        "Failed to update share",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            } catch (e: Exception) {
+                                                shareButton.alpha = 1f
+                                                shareButton.isEnabled = true
+
+                                                Log.e(TAG, "Share network error", e)
+                                                revertShareState(data, previousShareStatus, previousShareCount)
+
+                                                Toast.makeText(
+                                                    shareButton.context,
+                                                    "Network error. Please check your connection.",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        }
+                                    })
+
+                                    Toast.makeText(
+                                        shareButton.context,
+                                        "Shared successfully!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    Log.e(TAG, "Share failed - success=false")
                                     revertShareState(data, previousShareStatus, previousShareCount)
                                 }
-                            } else {
-                                Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
+                            } ?: run {
+                                Log.e(TAG, "Share response body is null")
                                 revertShareState(data, previousShareStatus, previousShareCount)
-
-                                Toast.makeText(
-                                    shareButton.context,
-                                    "Failed to update share",
-                                    Toast.LENGTH_SHORT
-                                ).show()
                             }
-                        } catch (e: Exception) {
-                            shareButton.alpha = 1f
-                            shareButton.isEnabled = true
-
-                            Log.e(TAG, "Share network error", e)
+                        } else {
+                            Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
                             revertShareState(data, previousShareStatus, previousShareCount)
 
                             Toast.makeText(
                                 shareButton.context,
-                                "Network error. Please check your connection.",
+                                "Failed to update share",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
+                    } catch (e: Exception) {
+                        shareButton.alpha = 1f
+                        shareButton.isEnabled = true
+
+                        Log.e(TAG, "Share network error", e)
+                        revertShareState(data, previousShareStatus, previousShareCount)
+
+                        Toast.makeText(
+                            shareButton.context,
+                            "Network error. Please check your connection.",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
-                })
+                }
             }
         }
 
@@ -6501,88 +6726,162 @@ class FeedAdapter(
                 val previousShareStatus = data.isShared
                 val previousShareCount = data.shareCount
 
-                // Show share bottom sheet
-                showShareBottomSheet(data, onShareConfirmed = {
-                    // Called when user actually shares to a platform
+                // Optimistic UI update
+                data.isShared = true
+                data.shareCount = previousShareCount + 1
 
-                    // Optimistic UI update
-                    data.isShared = true
-                    data.shareCount = previousShareCount + 1
-                    totalMixedShareCounts = data.shareCount
+                updateShareButtonUI(data.isShared)
+                updateMetricDisplay(shareCountTextView, data.shareCount, "share")
 
-                    updateShareButtonUI(data.isShared)
-                    updateMetricDisplay(shareCountTextView, data.shareCount, "share")
+                YoYo.with(Techniques.Tada)
+                    .duration(500)
+                    .repeat(1)
+                    .playOn(shareImageView)
 
-                    YoYo.with(Techniques.Tada)
-                        .duration(500)
-                        .repeat(1)
-                        .playOn(shareImageView)
+                shareImageView.isEnabled = false
+                shareImageView.alpha = 0.8f
 
-                    shareImageView.isEnabled = false
-                    shareImageView.alpha = 0.8f
+                CoroutineScope(Dispatchers.Main).launch {
+                    try {
+                        val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
 
-                    CoroutineScope(Dispatchers.Main).launch {
-                        try {
-                            val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
+                        shareImageView.alpha = 1f
+                        shareImageView.isEnabled = true
 
-                            shareImageView.alpha = 1f
-                            shareImageView.isEnabled = true
+                        if (response.isSuccessful) {
+                            response.body()?.let { shareResponse ->
+                                if (shareResponse.success) {
+                                    val serverData = shareResponse.data
 
-                            if (response.isSuccessful) {
-                                response.body()?.let { shareResponse ->
-                                    if (shareResponse.success) {
-                                        val serverData = shareResponse.data
+                                    Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
 
-                                        Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
+                                    data.isShared = serverData.isShared
+                                    data.shareCount = serverData.shareCount
 
-                                        data.isShared = serverData.isShared
-                                        data.shareCount = serverData.shareCount
-                                        totalMixedShareCounts = data.shareCount
+                                    updateShareButtonUI(data.isShared)
+                                    updateMetricDisplay(shareCountTextView, data.shareCount, "share")
+
+                                    // Notify adapter
+                                    feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+
+                                    // Show share bottom sheet
+                                    showShareBottomSheet(data, onShareConfirmed = {
+                                        // Called when user actually shares to a platform
+
+                                        // Optimistic UI update
+                                        data.isShared = true
+                                        data.shareCount = previousShareCount + 1
 
                                         updateShareButtonUI(data.isShared)
                                         updateMetricDisplay(shareCountTextView, data.shareCount, "share")
 
-                                        // Notify adapter
-                                        feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+                                        YoYo.with(Techniques.Tada)
+                                            .duration(500)
+                                            .repeat(1)
+                                            .playOn(shareImageView)
 
-                                        Toast.makeText(
-                                            shareImageView.context,
-                                            shareResponse.message,
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    } else {
-                                        Log.e(TAG, "Share failed - success=false")
-                                        revertShareState(data, previousShareStatus, previousShareCount)
-                                    }
-                                } ?: run {
-                                    Log.e(TAG, "Share response body is null")
+                                        shareImageView.isEnabled = false
+                                        shareImageView.alpha = 0.8f
+
+                                        CoroutineScope(Dispatchers.Main).launch {
+                                            try {
+                                                val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
+
+                                                shareImageView.alpha = 1f
+                                                shareImageView.isEnabled = true
+
+                                                if (response.isSuccessful) {
+                                                    response.body()?.let { shareResponse ->
+                                                        if (shareResponse.success) {
+                                                            val serverData = shareResponse.data
+
+                                                            Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
+
+                                                            data.isShared = serverData.isShared
+                                                            data.shareCount = serverData.shareCount
+
+                                                            updateShareButtonUI(data.isShared)
+                                                            updateMetricDisplay(shareCountTextView, data.shareCount, "share")
+
+                                                            // Notify adapter
+                                                            feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+
+                                                            Toast.makeText(
+                                                                shareImageView.context,
+                                                                shareResponse.message,
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        } else {
+                                                            Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share failed - success=false")
+                                                            revertShareState(data, previousShareStatus, previousShareCount)
+                                                        }
+                                                    } ?: run {
+                                                        Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share response body is null")
+                                                        revertShareState(data, previousShareStatus, previousShareCount)
+                                                    }
+                                                } else {
+                                                    Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share API error: ${response.code()} - ${response.message()}")
+                                                    revertShareState(data, previousShareStatus, previousShareCount)
+
+                                                    Toast.makeText(
+                                                        shareImageView.context,
+                                                        "Failed to update share",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            } catch (e: Exception) {
+                                                shareImageView.alpha = 1f
+                                                shareImageView.isEnabled = true
+
+                                                Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share network error", e)
+                                                revertShareState(data, previousShareStatus, previousShareCount)
+
+                                                Toast.makeText(
+                                                    shareImageView.context,
+                                                    "Network error. Please check your connection.",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        }
+                                    })
+
+                                    Toast.makeText(
+                                        shareImageView.context,
+                                        "Shared successfully!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share failed - success=false")
                                     revertShareState(data, previousShareStatus, previousShareCount)
                                 }
-                            } else {
-                                Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
+                            } ?: run {
+                                Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share response body is null")
                                 revertShareState(data, previousShareStatus, previousShareCount)
-
-                                Toast.makeText(
-                                    shareImageView.context,
-                                    "Failed to update share",
-                                    Toast.LENGTH_SHORT
-                                ).show()
                             }
-                        } catch (e: Exception) {
-                            shareImageView.alpha = 1f
-                            shareImageView.isEnabled = true
-
-                            Log.e(TAG, "Share network error", e)
+                        } else {
+                            Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share API error: ${response.code()} - ${response.message()}")
                             revertShareState(data, previousShareStatus, previousShareCount)
 
                             Toast.makeText(
                                 shareImageView.context,
-                                "Network error. Please check your connection.",
+                                "Failed to update share",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
+                    } catch (e: Exception) {
+                        shareImageView.alpha = 1f
+                        shareImageView.isEnabled = true
+
+                        Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Share network error", e)
+                        revertShareState(data, previousShareStatus, previousShareCount)
+
+                        Toast.makeText(
+                            shareImageView.context,
+                            "Network error. Please check your connection.",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
-                })
+                }
             }
         }
 
