@@ -3217,13 +3217,17 @@ class FeedAdapter(
 
 
         private fun navigateToTappedFilesInTheContainerView(
+
             files: List<Any>,
             mediaType: String,
             selectedPosition: Int
+
         ) {
             try {
+
                 val fragment = Tapped_Files_In_The_Container_View_Fragment().apply {
-                    arguments = Bundle().apply {
+
+                   arguments = Bundle().apply {
                         putString("files_data", Gson().toJson(files))
                         putString("media_type", mediaType)
                         putInt("selected_position", selectedPosition)
@@ -3238,12 +3242,19 @@ class FeedAdapter(
                             else -> files.map { it.toString() }
                         }
                         putStringArray("file_urls", fileUrls.toTypedArray())
-                        currentPost?.let { post ->
-                            putString("post_id", post._id)
-                            putString("post_data", Gson().toJson(post))
-                            putString("post_author_id", post.repostedUser?._id)
-                            putString("post_author_username", post.repostedUser?.username)
-                        }
+
+                       currentPost?.let { post ->
+                           putString("post_id", post._id)
+                           putString("post_data", Gson().toJson(post))
+
+                           // Store in local variable
+                           val repostedUser = post.repostedUser
+                           if (repostedUser != null) {
+                               putString("post_author_id", repostedUser._id)
+                               putString("post_author_username", repostedUser.username)
+                           }
+                       }
+
                         if (mediaType.contains("original") || mediaType.contains("quoted")) {
                             currentPost?.originalPost?.firstOrNull()?.let { originalPost ->
                                 putString("original_post_id", originalPost._id)
