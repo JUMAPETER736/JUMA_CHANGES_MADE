@@ -4359,6 +4359,221 @@ class FeedAdapter(
             }
         }
 
+        // Update setupShareButton in FeedPostViewHolder
+        //Replace your existing setupShareButton and incrementShareCount
+
+        private fun setupShareButton(data: Post) {
+            updateShareButtonUI(data.isShared)
+            updateMetricDisplay(shareCountText, data.shareCount, "share")
+
+            feedShare.setOnClickListener {
+                if (!feedShare.isEnabled) return@setOnClickListener
+
+                it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+
+                val previousShareStatus = data.isShared
+                val previousShareCount = data.shareCount
+
+                // Show share bottom sheet
+                showShareBottomSheet(data, onShareConfirmed = {
+                    // Called when user actually shares to a platform
+
+                    // Optimistic UI update
+                    data.isShared = true
+                    data.shareCount = previousShareCount + 1
+
+                    updateShareButtonUI(data.isShared)
+                    updateMetricDisplay(shareCountText, data.shareCount, "share")
+
+                    YoYo.with(Techniques.Tada)
+                        .duration(500)
+                        .repeat(1)
+                        .playOn(feedShare)
+
+                    feedShare.isEnabled = false
+                    feedShare.alpha = 0.8f
+
+                    CoroutineScope(Dispatchers.Main).launch {
+                        try {
+                            val response = retrofitInterface.apiService.shareUnShareFeed(data._id)
+
+                            feedShare.alpha = 1f
+                            feedShare.isEnabled = true
+
+                            if (response.isSuccessful) {
+                                response.body()?.let { shareResponse ->
+                                    if (shareResponse.success) {
+                                        val serverData = shareResponse.data
+
+                                        Log.d(TAG, "Share success - Server: isShared=${serverData.isShared}, count=${serverData.shareCount}")
+
+                                        data.isShared = serverData.isShared
+                                        data.shareCount = serverData.shareCount
+
+                                        updateShareButtonUI(data.isShared)
+                                        updateMetricDisplay(shareCountText, data.shareCount, "share")
+
+                                        // Notify adapter
+                                        feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
+
+                                        Toast.makeText(
+                                            feedShare.context,
+                                            shareResponse.message,
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        Log.e(TAG, "Share failed - success=false")
+                                        revertShareState(data, previousShareStatus, previousShareCount)
+                                    }
+                                } ?: run {
+                                    Log.e(TAG, "Share response body is null")
+                                    revertShareState(data, previousShareStatus, previousShareCount)
+                                }
+                            } else {
+                                Log.e(TAG, "Share API error: ${response.code()} - ${response.message()}")
+                                revertShareState(data, previousShareStatus, previousShareCount)
+
+                                Toast.makeText(
+                                    feedShare.context,
+                                    "Failed to update share",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        } catch (e: Exception) {
+                            feedShare.alpha = 1f
+                            feedShare.isEnabled = true
+
+                            Log.e(TAG, "Share network error", e)
+                            revertShareState(data, previousShareStatus, previousShareCount)
+
+                            Toast.makeText(
+                                feedShare.context,
+                                "Network error. Please check your connection.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                })
+            }
+        }
+
+        private fun revertShareState(data: Post, previousStatus: Boolean, previousCount: Int) {
+            data.isShared = previousStatus
+            data.shareCount = previousCount
+            updateShareButtonUI(data.isShared)
+            updateMetricDisplay(shareCountText, data.shareCount, "share")
+            Log.d(TAG, "Reverted to previous state: isShared=$previousStatus, shareCount=$previousCount")
+        }
+
+        private fun updateShareButtonUI(isShared: Boolean) {
+            Log.d(TAG, "Updating share button UI: isShared=$isShared")
+            try {
+                if (isShared) {
+                    feedShare.setColorFilter(
+                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
+                        PorterDuff.Mode.SRC_IN
+                    )
+                } else {
+                    feedShare.clearColorFilter()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating share button UI", e)
+            }
+        }
+
+        private fun showShareBottomSheet(
+            data: Post,
+            onShareConfirmed: () -> Unit
+        ) {
+            val context = feedShare.context
+            val bottomSheetDialog = BottomSheetDialog(context)
+            val binding = BottomDialogForShareBinding.inflate(LayoutInflater.from(context))
+            bottomSheetDialog.setContentView(binding.root)
+
+            // Prepare share content
+            val shareText = "Check out this post on Flash!\n" +
+                    "By: ${data.author?.account?.username ?: "Unknown"}\n" +
+                    "${data.content ?: ""}"
+            val postUrl = data.files?.firstOrNull()?.url
+            val fullShareText = if (postUrl != null) "$shareText\n$postUrl" else shareText
+
+            // Setup share buttons
+            binding.btnWhatsApp.setOnClickListener {
+                shareToWhatsApp(context, fullShareText)
+                onShareConfirmed()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnSMS.setOnClickListener {
+                shareViaSMS(context, fullShareText)
+                onShareConfirmed()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnInstagram.setOnClickListener {
+                shareToInstagram(context, fullShareText)
+                onShareConfirmed()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnMessenger.setOnClickListener {
+                shareToMessenger(context, fullShareText)
+                onShareConfirmed()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnFacebook.setOnClickListener {
+                shareToFacebook(context, fullShareText)
+                onShareConfirmed()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnTelegram.setOnClickListener {
+                shareToTelegram(context, fullShareText)
+                onShareConfirmed()
+                bottomSheetDialog.dismiss()
+            }
+
+            // Setup action buttons (these don't count as shares)
+            binding.btnReport.setOnClickListener {
+                Toast.makeText(context, "Report functionality", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnNotInterested.setOnClickListener {
+                Toast.makeText(context, "Not interested", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnSaveVideo.setOnClickListener {
+                Toast.makeText(context, "Save post functionality", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnDuet.setOnClickListener {
+                Toast.makeText(context, "Duet functionality", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnReact.setOnClickListener {
+                Toast.makeText(context, "React functionality", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnAddToFavorites.setOnClickListener {
+                Toast.makeText(context, "Add to favorites", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            // Setup cancel button
+            binding.btnCancel.setOnClickListener {
+                bottomSheetDialog.dismiss()
+            }
+
+            bottomSheetDialog.show()
+        }
+
+        /////////////////////////////////
         private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             totalMixedShareCounts = data.shareCount ?: 0
             updateMetricDisplay(shareCounts, totalMixedShareCounts, "share")
