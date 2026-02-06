@@ -719,10 +719,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         )
     }
 
-    private fun hidingBottomNav() {
-        EventBus.getDefault().post(HideBottomNav())
-    }
-
 
     override fun feedFavoriteClick(
         position: Int,
@@ -742,6 +738,82 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
 
     }
+
+
+    override fun feedShareClicked(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        Log.d(TAG, "feedShareClicked in AllFragment: postId=${data._id}, isShared=${data.isShared}")
+
+        // Use centralized sync method
+        getFeedViewModel.toggleShareInAllFeeds(
+            postId = data._id,
+            isShared = data.isShared,
+            shareCount = data.shareCount
+        )
+
+        // Update adapter
+        val feedPosition = allFeedAdapter.getPositionById(data._id)
+        if (feedPosition != -1) {
+            allFeedAdapter.updateItem(feedPosition, data)
+            Log.d(TAG, "Updated post in AllFeed at position: $feedPosition")
+        }
+
+        // Update in other feeds
+        val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
+        if (!isMyFeedEmpty) {
+            val myFeedData = getFeedViewModel.getMyFeedData()
+            val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
+            if (feedToUpdate != null) {
+                feedToUpdate.isShared = data.isShared
+                feedToUpdate.shareCount = data.shareCount
+                val myFeedDataPosition = getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
+                getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
+            }
+        }
+    }
+
+
+    override fun feedRepostPostClicked(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        Log.d(TAG, "feedRepostPostClicked in AllFragment: postId=${data._id}, isReposted=${data.isReposted}")
+
+        // Use centralized sync method
+        getFeedViewModel.toggleRepostInAllFeeds(
+            postId = data._id,
+            isReposted = data.isReposted,
+            repostCount = data.repostCount
+        )
+
+        // Update adapter
+        val feedPosition = allFeedAdapter.getPositionById(data._id)
+        if (feedPosition != -1) {
+            allFeedAdapter.updateItem(feedPosition, data)
+            Log.d(TAG, "Updated post in AllFeed at position: $feedPosition")
+        }
+
+        // Update in other feeds
+        val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
+        if (!isMyFeedEmpty) {
+            val myFeedData = getFeedViewModel.getMyFeedData()
+            val feedToUpdate = myFeedData.find { feed -> feed._id == data._id }
+            if (feedToUpdate != null) {
+                feedToUpdate.isReposted = data.isReposted
+                feedToUpdate.repostCount = data.repostCount
+                val myFeedDataPosition = getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
+                getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
+            }
+        }
+    }
+
+    private fun hidingBottomNav() {
+        EventBus.getDefault().post(HideBottomNav())
+    }
+
+
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun favoriteFeedClick(event: FromFavoriteFragmentFeedFavoriteClick) {
@@ -1753,43 +1825,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     }
 
 
-    override fun feedShareClicked(
-        position: Int,
-        data: com.uyscuti.social.network.api.response.posts.Post
-    ) {
-        val context = requireContext()
-
-        val bottomSheetDialog = BottomSheetDialog(requireContext())
-        val shareView = layoutInflater.inflate(R.layout.example, null)
-        val close_button = shareView.findViewById<ImageButton>(R.id.close_button)
-        val recyclerView = shareView.findViewById<RecyclerView>(R.id.apps_recycler_view)
-        val userRecyclerView = shareView.findViewById<RecyclerView>(R.id.users_recycler_view)
-
-        bottomSheetDialog.setContentView(shareView)
-        bottomSheetDialog.show()
-
-        close_button.setOnClickListener {
-            bottomSheetDialog.dismiss()
-        }
-
-        // Fetch installed apps that support sharing
-        val packageManager = context.packageManager
-        val intent = Intent(Intent.ACTION_SEND).apply { type = "text/plain" }
-        val resolveInfoList =
-            packageManager?.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
-
-        // Set up RecyclerView
-        recyclerView.layoutManager =
-            LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-        recyclerView.adapter = resolveInfoList?.let {
-            ShareFeedPostAdapter(it, context, data) }
-        userRecyclerView.layoutManager =
-            LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-        userRecyclerView.adapter = UserListAdapter(context) { user ->
-
-        }
-    }
-
     // Replace fragment helper method
     private fun replaceFragment(fragment: Fragment) {
         val fragmentTransaction = parentFragmentManager.beginTransaction()
@@ -1875,12 +1910,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    override fun feedRepostPostClicked(
-        position: Int,
-        data: com.uyscuti.social.network.api.response.posts.Post
-    ) {
-
-    }
 
     override fun feedClickedToOriginalPost(position: Int, originalPostId: String) {
         val intent = Intent(requireActivity(), PostFeedActivity::class.java)

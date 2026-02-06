@@ -2647,7 +2647,6 @@ class FeedAdapter(
             }
         }
 
-
         private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             updateShareButtonUI(data.isShared)
             updateMetricDisplay(shareCountText, data.shareCount, "share")
