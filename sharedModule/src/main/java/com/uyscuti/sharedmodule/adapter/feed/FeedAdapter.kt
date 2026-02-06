@@ -4011,14 +4011,15 @@ class FeedAdapter(
             followButton.setOnClickListener { view ->
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                // Get the correct user ID and USERNAME from current post
                 val feedReposterOwnerId: String
                 val feedReposterUsername: String
 
+                // Store in local variable
+                val repostedUser = currentPost?.repostedUser
                 when {
-                    currentPost?.repostedUser != null -> {
-                        feedReposterOwnerId = currentPost?.repostedUser?.owner ?: ""
-                        feedReposterUsername = currentPost?.repostedUser?.username ?: "unknown"
+                    repostedUser != null -> {
+                        feedReposterOwnerId = repostedUser.owner
+                        feedReposterUsername = repostedUser.username
                     }
                     currentPost?.author?.account != null -> {
                         feedReposterOwnerId = currentPost?.author?.account?._id ?: ""
