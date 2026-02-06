@@ -1,6 +1,6 @@
 package com.uyscuti.social.network.api.response.repostFeedPosts
 
-data class RepostUnRepostFeedPostResponse(
+data class FeedRepostResponse(
     val `data`: FeedRepostData,
     val message: String,
     val statusCode: Int,

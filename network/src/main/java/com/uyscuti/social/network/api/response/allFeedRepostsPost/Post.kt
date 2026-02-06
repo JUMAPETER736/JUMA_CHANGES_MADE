@@ -255,15 +255,6 @@ data class BookmarkRequest(
     val isBookmarked: Boolean
 )
 
-interface BookmarkService {
-    @POST("feed/bookmarks/{postId}")
-    suspend fun toggleBookmark(
-        @Path("postId") postId: String,
-        @Body request: BookmarkRequest
-    ): Response<BookmarkResponse>
-}
-
-
 
 object RetrofitClient {
     private const val BASE_URL = "http://192.168.1.103:8080/api/v1/"

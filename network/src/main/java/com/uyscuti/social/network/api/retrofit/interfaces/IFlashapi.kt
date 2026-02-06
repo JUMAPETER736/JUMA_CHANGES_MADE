@@ -112,6 +112,9 @@ import com.uyscuti.social.network.api.response.profile.followingList.RestrictedS
 import okhttp3.RequestBody
 import retrofit2.http.DELETE
 import retrofit2.http.PUT
+import com.uyscuti.social.network.api.response.repostFeedPosts.FeedRepostResponse
+import com.uyscuti.social.network.api.response.shareFeedPosts.FeedPostShareResponse
+
 
 
 interface IFlashapi {

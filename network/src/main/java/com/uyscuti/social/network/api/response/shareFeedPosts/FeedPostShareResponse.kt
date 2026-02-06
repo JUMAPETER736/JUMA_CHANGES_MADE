@@ -1,6 +1,6 @@
 package com.uyscuti.social.network.api.response.shareFeedPosts
 
-data class ShareUnShareFeedPostResponse(
+data class FeedPostShareResponse(
     val `data`: FeedPostShareData,
     val message: String,
     val statusCode: Int,
