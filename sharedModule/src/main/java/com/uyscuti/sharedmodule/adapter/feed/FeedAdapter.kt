@@ -5035,7 +5035,7 @@ class FeedAdapter(
                 if (isReposted) {
                     repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
                     repostButton.setColorFilter(
-                        ContextCompat.getColor(itemView.context, R.color.green),
+                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
                         PorterDuff.Mode.SRC_IN
                     )
                     repostButton.scaleX = 1.1f
@@ -5051,149 +5051,7 @@ class FeedAdapter(
             }
         }
 
-        /////////////////////////////////
 
-
-        private fun showShareBottomSheet(data: com.uyscuti.social.network.api.response.posts.Post) {
-            val context = shareButton.context
-            val bottomSheetDialog = BottomSheetDialog(context)
-            val binding = BottomDialogForShareBinding.inflate(LayoutInflater.from(context))
-            bottomSheetDialog.setContentView(binding.root)
-
-            // Prepare share content
-            val shareText = "Check out this post on Flash!\n" +
-                    "By: ${data.author?.account?.username ?: "Unknown"}\n" +
-                    "${data.content ?: ""}"
-            val postUrl = data.files?.firstOrNull()?.url
-            val fullShareText = if (postUrl != null) "$shareText\n$postUrl" else shareText
-
-            // Setup share buttons
-            binding.btnWhatsApp.setOnClickListener {
-                shareToWhatsApp(context, fullShareText)
-                incrementShareCount(data)
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnSMS.setOnClickListener {
-                shareViaSMS(context, fullShareText)
-                incrementShareCount(data)
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnInstagram.setOnClickListener {
-                shareToInstagram(context, fullShareText)
-                incrementShareCount(data)
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnMessenger.setOnClickListener {
-                shareToMessenger(context, fullShareText)
-                incrementShareCount(data)
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnFacebook.setOnClickListener {
-                shareToFacebook(context, fullShareText)
-                incrementShareCount(data)
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnTelegram.setOnClickListener {
-                shareToTelegram(context, fullShareText)
-                incrementShareCount(data)
-                bottomSheetDialog.dismiss()
-            }
-
-            // Setup action buttons
-            binding.btnReport.setOnClickListener {
-                Toast.makeText(context, "Report functionality", Toast.LENGTH_SHORT).show()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnNotInterested.setOnClickListener {
-                Toast.makeText(context, "Not interested", Toast.LENGTH_SHORT).show()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnSaveVideo.setOnClickListener {
-                Toast.makeText(context, "Save post functionality", Toast.LENGTH_SHORT).show()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnDuet.setOnClickListener {
-                Toast.makeText(context, "Duet functionality", Toast.LENGTH_SHORT).show()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnReact.setOnClickListener {
-                Toast.makeText(context, "React functionality", Toast.LENGTH_SHORT).show()
-                bottomSheetDialog.dismiss()
-            }
-
-            binding.btnAddToFavorites.setOnClickListener {
-                Toast.makeText(context, "Add to favorites", Toast.LENGTH_SHORT).show()
-                bottomSheetDialog.dismiss()
-            }
-
-            // Setup cancel button
-            binding.btnCancel.setOnClickListener {
-                bottomSheetDialog.dismiss()
-            }
-
-            bottomSheetDialog.show()
-        }
-
-        private fun incrementShareCount(data: com.uyscuti.social.network.api.response.posts.Post) {
-            val previousShareCount = totalMixedShareCounts
-
-            // Update immediately for better UX
-            totalMixedShareCounts += 1
-            data.shareCount = totalMixedShareCounts
-            updateMetricDisplay(shareCounts, totalMixedShareCounts, "share")
-
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(shareButton)
-
-            shareButton.isEnabled = false
-            shareButton.alpha = 0.8f
-
-            // Make API call to sync with server
-            RetrofitClient.shareService.incrementShare(data._id)
-                .enqueue(object : Callback<ShareResponse> {
-                    override fun onResponse(call: Call<ShareResponse>, response: Response<ShareResponse>) {
-                        shareButton.alpha = 1f
-                        shareButton.isEnabled = true
-
-                        if (response.isSuccessful) {
-                            response.body()?.let { shareResponse ->
-                                if (abs(shareResponse.shareCount - totalMixedShareCounts) > 1) {
-                                    data.shareCount = shareResponse.shareCount
-                                    totalMixedShareCounts = data.shareCount
-                                    updateMetricDisplay(shareCounts, data.shareCount, "share")
-                                }
-                            }
-                        } else {
-                            // Revert on failure
-                            data.shareCount = previousShareCount
-                            totalMixedShareCounts = data.shareCount
-                            updateMetricDisplay(shareCounts, data.shareCount, "share")
-                        }
-                    }
-
-                    override fun onFailure(call: Call<ShareResponse>, t: Throwable) {
-                        shareButton.alpha = 1f
-                        shareButton.isEnabled = true
-                        // Revert on network failure
-                        data.shareCount = previousShareCount
-                        totalMixedShareCounts = data.shareCount
-                        updateMetricDisplay(shareCounts, data.shareCount, "share")
-                    }
-                })
-
-            feedClickListener.feedShareClicked(absoluteAdapterPosition, data)
-        }
 
         // Share helper functions with multiple package name variants
         private fun shareToWhatsApp(context: Context, text: String) {
@@ -5329,17 +5187,7 @@ class FeedAdapter(
             }
         }
 
-        private fun updateRepostButtonAppearance(isReposted: Boolean) {
-            if (isReposted) {
-                repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
-                repostButton.scaleX = 1.1f
-                repostButton.scaleY = 1.1f
-            } else {
-                repostButton.setImageResource(R.drawable.repeat_svgrepo_com)
-                repostButton.scaleX = 1.0f
-                repostButton.scaleY = 1.0f
-            }
-        }
+
 
         private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
             Log.d(TAG, "updateMetricDisplay: Updating $metricType with count: $count")
@@ -6862,46 +6710,130 @@ class FeedAdapter(
         }
 
 
-        private fun setupRepostButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-
-            totalMixedRePostCounts = data.repostCount  // Use actual count, not 0
-            updateMetricDisplay(repostCountTextView, totalMixedRePostCounts, "repost")
-            updateRepostButtonAppearance(data.isReposted)
+        private fun setupRepostButton(data: Post) {
+            updateRepostButtonUI(data.isReposted)
+            updateMetricDisplay(repostCountTextView, data.repostCount, "repost")
 
             repostPost.setOnClickListener { view ->
                 if (!repostPost.isEnabled) return@setOnClickListener
 
-                // Haptic feedback
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                // Simple animation feedback
-                YoYo.with(Techniques.Pulse)
-                    .duration(300)
+                val previousRepostStatus = data.isReposted
+                val previousRepostCount = data.repostCount
+
+                Log.d(TAG, "Repost clicked - Post: ${data._id}, Current: $previousRepostStatus → New: ${!previousRepostStatus}")
+
+                // Optimistic UI update
+                data.isReposted = !previousRepostStatus
+                data.repostCount = if (data.isReposted) previousRepostCount + 1 else maxOf(0, previousRepostCount - 1)
+                totalMixedRePostCounts = data.repostCount
+
+                updateRepostButtonUI(data.isReposted)
+                updateMetricDisplay(repostCountTextView, data.repostCount, "repost")
+
+                YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
+                    .duration(500)
+                    .repeat(1)
                     .playOn(repostPost)
 
-                // Navigate to Fragment_Edit_Post_To_Repost WITHOUT changing any state
-                // The actual repost logic will happen in that fragment
-                navigateToEditPostToRepost(data)
+                repostPost.isEnabled = false
+                repostPost.alpha = 0.8f
 
-                // Also notify the listener if needed
-                feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
+                CoroutineScope(Dispatchers.Main).launch {
+                    try {
+                        val response = retrofitInterface.apiService.repostUnRepostFeed(data._id)
+
+                        repostPost.alpha = 1f
+                        repostPost.isEnabled = true
+
+                        if (response.isSuccessful) {
+                            response.body()?.let { repostResponse ->
+                                if (repostResponse.success) {
+                                    val serverData = repostResponse.data
+
+                                    Log.d(TAG, "Repost success - Server: isReposted=${serverData.isReposted}, count=${serverData.repostCount}")
+
+                                    data.isReposted = serverData.isReposted
+                                    data.repostCount = serverData.repostCount
+                                    totalMixedRePostCounts = data.repostCount
+
+                                    updateRepostButtonUI(data.isReposted)
+                                    updateMetricDisplay(repostCountTextView, data.repostCount, "repost")
+
+                                    feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
+
+                                    Toast.makeText(
+                                        repostPost.context,
+                                        repostResponse.message,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    Log.e(TAG, "Repost failed - success=false")
+                                    revertRepostState(data, previousRepostStatus, previousRepostCount)
+                                }
+                            } ?: run {
+                                Log.e(TAG, "Repost response body is null")
+                                revertRepostState(data, previousRepostStatus, previousRepostCount)
+                            }
+                        } else {
+                            Log.e(TAG, "Repost API error: ${response.code()} - ${response.message()}")
+                            revertRepostState(data, previousRepostStatus, previousRepostCount)
+
+                            Toast.makeText(
+                                repostPost.context,
+                                "Failed to update repost",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } catch (e: Exception) {
+                        repostPost.alpha = 1f
+                        repostPost.isEnabled = true
+
+                        Log.e(TAG, "Repost network error", e)
+                        revertRepostState(data, previousRepostStatus, previousRepostCount)
+
+                        Toast.makeText(
+                            repostPost.context,
+                            "Network error. Please check your connection.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
             }
         }
 
-        private fun updateRepostButtonAppearance(isReposted: Boolean) {
+        private fun revertRepostState(data: Post, previousStatus: Boolean, previousCount: Int) {
+            data.isReposted = previousStatus
+            data.repostCount = previousCount
+            totalMixedRePostCounts = previousCount
+            updateRepostButtonUI(data.isReposted)
+            updateMetricDisplay(repostCountTextView, data.repostCount, "repost")
+            Log.d(TAG, "Reverted to previous state: isReposted=$previousStatus, repostCount=$previousCount")
+        }
 
-            if (isReposted) {
-
-                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                repostPost.scaleX = 1.1f
-                repostPost.scaleY = 1.1f
-
-            } else {
-                repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                repostPost.scaleX = 1.0f
-                repostPost.scaleY = 1.0f
+        private fun updateRepostButtonUI(isReposted: Boolean) {
+            Log.d(TAG, "Updating repost button UI: isReposted=$isReposted")
+            try {
+                if (isReposted) {
+                    repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                    repostPost.setColorFilter(
+                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
+                        PorterDuff.Mode.SRC_IN
+                    )
+                    repostPost.scaleX = 1.1f
+                    repostPost.scaleY = 1.1f
+                } else {
+                    repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                    repostPost.clearColorFilter()
+                    repostPost.scaleX = 1.0f
+                    repostPost.scaleY = 1.0f
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating repost button UI", e)
             }
         }
+
 
         private fun setupShareButton(data: Post) {
             updateShareButtonUI(data.isShared)
@@ -6997,6 +6929,182 @@ class FeedAdapter(
                         }
                     }
                 })
+            }
+        }
+
+        private fun revertShareState(data: Post, previousStatus: Boolean, previousCount: Int) {
+            data.isShared = previousStatus
+            data.shareCount = previousCount
+            totalMixedShareCounts = previousCount
+            updateShareButtonUI(data.isShared)
+            updateMetricDisplay(shareCountTextView, data.shareCount, "share")
+            Log.d(TAG, "Reverted to previous state: isShared=$previousStatus, shareCount=$previousCount")
+        }
+
+        private fun updateShareButtonUI(isShared: Boolean) {
+            Log.d(TAG, "Updating share button UI: isShared=$isShared")
+            try {
+                if (isShared) {
+                    shareImageView.setColorFilter(
+                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
+                        PorterDuff.Mode.SRC_IN
+                    )
+                } else {
+                    shareImageView.clearColorFilter()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating share button UI", e)
+            }
+        }
+
+        private fun showShareBottomSheet(data: Post, onShareConfirmed: () -> Unit) {
+            val context = shareImageView.context
+            val bottomSheetDialog = BottomSheetDialog(context)
+            val binding = BottomDialogForShareBinding.inflate(LayoutInflater.from(context))
+            bottomSheetDialog.setContentView(binding.root)
+
+            // Prepare share content
+            val shareText = "Check out this post on Flash!\n" +
+                    "By: ${data.author?.account?.username ?: "Unknown"}\n" +
+                    "${data.content ?: ""}"
+            val postUrl = data.files?.firstOrNull()?.url
+            val fullShareText = if (postUrl != null) "$shareText\n$postUrl" else shareText
+
+            // Setup share buttons
+            binding.btnWhatsApp.setOnClickListener {
+                shareToWhatsApp(context, fullShareText)
+                onShareConfirmed()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnSMS.setOnClickListener {
+                shareViaSMS(context, fullShareText)
+                onShareConfirmed()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnInstagram.setOnClickListener {
+                shareToInstagram(context, fullShareText)
+                onShareConfirmed()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnMessenger.setOnClickListener {
+                shareToMessenger(context, fullShareText)
+                onShareConfirmed()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnFacebook.setOnClickListener {
+                shareToFacebook(context, fullShareText)
+                onShareConfirmed()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnTelegram.setOnClickListener {
+                shareToTelegram(context, fullShareText)
+                onShareConfirmed()
+                bottomSheetDialog.dismiss()
+            }
+
+            // Setup action buttons (these don't count as shares)
+            binding.btnReport.setOnClickListener {
+                Toast.makeText(context, "Report functionality", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnNotInterested.setOnClickListener {
+                Toast.makeText(context, "Not interested", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnSaveVideo.setOnClickListener {
+                Toast.makeText(context, "Save post functionality", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnDuet.setOnClickListener {
+                Toast.makeText(context, "Duet functionality", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnReact.setOnClickListener {
+                Toast.makeText(context, "React functionality", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            binding.btnAddToFavorites.setOnClickListener {
+                Toast.makeText(context, "Add to favorites", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            // Setup cancel button
+            binding.btnCancel.setOnClickListener {
+                bottomSheetDialog.dismiss()
+            }
+
+            bottomSheetDialog.show()
+        }
+
+        // Share helper functions
+        private fun shareToWhatsApp(context: Context, text: String) {
+            val packages = listOf("com.whatsapp", "com.whatsapp.w4b")
+            shareToApp(context, text, packages, "WhatsApp")
+        }
+
+        private fun shareViaSMS(context: Context, text: String) {
+            try {
+                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                    data = "smsto:".toUri()
+                    putExtra("sms_body", text)
+                }
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, "SMS app not available", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        private fun shareToInstagram(context: Context, text: String) {
+            shareToApp(context, text, listOf("com.instagram.android"), "Instagram")
+        }
+
+        private fun shareToMessenger(context: Context, text: String) {
+            val packages = listOf("com.facebook.orca", "com.facebook.mlite")
+            shareToApp(context, text, packages, "Messenger")
+        }
+
+        private fun shareToFacebook(context: Context, text: String) {
+            val packages = listOf("com.facebook.katana", "com.facebook.lite")
+            shareToApp(context, text, packages, "Facebook")
+        }
+
+        private fun shareToTelegram(context: Context, text: String) {
+            val packages = listOf(
+                "org.telegram.messenger",
+                "org.telegram.messenger.web",
+                "org.thunderdog.challegram"
+            )
+            shareToApp(context, text, packages, "Telegram")
+        }
+
+        private fun shareToApp(context: Context, text: String, packages: List<String>, appName: String) {
+            try {
+                for (packageName in packages) {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        setPackage(packageName)
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+
+                    if (intent.resolveActivity(context.packageManager) != null) {
+                        context.startActivity(intent)
+                        return
+                    }
+                }
+
+                Toast.makeText(context, "$appName not installed", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "$appName not available", Toast.LENGTH_SHORT).show()
             }
         }
 
