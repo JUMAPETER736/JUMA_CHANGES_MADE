@@ -114,6 +114,9 @@ import retrofit2.http.DELETE
 import retrofit2.http.PUT
 import com.uyscuti.social.network.api.response.repostFeedPosts.FeedRepostResponse
 import com.uyscuti.social.network.api.response.shareFeedPosts.FeedPostShareResponse
+import com.uyscuti.social.network.api.response.shareFeedPosts.ShareUnShareFeedPostResponse
+import com.uyscuti.social.network.api.response.shareFeedPosts.ShareRequest
+import com.uyscuti.social.network.api.response.repostFeedPosts.RepostUnRepostFeedPostResponse
 
 
 
@@ -641,7 +644,7 @@ interface IFlashapi {
     ): Response<CreateRepostFeedPost>
 
 
-    // ==================== FEED - LIKES ====================
+    // ==================== FEED POSTS - LIKES ====================
 
     @POST("feed/like/{postId}")
     suspend fun likeUnLikeFeed(@Path("postId") postId: String): Response<LikeUnLikeFeedPostResponse>
@@ -653,19 +656,23 @@ interface IFlashapi {
     suspend fun likeUnLikeFeedCommentReply(@Path("commentReplyId") commentReplyId: String): Response<LikeUnLikeCommentResponse>
 
 
-    // ==================== FEED - BOOKMARKS ====================
+    // ==================== FEED POSTS - BOOKMARKS ====================
 
-    @POST("feed/bookmarks/{postId}")
-    suspend fun favoriteFeed(@Path("postId") postId: String): Response<ShortsFavoriteResponse>
 
     @GET("feed/bookmarks/")
     suspend fun getFavoriteFeed(@Query("page") page: String): Response<FeedFavoriteResponse>
 
     @POST("feed/bookmarks/{postId}")
+    suspend fun favoriteFeed(@Path("postId") postId: String): Response<ShortsFavoriteResponse>
+
+    @POST("feed/bookmarks/{postId}")
     suspend fun toggleBookmark(@Path("postId") postId: String, @Body request: BookmarkRequest): Response<BookmarkResponse>
 
 
-    // ==================== FEED - SHARE ====================
+    // ==================== FEED POSTS - SHARE ====================
+
+    @GET("feed/shares/")
+    suspend fun getSharedFeed(@Query("page") page: String): Response<FeedPostShareResponse>
 
     @POST("feed/share/{postId}")
     suspend fun shareUnShareFeed(@Path("postId") postId: String): Response<ShareUnShareFeedPostResponse>
@@ -673,11 +680,11 @@ interface IFlashapi {
     @POST("feed/share/{postId}")
     suspend fun shareUnShareFeedWithData(@Path("postId") postId: String, @Body request: ShareRequest): Response<ShareUnShareFeedPostResponse>
 
-    @GET("feed/shares/")
-    suspend fun getSharedFeed(@Query("page") page: String): Response<FeedPostShareResponse>
 
+    // ==================== FEED POSTS - REPOST ====================
 
-    // ==================== FEED - REPOST ====================
+    @GET("feed/reposts/")
+    suspend fun getRepostedFeed(@Query("page") page: String): Response<FeedRepostResponse>
 
     @POST("feed/repost/{postId}")
     suspend fun repostUnRepostFeed(@Path("postId") postId: String): Response<RepostUnRepostFeedPostResponse>
@@ -685,12 +692,9 @@ interface IFlashapi {
     @POST("feed/repost/{postId}")
     suspend fun repostUnRepostFeedWithData(@Path("postId") postId: String, @Body request: RepostRequest): Response<RepostUnRepostFeedPostResponse>
 
-    @GET("feed/reposts/")
-    suspend fun getRepostedFeed(@Query("page") page: String): Response<FeedRepostResponse>
 
 
-
-    // ==================== FEED - COMMENTS ====================
+    // ==================== FEED POSTS - COMMENTS ====================
 
     @GET("feed/comments/{postId}")
     suspend fun getFeedComments(
