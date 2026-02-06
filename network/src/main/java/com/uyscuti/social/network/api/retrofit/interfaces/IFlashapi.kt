@@ -671,7 +671,7 @@ interface IFlashapi {
     suspend fun shareUnShareFeedWithData(@Path("postId") postId: String, @Body request: ShareRequest): Response<ShareUnShareFeedPostResponse>
 
     @GET("feed/shares/")
-    suspend fun getSharedFeed(@Query("page") page: String): Response<FeedShareResponse>
+    suspend fun getSharedFeed(@Query("page") page: String): Response<FeedPostShareResponse>
 
 
     // ==================== FEED - REPOST ====================

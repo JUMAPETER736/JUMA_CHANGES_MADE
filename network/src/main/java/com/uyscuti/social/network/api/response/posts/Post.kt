@@ -26,27 +26,42 @@ data class Post(
     var likes: Int,
     val numberOfPages: List<NumberOfPageX>,
     val originalPost: List<OriginalPost>,
-    val repostedByUserId: String,
-    val repostedUser: RepostedUser,
+    val repostedByUserId: String?,
+    val repostedUser: RepostedUser?,
     val repostedUsers: List<String>,
     val tags: List<Any?>,
     val thumbnail: List<ThumbnailX>,
     val updatedAt: String,
-    var shareCount: Int,
-    var repostCount: Int,
+
+    // Share related fields
+    var shareCount: Int = 0,
+    var isShared: Boolean = false,
+    val sharedByUserIds: List<String> = emptyList(),
+    val sharedBy: String? = null,
+    val sharedAt: String? = null,
+    val shareId: String? = null,
+
+    // Repost related fields
+    var repostCount: Int = 0,
+    val repostedByUserIds: List<String> = emptyList(),
+    val repostedBy: String? = null,
+    val repostedAt: String? = null,
+    val repostId: String? = null,
 
     // Business/Shop related fields
     val isBusinessPost: Boolean? = null,
     val category: String? = null,
     val businessDetails: BusinessPost? = null,
 
-    // Favorites related fields
+    // Bookmark/Favorites related fields
     var isFavorited: Boolean? = null,
     val favorites: List<String>? = null,
     val bookmarkId: String? = null,
     val bookmarkedBy: String? = null,
     val bookmarkedAt: String? = null,
-    val bookmarkedByUserIds: List<String>? = null,
+    val bookmarkedByUserIds: List<String> = emptyList(),
+
+    // Likes related fields
     val likedByUserIds: List<String> = emptyList(),
 
     // Privacy / relationship flags
@@ -55,9 +70,7 @@ data class Post(
     var isStoriesMuted: Boolean? = null,
     var isRestricted: Boolean? = null,
     var isFavorite: Boolean? = null,
-
-
-    ): Serializable
+): Serializable
 
 
 data class BusinessPost(
@@ -94,7 +107,6 @@ data class AvatarB(
     val localPath: String,
     val _id: String
 ): Serializable
-
 
 data class BusinessProfile(
     val _id: String,
