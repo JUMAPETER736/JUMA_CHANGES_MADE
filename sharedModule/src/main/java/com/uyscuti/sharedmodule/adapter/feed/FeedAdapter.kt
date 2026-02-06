@@ -81,9 +81,7 @@ import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeRequest
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeResponse
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostResponse
+import android.content.res.ColorStateList
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File
@@ -2202,7 +2200,7 @@ class FeedAdapter(
                 // Add to adapter's following list AND persistent storage
                 (bindingAdapter as? FeedAdapter)?.addToFollowing(feedOwnerId, username)
 
-                // CRITICAL: Also update global cache
+                // Also update global cache
                 FeedAdapter.addToFollowingCache(feedOwnerId)
 
                 // Also update via manager for consistency
@@ -2228,7 +2226,7 @@ class FeedAdapter(
                 // Update via manager for consistency
                 FollowingManager(itemView.context).removeFromFollowing(feedOwnerId)
 
-                // CRITICAL: Update the global cache immediately
+                //Update the global cache immediately
                 FeedAdapter.removeFromFollowingCache(feedOwnerId)
 
                 // Update local state immediately
@@ -6922,13 +6920,30 @@ class FeedAdapter(
         private fun updateShareButtonUI(isShared: Boolean) {
             Log.d(TAG, "Updating share button UI: isShared=$isShared")
             try {
-                if (isShared) {
-                    shareImageView.setColorFilter(
-                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
-                        PorterDuff.Mode.SRC_IN
-                    )
-                } else {
-                    shareImageView.clearColorFilter()
+                when (shareImageView) {
+                    is ImageView -> {
+                        if (isShared) {
+                            (shareImageView as ImageView).setColorFilter(
+                                ContextCompat.getColor(itemView.context, R.color.bluejeans),
+                                PorterDuff.Mode.SRC_IN
+                            )
+                        } else {
+                            (shareImageView as ImageView).clearColorFilter()
+                        }
+                    }
+                    is ImageButton -> {
+                        if (isShared) {
+                            (shareImageView as ImageButton).setColorFilter(
+                                ContextCompat.getColor(itemView.context, R.color.bluejeans),
+                                PorterDuff.Mode.SRC_IN
+                            )
+                        } else {
+                            (shareImageView as ImageButton).clearColorFilter()
+                        }
+                    }
+                    else -> {
+                        Log.e(TAG, "shareImageView is not an ImageView or ImageButton: ${shareImageView::class.java.simpleName}")
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating share button UI", e)
@@ -7065,26 +7080,34 @@ class FeedAdapter(
             shareToApp(context, text, packages, "Telegram")
         }
 
-        private fun shareToApp(context: Context, text: String, packages: List<String>, appName: String) {
+        private fun shareToApp(context: Context, text: String, packageNames: List<String>, appName: String) {
             try {
-                for (packageName in packages) {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        setPackage(packageName)
-                        putExtra(Intent.EXTRA_TEXT, text)
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, text)
+
+                    // Try to find an installed package
+                    val installedPackage = packageNames.firstOrNull { packageName ->
+                        try {
+                            context.packageManager.getPackageInfo(packageName, 0)
+                            true
+                        } catch (e: Exception) {
+                            false
+                        }
                     }
 
-                    if (intent.resolveActivity(context.packageManager) != null) {
-                        context.startActivity(intent)
-                        return
+                    if (installedPackage != null) {
+                        setPackage(installedPackage)
+                    } else {
+                        throw Exception("App not installed")
                     }
                 }
-
-                Toast.makeText(context, "$appName not installed", Toast.LENGTH_SHORT).show()
+                context.startActivity(intent)
             } catch (e: Exception) {
-                Toast.makeText(context, "$appName not available", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "$appName is not installed", Toast.LENGTH_SHORT).show()
             }
         }
+
 
         private fun setupMoreOptionsButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             moreOptionsButton.setOnClickListener {
