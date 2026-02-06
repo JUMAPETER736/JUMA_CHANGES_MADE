@@ -4481,10 +4481,7 @@ class FeedAdapter(
             }
         }
 
-        private fun showShareBottomSheet(
-            data: Post,
-            onShareConfirmed: () -> Unit
-        ) {
+        private fun showShareBottomSheet(data: Post, onShareConfirmed: () -> Unit) {
             val context = feedShare.context
             val bottomSheetDialog = BottomSheetDialog(context)
             val binding = BottomDialogForShareBinding.inflate(LayoutInflater.from(context))
@@ -4573,7 +4570,130 @@ class FeedAdapter(
             bottomSheetDialog.show()
         }
 
+        private fun setupRepostButton(data: Post) {
+            updateRepostButtonUI(data.isReposted)
+            updateMetricDisplay(repostCount, data.repostCount, "repost")
+
+            repostPost.setOnClickListener { view ->
+                if (!repostPost.isEnabled) return@setOnClickListener
+
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+
+                val previousRepostStatus = data.isReposted
+                val previousRepostCount = data.repostCount
+
+                Log.d(TAG, "Repost clicked - Post: ${data._id}, Current: $previousRepostStatus → New: ${!previousRepostStatus}")
+
+                // Optimistic UI update
+                data.isReposted = !previousRepostStatus
+                data.repostCount = if (data.isReposted) previousRepostCount + 1 else maxOf(0, previousRepostCount - 1)
+
+                updateRepostButtonUI(data.isReposted)
+                updateMetricDisplay(repostCount, data.repostCount, "repost")
+
+                YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
+                    .duration(500)
+                    .repeat(1)
+                    .playOn(repostPost)
+
+                repostPost.isEnabled = false
+                repostPost.alpha = 0.8f
+
+                CoroutineScope(Dispatchers.Main).launch {
+                    try {
+                        val response = retrofitInterface.apiService.repostUnRepostFeed(data._id)
+
+                        repostPost.alpha = 1f
+                        repostPost.isEnabled = true
+
+                        if (response.isSuccessful) {
+                            response.body()?.let { repostResponse ->
+                                if (repostResponse.success) {
+                                    val serverData = repostResponse.data
+
+                                    Log.d(TAG, "Repost success - Server: isReposted=${serverData.isReposted}, count=${serverData.repostCount}")
+
+                                    data.isReposted = serverData.isReposted
+                                    data.repostCount = serverData.repostCount
+
+                                    updateRepostButtonUI(data.isReposted)
+                                    updateMetricDisplay(repostCount, data.repostCount, "repost")
+
+                                    // Notify adapter
+                                    feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
+
+                                    Toast.makeText(
+                                        repostPost.context,
+                                        repostResponse.message,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    Log.e(TAG, "Repost failed - success=false")
+                                    revertRepostState(data, previousRepostStatus, previousRepostCount)
+                                }
+                            } ?: run {
+                                Log.e(TAG, "Repost response body is null")
+                                revertRepostState(data, previousRepostStatus, previousRepostCount)
+                            }
+                        } else {
+                            Log.e(TAG, "Repost API error: ${response.code()} - ${response.message()}")
+                            revertRepostState(data, previousRepostStatus, previousRepostCount)
+
+                            Toast.makeText(
+                                repostPost.context,
+                                "Failed to update repost",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } catch (e: Exception) {
+                        repostPost.alpha = 1f
+                        repostPost.isEnabled = true
+
+                        Log.e(TAG, "Repost network error", e)
+                        revertRepostState(data, previousRepostStatus, previousRepostCount)
+
+                        Toast.makeText(
+                            repostPost.context,
+                            "Network error. Please check your connection.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+        }
+
+        private fun revertRepostState(data: Post, previousStatus: Boolean, previousCount: Int) {
+            data.isReposted = previousStatus
+            data.repostCount = previousCount
+            updateRepostButtonUI(data.isReposted)
+            updateMetricDisplay(repostCount, data.repostCount, "repost")
+            Log.d(TAG, "Reverted to previous state: isReposted=$previousStatus, repostCount=$previousCount")
+        }
+
+        private fun updateRepostButtonUI(isReposted: Boolean) {
+            Log.d(TAG, "Updating repost button UI: isReposted=$isReposted")
+            try {
+                if (isReposted) {
+                    repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                    repostPost.setColorFilter(
+                        ContextCompat.getColor(itemView.context, R.color.green),
+                        PorterDuff.Mode.SRC_IN
+                    )
+                    repostPost.scaleX = 1.1f
+                    repostPost.scaleY = 1.1f
+                } else {
+                    repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                    repostPost.clearColorFilter()
+                    repostPost.scaleX = 1.0f
+                    repostPost.scaleY = 1.0f
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating repost button UI", e)
+            }
+        }
+
         /////////////////////////////////
+
         private fun setupShareButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             totalMixedShareCounts = data.shareCount ?: 0
             updateMetricDisplay(shareCounts, totalMixedShareCounts, "share")
