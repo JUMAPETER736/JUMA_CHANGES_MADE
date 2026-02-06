@@ -88,6 +88,7 @@ import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_cl
 import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.Duration
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -105,7 +106,7 @@ import kotlin.getValue
 private const val TAG = "Fragment_Original_Post_With_Repost_Inside"
 private const val FRAGMENT_ORIGINAL_POST_WITH_REPOST = 1
 
-
+@AndroidEntryPoint
 class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     companion object {
@@ -126,7 +127,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
-    
+
     // Views from header_toolbar.xml
     private lateinit var backButton: ImageButton
     private lateinit var headerTitle: TextView
