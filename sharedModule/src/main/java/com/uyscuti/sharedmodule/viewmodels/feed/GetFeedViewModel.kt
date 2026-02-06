@@ -120,6 +120,58 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
         }
     }
 
+    // Synchronized share toggle across all feeds
+    fun toggleShareInAllFeeds(postId: String, isShared: Boolean, shareCount: Int) {
+        Log.d(TAG, "toggleShareInAllFeeds: postId=$postId, isShared=$isShared, count=$shareCount")
+
+        // Update in allFeedData
+        allFeedData.find { it._id == postId }?.let { post ->
+            post.isShared = isShared
+            post.shareCount = shareCount
+            Log.d(TAG, "Updated share in allFeedData for post: $postId")
+        }
+
+        // Update in myFeedData
+        myFeedData.find { it._id == postId }?.let { post ->
+            post.isShared = isShared
+            post.shareCount = shareCount
+            Log.d(TAG, "Updated share in myFeedData for post: $postId")
+        }
+
+        // Update in allFavoriteFeedData
+        allFavoriteFeedData.find { it._id == postId }?.let { post ->
+            post.isShared = isShared
+            post.shareCount = shareCount
+            Log.d(TAG, "Updated share in allFavoriteFeedData for post: $postId")
+        }
+    }
+
+    // Synchronized repost toggle across all feeds
+    fun toggleRepostInAllFeeds(postId: String, isReposted: Boolean, repostCount: Int) {
+        Log.d(TAG, "toggleRepostInAllFeeds: postId=$postId, isReposted=$isReposted, count=$repostCount")
+
+        // Update in allFeedData
+        allFeedData.find { it._id == postId }?.let { post ->
+            post.isReposted = isReposted
+            post.repostCount = repostCount
+            Log.d(TAG, "Updated repost in allFeedData for post: $postId")
+        }
+
+        // Update in myFeedData
+        myFeedData.find { it._id == postId }?.let { post ->
+            post.isReposted = isReposted
+            post.repostCount = repostCount
+            Log.d(TAG, "Updated repost in myFeedData for post: $postId")
+        }
+
+        // Update in allFavoriteFeedData
+        allFavoriteFeedData.find { it._id == postId }?.let { post ->
+            post.isReposted = isReposted
+            post.repostCount = repostCount
+            Log.d(TAG, "Updated repost in allFavoriteFeedData for post: $postId")
+        }
+    }
+
     // Synchronized bookmark toggle across all feeds
     fun toggleBookmarkInAllFeeds(postId: String, isBookmarked: Boolean, bookmarkCount: Int) {
         Log.d(TAG, "toggleBookmarkInAllFeeds: postId=$postId, isBookmarked=$isBookmarked, count=$bookmarkCount")
@@ -309,4 +361,5 @@ class GetFeedViewModel @Inject constructor(private val retrofitInstance: Retrofi
     fun clearAllFeedData() {
         allFeedData.clear()
     }
+
 }
