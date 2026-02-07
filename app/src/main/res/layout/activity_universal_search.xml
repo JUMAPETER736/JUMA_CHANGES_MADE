@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/bluejeans"
+        android:paddingEnd="16dp"
+        app:contentInsetStart="0dp"
+        app:titleTextColor="@color/white"
+        tools:ignore="RtlSymmetry">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- iOS-style Back Button -->
+            <LinearLayout
+                android:id="@+id/backButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="1dp"
+                android:paddingEnd="10dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?android:attr/selectableItemBackgroundBorderless">
+
+                <ImageView
+                    android:layout_marginLeft="@dimen/caption_text_size"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/baseline_arrow_back_ios_24"
+                    android:contentDescription="Back"
+                    app:tint="@color/white" />
+
+            </LinearLayout>
+
+            <!-- Search Input in Toolbar -->
+            <EditText
+                android:id="@+id/searchEditText"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_marginStart="1dp"
+                android:autofillHints="shorts"
+                android:background="@drawable/search_input_border"
+                android:hint="Search..."
+                android:paddingStart="8dp"
+                android:paddingEnd="1dp"
+                android:textSize="15sp"
+                android:textColor="@color/black"
+                android:textColorHint="#B3121111"
+                android:singleLine="true"
+                android:imeOptions="actionSearch"
+                android:inputType="text" />
+
+        </LinearLayout>
+
+    </androidx.appcompat.widget.Toolbar>
+
+    <!-- Context indicator chip (e.g., "Posts by @username") -->
+    <com.google.android.material.chip.Chip
+        android:id="@+id/contextChip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp"
+        android:visibility="gone"
+        app:chipBackgroundColor="@color/bluejeans"
+        app:chipStrokeWidth="0dp"
+        app:closeIconEnabled="true"
+        app:closeIconTint="@color/white"
+        android:textColor="@color/white"
+        tools:text="Posts by @uyscuti"
+        tools:visibility="gone" />
+
+    <!-- Filter chips - Horizontal in single line -->
+    <LinearLayout
+        android:id="@+id/filterChipsGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="4dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipAll"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="4dp"
+            android:text="All"
+            android:textAlignment="center"
+            android:textColor="@color/chip_text_color"
+            app:checkedIconVisible="false"
+            app:chipBackgroundColor="@color/chip_background_selector"
+            app:chipStrokeColor="@color/bluejeans"
+            app:chipStrokeWidth="1dp"
+            android:gravity="center"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipPeople"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="4dp"
+            android:text="People"
+            android:textAlignment="center"
+            android:textColor="@color/chip_text_color"
+            app:checkedIconVisible="false"
+            app:chipBackgroundColor="@color/chip_background_selector"
+            app:chipStrokeColor="@color/bluejeans"
+            app:chipStrokeWidth="1dp"
+            android:gravity="center"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipFeed"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="4dp"
+            android:text="Feed"
+            android:textAlignment="center"
+            android:textColor="@color/chip_text_color"
+            app:checkedIconVisible="false"
+            app:chipBackgroundColor="@color/chip_background_selector"
+            app:chipStrokeColor="@color/bluejeans"
+            app:chipStrokeWidth="1dp"
+            android:gravity="center"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipShorts"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="4dp"
+            android:text="Shorts"
+            android:textAlignment="center"
+            android:textColor="@color/chip_text_color"
+            app:checkedIconVisible="false"
+            app:chipBackgroundColor="@color/chip_background_selector"
+            app:chipStrokeColor="@color/bluejeans"
+            app:chipStrokeWidth="1dp"
+            android:gravity="center"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipChats"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="4dp"
+            android:text="Chats"
+            android:textAlignment="center"
+            android:textColor="@color/chip_text_color"
+            app:checkedIconVisible="false"
+            app:chipBackgroundColor="@color/chip_background_selector"
+            app:chipStrokeColor="@color/bluejeans"
+            app:chipStrokeWidth="1dp"
+            android:gravity="center"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipBusiness"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="4dp"
+            android:text="Business"
+            android:textAlignment="center"
+            android:textColor="@color/chip_text_color"
+            app:checkedIconVisible="false"
+            app:chipBackgroundColor="@color/chip_background_selector"
+            app:chipStrokeColor="@color/bluejeans"
+            app:chipStrokeWidth="1dp"
+            android:gravity="center"/>
+    </LinearLayout>
+
+    <!-- Thin divider line -->
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0" />
+
+    <!-- FrameLayout to overlay RecyclerView and noResultsText -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/searchResultsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingTop="4dp"
+            tools:listitem="@layout/people_search_list" />
+
+        <TextView
+            android:id="@+id/noResultsText"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:padding="24dp"
+            android:text="@string/no_results_found"
+            android:textSize="16sp"
+            android:textColor="@color/challenge_primary_color"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+    </FrameLayout>
+
+</LinearLayout>
