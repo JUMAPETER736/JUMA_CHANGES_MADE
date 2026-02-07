@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to create commits backdated to last Saturday (February 1, 2026)
+# Script to create commits backdated to last Saturday (February 7, 2026)
 # with different times throughout the day
 # 
 # Usage: 
@@ -8,11 +8,21 @@
 #   ./saturday-commit.sh --reset                # Reset time counter to start over
 
 # Base date - last Saturday
-BASE_DATE="2026-02-01"
+BASE_DATE="2026-02-07"
 
 # Array of times throughout the day (you can customize these)
 TIMES=(
     "09:15:00"
+    "10:27:00"
+    "11:12:00"
+    "13:48:00"
+    "14:06:00"
+    "15:51:00"
+    "17:18:00"
+    "18:25:00"
+    "19:40:00"
+    "20:55:00"
+    "09:01:00"
     "10:30:00"
     "11:45:00"
     "13:20:00"
