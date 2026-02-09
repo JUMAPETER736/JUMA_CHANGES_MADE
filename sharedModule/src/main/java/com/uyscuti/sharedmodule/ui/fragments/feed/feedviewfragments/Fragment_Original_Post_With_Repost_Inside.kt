@@ -126,7 +126,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     companion object {
         private const val ARG_ORIGINAL_POST = "original_post"
 
-        fun newInstance(data: com.uyscuti.social.network.api.response.posts.Post): Fragment_Original_Post_With_Repost_Inside {
+        fun newInstance(data: Post): Fragment_Original_Post_With_Repost_Inside {
             return Fragment_Original_Post_With_Repost_Inside().apply {
                 arguments = Bundle().apply {
                     putSerializable(ARG_ORIGINAL_POST, data)
@@ -136,7 +136,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     }
 
-    private lateinit var feedPost: com.uyscuti.social.network.api.response.posts.Post
+    private lateinit var feedPost: Post
 
 
     @Inject
@@ -202,7 +202,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private lateinit var shareCount: TextView
 
 
-    private var currentPost: com.uyscuti.social.network.api.response.posts.Post? = null
+    private var currentPost: Post? = null
     private var currentPosition: Int = 0
 
 
@@ -556,43 +556,43 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         (activity as? OnFeedClickListener) ?:
         object : OnFeedClickListener {
 
-            override fun likeUnLikeFeed(position: Int, post: com.uyscuti.social.network.api.response.posts.Post) {
+            override fun likeUnLikeFeed(position: Int, post: Post) {
                 Log.d(TAG, "feedClickListener: likeUnLikeFeed position $position for post ${post._id}")
             }
 
             override fun feedCommentClicked(
                 position: Int,
-                data: com.uyscuti.social.network.api.response.posts.Post
+                data: Post
             ) {
                 Log.d(TAG, "feedClickListener: feedCommentClicked position $position for post ${post?._id}")
                 handleFeedCommentClicked(position, data)
             }
 
-            override fun feedFavoriteClick(position: Int, post: com.uyscuti.social.network.api.response.posts.Post) {
+            override fun feedFavoriteClick(position: Int, post: Post) {
                 Log.d(TAG, "feedClickListener: feedFavoriteClick position $position for post ${post._id}")
             }
 
             override fun moreOptionsClick(
                 position: Int,
-                data: com.uyscuti.social.network.api.response.posts.Post
+                data: Post
             ) {
                 Log.d(TAG, "feedClickListener: moreOptionsClick position $position for post ${data._id}")
             }
 
             override fun feedFileClicked(
                 position: Int,
-                data: com.uyscuti.social.network.api.response.posts.Post
+                data: Post
             ) {
                 Log.d(TAG, "feedClickListener: feedFileClicked position $position for post ${data._id}")
             }
 
-            override fun feedRepostFileClicked(position: Int, data: com.uyscuti.social.network.api.response.posts.OriginalPost) {
+            override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
                 Log.d(TAG, "feedClickListener: feedRepostFileClicked position $position")
             }
 
             override fun feedShareClicked(
                 position: Int,
-                data: com.uyscuti.social.network.api.response.posts.Post
+                data: Post
             ) {
                 Log.d(TAG, "feedClickListener: feedShareClicked position $position for post ${post?._id}")
             }
@@ -604,13 +604,13 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                 Log.d(TAG, "feedClickListener: followButtonClicked")
             }
 
-            override fun feedRepostPost(position: Int, post: com.uyscuti.social.network.api.response.posts.Post) {
+            override fun feedRepostPost(position: Int, post: Post) {
                 Log.d(TAG, "feedClickListener: feedRepostPost position $position for post ${post._id}")
             }
 
             override fun feedRepostPostClicked(
                 position: Int,
-                data: com.uyscuti.social.network.api.response.posts.Post
+                data: Post
             ) {
                 Log.d(TAG, "feedClickListener: feedRepostPostClicked position $position for post ${data._id}")
             }
@@ -1256,7 +1256,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     @SuppressLint("InflateParams", "MissingInflatedId", "ServiceCast")
     fun moreOptionsClick(
         position: Int,
-        data: com.uyscuti.social.network.api.response.posts.Post
+        data: Post
     ) {
         Log.d(TAG, "moreOptionsClick: More options clicked")
         val view: View = layoutInflater.inflate(R.layout.feed_more_options_layout, null)
@@ -1591,7 +1591,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
 
     private fun handleNotInterested(
-        data: com.uyscuti.social.network.api.response.posts.Post) {
+        data: Post) {
 
         val sharedPrefs =
             requireContext().getSharedPreferences("NotInterestedPosts", Context.MODE_PRIVATE)
@@ -1658,7 +1658,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     @SuppressLint("NotifyDataSetChanged")
     private fun hideSinglePost(
         position: Int,
-        data: com.uyscuti.social.network.api.response.posts.Post
+        data: Post
     ) {
         Log.d(
             TAG,
@@ -1931,7 +1931,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     // Fixed setupLikeButton - Replace in your FeedAdapter.kt
 
-    private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+    private fun setupLikeButton(data: Post) {
         updateLikeButtonUI(data.isLiked)
         updateMetricDisplay(likesCount, data.likes, "like")
 
@@ -1981,20 +1981,20 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
                                 // Safely access likedByUserIds (it might be null)
                                 val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
-                                Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
+                                Log.d(TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
 
                                 // Notify adapter
                                 feedClickListener.likeUnLikeFeed(0, data)
                             } else {
-                                Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like failed - success=false")
+                                Log.e(TAG, "Like failed - success=false")
                                 revertLikeState(data, previousLikeStatus, previousLikeCount)
                             }
                         } ?: run {
-                            Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like response body is null")
+                            Log.e(TAG, "Like response body is null")
                             revertLikeState(data, previousLikeStatus, previousLikeCount)
                         }
                     } else {
-                        Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like API error: ${response.code()} - ${response.message()}")
+                        Log.e(TAG, "Like API error: ${response.code()} - ${response.message()}")
                         revertLikeState(data, previousLikeStatus, previousLikeCount)
 
                         Toast.makeText(
@@ -2007,7 +2007,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                     like.alpha = 1f
                     like.isEnabled = true
 
-                    Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like network error", e)
+                    Log.e(TAG, "Like network error", e)
                     revertLikeState(data, previousLikeStatus, previousLikeCount)
 
                     Toast.makeText(
@@ -2020,15 +2020,15 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
-    private fun revertLikeState(data: com.uyscuti.social.network.api.response.posts.Post, previousStatus: Boolean, previousCount: Int) {
+    private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
         data.isLiked = previousStatus
         data.likes = previousCount
         updateLikeButtonUI(data.isLiked)
         updateMetricDisplay(likesCount, data.likes, "like")
-        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
+        Log.d(TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
     }
 
-    private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+    private fun setupBookmarkButton(data: Post) {
         Log.d(TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
 
         updateBookmarkButtonUI(data.isBookmarked)
@@ -2137,7 +2137,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     // Helper function to revert bookmark state on error
     private fun revertBookmarkState(
-        data: com.uyscuti.social.network.api.response.posts.Post,
+        data: Post,
         previousBookmarkStatus: Boolean,
         previousBookmarkCount: Int
     ) {
@@ -2214,21 +2214,24 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
     private fun handleOriginalMediaClick() {
-        post?.originalPost?.firstOrNull()?.let { originalPost ->
+        val currentPost = post ?: return
+        currentPost.originalPost.firstOrNull()?.let { originalPost ->
             if (originalPost.files.isNotEmpty()) {
                 val filesList = originalPost.files
                 val fileIds = filesList.map { it.fileId }
-                navigateToTappedFilesFragment(requireContext(), 0, filesList, fileIds)
+                // Pass currentPost but use originalPost files
+                navigateToTappedFilesFragment(requireContext(), 0, filesList, fileIds, currentPost)
             }
         }
     }
 
     private fun handleOriginalFileClick() {
-        post?.originalPost?.firstOrNull()?.let { originalPost ->
+        val currentPost = post ?: return
+        currentPost.originalPost.firstOrNull()?.let { originalPost ->
             if (originalPost.files.isNotEmpty()) {
                 val filesList = originalPost.files
                 val fileIds = filesList.map { it.fileId }
-                navigateToTappedFilesFragment(requireContext(), 0, filesList, fileIds)
+                navigateToTappedFilesFragment(requireContext(), 0, filesList, fileIds, currentPost)
             }
         }
     }
