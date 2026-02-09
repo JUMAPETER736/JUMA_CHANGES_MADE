@@ -688,19 +688,19 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         ivQuotedPostImage = view.findViewById(R.id.ivQuotedPostImage)
 
         // Action Button Views
-        likeSection = view.findViewById(R.id.likeSection)
+        likeSection = view.findViewById(R.id.like_layout)
         like = view.findViewById(R.id.like)
         likesCount = view.findViewById(R.id.likesCount)
-        commentSection = view.findViewById(R.id.commentSection)
+        commentSection = view.findViewById(R.id.comment_layout)
         comment = view.findViewById(R.id.comment)
         commentCount = view.findViewById(R.id.commentCount)
         favoriteSection = view.findViewById(R.id.favoriteSection)
         fav = view.findViewById(R.id.fav)
         favCount = view.findViewById(R.id.favCount)
-        retweetSection = view.findViewById(R.id.retweetSection)
+        retweetSection = view.findViewById(R.id.repost_layout)
         reFeed = view.findViewById(R.id.reFeed)
         repostCount = view.findViewById(R.id.repostCount)
-        shareSection = view.findViewById(R.id.shareSection)
+        shareSection = view.findViewById(R.id.share_layout)
         share = view.findViewById(R.id.share)
         shareCount = view.findViewById(R.id.shareCount)
     }
