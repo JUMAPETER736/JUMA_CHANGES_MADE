@@ -103,6 +103,7 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.comment.allcomments.Comment
 import com.uyscuti.social.network.api.response.post.Thumbnail
+import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -522,7 +523,63 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
         handleThumbnails(originalPost.thumbnail, ivQuotedPostImage)
     }
-    
+
+    private fun createPostFromOriginalPost(originalPost: OriginalPost): Post {
+        // AuthorX and Author have the same structure, so we can create Author from AuthorX fields
+        val author = Author(
+            __v = originalPost.__v,
+            _id = originalPost.author._id,
+            account = originalPost.author.account,
+            bio = originalPost.author.bio,
+            countryCode = originalPost.author.countryCode,
+            coverImage = originalPost.author.coverImage,
+            createdAt = originalPost.author.createdAt,
+            dob = originalPost.author.dob,
+            firstName = originalPost.author.firstName,
+            lastName = originalPost.author.lastName,
+            location = originalPost.author.location,
+            owner = originalPost.author.owner,
+            phoneNumber = originalPost.author.phoneNumber,
+            updatedAt = originalPost.author.updatedAt
+        )
+
+        return Post(
+            __v = originalPost.__v,
+            _id = originalPost._id,
+            author = author,
+            bookmarkCount = originalPost.bookmarkCount,
+            comments = originalPost.commentCount,
+            content = originalPost.content,
+            contentType = originalPost.contentType,
+            createdAt = originalPost.createdAt,
+            duration = originalPost.duration,
+            feedShortsBusinessId = originalPost.feedShortsBusinessId,
+            fileIds = originalPost.fileIds,
+            fileNames = originalPost.fileNames,
+            fileSizes = originalPost.fileSizes,
+            fileTypes = originalPost.fileTypes,
+            files = ArrayList(originalPost.files),
+            isBookmarked = originalPost.bookmarks.isNotEmpty(),
+            isExpanded = false,
+            isFollowing = false,
+            isLiked = false,
+            isLocal = false,
+            isReposted = originalPost.isReposted,
+            likes = originalPost.likeCount,
+            numberOfPages = originalPost.numberOfPages,
+            originalPost = emptyList(),
+            repostedByUserId = null,
+            repostedUser = null,
+            repostedUsers = emptyList(),
+            tags = originalPost.tags,
+            thumbnail = originalPost.thumbnail,
+            updatedAt = originalPost.updatedAt,
+            shareCount = originalPost.shareCount,
+            repostCount = originalPost.repostCount,
+            isBusinessPost = originalPost.isBusinessPost,
+            category = originalPost.category
+        )
+    }
 
     // 7. FIX: Update updateMetricDisplay to ensure TextView is properly updated
     private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
@@ -1094,8 +1151,8 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         headerTitle = view.findViewById(R.id.headerTitle)
         headerMenuButton = view.findViewById(R.id.headerMenuButton)
 
-        // User Info Views
-        userProfileImage = view.findViewById(R.id.userProfileImage)
+        // User Info Views - Use correct ID from XML
+        userProfileImage = view.findViewById(R.id.userReposterProfileImage) // FIXED
         repostedUserName = view.findViewById(R.id.repostedUserName)
         tvUserHandle = view.findViewById(R.id.tvUserHandle)
         dateTimeCreate = view.findViewById(R.id.date_time_create)
@@ -1107,9 +1164,10 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         userComment = view.findViewById(R.id.userComment)
         tvHashtags = view.findViewById(R.id.tvHashtags)
 
-        // Media Views - FIXED
+        // Media Views
         mixedFilesCardViews = view.findViewById(R.id.mixedFilesCardViews)
         originalFeedImages = view.findViewById(R.id.originalFeedImages)
+        multipleMediaContainer = view.findViewById(R.id.multipleMediaContainer) // Note: This should be LinearLayout, not FrameLayout based on your XML
         multipleAudiosContainers = view.findViewById(R.id.multipleAudiosContainers)
         recyclerViews = view.findViewById(R.id.recyclerViews)
 
@@ -1131,19 +1189,19 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
         // Action Button Views
         likeSection = view.findViewById(R.id.like_layout)
-        like = view.findViewById(R.id.like)
+        like = view.findViewById(R.id.likeButtonIcon)
         likesCount = view.findViewById(R.id.likesCount)
         commentSection = view.findViewById(R.id.comment_layout)
-        comment = view.findViewById(R.id.comment)
+        comment = view.findViewById(R.id.commentButtonIcon)
         commentCount = view.findViewById(R.id.commentCount)
         favoriteSection = view.findViewById(R.id.favoriteSection)
-        fav = view.findViewById(R.id.fav)
-        favCount = view.findViewById(R.id.favCount)
+        fav = view.findViewById(R.id.favorites_button)
+        favCount = view.findViewById(R.id.favoriteCounts)
         retweetSection = view.findViewById(R.id.repost_layout)
-        reFeed = view.findViewById(R.id.reFeed)
+        reFeed = view.findViewById(R.id.repostPost)
         repostCount = view.findViewById(R.id.repostCount)
         shareSection = view.findViewById(R.id.share_layout)
-        share = view.findViewById(R.id.share)
+        share = view.findViewById(R.id.shareButtonIcon)
         shareCount = view.findViewById(R.id.shareCount)
     }
 
