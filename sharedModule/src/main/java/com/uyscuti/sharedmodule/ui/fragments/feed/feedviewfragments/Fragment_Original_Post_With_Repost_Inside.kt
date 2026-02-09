@@ -37,6 +37,9 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.uyscuti.sharedmodule.R
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.OriginalPost
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+import java.text.SimpleDateFormat
 import java.util.*
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.OptIn
@@ -50,7 +53,9 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File
 import kotlin.collections.isNotEmpty
+import com.uyscuti.social.network.api.response.getfeedandresposts.Thumbnail
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
@@ -58,55 +63,31 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.sharedmodule.ReportNotificationActivity2
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.TAG
 import com.uyscuti.sharedmodule.databinding.FragmentOriginalPostWithRepostInsideBinding
+import com.uyscuti.sharedmodule.model.FeedCommentClicked
 import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
+import com.uyscuti.sharedmodule.model.ShowAppBar
+import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside.CommentCountUpdatedEvent
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside.CommentsLoadedEvent
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside.OnFeedClickListener
-import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.AudioDuration
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlin.getValue
-import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
-import com.uyscuti.sharedmodule.model.FeedCommentClicked
-import com.uyscuti.sharedmodule.model.ShowAppBar
-import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
 import com.uyscuti.sharedmodule.utils.FollowingManager
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
-import com.uyscuti.social.network.api.response.posts.OriginalPost
-import com.uyscuti.social.network.api.response.posts.Post
-import com.uyscuti.social.network.api.response.posts.Duration
-import com.uyscuti.social.network.api.response.posts.ThumbnailX
-import com.uyscuti.social.network.api.response.posts.File
-import com.uyscuti.social.network.api.response.posts.FileType
-import java.text.SimpleDateFormat
-import java.util.*
-import com.uyscuti.social.network.utils.LocalStorage
-import retrofit2.Call
-import retrofit2.Callback
-import kotlin.math.abs
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
-import com.uyscuti.social.network.api.response.posts.Avatar
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeRequest
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeResponse
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
-import com.uyscuti.social.network.api.response.comment.allcomments.Comment
-import com.uyscuti.social.network.api.response.post.Thumbnail
-import com.uyscuti.social.network.api.response.posts.Author
-import com.uyscuti.social.network.api.response.posts.FileSize
+import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.AudioDuration
+import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.Duration
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
-import dagger.hilt.android.AndroidEntryPoint
+import com.uyscuti.social.network.utils.LocalStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -114,6 +95,8 @@ import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import retrofit2.Call
+import retrofit2.Callback
 import retrofit2.Response
 import javax.inject.Inject
 import kotlin.getValue
@@ -122,13 +105,13 @@ import kotlin.getValue
 private const val TAG = "Fragment_Original_Post_With_Repost_Inside"
 private const val FRAGMENT_ORIGINAL_POST_WITH_REPOST = 1
 
-@AndroidEntryPoint
+
 class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     companion object {
         private const val ARG_ORIGINAL_POST = "original_post"
 
-        fun newInstance(data: Post): Fragment_Original_Post_With_Repost_Inside {
+        fun newInstance(data: com.uyscuti.social.network.api.response.posts.Post): Fragment_Original_Post_With_Repost_Inside {
             return Fragment_Original_Post_With_Repost_Inside().apply {
                 arguments = Bundle().apply {
                     putSerializable(ARG_ORIGINAL_POST, data)
@@ -138,14 +121,15 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     }
 
-    private lateinit var feedPost: Post
+    private lateinit var feedPost: com.uyscuti.social.network.api.response.posts.Post
 
 
     @Inject
     lateinit var retrofitInstance: RetrofitInstance
 
+
     // Views from header_toolbar.xml
-    private lateinit var cancelButton: ImageButton
+    private lateinit var backButton: ImageButton
     private lateinit var headerTitle: TextView
     private lateinit var headerMenuButton: ImageButton
 
@@ -196,7 +180,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private lateinit var favoriteSection: LinearLayout
     private lateinit var fav: ImageView
     private lateinit var favCount: TextView
-    private lateinit var retweetSection: LinearLayout
+    private lateinit var repostSection: LinearLayout
     private lateinit var reFeed: ImageView
     private lateinit var repostCount: TextView
     private lateinit var shareSection: LinearLayout
@@ -204,7 +188,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private lateinit var shareCount: TextView
 
 
-    private var currentPost: Post? = null
+    private var currentPost: com.uyscuti.social.network.api.response.posts.Post? = null
     private var currentPosition: Int = 0
 
 
@@ -232,477 +216,48 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private val getFeedViewModel: GetFeedViewModel by activityViewModels()
     private lateinit var feedListView: RecyclerView
 
-    private val Post.safeRepostCount: Int
-        get() = repostCount ?: 0
-
-    private val Post.safeLikes: Int
-        get() = likes ?: 0
-
-    private val Post.safeCommentCount: Int
-        get() = comments ?: 0
-
-    private val Post.safeBookmarkCount: Int
-        get() = bookmarkCount ?: 0
-
-    private val Post.safeShareCount: Int
-        get() = shareCount ?: 0
-
-
-
-
-    private fun populatePostData(post: Post) {
-        currentPost = post
-
-        // Set header
-        headerTitle.text = "Post"
-
-        // Populate reposter information
-        populateReposterInfo(post)
-
-        // Populate repost content
-        populateRepostContent(post)
-
-        // FIX: Handle files from the ORIGINAL post if it exists
-        if (post.originalPost.isNotEmpty()) {
-            val originalPost = post.originalPost[0]
-
-            // FIX: Initialize counts from the ORIGINAL post (not the repost wrapper)
-            totalMixedComments = originalPost.commentCount
-            totalMixedLikesCounts = originalPost.likeCount
-            totalMixedBookMarkCounts = originalPost.bookmarkCount
-            totalMixedRePostCounts = originalPost.repostCount
-            totalMixedShareCounts = originalPost.shareCount
-
-            // Update UI with actual counts immediately
-            forceRefreshAllMetrics()
-
-            populateOriginalPostData(originalPost)
-
-            // FIX: Fetch fresh comment count for the ORIGINAL post
-            fetchAndUpdateCommentCount(originalPost._id)
-        } else {
-            // If no original post, use the repost's own data
-            totalMixedComments = post.comments
-            totalMixedLikesCounts = post.likes
-            totalMixedBookMarkCounts = post.bookmarkCount
-            totalMixedRePostCounts = post.repostCount ?: 0
-            totalMixedShareCounts = post.shareCount
-
-            forceRefreshAllMetrics()
-        }
-
-        setupInitialFollowButtonState(post)
-
-        // Handle repost media files
-        handleRepostMediaFiles(post)
-    }
-
-    // 2. ADD: Force refresh all metrics
-    private fun forceRefreshAllMetrics() {
-        Log.d(TAG, "forceRefreshAllMetrics: Forcing refresh of all metric displays")
-
-        Handler(Looper.getMainLooper()).post {
-            updateMetricDisplay(commentCount, totalMixedComments, "comment")
-            updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
-            updateMetricDisplay(favCount, totalMixedBookMarkCounts, "bookmark")
-            updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
-            updateMetricDisplay(shareCount, totalMixedShareCounts, "share")
-
-            Log.d(TAG, "forceRefreshAllMetrics: All metrics refreshed")
-        }
-    }
-
-    // 3. FIX: Update handleFeedCommentClicked to get correct post ID
-    private fun handleFeedCommentClicked(position: Int, post: Post?) {
-        Log.d(TAG, "handleFeedCommentClicked: Posting comment event for post ${post?._id}")
-        try {
-            post?.let {
-                EventBus.getDefault().post(FeedCommentClicked(position, post))
-            }
-
-            // FIX: Get the ORIGINAL post ID (already a String)
-            val postIdToFetch = if (currentPost?.originalPost?.isNotEmpty() == true) {
-                currentPost?.originalPost?.firstOrNull()?._id
-            } else {
-                currentPost?._id
-            }
-
-            Log.d(TAG, "handleFeedCommentClicked: Will fetch count for post ID: $postIdToFetch")
-
-            // Delay the fetch slightly to allow UI to settle
-            Handler(Looper.getMainLooper()).postDelayed({
-                postIdToFetch?.let { id ->
-                    fetchAndUpdateCommentCount(id)  // id is already a String
-                }
-            }, 500)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error posting comment event: ${e.message}")
-            e.printStackTrace()
-        }
-    }
-
-    // 4. FIX: Update event handlers to use correct post ID
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onCommentsLoaded(event: CommentsLoadedEvent) {
-        Log.d(TAG, "onCommentsLoaded: Received comments loaded event with ${event.commentCount} comments for post ${event.postId}")
-
-        // FIX: Get the correct post ID (already a String)
-        val currentPostId = currentPost?.originalPost?.firstOrNull()?._id ?: currentPost?._id
-
-        if (currentPostId == event.postId) {
-            Log.d(TAG, "onCommentsLoaded: Updating UI for matching post")
-            updateCommentCount(event.commentCount)
-        } else {
-            Log.d(TAG, "onCommentsLoaded: Event for different post (expected: $currentPostId, got: ${event.postId}), ignoring")
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onCommentCountUpdated(event: CommentCountUpdatedEvent) {
-        Log.d(TAG, "onCommentCountUpdated: Received count ${event.commentCount} for post ${event.postId}")
-
-        // FIX: Get the correct post ID (already a String)
-        val currentPostId = currentPost?.originalPost?.firstOrNull()?._id ?: currentPost?._id
-
-        if (currentPostId == event.postId) {
-            Log.d(TAG, "onCommentCountUpdated: Updating UI for matching post")
-            updateCommentCount(event.commentCount)
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onCommentAdded(event: CommentAddedEvent) {
-        Log.d(TAG, "onCommentAdded: Received event for post ${event.postId}")
-
-        // FIX: Compare with original post ID if it exists
-        val currentPostId = currentPost?.originalPost?.firstOrNull()?._id ?: currentPost?._id
-
-        if (currentPostId == event.postId) {
-            incrementCommentCount()
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onCommentDeleted(event: CommentDeletedEvent) {
-        Log.d(TAG, "onCommentDeleted: Received event for post ${event.postId}")
-
-        // FIX: Compare with original post ID if it exists
-        val currentPostId = currentPost?.originalPost?.firstOrNull()?._id ?: currentPost?._id
-
-        if (currentPostId == event.postId) {
-            decrementCommentCount()
-        }
-    }
-
-    // 5. FIX: Update fetchAndUpdateCommentCount
-    private fun fetchAndUpdateCommentCount(postId: String) {
-        Log.d(TAG, "fetchAndUpdateCommentCount: Fetching current comment count for post: $postId")
-
-        RetrofitClient.commentService.getCommentCount(postId)
-            .enqueue(object : Callback<CommentCountResponse> {
-                override fun onResponse(call: Call<CommentCountResponse>, response: Response<CommentCountResponse>) {
-                    if (response.isSuccessful && isAdded) {
-                        response.body()?.let { countResponse ->
-                            val actualCount = countResponse.count
-                            Log.d(TAG, "fetchAndUpdateCommentCount: API returned count: $actualCount for post: $postId")
-
-                            // FIX: Check if this is still the current post (String comparison)
-                            val currentPostId = currentPost?.originalPost?.firstOrNull()?._id ?: currentPost?._id
-
-                            if (currentPostId == postId) {
-                                // Only update if the count has changed
-                                if (totalMixedComments != actualCount) {
-                                    Log.d(TAG, "fetchAndUpdateCommentCount: Count changed from $totalMixedComments to $actualCount")
-
-                                    totalMixedComments = actualCount
-                                    currentPost?.comments = actualCount
-
-                                    // Update the original post's comment count if it exists
-                                    currentPost?.originalPost?.firstOrNull()?.let { original ->
-                                        original.commentCount = actualCount
-                                    }
-
-                                    updateMetricDisplay(commentCount, actualCount, "comment")
-
-                                    // Add animation
-                                    YoYo.with(Techniques.Pulse)
-                                        .duration(300)
-                                        .playOn(commentCount)
-                                } else {
-                                    Log.d(TAG, "fetchAndUpdateCommentCount: Count unchanged at $actualCount")
-                                }
-                            } else {
-                                Log.d(TAG, "fetchAndUpdateCommentCount: Post ID mismatch. Expected: $currentPostId, Got: $postId")
-                            }
-                        }
-                    } else {
-                        Log.e(TAG, "fetchAndUpdateCommentCount: Failed with code: ${response.code()}")
-                        if (response.code() == 404) {
-                            updateMetricDisplay(commentCount, 0, "comment")
-                        } else {
-                            loadCommentsAndUpdateCount(postId)
-                        }
-                    }
-                }
-
-                override fun onFailure(call: Call<CommentCountResponse>, t: Throwable) {
-                    Log.e(TAG, "fetchAndUpdateCommentCount: Network error", t)
-                    Log.d(TAG, "fetchAndUpdateCommentCount: Keeping existing count: $totalMixedComments")
-                }
-            })
-    }
-
-    // 6. FIX: Update handleRepostMediaFiles to properly show files
-    private fun handleRepostMediaFiles(post: Post) {
-        if (post.files.isNotEmpty()) {
-            // These are NEW files added by the reposter
-            val firstFile = post.files[0]
-            Log.d(TAG, "handleRepostMediaFiles: Processing ${post.files.size} files from reposter")
-
-            when {
-                firstFile.mimeType?.startsWith("image") == true -> {
-                    showRepostImageMedia(post, firstFile)
-                }
-                firstFile.mimeType?.startsWith("video") == true -> {
-                    showRepostVideoMedia(post, firstFile)
-                }
-                firstFile.mimeType?.startsWith("audio") == true -> {
-                    showRepostAudioMedia(post, firstFile)
-                }
-                isDocumentFile(firstFile) -> {
-                    showRepostDocumentMedia(post, firstFile)
-                }
-                else -> {
-                    showRepostCombinationOfMultiplesMedia(post, firstFile)
-                }
-            }
-        } else {
-            // No new files from reposter, hide these views
-            hideAllRepostMediaViews()
-        }
-
-        // Handle thumbnails
-        handleThumbnails(post.thumbnail, ivQuotedPostImage)
-    }
-
-    // 7. FIX: Update handleOriginalPostMediaFiles to use correct file reference
-    private fun handleOriginalPostMediaFiles(originalPost: OriginalPost) {
-        Log.d(TAG, "handleOriginalPostMediaFiles: Processing ${originalPost.files.size} files from original post")
-
-        if (originalPost.files.isNotEmpty()) {
-            val firstFile = originalPost.files[0]
-
-            Log.d(TAG, "handleOriginalPostMediaFiles: First file - mimeType: ${firstFile.mimeType}, url: ${firstFile.url}")
-
-            when {
-                isImageFile(firstFile) -> {
-                    Log.d(TAG, "handleOriginalPostMediaFiles: Showing image media")
-                    showOriginalImageMedia(originalPost, firstFile)
-                }
-                isVideoFile(firstFile) -> {
-                    Log.d(TAG, "handleOriginalPostMediaFiles: Showing video media")
-                    showOriginalVideoMedia(originalPost, firstFile)
-                }
-                isAudioFile(firstFile) -> {
-                    Log.d(TAG, "handleOriginalPostMediaFiles: Showing audio media")
-                    showOriginalAudioMedia(originalPost, firstFile)
-                }
-                isDocumentFile(firstFile) -> {
-                    Log.d(TAG, "handleOriginalPostMediaFiles: Showing document media")
-                    showOriginalDocumentMedia(originalPost, firstFile)
-                }
-                else -> {
-                    Log.d(TAG, "handleOriginalPostMediaFiles: Unknown file type, hiding all media views")
-                    hideAllOriginalMediaViews()
-                }
-            }
-        } else {
-            Log.d(TAG, "handleOriginalPostMediaFiles: No files found, hiding all media views")
-            hideAllOriginalMediaViews()
-        }
-
-        handleThumbnails(originalPost.thumbnail, ivQuotedPostImage)
-    }
-
-    private fun createPostFromOriginalPost(originalPost: OriginalPost): Post {
-        // Convert AuthorX to Author - they have the same structure
-        val author = Author(
-            __v = originalPost.__v,
-            _id = originalPost.author._id,
-            account = originalPost.author.account,
-            bio = originalPost.author.bio,
-            countryCode = originalPost.author.countryCode,
-            coverImage = originalPost.author.coverImage,
-            createdAt = originalPost.author.createdAt,
-            dob = originalPost.author.dob,
-            firstName = originalPost.author.firstName,
-            lastName = originalPost.author.lastName,
-            location = originalPost.author.location,
-            owner = originalPost.author.owner,
-            phoneNumber = originalPost.author.phoneNumber,
-            updatedAt = originalPost.author.updatedAt
-        )
-
-        // Convert FileSizeX to FileSize
-        val fileSizes = originalPost.fileSizes.map { fileSizeX ->
-            FileSize(
-                fileId = fileSizeX.fileId,
-                fileSize = fileSizeX.fileSize.toLongOrNull() ?: 0L
-            )
-        }
-
-        // Convert ThumbnailX if needed (they might have the same structure)
-        val thumbnails = originalPost.thumbnail.map { thumbX ->
-            ThumbnailX(
-                _id = thumbX._id,
-                fileId = thumbX.fileId,
-                thumbnailLocalPath = thumbX.thumbnailLocalPath,
-                thumbnailUrl = thumbX.thumbnailUrl
-            )
-        }
-
-        return Post(
-            __v = originalPost.__v,
-            _id = originalPost._id,
-            author = author,
-            bookmarkCount = originalPost.bookmarkCount,
-            comments = originalPost.commentCount,
-            content = originalPost.content,
-            contentType = originalPost.contentType,
-            createdAt = originalPost.createdAt,
-            duration = originalPost.duration,
-            feedShortsBusinessId = originalPost.feedShortsBusinessId,
-            fileIds = originalPost.fileIds,
-            fileNames = originalPost.fileNames,
-            fileSizes = fileSizes, // Use converted list
-            fileTypes = originalPost.fileTypes,
-            files = ArrayList(originalPost.files),
-            isBookmarked = originalPost.bookmarks.isNotEmpty(),
-            isExpanded = false,
-            isFollowing = false,
-            isLiked = false,
-            isLocal = false,
-            isReposted = originalPost.isReposted,
-            likes = originalPost.likeCount,
-            numberOfPages = originalPost.numberOfPages,
-            originalPost = emptyList(),
-            repostedByUserId = null,
-            repostedUser = null,
-            repostedUsers = emptyList(),
-            tags = originalPost.tags,
-            thumbnail = thumbnails, // Use converted list
-            updatedAt = originalPost.updatedAt,
-
-            // Share related fields
-            shareCount = originalPost.shareCount,
-            isShared = false,
-            sharedByUserIds = emptyList(),
-            sharedBy = null,
-            sharedAt = null,
-            shareId = null,
-
-            // Repost related fields
-            repostCount = originalPost.repostCount,
-            repostedByUserIds = emptyList(),
-            repostedBy = null,
-            repostedAt = null,
-            repostId = null,
-
-            // Business/Shop related fields
-            isBusinessPost = originalPost.isBusinessPost,
-            category = originalPost.category,
-            businessDetails = null,
-
-            // Bookmark/Favorites related fields
-            isFavorited = originalPost.isFavorited,
-            favorites = originalPost.favorites,
-            bookmarkId = originalPost.bookmarkId,
-            bookmarkedBy = originalPost.bookmarkedBy,
-            bookmarkedAt = originalPost.bookmarkedAt,
-            bookmarkedByUserIds = emptyList(),
-
-            // Likes related fields
-            likedByUserIds = emptyList(),
-
-            // Privacy / relationship flags
-            isInCloseFriends = null,
-            isPostsMuted = null,
-            isStoriesMuted = null,
-            isRestricted = null,
-            isFavorite = null
-        )
-    }
-
-    // 7. FIX: Update updateMetricDisplay to ensure TextView is properly updated
-    private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
-        Log.d(TAG, "updateMetricDisplay: Updating $metricType display to $count")
-
-        // FIX: Ensure we're on the main thread
-        if (Thread.currentThread() != Looper.getMainLooper().thread) {
-            Handler(Looper.getMainLooper()).post {
-                updateMetricDisplayOnMainThread(textView, count, metricType)
-            }
-        } else {
-            updateMetricDisplayOnMainThread(textView, count, metricType)
-        }
-    }
-
-    private fun updateMetricDisplayOnMainThread(textView: TextView, count: Int, metricType: String) {
-        textView.text = formatCount(count)
-        textView.visibility = View.VISIBLE
-        textView.contentDescription = when (metricType) {
-            "like" -> "$count ${if (count == 1) "like" else "likes"}"
-            "comment" -> "$count ${if (count == 1) "comment" else "comments"}"
-            "bookmark" -> "$count ${if (count == 1) "bookmark" else "bookmarks"}"
-            "repost" -> "$count ${if (count == 1) "repost" else "reposts"}"
-            "share" -> "$count ${if (count == 1) "share" else "shares"}"
-            else -> "$count $metricType"
-        }
-        Log.d(TAG, "updateMetricDisplay: Set $metricType text to '${textView.text}' - TextView ID: ${textView.id}")
-    }
 
     private val feedClickListener: OnFeedClickListener by lazy {
         (activity as? OnFeedClickListener) ?:
         object : OnFeedClickListener {
 
-            override fun likeUnLikeFeed(position: Int, post: Post) {
+            override fun likeUnLikeFeed(position: Int, post: com.uyscuti.social.network.api.response.posts.Post) {
                 Log.d(TAG, "feedClickListener: likeUnLikeFeed position $position for post ${post._id}")
             }
 
             override fun feedCommentClicked(
                 position: Int,
-                data: Post
+                data: com.uyscuti.social.network.api.response.posts.Post
             ) {
                 Log.d(TAG, "feedClickListener: feedCommentClicked position $position for post ${post?._id}")
                 handleFeedCommentClicked(position, data)
             }
 
-            override fun feedFavoriteClick(position: Int, post: Post) {
+            override fun feedFavoriteClick(position: Int, post: com.uyscuti.social.network.api.response.posts.Post) {
                 Log.d(TAG, "feedClickListener: feedFavoriteClick position $position for post ${post._id}")
             }
 
             override fun moreOptionsClick(
                 position: Int,
-                data: Post
+                data: com.uyscuti.social.network.api.response.posts.Post
             ) {
                 Log.d(TAG, "feedClickListener: moreOptionsClick position $position for post ${data._id}")
             }
 
             override fun feedFileClicked(
                 position: Int,
-                data: Post
+                data: com.uyscuti.social.network.api.response.posts.Post
             ) {
                 Log.d(TAG, "feedClickListener: feedFileClicked position $position for post ${data._id}")
             }
 
-            override fun feedRepostFileClicked(position: Int, data: OriginalPost) {
+            override fun feedRepostFileClicked(position: Int, data: com.uyscuti.social.network.api.response.posts.OriginalPost) {
                 Log.d(TAG, "feedClickListener: feedRepostFileClicked position $position")
             }
 
             override fun feedShareClicked(
                 position: Int,
-                data: Post
+                data: com.uyscuti.social.network.api.response.posts.Post
             ) {
                 Log.d(TAG, "feedClickListener: feedShareClicked position $position for post ${post?._id}")
             }
@@ -714,13 +269,13 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                 Log.d(TAG, "feedClickListener: followButtonClicked")
             }
 
-            override fun feedRepostPost(position: Int, post: Post) {
+            override fun feedRepostPost(position: Int, post: com.uyscuti.social.network.api.response.posts.Post) {
                 Log.d(TAG, "feedClickListener: feedRepostPost position $position for post ${post._id}")
             }
 
             override fun feedRepostPostClicked(
                 position: Int,
-                data: Post
+                data: com.uyscuti.social.network.api.response.posts.Post
             ) {
                 Log.d(TAG, "feedClickListener: feedRepostPostClicked position $position for post ${data._id}")
             }
@@ -735,20 +290,40 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
-    private fun showRepostDocumentMedia(post: Post, firstFile: File) {
-        mixedFilesCardViews.visibility = View.VISIBLE
-        multipleAudiosContainers.visibility = View.GONE
-        recyclerViews.visibility = View.GONE
 
-        val thumbnailUrl = post.thumbnail.firstOrNull()?.thumbnailUrl
-        if (!thumbnailUrl.isNullOrEmpty()) {
-            Glide.with(this)
-                .load(thumbnailUrl)
-                .placeholder(getDocumentPlaceholder(firstFile))
-                .error(getDocumentPlaceholder(firstFile))
-                .into(originalFeedImages)
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onCommentsLoaded(event: CommentsLoadedEvent) {
+        Log.d(TAG, "onCommentsLoaded: Received comments loaded event with ${event.commentCount} comments for post ${event.postId}")
+
+        // Check if this event is for the current post
+        val currentPostId = if (currentPost?.originalPost?.isNotEmpty() == true) {
+            currentPost?.originalPost?.get(0)?._id
         } else {
-            originalFeedImages.setImageResource(getDocumentPlaceholder(firstFile))
+            currentPost?._id
+        }
+
+        if (currentPostId == event.postId) {
+            Log.d(TAG, "onCommentsLoaded: Updating UI for matching post")
+            updateCommentCount(event.commentCount)
+        } else {
+            Log.d(TAG, "onCommentsLoaded: Event for different post, ignoring")
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onCommentCountUpdated(event: CommentCountUpdatedEvent) {
+        Log.d(TAG, "onCommentCountUpdated: Received count ${event.commentCount} for post ${event.postId}")
+
+        // Check if this event is for the current post
+        val currentPostId = if (currentPost?.originalPost?.isNotEmpty() == true) {
+            currentPost?.originalPost?.get(0)?._id
+        } else {
+            currentPost?._id
+        }
+
+        if (currentPostId == event.postId) {
+            Log.d(TAG, "onCommentCountUpdated: Updating UI for matching post")
+            updateCommentCount(event.commentCount)
         }
     }
 
@@ -781,6 +356,64 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             })
     }
 
+    private fun fetchAndUpdateCommentCount(postId: String) {
+        Log.d(TAG, "fetchAndUpdateCommentCount: Fetching current comment count for post: $postId")
+
+        RetrofitClient.commentService.getCommentCount(postId)
+            .enqueue(object : Callback<CommentCountResponse> {
+                override fun onResponse(call: Call<CommentCountResponse>, response: Response<CommentCountResponse>) {
+                    if (response.isSuccessful && isAdded) {
+                        response.body()?.let { countResponse ->
+                            val actualCount = countResponse.count
+                            Log.d(TAG, "fetchAndUpdateCommentCount: API returned count: $actualCount for post: $postId")
+
+                            // Check if this is still the current post
+                            val currentPostId = if (currentPost?.originalPost?.isNotEmpty() == true) {
+                                currentPost?.originalPost?.get(0)?._id
+                            } else {
+                                currentPost?._id
+                            }
+
+                            if (currentPostId == postId) {
+                                // Only update if the count has changed to avoid unnecessary UI updates
+                                if (totalMixedComments != actualCount) {
+                                    Log.d(TAG, "fetchAndUpdateCommentCount: Count changed from $totalMixedComments to $actualCount")
+
+                                    totalMixedComments = actualCount
+                                    currentPost?.comments = actualCount
+                                    currentPost?.comments = actualCount
+
+                                    updateMetricDisplay(commentCount, actualCount, "comment")
+
+                                    // Add a subtle animation to indicate the count was updated
+                                    YoYo.with(Techniques.Pulse)
+                                        .duration(300)
+                                        .playOn(commentCount)
+                                } else {
+                                    Log.d(TAG, "fetchAndUpdateCommentCount: Count unchanged at $actualCount")
+                                }
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "fetchAndUpdateCommentCount: Failed with code: ${response.code()}")
+                        if (response.code() == 404) {
+                            // Post might not exist or have no comments
+                            updateMetricDisplay(commentCount, 0, "comment")
+                        } else {
+                            // Fallback to loading comments
+                            loadCommentsAndUpdateCount(postId)
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<CommentCountResponse>, t: Throwable) {
+                    Log.e(TAG, "fetchAndUpdateCommentCount: Network error", t)
+                    // Don't override existing count on network failure
+                    Log.d(TAG, "fetchAndUpdateCommentCount: Keeping existing count: $totalMixedComments")
+                }
+            })
+    }
+
     fun decrementCommentCount() {
         val newCount = maxOf(0, totalMixedComments - 1)
         Log.d(tag, "decrementCommentCount: Decrementing from $totalMixedComments to $newCount")
@@ -794,187 +427,21 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         updateCommentCount(newCount)
     }
 
-    private fun setupCommentButton(data: Post) {
-        comment.setOnClickListener {
-            if (!comment.isEnabled) return@setOnClickListener
 
-            Log.d(TAG, "setupCommentButton: Comment button clicked for post ${data._id}")
-
-            // Animate the comment button
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(comment)
-
-            // Post event to MainActivity via EventBus
-            handleFeedCommentClicked(0, data)
-
-            comment.isEnabled = true
-        }
-
-        commentCount.setOnClickListener {
-            if (!commentCount.isEnabled) return@setOnClickListener
-
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(commentCount)
-
-            handleFeedCommentClicked(0, data)
-            commentCount.isEnabled = true
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onCommentAdded(event: CommentAddedEvent) {
+        Log.d(TAG, "onCommentAdded: Received event for post ${event.postId}")
+        if (currentPost?._id == event.postId) {
+            incrementCommentCount()
         }
     }
 
-    private fun setupShareButton(data: Post) {
-        updateMetricDisplay(shareCount, data.shareCount, "share")
-        share.setOnClickListener {
-            if (!share.isEnabled) return@setOnClickListener
-
-            Log.d(TAG, "Share clicked for post: ${data._id}")
-            val previousShareCount = data.shareCount
-
-            // Update immediately for better UX
-            data.shareCount += 1
-            totalMixedShareCounts = data.shareCount
-            updateMetricDisplay(shareCount, data.shareCount, "share")
-
-            YoYo.with(Techniques.Tada)
-                .duration(700)
-                .repeat(1)
-                .playOn(share)
-
-            share.isEnabled = false
-            share.alpha = 0.8f
-
-            // Make API call to sync with server
-            RetrofitClient.shareService.incrementShare(data._id)
-                .enqueue(object : Callback<ShareResponse> {
-                    override fun onResponse(call: Call<ShareResponse>, response: Response<ShareResponse>) {
-                        share.alpha = 1f
-                        share.isEnabled = true
-
-                        if (response.isSuccessful) {
-                            response.body()?.let { shareResponse ->
-                                if (abs(shareResponse.shareCount - data.shareCount) > 1) {
-                                    data.shareCount = shareResponse.shareCount
-                                    totalMixedShareCounts = data.shareCount
-                                    updateMetricDisplay(shareCount, data.shareCount, "share")
-                                }
-                            }
-                        } else {
-                            Log.e(TAG, "Share sync failed: ${response.code()}")
-                            if (response.code() != 200) {
-                                data.shareCount = previousShareCount
-                                totalMixedShareCounts = data.shareCount
-                                updateMetricDisplay(shareCount, data.shareCount, "share")
-                            }
-                        }
-                    }
-
-                    override fun onFailure(call: Call<ShareResponse>, t: Throwable) {
-                        share.alpha = 1f
-                        share.isEnabled = true
-                        Log.e(TAG, "Share network error", t)
-                    }
-                })
-
-            // Show the share dialog
-            feedShareClicked(0, data)
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onCommentDeleted(event: CommentDeletedEvent) {
+        Log.d(TAG, "onCommentDeleted: Received event for post ${event.postId}")
+        if (currentPost?._id == event.postId) {
+            decrementCommentCount()
         }
-    }
-
-    private fun setupRepostButton(data: Post) {
-        totalMixedRePostCounts = data.safeRepostCount
-        updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
-        updateRepostButtonAppearance(data.isReposted)
-
-        reFeed.setOnClickListener { view ->
-            if (!reFeed.isEnabled) return@setOnClickListener
-            reFeed.isEnabled = false
-
-            try {
-                val wasReposted = data.isReposted
-                data.isReposted = !wasReposted
-                totalMixedRePostCounts = if (data.isReposted) totalMixedRePostCounts + 1 else maxOf(0, totalMixedRePostCounts - 1)
-                data.repostCount = totalMixedRePostCounts
-                updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
-                updateRepostButtonAppearance(data.isReposted)
-
-                YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
-                    .duration(700)
-                    .playOn(reFeed)
-
-                reFeed.alpha = 0.8f
-
-                val apiCall = if (data.isReposted) {
-                    RetrofitClient.repostService.incrementRepost(data._id)
-                } else {
-                    RetrofitClient.repostService.decrementRepost(data._id)
-                }
-
-                apiCall.enqueue(object : Callback<RepostResponse> {
-                    override fun onResponse(call: Call<RepostResponse>, response: Response<RepostResponse>) {
-                        reFeed.isEnabled = true
-                        reFeed.alpha = 1f
-
-                        if (response.isSuccessful) {
-                            response.body()?.let { repostResponse ->
-                                if (abs(repostResponse.repostCount - totalMixedRePostCounts) > 1) {
-                                    data.repostCount = repostResponse.repostCount
-                                    totalMixedRePostCounts = repostResponse.repostCount
-                                    updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
-                                }
-                            }
-                        }
-                    }
-
-                    override fun onFailure(call: Call<RepostResponse>, t: Throwable) {
-                        reFeed.isEnabled = true
-                        reFeed.alpha = 1f
-                        Log.e(TAG, "Repost network error", t)
-                    }
-                })
-
-                if (data.isReposted) {
-                    navigateToEditPostToRepost(data)
-                }
-
-                feedClickListener.feedRepostPost(0, data)
-            } catch (e: Exception) {
-                reFeed.isEnabled = true
-                reFeed.alpha = 1f
-                Log.e(TAG, "Exception in repost click listener", e)
-            }
-        }
-    }
-
-    private fun updateRepostButtonAppearance(isReposted: Boolean) {
-        if (isReposted) {
-            reFeed.setImageResource(R.drawable.repeat_svgrepo_com)
-            reFeed.scaleX = 1.1f
-            reFeed.scaleY = 1.1f
-        } else {
-            reFeed.setImageResource(R.drawable.repeat_svgrepo_com)
-            reFeed.scaleX = 1.0f
-            reFeed.scaleY = 1.0f
-        }
-    }
-
-    private fun navigateToEditPostToRepost(data: Post) {
-        try {
-            val fragment = Fragment_Edit_Post_To_Repost(data)
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, fragment)
-                .addToBackStack("edit_post_to_repost")
-                .commit()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error navigating to edit post fragment", e)
-        }
-    }
-
-    private fun feedShareClicked(position: Int, data: Post) {
-        // Your existing share dialog implementation
-        showToast("Share functionality")
     }
 
     // 6. Create these event classes if they don't exist
@@ -1018,6 +485,30 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         Log.d(TAG, "updateCommentCount: Successfully updated UI to $totalMixedComments")
     }
 
+    private fun handleFeedCommentClicked(position: Int, post: com.uyscuti.social.network.api.response.posts.Post?) {
+        Log.d(TAG, "handleFeedCommentClicked: Posting comment event for post ${post?._id}")
+        try {
+            EventBus.getDefault().post(FeedCommentClicked(position,
+                post as com.uyscuti.social.network.api.response.posts.Post
+            ))
+
+            // Immediately try to refresh comment count from server
+            val postIdToFetch = if (post?.originalPost?.isNotEmpty() == true) {
+                post?.originalPost[0]?._id ?: 0
+            } else {
+                post?._id ?: 0
+            }
+
+            // Delay the fetch slightly to allow UI to settle
+            Handler(Looper.getMainLooper()).postDelayed({
+                fetchAndUpdateCommentCount(postIdToFetch.toString())
+            }, 500)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error posting comment event: ${e.message}")
+            e.printStackTrace()
+        }
+    }
 
     // Helper function to get AppCompatActivity from context
     private fun getActivityFromContext(context: Context): AppCompatActivity? {
@@ -1027,7 +518,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             else -> null
         }
     }
-
     private fun navigateToTappedFilesFragment(
         context: Context,
         currentIndex: Int,
@@ -1125,87 +615,45 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+
         // Setup back pressed callback
         onBackPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                cleanupAndGoBack()
-            }
-        }
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, onBackPressedCallback)
-
-        initializeViews(view)
-        setupRecyclerViews()
-
-        // Get post data
-        post = arguments?.getSerializable(ARG_ORIGINAL_POST) as? Post
-
-        post?.let { postData ->
-            Log.d(TAG, "Post ID: ${postData._id}")
-
-            currentPost = postData
-
-            // Get the actual comment count
-            totalMixedComments = if (postData.originalPost.isNotEmpty()) {
-                val originalPost = postData.originalPost[0]
-                originalPost.commentCount
-            } else {
-                postData.comments
-            }
-
-            // CRITICAL: Force immediate UI updates
-            Handler(Looper.getMainLooper()).post {
-                try {
-                    commentCount.text = totalMixedComments.toString()
-                    commentCount.visibility = View.VISIBLE
-                    commentCount.requestLayout()
-
-                    likesCount.text = postData.safeLikes.toString()
-                    likesCount.visibility = View.VISIBLE
-                    likesCount.requestLayout()
-
-                    favCount.text = postData.safeBookmarkCount.toString()
-                    favCount.visibility = View.VISIBLE
-                    favCount.requestLayout()
-
-                    shareCount.text = postData.safeShareCount.toString()
-                    shareCount.visibility = View.VISIBLE
-                    shareCount.requestLayout()
-
-                    repostCount.text = postData.safeRepostCount.toString()
-                    repostCount.visibility = View.VISIBLE
-                    repostCount.requestLayout()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error updating counts", e)
+                // Navigate back to previous fragment/activity
+                if (parentFragmentManager.backStackEntryCount > 0) {
+                    parentFragmentManager.popBackStack()
+                } else {
+                    requireActivity().finish()
                 }
             }
-
-            // Populate post data
-            populatePostData(postData)
-
-            // Setup buttons
-            setupLikeButton(postData)
-            setupBookmarkButton(postData)
-            setupCommentButton(postData)
-            setupShareButton(postData)
-            setupRepostButton(postData)
-            setupClickListeners(postData)
-
-            // Force refresh after setup
-            Handler(Looper.getMainLooper()).postDelayed({
-                forceRefreshAllMetrics()
-            }, 300)
         }
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            onBackPressedCallback
+        )
+
+        initializeViews(view)
+        setupClickListeners()
+        setupRecyclerViews()
+
+        post = arguments?.getSerializable(ARG_ORIGINAL_POST) as? Post
+        Log.d("populateViews", "post: $post")
+        originalPost?.let { populateViews(it) }
+
+        post?.let { populatePostData(it) }
+
+
     }
 
     private fun initializeViews(view: View) {
 
         // Header Views
-        cancelButton = view.findViewById(R.id.cancelButton)
+        backButton = view.findViewById(R.id.backButton)
         headerTitle = view.findViewById(R.id.headerTitle)
         headerMenuButton = view.findViewById(R.id.headerMenuButton)
 
-        // User Info Views - Use correct ID from XML
-        userProfileImage = view.findViewById(R.id.userReposterProfileImage) // FIXED
+        // User Info Views
+        userProfileImage = view.findViewById(R.id.userProfileImage)
         repostedUserName = view.findViewById(R.id.repostedUserName)
         tvUserHandle = view.findViewById(R.id.tvUserHandle)
         dateTimeCreate = view.findViewById(R.id.date_time_create)
@@ -1217,10 +665,10 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         userComment = view.findViewById(R.id.userComment)
         tvHashtags = view.findViewById(R.id.tvHashtags)
 
-        // Media Views
+        // Media Views - CORRECTED
         mixedFilesCardViews = view.findViewById(R.id.mixedFilesCardViews)
         originalFeedImages = view.findViewById(R.id.originalFeedImages)
-        multipleMediaContainer = view.findViewById(R.id.multipleMediaContainer) // Note: This should be LinearLayout, not FrameLayout based on your XML
+        multipleMediaContainer = view.findViewById(R.id.multipleMediaContainer)
         multipleAudiosContainers = view.findViewById(R.id.multipleAudiosContainers)
         recyclerViews = view.findViewById(R.id.recyclerViews)
 
@@ -1242,32 +690,36 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
         // Action Button Views
         likeSection = view.findViewById(R.id.like_layout)
-        like = view.findViewById(R.id.likeButtonIcon)
+        like = view.findViewById(R.id.like)
         likesCount = view.findViewById(R.id.likesCount)
         commentSection = view.findViewById(R.id.comment_layout)
-        comment = view.findViewById(R.id.commentButtonIcon)
+        comment = view.findViewById(R.id.comment)
         commentCount = view.findViewById(R.id.commentCount)
         favoriteSection = view.findViewById(R.id.favoriteSection)
-        fav = view.findViewById(R.id.favorites_button)
-        favCount = view.findViewById(R.id.favoriteCounts)
-        retweetSection = view.findViewById(R.id.repost_layout)
-        reFeed = view.findViewById(R.id.repostPost)
+        fav = view.findViewById(R.id.fav)
+        favCount = view.findViewById(R.id.favCount)
+        repostSection = view.findViewById(R.id.repost_layout)
+        reFeed = view.findViewById(R.id.reFeed)
         repostCount = view.findViewById(R.id.repostCount)
         shareSection = view.findViewById(R.id.share_layout)
-        share = view.findViewById(R.id.shareButtonIcon)
+        share = view.findViewById(R.id.share)
         shareCount = view.findViewById(R.id.shareCount)
+
     }
 
-    private fun setupClickListeners(data: Post) {
+    private fun setupClickListeners() {
 
         // Header click listeners
-        cancelButton.setOnClickListener {
+        backButton.setOnClickListener {
             Log.d(TAG, "Cancel button clicked")
             cleanupAndGoBack()
         }
 
         headerMenuButton.setOnClickListener {
-            moreOptionsClick(currentPosition, data)
+            moreOptionsClick(
+                position = TODO(),
+                data = TODO()
+            )
         }
 
         // User interaction click listeners
@@ -1280,21 +732,10 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         quotedPostCard.setOnClickListener { handleOriginalPostClick() }
 
         // Action button click listeners
-        likeSection.setOnClickListener {
-            currentPost?.let { post ->
-                setupLikeButton(post)
-            }
-        }
-
-        favoriteSection.setOnClickListener {
-            currentPost?.let { post ->
-                setupBookmarkButton(post)
-            }
-        }
-
+        likeSection.setOnClickListener { handleLikeClick() }
         commentSection.setOnClickListener { handleCommentClick() }
-
-        retweetSection.setOnClickListener { handleRetweetClick() }
+        favoriteSection.setOnClickListener { handleFavoriteClick() }
+        repostSection.setOnClickListener { handleRetweetClick() }
         shareSection.setOnClickListener { handleShareClick() }
 
         // Media click listeners - ADD THESE NEW ONES
@@ -1341,7 +782,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
     private fun handleRepostFileClick() {
-
         post?.let { currentPost ->
             if (currentPost.files.isNotEmpty()) {
                 val files = currentPost.files.map { file ->
@@ -1350,11 +790,12 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                         fileId = file.fileId,
                         localPath = file.localPath,
                         url = file.url,
-
+                        type = file.type,
                         mimeType = file.mimeType,
-
+                        fileType = file.fileType
                     ).apply {
-
+                        url = file.url
+                        mimeType = file.mimeType
                     }
                 }
                 val fileIds = currentPost.files.map { it ?: "unknown_id" }
@@ -1364,10 +805,31 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
+    private fun handleOriginalFileClick() {
+        post?.originalPost?.firstOrNull()?.let { originalPost ->
+            if (originalPost.files.isNotEmpty()) {
+                val files = originalPost.files.map { file ->
+                    File(
+                        _id = file._id,
+                        fileId = file.fileId,
+                        localPath = file.localPath,
+                        url = file.url,
+                        type = file.type,
+                        mimeType = file.mimeType,
+                        fileType = file.fileType
+                    )
+                }
+
+                val fileIds = originalPost.files.map { it.fileId ?: "unknown_id" }
+                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds, post!!)
+            }
+        }
+    }
+
     @SuppressLint("InflateParams", "MissingInflatedId", "ServiceCast")
     fun moreOptionsClick(
         position: Int,
-        data: Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         Log.d(TAG, "moreOptionsClick: More options clicked")
         val view: View = layoutInflater.inflate(R.layout.feed_more_options_layout, null)
@@ -1702,7 +1164,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
 
     private fun handleNotInterested(
-        data: Post) {
+        data: com.uyscuti.social.network.api.response.posts.Post) {
 
         val sharedPrefs =
             requireContext().getSharedPreferences("NotInterestedPosts", Context.MODE_PRIVATE)
@@ -1769,7 +1231,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     @SuppressLint("NotifyDataSetChanged")
     private fun hideSinglePost(
         position: Int,
-        data: Post
+        data: com.uyscuti.social.network.api.response.posts.Post
     ) {
         Log.d(
             TAG,
@@ -1828,7 +1290,9 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     private fun handleMainPostClick() = showToast("Opening full post ...")
     private fun handleOriginalPostClick() = showToast("Opening original post...")
+    private fun handleLikeClick() = toggleLike()
     private fun handleCommentClick() = showToast("Opening comments...")
+    private fun handleFavoriteClick() = toggleFavorite()
     private fun handleRetweetClick() = showRetweetOptions()
     private fun handleShareClick() = sharePost()
 
@@ -2027,10 +1491,12 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                         fileId = file.fileId,
                         localPath = file.localPath,
                         url = file.url,
+                        type = file.type,
                         mimeType = file.mimeType,
-
+                        fileType = file.fileType
                     ).apply {
-
+                        url = file.url
+                        mimeType = file.mimeType
                     }
                 }
                 val fileIds = currentPost.files.map { it ?: "unknown_id" }
@@ -2040,106 +1506,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
 
-    // Fixed setupLikeButton - Replace in your FeedAdapter.kt
-
-    private fun setupLikeButton(data: Post) {
-        updateLikeButtonUI(data.isLiked)
-        updateMetricDisplay(likesCount, data.likes, "like")
-
-        like.setOnClickListener {
-            if (!like.isEnabled) return@setOnClickListener
-
-            it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-
-            val previousLikeStatus = data.isLiked
-            val previousLikeCount = data.likes
-
-            // Optimistic UI update
-            data.isLiked = !previousLikeStatus
-            data.likes = if (data.isLiked) previousLikeCount + 1 else maxOf(0, previousLikeCount - 1)
-
-            updateLikeButtonUI(data.isLiked)
-            updateMetricDisplay(likesCount, data.likes, "like")
-
-            YoYo.with(if (data.isLiked) Techniques.Tada else Techniques.Pulse)
-                .duration(500)
-                .repeat(1)
-                .playOn(like)
-
-            like.isEnabled = false
-            like.alpha = 0.8f
-
-            CoroutineScope(Dispatchers.Main).launch {
-                try {
-                    val response = retrofitInstance.apiService.likeUnLikeFeed(data._id)
-
-                    like.alpha = 1f
-                    like.isEnabled = true
-
-                    if (response.isSuccessful) {
-                        response.body()?.let { likeResponse ->
-                            if (likeResponse.success) {
-                                // Sync with server data
-                                data.isLiked = likeResponse.data.isLiked
-
-                                // Handle potential null likeCount from server
-                                // Since your server only returns { isLiked: true/false }
-                                // We keep our optimistic count
-                                // data.likes stays as is (our optimistic update)
-
-                                updateLikeButtonUI(data.isLiked)
-                                updateMetricDisplay(likesCount, data.likes, "like")
-
-                                // Safely access likedByUserIds (it might be null)
-                                val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
-                                Log.d(TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
-
-                                // Notify adapter
-                                feedClickListener.likeUnLikeFeed(0, data)
-                            } else {
-                                Log.e(TAG, "Like failed - success=false")
-                                revertLikeState(data, previousLikeStatus, previousLikeCount)
-                            }
-                        } ?: run {
-                            Log.e(TAG, "Like response body is null")
-                            revertLikeState(data, previousLikeStatus, previousLikeCount)
-                        }
-                    } else {
-                        Log.e(TAG, "Like API error: ${response.code()} - ${response.message()}")
-                        revertLikeState(data, previousLikeStatus, previousLikeCount)
-
-                        Toast.makeText(
-                            like.context,
-                            "Failed to update like",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } catch (e: Exception) {
-                    like.alpha = 1f
-                    like.isEnabled = true
-
-                    Log.e(TAG, "Like network error", e)
-                    revertLikeState(data, previousLikeStatus, previousLikeCount)
-
-                    Toast.makeText(
-                        like.context,
-                        "Network error. Please check your connection.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
-    private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
-        data.isLiked = previousStatus
-        data.likes = previousCount
-        updateLikeButtonUI(data.isLiked)
-        updateMetricDisplay(likesCount, data.likes, "like")
-        Log.d(TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
-    }
-
-    private fun setupBookmarkButton(data: Post) {
+    private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
         Log.d(TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
 
         updateBookmarkButtonUI(data.isBookmarked)
@@ -2175,7 +1542,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                 try {
                     val bookmarkRequest = BookmarkRequest(newBookmarkStatus)
 
-                    //  Use retrofitInstance.apiService instead of retrofitInterface.apiService
+                    // ✅ FIXED: Use retrofitInstance.apiService instead of retrofitInterface.apiService
                     val response = retrofitInstance.apiService.toggleBookmark(data._id, bookmarkRequest)
 
                     fav.alpha = 1f
@@ -2248,7 +1615,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     // Helper function to revert bookmark state on error
     private fun revertBookmarkState(
-        data: Post,
+        data: com.uyscuti.social.network.api.response.posts.Post,
         previousBookmarkStatus: Boolean,
         previousBookmarkCount: Int
     ) {
@@ -2259,21 +1626,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         Log.d(TAG, "Reverted to previous state: isBookmarked=$previousBookmarkStatus, count=$previousBookmarkCount")
     }
 
-
-    private fun updateLikeButtonUI(isLiked: Boolean) {
-
-        Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
-        try {
-            if (isLiked) {
-                like.setImageResource(R.drawable.filled_favorite_like)
-            } else {
-                like.setImageResource(R.drawable.heart_svgrepo_com)
-                like.clearColorFilter()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating like button UI", e)
-        }
-    }
 
     private fun updateBookmarkButtonUI(isBookmarked: Boolean) {
         Log.d(tag, "Updating bookmark button UI: isBookmarked=$isBookmarked")
@@ -2289,6 +1641,21 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
+    private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
+        Log.d(TAG, "updateMetricDisplay: Updating $metricType with count: $count")
+        textView.text = formatCount(count)
+        textView.visibility = View.VISIBLE
+        textView.contentDescription = when (metricType) {
+            "like" -> "$count ${if (count == 1) "like" else "likes"}"
+            "comment" -> "$count ${if (count == 1) "comment" else "comments"}"
+            "bookmark" -> "$count ${if (count == 1) "bookmark" else "bookmarks"}"
+            "repost" -> "$count ${if (count == 1) "repost" else "reposts"}"
+            "share" -> "$count ${if (count == 1) "share" else "shares"}"
+            else -> "$count $metricType"
+        }
+    }
+
+
 
     private fun setupRecyclerViews() {
         recyclerViews.layoutManager = GridLayoutManager(requireContext(), 3)
@@ -2298,51 +1665,78 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         recyclerView.isNestedScrollingEnabled = false
     }
 
-    private fun populateOriginalPostData(originalPost: OriginalPost) {
-        Log.d(TAG, "populateOriginalPostData: originalPost=$originalPost")
 
-        // Original post author info - Access through account
-        originalPosterName.text = originalPost.author.account.username ?: "Unknown User"
-        tvQuotedUserHandle.text = "@${originalPost.author.account.username ?: "unknown"}"
 
-        // Load avatar from account
-        loadProfileImage(originalPost.author.account.avatar.url, originalPosterProfileImage)
+// MAIN POST POPULATION METHODS...
 
-        // Original post content
-        originalPostText.text = originalPost.content
-        dateTime.text = formatDateTime(originalPost.createdAt)
+    private fun populateViews(post: OriginalPost) {
+        Log.d("populateViews", "post: $post")
 
-        // Original post tags
-        val originalTagsText = originalPost.tags.filterNotNull().joinToString(" ") { "#$it" }
-        tvQuotedHashtags.text = originalTagsText
-        tvQuotedHashtags.visibility = if (originalTagsText.isNotEmpty()) View.VISIBLE else View.GONE
+        // Set header
+        headerTitle.text = "Post"
 
-        // Use the counts we already set in populatePostData
-        updateOriginalPostInteractionStates(originalPost)
+        populateReposterInfo(post)
+        populatePostContent(post)
+        populateOriginalAuthorInfo(post)
+        populateInteractionData(post)
 
-        // Handle original post media files
-        handleOriginalPostMediaFiles(originalPost)
     }
 
     private fun handleOriginalMediaClick() {
-        val currentPost = post ?: return
-        currentPost.originalPost.firstOrNull()?.let { originalPost ->
+        post?.originalPost?.firstOrNull()?.let { originalPost ->
             if (originalPost.files.isNotEmpty()) {
-                val filesList = originalPost.files
-                val fileIds = filesList.map { it.fileId }
-                // Pass currentPost but use originalPost files
-                navigateToTappedFilesFragment(requireContext(), 0, filesList, fileIds, currentPost)
+                val files = originalPost.files.map { file ->
+                    File(
+                        _id = file._id?.ifBlank { "unknown_id" } ?: "unknown_id",
+                        fileId = file.fileId?.ifBlank { "no_file_id" } ?: "no_file_id",
+                        localPath = file.localPath?.ifBlank { "" } ?: "",
+                        url = file.url?.ifBlank { "" } ?: "",
+                        type = file.type?.ifBlank { "unknown_type" } ?: "unknown_type",
+                        mimeType = file.mimeType?.ifBlank { "" } ?: "", // Fixed: handle null mimeType
+                        fileType = ""
+                    )
+                }
+
+                val fileIds = files.map { it.fileId }
+                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds, post!!)
             }
         }
     }
 
-    private fun handleOriginalFileClick() {
-        val currentPost = post ?: return
-        currentPost.originalPost.firstOrNull()?.let { originalPost ->
-            if (originalPost.files.isNotEmpty()) {
-                val filesList = originalPost.files
-                val fileIds = filesList.map { it.fileId }
-                navigateToTappedFilesFragment(requireContext(), 0, filesList, fileIds, currentPost)
+    fun populatePostData(post: Post) {
+        // Set header
+        headerTitle.text = "Post"
+
+        // Populate reposter information
+        populateReposterInfo(post)
+
+        // Populate repost content
+        populateRepostContent(post)
+
+        // Handle repost media files
+        handleRepostMediaFiles(post)
+
+        setupInitialFollowButtonState(post)
+
+        // Handle original post data if available
+        if (post.originalPost.isNotEmpty()) {
+            val originalPost = post.originalPost[0]
+            populateOriginalPostData(originalPost)
+        }
+    }
+
+
+// USER INFORMATION POPULATION METHODS...
+
+
+    private fun populateReposterInfo(post: OriginalPost) {
+        if (post.originalPostReposter.isNotEmpty()) {
+            val reposter = post.originalPostReposter[0]
+            repostedUserName.text = reposter.username ?: "Unknown User"
+            tvUserHandle.text = "@${reposter.username ?: "unknown"}"
+
+            reposter.avatar?.let { profileUrl ->
+                loadProfileImage(profileUrl.toString(), userProfileImage)
             }
         }
     }
@@ -2360,7 +1754,17 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     }
 
+    private fun populateOriginalAuthorInfo(post: OriginalPost) {
+        if (post.author.isNotEmpty()) {
+            val originalAuthor = post.author[0]
+            originalPosterName.text = originalAuthor.username ?: "Unknown User"
+            tvQuotedUserHandle.text = "@${originalAuthor.username ?: "unknown"}"
 
+            originalAuthor.avatar?.let { profileUrl ->
+                loadProfileImage(profileUrl.toString(), originalPosterProfileImage)
+            }
+        }
+    }
 
     private fun loadProfileImage(url: String, imageView: ImageView) {
         Glide.with(this)
@@ -2409,6 +1813,36 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         populateTagsViews(tagsText)
     }
 
+    private fun populateOriginalPostData(originalPost: OriginalPost) {
+
+        Log.d("populateViews", "populateOriginalPostData, $originalPost")
+        // Original post author info
+        if (originalPost.author.isNotEmpty()) {
+            val originalAuthor = originalPost.author[0]
+            originalPosterName.text = originalAuthor.username ?: "Unknown User"
+            tvQuotedUserHandle.text = "@${originalAuthor.username ?: "unknown"}"
+
+            originalAuthor.avatar?.let { profileUrl ->
+                loadProfileImage(profileUrl.toString(), originalPosterProfileImage)
+            }
+        }
+
+        // Original post content
+        originalPostText.text = originalPost.content
+        dateTime.text = formatDateTime(originalPost.createdAt)
+
+        // Original post tags
+        val originalTagsText = originalPost.tags.filterNotNull().joinToString(" ") { "#$it" }
+        tvQuotedHashtags.text = originalTagsText
+        tvQuotedHashtags.visibility = if (originalTagsText.isNotEmpty()) View.VISIBLE else View.GONE
+
+        // Interaction counts
+        populateOriginalPostInteractionData(originalPost)
+
+        // Handle original post media files
+        handleOriginalPostMediaFiles(originalPost)
+    }
+
     private fun populateTagsViews(tagsText: String) {
         tvHashtags.text = tagsText.takeIf { it.isNotEmpty() } ?: ""
         tvHashtags.visibility = if (tagsText.isNotEmpty()) View.VISIBLE else View.GONE
@@ -2417,7 +1851,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
 
-    // INTERACTION DATA METHODS
+// INTERACTION DATA METHODS
 
     private fun populateInteractionData(post: OriginalPost) {
         likesCount.text = formatCount(post.likeCount)
@@ -2440,7 +1874,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
     private fun updateOriginalPostInteractionStates(originalPost: OriginalPost) {
-        updateLikeUI(originalPost.isReposted)
+        updateLikeUI(originalPost.isLikedCount)
         updateFavoriteUI(originalPost.bookmarks.isNotEmpty())
         updateFollowButtonUI()
 
@@ -2450,12 +1884,15 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         )
     }
 
+// MEDIA HANDLING METHODS
+
     private fun handleThumbnails(
-        thumbnails: List<ThumbnailX>,
+        thumbnails: List<Thumbnail>,
         imageView: ImageView
     ) {
         if (thumbnails.isNotEmpty()) {
             val thumbnailUrl = thumbnails.firstOrNull()?.thumbnailUrl
+
             if (thumbnailUrl?.isNotEmpty() == true && mixedFilesCardView.visibility == View.VISIBLE) {
                 loadImage(thumbnailUrl, imageView)
             }
@@ -2463,9 +1900,77 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
 
+    private fun handleRepostMediaFiles(post: Post) {
+        if (post.files.isNotEmpty()) {
+            val firstFile = post.files[0]
+
+            when {
+                firstFile.mimeType?.startsWith("image") == true -> {
+                    showRepostImageMedia(post, firstFile)
+                }
+
+                firstFile.mimeType?.startsWith("video") == true -> {
+                    showRepostVideoMedia(post, firstFile)
+                }
+
+                firstFile.mimeType?.startsWith("audio") == true -> {
+                    showRepostAudioMedia(post, firstFile)
+                }
+
+                firstFile.mimeType?.startsWith("mixed_files") == true -> {
+                    showRepostCombinationOfMultiplesMedia(post, firstFile)
+                }
+
+                isDocumentFile(firstFile) -> {
+                    showRepostDocumentMedia(post, firstFile)
+                }
+
+                else -> {
+                    showRepostCombinationOfMultiplesMedia(post, firstFile)
+                }
+            }
+        } else {
+            hideAllRepostMediaViews()
+        }
+
+        handleThumbnails(post.thumbnail, ivQuotedPostImage)
+    }
+
+    private fun handleOriginalPostMediaFiles(originalPost: OriginalPost) {
+        if (originalPost.files.isNotEmpty()) {
+            val firstFile = originalPost.files[0]
+
+            when {
+                isImageFile(firstFile) -> {
+                    showOriginalImageMedia(originalPost, firstFile)
+                }
+
+                isVideoFile(firstFile) -> {
+                    showOriginalVideoMedia(originalPost, firstFile)
+                }
+
+                isAudioFile(firstFile) -> {
+                    showOriginalAudioMedia(originalPost, firstFile)
+                }
+
+                isDocumentFile(firstFile) -> {
+                    showOriginalDocumentMedia(originalPost, firstFile)
+                }
+
+                else -> {
+                    hideAllOriginalMediaViews()
+                }
+            }
+        } else {
+            hideAllOriginalMediaViews()
+        }
+
+        handleThumbnails(originalPost.thumbnail, ivQuotedPostImage)
+    }
+
     private fun updateInteractionStates(post: OriginalPost) {
         // Update like button state
-        updateLikeUI(post.isReposted)
+        updateLikeUI(post.isLikedCount)
 
         // Update bookmark/favorite button state
         updateFavoriteUI(post.bookmarks.isNotEmpty())
@@ -3101,7 +2606,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
             // Title
             addView(TextView(context).apply {
-               // text = files.getOrNull(index)?.name ?: "Audio ${index + 1}"
+                // text = files.getOrNull(index)?.name ?: "Audio ${index + 1}"
                 textSize = 16f
                 setTextColor(Color.BLACK)
                 typeface = Typeface.DEFAULT_BOLD
@@ -3161,6 +2666,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             files = originalPost.files,
             containerView = binding.multipleAudiosContainer,
             durationData = originalPost.duration ?: emptyList(),
+            thumbnailData = originalPost.thumbnail,
             isRepost = false,
             post = originalPost
         )
@@ -3171,6 +2677,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             files = post.files,
             containerView = binding.multipleAudiosContainers,
             durationData = post.duration ?: emptyList(),
+            thumbnailData = post.thumbnail,
             isRepost = true,
             post = post
         )
@@ -3536,7 +3043,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         return when {
             // First try to match by fileId
             thumbnailData != null && !fileId.isNullOrEmpty() -> {
-                thumbnailData.find { it._id == fileId }?.thumbnailUrl
+                thumbnailData.find { it.fileId == fileId }?.thumbnailUrl
             }
             // Fallback to index if fileId doesn't match
             thumbnailData != null && index < thumbnailData.size -> {
@@ -3586,13 +3093,12 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             .commit()
     }
 
-
-
     // Convenience methods for different post types
     private fun showOriginalVideoMedia(originalPost: OriginalPost, firstFile: File) {
         showVideoMedia(
             files = originalPost.files,
             containerView = mixedFilesCardView,
+            thumbnailData = originalPost.thumbnail,
             durationData = originalPost.duration, // Remove ?: emptyList() and casting
             isRepost = false,
             post = originalPost
@@ -3605,6 +3111,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         showVideoMedia(
             files = post.files,
             containerView = mixedFilesCardViews,
+            thumbnailData = post.thumbnail,
             durationData = post.duration, // Remove ?: emptyList() and casting
             isRepost = true,
             post = post
@@ -3685,6 +3192,23 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
+    private fun showRepostDocumentMedia(post: Post, firstFile: File) {
+        mixedFilesCardViews.visibility = View.VISIBLE
+        multipleAudiosContainers.visibility = View.GONE
+        recyclerViews.visibility = View.GONE
+
+        val thumbnailUrl = post.thumbnail.firstOrNull()?.thumbnailUrl
+        if (!thumbnailUrl.isNullOrEmpty()) {
+            Glide.with(this)
+                .load(thumbnailUrl)
+                .placeholder(getDocumentPlaceholder(firstFile))
+                .error(getDocumentPlaceholder(firstFile))
+                .into(originalFeedImages)
+        } else {
+            // Try to generate thumbnail from document URL if possible
+            originalFeedImages.setImageResource(getDocumentPlaceholder(firstFile))
+        }
+    }
 
     private fun showOriginalDocumentMedia(originalPost: OriginalPost, firstFile: File) {
         mixedFilesCardView.visibility = View.VISIBLE
@@ -4468,6 +3992,33 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private fun isPostLiked() = false
     private fun isPostBookmarked() = originalPost?.bookmarks?.isNotEmpty() ?: false
 
+    private fun toggleLike() {
+        originalPost?.let { post ->
+            val currentLikeCount = likesCount.text.toString().toIntOrNull() ?: post.likeCount
+            val newLikeCount = if (isPostLiked()) currentLikeCount - 1 else currentLikeCount + 1
+
+            updateLikeUI(newLikeCount > currentLikeCount)
+            likesCount.text = formatCount(newLikeCount)
+            showToast(if (newLikeCount > currentLikeCount) "Liked!" else "Like removed")
+        }
+    }
+
+    private fun toggleFavorite() {
+        originalPost?.let { post ->
+            val currentBookmarkCount = favCount.text.toString().toIntOrNull() ?: post.bookmarkCount
+            val newBookmarkCount =
+                if (isPostBookmarked()) currentBookmarkCount - 1 else currentBookmarkCount + 1
+
+            updateFavoriteUI(newBookmarkCount > currentBookmarkCount)
+            favCount.text = formatCount(newBookmarkCount)
+            showToast(
+                if (
+                    newBookmarkCount > currentBookmarkCount) "Added to favorites!" else "Removed from favorites"
+            )
+        }
+    }
+
+
     private fun showRetweetOptions() {
         originalPost?.let { post ->
             val currentRepostCount = repostCount.text.toString().toIntOrNull() ?: post.repostCount
@@ -4480,16 +4031,10 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
     private fun sharePost() {
-        currentPost?.let { post ->
-            val postId = if (post.originalPost.isNotEmpty()) {
-                post.originalPost[0]._id
-            } else {
-                post._id
-            }
-
+        originalPost?.let { post ->
             val shareText = buildString {
                 append(post.content)
-                append("\n\nhttps://circuitSocial.app/post/$postId")
+                if (post.url.isNotEmpty()) append("\n\n${post.url}")
                 val tags = post.tags.filterNotNull().joinToString(" ") { "#$it" }
                 if (tags.isNotEmpty()) append("\n\n$tags")
             }
@@ -4497,8 +4042,8 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             startActivity(
                 Intent.createChooser(
                     Intent().apply {
-                        action = Intent.ACTION_SEND
-                        type = "text/plain"
+                        setAction(Intent.ACTION_SEND)
+                        setType("text/plain")
                         putExtra(Intent.EXTRA_TEXT, shareText)
                     },
                     "Share Post"

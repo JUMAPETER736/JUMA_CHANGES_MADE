@@ -3871,7 +3871,10 @@ class Fragment_Edit_Post_To_Repost(private val data: Post) : Fragment() {
                                 fileIds = originalPostData.fileIds,
                                 fileNames = originalPostData.fileNames,
                                 fileSizes = originalPostData.fileSizes.map { fileSizeX ->
-                                    FileSize()
+                                    FileSize(
+                                        fileId = fileSizeX.fileId,
+                                        fileSize = fileSizeX.fileSize.toLongOrNull() ?: 0L
+                                    )
                                 },
                                 fileTypes = originalPostData.fileTypes,
                                 files = ArrayList(originalPostData.files),
