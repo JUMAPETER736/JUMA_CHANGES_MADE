@@ -3641,24 +3641,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             else -> R.drawable.text_placeholder
         }
     }
-
-    private fun showRepostDocumentMedia(post: Post, firstFile: File) {
-        mixedFilesCardViews.visibility = View.VISIBLE
-        multipleAudiosContainers.visibility = View.GONE
-        recyclerViews.visibility = View.GONE
-
-        val thumbnailUrl = post.thumbnail.firstOrNull()?.thumbnailUrl
-        if (!thumbnailUrl.isNullOrEmpty()) {
-            Glide.with(this)
-                .load(thumbnailUrl)
-                .placeholder(getDocumentPlaceholder(firstFile))
-                .error(getDocumentPlaceholder(firstFile))
-                .into(originalFeedImages)
-        } else {
-            // Try to generate thumbnail from document URL if possible
-            originalFeedImages.setImageResource(getDocumentPlaceholder(firstFile))
-        }
-    }
+    
 
     private fun showOriginalDocumentMedia(originalPost: OriginalPost, firstFile: File) {
         mixedFilesCardView.visibility = View.VISIBLE
@@ -4441,7 +4424,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     // Helper methods
     private fun isPostLiked() = false
     private fun isPostBookmarked() = originalPost?.bookmarks?.isNotEmpty() ?: false
-    
+
     private fun showRetweetOptions() {
         originalPost?.let { post ->
             val currentRepostCount = repostCount.text.toString().toIntOrNull() ?: post.repostCount
