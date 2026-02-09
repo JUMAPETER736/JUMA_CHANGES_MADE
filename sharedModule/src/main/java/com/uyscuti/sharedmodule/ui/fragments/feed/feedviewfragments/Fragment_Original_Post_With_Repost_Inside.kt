@@ -2836,19 +2836,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     }
 
 
-    private fun cleanupResources() {
-        try {
-            _binding?.let { binding ->
-                binding.replyInput.clearFocus()
-                val imm = requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.hideSoftInputFromWindow(binding.replyInput.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
-            }
-            Log.d(TAG, "Resources cleaned up")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error during cleanup", e)
-        }
-    }
-
 
     override fun onDestroy() {
         super.onDestroy()
