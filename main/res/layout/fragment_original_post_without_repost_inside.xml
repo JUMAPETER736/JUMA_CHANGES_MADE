@@ -487,17 +487,7 @@
                 android:layout_height="1dp"
                 android:background="#E1E8ED" />
 
-            <EditText
-                android:id="@+id/replyInput"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@android:color/transparent"
-                android:gravity="center_vertical"
-                android:hint="Post your reply"
-                android:paddingHorizontal="16dp"
-                android:textColor="@android:color/black"
-                android:textColorHint="#808080"
-                android:textSize="16sp" />
+
 
         </LinearLayout>
 
