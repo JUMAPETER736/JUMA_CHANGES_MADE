@@ -1270,12 +1270,11 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                         fileId = file.fileId,
                         localPath = file.localPath,
                         url = file.url,
-                        type = file.type,
+
                         mimeType = file.mimeType,
-                        fileType = file.fileType
+
                     ).apply {
-                        url = file.url
-                        mimeType = file.mimeType
+
                     }
                 }
                 val fileIds = currentPost.files.map { it ?: "unknown_id" }
@@ -2242,19 +2241,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
-
-    private fun populateReposterInfo(post: OriginalPost) {
-        if (post.originalPostReposter.isNotEmpty()) {
-            val reposter = post.originalPostReposter[0]
-            repostedUserName.text = reposter.username ?: "Unknown User"
-            tvUserHandle.text = "@${reposter.username ?: "unknown"}"
-
-            reposter.avatar?.let { profileUrl ->
-                loadProfileImage(profileUrl.toString(), userProfileImage)
-            }
-        }
-    }
-
     private fun populateReposterInfo(post: Post) {
 
         post.repostedUser?.let { reposter ->
@@ -2268,7 +2254,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     }
 
- 
+
 
     private fun loadProfileImage(url: String, imageView: ImageView) {
         Glide.with(this)
