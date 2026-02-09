@@ -1,6 +1,7 @@
 package com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments
 
 import android.annotation.SuppressLint
+import android.annotation.TargetApi
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -13,6 +14,7 @@ import android.graphics.Outline
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -28,6 +30,7 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -65,6 +68,7 @@ import com.bumptech.glide.request.target.Target
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.stream.MalformedJsonException
 import com.uyscuti.sharedmodule.R
@@ -86,6 +90,7 @@ import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.F
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
 import com.uyscuti.sharedmodule.utils.FollowingManager
+import com.uyscuti.sharedmodule.utils.waveformseekbar.WaveformSeekBar
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.network.api.response.posts.OriginalPost
@@ -113,6 +118,8 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.comment.allcomments.Comment
 import com.uyscuti.social.circuit.MainActivity
+import com.uyscuti.social.network.api.response.post.Thumbnail
+import com.uyscuti.social.network.api.response.posts.Author
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -313,9 +320,9 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
 
 
-    private val feedClickListener: com.uyscuti.social.circuit.adapter.feed.OnFeedClickListener by lazy {
-        (activity as? com.uyscuti.social.circuit.adapter.feed.OnFeedClickListener) ?:
-        object : com.uyscuti.social.circuit.adapter.feed.OnFeedClickListener {
+    private val feedClickListener: com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener by lazy {
+        (activity as? com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener) ?:
+        object : com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener {
 
             override fun likeUnLikeFeed(position: Int, post: Post) {
                 Log.d(TAG, "feedClickListener: likeUnLikeFeed position $position for post ${post._id}")
@@ -388,7 +395,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
 
     private var onMultipleFilesClickListener:
-            com.uyscuti.social.circuit.adapter.feed.multiple_files.OnMultipleFilesClickListener? = null
+            com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.OnMultipleFilesClickListener? = null
 
 
     fun multipleFileClickListener(currentIndex: Int, files: List<File>, fileIds: List<String>) {
@@ -716,31 +723,32 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             var feedOwnerId = "" // For follow check
 
             if (post.repostedUser != null) {
-                // ✅ Use OWNER field (account ID), not _id (profile ID)
-                feedOwnerId = post.repostedUser.owner
-                profilePicUrl = post.repostedUser.avatar?.url
 
-                // ✅ Build full name with proper cascade
+                // Use OWNER field (account ID), not _id (profile ID)
+                feedOwnerId = post.repostedUser!!.owner
+                profilePicUrl = post.repostedUser!!.avatar?.url
+
+                // Build full name with proper cascade
                 feedOwnerDisplayName = when {
-                    post.repostedUser.firstName.isNotBlank() && post.repostedUser.lastName.isNotBlank() ->
-                        "${post.repostedUser.firstName} ${post.repostedUser.lastName}"
-                    post.repostedUser.firstName.isNotBlank() -> post.repostedUser.firstName
-                    post.repostedUser.lastName.isNotBlank() -> post.repostedUser.lastName
-                    else -> post.repostedUser.username
+                    post.repostedUser!!.firstName.isNotBlank() && post.repostedUser!!.lastName.isNotBlank() ->
+                        "${post.repostedUser!!.firstName} ${post.repostedUser!!.lastName}"
+                    post.repostedUser!!.firstName.isNotBlank() -> post.repostedUser!!.firstName
+                    post.repostedUser!!.lastName.isNotBlank() -> post.repostedUser!!.lastName
+                    else -> post.repostedUser!!.username
                 }
 
-                feedOwnerUsername = post.repostedUser.username
-                userHandle = "@${post.repostedUser.username}"
+                feedOwnerUsername = post.repostedUser!!.username
+                userHandle = "@${post.repostedUser!!.username}"
 
-                Log.d(TAG, "📍 Reposted by: $feedOwnerDisplayName (Account/Owner: $feedOwnerId, Username: @$feedOwnerUsername)")
+                Log.d(TAG, "Reposted by: $feedOwnerDisplayName (Account/Owner: $feedOwnerId, Username: @$feedOwnerUsername)")
 
             } else if (post.originalPost != null && post.originalPost.isNotEmpty()) {
-                // ✅ Use author.owner (the account ID)
+                // Use author.owner (the account ID)
                 val originalAuthor = post.originalPost[0].author
                 feedOwnerId = originalAuthor.owner // Account ID!
                 profilePicUrl = originalAuthor.account.avatar.url
 
-                // ✅ Build full name for AuthorX type
+                // Build full name for AuthorX type
                 feedOwnerDisplayName = when {
                     originalAuthor.firstName.isNotBlank() && originalAuthor.lastName.isNotBlank() ->
                         "${originalAuthor.firstName} ${originalAuthor.lastName}"
@@ -752,7 +760,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 feedOwnerUsername = originalAuthor.account.username
                 userHandle = "@${originalAuthor.account.username}"
 
-                Log.d(TAG, "📍 Original author: $feedOwnerDisplayName (Account/Owner ID: $feedOwnerId, Username: @$feedOwnerUsername)")
+                Log.d(TAG, "Original author: $feedOwnerDisplayName (Account/Owner ID: $feedOwnerId, Username: @$feedOwnerUsername)")
 
             } else {
                 // Fall back to main post author
@@ -760,7 +768,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 feedOwnerId = author.account._id // Account ID
                 profilePicUrl = author.account.avatar?.url
 
-                // ✅ Build full name for Author type
+                // Build full name for Author type
                 feedOwnerDisplayName = when {
                     author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
                         "${author.firstName} ${author.lastName}"
@@ -777,10 +785,10 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                     "@unknown"
                 }
 
-                Log.d(TAG, "📍 Main author: $feedOwnerDisplayName (Account: $feedOwnerId, Username: @$feedOwnerUsername)")
+                Log.d(TAG, "Main author: $feedOwnerDisplayName (Account: $feedOwnerId, Username: @$feedOwnerUsername)")
             }
 
-            // ✅ Set UI elements with FULL NAME (not username)
+            // Set UI elements with FULL NAME (not username)
             if (::reposterFullName.isInitialized) {
                 reposterFullName.text = feedOwnerDisplayName // Show full name!
             }
@@ -791,7 +799,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 loadProfileImage(profilePicUrl, userReposterProfileImage)
             }
 
-            // ✅ Update follow button visibility
+            // Update follow button visibility
             updateFollowButtonVisibility(feedOwnerId, feedOwnerUsername)
 
             Log.d(TAG, "Handling media from reposter info with ${post.files?.size ?: 0} files")
@@ -826,21 +834,21 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             val isUserFollowing = cachedFollowingList.contains(accountId) ||
                     cachedFollowingUsernames.contains(username)
 
-            Log.d(TAG, "═══════════════════════════════════════")
+
             Log.d(TAG, "FOLLOW BUTTON VISIBILITY CHECK")
             Log.d(TAG, "Account ID: $accountId")
             Log.d(TAG, "Username: @$username")
             Log.d(TAG, "Current user ID: $currentUserId")
             Log.d(TAG, "Is following (by ID): ${cachedFollowingList.contains(accountId)}")
             Log.d(TAG, "Is following (by username): ${cachedFollowingUsernames.contains(username)}")
-            Log.d(TAG, "═══════════════════════════════════════")
+
 
             // Hide button if it's own post OR already following
             val shouldHideButton = accountId == currentUserId || isUserFollowing
 
             if (shouldHideButton) {
                 followButton.visibility = View.GONE
-                Log.d(TAG, "✓✓✓ HIDING follow button - Reason: ${when {
+                Log.d(TAG, "HIDING follow button - Reason: ${when {
                     accountId == currentUserId -> "Own post"
                     cachedFollowingUsernames.contains(username) -> "Already following (by username: @$username)"
                     cachedFollowingList.contains(accountId) -> "Already following (by ID: $accountId)"
@@ -849,7 +857,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             } else {
                 followButton.visibility = View.VISIBLE
                 followButton.text = "Follow"
-                Log.d(TAG, "✓✓✓ SHOWING follow button for account: $accountId (@$username)")
+                Log.d(TAG, "SHOWING follow button for account: $accountId (@$username)")
             }
 
         } catch (e: Exception) {
@@ -2090,7 +2098,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onCommentEventReceived(event: com.uyscuti.social.circuit.model.FeedCommentClicked) {
+    fun onCommentEventReceived(event: com.uyscuti.sharedmodule.model.FeedCommentClicked) {
         Log.d(TAG, "onCommentEventReceived: Comment event received in fragment for post ${event.data?._id}")
         // Handle comment event
         currentPost?.let { post ->
@@ -4473,58 +4481,69 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 context: Context,
                 currentIndex: Int,
                 files: List<File>,
-                fileIds: List<String>
+                fileIds: List<String>,
+                post: Post
             ) {
                 val activity = getActivityFromContext(context)
                 if (activity != null) {
-                    activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
-                    activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
-
                     val fragment = Tapped_Files_In_The_Container_View_Fragment()
 
                     val bundle = Bundle().apply {
                         putInt("current_index", currentIndex)
                         putInt("total_files", files.size)
 
+                        // Convert files to ArrayList of URLs
                         val fileUrls = ArrayList<String>()
-                        files.forEach { file -> fileUrls.add(file.url) }
+                        files.forEach { file ->
+                            fileUrls.add(file.url)
+                        }
                         putStringArrayList("file_urls", fileUrls)
                         putStringArrayList("file_ids", ArrayList(fileIds))
 
+                        // Create PostItem list for the ViewPager
                         val postItems = ArrayList<PostItem>()
                         files.forEachIndexed { index, file ->
                             val postItem = PostItem(
-                                audioUrl = file.url,
+                                postId = post._id,
+                                userId = post.author._id,
+                                username = post.author.account.username,
+                                authorName = listOfNotNull(
+                                    post.author.firstName?.takeIf { it.isNotBlank() },
+                                    post.author.lastName?.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").ifBlank { post.author.account.username },
+                                avatarUrl = post.author.account.avatar.url,
+                                audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
-                                videoUrl = file.url,
+                                videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                                 videoThumbnailUrl = null,
-                                postId = fileIds.getOrNull(index) ?: "file_$index",
-                                data = "Post data for file $index",
-                                files = arrayListOf(file.url)
+                                data = post.content,
+                                files = arrayListOf(file.url),
+                                fileType = file.url.substringAfterLast('.', "")
                             )
+
                             postItems.add(postItem)
                         }
                         putParcelableArrayList("post_list", postItems)
-                        putString(
-                            "post_id",
-                            fileIds.getOrNull(currentIndex) ?: "file_$currentIndex"
-                        )
+
+                        // Set post ID
+                        putString("post_id", fileIds.getOrNull(currentIndex) ?: "file_$currentIndex")
                     }
 
                     fragment.arguments = bundle
 
+                    // Navigate to the fragment with animation
                     activity.supportFragmentManager.beginTransaction()
                         .setCustomAnimations(
                             R.anim.slide_in_right,
-                            R.anim.slide_out_left
+                            R.anim.slide_out_left,
                         )
-                        .replace(R.id.frame_layout, fragment)
+                        .replace(android.R.id.content, fragment)
                         .addToBackStack("tapped_files_view")
                         .commit()
 
                     Log.d(
-                        TAG, "Navigated to Tapped_Files_In_The_Container_View with " +
-                                "${files.size} files, starting at index $currentIndex"
+                        TAG,
+                        "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files, starting at index $currentIndex"
                     )
                 } else {
                     Log.e(TAG, "Activity is null, cannot navigate to fragment")
@@ -6302,51 +6321,72 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 context: Context,
                 currentIndex: Int,
                 files: List<File>,
-                fileIds: List<String>
+                fileIds: List<String>,
+                post: Post
             ) {
                 val activity = getActivityFromContext(context)
                 if (activity != null) {
-                    activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
-                    activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
-
                     val fragment = Tapped_Files_In_The_Container_View_Fragment()
 
                     val bundle = Bundle().apply {
                         putInt("current_index", currentIndex)
                         putInt("total_files", files.size)
 
+                        // Convert files to ArrayList of URLs
                         val fileUrls = ArrayList<String>()
-                        files.forEach { file -> fileUrls.add(file.url) }
+                        files.forEach { file ->
+                            fileUrls.add(file.url)
+                        }
                         putStringArrayList("file_urls", fileUrls)
                         putStringArrayList("file_ids", ArrayList(fileIds))
 
+                        // Create PostItem list for the ViewPager
                         val postItems = ArrayList<PostItem>()
                         files.forEachIndexed { index, file ->
                             val postItem = PostItem(
-                                audioUrl = file.url,
+                                postId = post._id,
+                                userId = post.author._id,
+                                username = post.author.account.username,
+                                authorName = listOfNotNull(
+                                    post.author.firstName?.takeIf { it.isNotBlank() },
+                                    post.author.lastName?.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").ifBlank { post.author.account.username },
+                                avatarUrl = post.author.account.avatar.url,
+                                audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
-                                videoUrl = file.url,
+                                videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                                 videoThumbnailUrl = null,
-                                postId = fileIds.getOrNull(index) ?: "file_$index",
-                                data = "Post data for file $index",
-                                files = arrayListOf(file.url)
+                                data = post.content,
+                                files = arrayListOf(file.url),
+                                fileType = file.url.substringAfterLast('.', "")
                             )
+
                             postItems.add(postItem)
                         }
                         putParcelableArrayList("post_list", postItems)
+
+                        // Set post ID
                         putString("post_id", fileIds.getOrNull(currentIndex) ?: "file_$currentIndex")
                     }
 
                     fragment.arguments = bundle
 
+                    // Navigate to the fragment with animation
                     activity.supportFragmentManager.beginTransaction()
                         .setCustomAnimations(
                             R.anim.slide_in_right,
-                            R.anim.slide_out_left
+                            R.anim.slide_out_left,
                         )
-                        .replace(R.id.frame_layout, fragment)
+                        .replace(android.R.id.content, fragment)
                         .addToBackStack("tapped_files_view")
                         .commit()
+
+                    Log.d(
+                        TAG,
+                        "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files, starting at index $currentIndex"
+                    )
+                } else {
+                    Log.e(TAG, "Activity is null, cannot navigate to fragment")
                 }
             }
 
@@ -6681,20 +6721,18 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         context: Context,
         currentIndex: Int,
         files: List<File>,
-        fileIds: List<String>
-
+        fileIds: List<String>,
+        post: Post
     ) {
         val activity = getActivityFromContext(context)
         if (activity != null) {
-            // Create the fragment instance
             val fragment = Tapped_Files_In_The_Container_View_Fragment()
 
-            // Create bundle to pass data to the fragment
             val bundle = Bundle().apply {
                 putInt("current_index", currentIndex)
                 putInt("total_files", files.size)
 
-                // Convert files to ArrayList of URLs for easy passing
+                // Convert files to ArrayList of URLs
                 val fileUrls = ArrayList<String>()
                 files.forEach { file ->
                     fileUrls.add(file.url)
@@ -6706,19 +6744,28 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 val postItems = ArrayList<PostItem>()
                 files.forEachIndexed { index, file ->
                     val postItem = PostItem(
-                        audioUrl = file.url,
+                        postId = post._id,
+                        userId = post.author._id,
+                        username = post.author.account.username,
+                        authorName = listOfNotNull(
+                            post.author.firstName?.takeIf { it.isNotBlank() },
+                            post.author.lastName?.takeIf { it.isNotBlank() }
+                        ).joinToString(" ").ifBlank { post.author.account.username },
+                        avatarUrl = post.author.account.avatar.url,
+                        audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                         audioThumbnailUrl = null,
-                        videoUrl = file.url,
+                        videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                         videoThumbnailUrl = null,
-                        postId = fileIds.getOrNull(index) ?: "file_$index",
-                        data = "Post data for file $index",
-                        files = arrayListOf(file.url)
+                        data = post.content,
+                        files = arrayListOf(file.url),
+                        fileType = file.url.substringAfterLast('.', "")
                     )
+
                     postItems.add(postItem)
                 }
                 putParcelableArrayList("post_list", postItems)
 
-                // Set a default post ID
+                // Set post ID
                 putString("post_id", fileIds.getOrNull(currentIndex) ?: "file_$currentIndex")
             }
 
@@ -6729,17 +6776,14 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 .setCustomAnimations(
                     R.anim.slide_in_right,
                     R.anim.slide_out_left,
-                    R.anim.slide_in_left,
-                    R.anim.slide_out_right
                 )
-                .replace(R.id.frame_layout, fragment)
+                .replace(android.R.id.content, fragment)
                 .addToBackStack("tapped_files_view")
                 .commit()
 
             Log.d(
                 TAG,
-                "Navigated to Tapped_Files_In_The_Container_View with ${files.size} " +
-                        "files, starting at index $currentIndex"
+                "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files, starting at index $currentIndex"
             )
         } else {
             Log.e(TAG, "Activity is null, cannot navigate to fragment")
