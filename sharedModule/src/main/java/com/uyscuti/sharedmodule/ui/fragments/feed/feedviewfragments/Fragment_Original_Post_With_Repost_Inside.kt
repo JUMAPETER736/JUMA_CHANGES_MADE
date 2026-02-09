@@ -70,6 +70,7 @@ import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
+import com.google.gson.JsonSyntaxException
 import com.google.gson.stream.MalformedJsonException
 import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.ReportNotificationActivity2
@@ -117,9 +118,12 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.comment.allcomments.Comment
-import com.uyscuti.social.circuit.MainActivity
 import com.uyscuti.social.network.api.response.post.Thumbnail
 import com.uyscuti.social.network.api.response.posts.Author
+import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -147,6 +151,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     }
 
 
+    @Inject
+    lateinit var retrofitInstance: RetrofitInstance
 
     // Data
     private var originalPost: Post? = null
@@ -1617,7 +1623,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
         try {
             // Post the event
-            EventBus.getDefault().post(com.uyscuti.social.circuit.model.FeedCommentClicked(position, post))
+            EventBus.getDefault().post(com.uyscuti.sharedmodule.model.FeedCommentClicked(position, post))
             Log.d(TAG, "handleFeedCommentClicked: Event posted successfully")
 
             // Don't fetch comment count immediately - wait for the comment activity/fragment to finish
@@ -1671,196 +1677,225 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         Log.d(TAG, "updateCommentCount: Successfully updated to $totalRepostComments")
     }
 
+    // Fixed setupLikeButton - Replace in your FeedAdapter.kt
+
     private fun setupLikeButton(data: Post) {
-        Log.d(TAG, "Setting up like button - Initial state: isLiked=${data.isLiked}, likes=${data.likes}")
-        updateLikeButtonUI(data.isLiked ?: false)
+        updateLikeButtonUI(data.isLiked)
         updateMetricDisplay(likesCount, data.likes, "like")
 
         likeButtonIcon.setOnClickListener {
             if (!likeButtonIcon.isEnabled) return@setOnClickListener
 
-            Log.d(TAG, "Like clicked for post: ${data._id}")
-            Log.d(TAG, "Current state before toggle: isLiked=${data.isLiked}, likes=${data.likes}")
+            it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-            val newLikeStatus = !(data.isLiked ?: false)
-            val previousLikeStatus = data.isLiked ?: false
-            val previousLikesCount = data.likes
+            val previousLikeStatus = data.isLiked
+            val previousLikeCount = data.likes
 
-            // Update data immediately
-            data.isLiked = newLikeStatus
-            data.likes = if (newLikeStatus) data.likes + 1 else maxOf(0, data.likes - 1)
-            totalMixedLikesCounts = data.likes
+            // Optimistic UI update
+            data.isLiked = !previousLikeStatus
+            data.likes = if (data.isLiked) previousLikeCount + 1 else maxOf(0, previousLikeCount - 1)
 
-            Log.d(TAG, "New state after toggle: isLiked=${data.isLiked}, likes=${data.likes}")
-
-            // Update UI immediately for better UX
-            updateLikeButtonUI(data.isLiked ?: false)
+            updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, data.likes, "like")
 
-            // Animation
-            YoYo.with(if (newLikeStatus) Techniques.Tada else Techniques.Pulse)
-                .duration(300)
+            YoYo.with(if (data.isLiked) Techniques.Tada else Techniques.Pulse)
+                .duration(500)
                 .repeat(1)
                 .playOn(likeButtonIcon)
 
-            // Disable button during network call
             likeButtonIcon.isEnabled = false
             likeButtonIcon.alpha = 0.8f
 
-            val likeRequest = LikeRequest(newLikeStatus)
-            RetrofitClient.likeService.toggleLike(data._id, likeRequest)
-                .enqueue(object : Callback<LikeResponse> {
-                    override fun onResponse(call: Call<LikeResponse>, response: Response<LikeResponse>) {
-                        likeButtonIcon.alpha = 1f
-                        likeButtonIcon.isEnabled = true
+            CoroutineScope(Dispatchers.Main).launch {
+                try {
+                    val response = retrofitInstance.apiService.likeUnLikeFeed(data._id)
 
-                        if (response.isSuccessful) {
-                            response.body()?.let { likeResponse ->
-                                Log.d(TAG, "Like API success - Server count: ${likeResponse.likesCount}")
-                                // Only update if server count is significantly different
-                                if (likeResponse.likesCount != null &&
-                                    abs(likeResponse.likesCount - data.likes) > 1
-                                ) {
-                                    data.likes = likeResponse.likesCount
-                                    totalMixedLikesCounts = data.likes
-                                    updateMetricDisplay(likesCount, data.likes, "like")
-                                    Log.d(TAG, "Updated likes count from server: ${data.likes}")
-                                }
-                            }
-                        } else {
-                            Log.e(TAG, "Like sync failed: ${response.code()}")
-                            // Only revert on actual API errors, not JSON parsing issues
-                            if (response.code() != 200) {
-                                data.isLiked = previousLikeStatus
-                                data.likes = previousLikesCount
-                                totalMixedLikesCounts = data.likes
-                                updateLikeButtonUI(data.isLiked ?: false)
+                    likeButtonIcon.alpha = 1f
+                    likeButtonIcon.isEnabled = true
+
+                    if (response.isSuccessful) {
+                        response.body()?.let { likeResponse ->
+                            if (likeResponse.success) {
+                                // Sync with server data
+                                data.isLiked = likeResponse.data.isLiked
+
+                                // Handle potential null likeCount from server
+                                // Since your server only returns { isLiked: true/false }
+                                // We keep our optimistic count
+                                // data.likes stays as is (our optimistic update)
+
+                                updateLikeButtonUI(data.isLiked)
                                 updateMetricDisplay(likesCount, data.likes, "like")
-                                Log.d(TAG, "Reverted to previous state: isLiked=${data.isLiked}, likes=${data.likes}")
+
+                                // Safely access likedByUserIds (it might be null)
+                                val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
+                                Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
+
+                                // Notify adapter
+                                feedClickListener.likeUnLikeFeed(0, data)
+                            } else {
+                                Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like failed - success=false")
+                                revertLikeState(data, previousLikeStatus, previousLikeCount)
                             }
+                        } ?: run {
+                            Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like response body is null")
+                            revertLikeState(data, previousLikeStatus, previousLikeCount)
                         }
+                    } else {
+                        Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like API error: ${response.code()} - ${response.message()}")
+                        revertLikeState(data, previousLikeStatus, previousLikeCount)
+
+                        Toast.makeText(
+                            likeButtonIcon.context,
+                            "Failed to update like",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
+                } catch (e: Exception) {
+                    likeButtonIcon.alpha = 1f
+                    likeButtonIcon.isEnabled = true
 
-                    override fun onFailure(call: Call<LikeResponse>, t: Throwable) {
-                        likeButtonIcon.alpha = 1f
-                        likeButtonIcon.isEnabled = true
+                    Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Like network error", e)
+                    revertLikeState(data, previousLikeStatus, previousLikeCount)
 
-                        // Check if it's a JSON parsing error
-                        if (t is MalformedJsonException ||
-                            t.message?.contains("MalformedJsonException") == true) {
-                            Log.w(TAG, "Like API returned malformed JSON but operation likely succeeded - keeping UI state")
-                            // Don't revert UI changes for JSON parsing errors as the operation likely succeeded
-                            return
-                        }
-
-                        Log.e(TAG, "Like network error - reverting changes", t)
-                        // Only revert for actual network failures
-                        data.isLiked = previousLikeStatus
-                        data.likes = previousLikesCount
-                        totalMixedLikesCounts = data.likes
-                        updateLikeButtonUI(data.isLiked ?: false)
-                        updateMetricDisplay(likesCount, data.likes, "like")
-                        Log.d(TAG, "Reverted to previous state after network error: isLiked=${data.isLiked}, likes=${data.likes}")
-                    }
-                })
-
-            feedClickListener.likeUnLikeFeed(0, data)
+                    Toast.makeText(
+                        likeButtonIcon.context,
+                        "Network error. Please check your connection.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         }
+    }
+
+    private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
+        data.isLiked = previousStatus
+        data.likes = previousCount
+        updateLikeButtonUI(data.isLiked)
+        updateMetricDisplay(likesCount, data.likes, "like")
+        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
     }
 
     private fun setupBookmarkButton(data: Post) {
-        Log.d(TAG, "Setting up bookmark button - Initial state: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
-        updateBookmarkButtonUI(data.isBookmarked ?: false)
+        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
+
+        updateBookmarkButtonUI(data.isBookmarked)
         updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
 
-        favoritesButton.setOnClickListener {
-            if (!favoritesButton.isEnabled) return@setOnClickListener
+        favoriteCounts.setOnClickListener {
+            if (!favoriteCounts.isEnabled) return@setOnClickListener
 
-            Log.d(TAG, "Bookmark clicked for post: ${data._id}")
-            Log.d(TAG, "Current state before toggle: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
+            it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-            val newBookmarkStatus = !(data.isBookmarked ?: false)
-            val previousBookmarkStatus = data.isBookmarked ?: false
+            val newBookmarkStatus = !data.isBookmarked
+            val previousBookmarkStatus = data.isBookmarked
             val previousBookmarkCount = data.bookmarkCount
 
-            // Update data immediately
+            Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark clicked - Post: ${data._id}, Current: $previousBookmarkStatus → New: $newBookmarkStatus")
+
+            // Optimistic UI update
             data.isBookmarked = newBookmarkStatus
-            data.bookmarkCount = if (newBookmarkStatus) data.bookmarkCount + 1 else maxOf(0, data.bookmarkCount - 1)
-            totalMixedBookMarkCounts = data.bookmarkCount
+            data.bookmarkCount = if (newBookmarkStatus) previousBookmarkCount + 1 else maxOf(0, previousBookmarkCount - 1)
 
-            Log.d(TAG, "New state after toggle: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
-
-            // Update UI immediately for better UX
-            updateBookmarkButtonUI(data.isBookmarked ?: false)
+            updateBookmarkButtonUI(data.isBookmarked)
             updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
 
-            // Animation
             YoYo.with(if (newBookmarkStatus) Techniques.Tada else Techniques.Pulse)
                 .duration(500)
                 .repeat(1)
-                .playOn(favoritesButton)
+                .playOn(favoriteCounts)
 
-            // Disable button during network call
-            favoritesButton.isEnabled = false
-            favoritesButton.alpha = 0.8f
+            favoriteCounts.isEnabled = false
+            favoriteCounts.alpha = 0.8f
 
-            val bookmarkRequest = BookmarkRequest(newBookmarkStatus)
-            RetrofitClient.bookmarkService.toggleBookmark(data._id, bookmarkRequest)
-                .enqueue(object : Callback<BookmarkResponse> {
-                    override fun onResponse(call: Call<BookmarkResponse>, response: Response<BookmarkResponse>) {
-                        favoritesButton.alpha = 1f
-                        favoritesButton.isEnabled = true
+            CoroutineScope(Dispatchers.Main).launch {
+                try {
+                    val bookmarkRequest = BookmarkRequest(newBookmarkStatus)
 
-                        if (response.isSuccessful) {
-                            response.body()?.let { bookmarkResponse ->
-                                Log.d(TAG, "Bookmark API success - Server count: ${bookmarkResponse.bookmarkCount}")
-                                if (abs(bookmarkResponse.bookmarkCount - data.bookmarkCount) > 1) {
-                                    data.bookmarkCount = bookmarkResponse.bookmarkCount
-                                    totalMixedBookMarkCounts = data.bookmarkCount
-                                    updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
-                                    Log.d(TAG, "Updated bookmark count from server: ${data.bookmarkCount}")
-                                }
-                            }
-                        } else {
-                            Log.e(TAG, "Bookmark sync failed: ${response.code()}")
-                            // Only revert on actual API errors, not JSON parsing issues
-                            if (response.code() != 200) {
-                                data.isBookmarked = previousBookmarkStatus
-                                data.bookmarkCount = previousBookmarkCount
-                                totalMixedBookMarkCounts = data.bookmarkCount
-                                updateBookmarkButtonUI(data.isBookmarked ?: false)
+                    //  Use retrofitInstance.apiService instead of retrofitInterface.apiService
+                    val response = retrofitInstance.apiService.toggleBookmark(data._id, bookmarkRequest)
+
+                    favoriteCounts.alpha = 1f
+                    favoriteCounts.isEnabled = true
+
+                    if (response.isSuccessful) {
+                        response.body()?.let { bookmarkResponse ->
+                            if (bookmarkResponse.success) {
+                                val serverData = bookmarkResponse.data
+
+                                Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark success - Server: isBookmarked=${serverData.isBookmarked}, count=${serverData.bookmarkCount}")
+
+                                data.isBookmarked = serverData.isBookmarked
+                                data.bookmarkCount = serverData.bookmarkCount
+
+                                updateBookmarkButtonUI(data.isBookmarked)
                                 updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
-                                Log.d(TAG, "Reverted to previous state: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
+
+                                feedClickListener.feedFavoriteClick(0, data)
+
+                                //Use requireContext() or context
+                                Toast.makeText(
+                                    requireContext(),
+                                    bookmarkResponse.message,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark failed - success=false")
+                                revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
+                                Toast.makeText(
+                                    requireContext(),
+                                    "Failed to update bookmark",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
+                        } ?: run {
+                            Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark response body is null")
+                            revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
+                            Toast.makeText(
+                                requireContext(),
+                                "Failed to update bookmark",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
+                    } else {
+                        Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark API error: ${response.code()} - ${response.message()}")
+                        revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
+                        Toast.makeText(
+                            requireContext(),
+                            "Failed to update bookmark",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
+                } catch (e: Exception) {
+                    favoriteCounts.alpha = 1f
+                    favoriteCounts.isEnabled = true
 
-                    override fun onFailure(call: Call<BookmarkResponse>, t: Throwable) {
-                        favoritesButton.alpha = 1f
-                        favoritesButton.isEnabled = true
+                    Log.e(com.uyscuti.sharedmodule.adapter.feed.TAG, "Bookmark network error", e)
+                    revertBookmarkState(data, previousBookmarkStatus, previousBookmarkCount)
 
-                        // Check if it's a JSON parsing error
-                        if (t is MalformedJsonException ||
-                            t.message?.contains("MalformedJsonException") == true) {
-                            Log.w(TAG, "Bookmark API returned malformed JSON but operation likely succeeded - keeping UI state")
-                            // Don't revert UI changes for JSON parsing errors as the operation likely succeeded
-                            return
-                        }
-
-                        Log.e(TAG, "Bookmark network error - reverting changes", t)
-                        // Only revert for actual network failures
-                        data.isBookmarked = previousBookmarkStatus
-                        data.bookmarkCount = previousBookmarkCount
-                        totalMixedBookMarkCounts = data.bookmarkCount
-                        updateBookmarkButtonUI(data.isBookmarked ?: false)
-                        updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
-                        Log.d(TAG, "Reverted to previous state after network error: isBookmarked=${data.isBookmarked}, bookmarkCount=${data.bookmarkCount}")
-                    }
-                })
-
-            feedClickListener.feedFavoriteClick(0, data)
+                    Toast.makeText(
+                        requireContext(),
+                        "Network error. Please check your connection.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         }
     }
+
+    // Helper function to revert bookmark state on error
+    private fun revertBookmarkState(
+        data: Post,
+        previousBookmarkStatus: Boolean,
+        previousBookmarkCount: Int
+    ) {
+        data.isBookmarked = previousBookmarkStatus
+        data.bookmarkCount = previousBookmarkCount
+        updateBookmarkButtonUI(data.isBookmarked)
+        updateMetricDisplay(favoriteCounts, data.bookmarkCount, "bookmark")
+        Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted to previous state: isBookmarked=$previousBookmarkStatus, count=$previousBookmarkCount")
+    }
+
 
     private fun setupShareButton(data: Post) {
         updateMetricDisplay(shareCount, data.shareCount, "share")
@@ -1978,11 +2013,10 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
         // Set click listeners for share buttons
         btnWhatsApp.setOnClickListener { shareToApp("com.whatsapp", "WhatsApp") }
-
         btnSMS.setOnClickListener {
             try {
                 val smsIntent = Intent(Intent.ACTION_SENDTO).apply {
-                    setData(Uri.parse("smsto:"))
+                    setData(Uri.parse("smsto:")) // Use setData to set the Intent's data property
                     putExtra("sms_body", data.content)
                 }
                 context.startActivity(Intent.createChooser(smsIntent, "Share via SMS"))
@@ -1990,7 +2024,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 Toast.makeText(context, "Unable to share via SMS", Toast.LENGTH_SHORT).show()
             }
         }
-
         btnInstagram.setOnClickListener { shareToApp("com.instagram.android", "Instagram") }
         btnMessenger.setOnClickListener { shareToApp("com.facebook.orca", "Messenger") }
         btnFacebook.setOnClickListener { shareToApp("com.facebook.katana", "Facebook") }
@@ -2028,8 +2061,9 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
+
     private fun setupRepostButton(data: Post) {
-        totalMixedRePostCounts = data.repostCount
+        totalMixedRePostCounts = data.safeRepostCount
         updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
         updateRepostButtonAppearance(data.isReposted)
         repostPost.setOnClickListener { view ->
@@ -4574,19 +4608,25 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 materialCardView.cardElevation = 0f
 
                 val clickListener = View.OnClickListener {
+                    val position = absoluteAdapterPosition
+                    if (position == RecyclerView.NO_POSITION) return@OnClickListener
+
                     navigateToTappedFilesFragment(
-                        context,
-                        absoluteAdapterPosition,
-                        data.files,
-                        data.fileIds as List<String>
+                        context = context,
+                        currentIndex = position,
+                        files = data.files,
+                        fileIds = data.fileIds,
+                        post = data
                     )
 
                     onMultipleFilesClickListener?.multipleFileClickListener(
-                        absoluteAdapterPosition,
+                        position,
                         data.files,
-                        data.fileIds as List<String>
+                        data.fileIds,
+
                     )
                 }
+
 
                 itemView.setOnClickListener(clickListener)
                 imageView.setOnClickListener(clickListener)
@@ -4840,63 +4880,69 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 context: Context,
                 currentIndex: Int,
                 files: List<File>,
-                fileIds: List<String>
+                fileIds: List<String>,
+                post: Post
             ) {
                 val activity = getActivityFromContext(context)
                 if (activity != null) {
-                    activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
-                    activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
-
                     val fragment = Tapped_Files_In_The_Container_View_Fragment()
 
                     val bundle = Bundle().apply {
                         putInt("current_index", currentIndex)
                         putInt("total_files", files.size)
 
+                        // Convert files to ArrayList of URLs
                         val fileUrls = ArrayList<String>()
-                        files.forEach { file -> fileUrls.add(file.url) }
+                        files.forEach { file ->
+                            fileUrls.add(file.url)
+                        }
                         putStringArrayList("file_urls", fileUrls)
                         putStringArrayList("file_ids", ArrayList(fileIds))
 
+                        // Create PostItem list for the ViewPager
                         val postItems = ArrayList<PostItem>()
                         files.forEachIndexed { index, file ->
-                            val fileId = fileIds.getOrNull(index)
-                            val fileName =
-                                data?.fileNames?.find { it.fileId == fileId }?.fileName ?: ""
                             val postItem = PostItem(
-                                audioUrl = file.url,
+                                postId = post._id,
+                                userId = post.author._id,
+                                username = post.author.account.username,
+                                authorName = listOfNotNull(
+                                    post.author.firstName?.takeIf { it.isNotBlank() },
+                                    post.author.lastName?.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").ifBlank { post.author.account.username },
+                                avatarUrl = post.author.account.avatar.url,
+                                audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
-                                videoUrl = null,
+                                videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                                 videoThumbnailUrl = null,
-                                postId = fileId ?: "audio_file_$index",
-                                data = "Audio file: $fileName",
+                                data = post.content,
                                 files = arrayListOf(file.url),
-                                fileType = "audio"
+                                fileType = file.url.substringAfterLast('.', "")
                             )
+
                             postItems.add(postItem)
                         }
                         putParcelableArrayList("post_list", postItems)
-                        putString(
-                            "post_id",
-                            fileIds.getOrNull(currentIndex) ?: "audio_file_$currentIndex"
-                        )
-                        putString("media_type", "audio")
+
+                        // Set post ID
+                        putString("post_id", fileIds.getOrNull(currentIndex) ?: "file_$currentIndex")
                     }
 
                     fragment.arguments = bundle
 
+                    // Navigate to the fragment with animation
                     activity.supportFragmentManager.beginTransaction()
                         .setCustomAnimations(
                             R.anim.slide_in_right,
-                            R.anim.slide_out_left
+                            R.anim.slide_out_left,
                         )
-                        .replace(R.id.frame_layout, fragment)
-                        .addToBackStack("tapped_audio_files_view")
+                        .replace(android.R.id.content, fragment)
+                        .addToBackStack("tapped_files_view")
                         .commit()
 
                     Log.d(
                         TAG,
-                        "Navigated to Tapped_Files_In_The_Container_View with ${files.size} audio files, starting at index $currentIndex"
+                        "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files, starting at index $currentIndex"
                     )
                 } else {
                     Log.e(TAG, "Activity is null, cannot navigate to fragment")
@@ -5357,58 +5403,69 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 context: Context,
                 currentIndex: Int,
                 files: List<File>,
-                fileIds: List<String>
+                fileIds: List<String>,
+                post: Post
             ) {
                 val activity = getActivityFromContext(context)
                 if (activity != null) {
-                    activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
-                    activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
-
                     val fragment = Tapped_Files_In_The_Container_View_Fragment()
 
                     val bundle = Bundle().apply {
                         putInt("current_index", currentIndex)
                         putInt("total_files", files.size)
 
+                        // Convert files to ArrayList of URLs
                         val fileUrls = ArrayList<String>()
-                        files.forEach { file -> fileUrls.add(file.url) }
+                        files.forEach { file ->
+                            fileUrls.add(file.url)
+                        }
                         putStringArrayList("file_urls", fileUrls)
                         putStringArrayList("file_ids", ArrayList(fileIds))
 
+                        // Create PostItem list for the ViewPager
                         val postItems = ArrayList<PostItem>()
                         files.forEachIndexed { index, file ->
                             val postItem = PostItem(
-                                audioUrl = file.url,
+                                postId = post._id,
+                                userId = post.author._id,
+                                username = post.author.account.username,
+                                authorName = listOfNotNull(
+                                    post.author.firstName?.takeIf { it.isNotBlank() },
+                                    post.author.lastName?.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").ifBlank { post.author.account.username },
+                                avatarUrl = post.author.account.avatar.url,
+                                audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
-                                videoUrl = file.url,
+                                videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                                 videoThumbnailUrl = null,
-                                postId = fileIds.getOrNull(index) ?: "file_$index",
-                                data = "Post data for file $index",
-                                files = arrayListOf(file.url)
+                                data = post.content,
+                                files = arrayListOf(file.url),
+                                fileType = file.url.substringAfterLast('.', "")
                             )
+
                             postItems.add(postItem)
                         }
                         putParcelableArrayList("post_list", postItems)
-                        putString(
-                            "post_id",
-                            fileIds.getOrNull(currentIndex) ?: "file_$currentIndex"
-                        )
+
+                        // Set post ID
+                        putString("post_id", fileIds.getOrNull(currentIndex) ?: "file_$currentIndex")
                     }
 
                     fragment.arguments = bundle
 
+                    // Navigate to the fragment with animation
                     activity.supportFragmentManager.beginTransaction()
                         .setCustomAnimations(
                             R.anim.slide_in_right,
-                            R.anim.slide_out_left
+                            R.anim.slide_out_left,
                         )
-                        .replace(R.id.frame_layout, fragment)
+                        .replace(android.R.id.content, fragment)
                         .addToBackStack("tapped_files_view")
                         .commit()
 
                     Log.d(
-                        TAG, "Navigated to Tapped_Files_In_The_Container_View with" +
-                                " ${files.size} files, starting at index $currentIndex"
+                        TAG,
+                        "Navigated to Tapped_Files_In_The_Container_View with ${files.size} files, starting at index $currentIndex"
                     )
                 } else {
                     Log.e(TAG, "Activity is null, cannot navigate to fragment")
@@ -5673,59 +5730,67 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 }
             }
 
-            // Add the navigation function
             private fun navigateToTappedFilesFragment(
                 context: Context,
                 currentIndex: Int,
                 files: List<File>,
-                fileIds: List<String>
+                fileIds: List<String>,
+                post: Post
             ) {
                 val activity = getActivityFromContext(context)
                 if (activity != null) {
-                    // Hide AppBar (Toolbar) if available
-                    activity.findViewById<View>(R.id.topBar)?.visibility = View.GONE
-                    // Hide Bottom Navigation if available
-                    activity.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.GONE
-
                     val fragment = Tapped_Files_In_The_Container_View_Fragment()
 
                     val bundle = Bundle().apply {
                         putInt("current_index", currentIndex)
                         putInt("total_files", files.size)
 
+                        // Convert files to ArrayList of URLs
                         val fileUrls = ArrayList<String>()
-                        files.forEach { file -> fileUrls.add(file.url) }
+                        files.forEach { file ->
+                            fileUrls.add(file.url)
+                        }
                         putStringArrayList("file_urls", fileUrls)
                         putStringArrayList("file_ids", ArrayList(fileIds))
 
+                        // Create PostItem list for the ViewPager
                         val postItems = ArrayList<PostItem>()
                         files.forEachIndexed { index, file ->
                             val postItem = PostItem(
-                                audioUrl = file.url,
+                                postId = post._id,
+                                userId = post.author._id,
+                                username = post.author.account.username,
+                                authorName = listOfNotNull(
+                                    post.author.firstName?.takeIf { it.isNotBlank() },
+                                    post.author.lastName?.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").ifBlank { post.author.account.username },
+                                avatarUrl = post.author.account.avatar.url,
+                                audioUrl = file.url.takeIf { it.endsWith(".mp3", true) || it.endsWith(".aac", true) },
                                 audioThumbnailUrl = null,
-                                videoUrl = file.url,
+                                videoUrl = file.url.takeIf { it.endsWith(".mp4", true) || it.endsWith(".mkv", true) },
                                 videoThumbnailUrl = null,
-                                postId = fileIds.getOrNull(index) ?: "file_$index",
-                                data = "Post data for file $index",
-                                files = arrayListOf(file.url)
+                                data = post.content,
+                                files = arrayListOf(file.url),
+                                fileType = file.url.substringAfterLast('.', "")
                             )
+
                             postItems.add(postItem)
                         }
                         putParcelableArrayList("post_list", postItems)
-                        putString(
-                            "post_id",
-                            fileIds.getOrNull(currentIndex) ?: "file_$currentIndex"
-                        )
+
+                        // Set post ID
+                        putString("post_id", fileIds.getOrNull(currentIndex) ?: "file_$currentIndex")
                     }
 
                     fragment.arguments = bundle
 
+                    // Navigate to the fragment with animation
                     activity.supportFragmentManager.beginTransaction()
                         .setCustomAnimations(
                             R.anim.slide_in_right,
-                            R.anim.slide_out_left
+                            R.anim.slide_out_left,
                         )
-                        .replace(R.id.frame_layout, fragment)
+                        .replace(android.R.id.content, fragment)
                         .addToBackStack("tapped_files_view")
                         .commit()
 
@@ -6876,7 +6941,10 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                     }
                 }
                 val fileIds = currentPost.files.map { it ?: "unknown_id" }
-                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds as List<String>)
+                navigateToTappedFilesFragment(
+                    requireContext(), 0, files, fileIds as List<String>,
+                    post = TODO()
+                )
             }
         }
     }
