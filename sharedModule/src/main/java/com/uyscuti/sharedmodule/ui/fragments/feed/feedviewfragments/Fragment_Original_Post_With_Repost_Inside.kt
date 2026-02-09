@@ -1,6 +1,7 @@
 package com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments
 
 import android.Manifest
+import android.R.attr.data
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.content.ClipData
@@ -521,17 +522,13 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
         setupInitialFollowButtonState(post)
 
-        cancelButton.setOnClickListener { button ->
-            Log.d(TAG, "Cancel button clicked - immediate navigation")
-            button.isEnabled = false
-            immediateNavigateBack()
-            Handler(Looper.getMainLooper()).postDelayed({
-                if (isAdded) button.isEnabled = true
-            }, 1000)
+        cancelButton.setOnClickListener {
+            Log.d(TAG, "Cancel button clicked")
+            cleanupAndGoBack()
         }
 
         headerMenuButton.setOnClickListener { view ->
-            moreOptionsClick(currentPosition, data)
+            moreOptionsClick(currentPosition, post)
         }
 
         followButton.setOnClickListener {
@@ -1588,7 +1585,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
                 // Repost User Section Views
                 userReposterProfileImage = safeBinding.userReposterProfileImage
-                reposterFullName = safeBinding.reposterFullName
+                reposterFullName = safeBinding.repostedUserName
                 tvUserHandle = safeBinding.tvUserHandle
                 dateTimeCreate = safeBinding.dateTimeCreate
                 followButton = safeBinding.followButton
@@ -2453,7 +2450,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
 
     private fun setupRepostButton(data: Post) {
-        totalMixedRePostCounts = data.safeRepostCount
+        totalMixedRePostCounts = data.repostCount
         updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
         updateRepostButtonAppearance(data.isReposted)
         repostPost.setOnClickListener { view ->
@@ -2794,224 +2791,50 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    @OptIn(UnstableApi::class)
-    private fun immediateNavigateBack() {
-        // Prevent multiple simultaneous navigation attempts
-        if (isNavigationInProgress) {
-            Log.d(Companion.TAG, "Navigation already in progress, ignoring")
-            return
-        }
-
-        isNavigationInProgress = true
-
-        try {
-            Log.d(Companion.TAG, "Starting immediate navigation back")
-
-            // Clean up resources first
-            cleanupResources()
-
-            // Restore system UI immediately
-            restoreSystemBarsImmediately()
-
-            // Don't use any delays - try to navigate immediately but safely
-            performSafeBackNavigation()
-
-        } catch (e: Exception) {
-            Log.e(Companion.TAG, "Error in immediate navigation", e)
-            isNavigationInProgress = false
-        }
-    }
-
-    private fun performSafeBackNavigation() {
-        try {
-            // Check if fragment is still valid
-            if (!isAdded || isDetached || activity == null) {
-                Log.w(Companion.TAG, "Fragment not attached, cannot navigate back")
-                isNavigationInProgress = false
-                return
-            }
-
-            val fragmentManager = parentFragmentManager
-
-            // Multiple checks to ensure FragmentManager is ready
-            if (fragmentManager.isStateSaved || fragmentManager.isDestroyed) {
-                Log.w(Companion.TAG, "FragmentManager not ready, cannot navigate")
-                isNavigationInProgress = false
-                return
-            }
-
-            // Check if there's anything to pop
-            if (fragmentManager.backStackEntryCount <= 0) {
-                Log.d(Companion.TAG, "No back stack entries, staying in current state")
-                isNavigationInProgress = false
-                return
-            }
-
-            // Try immediate navigation first
-            try {
-                // Use a different approach: remove this fragment from the parent container
-                // This avoids ViewPager2 conflicts
-                val parentFragment = parentFragment
-                if (parentFragment != null) {
-                    // If we're in a ViewPager, handle it differently
-                    handleViewPagerNavigation()
-                } else {
-                    // Standard fragment navigation
-                    fragmentManager.popBackStackImmediate()
-                    Log.d(Companion.TAG, "Standard back navigation successful")
-                    isNavigationInProgress = false
-                }
-            } catch (e: IllegalStateException) {
-                Log.w(Companion.TAG, "Immediate navigation failed, trying alternative", e)
-                // Alternative approach: Post to a different thread
-                Thread {
-                    try {
-                        Thread.sleep(50) // Very short wait
-                        requireActivity().runOnUiThread {
-                            performDelayedNavigation()
-                        }
-                    } catch (e2: Exception) {
-                        Log.e(Companion.TAG, "Thread-based navigation failed", e2)
-                        requireActivity().runOnUiThread {
-                            isNavigationInProgress = false
-                        }
-                    }
-                }.start()
-            }
-
-        } catch (e: Exception) {
-            Log.e(Companion.TAG, "Error in performSafeBackNavigation", e)
-            isNavigationInProgress = false
-        }
-    }
 
     @OptIn(UnstableApi::class)
-    private fun handleViewPagerNavigation() {
+    private fun cleanupAndGoBack() {
+        // IMMEDIATE: Go back first - this is the priority
         try {
-
-            val activity = activity as? MainActivity
-            if (activity != null) {
-
-                activity.runOnUiThread {
-                    try {
-
-                        activity.onBackPressedDispatcher.onBackPressed()
-                        Log.d(Companion.TAG, "ViewPager navigation delegated to activity")
-                        isNavigationInProgress = false
-                    } catch (e: Exception) {
-                        Log.e(Companion.TAG, "Activity navigation failed", e)
-                        performDelayedNavigation()
-                    }
-                }
-            } else {
-                performDelayedNavigation()
+            if (isAdded && !parentFragmentManager.isStateSaved) {
+                parentFragmentManager.popBackStackImmediate()
             }
         } catch (e: Exception) {
-            Log.e(Companion.TAG, "ViewPager navigation failed", e)
-            performDelayedNavigation()
-        }
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun setupBackNavigation() {
-        val callback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                Log.d(TAG, "Back pressed - starting navigation")
-                navigateBack()
-            }
-        }
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
-    }
-
-    @OptIn(UnstableApi::class)
-    private fun navigateBack() {
-        // Prevent multiple simultaneous navigation attempts
-        if (isNavigationInProgress) {
-            Log.d(TAG, "Navigation already in progress, ignoring")
-            return
+            Log.e(Fragment_Edit_Post_To_Repost.Companion.TAG, "Error popping back stack", e)
+            // If immediate fails, try regular popBackStack
+            parentFragmentManager.popBackStack()
         }
 
-        isNavigationInProgress = true
-
-        try {
-            // Clean up resources first
-            cleanupResources()
-            restoreSystemBarsImmediately()
-
-            // Single navigation attempt with proper fallback
-            performNavigation()
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in navigation", e)
-            isNavigationInProgress = false
-        }
-    }
-
-    private fun performNavigation() {
-        // Check if fragment is still valid
-        if (!isAdded || isDetached || activity == null) {
-            Log.w(TAG, "Fragment not attached, cannot navigate back")
-            isNavigationInProgress = false
-            return
-        }
-
-        val fragmentManager = parentFragmentManager
-
-        // Check FragmentManager state
-        if (fragmentManager.isStateSaved || fragmentManager.isDestroyed) {
-            Log.w(TAG, "FragmentManager not ready, cannot navigate")
-            isNavigationInProgress = false
-            return
-        }
-
-        // Check if there's anything to pop
-        if (fragmentManager.backStackEntryCount <= 0) {
-            Log.d(TAG, "No back stack entries, finishing navigation")
-            isNavigationInProgress = false
-            return
-        }
-
-        // Try immediate navigation, with single fallback
-        try {
-            fragmentManager.popBackStackImmediate()
-            Log.d(TAG, "Immediate navigation successful")
-            isNavigationInProgress = false
-        } catch (e: IllegalStateException) {
-            Log.w(TAG, "Immediate navigation failed, using delayed approach", e)
-            performDelayedNavigation()
-        }
-    }
-
-    private fun performDelayedNavigation() {
-        // Use view.post instead of Handler for better synchronization with UI thread
+        // Everything else happens AFTER we're already going back
         view?.post {
-            try {
-                if (!isAdded || isDetached || activity == null) {
-                    isNavigationInProgress = false
-                    return@post
-                }
+            // Clear focus
+            _binding?.replyInput?.clearFocus()
 
-                val fragmentManager = parentFragmentManager
+            // Hide keyboard
+            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.hideSoftInputFromWindow(view?.windowToken, 0)
 
-                if (!fragmentManager.isStateSaved && !fragmentManager.isDestroyed) {
-                    if (fragmentManager.backStackEntryCount > 0) {
-                        try {
-                            // Use regular popBackStack (not immediate) to avoid conflicts
-                            fragmentManager.popBackStack()
-                            Log.d(TAG, "Delayed navigation successful")
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Delayed navigation failed", e)
-                            // If all else fails, try to remove the fragment
-                            removeFragmentSafely()
-                        }
-                    }
-                }
-                isNavigationInProgress = false
-            } catch (e: Exception) {
-                Log.e(TAG, "Delayed navigation error", e)
-                isNavigationInProgress = false
+            // Restore system bars
+            activity?.let { act ->
+                WindowCompat.setDecorFitsSystemWindows(act.window, true)
+                WindowInsetsControllerCompat(act.window, act.window.decorView)
+                    .show(WindowInsetsCompat.Type.systemBars())
+
+                EventBus.getDefault().post(ShowAppBar(true))
+                EventBus.getDefault().post(ShowBottomNav(true))
             }
         }
+    }
+
+    private fun setupBackPressHandler() {
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    cleanupAndGoBack()
+                }
+            }
+        )
     }
 
     private fun removeFragmentSafely() {
