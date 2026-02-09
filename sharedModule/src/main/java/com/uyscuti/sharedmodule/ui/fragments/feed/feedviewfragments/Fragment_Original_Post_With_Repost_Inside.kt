@@ -1,7 +1,6 @@
 package com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments
 
 import android.Manifest
-import android.R.attr.data
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -38,13 +37,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.uyscuti.sharedmodule.R
-import com.uyscuti.social.network.api.response.posts.OriginalPost
-import com.uyscuti.social.network.api.response.posts.Post
-import com.uyscuti.social.network.api.response.posts.Duration
-import com.uyscuti.social.network.api.response.posts.ThumbnailX
-import com.uyscuti.social.network.api.response.posts.File
-import com.uyscuti.social.network.api.response.posts.FileType
-import java.text.SimpleDateFormat
 import java.util.*
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.OptIn
@@ -67,30 +59,51 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.sharedmodule.ReportNotificationActivity2
-import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.TAG
 import com.uyscuti.sharedmodule.databinding.FragmentOriginalPostWithRepostInsideBinding
-import com.uyscuti.sharedmodule.model.FeedCommentClicked
 import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
-import com.uyscuti.sharedmodule.model.ShowAppBar
-import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside.CommentCountUpdatedEvent
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside.CommentsLoadedEvent
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_Without_Repost_Inside.OnFeedClickListener
+import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.AudioDuration
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.getValue
+import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
+import com.uyscuti.sharedmodule.model.FeedCommentClicked
+import com.uyscuti.sharedmodule.model.ShowAppBar
+import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.PostItem
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
 import com.uyscuti.sharedmodule.utils.FollowingManager
 import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
+import com.uyscuti.social.network.api.response.posts.OriginalPost
+import com.uyscuti.social.network.api.response.posts.Post
+import com.uyscuti.social.network.api.response.posts.Duration
+import com.uyscuti.social.network.api.response.posts.ThumbnailX
+import com.uyscuti.social.network.api.response.posts.File
+import com.uyscuti.social.network.api.response.posts.FileType
+import java.text.SimpleDateFormat
+import java.util.*
+import com.uyscuti.social.network.utils.LocalStorage
+import retrofit2.Call
+import retrofit2.Callback
+import kotlin.math.abs
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
+import com.uyscuti.social.network.api.response.posts.Avatar
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeRequest
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeResponse
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
-import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.AudioDuration
+import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
+import com.uyscuti.social.network.api.response.comment.allcomments.Comment
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
-import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -99,8 +112,6 @@ import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
-import retrofit2.Call
-import retrofit2.Callback
 import retrofit2.Response
 import javax.inject.Inject
 import kotlin.getValue
@@ -219,10 +230,26 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private val getFeedViewModel: GetFeedViewModel by activityViewModels()
     private lateinit var feedListView: RecyclerView
 
+    private val Post.safeRepostCount: Int
+        get() = repostCount ?: 0
 
-    // 1. FIX: Update populatePostData to properly handle files and counts
-    fun populatePostData(post: Post) {
-        currentPost = post  // Store the current post reference
+    private val Post.safeLikes: Int
+        get() = likes ?: 0
+
+    private val Post.safeCommentCount: Int
+        get() = comments ?: 0
+
+    private val Post.safeBookmarkCount: Int
+        get() = bookmarkCount ?: 0
+
+    private val Post.safeShareCount: Int
+        get() = shareCount ?: 0
+
+
+
+
+    private fun populatePostData(post: Post) {
+        currentPost = post
 
         // Set header
         headerTitle.text = "Post"
@@ -244,19 +271,12 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             totalMixedRePostCounts = originalPost.repostCount
             totalMixedShareCounts = originalPost.shareCount
 
-            Log.d(TAG, "populatePostData: Initialized counts from original post")
-            Log.d(TAG, "- Comments: $totalMixedComments")
-            Log.d(TAG, "- Likes: $totalMixedLikesCounts")
-            Log.d(TAG, "- Bookmarks: $totalMixedBookMarkCounts")
-            Log.d(TAG, "- Reposts: $totalMixedRePostCounts")
-            Log.d(TAG, "- Shares: $totalMixedShareCounts")
-
             // Update UI with actual counts immediately
             forceRefreshAllMetrics()
 
             populateOriginalPostData(originalPost)
 
-            // FIX: Fetch fresh comment count for the ORIGINAL post (it's already a String)
+            // FIX: Fetch fresh comment count for the ORIGINAL post
             fetchAndUpdateCommentCount(originalPost._id)
         } else {
             // If no original post, use the repost's own data
@@ -271,7 +291,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
         setupInitialFollowButtonState(post)
 
-        // Handle repost media files (the new files added by the reposter, if any)
+        // Handle repost media files
         handleRepostMediaFiles(post)
     }
 
@@ -295,7 +315,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         Log.d(TAG, "handleFeedCommentClicked: Posting comment event for post ${post?._id}")
         try {
             post?.let {
-                EventBus.getDefault().post(FeedCommentClicked(position, data))
+                EventBus.getDefault().post(FeedCommentClicked(position, post))
             }
 
             // FIX: Get the ORIGINAL post ID (already a String)
@@ -503,8 +523,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         handleThumbnails(originalPost.thumbnail, ivQuotedPostImage)
     }
 
-
-
     // 3. FIX: Update populateOriginalPostData to use the counts properly
     private fun populateOriginalPostData(originalPost: OriginalPost) {
         Log.d(TAG, "populateOriginalPostData: originalPost=$originalPost")
@@ -536,7 +554,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         // Handle original post media files
         handleOriginalPostMediaFiles(originalPost)
     }
-    
+
     // 7. FIX: Update updateMetricDisplay to ensure TextView is properly updated
     private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
         Log.d(TAG, "updateMetricDisplay: Updating $metricType display to $count")
@@ -677,6 +695,37 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         val newCount = totalMixedComments + 1
         Log.d(tag, "incrementCommentCount: Incrementing from $totalMixedComments to $newCount")
         updateCommentCount(newCount)
+    }
+
+    private fun setupCommentButton(data: Post) {
+        comment.setOnClickListener {
+            if (!comment.isEnabled) return@setOnClickListener
+
+            Log.d(TAG, "setupCommentButton: Comment button clicked for post ${data._id}")
+
+            // Animate the comment button
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(comment)
+
+            // Post event to MainActivity via EventBus
+            handleFeedCommentClicked(0, data)
+
+            comment.isEnabled = true
+        }
+
+        commentCount.setOnClickListener {
+            if (!commentCount.isEnabled) return@setOnClickListener
+
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(commentCount)
+
+            handleFeedCommentClicked(0, data)
+            commentCount.isEnabled = true
+        }
     }
 
 
@@ -846,8 +895,22 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         )
 
         initializeViews(view)
-        setupClickListeners()
+        setupLikeButton(postData)
+        setupBookmarkButton(postData)
+        setupCommentButton(postData)
+        setupShareButton(postData)
+        setupRepostButton(postData)
+        setupClickListeners(postData)
         setupRecyclerViews()
+
+        post?.let { safePost ->
+            setupLikeButton(safePost)
+            setupBookmarkButton(safePost)
+            setupCommentButton(safePost)
+            setupShareButton(safePost)
+            setupRepostButton(safePost)
+            setupClickListeners(safePost)
+        }
 
         post = arguments?.getSerializable(ARG_ORIGINAL_POST) as? Post
         Log.d("populateViews", "post: $post")
@@ -855,6 +918,121 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
         post?.let { populatePostData(it) }
 
+        post?.let { postData ->
+
+            Log.d(TAG, "Post ID: ${postData._id}")
+            Log.d(TAG, "Post commentCount: ${postData.comments}")
+            Log.d(TAG, "Post comments: ${postData.comments}")
+            Log.d(TAG, "Post likes: ${postData.likes}")
+            Log.d(TAG, "Post safeCommentCount: ${postData.safeCommentCount}")
+            Log.d(TAG, "Post safeLikes: ${postData.safeLikes}")
+
+            currentPost = postData
+
+            // Get the actual comment count
+            totalMixedComments = if (postData.originalPost.isNotEmpty() == true) {
+                val originalPost = postData.originalPost[0]
+                Log.d(TAG, "Original post comment count: ${originalPost.commentCount}")
+                originalPost.commentCount ?: postData.comments
+            } else {
+                postData.comments ?: postData.comments
+            }
+
+            Log.d(TAG, "Final totalMixedComments: $totalMixedComments")
+
+
+            // CRITICAL: Force immediate UI updates with actual values
+            Handler(Looper.getMainLooper()).post {
+                Log.d(TAG, "Forcing immediate UI update with values:")
+                Log.d(TAG, "- Comments: $totalMixedComments")
+                Log.d(TAG, "- Likes: ${postData.safeLikes}")
+                Log.d(TAG, "- Bookmarks: ${postData.safeBookmarkCount}")
+                Log.d(TAG, "- Shares: ${postData.safeShareCount}")
+                Log.d(TAG, "- Reposts: ${postData.safeRepostCount}")
+
+                // Update each metric individually with error handling
+                try {
+                    commentCount.text = totalMixedComments.toString()
+                    commentCount.visibility = View.VISIBLE
+                    commentCount.requestLayout()
+                    Log.d(TAG, "Comment count updated to: ${commentCount.text}")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error updating comment count", e)
+                }
+
+                try {
+                    likesCount.text = postData.safeLikes.toString()
+                    likesCount.visibility = View.VISIBLE
+                    likesCount.requestLayout()
+                    Log.d(TAG, "Likes count updated to: ${likesCount.text}")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error updating likes count", e)
+                }
+
+                try {
+                    favoriteCounts.text = postData.safeBookmarkCount.toString()
+                    favoriteCounts.visibility = View.VISIBLE
+                    favoriteCounts.requestLayout()
+                    Log.d(TAG, "Bookmark count updated to: ${favoriteCounts.text}")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error updating bookmark count", e)
+                }
+
+                try {
+                    shareCount.text = postData.safeShareCount.toString()
+                    shareCount.visibility = View.VISIBLE
+                    shareCount.requestLayout()
+                    Log.d(TAG, "Share count updated to: ${shareCount.text}")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error updating share count", e)
+                }
+
+                try {
+                    repostCount.text = postData.safeRepostCount.toString()
+                    repostCount.visibility = View.VISIBLE
+                    repostCount.requestLayout()
+                    Log.d(TAG, "Repost count updated to: ${repostCount.text}")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error updating repost count", e)
+                }
+
+                // Force parent layout refresh
+                try {
+                    (view as? ViewGroup)?.requestLayout()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error refreshing parent layout", e)
+                }
+            }
+
+            // Also try the updateMetricDisplay method
+            Handler(Looper.getMainLooper()).postDelayed({
+                updateMetricDisplay(commentCount, totalMixedComments, "comment")
+                updateMetricDisplay(likesCount, postData.safeLikes, "like")
+                updateMetricDisplay(favoriteCounts, postData.safeBookmarkCount, "bookmark")
+                updateMetricDisplay(shareCount, postData.safeShareCount, "share")
+                updateMetricDisplay(repostCount, postData.safeRepostCount, "repost")
+            }, 100)
+
+            // Populate other data
+            populatePostData(postData)
+
+            // Setup buttons
+            setupLikeButton(postData)
+            setupBookmarkButton(postData)
+            setupCommentButton(postData)
+            setupShareButton(postData)
+            setupRepostButton(postData)
+            setupClickListeners(postData)
+
+
+
+            // Force another refresh after everything is set up
+            Handler(Looper.getMainLooper()).postDelayed({
+                forceRefreshAllMetrics()
+            }, 300)
+
+            Log.d(TAG, "Post data populated successfully")
+        }
 
     }
 
@@ -918,7 +1096,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         shareCount = view.findViewById(R.id.shareCount)
     }
 
-    private fun setupClickListeners() {
+    private fun setupClickListeners(data: Post) {
 
         // Header click listeners
         cancelButton.setOnClickListener {
