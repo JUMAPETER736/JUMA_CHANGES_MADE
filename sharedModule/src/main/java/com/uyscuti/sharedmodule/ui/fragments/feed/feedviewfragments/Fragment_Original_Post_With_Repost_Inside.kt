@@ -1948,12 +1948,10 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
                         fileId = file.fileId,
                         localPath = file.localPath,
                         url = file.url,
-                        type = file.type,
                         mimeType = file.mimeType,
-                        fileType = file.fileType
+
                     ).apply {
-                        url = file.url
-                        mimeType = file.mimeType
+
                     }
                 }
                 val fileIds = currentPost.files.map { it ?: "unknown_id" }
@@ -2270,17 +2268,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     }
 
-    private fun populateOriginalAuthorInfo(post: OriginalPost) {
-        if (post.author.isNotEmpty()) {
-            val originalAuthor = post.author[0]
-            originalPosterName.text = originalAuthor.username ?: "Unknown User"
-            tvQuotedUserHandle.text = "@${originalAuthor.username ?: "unknown"}"
-
-            originalAuthor.avatar?.let { profileUrl ->
-                loadProfileImage(profileUrl.toString(), originalPosterProfileImage)
-            }
-        }
-    }
+ 
 
     private fun loadProfileImage(url: String, imageView: ImageView) {
         Glide.with(this)
