@@ -5704,7 +5704,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         context,
                         absoluteAdapterPosition,
                         data.files,
-                        data.fileIds as List<String>
+                        data.fileIds as List<String>,
+                        data
                     )
                 }
 
@@ -5713,7 +5714,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         context,
                         absoluteAdapterPosition,
                         data.files,
-                        data.fileIds as List<String>
+                        data.fileIds as List<String>,
+                        data
                     )
                 }
 
@@ -5999,7 +6001,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         context,
                         absoluteAdapterPosition,
                         data.files,
-                        data.fileIds as List<String>
+                        data.fileIds as List<String>,
+                        data
                     )
 
                     // Optional: Still call the original listener if needed
@@ -6016,7 +6019,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         context,
                         absoluteAdapterPosition,
                         data.files,
-                        data.fileIds as List<String>
+                        data.fileIds as List<String>,
+                        data
                     )
                 }
 
@@ -6026,7 +6030,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         context,
                         absoluteAdapterPosition,
                         data.files,
-                        data.fileIds as List<String>
+                        data.fileIds as List<String>,
+                        data
                     )
                 }
 
@@ -7105,25 +7110,22 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     }
 
     private fun handleRepostMediaClick() {
-        post?.let { currentPost ->
-            if (currentPost.files.isNotEmpty()) {
-                val files = currentPost.files.map { file ->
-                    File(
-                        _id = file._id,
-                        fileId = file.fileId,
-                        localPath = file.localPath,
-                        url = file.url,
-                        // type = file.type,
-                        mimeType = file.url,
-                        // fileType = file.fileType
-                    ).apply {
-                        //  url = file.url
-                        //  mimeType = file.mimeType
-                    }
-                }
-                val fileIds = currentPost.files.map { it ?: "unknown_id" }
-                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds as List<String>, post)
+        post?.originalPost?.firstOrNull()?.let { originalPost ->
+            if (originalPost.files.isNotEmpty()) {
+                val files = originalPost.files
+                val fileIds = originalPost.fileIds
+
+                navigateToTappedFilesFragment(
+                    requireContext(),
+                    0,
+                    files,
+                    fileIds,
+                    originalPost
+                )
             }
+        } ?: run {
+            Log.e(TAG, "No original post found")
+            Toast.makeText(requireContext(), "Unable to open media", Toast.LENGTH_SHORT).show()
         }
     }
 
