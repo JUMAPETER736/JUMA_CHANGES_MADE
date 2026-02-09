@@ -51,7 +51,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import kotlin.collections.isNotEmpty
-import com.uyscuti.social.network.api.response.getfeedandresposts.Thumbnail
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
@@ -103,6 +102,7 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.comment.allcomments.Comment
+import com.uyscuti.social.network.api.response.post.Thumbnail
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -1261,6 +1261,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
     private fun handleRepostFileClick() {
+
         post?.let { currentPost ->
             if (currentPost.files.isNotEmpty()) {
                 val files = currentPost.files.map { file ->
@@ -2241,40 +2242,25 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         recyclerView.isNestedScrollingEnabled = false
     }
 
+    
+    private fun handleOriginalMediaClick() {
+        post?.let { postData ->
+            if (postData.files.isNotEmpty()) {
+                val filesList = postData.files//.map { file ->
 
-
-// MAIN POST POPULATION METHODS...
-
-    private fun populateViews(post: OriginalPost) {
-        Log.d("populateViews", "post: $post")
-
-        // Set header
-        headerTitle.text = "Post"
-
-        populateReposterInfo(post)
-        populatePostContent(post)
-        populateOriginalAuthorInfo(post)
-        populateInteractionData(post)
-
+                val fileIds = filesList.map { it.fileId }
+                navigateToTappedFilesFragment(requireContext(), 0, filesList, fileIds)
+            }
+        }
     }
 
-    private fun handleOriginalMediaClick() {
-        post?.originalPost?.firstOrNull()?.let { originalPost ->
-            if (originalPost.files.isNotEmpty()) {
-                val files = originalPost.files.map { file ->
-                    File(
-                        _id = file._id?.ifBlank { "unknown_id" } ?: "unknown_id",
-                        fileId = file.fileId?.ifBlank { "no_file_id" } ?: "no_file_id",
-                        localPath = file.localPath?.ifBlank { "" } ?: "",
-                        url = file.url?.ifBlank { "" } ?: "",
-                        type = file.type?.ifBlank { "unknown_type" } ?: "unknown_type",
-                        mimeType = file.mimeType?.ifBlank { "" } ?: "", // Fixed: handle null mimeType
-                        fileType = ""
-                    )
-                }
+    private fun handleOriginalFileClick() {
+        post?.let { postData ->
+            if (postData.files.isNotEmpty()) {
+                val filesList = postData.files//.map { file ->
 
-                val fileIds = files.map { it.fileId }
-                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds, post!!)
+                val fileIds = filesList.map { it.fileId }
+                navigateToTappedFilesFragment(requireContext(), 0, filesList, fileIds)
             }
         }
     }
@@ -2395,7 +2381,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
     private fun updateOriginalPostInteractionStates(originalPost: OriginalPost) {
-        updateLikeUI(originalPost.isLikedCount)
+        updateLikeUI(originalPost.isReposted)
         updateFavoriteUI(originalPost.bookmarks.isNotEmpty())
         updateFollowButtonUI()
 
@@ -2420,7 +2406,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     private fun updateInteractionStates(post: OriginalPost) {
         // Update like button state
-        updateLikeUI(post.is)
+        updateLikeUI(post.isReposted)
 
         // Update bookmark/favorite button state
         updateFavoriteUI(post.bookmarks.isNotEmpty())
@@ -3116,7 +3102,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             files = originalPost.files,
             containerView = binding.multipleAudiosContainer,
             durationData = originalPost.duration ?: emptyList(),
-            thumbnailData = originalPost.thumbnail,
             isRepost = false,
             post = originalPost
         )
@@ -3127,7 +3112,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             files = post.files,
             containerView = binding.multipleAudiosContainers,
             durationData = post.duration ?: emptyList(),
-            thumbnailData = post.thumbnail,
             isRepost = true,
             post = post
         )
@@ -3493,7 +3477,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         return when {
             // First try to match by fileId
             thumbnailData != null && !fileId.isNullOrEmpty() -> {
-                thumbnailData.find { it.fileId == fileId }?.thumbnailUrl
+                thumbnailData.find { it._id == fileId }?.thumbnailUrl
             }
             // Fallback to index if fileId doesn't match
             thumbnailData != null && index < thumbnailData.size -> {
@@ -3543,12 +3527,13 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             .commit()
     }
 
+
+
     // Convenience methods for different post types
     private fun showOriginalVideoMedia(originalPost: OriginalPost, firstFile: File) {
         showVideoMedia(
             files = originalPost.files,
             containerView = mixedFilesCardView,
-            thumbnailData = originalPost.thumbnail,
             durationData = originalPost.duration, // Remove ?: emptyList() and casting
             isRepost = false,
             post = originalPost
@@ -3561,7 +3546,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         showVideoMedia(
             files = post.files,
             containerView = mixedFilesCardViews,
-            thumbnailData = post.thumbnail,
             durationData = post.duration, // Remove ?: emptyList() and casting
             isRepost = true,
             post = post
@@ -3641,7 +3625,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             else -> R.drawable.text_placeholder
         }
     }
-    
+
 
     private fun showOriginalDocumentMedia(originalPost: OriginalPost, firstFile: File) {
         mixedFilesCardView.visibility = View.VISIBLE
