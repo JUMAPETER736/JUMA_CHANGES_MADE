@@ -665,10 +665,9 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         userComment = view.findViewById(R.id.userComment)
         tvHashtags = view.findViewById(R.id.tvHashtags)
 
-        // Media Views - CORRECTED
+        // Media Views - FIXED
         mixedFilesCardViews = view.findViewById(R.id.mixedFilesCardViews)
         originalFeedImages = view.findViewById(R.id.originalFeedImages)
-        multipleMediaContainer = view.findViewById(R.id.multipleMediaContainer)
         multipleAudiosContainers = view.findViewById(R.id.multipleAudiosContainers)
         recyclerViews = view.findViewById(R.id.recyclerViews)
 
@@ -704,7 +703,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         shareSection = view.findViewById(R.id.shareSection)
         share = view.findViewById(R.id.share)
         shareCount = view.findViewById(R.id.shareCount)
-
     }
 
     private fun setupClickListeners() {
