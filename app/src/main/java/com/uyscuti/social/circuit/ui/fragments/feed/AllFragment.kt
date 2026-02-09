@@ -447,7 +447,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    // Update the getAllFeed method to filter based on relationships
     fun getAllFeed(page: Int) {
         val TAG = "GetAllFeed"
         Log.d(TAG, "GetAllFeed: page number $page")
@@ -466,29 +465,35 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                     val authorId = post.author?.account?._id
                     val reposterId = post.repostedUser?.owner
 
-                    val posterId = reposterId ?: authorId
-
-                    // Check if user is blocked
-                    val isBlocked = posterId?.let { blockedUserIds.contains(it) } ?: false
-
-                    // Check if posts are muted - CHECK ALL THREE SOURCES (just like hide posts)
-                    val isPostsMuted = posterId?.let {
+                    // Check if ORIGINAL AUTHOR is blocked/muted
+                    val isAuthorBlocked = authorId?.let { blockedUserIds.contains(it) } ?: false
+                    val isAuthorPostsMuted = authorId?.let {
                         relationshipsViewModel.isPostsMuted(it) ||
                                 FeedAdapter.isUserPostsMuted(it) ||
-                                isUserPostsMutedInPrefs(it)  // ← CRITICAL: Check SharedPreferences
+                                isUserPostsMutedInPrefs(it)
                     } ?: false
 
-                    // Check if user is restricted (optional)
-                    val isRestricted = posterId?.let {
+                    // Check if REPOSTER is blocked/muted (only applies to reposts)
+                    val isReposterBlocked = reposterId?.let { blockedUserIds.contains(it) } ?: false
+                    val isReposterPostsMuted = reposterId?.let {
+                        relationshipsViewModel.isPostsMuted(it) ||
+                                FeedAdapter.isUserPostsMuted(it) ||
+                                isUserPostsMutedInPrefs(it)
+                    } ?: false
+
+                    // Check if user is restricted (optional - currently not filtering based on this)
+                    val isRestricted = authorId?.let {
                         relationshipsViewModel.isRestricted(it)
                     } ?: false
 
-                    // Filter logic
-                    val shouldFilter = isBlocked || isPostsMuted
+                    // Filter logic: Remove if EITHER author OR reposter is blocked/muted
+                    val shouldFilter = isAuthorBlocked || isAuthorPostsMuted ||
+                            isReposterBlocked || isReposterPostsMuted
 
                     if (shouldFilter) {
-                        Log.d(TAG, "Filtering out post from user: $posterId " +
-                                "(blocked: $isBlocked, muted: $isPostsMuted, restricted: $isRestricted)")
+                        Log.d(TAG, "Filtering out post from author: $authorId, reposter: $reposterId " +
+                                "(authorBlocked: $isAuthorBlocked, authorMuted: $isAuthorPostsMuted, " +
+                                "reposterBlocked: $isReposterBlocked, reposterMuted: $isReposterPostsMuted)")
                     }
 
                     !shouldFilter

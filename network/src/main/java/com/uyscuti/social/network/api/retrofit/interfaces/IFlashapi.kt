@@ -663,7 +663,7 @@ interface IFlashapi {
     @POST("feed/bookmarks/{postId}")
     suspend fun toggleBookmark(@Path("postId") postId: String, @Body request: BookmarkRequest): Response<BookmarkResponse>
 
-    
+
     // ==================== FEED POSTS - REPOST ====================
 
     @GET("feed/reposts/")
