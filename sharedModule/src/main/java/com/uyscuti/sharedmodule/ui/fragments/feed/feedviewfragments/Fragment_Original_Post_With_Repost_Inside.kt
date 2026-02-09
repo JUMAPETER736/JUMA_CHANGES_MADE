@@ -728,7 +728,158 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
+    private fun setupShareButton(data: Post) {
+        updateMetricDisplay(shareCount, data.shareCount, "share")
+        share.setOnClickListener {
+            if (!share.isEnabled) return@setOnClickListener
 
+            Log.d(TAG, "Share clicked for post: ${data._id}")
+            val previousShareCount = data.shareCount
+
+            // Update immediately for better UX
+            data.shareCount += 1
+            totalMixedShareCounts = data.shareCount
+            updateMetricDisplay(shareCount, data.shareCount, "share")
+
+            YoYo.with(Techniques.Tada)
+                .duration(700)
+                .repeat(1)
+                .playOn(share)
+
+            share.isEnabled = false
+            share.alpha = 0.8f
+
+            // Make API call to sync with server
+            RetrofitClient.shareService.incrementShare(data._id)
+                .enqueue(object : Callback<ShareResponse> {
+                    override fun onResponse(call: Call<ShareResponse>, response: Response<ShareResponse>) {
+                        share.alpha = 1f
+                        share.isEnabled = true
+
+                        if (response.isSuccessful) {
+                            response.body()?.let { shareResponse ->
+                                if (abs(shareResponse.shareCount - data.shareCount) > 1) {
+                                    data.shareCount = shareResponse.shareCount
+                                    totalMixedShareCounts = data.shareCount
+                                    updateMetricDisplay(shareCount, data.shareCount, "share")
+                                }
+                            }
+                        } else {
+                            Log.e(TAG, "Share sync failed: ${response.code()}")
+                            if (response.code() != 200) {
+                                data.shareCount = previousShareCount
+                                totalMixedShareCounts = data.shareCount
+                                updateMetricDisplay(shareCount, data.shareCount, "share")
+                            }
+                        }
+                    }
+
+                    override fun onFailure(call: Call<ShareResponse>, t: Throwable) {
+                        share.alpha = 1f
+                        share.isEnabled = true
+                        Log.e(TAG, "Share network error", t)
+                    }
+                })
+
+            // Show the share dialog
+            feedShareClicked(0, data)
+        }
+    }
+
+    private fun setupRepostButton(data: Post) {
+        totalMixedRePostCounts = data.safeRepostCount
+        updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
+        updateRepostButtonAppearance(data.isReposted)
+
+        reFeed.setOnClickListener { view ->
+            if (!reFeed.isEnabled) return@setOnClickListener
+            reFeed.isEnabled = false
+
+            try {
+                val wasReposted = data.isReposted
+                data.isReposted = !wasReposted
+                totalMixedRePostCounts = if (data.isReposted) totalMixedRePostCounts + 1 else maxOf(0, totalMixedRePostCounts - 1)
+                data.repostCount = totalMixedRePostCounts
+                updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
+                updateRepostButtonAppearance(data.isReposted)
+
+                YoYo.with(if (data.isReposted) Techniques.Tada else Techniques.Pulse)
+                    .duration(700)
+                    .playOn(reFeed)
+
+                reFeed.alpha = 0.8f
+
+                val apiCall = if (data.isReposted) {
+                    RetrofitClient.repostService.incrementRepost(data._id)
+                } else {
+                    RetrofitClient.repostService.decrementRepost(data._id)
+                }
+
+                apiCall.enqueue(object : Callback<RepostResponse> {
+                    override fun onResponse(call: Call<RepostResponse>, response: Response<RepostResponse>) {
+                        reFeed.isEnabled = true
+                        reFeed.alpha = 1f
+
+                        if (response.isSuccessful) {
+                            response.body()?.let { repostResponse ->
+                                if (abs(repostResponse.repostCount - totalMixedRePostCounts) > 1) {
+                                    data.repostCount = repostResponse.repostCount
+                                    totalMixedRePostCounts = repostResponse.repostCount
+                                    updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
+                                }
+                            }
+                        }
+                    }
+
+                    override fun onFailure(call: Call<RepostResponse>, t: Throwable) {
+                        reFeed.isEnabled = true
+                        reFeed.alpha = 1f
+                        Log.e(TAG, "Repost network error", t)
+                    }
+                })
+
+                if (data.isReposted) {
+                    navigateToEditPostToRepost(data)
+                }
+
+                feedClickListener.feedRepostPost(0, data)
+            } catch (e: Exception) {
+                reFeed.isEnabled = true
+                reFeed.alpha = 1f
+                Log.e(TAG, "Exception in repost click listener", e)
+            }
+        }
+    }
+
+    private fun updateRepostButtonAppearance(isReposted: Boolean) {
+        if (isReposted) {
+            reFeed.setImageResource(R.drawable.repeat_svgrepo_com)
+            reFeed.scaleX = 1.1f
+            reFeed.scaleY = 1.1f
+        } else {
+            reFeed.setImageResource(R.drawable.repeat_svgrepo_com)
+            reFeed.scaleX = 1.0f
+            reFeed.scaleY = 1.0f
+        }
+    }
+
+    private fun navigateToEditPostToRepost(data: Post) {
+        try {
+            val fragment = Fragment_Edit_Post_To_Repost(data)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, fragment)
+                .addToBackStack("edit_post_to_repost")
+                .commit()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error navigating to edit post fragment", e)
+        }
+    }
+
+    private fun feedShareClicked(position: Int, data: Post) {
+        // Your existing share dialog implementation
+        showToast("Share functionality")
+    }
+    
     // 6. Create these event classes if they don't exist
     data class CommentAddedEvent(val postId: String)
     data class CommentDeletedEvent(val postId: String)
