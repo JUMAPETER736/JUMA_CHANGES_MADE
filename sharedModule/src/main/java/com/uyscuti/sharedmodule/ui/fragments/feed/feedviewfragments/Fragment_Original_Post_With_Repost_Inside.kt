@@ -879,7 +879,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         // Your existing share dialog implementation
         showToast("Share functionality")
     }
-    
+
     // 6. Create these event classes if they don't exist
     data class CommentAddedEvent(val postId: String)
     data class CommentDeletedEvent(val postId: String)
@@ -1028,143 +1028,61 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-
         // Setup back pressed callback
         onBackPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                // Navigate back to previous fragment/activity
-                if (parentFragmentManager.backStackEntryCount > 0) {
-                    parentFragmentManager.popBackStack()
-                } else {
-                    requireActivity().finish()
-                }
+                cleanupAndGoBack()
             }
         }
-        requireActivity().onBackPressedDispatcher.addCallback(
-            viewLifecycleOwner,
-            onBackPressedCallback
-        )
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, onBackPressedCallback)
 
         initializeViews(view)
-        setupLikeButton(postData)
-        setupBookmarkButton(postData)
-        setupCommentButton(postData)
-        setupShareButton(postData)
-        setupRepostButton(postData)
-        setupClickListeners(postData)
         setupRecyclerViews()
 
-        post?.let { safePost ->
-            setupLikeButton(safePost)
-            setupBookmarkButton(safePost)
-            setupCommentButton(safePost)
-            setupShareButton(safePost)
-            setupRepostButton(safePost)
-            setupClickListeners(safePost)
-        }
-
+        // Get post data
         post = arguments?.getSerializable(ARG_ORIGINAL_POST) as? Post
-        Log.d("populateViews", "post: $post")
-        originalPost?.let { populateViews(it) }
-
-        post?.let { populatePostData(it) }
 
         post?.let { postData ->
-
             Log.d(TAG, "Post ID: ${postData._id}")
-            Log.d(TAG, "Post commentCount: ${postData.comments}")
-            Log.d(TAG, "Post comments: ${postData.comments}")
-            Log.d(TAG, "Post likes: ${postData.likes}")
-            Log.d(TAG, "Post safeCommentCount: ${postData.safeCommentCount}")
-            Log.d(TAG, "Post safeLikes: ${postData.safeLikes}")
 
             currentPost = postData
 
             // Get the actual comment count
-            totalMixedComments = if (postData.originalPost.isNotEmpty() == true) {
+            totalMixedComments = if (postData.originalPost.isNotEmpty()) {
                 val originalPost = postData.originalPost[0]
-                Log.d(TAG, "Original post comment count: ${originalPost.commentCount}")
-                originalPost.commentCount ?: postData.comments
+                originalPost.commentCount
             } else {
-                postData.comments ?: postData.comments
+                postData.comments
             }
 
-            Log.d(TAG, "Final totalMixedComments: $totalMixedComments")
-
-
-            // CRITICAL: Force immediate UI updates with actual values
+            // CRITICAL: Force immediate UI updates
             Handler(Looper.getMainLooper()).post {
-                Log.d(TAG, "Forcing immediate UI update with values:")
-                Log.d(TAG, "- Comments: $totalMixedComments")
-                Log.d(TAG, "- Likes: ${postData.safeLikes}")
-                Log.d(TAG, "- Bookmarks: ${postData.safeBookmarkCount}")
-                Log.d(TAG, "- Shares: ${postData.safeShareCount}")
-                Log.d(TAG, "- Reposts: ${postData.safeRepostCount}")
-
-                // Update each metric individually with error handling
                 try {
                     commentCount.text = totalMixedComments.toString()
                     commentCount.visibility = View.VISIBLE
                     commentCount.requestLayout()
-                    Log.d(TAG, "Comment count updated to: ${commentCount.text}")
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error updating comment count", e)
-                }
 
-                try {
                     likesCount.text = postData.safeLikes.toString()
                     likesCount.visibility = View.VISIBLE
                     likesCount.requestLayout()
-                    Log.d(TAG, "Likes count updated to: ${likesCount.text}")
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error updating likes count", e)
-                }
 
-                try {
-                    favoriteCounts.text = postData.safeBookmarkCount.toString()
-                    favoriteCounts.visibility = View.VISIBLE
-                    favoriteCounts.requestLayout()
-                    Log.d(TAG, "Bookmark count updated to: ${favoriteCounts.text}")
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error updating bookmark count", e)
-                }
+                    favCount.text = postData.safeBookmarkCount.toString()
+                    favCount.visibility = View.VISIBLE
+                    favCount.requestLayout()
 
-                try {
                     shareCount.text = postData.safeShareCount.toString()
                     shareCount.visibility = View.VISIBLE
                     shareCount.requestLayout()
-                    Log.d(TAG, "Share count updated to: ${shareCount.text}")
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error updating share count", e)
-                }
 
-                try {
                     repostCount.text = postData.safeRepostCount.toString()
                     repostCount.visibility = View.VISIBLE
                     repostCount.requestLayout()
-                    Log.d(TAG, "Repost count updated to: ${repostCount.text}")
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error updating repost count", e)
-                }
-
-                // Force parent layout refresh
-                try {
-                    (view as? ViewGroup)?.requestLayout()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error refreshing parent layout", e)
+                    Log.e(TAG, "Error updating counts", e)
                 }
             }
 
-            // Also try the updateMetricDisplay method
-            Handler(Looper.getMainLooper()).postDelayed({
-                updateMetricDisplay(commentCount, totalMixedComments, "comment")
-                updateMetricDisplay(likesCount, postData.safeLikes, "like")
-                updateMetricDisplay(favoriteCounts, postData.safeBookmarkCount, "bookmark")
-                updateMetricDisplay(shareCount, postData.safeShareCount, "share")
-                updateMetricDisplay(repostCount, postData.safeRepostCount, "repost")
-            }, 100)
-
-            // Populate other data
+            // Populate post data
             populatePostData(postData)
 
             // Setup buttons
@@ -1175,16 +1093,11 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             setupRepostButton(postData)
             setupClickListeners(postData)
 
-
-
-            // Force another refresh after everything is set up
+            // Force refresh after setup
             Handler(Looper.getMainLooper()).postDelayed({
                 forceRefreshAllMetrics()
             }, 300)
-
-            Log.d(TAG, "Post data populated successfully")
         }
-
     }
 
     private fun initializeViews(view: View) {
