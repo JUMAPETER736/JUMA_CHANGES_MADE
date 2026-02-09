@@ -171,6 +171,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/medium_margin"
+                android:visibility="gone"
                 android:text="#Repost #GreatSoftware #MustTry"
                 android:textColor="@color/blueJeans"
                 android:textSize="@dimen/hashtag_text_size" />
@@ -306,6 +307,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="@dimen/small_margin"
+                        android:visibility="gone"
                         android:text="#SoftwareAppreciation #GameChanger"
                         android:textColor="@color/blueJeans"
                         android:textSize="@dimen/quoted_hashtag_size" />

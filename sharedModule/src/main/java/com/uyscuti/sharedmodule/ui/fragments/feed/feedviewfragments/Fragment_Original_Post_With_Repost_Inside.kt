@@ -129,7 +129,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     lateinit var retrofitInstance: RetrofitInstance
 
     // Views from header_toolbar.xml
-    private lateinit var backButton: ImageButton
+    private lateinit var cancelButton: ImageButton
     private lateinit var headerTitle: TextView
     private lateinit var headerMenuButton: ImageButton
 
@@ -648,7 +648,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private fun initializeViews(view: View) {
 
         // Header Views
-        backButton = view.findViewById(R.id.backButton)
+        cancelButton = view.findViewById(R.id.backButton)
         headerTitle = view.findViewById(R.id.headerTitle)
         headerMenuButton = view.findViewById(R.id.headerMenuButton)
 
@@ -708,7 +708,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private fun setupClickListeners() {
 
         // Header click listeners
-        backButton.setOnClickListener {
+        cancelButton.setOnClickListener {
             Log.d(TAG, "Cancel button clicked")
             cleanupAndGoBack()
         }
