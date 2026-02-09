@@ -440,6 +440,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             // Initialize views first
             initializeViews(view)
 
+            setupBackPressHandler()
+
             // Verify views are initialized before proceeding
             if (!isViewsInitialized()) {
                 Log.e(TAG, "Critical views not initialized properly")
@@ -469,7 +471,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             post?.let { safePost ->
                 setupClickListeners(safePost)
                 setupRecyclerViews()
-                setupBackNavigation()
 
                 // Hide UI elements
                 // Hide UI elements
@@ -693,7 +694,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-
     private fun populateReposterInfo(post: Post) {
         try {
             var profilePicUrl: String? = null
@@ -798,7 +798,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             }
         }
     }
-
 
     private fun updateFollowButtonVisibility(accountId: String, username: String) {
         if (!::followButton.isInitialized) return
@@ -2837,49 +2836,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         )
     }
 
-    private fun removeFragmentSafely() {
-        try {
-            if (!isAdded || activity == null) {
-                return
-            }
 
-            val fragmentManager = parentFragmentManager
-            if (!fragmentManager.isStateSaved && !fragmentManager.isDestroyed) {
-                val transaction = fragmentManager.beginTransaction()
-                transaction.remove(this)
-                transaction.commitAllowingStateLoss() // Allow state loss for edge cases
-                Log.d(TAG, "Fragment removed safely")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Safe fragment removal failed", e)
-        }
-    }
-
-    // Keep your existing cleanup methods
-    @OptIn(UnstableApi::class)
-    private fun restoreSystemBarsImmediately() {
-        try {
-            val activity = activity ?: return
-            if (!isAdded) return
-
-            WindowCompat.setDecorFitsSystemWindows(activity.window, true)
-            WindowInsetsControllerCompat(activity.window, activity.window.decorView)
-                .show(WindowInsetsCompat.Type.systemBars())
-
-            (activity as? MainActivity)?.let { mainActivity ->
-                try {
-                    mainActivity.showAppBar()
-                    mainActivity.showBottomNavigation()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error showing MainActivity UI elements", e)
-                }
-            }
-
-            Log.d(TAG, "System bars restored")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error restoring system bars", e)
-        }
-    }
 
     private fun cleanupResources() {
         try {
@@ -4729,7 +4686,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 currentIndex: Int,
                 files: List<File>,
                 fileIds: List<String>,
-                post: Post
+                post: OriginalPost
             ) {
                 val activity = getActivityFromContext(context)
                 if (activity != null) {
@@ -5094,7 +5051,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 currentIndex: Int,
                 files: List<File>,
                 fileIds: List<String>,
-                post: Post
+                post: OriginalPost
             ) {
                 val activity = getActivityFromContext(context)
                 if (activity != null) {
@@ -5209,7 +5166,9 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         context,
                         absoluteAdapterPosition,
                         data.files,
-                        data.fileIds as List<String>
+                        data.fileIds as List<String>,
+                        data
+
                     )
 
                     onMultipleFilesClickListener?.multipleFileClickListener(
@@ -5617,7 +5576,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 currentIndex: Int,
                 files: List<File>,
                 fileIds: List<String>,
-                post: Post
+                post: OriginalPost
             ) {
                 val activity = getActivityFromContext(context)
                 if (activity != null) {
@@ -5729,7 +5688,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         context,
                         absoluteAdapterPosition,
                         data.files,
-                        data.fileIds as List<String>
+                        data.fileIds as List<String>,
+                        data
                     )
 
                     onMultipleFilesClickListener?.multipleFileClickListener(
@@ -5948,7 +5908,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 currentIndex: Int,
                 files: List<File>,
                 fileIds: List<String>,
-                post: Post
+                post: OriginalPost
             ) {
                 val activity = getActivityFromContext(context)
                 if (activity != null) {
@@ -6600,7 +6560,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 currentIndex: Int,
                 files: List<File>,
                 fileIds: List<String>,
-                post: Post
+                post: OriginalPost
             ) {
                 val activity = getActivityFromContext(context)
                 if (activity != null) {
@@ -6730,7 +6690,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         context,
                         actualFileIndex,
                         data.files,
-                        data.fileIds as List<String>
+                        data.fileIds as List<String>,
+                        data
                     )
                 }
 
@@ -7000,7 +6961,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         currentIndex: Int,
         files: List<File>,
         fileIds: List<String>,
-        post: Post
+        post: OriginalPost
     ) {
         val activity = getActivityFromContext(context)
         if (activity != null) {
@@ -7092,19 +7053,22 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         fileId = file.fileId,
                         localPath = file.localPath,
                         url = file.url,
-                        //   type = file.type,
                         mimeType = file.url,
-                        //   fileType = file.fileType
-                    ).apply {
-                        //   url = file.url
-                        //   mimeType = file.mimeType
-                    }
+                    )
                 }
-                val fileIds = currentPost.files.map { it ?: "unknown_id" }
-                navigateToTappedFilesFragment(
-                    requireContext(),
-                    0, files, fileIds as List<String>
-                )
+                val fileIds = currentPost.files.map { it.fileId ?: "unknown_id" }
+
+                // You need to get the OriginalPost from the Post object
+                // Assuming the first originalPost in the list is what you want
+                currentPost.originalPost.firstOrNull()?.let { originalPost ->
+                    navigateToTappedFilesFragment(
+                        requireContext(),
+                        0,
+                        files,
+                        fileIds as List<String>,
+                        originalPost  // Pass the OriginalPost object
+                    )
+                }
             }
         }
     }
@@ -7118,14 +7082,18 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         fileId = file.fileId,
                         localPath = file.localPath,
                         url = file.url,
-                        //  type = file.type,
                         mimeType = file.mimeType,
-                        // fileType = file.fileType
                     )
                 }
 
                 val fileIds = originalPost.files.map { it.fileId ?: "unknown_id" }
-                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds)
+                navigateToTappedFilesFragment(
+                    requireContext(),
+                    0,
+                    files,
+                    fileIds,
+                    originalPost  // This is correct - originalPost is of type OriginalPost
+                )
             }
         }
     }
@@ -7154,7 +7122,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                     }
                 }
                 val fileIds = currentPost.files.map { it ?: "unknown_id" }
-                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds as List<String>)
+                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds as List<String>, post)
             }
         }
     }
