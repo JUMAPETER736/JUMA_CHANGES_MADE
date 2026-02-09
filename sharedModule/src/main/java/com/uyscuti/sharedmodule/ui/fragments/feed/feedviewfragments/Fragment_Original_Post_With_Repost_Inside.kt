@@ -4441,34 +4441,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     // Helper methods
     private fun isPostLiked() = false
     private fun isPostBookmarked() = originalPost?.bookmarks?.isNotEmpty() ?: false
-
-    private fun toggleLike() {
-        originalPost?.let { post ->
-            val currentLikeCount = likesCount.text.toString().toIntOrNull() ?: post.likeCount
-            val newLikeCount = if (isPostLiked()) currentLikeCount - 1 else currentLikeCount + 1
-
-            updateLikeUI(newLikeCount > currentLikeCount)
-            likesCount.text = formatCount(newLikeCount)
-            showToast(if (newLikeCount > currentLikeCount) "Liked!" else "Like removed")
-        }
-    }
-
-    private fun toggleFavorite() {
-        originalPost?.let { post ->
-            val currentBookmarkCount = favCount.text.toString().toIntOrNull() ?: post.bookmarkCount
-            val newBookmarkCount =
-                if (isPostBookmarked()) currentBookmarkCount - 1 else currentBookmarkCount + 1
-
-            updateFavoriteUI(newBookmarkCount > currentBookmarkCount)
-            favCount.text = formatCount(newBookmarkCount)
-            showToast(
-                if (
-                    newBookmarkCount > currentBookmarkCount) "Added to favorites!" else "Removed from favorites"
-            )
-        }
-    }
-
-
+    
     private fun showRetweetOptions() {
         originalPost?.let { post ->
             val currentRepostCount = repostCount.text.toString().toIntOrNull() ?: post.repostCount
@@ -4490,7 +4463,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
             val shareText = buildString {
                 append(post.content)
-                append("\n\nhttps://circuitSocial.app/post/$postId")  
+                append("\n\nhttps://circuitSocial.app/post/$postId")
                 val tags = post.tags.filterNotNull().joinToString(" ") { "#$it" }
                 if (tags.isNotEmpty()) append("\n\n$tags")
             }
