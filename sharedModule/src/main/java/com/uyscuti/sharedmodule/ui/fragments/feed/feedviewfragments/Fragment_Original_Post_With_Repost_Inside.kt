@@ -522,38 +522,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
         handleThumbnails(originalPost.thumbnail, ivQuotedPostImage)
     }
-
-    // 3. FIX: Update populateOriginalPostData to use the counts properly
-    private fun populateOriginalPostData(originalPost: OriginalPost) {
-        Log.d(TAG, "populateOriginalPostData: originalPost=$originalPost")
-
-        // Original post author info
-        if (originalPost.author.isNotEmpty()) {
-            val originalAuthor = originalPost.author[0]
-            originalPosterName.text = originalAuthor.username ?: "Unknown User"
-            tvQuotedUserHandle.text = "@${originalAuthor.username ?: "unknown"}"
-
-            originalAuthor.avatar?.let { profileUrl ->
-                loadProfileImage(profileUrl.toString(), originalPosterProfileImage)
-            }
-        }
-
-        // Original post content
-        originalPostText.text = originalPost.content
-        dateTime.text = formatDateTime(originalPost.createdAt)
-
-        // Original post tags
-        val originalTagsText = originalPost.tags.filterNotNull().joinToString(" ") { "#$it" }
-        tvQuotedHashtags.text = originalTagsText
-        tvQuotedHashtags.visibility = if (originalTagsText.isNotEmpty()) View.VISIBLE else View.GONE
-
-        // FIX: Use the counts we already set in populatePostData
-        // Don't call populateOriginalPostInteractionData as it would overwrite
-        updateOriginalPostInteractionStates(originalPost)
-
-        // Handle original post media files
-        handleOriginalPostMediaFiles(originalPost)
-    }
+    
 
     // 7. FIX: Update updateMetricDisplay to ensure TextView is properly updated
     private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
@@ -2218,12 +2187,36 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         recyclerView.isNestedScrollingEnabled = false
     }
 
+    private fun populateOriginalPostData(originalPost: OriginalPost) {
+        Log.d(TAG, "populateOriginalPostData: originalPost=$originalPost")
+
+        // Original post author info - Access through account
+        originalPosterName.text = originalPost.author.account.username ?: "Unknown User"
+        tvQuotedUserHandle.text = "@${originalPost.author.account.username ?: "unknown"}"
+
+        // Load avatar from account
+        loadProfileImage(originalPost.author.account.avatar.url, originalPosterProfileImage)
+
+        // Original post content
+        originalPostText.text = originalPost.content
+        dateTime.text = formatDateTime(originalPost.createdAt)
+
+        // Original post tags
+        val originalTagsText = originalPost.tags.filterNotNull().joinToString(" ") { "#$it" }
+        tvQuotedHashtags.text = originalTagsText
+        tvQuotedHashtags.visibility = if (originalTagsText.isNotEmpty()) View.VISIBLE else View.GONE
+
+        // Use the counts we already set in populatePostData
+        updateOriginalPostInteractionStates(originalPost)
+
+        // Handle original post media files
+        handleOriginalPostMediaFiles(originalPost)
+    }
 
     private fun handleOriginalMediaClick() {
-        post?.let { postData ->
-            if (postData.files.isNotEmpty()) {
-                val filesList = postData.files//.map { file ->
-
+        post?.originalPost?.firstOrNull()?.let { originalPost ->
+            if (originalPost.files.isNotEmpty()) {
+                val filesList = originalPost.files
                 val fileIds = filesList.map { it.fileId }
                 navigateToTappedFilesFragment(requireContext(), 0, filesList, fileIds)
             }
@@ -2231,10 +2224,9 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
     private fun handleOriginalFileClick() {
-        post?.let { postData ->
-            if (postData.files.isNotEmpty()) {
-                val filesList = postData.files//.map { file ->
-
+        post?.originalPost?.firstOrNull()?.let { originalPost ->
+            if (originalPost.files.isNotEmpty()) {
+                val filesList = originalPost.files
                 val fileIds = filesList.map { it.fileId }
                 navigateToTappedFilesFragment(requireContext(), 0, filesList, fileIds)
             }
