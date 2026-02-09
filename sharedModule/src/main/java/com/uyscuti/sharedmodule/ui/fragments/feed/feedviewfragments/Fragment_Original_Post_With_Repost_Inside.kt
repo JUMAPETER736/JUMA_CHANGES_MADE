@@ -518,6 +518,51 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
+    // Add this method for proper back navigation (same as your working implementation)
+    @OptIn(UnstableApi::class)
+    private fun cleanupAndGoBack() {
+        // IMMEDIATE: Go back first - this is the priority
+        try {
+            if (isAdded && !parentFragmentManager.isStateSaved) {
+                parentFragmentManager.popBackStackImmediate()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error popping back stack", e)
+            // If immediate fails, try regular popBackStack
+            parentFragmentManager.popBackStack()
+        }
+
+        // Everything else happens AFTER we're already going back
+        view?.post {
+            // Hide keyboard if shown
+            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.hideSoftInputFromWindow(view?.windowToken, 0)
+
+            // Restore system bars
+            activity?.let { act ->
+                WindowCompat.setDecorFitsSystemWindows(act.window, true)
+                WindowInsetsControllerCompat(act.window, act.window.decorView)
+                    .show(WindowInsetsCompat.Type.systemBars())
+
+                EventBus.getDefault().post(ShowAppBar(true))
+                EventBus.getDefault().post(ShowBottomNav(true))
+            }
+        }
+    }
+
+    // Add this method (same as your working implementation)
+    private fun setupBackPressHandler() {
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    cleanupAndGoBack()
+                }
+            }
+        )
+    }
+
+    // REPLACE your existing setupClickListeners method with this:
     @OptIn(UnstableApi::class)
     private fun setupClickListeners(post: Post) {
 
@@ -536,32 +581,28 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             handleFollowButtonClick()
         }
 
-        repostContainer.setOnClickListener {
-            handleMainPostClick()
-        }
+        // REMOVED: repostContainer click - make repost not clickable
+        // repostContainer.setOnClickListener { ... }
 
-        mixedFilesCardViews.setOnClickListener {
-            handleRepostMediaClick()
-        }
+        // REMOVED: mixedFilesCardViews click - repost media not clickable
+        // mixedFilesCardViews.setOnClickListener { ... }
 
-        originalFeedImages.setOnClickListener {
-            handleRepostFileClick()
-        }
+        // REMOVED: originalFeedImages click - repost file not clickable
+        // originalFeedImages.setOnClickListener { ... }
 
+        // KEEP: Original post media is clickable
         originalFeedImage.setOnClickListener {
             handleOriginalFileClick()
         }
 
-        // FIXED: Reposter Profile Image Click
+        // Reposter Profile Image Click
         userReposterProfileImage.setOnClickListener { view ->
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
             try {
-                // Check if we have repostedUser data first (for actual reposts)
                 val repostedUser = post.repostedUser
 
                 if (repostedUser != null) {
-                    // Use reposted user data
                     val feedOwnerId = repostedUser._id
                     val feedOwnerUsername = repostedUser.username
                     val profilePicUrl = repostedUser.avatar?.url ?: ""
@@ -575,16 +616,12 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         profilePicUrl = profilePicUrl
                     )
                 } else {
-                    // Fall back to main author if no reposted user
                     val author = post.author
                     if (author != null) {
                         val feedOwnerId = author._id
                         val feedOwnerUsername = author.account.username
-
-                        // Build display name
                         val feedOwnerName = buildDisplayName(author)
 
-                        // Get avatar URL with proper type handling
                         val profilePicUrl = when (val avatar = author.account.avatar) {
                             is Avatar -> avatar.url
                             is String -> avatar
@@ -610,22 +647,18 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             }
         }
 
-        // FIXED: Original Poster Profile Image Click
+        // Original Poster Profile Image Click
         originalPosterProfileImage.setOnClickListener { view ->
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
             try {
-                // Get the original post
                 val originalPost = post.originalPost?.firstOrNull()
 
                 if (originalPost != null) {
-                    // Use original post author (AuthorX type)
                     val author = originalPost.author
-
                     val feedOwnerId = author._id
                     val feedOwnerUsername = author.account.username
 
-                    // Build display name for AuthorX
                     val feedOwnerName = when {
                         author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
                             "${author.firstName} ${author.lastName}"
@@ -635,7 +668,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         else -> "Unknown User"
                     }
 
-                    // Get avatar URL
                     val profilePicUrl = author.account.avatar.url
 
                     Log.d(TAG, "Navigating to original poster profile: $feedOwnerName (ID: $feedOwnerId)")
@@ -647,7 +679,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                         profilePicUrl = profilePicUrl
                     )
                 } else {
-                    // If no original post, use main author
                     val author = post.author
                     if (author != null) {
                         val feedOwnerId = author._id
@@ -679,11 +710,11 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             }
         }
 
-        // Quoted Post Card Click
+        // MAIN POST CARD CLICK - This makes the main/original post clickable
         quotedPostCard.setOnClickListener { view ->
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-            Log.d(TAG, "Quoted Post / Original Post Card clicked! Post ID: ${post._id}")
+            Log.d(TAG, "Main/Original Post Card clicked! Post ID: ${post._id}")
 
             try {
                 navigateToFragment_Original_Post_Without_Repost_Inside(post)
@@ -693,6 +724,20 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             }
         }
     }
+
+    // UPDATE onDestroyView to match your working implementation:
+    override fun onDestroyView() {
+        super.onDestroyView()
+        try {
+            // Show UI elements when view is destroyed
+            EventBus.getDefault().post(HideAppBar(false))
+            EventBus.getDefault().post(HideBottomNav(false))
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in onDestroyView cleanup: ${e.message}", e)
+        }
+        _binding = null
+    }
+
 
     private fun populateReposterInfo(post: Post) {
         try {
@@ -2791,53 +2836,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     }
 
 
-    @OptIn(UnstableApi::class)
-    private fun cleanupAndGoBack() {
-        // IMMEDIATE: Go back first - this is the priority
-        try {
-            if (isAdded && !parentFragmentManager.isStateSaved) {
-                parentFragmentManager.popBackStackImmediate()
-            }
-        } catch (e: Exception) {
-            Log.e(Fragment_Edit_Post_To_Repost.Companion.TAG, "Error popping back stack", e)
-            // If immediate fails, try regular popBackStack
-            parentFragmentManager.popBackStack()
-        }
-
-        // Everything else happens AFTER we're already going back
-        view?.post {
-            // Clear focus
-            _binding?.replyInput?.clearFocus()
-
-            // Hide keyboard
-            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-            imm?.hideSoftInputFromWindow(view?.windowToken, 0)
-
-            // Restore system bars
-            activity?.let { act ->
-                WindowCompat.setDecorFitsSystemWindows(act.window, true)
-                WindowInsetsControllerCompat(act.window, act.window.decorView)
-                    .show(WindowInsetsCompat.Type.systemBars())
-
-                EventBus.getDefault().post(ShowAppBar(true))
-                EventBus.getDefault().post(ShowBottomNav(true))
-            }
-        }
-    }
-
-    private fun setupBackPressHandler() {
-        requireActivity().onBackPressedDispatcher.addCallback(
-            viewLifecycleOwner,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    cleanupAndGoBack()
-                }
-            }
-        )
-    }
-
-
-
     private fun cleanupResources() {
         try {
             _binding?.let { binding ->
@@ -2851,20 +2849,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    override fun onDestroyView() {
-        // Cancel any pending navigation operations
-        view?.removeCallbacks(null)
-        isNavigationInProgress = false
-
-        super.onDestroyView()
-        try {
-            cleanupResources()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in onDestroyView cleanup", e)
-        } finally {
-            _binding = null
-        }
-    }
 
     override fun onDestroy() {
         super.onDestroy()

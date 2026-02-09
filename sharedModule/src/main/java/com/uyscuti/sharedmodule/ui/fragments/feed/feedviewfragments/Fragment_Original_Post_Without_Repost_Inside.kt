@@ -802,8 +802,7 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
 
         // Everything else happens AFTER we're already going back
         view?.post {
-            // Clear focus
-            _binding?.replyInput?.clearFocus()
+
 
             // Hide keyboard
             val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
