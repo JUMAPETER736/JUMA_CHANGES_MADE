@@ -1,6 +1,7 @@
 package com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments
 
 import android.Manifest
+import android.R.attr.data
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -37,8 +38,12 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.uyscuti.sharedmodule.R
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.OriginalPost
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.Post
+import com.uyscuti.social.network.api.response.posts.OriginalPost
+import com.uyscuti.social.network.api.response.posts.Post
+import com.uyscuti.social.network.api.response.posts.Duration
+import com.uyscuti.social.network.api.response.posts.ThumbnailX
+import com.uyscuti.social.network.api.response.posts.File
+import com.uyscuti.social.network.api.response.posts.FileType
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.activity.OnBackPressedCallback
@@ -53,7 +58,6 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File
 import kotlin.collections.isNotEmpty
 import com.uyscuti.social.network.api.response.getfeedandresposts.Thumbnail
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
@@ -85,7 +89,6 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountRe
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.AudioDuration
-import com.uyscuti.social.network.api.response.feed.getallfeed.more_feed_data_classes.Duration
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import com.uyscuti.social.network.utils.LocalStorage
 import dagger.hilt.android.AndroidEntryPoint
@@ -217,6 +220,351 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private lateinit var feedListView: RecyclerView
 
 
+    // 1. FIX: Update populatePostData to properly handle files and counts
+    fun populatePostData(post: Post) {
+        currentPost = post  // Store the current post reference
+
+        // Set header
+        headerTitle.text = "Post"
+
+        // Populate reposter information
+        populateReposterInfo(post)
+
+        // Populate repost content
+        populateRepostContent(post)
+
+        // FIX: Handle files from the ORIGINAL post if it exists
+        if (post.originalPost.isNotEmpty()) {
+            val originalPost = post.originalPost[0]
+
+            // FIX: Initialize counts from the ORIGINAL post (not the repost wrapper)
+            totalMixedComments = originalPost.commentCount
+            totalMixedLikesCounts = originalPost.likeCount
+            totalMixedBookMarkCounts = originalPost.bookmarkCount
+            totalMixedRePostCounts = originalPost.repostCount
+            totalMixedShareCounts = originalPost.shareCount
+
+            Log.d(TAG, "populatePostData: Initialized counts from original post")
+            Log.d(TAG, "- Comments: $totalMixedComments")
+            Log.d(TAG, "- Likes: $totalMixedLikesCounts")
+            Log.d(TAG, "- Bookmarks: $totalMixedBookMarkCounts")
+            Log.d(TAG, "- Reposts: $totalMixedRePostCounts")
+            Log.d(TAG, "- Shares: $totalMixedShareCounts")
+
+            // Update UI with actual counts immediately
+            forceRefreshAllMetrics()
+
+            populateOriginalPostData(originalPost)
+
+            // FIX: Fetch fresh comment count for the ORIGINAL post (it's already a String)
+            fetchAndUpdateCommentCount(originalPost._id)
+        } else {
+            // If no original post, use the repost's own data
+            totalMixedComments = post.comments
+            totalMixedLikesCounts = post.likes
+            totalMixedBookMarkCounts = post.bookmarkCount
+            totalMixedRePostCounts = post.repostCount ?: 0
+            totalMixedShareCounts = post.shareCount
+
+            forceRefreshAllMetrics()
+        }
+
+        setupInitialFollowButtonState(post)
+
+        // Handle repost media files (the new files added by the reposter, if any)
+        handleRepostMediaFiles(post)
+    }
+
+    // 2. ADD: Force refresh all metrics
+    private fun forceRefreshAllMetrics() {
+        Log.d(TAG, "forceRefreshAllMetrics: Forcing refresh of all metric displays")
+
+        Handler(Looper.getMainLooper()).post {
+            updateMetricDisplay(commentCount, totalMixedComments, "comment")
+            updateMetricDisplay(likesCount, totalMixedLikesCounts, "like")
+            updateMetricDisplay(favCount, totalMixedBookMarkCounts, "bookmark")
+            updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
+            updateMetricDisplay(shareCount, totalMixedShareCounts, "share")
+
+            Log.d(TAG, "forceRefreshAllMetrics: All metrics refreshed")
+        }
+    }
+
+    // 3. FIX: Update handleFeedCommentClicked to get correct post ID
+    private fun handleFeedCommentClicked(position: Int, post: Post?) {
+        Log.d(TAG, "handleFeedCommentClicked: Posting comment event for post ${post?._id}")
+        try {
+            post?.let {
+                EventBus.getDefault().post(FeedCommentClicked(position, data))
+            }
+
+            // FIX: Get the ORIGINAL post ID (already a String)
+            val postIdToFetch = if (currentPost?.originalPost?.isNotEmpty() == true) {
+                currentPost?.originalPost?.firstOrNull()?._id
+            } else {
+                currentPost?._id
+            }
+
+            Log.d(TAG, "handleFeedCommentClicked: Will fetch count for post ID: $postIdToFetch")
+
+            // Delay the fetch slightly to allow UI to settle
+            Handler(Looper.getMainLooper()).postDelayed({
+                postIdToFetch?.let { id ->
+                    fetchAndUpdateCommentCount(id)  // id is already a String
+                }
+            }, 500)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error posting comment event: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    // 4. FIX: Update event handlers to use correct post ID
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onCommentsLoaded(event: CommentsLoadedEvent) {
+        Log.d(TAG, "onCommentsLoaded: Received comments loaded event with ${event.commentCount} comments for post ${event.postId}")
+
+        // FIX: Get the correct post ID (already a String)
+        val currentPostId = currentPost?.originalPost?.firstOrNull()?._id ?: currentPost?._id
+
+        if (currentPostId == event.postId) {
+            Log.d(TAG, "onCommentsLoaded: Updating UI for matching post")
+            updateCommentCount(event.commentCount)
+        } else {
+            Log.d(TAG, "onCommentsLoaded: Event for different post (expected: $currentPostId, got: ${event.postId}), ignoring")
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onCommentCountUpdated(event: CommentCountUpdatedEvent) {
+        Log.d(TAG, "onCommentCountUpdated: Received count ${event.commentCount} for post ${event.postId}")
+
+        // FIX: Get the correct post ID (already a String)
+        val currentPostId = currentPost?.originalPost?.firstOrNull()?._id ?: currentPost?._id
+
+        if (currentPostId == event.postId) {
+            Log.d(TAG, "onCommentCountUpdated: Updating UI for matching post")
+            updateCommentCount(event.commentCount)
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onCommentAdded(event: CommentAddedEvent) {
+        Log.d(TAG, "onCommentAdded: Received event for post ${event.postId}")
+
+        // FIX: Compare with original post ID if it exists
+        val currentPostId = currentPost?.originalPost?.firstOrNull()?._id ?: currentPost?._id
+
+        if (currentPostId == event.postId) {
+            incrementCommentCount()
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onCommentDeleted(event: CommentDeletedEvent) {
+        Log.d(TAG, "onCommentDeleted: Received event for post ${event.postId}")
+
+        // FIX: Compare with original post ID if it exists
+        val currentPostId = currentPost?.originalPost?.firstOrNull()?._id ?: currentPost?._id
+
+        if (currentPostId == event.postId) {
+            decrementCommentCount()
+        }
+    }
+
+    // 5. FIX: Update fetchAndUpdateCommentCount
+    private fun fetchAndUpdateCommentCount(postId: String) {
+        Log.d(TAG, "fetchAndUpdateCommentCount: Fetching current comment count for post: $postId")
+
+        RetrofitClient.commentService.getCommentCount(postId)
+            .enqueue(object : Callback<CommentCountResponse> {
+                override fun onResponse(call: Call<CommentCountResponse>, response: Response<CommentCountResponse>) {
+                    if (response.isSuccessful && isAdded) {
+                        response.body()?.let { countResponse ->
+                            val actualCount = countResponse.count
+                            Log.d(TAG, "fetchAndUpdateCommentCount: API returned count: $actualCount for post: $postId")
+
+                            // FIX: Check if this is still the current post (String comparison)
+                            val currentPostId = currentPost?.originalPost?.firstOrNull()?._id ?: currentPost?._id
+
+                            if (currentPostId == postId) {
+                                // Only update if the count has changed
+                                if (totalMixedComments != actualCount) {
+                                    Log.d(TAG, "fetchAndUpdateCommentCount: Count changed from $totalMixedComments to $actualCount")
+
+                                    totalMixedComments = actualCount
+                                    currentPost?.comments = actualCount
+
+                                    // Update the original post's comment count if it exists
+                                    currentPost?.originalPost?.firstOrNull()?.let { original ->
+                                        original.commentCount = actualCount
+                                    }
+
+                                    updateMetricDisplay(commentCount, actualCount, "comment")
+
+                                    // Add animation
+                                    YoYo.with(Techniques.Pulse)
+                                        .duration(300)
+                                        .playOn(commentCount)
+                                } else {
+                                    Log.d(TAG, "fetchAndUpdateCommentCount: Count unchanged at $actualCount")
+                                }
+                            } else {
+                                Log.d(TAG, "fetchAndUpdateCommentCount: Post ID mismatch. Expected: $currentPostId, Got: $postId")
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "fetchAndUpdateCommentCount: Failed with code: ${response.code()}")
+                        if (response.code() == 404) {
+                            updateMetricDisplay(commentCount, 0, "comment")
+                        } else {
+                            loadCommentsAndUpdateCount(postId)
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<CommentCountResponse>, t: Throwable) {
+                    Log.e(TAG, "fetchAndUpdateCommentCount: Network error", t)
+                    Log.d(TAG, "fetchAndUpdateCommentCount: Keeping existing count: $totalMixedComments")
+                }
+            })
+    }
+
+    // 6. FIX: Update handleRepostMediaFiles to properly show files
+    private fun handleRepostMediaFiles(post: Post) {
+        if (post.files.isNotEmpty()) {
+            // These are NEW files added by the reposter
+            val firstFile = post.files[0]
+            Log.d(TAG, "handleRepostMediaFiles: Processing ${post.files.size} files from reposter")
+
+            when {
+                firstFile.mimeType?.startsWith("image") == true -> {
+                    showRepostImageMedia(post, firstFile)
+                }
+                firstFile.mimeType?.startsWith("video") == true -> {
+                    showRepostVideoMedia(post, firstFile)
+                }
+                firstFile.mimeType?.startsWith("audio") == true -> {
+                    showRepostAudioMedia(post, firstFile)
+                }
+                isDocumentFile(firstFile) -> {
+                    showRepostDocumentMedia(post, firstFile)
+                }
+                else -> {
+                    showRepostCombinationOfMultiplesMedia(post, firstFile)
+                }
+            }
+        } else {
+            // No new files from reposter, hide these views
+            hideAllRepostMediaViews()
+        }
+
+        // Handle thumbnails
+        handleThumbnails(post.thumbnail, ivQuotedPostImage)
+    }
+
+    // 7. FIX: Update handleOriginalPostMediaFiles to use correct file reference
+    private fun handleOriginalPostMediaFiles(originalPost: OriginalPost) {
+        Log.d(TAG, "handleOriginalPostMediaFiles: Processing ${originalPost.files.size} files from original post")
+
+        if (originalPost.files.isNotEmpty()) {
+            val firstFile = originalPost.files[0]
+
+            Log.d(TAG, "handleOriginalPostMediaFiles: First file - mimeType: ${firstFile.mimeType}, url: ${firstFile.url}")
+
+            when {
+                isImageFile(firstFile) -> {
+                    Log.d(TAG, "handleOriginalPostMediaFiles: Showing image media")
+                    showOriginalImageMedia(originalPost, firstFile)
+                }
+                isVideoFile(firstFile) -> {
+                    Log.d(TAG, "handleOriginalPostMediaFiles: Showing video media")
+                    showOriginalVideoMedia(originalPost, firstFile)
+                }
+                isAudioFile(firstFile) -> {
+                    Log.d(TAG, "handleOriginalPostMediaFiles: Showing audio media")
+                    showOriginalAudioMedia(originalPost, firstFile)
+                }
+                isDocumentFile(firstFile) -> {
+                    Log.d(TAG, "handleOriginalPostMediaFiles: Showing document media")
+                    showOriginalDocumentMedia(originalPost, firstFile)
+                }
+                else -> {
+                    Log.d(TAG, "handleOriginalPostMediaFiles: Unknown file type, hiding all media views")
+                    hideAllOriginalMediaViews()
+                }
+            }
+        } else {
+            Log.d(TAG, "handleOriginalPostMediaFiles: No files found, hiding all media views")
+            hideAllOriginalMediaViews()
+        }
+
+        handleThumbnails(originalPost.thumbnail, ivQuotedPostImage)
+    }
+
+
+
+    // 3. FIX: Update populateOriginalPostData to use the counts properly
+    private fun populateOriginalPostData(originalPost: OriginalPost) {
+        Log.d(TAG, "populateOriginalPostData: originalPost=$originalPost")
+
+        // Original post author info
+        if (originalPost.author.isNotEmpty()) {
+            val originalAuthor = originalPost.author[0]
+            originalPosterName.text = originalAuthor.username ?: "Unknown User"
+            tvQuotedUserHandle.text = "@${originalAuthor.username ?: "unknown"}"
+
+            originalAuthor.avatar?.let { profileUrl ->
+                loadProfileImage(profileUrl.toString(), originalPosterProfileImage)
+            }
+        }
+
+        // Original post content
+        originalPostText.text = originalPost.content
+        dateTime.text = formatDateTime(originalPost.createdAt)
+
+        // Original post tags
+        val originalTagsText = originalPost.tags.filterNotNull().joinToString(" ") { "#$it" }
+        tvQuotedHashtags.text = originalTagsText
+        tvQuotedHashtags.visibility = if (originalTagsText.isNotEmpty()) View.VISIBLE else View.GONE
+
+        // FIX: Use the counts we already set in populatePostData
+        // Don't call populateOriginalPostInteractionData as it would overwrite
+        updateOriginalPostInteractionStates(originalPost)
+
+        // Handle original post media files
+        handleOriginalPostMediaFiles(originalPost)
+    }
+    
+    // 7. FIX: Update updateMetricDisplay to ensure TextView is properly updated
+    private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
+        Log.d(TAG, "updateMetricDisplay: Updating $metricType display to $count")
+
+        // FIX: Ensure we're on the main thread
+        if (Thread.currentThread() != Looper.getMainLooper().thread) {
+            Handler(Looper.getMainLooper()).post {
+                updateMetricDisplayOnMainThread(textView, count, metricType)
+            }
+        } else {
+            updateMetricDisplayOnMainThread(textView, count, metricType)
+        }
+    }
+
+    private fun updateMetricDisplayOnMainThread(textView: TextView, count: Int, metricType: String) {
+        textView.text = formatCount(count)
+        textView.visibility = View.VISIBLE
+        textView.contentDescription = when (metricType) {
+            "like" -> "$count ${if (count == 1) "like" else "likes"}"
+            "comment" -> "$count ${if (count == 1) "comment" else "comments"}"
+            "bookmark" -> "$count ${if (count == 1) "bookmark" else "bookmarks"}"
+            "repost" -> "$count ${if (count == 1) "repost" else "reposts"}"
+            "share" -> "$count ${if (count == 1) "share" else "shares"}"
+            else -> "$count $metricType"
+        }
+        Log.d(TAG, "updateMetricDisplay: Set $metricType text to '${textView.text}' - TextView ID: ${textView.id}")
+    }
+
     private val feedClickListener: OnFeedClickListener by lazy {
         (activity as? OnFeedClickListener) ?:
         object : OnFeedClickListener {
@@ -290,44 +638,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onCommentsLoaded(event: CommentsLoadedEvent) {
-        Log.d(TAG, "onCommentsLoaded: Received comments loaded event with ${event.commentCount} comments for post ${event.postId}")
-
-        // Check if this event is for the current post
-        val currentPostId = if (currentPost?.originalPost?.isNotEmpty() == true) {
-            currentPost?.originalPost?.get(0)?._id
-        } else {
-            currentPost?._id
-        }
-
-        if (currentPostId == event.postId) {
-            Log.d(TAG, "onCommentsLoaded: Updating UI for matching post")
-            updateCommentCount(event.commentCount)
-        } else {
-            Log.d(TAG, "onCommentsLoaded: Event for different post, ignoring")
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onCommentCountUpdated(event: CommentCountUpdatedEvent) {
-        Log.d(TAG, "onCommentCountUpdated: Received count ${event.commentCount} for post ${event.postId}")
-
-        // Check if this event is for the current post
-        val currentPostId = if (currentPost?.originalPost?.isNotEmpty() == true) {
-            currentPost?.originalPost?.get(0)?._id
-        } else {
-            currentPost?._id
-        }
-
-        if (currentPostId == event.postId) {
-            Log.d(TAG, "onCommentCountUpdated: Updating UI for matching post")
-            updateCommentCount(event.commentCount)
-        }
-    }
-
-
     private fun loadCommentsAndUpdateCount(postId: String) {
         Log.d(TAG, "loadCommentsAndUpdateCount: Loading comments to get count for post: $postId")
 
@@ -356,64 +666,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             })
     }
 
-    private fun fetchAndUpdateCommentCount(postId: String) {
-        Log.d(TAG, "fetchAndUpdateCommentCount: Fetching current comment count for post: $postId")
-
-        RetrofitClient.commentService.getCommentCount(postId)
-            .enqueue(object : Callback<CommentCountResponse> {
-                override fun onResponse(call: Call<CommentCountResponse>, response: Response<CommentCountResponse>) {
-                    if (response.isSuccessful && isAdded) {
-                        response.body()?.let { countResponse ->
-                            val actualCount = countResponse.count
-                            Log.d(TAG, "fetchAndUpdateCommentCount: API returned count: $actualCount for post: $postId")
-
-                            // Check if this is still the current post
-                            val currentPostId = if (currentPost?.originalPost?.isNotEmpty() == true) {
-                                currentPost?.originalPost?.get(0)?._id
-                            } else {
-                                currentPost?._id
-                            }
-
-                            if (currentPostId == postId) {
-                                // Only update if the count has changed to avoid unnecessary UI updates
-                                if (totalMixedComments != actualCount) {
-                                    Log.d(TAG, "fetchAndUpdateCommentCount: Count changed from $totalMixedComments to $actualCount")
-
-                                    totalMixedComments = actualCount
-                                    currentPost?.comments = actualCount
-                                    currentPost?.comments = actualCount
-
-                                    updateMetricDisplay(commentCount, actualCount, "comment")
-
-                                    // Add a subtle animation to indicate the count was updated
-                                    YoYo.with(Techniques.Pulse)
-                                        .duration(300)
-                                        .playOn(commentCount)
-                                } else {
-                                    Log.d(TAG, "fetchAndUpdateCommentCount: Count unchanged at $actualCount")
-                                }
-                            }
-                        }
-                    } else {
-                        Log.e(TAG, "fetchAndUpdateCommentCount: Failed with code: ${response.code()}")
-                        if (response.code() == 404) {
-                            // Post might not exist or have no comments
-                            updateMetricDisplay(commentCount, 0, "comment")
-                        } else {
-                            // Fallback to loading comments
-                            loadCommentsAndUpdateCount(postId)
-                        }
-                    }
-                }
-
-                override fun onFailure(call: Call<CommentCountResponse>, t: Throwable) {
-                    Log.e(TAG, "fetchAndUpdateCommentCount: Network error", t)
-                    // Don't override existing count on network failure
-                    Log.d(TAG, "fetchAndUpdateCommentCount: Keeping existing count: $totalMixedComments")
-                }
-            })
-    }
-
     fun decrementCommentCount() {
         val newCount = maxOf(0, totalMixedComments - 1)
         Log.d(tag, "decrementCommentCount: Decrementing from $totalMixedComments to $newCount")
@@ -427,22 +679,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         updateCommentCount(newCount)
     }
 
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onCommentAdded(event: CommentAddedEvent) {
-        Log.d(TAG, "onCommentAdded: Received event for post ${event.postId}")
-        if (currentPost?._id == event.postId) {
-            incrementCommentCount()
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onCommentDeleted(event: CommentDeletedEvent) {
-        Log.d(TAG, "onCommentDeleted: Received event for post ${event.postId}")
-        if (currentPost?._id == event.postId) {
-            decrementCommentCount()
-        }
-    }
 
     // 6. Create these event classes if they don't exist
     data class CommentAddedEvent(val postId: String)
@@ -485,30 +721,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         Log.d(TAG, "updateCommentCount: Successfully updated UI to $totalMixedComments")
     }
 
-    private fun handleFeedCommentClicked(position: Int, post: com.uyscuti.social.network.api.response.posts.Post?) {
-        Log.d(TAG, "handleFeedCommentClicked: Posting comment event for post ${post?._id}")
-        try {
-            EventBus.getDefault().post(FeedCommentClicked(position,
-                post as com.uyscuti.social.network.api.response.posts.Post
-            ))
-
-            // Immediately try to refresh comment count from server
-            val postIdToFetch = if (post?.originalPost?.isNotEmpty() == true) {
-                post?.originalPost[0]?._id ?: 0
-            } else {
-                post?._id ?: 0
-            }
-
-            // Delay the fetch slightly to allow UI to settle
-            Handler(Looper.getMainLooper()).postDelayed({
-                fetchAndUpdateCommentCount(postIdToFetch.toString())
-            }, 500)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error posting comment event: ${e.message}")
-            e.printStackTrace()
-        }
-    }
 
     // Helper function to get AppCompatActivity from context
     private fun getActivityFromContext(context: Context): AppCompatActivity? {
@@ -518,6 +730,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             else -> null
         }
     }
+
     private fun navigateToTappedFilesFragment(
         context: Context,
         currentIndex: Int,
@@ -648,7 +861,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     private fun initializeViews(view: View) {
 
         // Header Views
-        cancelButton = view.findViewById(R.id.backButton)
+        cancelButton = view.findViewById(R.id.cancelButton)
         headerTitle = view.findViewById(R.id.headerTitle)
         headerMenuButton = view.findViewById(R.id.headerMenuButton)
 
@@ -714,10 +927,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
 
         headerMenuButton.setOnClickListener {
-            moreOptionsClick(
-                position = TODO(),
-                data = TODO()
-            )
+            moreOptionsClick(currentPosition, data)
         }
 
         // User interaction click listeners
@@ -1762,21 +1972,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
-    private fun updateMetricDisplay(textView: TextView, count: Int, metricType: String) {
-        Log.d(TAG, "updateMetricDisplay: Updating $metricType with count: $count")
-        textView.text = formatCount(count)
-        textView.visibility = View.VISIBLE
-        textView.contentDescription = when (metricType) {
-            "like" -> "$count ${if (count == 1) "like" else "likes"}"
-            "comment" -> "$count ${if (count == 1) "comment" else "comments"}"
-            "bookmark" -> "$count ${if (count == 1) "bookmark" else "bookmarks"}"
-            "repost" -> "$count ${if (count == 1) "repost" else "reposts"}"
-            "share" -> "$count ${if (count == 1) "share" else "shares"}"
-            else -> "$count $metricType"
-        }
-    }
-
-
 
     private fun setupRecyclerViews() {
         recyclerViews.layoutManager = GridLayoutManager(requireContext(), 3)
@@ -1823,31 +2018,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             }
         }
     }
-
-    fun populatePostData(post: Post) {
-        // Set header
-        headerTitle.text = "Post"
-
-        // Populate reposter information
-        populateReposterInfo(post)
-
-        // Populate repost content
-        populateRepostContent(post)
-
-        // Handle repost media files
-        handleRepostMediaFiles(post)
-
-        setupInitialFollowButtonState(post)
-
-        // Handle original post data if available
-        if (post.originalPost.isNotEmpty()) {
-            val originalPost = post.originalPost[0]
-            populateOriginalPostData(originalPost)
-        }
-    }
-
-
-// USER INFORMATION POPULATION METHODS...
 
 
     private fun populateReposterInfo(post: OriginalPost) {
@@ -1934,36 +2104,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         populateTagsViews(tagsText)
     }
 
-    private fun populateOriginalPostData(originalPost: OriginalPost) {
-
-        Log.d("populateViews", "populateOriginalPostData, $originalPost")
-        // Original post author info
-        if (originalPost.author.isNotEmpty()) {
-            val originalAuthor = originalPost.author[0]
-            originalPosterName.text = originalAuthor.username ?: "Unknown User"
-            tvQuotedUserHandle.text = "@${originalAuthor.username ?: "unknown"}"
-
-            originalAuthor.avatar?.let { profileUrl ->
-                loadProfileImage(profileUrl.toString(), originalPosterProfileImage)
-            }
-        }
-
-        // Original post content
-        originalPostText.text = originalPost.content
-        dateTime.text = formatDateTime(originalPost.createdAt)
-
-        // Original post tags
-        val originalTagsText = originalPost.tags.filterNotNull().joinToString(" ") { "#$it" }
-        tvQuotedHashtags.text = originalTagsText
-        tvQuotedHashtags.visibility = if (originalTagsText.isNotEmpty()) View.VISIBLE else View.GONE
-
-        // Interaction counts
-        populateOriginalPostInteractionData(originalPost)
-
-        // Handle original post media files
-        handleOriginalPostMediaFiles(originalPost)
-    }
-
     private fun populateTagsViews(tagsText: String) {
         tvHashtags.text = tagsText.takeIf { it.isNotEmpty() } ?: ""
         tvHashtags.visibility = if (tagsText.isNotEmpty()) View.VISIBLE else View.GONE
@@ -1972,7 +2112,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
 
-// INTERACTION DATA METHODS
+    // INTERACTION DATA METHODS
 
     private fun populateInteractionData(post: OriginalPost) {
         likesCount.text = formatCount(post.likeCount)
@@ -2020,74 +2160,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
-
-    private fun handleRepostMediaFiles(post: Post) {
-        if (post.files.isNotEmpty()) {
-            val firstFile = post.files[0]
-
-            when {
-                firstFile.mimeType?.startsWith("image") == true -> {
-                    showRepostImageMedia(post, firstFile)
-                }
-
-                firstFile.mimeType?.startsWith("video") == true -> {
-                    showRepostVideoMedia(post, firstFile)
-                }
-
-                firstFile.mimeType?.startsWith("audio") == true -> {
-                    showRepostAudioMedia(post, firstFile)
-                }
-
-                firstFile.mimeType?.startsWith("mixed_files") == true -> {
-                    showRepostCombinationOfMultiplesMedia(post, firstFile)
-                }
-
-                isDocumentFile(firstFile) -> {
-                    showRepostDocumentMedia(post, firstFile)
-                }
-
-                else -> {
-                    showRepostCombinationOfMultiplesMedia(post, firstFile)
-                }
-            }
-        } else {
-            hideAllRepostMediaViews()
-        }
-
-        handleThumbnails(post.thumbnail, ivQuotedPostImage)
-    }
-
-    private fun handleOriginalPostMediaFiles(originalPost: OriginalPost) {
-        if (originalPost.files.isNotEmpty()) {
-            val firstFile = originalPost.files[0]
-
-            when {
-                isImageFile(firstFile) -> {
-                    showOriginalImageMedia(originalPost, firstFile)
-                }
-
-                isVideoFile(firstFile) -> {
-                    showOriginalVideoMedia(originalPost, firstFile)
-                }
-
-                isAudioFile(firstFile) -> {
-                    showOriginalAudioMedia(originalPost, firstFile)
-                }
-
-                isDocumentFile(firstFile) -> {
-                    showOriginalDocumentMedia(originalPost, firstFile)
-                }
-
-                else -> {
-                    hideAllOriginalMediaViews()
-                }
-            }
-        } else {
-            hideAllOriginalMediaViews()
-        }
-
-        handleThumbnails(originalPost.thumbnail, ivQuotedPostImage)
-    }
 
     private fun updateInteractionStates(post: OriginalPost) {
         // Update like button state
