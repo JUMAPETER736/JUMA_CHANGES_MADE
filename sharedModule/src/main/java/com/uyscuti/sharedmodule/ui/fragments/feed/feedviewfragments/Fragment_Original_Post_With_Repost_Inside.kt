@@ -656,6 +656,24 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
+    private fun showRepostDocumentMedia(post: Post, firstFile: File) {
+        mixedFilesCardViews.visibility = View.VISIBLE
+        multipleAudiosContainers.visibility = View.GONE
+        recyclerViews.visibility = View.GONE
+
+        val thumbnailUrl = post.thumbnail.firstOrNull()?.thumbnailUrl
+        if (!thumbnailUrl.isNullOrEmpty()) {
+            Glide.with(this)
+                .load(thumbnailUrl)
+                .placeholder(getDocumentPlaceholder(firstFile))
+                .error(getDocumentPlaceholder(firstFile))
+                .into(originalFeedImages)
+        } else {
+            originalFeedImages.setImageResource(getDocumentPlaceholder(firstFile))
+        }
+    }
+
+
     private fun loadCommentsAndUpdateCount(postId: String) {
         Log.d(TAG, "loadCommentsAndUpdateCount: Loading comments to get count for post: $postId")
 
@@ -2387,15 +2405,12 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         )
     }
 
-// MEDIA HANDLING METHODS
-
     private fun handleThumbnails(
-        thumbnails: List<Thumbnail>,
+        thumbnails: List<ThumbnailX>,
         imageView: ImageView
     ) {
         if (thumbnails.isNotEmpty()) {
             val thumbnailUrl = thumbnails.firstOrNull()?.thumbnailUrl
-
             if (thumbnailUrl?.isNotEmpty() == true && mixedFilesCardView.visibility == View.VISIBLE) {
                 loadImage(thumbnailUrl, imageView)
             }
@@ -2405,7 +2420,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
 
     private fun updateInteractionStates(post: OriginalPost) {
         // Update like button state
-        updateLikeUI(post.isLikedCount)
+        updateLikeUI(post.is)
 
         // Update bookmark/favorite button state
         updateFavoriteUI(post.bookmarks.isNotEmpty())
@@ -4466,10 +4481,16 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
     private fun sharePost() {
-        originalPost?.let { post ->
+        currentPost?.let { post ->
+            val postId = if (post.originalPost.isNotEmpty()) {
+                post.originalPost[0]._id
+            } else {
+                post._id
+            }
+
             val shareText = buildString {
                 append(post.content)
-                if (post.url.isNotEmpty()) append("\n\n${post.url}")
+                append("\n\nhttps://circuitSocial.app/post/$postId")  
                 val tags = post.tags.filterNotNull().joinToString(" ") { "#$it" }
                 if (tags.isNotEmpty()) append("\n\n$tags")
             }
@@ -4477,8 +4498,8 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             startActivity(
                 Intent.createChooser(
                     Intent().apply {
-                        setAction(Intent.ACTION_SEND)
-                        setType("text/plain")
+                        action = Intent.ACTION_SEND
+                        type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, shareText)
                     },
                     "Share Post"
