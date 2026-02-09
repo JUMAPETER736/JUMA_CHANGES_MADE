@@ -7,11 +7,8 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
-import android.content.res.Resources
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Outline
-import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
@@ -40,31 +37,20 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.toColorInt
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
-import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.resource.bitmap.CircleCrop
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import com.google.android.material.card.MaterialCardView
 import com.google.gson.Gson
-import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
-import com.bumptech.glide.request.target.Target
 import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -76,10 +62,8 @@ import com.uyscuti.sharedmodule.R
 import com.uyscuti.sharedmodule.ReportNotificationActivity2
 import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfileAccount
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
-import com.uyscuti.sharedmodule.adapter.feed.feed.multiple_files.FeedRepostViewFileAdapter.OnMultipleFilesClickListener
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.databinding.FragmentOriginalPostWithRepostInsideBinding
-import com.uyscuti.sharedmodule.databinding.FragmentOriginalPostWithoutRepostInsideBinding
 import com.uyscuti.sharedmodule.model.FeedCommentClicked
 import com.uyscuti.sharedmodule.model.GoToUserProfileFragment
 import com.uyscuti.sharedmodule.model.HideAppBar
@@ -303,9 +287,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     private val OriginalPost.safeShareCount: Int
         get() = shareCount ?: 0
 
-    private val mainActivity: MainActivity?
-        @OptIn(UnstableApi::class)
-        get() = activity as? MainActivity
 
 
     override fun onStart() {
@@ -495,8 +476,9 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                 setupBackNavigation()
 
                 // Hide UI elements
-                (activity as? MainActivity)?.hideAppBar()
-                (activity as? MainActivity)?.hideBottomNavigation()
+                // Hide UI elements
+                EventBus.getDefault().post(HideAppBar(true))
+                EventBus.getDefault().post(HideBottomNav(true))
 
                 // Populate data
                 Log.d(TAG, "Post type: ${safePost::class.java.simpleName}")
@@ -554,7 +536,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
 
         headerMenuButton.setOnClickListener { view ->
-            showOptionsMenu(view)
+            moreOptionsClick(currentPosition, data)
         }
 
         followButton.setOnClickListener {
@@ -873,85 +855,385 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     }
 
 
-    private fun showOptionsMenu(anchor: View) {
-        val context = requireContext()
-        val popup = PopupMenu(context, anchor, Gravity.END)
+    @SuppressLint("InflateParams", "MissingInflatedId", "ServiceCast")
+    fun moreOptionsClick(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        Log.d(TAG, "moreOptionsClick: More options clicked")
+        val view: View = layoutInflater.inflate(R.layout.feed_more_options_layout, null)
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(view)
 
-        // Apply custom style and force show icons (optional)
-        try {
-            val fieldPopup = PopupMenu::class.java.getDeclaredField("mPopup")
-            fieldPopup.isAccessible = true
-            val menuPopupWindow = fieldPopup.get(popup)
-            // Note: MenuPopupWindow.setForceShowIcon() might not be available in all versions
-            // You may need to handle this differently based on your target SDK
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        // Get all views from XML
+        val downloadFiles: View = view.findViewById(R.id.downloadAction)
+        val followUnfollowLayout: View = view.findViewById(R.id.followAction)
+        val reportUser: View = view.findViewById(R.id.reportOptionLayout)
+        val hidePostLayout: View = view.findViewById(R.id.hidePostLayout)
+        val copyLink: View = view.findViewById(R.id.copyLinkLayout)
+        val muteOptionLayout: MaterialCardView = view.findViewById(R.id.muteOptionLayout)
+        val blockUserLayout: MaterialCardView = view.findViewById(R.id.blockUserLayout)
+        val quoteFeedLayout: View = view.findViewById(R.id.repostAction)
+        val shareAction: View = view.findViewById(R.id.shareAction)
+        val notInterested: View = view.findViewById(R.id.notInterestedLayout)
 
-        // Inflate the menu
-        popup.menuInflater.inflate(R.menu.post_options_menu, popup.menu)
+        // Get the author ID and username
+        val authorId = data.author?.account?._id
+        val username = data.author?.account?.username ?: "User"
 
-        // Set menu item click listener
-        popup.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.menu_report -> {
-                    handleReportPost()
-                    true
-                }
-                R.id.menu_block_user -> {
-                    handleBlockUser()
-                    true
-                }
-                R.id.menu_mute_user -> {
-                    handleMuteUser()
-                    true
-                }
-                R.id.menu_copy_link -> {
-                    handleCopyLink()
-                    true
-                }
-                R.id.menu_save_post -> {
-                    handleSavePost()
-                    true
-                }
-                R.id.menu_not_interested -> {
-                    handleNotInterested()
-                    true
-                }
-                else -> false
+        // Update mute button text based on current state
+        if (authorId != null) {
+            // Find the nested LinearLayout inside muteOptionLayout
+            val muteCard = muteOptionLayout.getChildAt(0) as? LinearLayout
+            val muteTextContainer = muteCard?.getChildAt(1) as? LinearLayout
+            val muteStaticText = muteTextContainer?.getChildAt(0) as? TextView
+            val muteUsernameText = muteTextContainer?.getChildAt(1) as? TextView
+
+            if (relationshipsViewModel.isPostsMuted(authorId)) {
+                muteStaticText?.text = "Unmute "
+                muteUsernameText?.text = username
+            } else {
+                muteStaticText?.text = "Mute "
+                muteUsernameText?.text = username
             }
         }
 
-        // Show the popup menu
-        popup.show()
+        // Update block button username text
+        val blockCard = blockUserLayout.getChildAt(0) as? LinearLayout
+        val blockContentLayout = blockCard?.getChildAt(1) as? LinearLayout
+        val blockDescriptionLayout = blockContentLayout?.getChildAt(1) as? LinearLayout
+        val usernameBlockText = blockDescriptionLayout?.findViewById<TextView>(R.id.usernameBlock)
+        usernameBlockText?.text = username
+
+        // Show the dialog
+        dialog.show()
+
+        // ==================== SHARE ACTION ====================
+        shareAction.setOnClickListener {
+            val shareIntent = Intent(Intent.ACTION_SEND)
+            shareIntent.type = "text/plain"
+            shareIntent.putExtra(Intent.EXTRA_TEXT, data.content)
+            startActivity(Intent.createChooser(shareIntent, "Share via"))
+            dialog.dismiss()
+        }
+
+        // ==================== DOWNLOAD ACTION ====================
+        downloadFiles.setOnClickListener {
+            Log.d("DownloadButton", "Data: $data")
+            if (data.files.isNotEmpty()) {
+                onDownloadClick(data.files[0].url, "FlashShorts")
+            } else {
+                Toast.makeText(context, "No files to download", Toast.LENGTH_SHORT).show()
+            }
+            dialog.dismiss()
+        }
+
+        // Hide download if text-only post
+        if (data.contentType == "text") {
+            downloadFiles.visibility = View.GONE
+        }
+
+        // ==================== MUTE ACTION ====================
+        muteOptionLayout.setOnClickListener {
+            Log.d("MuteButton", "Mute button clicked for user: $authorId")
+            dialog.dismiss()
+
+            authorId?.let { userId ->
+                handleMuteToggle(userId, position)
+            } ?: run {
+                Toast.makeText(context, "Cannot mute: User ID not found", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // ==================== BLOCK USER ACTION ====================
+        blockUserLayout.setOnClickListener {
+            Log.d("BlockButton", "Block button clicked for user: $authorId")
+            dialog.dismiss()
+
+            authorId?.let { userId ->
+                // Check if user is trying to block themselves
+
+                // Check if user is already blocked
+                if (blockedUserIds.contains(userId)) {
+                    // Unblock the user
+                    handleUnblockUser(userId, username)
+                } else {
+                    // Block the user
+                    showBlockConfirmationDialog(userId, username, position)
+                }
+            } ?: run {
+                Toast.makeText(context, "Cannot block: User ID not found", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // ==================== REPOST ACTION ====================
+        quoteFeedLayout.setOnClickListener {
+            val fragment = Fragment_Edit_Post_To_Repost(data)
+            val transaction = requireActivity().supportFragmentManager.beginTransaction()
+            transaction.replace(R.id.frame_layout, fragment)
+            transaction.addToBackStack(null)
+            transaction.commit()
+            dialog.dismiss()
+        }
+
+        // ==================== COPY LINK ACTION ====================
+        copyLink.setOnClickListener {
+            val postId = data._id
+            val linkToCopy = "https://circuitSocial.app/post/$postId"
+            val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Copied Link", linkToCopy)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(requireContext(), "Link copied to clipboard", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+
+        // ==================== NOT INTERESTED ACTION ====================
+        notInterested.setOnClickListener {
+            handleNotInterested(data)
+            dialog.dismiss()
+        }
+
+        // ==================== HIDE POST ACTION ====================
+        hidePostLayout.setOnClickListener {
+            Log.d(TAG, "hidePostLayout: hide post clicked")
+            hideSinglePost(position, data)
+            dialog.dismiss()
+        }
+
+        // ==================== REPORT USER ACTION ====================
+        reportUser.setOnClickListener {
+            Log.d("reportUser", "Report button clicked")
+            val intent = Intent(requireActivity(), ReportNotificationActivity2::class.java)
+            startActivityForResult(intent, FRAGMENT_ORIGINAL_POST_WITH_REPOST)
+            dialog.dismiss()
+        }
+
+        // Hide follow button (you can show it if needed based on relationship status)
+        followUnfollowLayout.visibility = View.GONE
     }
 
-    private fun handleReportPost() {
-        // Show report dialog or navigate to report screen
-        Toast.makeText(requireContext(), "Report post", Toast.LENGTH_SHORT).show()
+    @SuppressLint("NotifyDataSetChanged")
+    private fun hideSinglePost(
+        position: Int,
+        data: com.uyscuti.social.network.api.response.posts.Post
+    ) {
+        Log.d(
+            Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "hideSinglePost: Hiding post at position: $position, PostId: ${data._id}")
+        try {
+            if (::allFeedAdapter.isInitialized) {
+
+                allFeedAdapter.removeItem(position)
+                allFeedAdapter.notifyItemRemoved(position)
+
+                // Optional: Add fade-out animation
+                val viewHolder = feedListView.findViewHolderForAdapterPosition(position)
+                if (viewHolder != null) {
+                    viewHolder.itemView.animate()
+                        .alpha(0f)
+                        .setDuration(300)
+                        .withEndAction {
+                            allFeedAdapter.notifyItemRemoved(position)
+                        }
+                        .start()
+                } else {
+                    Log.w(
+                        Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "ViewHolder at position $position is null, notifying removal directly"
+                    )
+                    allFeedAdapter.notifyItemRemoved(position) // Fallback for off-screen items
+                }
+                // Show Snackbar with Undo button
+                Snackbar.make(feedListView, "Post hidden", Snackbar.LENGTH_LONG)
+                    .setAction("Undo") {
+                        // Restore the post
+
+                        allFeedAdapter.notifyItemInserted(position)
+                    }
+                    .show()
+                return
+            }
+
+            val sharedPrefs =
+                requireContext().getSharedPreferences(
+                    "HiddenPosts", Context.MODE_PRIVATE)
+            with(sharedPrefs.edit()) {
+                putBoolean(data._id, true)
+                apply()
+            }
+
+        } catch (e: Exception) {
+            Log.e(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Error hiding post: ${e.message}")
+            Toast.makeText(requireContext(),
+                "Failed to hide post", Toast.LENGTH_SHORT).show()
+        }
     }
 
-    private fun handleBlockUser() {
-        // Show confirmation dialog and block user
-        Toast.makeText(requireContext(), "User blocked", Toast.LENGTH_SHORT).show()
+    private fun handleFollowButtonClick() {
+        post?.let { currentPost ->
+            // Extract ACCOUNT ID and USERNAME
+            val feedOwnerId: String
+            val feedOwnerUsername: String
+
+            when {
+                // Case 1: Reposted post - use original author's account ID
+                currentPost.originalPost.isNotEmpty() -> {
+                    val originalAuthor = currentPost.originalPost[0].author
+                    feedOwnerId = originalAuthor.owner  // Use owner field (account ID)
+                    feedOwnerUsername = originalAuthor.account.username
+                    Log.d(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Follow button - Original author ID: $feedOwnerId (@$feedOwnerUsername)")
+                }
+                // Case 2: Regular post - use main author's account ID
+                else -> {
+                    feedOwnerId = currentPost.author?.account?._id ?: ""
+                    feedOwnerUsername = currentPost.author?.account?.username ?: "unknown"
+                    Log.d(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Follow button - Main author ID: $feedOwnerId (@$feedOwnerUsername)")
+                }
+            }
+
+            val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
+
+            // Check following status by BOTH ID and USERNAME
+            val cachedFollowingList = FeedAdapter.getCachedFollowingList()
+            val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
+
+            val isAlreadyFollowing = followingUserIds.contains(feedOwnerId) ||
+                    cachedFollowingList.contains(feedOwnerId) ||
+                    cachedFollowingUsernames.contains(feedOwnerUsername)
+
+            // Hide button if it's own post OR already following
+            if (feedOwnerId == currentUserId || isAlreadyFollowing) {
+                followButton.visibility = View.GONE
+                Log.d(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Follow button hidden - Own post or already following")
+                return
+            }
+
+            // Toggle follow status
+            isFollowing = !isFollowing
+
+            if (isFollowing) {
+                // Hide button immediately
+                followButton.visibility = View.GONE
+
+
+                // Update FeedAdapter cache
+                FeedAdapter.addToFollowingCache(feedOwnerId)
+                FeedAdapter.setCachedFollowingList(followingUserIds)
+
+                // Save to local storage
+                FollowingManager(requireContext()).addToFollowing(feedOwnerId)
+
+                // Build display name for toast
+                val displayName = when {
+                    currentPost.originalPost.isNotEmpty() -> {
+                        val author = currentPost.originalPost[0].author
+                        when {
+                            author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
+                                "${author.firstName} ${author.lastName}"
+                            author.firstName.isNotBlank() -> author.firstName
+                            author.lastName.isNotBlank() -> author.lastName
+                            else -> author.account.username
+                        }
+                    }
+                    else -> {
+                        val author = currentPost.author
+                        when {
+                            author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
+                                "${author.firstName} ${author.lastName}"
+                            author.firstName.isNotBlank() -> author.firstName
+                            author.lastName.isNotBlank() -> author.lastName
+                            else -> author.account.username
+                        }
+                    }
+                }
+
+                showToast("Now following $displayName")
+                Log.d(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Added account $feedOwnerId (@$feedOwnerUsername) to following list")
+
+            } else {
+
+                // Check if they follow you to show correct button text
+                val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+
+                // Show button with appropriate text
+                followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
+                followButton.visibility = View.VISIBLE
+
+
+                // Update FeedAdapter cache
+                FeedAdapter.removeFromFollowingCache(feedOwnerId)
+                FeedAdapter.setCachedFollowingList(followingUserIds)
+
+                // Remove from local storage
+                FollowingManager(requireContext()).removeFromFollowing(feedOwnerId)
+
+                showToast("Unfollowed")
+                Log.d(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "✓ Removed account $feedOwnerId (@$feedOwnerUsername) from following list")
+            }
+
+            updateFollowButtonUI()
+        }
     }
 
-    private fun handleMuteUser() {
-        // Show confirmation dialog and mute user
-        Toast.makeText(requireContext(), "User muted", Toast.LENGTH_SHORT).show()
+    private fun setupInitialFollowButtonState(data: Post) {
+        val feedOwnerId: String
+        val feedOwnerUsername: String
+
+        when {
+            data.originalPost.isNotEmpty() -> {
+                val originalAuthor = data.originalPost[0].author
+                feedOwnerId = originalAuthor.owner
+                feedOwnerUsername = originalAuthor.account.username
+            }
+            else -> {
+                feedOwnerId = data.author?.account?._id ?: ""
+                feedOwnerUsername = data.author?.account?.username ?: "unknown"
+            }
+        }
+
+        val currentUserId = LocalStorage.getInstance(requireContext()).getUserId()
+        val cachedFollowingList = FeedAdapter.getCachedFollowingList()
+        val cachedFollowingUsernames = FeedAdapter.getCachedFollowingUsernames()
+
+        val isAlreadyFollowing = followingUserIds.contains(feedOwnerId) ||
+                cachedFollowingList.contains(feedOwnerId) ||
+                cachedFollowingUsernames.contains(feedOwnerUsername)
+
+        if (feedOwnerId == currentUserId || isAlreadyFollowing) {
+            followButton.visibility = View.GONE
+            Log.d(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Initial setup: Follow button hidden for $feedOwnerId (@$feedOwnerUsername)")
+        } else {
+            followButton.visibility = View.VISIBLE
+
+            // Check if this user follows us back
+            val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+            followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
+
+            Log.d(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Initial setup: Follow button shown for $feedOwnerId (@$feedOwnerUsername) - Text: '${followButton.text}'")
+        }
     }
 
-    private fun handleCopyLink() {
-        // Copy post link to clipboard
-        val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Post Link", "https://example.com/post/123")
-        clipboard.setPrimaryClip(clip)
-        Toast.makeText(requireContext(), "Link copied to clipboard", Toast.LENGTH_SHORT).show()
-    }
+    private fun updateFollowButtonUI() {
+        if (isFollowing) {
+            followButton.visibility = View.GONE
+        } else {
+            followButton.visibility = View.VISIBLE
 
-    private fun handleSavePost() {
-        // Save/unsave post
-        Toast.makeText(requireContext(), "Post saved", Toast.LENGTH_SHORT).show()
+            post?.let { currentPost ->
+                val feedOwnerId = when {
+                    currentPost.originalPost.isNotEmpty() ->
+                        currentPost.originalPost[0].author.owner
+                    else ->
+                        currentPost.author?.account?._id ?: ""
+                }
+
+                //Just read from cache - FollowingFragment already loaded this
+                val theyFollowMe = FeedAdapter.isUserInMyFollowersList(feedOwnerId)
+                followButton.text = if (theyFollowMe) "Follow Back" else "Follow"
+
+                Log.d(Fragment_Original_Post_Without_Repost_Inside.Companion.TAG, "Updated button UI - Text: '${followButton.text}' for user $feedOwnerId")
+            }
+
+            followButton.setBackgroundResource(R.drawable.follow_button_background)
+        }
     }
 
     private fun handleNotInterested() {
@@ -1679,7 +1961,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
     // Fixed setupLikeButton - Replace in your FeedAdapter.kt
 
-    private fun setupLikeButton(data: Post) {
+    private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
         updateLikeButtonUI(data.isLiked)
         updateMetricDisplay(likesCount, data.likes, "like")
 
@@ -1768,7 +2050,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
+    private fun revertLikeState(data: com.uyscuti.social.network.api.response.posts.Post, previousStatus: Boolean, previousCount: Int) {
         data.isLiked = previousStatus
         data.likes = previousCount
         updateLikeButtonUI(data.isLiked)
@@ -1776,7 +2058,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
     }
 
-    private fun setupBookmarkButton(data: Post) {
+    private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
         Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
 
         updateBookmarkButtonUI(data.isBookmarked)
@@ -1885,7 +2167,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
     // Helper function to revert bookmark state on error
     private fun revertBookmarkState(
-        data: Post,
+        data: com.uyscuti.social.network.api.response.posts.Post,
         previousBookmarkStatus: Boolean,
         previousBookmarkCount: Int
     ) {
@@ -6941,10 +7223,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
                     }
                 }
                 val fileIds = currentPost.files.map { it ?: "unknown_id" }
-                navigateToTappedFilesFragment(
-                    requireContext(), 0, files, fileIds as List<String>,
-                    post = TODO()
-                )
+                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds as List<String>)
             }
         }
     }
