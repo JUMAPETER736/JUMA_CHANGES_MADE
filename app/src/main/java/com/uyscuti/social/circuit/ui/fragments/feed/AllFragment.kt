@@ -867,24 +867,33 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         Log.d(TAG, "RepostCount: ${event.post.repostCount}")
 
 
-        // Step 1: Sync data across all feeds in ViewModel
+        //  Sync data in ViewModel
         getFeedViewModel.toggleRepostInAllFeeds(
             postId = event.post._id,
             isReposted = event.post.isReposted,
             repostCount = event.post.repostCount
         )
 
-        // Step 2: Update UI in current fragment's adapter
+        // Find the post in adapter
         val feedPosition = allFeedAdapter.getPositionById(event.post._id)
+
         if (feedPosition != -1) {
-            // Get updated post from ViewModel
+            // Get the updated post from ViewModel
             val updatedPost = getFeedViewModel.getPostById(event.post._id)
+
             if (updatedPost != null) {
+                //  Update the item AND notify the adapter
                 allFeedAdapter.updateItem(feedPosition, updatedPost)
-                Log.d(TAG, "✓ Updated UI in AllFeed at position: $feedPosition")
+                allFeedAdapter.notifyItemChanged(feedPosition)  // ← ADD THIS LINE!
+
+                Log.d(TAG, "Updated UI in AllFeed at position: $feedPosition")
+                Log.d(TAG, "  isReposted: ${updatedPost.isReposted}")
+                Log.d(TAG, "  repostCount: ${updatedPost.repostCount}")
+            } else {
+                Log.e(TAG, "Updated post is null from ViewModel")
             }
         } else {
-            Log.d(TAG, "✗ Post not found in AllFeed adapter")
+            Log.w(TAG, "Post not found in adapter (position: $feedPosition)")
         }
 
     }
