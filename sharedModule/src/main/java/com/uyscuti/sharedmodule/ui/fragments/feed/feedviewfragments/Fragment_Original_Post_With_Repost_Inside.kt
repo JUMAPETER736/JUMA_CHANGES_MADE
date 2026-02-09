@@ -104,6 +104,7 @@ import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.comment.allcomments.Comment
 import com.uyscuti.social.network.api.response.post.Thumbnail
 import com.uyscuti.social.network.api.response.posts.Author
+import com.uyscuti.social.network.api.response.posts.FileSize
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -525,7 +526,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
     }
 
     private fun createPostFromOriginalPost(originalPost: OriginalPost): Post {
-        // AuthorX and Author have the same structure, so we can create Author from AuthorX fields
+        // Convert AuthorX to Author - they have the same structure
         val author = Author(
             __v = originalPost.__v,
             _id = originalPost.author._id,
@@ -543,6 +544,24 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             updatedAt = originalPost.author.updatedAt
         )
 
+        // Convert FileSizeX to FileSize
+        val fileSizes = originalPost.fileSizes.map { fileSizeX ->
+            FileSize(
+                fileId = fileSizeX.fileId,
+                fileSize = fileSizeX.fileSize.toLongOrNull() ?: 0L
+            )
+        }
+
+        // Convert ThumbnailX if needed (they might have the same structure)
+        val thumbnails = originalPost.thumbnail.map { thumbX ->
+            ThumbnailX(
+                _id = thumbX._id,
+                fileId = thumbX.fileId,
+                thumbnailLocalPath = thumbX.thumbnailLocalPath,
+                thumbnailUrl = thumbX.thumbnailUrl
+            )
+        }
+
         return Post(
             __v = originalPost.__v,
             _id = originalPost._id,
@@ -556,7 +575,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             feedShortsBusinessId = originalPost.feedShortsBusinessId,
             fileIds = originalPost.fileIds,
             fileNames = originalPost.fileNames,
-            fileSizes = originalPost.fileSizes,
+            fileSizes = fileSizes, // Use converted list
             fileTypes = originalPost.fileTypes,
             files = ArrayList(originalPost.files),
             isBookmarked = originalPost.bookmarks.isNotEmpty(),
@@ -572,12 +591,46 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
             repostedUser = null,
             repostedUsers = emptyList(),
             tags = originalPost.tags,
-            thumbnail = originalPost.thumbnail,
+            thumbnail = thumbnails, // Use converted list
             updatedAt = originalPost.updatedAt,
+
+            // Share related fields
             shareCount = originalPost.shareCount,
+            isShared = false,
+            sharedByUserIds = emptyList(),
+            sharedBy = null,
+            sharedAt = null,
+            shareId = null,
+
+            // Repost related fields
             repostCount = originalPost.repostCount,
+            repostedByUserIds = emptyList(),
+            repostedBy = null,
+            repostedAt = null,
+            repostId = null,
+
+            // Business/Shop related fields
             isBusinessPost = originalPost.isBusinessPost,
-            category = originalPost.category
+            category = originalPost.category,
+            businessDetails = null,
+
+            // Bookmark/Favorites related fields
+            isFavorited = originalPost.isFavorited,
+            favorites = originalPost.favorites,
+            bookmarkId = originalPost.bookmarkId,
+            bookmarkedBy = originalPost.bookmarkedBy,
+            bookmarkedAt = originalPost.bookmarkedAt,
+            bookmarkedByUserIds = emptyList(),
+
+            // Likes related fields
+            likedByUserIds = emptyList(),
+
+            // Privacy / relationship flags
+            isInCloseFriends = null,
+            isPostsMuted = null,
+            isStoriesMuted = null,
+            isRestricted = null,
+            isFavorite = null
         )
     }
 

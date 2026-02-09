@@ -1,3 +1,8 @@
 package com.uyscuti.social.network.api.response.posts
 
-class FileSize
+import java.io.Serializable
+
+data class FileSize(
+    val fileId: String,
+    val fileSize: Long
+)
