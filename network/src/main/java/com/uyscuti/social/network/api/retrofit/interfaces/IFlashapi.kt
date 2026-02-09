@@ -663,6 +663,18 @@ interface IFlashapi {
     @POST("feed/bookmarks/{postId}")
     suspend fun toggleBookmark(@Path("postId") postId: String, @Body request: BookmarkRequest): Response<BookmarkResponse>
 
+    
+    // ==================== FEED POSTS - REPOST ====================
+
+    @GET("feed/reposts/")
+    suspend fun getRepostedFeed(@Query("page") page: String): Response<FeedRepostResponse>
+
+    @POST("feed/repost/{postId}")
+    suspend fun repostUnRepostFeed(@Path("postId") postId: String): Response<RepostUnRepostFeedPostResponse>
+
+    @POST("feed/repost/{postId}")
+    suspend fun toggleFeedRepost(@Path("postId") postId: String, @Body request: RepostRequest): Response<RepostUnRepostFeedPostResponse>
+
 
     // ==================== FEED POSTS - SHARE ====================
 
@@ -674,18 +686,6 @@ interface IFlashapi {
 
     @POST("feed/share/{postId}")
     suspend fun toggleFeedShare(@Path("postId") postId: String, @Body request: ShareRequest): Response<ShareUnShareFeedPostResponse>
-
-
-    // ==================== FEED POSTS - REPOST ====================
-
-    @GET("feed/reposts/")
-    suspend fun getRepostedFeed(@Query("page") page: String): Response<FeedRepostResponse>
-
-    @POST("feed/repost/{postId}")
-    suspend fun repostUnRepostFeed(@Path("postId") postId: String): Response<RepostUnRepostFeedPostResponse>
-
-    @POST("feed/repost/{postId}")
-    suspend fun toggleFeedRepost(@Path("postId") postId: String, @Body request: RepostRequest): Response<RepostUnRepostFeedPostResponse>
 
 
 

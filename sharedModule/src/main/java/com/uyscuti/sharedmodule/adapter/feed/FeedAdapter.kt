@@ -423,42 +423,6 @@ class FeedAdapter(
     var onItemVisible: ((Int) -> Unit)? = null
 
 
-    // Add this to FeedAdapter.kt (inside the class, not inside a ViewHolder)
-    fun updateRepostStatus(postId: String, isReposted: Boolean, repostCount: Int) {
-
-        Log.d("FeedAdapter", "updateRepostStatus called")
-        Log.d("FeedAdapter", "PostId: $postId")
-        Log.d("FeedAdapter", "IsReposted: $isReposted")
-        Log.d("FeedAdapter", "RepostCount: $repostCount")
-
-        // Find the position of the post
-        val position = currentList.indexOfFirst { it._id == postId }
-
-        if (position != -1) {
-            val post = currentList[position]
-
-            Log.d("FeedAdapter", "Found post at position: $position")
-            Log.d("FeedAdapter", "BEFORE - isReposted: ${post.isReposted}, count: ${post.repostCount}")
-
-            // Update the post object
-            post.isReposted = isReposted
-            post.repostCount = repostCount
-
-            Log.d("FeedAdapter", "AFTER - isReposted: ${post.isReposted}, count: ${post.repostCount}")
-
-            // Notify the adapter to re-render this specific item
-            notifyItemChanged(position)
-
-            Log.d("FeedAdapter", "✓ notifyItemChanged($position) called")
-        } else {
-            Log.e("FeedAdapter", "✗ Post not found in adapter (position: $position)")
-            Log.d("FeedAdapter", "Current list has ${currentList.size} items")
-        }
-
-
-    }
-
-
     inner class FeedTextOnyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
 
