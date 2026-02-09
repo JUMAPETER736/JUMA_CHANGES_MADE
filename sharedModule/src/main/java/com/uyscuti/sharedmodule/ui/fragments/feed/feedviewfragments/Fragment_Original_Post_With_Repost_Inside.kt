@@ -1285,27 +1285,6 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         }
     }
 
-    private fun handleOriginalFileClick() {
-        post?.originalPost?.firstOrNull()?.let { originalPost ->
-            if (originalPost.files.isNotEmpty()) {
-                val files = originalPost.files.map { file ->
-                    File(
-                        _id = file._id,
-                        fileId = file.fileId,
-                        localPath = file.localPath,
-                        url = file.url,
-                        type = file.type,
-                        mimeType = file.mimeType,
-                        fileType = file.fileType
-                    )
-                }
-
-                val fileIds = originalPost.files.map { it.fileId ?: "unknown_id" }
-                navigateToTappedFilesFragment(requireContext(), 0, files, fileIds, post!!)
-            }
-        }
-    }
-
     @SuppressLint("InflateParams", "MissingInflatedId", "ServiceCast")
     fun moreOptionsClick(
         position: Int,
@@ -2242,7 +2221,7 @@ class Fragment_Original_Post_With_Repost_Inside() : Fragment() {
         recyclerView.isNestedScrollingEnabled = false
     }
 
-    
+
     private fun handleOriginalMediaClick() {
         post?.let { postData ->
             if (postData.files.isNotEmpty()) {

@@ -1473,7 +1473,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
         }
     }
 
-
     private fun navigateToFragment(fragment: Fragment, tag: String) {
         try {
             val activity = activity
@@ -1717,7 +1716,6 @@ class Fragment_Original_Post_Without_Repost_Inside : Fragment(), OnMultipleFiles
             Log.e(TAG, "Error populating original author info: ${e.message}", e)
         }
     }
-
 
     private fun setupInitialMetrics(post: Post) {
         Log.d(TAG, "setupInitialMetrics: Setting up metrics for post ${post._id}")
