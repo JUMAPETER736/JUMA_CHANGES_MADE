@@ -2585,20 +2585,22 @@ class FeedAdapter(
             }
         }
 
-        private fun updateRepostButtonUI(isReposted: Boolean) {
-            Log.d(TAG, "Updating repost button UI: isReposted=$isReposted")
+        private fun updateRepostButtonUI(isRepostedByCurrentUser: Boolean) {
+            Log.d(TAG, "Updating repost button UI: isRepostedByMe=$isRepostedByCurrentUser")
             try {
-                if (isReposted) {
+                if (isRepostedByCurrentUser) {
+                    // Current user HAS reposted this
                     repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostPost.drawable?.setColorFilter(
+                    repostPost.setColorFilter(
                         ContextCompat.getColor(itemView.context, R.color.bluejeans),
                         PorterDuff.Mode.SRC_IN
                     )
                     repostPost.scaleX = 1.1f
                     repostPost.scaleY = 1.1f
                 } else {
+                    // Current user has NOT reposted this
                     repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostPost.drawable?.clearColorFilter()
+                    repostPost.clearColorFilter()
                     repostPost.scaleX = 1.0f
                     repostPost.scaleY = 1.0f
                 }
