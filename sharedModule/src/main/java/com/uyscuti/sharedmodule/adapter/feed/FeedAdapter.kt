@@ -2559,21 +2559,24 @@ class FeedAdapter(
             }
         }
 
+        private fun setupEngagementButtons(data: Post) {
+            Log.d(TAG, "Setting up engagement with counts - Likes: $totalMixedLikesCounts, Comments: $totalMixedComments, Bookmarks: $totalMixedBookMarkCounts, Reposts: $totalMixedRePostCounts, Shares: $totalMixedShareCounts")
+
+            setupCommentButton(data)
+            setupLikeButton(data)
+            setupBookmarkButton(data)
+            setupRepostButton(data)
+            setupShareButton(data)
+        }
+
         private fun setupRepostButton(data: Post) {
             updateRepostButtonUI(data.isReposted)
-
-            // Use totalMixedRePostCounts which is now properly initialized
             updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
 
             repostPost.setOnClickListener { view ->
                 if (!repostPost.isEnabled) return@setOnClickListener
-
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-
-                YoYo.with(Techniques.Pulse)
-                    .duration(300)
-                    .playOn(repostPost)
-
+                YoYo.with(Techniques.Pulse).duration(300).playOn(repostPost)
                 feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
             }
         }
