@@ -1856,27 +1856,43 @@ class FeedAdapter(
             data.isBusinessPost?.let {
                 if (!it) {
 
+                    Log.d(TAG, "render: feed data $data")
+
+                    // Store current post reference
                     currentPost = data
+
                     val feedOwnerId = data.author?.account?._id ?: "Unknown"
+
+                    // Check if this post has an original post (meaning it's a repost)
                     val originalPost = data.originalPost?.firstOrNull()
 
+
                     isFollowingUser = followingUserIds.contains(feedOwnerId)
+                    Log.d(TAG, "render: User ${data.author?.account?.username} following status: $isFollowingUser")
+
+
+
 
                     if (originalPost != null) {
-                        // This is a repost - use original post's metrics
+                        // This is a repost - use original post's engagement metrics
                         totalMixedComments = originalPost.commentCount
-                        totalMixedLikesCounts = originalPost.likeCount
+                        totalMixedLikesCounts = originalPost.likeCount  // Note: likeCount in OriginalPost
                         totalMixedBookMarkCounts = originalPost.bookmarkCount
                         totalMixedShareCounts = 0
                         totalMixedRePostCounts = originalPost.repostCount
+
+
+
+                        Log.d(TAG, "Using original post metrics - Likes: ${originalPost.likeCount}, Comments: ${originalPost.commentCount}")
                     } else {
-                        // This is a normal post - use its own metrics
+                        // This is a regular post - use its own metrics
                         totalMixedComments = data.comments
                         totalMixedLikesCounts = data.likes
                         totalMixedBookMarkCounts = data.bookmarkCount
                         totalMixedShareCounts = 0
-                        //  JUST USE THE REPOST COUNT FROM API
-                        totalMixedRePostCounts = data.repostCount
+                        totalMixedRePostCounts = data.safeRepostCount
+
+                        Log.d(TAG, "Using direct post metrics - Likes: ${data.likes}, Comments: ${data.comments}")
                     }
 
                     setupUserInfo(data, feedOwnerId)
@@ -1891,6 +1907,9 @@ class FeedAdapter(
                     ensurePostClickability(data)
                 }
             }
+
+
+
         }
 
         private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -2551,9 +2570,17 @@ class FeedAdapter(
         }
 
         private fun setupRepostButton(data: Post) {
+            updateRepostButtonUI(data.isReposted)
 
-            // Just display the count, no special UI state
-            updateMetricDisplay(repostCount, data.repostCount, "repost")
+            val originalPost = data.originalPost?.firstOrNull()
+
+            val displayRepostCount = if (originalPost != null) {
+                originalPost.repostCount
+            } else {
+                data.repostCount
+            }
+
+            updateMetricDisplay(repostCount, displayRepostCount, "repost")
 
             repostPost.setOnClickListener { view ->
                 if (!repostPost.isEnabled) return@setOnClickListener
@@ -2568,13 +2595,27 @@ class FeedAdapter(
             }
         }
 
-        //Keep button appearance neutral (no highlighting)
+
         private fun updateRepostButtonUI(isReposted: Boolean) {
-            // Just keep default appearance for everyone
-            repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-            repostPost.clearColorFilter()
-            repostPost.scaleX = 1.0f
-            repostPost.scaleY = 1.0f
+            Log.d(TAG, "Updating repost button UI: isReposted=$isReposted")
+            try {
+                if (isReposted) {
+                    repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                    repostPost.drawable?.setColorFilter(
+                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
+                        PorterDuff.Mode.SRC_IN
+                    )
+                    repostPost.scaleX = 1.1f
+                    repostPost.scaleY = 1.1f
+                } else {
+                    repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+                    repostPost.drawable?.clearColorFilter()
+                    repostPost.scaleX = 1.0f
+                    repostPost.scaleY = 1.0f
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating repost button UI", e)
+            }
         }
 
         private fun setupShareButton(data: Post) {
@@ -4890,6 +4931,7 @@ class FeedAdapter(
                 Log.e(TAG, "Error updating repost button UI", e)
             }
         }
+
 
 
         // Share helper functions with multiple package name variants
