@@ -491,24 +491,23 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                     !shouldFilter
                 }
 
-                //  Sort by PRIORITY first, then by DATE within each priority group
-                val sortedPosts = filteredPosts.sortedWith(
-                    compareByDescending<Post> { post ->
-                        // First sort key: Priority (close friends > favorites > regular)
-                        val authorId = post.author?.account?._id ?: return@compareByDescending 0
-                        val isCloseFriend = relationshipsViewModel.isCloseFriend(authorId)
-                        val isFavorite = relationshipsViewModel.isFavorite(authorId)
+                // ✅ PURE CHRONOLOGICAL SORT - Newest activity first
+                val sortedPosts = filteredPosts.sortedByDescending { post ->
+                    parsePostDate(post.createdAt)
+                }
 
-                        when {
-                            isCloseFriend -> 3
-                            isFavorite -> 2
-                            else -> 1
-                        }
-                    }.thenByDescending { post ->
-                        // Second sort key: Date (newest first within each priority group)
-                        parsePostDate(post.createdAt)
+                // ✅ Add debug logging to verify sort order
+                Log.d(TAG, "=== FEED SORT ORDER ===")
+                sortedPosts.take(5).forEachIndexed { index, post ->
+                    Log.d(TAG, "Position $index:")
+                    Log.d(TAG, "  PostId: ${post._id}")
+                    Log.d(TAG, "  CreatedAt: ${post.createdAt}")
+                    Log.d(TAG, "  IsRepost: ${post.isReposted}")
+                    if (post.isReposted && post.originalPost.isNotEmpty()) {
+                        Log.d(TAG, "  Original Post Date: ${post.originalPost[0].createdAt}")
                     }
-                )
+                    Log.d(TAG, "  ---")
+                }
 
                 Log.d(TAG, "Original posts: ${posts.size}, After filtering: ${filteredPosts.size}, After sorting: ${sortedPosts.size}")
 
@@ -524,18 +523,21 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    // Add this helper function to parse dates
+    // ✅ Add this helper function (put it outside getAllFeed, as a class method)
     private fun parsePostDate(dateString: String?): Long {
         return try {
             val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
             format.timeZone = TimeZone.getTimeZone("UTC")
-            format.parse(dateString ?: "")?.time ?: 0L
+            val parsedDate = format.parse(dateString ?: "")?.time ?: 0L
+
+            Log.d(TAG, "Parsed date: $dateString → $parsedDate")
+            parsedDate
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing date: $dateString", e)
             0L
         }
     }
-
+ 
     private suspend fun loadBlockedUsers() {
 
         try {
