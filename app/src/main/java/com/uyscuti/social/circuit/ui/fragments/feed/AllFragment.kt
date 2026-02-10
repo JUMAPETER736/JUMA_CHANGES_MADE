@@ -17,7 +17,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
 import android.widget.FrameLayout
-import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -40,19 +39,7 @@ import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
-import com.uyscuti.social.circuit.adapter.UserListAdapter
-import com.uyscuti.social.circuit.adapter.feed.ShareFeedPostAdapter
-import com.uyscuti.social.circuit.ui.feedactivities.FeedVideoViewFragment
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedAudioViewFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostDocFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostImageFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostTextFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostVideoViewFragment
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedImageViewFragment
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedMultipleImageViewFragment
-import com.uyscut.flashdesign.ui.fragments.feed.feedviewfragments.FeedTextViewFragment
 import com.uyscuti.sharedmodule.ReportNotificationActivity2
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.adapter.feed.OnFeedClickListener
@@ -79,9 +66,6 @@ import com.uyscuti.sharedmodule.model.ShowAppBar
 import com.uyscuti.sharedmodule.model.ShowBottomNav
 import com.uyscuti.sharedmodule.model.feed.SetAllFragmentScrollPosition
 import com.uyscuti.sharedmodule.presentation.DialogViewModel
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FeedDocumentViewFragment
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.FeedMixedFilesViewFragment
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.feedRepost.Tapped_Files_In_The_Container_View_Fragment
 import com.uyscuti.sharedmodule.utils.removeDuplicateFollowers
@@ -94,12 +78,8 @@ import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.circuit.R
 import com.uyscuti.social.circuit.feed.FeedUploadRepository
 import com.uyscuti.social.circuit.log_in_and_register.LoginActivity
-import com.uyscuti.social.circuit.ui.fragments.chat.FeedFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.FeedRepostAudioViewFragment
-import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragmentsimport.FeedRepostMultipleImageFragment
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
-import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -598,7 +578,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     }
 
-
     override fun onResume() {
         super.onResume()
         getFeedViewModel.isResuming = true
@@ -614,7 +593,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
 
     }
 
-
     override fun onDestroyView() {
         super.onDestroyView()
         Log.d(TAG, "onDestroyView: called")
@@ -625,17 +603,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         currentAdapterPosition = allFeedAdapter.getCurrentItemDisplayPosition()
         Log.d(TAG, "onCreateView: data added last view position $currentAdapterPosition")
         Log.d(TAG, "onPause: called")
-
-    }
-
-    // Call this method when you need to get the position
-    private fun getCurrentFeedPosition(): Int? {
-        val layoutManager = feedListView.layoutManager as LinearLayoutManager
-        val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
-        val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
-        // You can determine which item is considered as "current" based on your criteria
-
-        return firstVisibleItemPosition.takeIf { it <= lastVisibleItemPosition }
 
     }
 
@@ -1647,42 +1614,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             "We'll show you less content like this",
             Toast.LENGTH_SHORT
         ).show()
-    }
-
-    @SuppressLint("InflateParams")
-    private fun showDeleteConfirmationDialog(feedId: String, position: Int) {
-        val inflater = LayoutInflater.from(requireContext())
-        val customTitleView: View = inflater.inflate(
-            R.layout.delete_title_custom_layout, null)
-        val builder = AlertDialog.Builder(requireContext())
-
-        builder.setCustomTitle(customTitleView)
-        builder.setMessage("Are you sure you want to delete this feed?")
-
-        // Positive Button
-        builder.setPositiveButton("Delete") { dialog, which ->
-
-
-            handleDeleteAction(feedId = feedId, position) { isSuccess, message ->
-                if (isSuccess) {
-                    Log.d(TAG, "handleDeleteAction $message")
-                    dialog.dismiss()
-                } else {
-                    dialog.dismiss()
-                    Log.e(TAG, "handleDeleteAction $message")
-                }
-            }
-            dialog.dismiss()
-        }
-
-        // Negative Button
-        builder.setNegativeButton("Cancel") { dialog, which ->
-            dialog.dismiss() // Dismiss the dialog
-        }
-
-        // Create and show the AlertDialog
-        val alertDialog = builder.create()
-        alertDialog.show()
     }
 
     private fun handleDeleteAction(
