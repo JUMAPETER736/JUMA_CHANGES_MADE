@@ -647,56 +647,47 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     ) {
         Log.d("likeUnLikeFeed", "likeUnLikeFeed: $data")
         try {
-            val updatedComment = if (data.isLiked) {
-                data.copy(
-                    likes = data.likes + 1,
-                    repostedByUserId = data.repostedByUserId ?: "",
-                    content = data.content ?: "",
-                    contentType = data.contentType ?: "",
-                    isLiked = true,
 
-                    )
-            } else {
-                data.copy(
-                    likes = data.likes - 1,
-                    repostedByUserId = data.repostedByUserId ?: "",
-                    content = data.content ?: "",
-                    contentType = data.contentType ?: "",
-                    isLiked = false,
-                )
-            }
+
+            // Trigger backend API call
             lifecycleScope.launch {
                 feedUploadViewModel.likeUnLikeFeed(data._id)
             }
+
             Log.d("likeUnLikeFeed", "likeUnLikeFeed: likes count is ${data.likes}")
+
+            // Update all feed data sources
             val updatedItems = getFeedViewModel.getAllFeedData()
-
             for (updatedItem in updatedItems) {
-
                 if (updatedItem._id == data._id) {
-                    if (data.isLiked) {
-                        updatedItem.likes += 1
-                    } else {
-                        updatedItem.likes -= 1
-                    }
+                    updatedItem.likes = data.likes
+                    updatedItem.isLiked = data.isLiked
                 }
             }
 
+            // Update favorite feed if exists
             val isFavoriteFeedDataEmpty = getFeedViewModel.getAllFavoriteFeedData().isEmpty()
             if (!isFavoriteFeedDataEmpty) {
                 val favoriteFeedData = getFeedViewModel.getAllFavoriteFeedData()
                 val feedToUpdate = favoriteFeedData.find { feed -> feed._id == data._id }
                 if (feedToUpdate != null) {
-                    EventBus.getDefault().post(FeedLikeClick(position, updatedComment))
-                    Log.d("likeUnLikeFeed", "likeUnLikeFeed: remove feed from favorite fragment")
+                    feedToUpdate.likes = data.likes
+                    feedToUpdate.isLiked = data.isLiked
+                    EventBus.getDefault().post(FeedLikeClick(position, data))
+
+                    Log.d("likeUnLikeFeed", "likeUnLikeFeed: updated feed in favorite fragment")
+
                 } else {
-                    Log.d("likeUnLikeFeed", "likeUnLikeFeed: add feed to favorite fragment")
+                    Log.d("likeUnLikeFeed", "likeUnLikeFeed: feed not in favorite fragment")
                 }
             } else {
-
-                Log.i("likeUnLikeFeed", "likeUnLikeFeed: my feed data is empty")
+                Log.i("likeUnLikeFeed", "likeUnLikeFeed: favorite feed data is empty")
             }
-            allFeedAdapter.updateItem(position, updatedComment)
+
+            // Update adapter
+            allFeedAdapter.updateItem(position, data)
+
+            // Update my feed if exists
             val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
             if (!isMyFeedEmpty) {
                 val myFeedData = getFeedViewModel.getMyFeedData()
@@ -704,15 +695,13 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 if (feedToUpdate != null) {
                     feedToUpdate.isLiked = data.isLiked
                     feedToUpdate.likes = data.likes
-                    val myFeedDataPosition =
-                        getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
+                    val myFeedDataPosition = getFeedViewModel.getMyFeedPositionById(feedToUpdate._id)
                     getFeedViewModel.updateMyFeedData(myFeedDataPosition, feedToUpdate)
                 } else {
                     Log.d(TAG, "likeUnLikeFeed: feed to update is not available in the list")
                 }
             } else {
                 Log.i(TAG, "likeUnLikeFeed: my feed data is empty")
-
             }
         } catch (e: Exception) {
             Log.e("likeUnLikeFeed", "likeUnLikeFeed: ${e.message}")

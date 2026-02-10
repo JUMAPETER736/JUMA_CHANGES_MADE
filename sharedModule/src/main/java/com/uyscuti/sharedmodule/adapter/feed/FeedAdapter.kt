@@ -2288,7 +2288,7 @@ class FeedAdapter(
             setupMoreOptionsButton(data)
         }
 
-        // Fixed setupLikeButton - Replace in your FeedAdapter.kt
+        // Fixed setupLikeButton - Replace in your Feed Post View Holder FeedAdapter.kt
 
         private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             updateLikeButtonUI(data.isLiked)
@@ -4336,7 +4336,7 @@ class FeedAdapter(
             Log.d(tag, "- quotedPostCard: clickable=${quotedPostCard.isClickable}, focusable=${quotedPostCard.isFocusable}")
         }
 
-        // Fixed setupLikeButton - Replace in your FeedAdapter.kt
+        // Fixed setupLikeButton - Replace in your Feed Repost View Holder FeedAdapter.kt
 
         private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
             updateLikeButtonUI(data.isLiked)
@@ -4353,6 +4353,9 @@ class FeedAdapter(
                 // Optimistic UI update
                 data.isLiked = !previousLikeStatus
                 data.likes = if (data.isLiked) previousLikeCount + 1 else maxOf(0, previousLikeCount - 1)
+
+                //  ALSO UPDATE THIS
+                totalMixedLikesCounts = data.likes
 
                 updateLikeButtonUI(data.isLiked)
                 updateMetricDisplay(likesCount, data.likes, "like")
@@ -4375,25 +4378,33 @@ class FeedAdapter(
                         if (response.isSuccessful) {
                             response.body()?.let { likeResponse ->
                                 if (likeResponse.success) {
-                                    // Sync BOTH isLiked AND likes count from server
+                                    // Sync with server data
                                     data.isLiked = likeResponse.data.isLiked
                                     data.likes = likeResponse.data.likeCount
+
+                                    // ALSO UPDATE THIS
+                                    totalMixedLikesCounts = data.likes
 
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
 
-                                    // Safely access likedByUserIds (it might be null)
-                                    val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
-                                    Log.d(TAG, "Like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
+                                    val likedByCount = likeResponse.data.likedByUserIds.size
+                                    Log.d(TAG, "Repost like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
 
-                                    // Notify adapter
-                                    feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
+                                    try {
+                                        feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error notifying adapter", e)
+                                    }
                                 } else {
                                     Log.e(TAG, "Like failed - success=false")
                                     revertLikeState(data, previousLikeStatus, previousLikeCount)
                                 }
+                            } ?: run {
+                                Log.e(TAG, "Like response body is null")
+                                revertLikeState(data, previousLikeStatus, previousLikeCount)
                             }
-                        }else {
+                        } else {
                             Log.e(TAG, "Like API error: ${response.code()} - ${response.message()}")
                             revertLikeState(data, previousLikeStatus, previousLikeCount)
 
@@ -4423,6 +4434,10 @@ class FeedAdapter(
         private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
             data.isLiked = previousStatus
             data.likes = previousCount
+
+            //ALSO UPDATE THIS
+            totalMixedLikesCounts = previousCount
+
             updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, data.likes, "like")
             Log.d(TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
