@@ -83,7 +83,6 @@ import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
-import com.uyscuti.social.network.api.response.posts.ThumbnailX
 import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.FileType
 import java.text.SimpleDateFormat
@@ -229,11 +228,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         val post: Post
     )
 
-    data class PostUpdatedEvent(
-        val postId: String,
-        val updatedPost: Post? = null
-    )
-
     data class CommentsLoadedEvent(
         val postId: String,
         val commentCount: Int,
@@ -259,8 +253,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         Log.d(TAG, "processLoadedComments: Processing ${comments.size} comments")
 
     }
-
-
 
 
     override fun onStart() {
@@ -922,7 +914,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         // Show the dialog
         dialog.show()
 
-        // ==================== SHARE ACTION ====================
+        //  SHARE ACTION
         shareAction.setOnClickListener {
             val shareIntent = Intent(Intent.ACTION_SEND)
             shareIntent.type = "text/plain"
@@ -931,7 +923,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             dialog.dismiss()
         }
 
-        // ==================== DOWNLOAD ACTION ====================
+        //  DOWNLOAD ACTION
         downloadFiles.setOnClickListener {
             Log.d("DownloadButton", "Data: $data")
             if (data.files.isNotEmpty()) {
@@ -947,7 +939,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             downloadFiles.visibility = View.GONE
         }
 
-        // ==================== MUTE ACTION ====================
+        //  MUTE ACTION
         muteOptionLayout.setOnClickListener {
             Log.d("MuteButton", "Mute button clicked for user: $authorId")
             dialog.dismiss()
@@ -959,7 +951,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             }
         }
 
-        // ==================== BLOCK USER ACTION ====================
+        //  BLOCK USER ACTION
         blockUserLayout.setOnClickListener {
             Log.d("BlockButton", "Block button clicked for user: $authorId")
             dialog.dismiss()
@@ -980,7 +972,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             }
         }
 
-        // ==================== REPOST ACTION ====================
+        //  REPOST ACTION
         quoteFeedLayout.setOnClickListener {
             val fragment = Fragment_Edit_Post_To_Repost(data)
             val transaction = requireActivity().supportFragmentManager.beginTransaction()
@@ -990,7 +982,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             dialog.dismiss()
         }
 
-        // ==================== COPY LINK ACTION ====================
+        //  COPY LINK ACTION
         copyLink.setOnClickListener {
             val postId = data._id
             val linkToCopy = "https://circuitSocial.app/post/$postId"
@@ -1001,20 +993,20 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             dialog.dismiss()
         }
 
-        // ==================== NOT INTERESTED ACTION ====================
+        //  NOT INTERESTED ACTION
         notInterested.setOnClickListener {
             handleNotInterested(data)
             dialog.dismiss()
         }
 
-        // ==================== HIDE POST ACTION ====================
+        //  HIDE POST ACTION
         hidePostLayout.setOnClickListener {
             Log.d(TAG, "hidePostLayout: hide post clicked")
             hideSinglePost(position, data)
             dialog.dismiss()
         }
 
-        // ==================== REPORT USER ACTION ====================
+        //  REPORT USER ACTION
         reportUser.setOnClickListener {
             Log.d("reportUser", "Report button clicked")
             val intent = Intent(requireActivity(), ReportNotificationActivity2::class.java)
@@ -1026,7 +1018,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         followUnfollowLayout.visibility = View.GONE
     }
 
-    // ==================== MUTE TOGGLE ====================
+    //  MUTE TOGGLE
     private fun handleMuteToggle(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
@@ -1073,7 +1065,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    // ==================== BLOCK USER CONFIRMATION ====================
+    //  BLOCK USER CONFIRMATION
     private fun showBlockConfirmationDialog(userId: String, username: String, position: Int) {
         AlertDialog.Builder(requireContext())
             .setTitle("Block $username?")
@@ -1088,7 +1080,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             .show()
     }
 
-    // ==================== BLOCK USER ====================
+    //  BLOCK USER
     private fun handleBlockUser(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
@@ -1139,7 +1131,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     }
 
 
-    // ==================== UNBLOCK USER ====================
+    //  UNBLOCK USER
     private fun handleUnblockUser(userId: String, username: String) {
         lifecycleScope.launch {
             try {
@@ -1880,7 +1872,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         return post.originalPost?.firstOrNull()?.commentCount ?: post.originalPost?.firstOrNull()?.commentCount ?: 0
     }
 
-
     private fun fetchAndUpdateCommentCount(postId: String) {
         Log.d(TAG, "fetchAndUpdateCommentCount: Fetching current comment count for post: $postId")
 
@@ -1981,8 +1972,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             })
     }
 
-
-
     private fun navigateToFragment_Original_Post_Without_Repost_Inside(data: Post) {
         try {
 
@@ -2019,8 +2008,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             Log.e(TAG, "Error navigating to original post fragment: ${e.message}", e)
         }
     }
-
-
+    
     private fun handleFeedCommentClicked(position: Int, post: Post) {
         Log.d(TAG, "handleFeedCommentClicked: Starting comment flow for post ${post?._id}")
 
@@ -2584,36 +2572,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             })
     }
 
-    private fun loadCommentsFromAPI(postId: String, callback: (List<Comment>) -> Unit) {
-        Log.d(TAG, "loadCommentsFromAPI: Loading comments for post: $postId")
-        RetrofitClient.commentService.getCommentsForPost(postId)
-            .enqueue(object : Callback<CommentsResponse> {
-                override fun onResponse(call: Call<CommentsResponse>, response: Response<CommentsResponse>) {
-                    if (response.isSuccessful) {
-                        response.body()?.let { commentsResponse ->
-                            if (commentsResponse.success) {
-                                Log.d(TAG, "loadCommentsFromAPI: Successfully loaded ${commentsResponse.comments.size} comments")
-                                processLoadedComments(commentsResponse.comments)  // Use the method
-                                callback(commentsResponse.comments)
-                            } else {
-                                Log.e(TAG, "loadCommentsFromAPI: API returned error: ${commentsResponse.message}")
-                                callback(emptyList())
-                            }
-                        } ?: run {
-                            Log.e(TAG, "loadCommentsFromAPI: Response body is null")
-                            callback(emptyList())
-                        }
-                    } else {
-                        Log.e(TAG, "loadCommentsFromAPI: API call failed with code: ${response.code()}")
-                        callback(emptyList())
-                    }
-                }
-                override fun onFailure(call: Call<CommentsResponse>, t: Throwable) {
-                    Log.e(TAG, "loadCommentsFromAPI: Network error", t)
-                    callback(emptyList())
-                }
-            })
-    }
 
     private fun updateLikeButtonUI(isLiked: Boolean) {
         Log.d(tag, "Updating like button UI: isLiked=$isLiked")
@@ -2655,48 +2613,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-
-    private fun editPost(post: Post) {
-        // Handle post editing
-        EventBus.getDefault().post(PostUpdatedEvent(post._id, post))
-    }
-
-    private fun deletePost(post: Post) {
-        // Handle post deletion
-    }
-
-    private fun reportPost(post: Post) {
-        // Handle post reporting
-    }
-
-    private fun sharePost(post: Post) {
-        // Handle post sharing
-        feedShareClicked(0, post)
-    }
-
-
-    @SuppressLint("DefaultLocale")
-    private fun formatCount(count: Int): String {
-        return when {
-            count >= 1_000_000 -> {
-                val millions = count / 1_000_000.0
-                if (millions == millions.toInt().toDouble()) {
-                    "${millions.toInt()}M"
-                } else {
-                    String.format("%.1fM", millions)
-                }
-            }
-            count >= 1_000 -> {
-                val thousands = count / 1_000.0
-                if (thousands == thousands.toInt().toDouble()) {
-                    "${thousands.toInt()}K"
-                } else {
-                    String.format("%.1fK", thousands)
-                }
-            }
-            else -> count.toString()
-        }
-    }
 
     private fun navigateToEditPostToRepost(data: Post) {
         try {
@@ -3083,35 +2999,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         } catch (e: Exception) {
             Log.e(TAG, "Error populating tags views: ${e.message}", e)
         }
-    }
-
-    private fun handleOriginalPostThumbnails(thumbnails: List<ThumbnailX>, imageView: ImageView) {
-        try {
-            thumbnails?.firstOrNull()?.thumbnailUrl?.takeIf { it.isNotEmpty() }
-                ?.let { thumbnailUrl ->
-                    loadImage(thumbnailUrl, imageView)
-                }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error handling original post thumbnails: ${e.message}", e)
-        }
-    }
-
-    private fun categorizeOriginalPostFiles(originalPost: OriginalPost): CategorizedFiles {
-        val files = originalPost.files
-
-        val imageFiles = files.filter { isImageFile(it, emptyList()) }
-        val audioFiles = files.filter { isAudioFile(it, emptyList()) }
-        val videoFiles = files.filter { isVideoFile(it, emptyList()) }
-        val documentFiles = files.filter { isDocumentFile(it, emptyList()) }
-        val combinationFiles = files.filter { isCombinationOfMultipleFile(it, emptyList()) }
-
-        return CategorizedFiles(
-            imageFiles = imageFiles,
-            audioFiles = audioFiles,
-            videoFiles = videoFiles,
-            documentFiles = documentFiles,
-            combinationOfMultipleFiles = combinationFiles
-        )
     }
 
 
@@ -3814,56 +3701,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    private fun bindOriginalViewHolder(
-        mediaType: MediaType,
-        itemView: View,
-        item: OriginalPost,
-        file: File
-
-    ) {
-        try {
-            Log.d(TAG, "Binding original view holder for media type: $mediaType")
-
-            when (mediaType) {
-                MediaType.Image -> bindRepostedOriginalImagesOnlyViewHolder(item,  item.files)
-                MediaType.Video -> bindRepostedOriginalVideosOnlyViewHolder(item,  item.files)
-                MediaType.Audio -> bindRepostedOriginalAudiosOnlyViewHolder(item, item.files)
-                MediaType.Document -> bindRepostedOriginalDocumentsOnlyViewHolder(item, item.files)
-                MediaType.CombinationOfMultipleFiles -> bindRepostedOriginalCombinationOfMultipleFilesViewHolder(
-                    item,
-                    item.files
-                )
-
-                MediaType.Unknown -> Log.d(TAG, "Unknown media type for original post")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error binding original view holder: ${e.message}", e)
-        }
-    }
-
-    private fun populateInteractionData(post: OriginalPost) {
-        try {
-            if (::likesCount.isInitialized) {
-                likesCount.text = formatCount(post.likeCount)
-            }
-            if (::commentCount.isInitialized) {
-                commentCount.text = formatCount(post.commentCount)
-            }
-            if (::repostCount.isInitialized) {
-                repostCount.text = formatCount(post.repostCount)
-            }
-            if (::favoriteCounts.isInitialized) {
-                favoriteCounts.text = formatCount(post.bookmarkCount)
-            }
-            if (::shareCount.isInitialized) {
-                shareCount.text = "0"
-            }
-
-            updateInteractionStates(post)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error populating interaction data: ${e.message}", e)
-        }
-    }
 
     private fun handleThumbnails(thumbnails: List<Thumbnail>?, imageView: ImageView) {
         try {
@@ -4159,7 +3996,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
 
     }
-
 
     private data class CategorizedFiles(
         val imageFiles: List<File>,
