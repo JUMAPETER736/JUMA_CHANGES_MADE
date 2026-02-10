@@ -4339,8 +4339,7 @@ class FeedAdapter(
         // Fixed setupLikeButton - Replace in your Feed Repost View Holder FeedAdapter.kt
 
         private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-
-            Log.d(TAG, "FeedRepostViewHolder Set Up Like Button Initial State - PostId: ${data._id}, isLiked: ${data.isLiked}, likes: ${data.likes}")
+            Log.d(TAG, "FeedRePostViewHolder Set Up Like Button Initial State - PostId: ${data._id}, isLiked: ${data.isLiked}, likes: ${data.likes}")
 
             updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, data.likes, "like")
@@ -4350,6 +4349,8 @@ class FeedAdapter(
 
                 it.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
+                Log.d(TAG, "Like button clicked - PostId: ${data._id}, current isLiked: ${data.isLiked}, current likes: ${data.likes}")
+
                 val previousLikeStatus = data.isLiked
                 val previousLikeCount = data.likes
 
@@ -4357,11 +4358,10 @@ class FeedAdapter(
                 data.isLiked = !previousLikeStatus
                 data.likes = if (data.isLiked) previousLikeCount + 1 else maxOf(0, previousLikeCount - 1)
 
-                //  ALSO UPDATE THIS
-                totalMixedLikesCounts = data.likes
-
                 updateLikeButtonUI(data.isLiked)
                 updateMetricDisplay(likesCount, data.likes, "like")
+
+                Log.d(TAG, "Optimistic update - PostId: ${data._id}, new isLiked: ${data.isLiked}, new likes: ${data.likes}")
 
                 YoYo.with(if (data.isLiked) Techniques.Tada else Techniques.Pulse)
                     .duration(500)
@@ -4373,6 +4373,7 @@ class FeedAdapter(
 
                 CoroutineScope(Dispatchers.Main).launch {
                     try {
+                        Log.d(TAG, "Making API call for post: ${data._id}")
                         val response = retrofitInterface.apiService.likeUnLikeFeed(data._id)
 
                         likeButton.alpha = 1f
@@ -4385,15 +4386,14 @@ class FeedAdapter(
                                     data.isLiked = likeResponse.data.isLiked
                                     data.likes = likeResponse.data.likeCount
 
-                                    // ALSO UPDATE THIS
-                                    totalMixedLikesCounts = data.likes
-
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
 
-                                    val likedByCount = likeResponse.data.likedByUserIds.size
-                                    Log.d(TAG, "Repost like synced - isLiked=${data.isLiked}, count=${data.likes}, likedBy=$likedByCount users")
+                                    // Safely access likedByUserIds (it might be null)
+                                    val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
+                                    Log.d(TAG, "API Response Success - PostId: ${data._id}, isLiked: ${data.isLiked}, likes: ${data.likes}, likedBy: $likedByCount users")
 
+                                    // Notify adapter
                                     try {
                                         feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
                                     } catch (e: Exception) {
@@ -4437,13 +4437,9 @@ class FeedAdapter(
         private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
             data.isLiked = previousStatus
             data.likes = previousCount
-
-            //ALSO UPDATE THIS
-            totalMixedLikesCounts = previousCount
-
             updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, data.likes, "like")
-            Log.d(TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
+            Log.d(TAG, "Reverted like state - PostId: ${data._id}, isLiked: $previousStatus, likes: $previousCount")
         }
 
         private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
