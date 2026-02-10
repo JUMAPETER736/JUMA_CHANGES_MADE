@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -34,9 +33,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.TransitionInflater
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
@@ -1616,99 +1612,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         ).show()
     }
 
-    private fun handleDeleteAction(
-        feedId: String,
-        position: Int,
-        callback: (Boolean, String) -> Unit
-    ) {
-        // Logic to delete the item
-        // e.g., remove it from a list or database
-        Log.d(TAG, "handleDeleteAction: remove from database")
-        lifecycleScope.launch {
-            val response = retrofitInstance.apiService.deleteFeed(feedId)
-            Log.d(TAG, "handleDeleteAction: $response")
-            Log.d(TAG, "handleDeleteAction body: ${response.body()}")
-            Log.d(TAG, "handleDeleteAction isSuccessful: ${response.isSuccessful}")
-            if (response.isSuccessful) {
-                getFeedViewModel.removeMyFeed(position)
-                allFeedAdapter.removeItem(position)
-
-
-                shortsViewModel.postCount -= 1
-                shortsViewModel.setIsRefreshPostCount(true)
-
-
-                Log.d(TAG, "handleDeleteAction: delete successful")
-                showSnackBar("File has been deleted successfully")
-                val isAllFeedDataEmpty = getFeedViewModel.getAllFeedData().isEmpty()
-                val isFavoriteFeedDataEmpty = getFeedViewModel.getAllFavoriteFeedData().isEmpty()
-
-                if (!isFavoriteFeedDataEmpty) {
-                    val favoriteFeed = getFeedViewModel.getAllFavoriteFeedData()
-                    val feedToUpdate = favoriteFeed.find { feed -> feed._id == feedId }
-
-                    if (feedToUpdate != null) {
-                        Log.d(TAG, "handleDeleteAction: feed to update id ${feedToUpdate._id}")
-                        try {
-                            Log.d("feedResponse", "handleDeleteAction: 1 ${feedToUpdate._id}")
-                            val feedPos = getFeedViewModel.getPositionById(feedId)
-                            Log.d("feedResponse", "handleDeleteAction: 2 ${feedToUpdate._id}")
-                            getFeedViewModel.removeFavoriteFeed(feedPos)
-                            Log.d("feedResponse", "handleDeleteAction: 3 ${feedToUpdate._id}")
-
-                            Log.d("feedResponse", "handleDeleteAction: 4 ${feedToUpdate._id}")
-
-                        } catch (e: Exception) {
-                            Log.e(TAG, "handleDeleteAction: error on bookmark delete ${e.message}")
-                            e.printStackTrace()
-                        }
-
-                    } else {
-                        Log.e(
-                            "feedResponse",
-                            "handleDeleteAction: feed to un-favorite not available"
-                        )
-                    }
-                }
-
-                if (!isAllFeedDataEmpty) {
-                    val allFeedData = getFeedViewModel.getAllFeedData()
-                    val feedToUpdate = allFeedData.find { feed -> feed._id == feedId }
-                    if (feedToUpdate != null) {
-                        Log.d(TAG, "handleDeleteAction: feed data found for all fragment")
-                        val pos = getFeedViewModel.getAllFeedDataPositionById(feedToUpdate._id)
-                        try {
-                            getFeedViewModel.removeAllFeedFragment(pos)
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-
-                    } else {
-                        Log.d(TAG, "handleDeleteAction: feed data not found for all fragment")
-                    }
-                } else {
-                    Log.i(TAG, "handleDeleteAction: all feed data is empty")
-                }
-
-                if (!isFavoriteFeedDataEmpty) {
-                    val favoriteFeedData = getFeedViewModel.getAllFavoriteFeedData()
-                    val feedToUpdate = favoriteFeedData.find { feed -> feed._id == feedId }
-                    if (feedToUpdate != null) {
-                        Log.d(TAG, "handleDeleteAction: feed data found for favorite")
-                        getFeedViewModel.setRefreshMyData(position, true)
-                    } else {
-                        Log.d(TAG, "handleDeleteAction: feed data not found for favorite")
-                    }
-                } else {
-                    Log.i(TAG, "handleDeleteAction: favorite feed data is empty")
-                }
-            } else {
-                callback(false, "Failed to delete file")
-                showSnackBar("Please try again!!!")
-            }
-        }
-    }
-
     private fun showSnackBar(message: String) {
         Snackbar.make(
             requireActivity().findViewById(
@@ -1791,15 +1694,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             .replace(R.id.frame_layout, tappedFilesFragment)
             .addToBackStack(null)
             .commit()
-    }
-
-
-    // Replace fragment helper method
-    private fun replaceFragment(fragment: Fragment) {
-        val fragmentTransaction = parentFragmentManager.beginTransaction()
-        fragmentTransaction.replace(android.R.id.content, fragment)  // Replace with your container's ID
-        fragmentTransaction.addToBackStack(null)  // Optional, if you want to add it to the back stack
-        fragmentTransaction.commit()
     }
 
 
@@ -1908,57 +1802,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             )
             delay(100)
         }
-    }
-
-    private fun shareTextFeed(data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
-        val sendIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, data.content)
-            type = "text/plain"
-        }
-        // Verify that the Intent will resolve to an activity
-        if (sendIntent.resolveActivity(requireContext().packageManager) != null) {
-            // Start the activity to share the text
-            startActivity(Intent.createChooser(sendIntent, "Share via"))
-        }
-    }
-
-    private fun shareImageFeed(data: com.uyscuti.social.network.api.response.getfeedandresposts.Post) {
-        Glide.with(this).asBitmap().load(data.files[0].url).into(
-            object : CustomTarget<Bitmap?>() {
-                override fun onResourceReady(
-                    resource: Bitmap,
-                    transition: Transition<in Bitmap?>?
-                ) {
-                    bitmap = resource
-                }
-
-                override fun onLoadCleared(placeholder: Drawable?) {
-                }
-            }
-        )
-        if (bitmap != null) {
-            shareImage()
-        }
-    }
-
-    private fun shareImageFeed(data: com.uyscuti.social.network.api.response.allFeedRepostsPost.Post) {
-        Glide.with(this).asBitmap().load(data.files[0].url).into(
-            object : CustomTarget<Bitmap?>() {
-                override fun onResourceReady(
-                    resource: Bitmap,
-                    transition: Transition<in Bitmap?>?
-                ) {
-                    bitmap = resource
-                    // Call shareImage() once the bitmap is ready
-                    shareImage()
-                }
-
-                override fun onLoadCleared(placeholder: Drawable?) {
-                    // Handle cleanup if needed
-                }
-            }
-        )
     }
 
     private fun shareImage() {
