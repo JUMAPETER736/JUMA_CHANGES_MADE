@@ -99,6 +99,7 @@ import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragments.Feed
 import com.uyscuti.social.circuit.ui.fragments.feed.feedRepostViewFragmentsimport.FeedRepostMultipleImageFragment
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
+import com.uyscuti.social.network.api.response.posts.Post
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -119,6 +120,7 @@ import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import java.util.UUID
 import javax.inject.Inject
 
@@ -465,7 +467,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                     val authorId = post.author?.account?._id
                     val reposterId = post.repostedUser?.owner
 
-                    // Check if ORIGINAL AUTHOR is blocked/muted
                     val isAuthorBlocked = authorId?.let { blockedUserIds.contains(it) } ?: false
                     val isAuthorPostsMuted = authorId?.let {
                         relationshipsViewModel.isPostsMuted(it) ||
@@ -473,7 +474,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                                 isUserPostsMutedInPrefs(it)
                     } ?: false
 
-                    // Check if REPOSTER is blocked/muted (only applies to reposts)
                     val isReposterBlocked = reposterId?.let { blockedUserIds.contains(it) } ?: false
                     val isReposterPostsMuted = reposterId?.let {
                         relationshipsViewModel.isPostsMuted(it) ||
@@ -481,38 +481,34 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                                 isUserPostsMutedInPrefs(it)
                     } ?: false
 
-                    // Check if user is restricted (optional - currently not filtering based on this)
-                    val isRestricted = authorId?.let {
-                        relationshipsViewModel.isRestricted(it)
-                    } ?: false
-
-                    // Filter logic: Remove if EITHER author OR reposter is blocked/muted
                     val shouldFilter = isAuthorBlocked || isAuthorPostsMuted ||
                             isReposterBlocked || isReposterPostsMuted
 
                     if (shouldFilter) {
-                        Log.d(TAG, "Filtering out post from author: $authorId, reposter: $reposterId " +
-                                "(authorBlocked: $isAuthorBlocked, authorMuted: $isAuthorPostsMuted, " +
-                                "reposterBlocked: $isReposterBlocked, reposterMuted: $isReposterPostsMuted)")
+                        Log.d(TAG, "Filtering out post from author: $authorId, reposter: $reposterId")
                     }
 
                     !shouldFilter
                 }
 
-                // Optional: Sort posts to prioritize close friends and favorites
-                val sortedPosts = filteredPosts.sortedByDescending { post ->
-                    val authorId = post.author?.account?._id ?: return@sortedByDescending 0
+                //  Sort by PRIORITY first, then by DATE within each priority group
+                val sortedPosts = filteredPosts.sortedWith(
+                    compareByDescending<Post> { post ->
+                        // First sort key: Priority (close friends > favorites > regular)
+                        val authorId = post.author?.account?._id ?: return@compareByDescending 0
+                        val isCloseFriend = relationshipsViewModel.isCloseFriend(authorId)
+                        val isFavorite = relationshipsViewModel.isFavorite(authorId)
 
-                    val isCloseFriend = relationshipsViewModel.isCloseFriend(authorId)
-                    val isFavorite = relationshipsViewModel.isFavorite(authorId)
-
-                    // Priority: close friends (3) > favorites (2) > regular (1)
-                    when {
-                        isCloseFriend -> 3
-                        isFavorite -> 2
-                        else -> 1
+                        when {
+                            isCloseFriend -> 3
+                            isFavorite -> 2
+                            else -> 1
+                        }
+                    }.thenByDescending { post ->
+                        // Second sort key: Date (newest first within each priority group)
+                        parsePostDate(post.createdAt)
                     }
-                }
+                )
 
                 Log.d(TAG, "Original posts: ${posts.size}, After filtering: ${filteredPosts.size}, After sorting: ${sortedPosts.size}")
 
@@ -525,6 +521,18 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 Log.e(TAG, "Error message: ${e.message}")
                 e.printStackTrace()
             }
+        }
+    }
+
+    // Add this helper function to parse dates
+    private fun parsePostDate(dateString: String?): Long {
+        return try {
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            format.timeZone = TimeZone.getTimeZone("UTC")
+            format.parse(dateString ?: "")?.time ?: 0L
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing date: $dateString", e)
+            0L
         }
     }
 
