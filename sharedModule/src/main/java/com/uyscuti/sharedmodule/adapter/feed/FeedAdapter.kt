@@ -1856,39 +1856,27 @@ class FeedAdapter(
             data.isBusinessPost?.let {
                 if (!it) {
 
-                    Log.d(TAG, "render: feed data $data")
-
-                    // Store current post reference
                     currentPost = data
-
                     val feedOwnerId = data.author?.account?._id ?: "Unknown"
-
-                    // Check if this post has an original post (meaning it's a repost)
                     val originalPost = data.originalPost?.firstOrNull()
 
                     isFollowingUser = followingUserIds.contains(feedOwnerId)
-                    Log.d(TAG, "render: User ${data.author?.account?.username} following status: $isFollowingUser")
 
                     if (originalPost != null) {
-                        // This is a repost - use original post's engagement metrics
+                        // This is a repost - use original post's metrics
                         totalMixedComments = originalPost.commentCount
                         totalMixedLikesCounts = originalPost.likeCount
                         totalMixedBookMarkCounts = originalPost.bookmarkCount
                         totalMixedShareCounts = 0
-                        totalMixedRePostCounts = originalPost.repostCount  //  Use original post's repost count
-
-                        Log.d(TAG, "Using original post metrics - Likes: ${originalPost.likeCount}, Comments: ${originalPost.commentCount}, Reposts: ${originalPost.repostCount}")
+                        totalMixedRePostCounts = originalPost.repostCount
                     } else {
-                        // This is a NORMAL post - use its own metrics
+                        // This is a normal post - use its own metrics
                         totalMixedComments = data.comments
                         totalMixedLikesCounts = data.likes
                         totalMixedBookMarkCounts = data.bookmarkCount
                         totalMixedShareCounts = 0
-                        //
-                        //  Use data.repostCount for normal posts
-                        totalMixedRePostCounts = data.repostCount  // Changed from data.safeRepostCount
-
-                        Log.d(TAG, "Using direct post metrics - Likes: ${data.likes}, Comments: ${data.comments}, Reposts: ${data.repostCount}")
+                        //  JUST USE THE REPOST COUNT FROM API
+                        totalMixedRePostCounts = data.repostCount
                     }
 
                     setupUserInfo(data, feedOwnerId)
@@ -2563,50 +2551,30 @@ class FeedAdapter(
         }
 
         private fun setupRepostButton(data: Post) {
-            // Display the current repost count
-            updateMetricDisplay(repostCount, data.repostCount, "repost")
 
-            // Update UI based on whether current user has reposted
-            updateRepostButtonUI(data.isRepostedByMe ?: false)
+            // Just display the count, no special UI state
+            updateMetricDisplay(repostCount, data.repostCount, "repost")
 
             repostPost.setOnClickListener { view ->
                 if (!repostPost.isEnabled) return@setOnClickListener
 
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
 
-                // Just show a quick animation - DON'T change state yet
                 YoYo.with(Techniques.Pulse)
                     .duration(300)
                     .playOn(repostPost)
 
-                // Navigate to edit fragment WITHOUT changing any state
-                // The actual repost happens when user confirms in the fragment
                 feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
             }
         }
 
-        private fun updateRepostButtonUI(isRepostedByCurrentUser: Boolean) {
-            Log.d(TAG, "Updating repost button UI: isRepostedByMe=$isRepostedByCurrentUser")
-            try {
-                if (isRepostedByCurrentUser) {
-                    // Current user HAS reposted this
-                    repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostPost.setColorFilter(
-                        ContextCompat.getColor(itemView.context, R.color.bluejeans),
-                        PorterDuff.Mode.SRC_IN
-                    )
-                    repostPost.scaleX = 1.1f
-                    repostPost.scaleY = 1.1f
-                } else {
-                    // Current user has NOT reposted this
-                    repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
-                    repostPost.clearColorFilter()
-                    repostPost.scaleX = 1.0f
-                    repostPost.scaleY = 1.0f
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error updating repost button UI", e)
-            }
+        //Keep button appearance neutral (no highlighting)
+        private fun updateRepostButtonUI(isReposted: Boolean) {
+            // Just keep default appearance for everyone
+            repostPost.setImageResource(R.drawable.repeat_svgrepo_com)
+            repostPost.clearColorFilter()
+            repostPost.scaleX = 1.0f
+            repostPost.scaleY = 1.0f
         }
 
         private fun setupShareButton(data: Post) {
