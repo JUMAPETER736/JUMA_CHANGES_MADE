@@ -4339,7 +4339,7 @@ class FeedAdapter(
         // Fixed setupLikeButton - Replace in your Feed Repost View Holder FeedAdapter.kt
 
         private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
-            Log.d(TAG, "FeedRePostViewHolder Set Up Like Button Initial State - PostId: ${data._id}, isLiked: ${data.isLiked}, likes: ${data.likes}")
+            Log.d(TAG, "FeedRepostViewHolder Set Up Like Button Initial State - PostId: ${data._id}, isLiked: ${data.isLiked}, likes: ${data.likes}")
 
             updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, data.likes, "like")
@@ -4357,6 +4357,7 @@ class FeedAdapter(
                 // Optimistic UI update
                 data.isLiked = !previousLikeStatus
                 data.likes = if (data.isLiked) previousLikeCount + 1 else maxOf(0, previousLikeCount - 1)
+                totalMixedLikesCounts = data.likes
 
                 updateLikeButtonUI(data.isLiked)
                 updateMetricDisplay(likesCount, data.likes, "like")
@@ -4385,15 +4386,14 @@ class FeedAdapter(
                                     // Sync with server data
                                     data.isLiked = likeResponse.data.isLiked
                                     data.likes = likeResponse.data.likeCount
+                                    totalMixedLikesCounts = data.likes
 
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
 
-                                    // Safely access likedByUserIds (it might be null)
-                                    val likedByCount = likeResponse.data.likedByUserIds?.size ?: 0
+                                    val likedByCount = likeResponse.data.likedByUserIds.size
                                     Log.d(TAG, "API Response Success - PostId: ${data._id}, isLiked: ${data.isLiked}, likes: ${data.likes}, likedBy: $likedByCount users")
 
-                                    // Notify adapter
                                     try {
                                         feedClickListener.likeUnLikeFeed(absoluteAdapterPosition, data)
                                     } catch (e: Exception) {
@@ -4437,6 +4437,8 @@ class FeedAdapter(
         private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
             data.isLiked = previousStatus
             data.likes = previousCount
+            totalMixedLikesCounts = previousCount
+
             updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, data.likes, "like")
             Log.d(TAG, "Reverted like state - PostId: ${data._id}, isLiked: $previousStatus, likes: $previousCount")
