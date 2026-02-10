@@ -2765,7 +2765,7 @@ class FeedAdapter(
                 }
             }
         }
-        
+
         private fun revertShareState(data: Post, previousStatus: Boolean, previousCount: Int) {
             data.isShared = previousStatus
             totalMixedShareCounts = previousCount  // ✅ Update the variable
