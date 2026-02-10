@@ -1,7 +1,6 @@
 package com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments
 
 import android.Manifest
-import android.R.attr.data
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.content.ClipData
@@ -16,7 +15,6 @@ import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.Gravity
@@ -70,7 +68,6 @@ import com.uyscuti.sharedmodule.User_Interfaces.OtherUserProfile.OtherUserProfil
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.databinding.FragmentOriginalPostWithRepostInsideBinding
-import com.uyscuti.sharedmodule.model.FeedCommentClicked
 import com.uyscuti.sharedmodule.model.GoToUserProfileFragment
 import com.uyscuti.sharedmodule.model.HideAppBar
 import com.uyscuti.sharedmodule.model.HideBottomNav
@@ -86,7 +83,6 @@ import com.uyscuti.sharedmodule.viewmodels.feed.GetFeedViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.UserRelationshipsViewModel
 import com.uyscuti.social.network.api.response.posts.OriginalPost
 import com.uyscuti.social.network.api.response.posts.Post
-import com.uyscuti.social.network.api.response.posts.Duration
 import com.uyscuti.social.network.api.response.posts.ThumbnailX
 import com.uyscuti.social.network.api.response.posts.File
 import com.uyscuti.social.network.api.response.posts.FileType
@@ -99,11 +95,8 @@ import kotlin.math.abs
 import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.network.api.response.posts.Avatar
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentsResponse
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeRequest
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.LikeResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RepostResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
@@ -267,21 +260,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
     }
 
-
-    private val OriginalPost.safeRepostCount: Int
-        get() = repostCount ?: 0
-
-    private val OriginalPost.safeLikes: Int
-        get() = likes ?: 0
-
-    private val OriginalPost.safeCommentCount: Int
-        get() = commentCount ?: 0
-
-    private val OriginalPost.safeBookmarkCount: Int
-        get() = bookmarkCount ?: 0
-
-    private val OriginalPost.safeShareCount: Int
-        get() = shareCount ?: 0
 
 
 
@@ -521,7 +499,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
     // Add this method for proper back navigation (same as your working implementation)
     @OptIn(UnstableApi::class)
     private fun cleanupAndGoBack() {
-        // IMMEDIATE: Go back first - this is the priority
+        // Go back first - this is the priority
         try {
             if (isAdded && !parentFragmentManager.isStateSaved) {
                 parentFragmentManager.popBackStackImmediate()
@@ -1517,9 +1495,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-
-    private fun handleMainPostClick() = showToast("Opening full post ...")
-
     private fun buildDisplayName(author: Author): String {
         return when {
             author.firstName.isNotBlank() && author.lastName.isNotBlank() ->
@@ -1905,9 +1880,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         return post.originalPost?.firstOrNull()?.commentCount ?: post.originalPost?.firstOrNull()?.commentCount ?: 0
     }
 
-    private fun getOriginalPostId(post: Post): String {
-        return post.originalPost?.firstOrNull()?._id ?: post._id
-    }
 
     private fun fetchAndUpdateCommentCount(postId: String) {
         Log.d(TAG, "fetchAndUpdateCommentCount: Fetching current comment count for post: $postId")
@@ -2110,7 +2082,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
     // Fixed setupLikeButton - Replace in your FeedAdapter.kt
 
-    private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+    private fun setupLikeButton(data: Post) {
         updateLikeButtonUI(data.isLiked)
         updateMetricDisplay(likesCount, data.likes, "like")
 
@@ -2199,7 +2171,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    private fun revertLikeState(data: com.uyscuti.social.network.api.response.posts.Post, previousStatus: Boolean, previousCount: Int) {
+    private fun revertLikeState(data: Post, previousStatus: Boolean, previousCount: Int) {
         data.isLiked = previousStatus
         data.likes = previousCount
         updateLikeButtonUI(data.isLiked)
@@ -2207,7 +2179,7 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Reverted to previous state: isLiked=$previousStatus, likes=$previousCount")
     }
 
-    private fun setupBookmarkButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+    private fun setupBookmarkButton(data: Post) {
         Log.d(com.uyscuti.sharedmodule.adapter.feed.TAG, "Setting up bookmark button - postId=${data._id}, isBookmarked=${data.isBookmarked}, count=${data.bookmarkCount}")
 
         updateBookmarkButtonUI(data.isBookmarked)
@@ -2683,21 +2655,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    private fun showMoreOptionsDialog(post: Post) {
-        // Implementation for showing more options
-        val options = arrayOf("Edit", "Delete", "Report", "Share")
-        AlertDialog.Builder(requireContext())
-            .setTitle("Post Options")
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> editPost(post)
-                    1 -> deletePost(post)
-                    2 -> reportPost(post)
-                    3 -> sharePost(post)
-                }
-            }
-            .show()
-    }
 
     private fun editPost(post: Post) {
         // Handle post editing
@@ -2775,19 +2732,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         }
     }
 
-    private fun updateLikeUI(isLiked: Boolean) {
-        Log.d(TAG, "Updating like button UI: isLiked=$isLiked")
-        try {
-            if (isLiked) {
-                likeButtonIcon.setImageResource(R.drawable.filled_favorite_like)
-            } else {
-                likeButtonIcon.setImageResource(R.drawable.heart_svgrepo_com)
-                likeButtonIcon.clearColorFilter()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating like button UI", e)
-        }
-    }
 
     private fun updateFavoriteUI(isFavorited: Boolean) {
         Log.d(TAG, "Updating bookmark button UI: isBookmarked=$isFavorited")
@@ -3168,61 +3112,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             documentFiles = documentFiles,
             combinationOfMultipleFiles = combinationFiles
         )
-    }
-
-    private fun handleOriginalPostMediaFiles(
-        originalPost: OriginalPost,
-        itemView: View,
-        ivQuotedPostImage: ImageView?
-
-    ) {
-        val files = originalPost.files ?: return
-        Log.d(TAG, "Processing OriginalPost with ${files.size} files")
-
-        val categorizedFiles = categorizeOriginalPostFiles(originalPost)
-        logFileCounts(categorizedFiles)
-
-        val finalMediaType = when {
-            categorizedFiles.getTypeCount() > 1 -> MediaType.CombinationOfMultipleFiles
-            categorizedFiles.imageFiles.isNotEmpty() -> MediaType.Image
-            categorizedFiles.audioFiles.isNotEmpty() -> MediaType.Audio
-            categorizedFiles.videoFiles.isNotEmpty() -> MediaType.Video
-            categorizedFiles.documentFiles.isNotEmpty() -> MediaType.Document
-            else -> MediaType.Unknown
-        }
-
-        when (finalMediaType) {
-            MediaType.Audio -> {
-                showAudioContainer()
-                bindRepostedOriginalAudiosOnlyViewHolder(originalPost, files)
-            }
-
-            MediaType.Video -> {
-                showVideoContainer()
-                bindRepostedOriginalVideosOnlyViewHolder(originalPost, files)
-            }
-
-            MediaType.Image -> {
-                showImageContainer()
-                bindRepostedOriginalImagesOnlyViewHolder(originalPost, files)
-            }
-
-            MediaType.Document -> {
-                showDocumentContainer()
-                bindRepostedOriginalDocumentsOnlyViewHolder(originalPost, files)
-            }
-
-            MediaType.CombinationOfMultipleFiles -> {
-                showMultipleCombinedFiles()
-                bindRepostedOriginalCombinationOfMultipleFilesViewHolder(originalPost, files)
-            }
-
-            else -> hideAllRepostMediaViews(itemView)
-        }
-
-        ivQuotedPostImage?.let { imageView ->
-            handleOriginalPostThumbnails(originalPost.thumbnail, imageView)
-        }
     }
 
 
@@ -4013,111 +3902,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         object Unknown : MediaType()
     }
 
-    private fun getMediaType(
-        file: File?,
-        fileTypes: List<FileType> = emptyList()
-    ): MediaType {
-        if (file == null) {
-            Log.d(TAG, "File is null, returning MediaType Unknown")
-            return MediaType.Unknown
-        }
-
-        Log.d(
-            TAG,
-            "File details: fileId=${file.fileId}, mimeType=${file.mimeType}, url=${file.url}"
-        )
-
-        // First check if we have fileTypes list and find matching fileType for this file
-        val matchingFileType = fileTypes.find { it.fileId == file.fileId }
-        matchingFileType?.let { fileTypeObj ->
-            when (fileTypeObj.fileType?.lowercase()) {
-                "video" -> {
-                    Log.d(TAG, "Detected video via fileTypes")
-                    return MediaType.Video
-                }
-
-                "pdf" -> {
-                    Log.d(TAG, "Detected pdf via fileTypes")
-                    return MediaType.Document
-                }
-
-                "image" -> {
-                    Log.d(TAG, "Detected image via fileTypes")
-                    return MediaType.Image
-                }
-
-                "audio" -> {
-                    Log.d(TAG, "Detected audio via fileTypes")
-                    return MediaType.Audio
-                }
-
-                "mixed_files" -> {
-                    Log.d(TAG, "Detected mixed_files via fileTypes")
-                    return MediaType.CombinationOfMultipleFiles
-                }
-            }
-        }
-
-        // Check file extension from fileId or URL
-        val extension = file.fileId.substringAfterLast(".").lowercase()
-            .takeIf { it != file.fileId } // Only use if there was actually a dot
-            ?: file.url.substringAfterLast(".").substringBefore("?").lowercase()
-                .takeIf { it != file.url.substringBefore("?") } // Only use if there was actually a dot
-
-        when (extension) {
-            "mp4", "mpeg", "mpe", "mpg", "avi", "mov", "wmv", "flv", "webm", "mkv" -> {
-                Log.d(TAG, "Detected video via extension: $extension")
-                return MediaType.Video
-            }
-
-            "pdf", "pdg", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "odt", "csv" -> {
-                Log.d(TAG, "Detected document via extension: $extension")
-                return MediaType.Document
-            }
-
-            "jpg", "jpeg", "png", "gif", "bmp", "webp" -> {
-                Log.d(TAG, "Detected image via extension: $extension")
-                return MediaType.Image
-            }
-
-            "mp3", "wav", "ogg", "m4a", "aac", "flac" -> {
-                Log.d(TAG, "Detected audio via extension: $extension")
-                return MediaType.Audio
-            }
-        }
-
-        // Check MIME type
-        when {
-            file.mimeType?.startsWith("image/", ignoreCase = true) == true -> {
-                Log.d(TAG, "Detected image via mimeType: ${file.mimeType}")
-                return MediaType.Image
-            }
-
-            file.mimeType?.startsWith("video/", ignoreCase = true) == true -> {
-                Log.d(TAG, "Detected video via mimeType: ${file.mimeType}")
-                return MediaType.Video
-            }
-
-            file.mimeType?.startsWith("audio/", ignoreCase = true) == true -> {
-                Log.d(TAG, "Detected audio via mimeType: ${file.mimeType}")
-                return MediaType.Audio
-            }
-
-            file.mimeType?.startsWith("application/", ignoreCase = true) == true -> {
-                Log.d(TAG, "Detected document via mimeType: ${file.mimeType}")
-                return MediaType.Document
-            }
-
-            file.mimeType == "mixed_files" -> {
-                Log.d(TAG, "Detected mixed_files via mimeType")
-                return MediaType.CombinationOfMultipleFiles
-            }
-        }
-
-        Log.d(TAG, "No type detected, returning MediaType.Unknown")
-        return MediaType.Unknown
-    }
-
 
     private fun isImageFile(file: File, fileTypes: List<FileType>?): Boolean {
         Log.d(
@@ -4375,8 +4159,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
 
     }
-
-
 
 
     private data class CategorizedFiles(
@@ -6930,8 +6712,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
 
 
 
-
-
     private fun navigateToTappedFilesFragment(
         context: Context,
         currentIndex: Int,
@@ -7020,34 +6800,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         recyclerViews.isNestedScrollingEnabled = false
     }
 
-    private fun handleRepostFileClick() {
-        post?.let { currentPost ->
-            if (currentPost.files.isNotEmpty()) {
-                val files = currentPost.files.map { file ->
-                    File(
-                        _id = file._id,
-                        fileId = file.fileId,
-                        localPath = file.localPath,
-                        url = file.url,
-                        mimeType = file.url,
-                    )
-                }
-                val fileIds = currentPost.files.map { it.fileId ?: "unknown_id" }
-
-                // You need to get the OriginalPost from the Post object
-                // Assuming the first originalPost in the list is what you want
-                currentPost.originalPost.firstOrNull()?.let { originalPost ->
-                    navigateToTappedFilesFragment(
-                        requireContext(),
-                        0,
-                        files,
-                        fileIds as List<String>,
-                        originalPost  // Pass the OriginalPost object
-                    )
-                }
-            }
-        }
-    }
 
     private fun handleOriginalFileClick() {
         post?.originalPost?.firstOrNull()?.let { originalPost ->
@@ -7080,25 +6832,6 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
         isNavigating = false
     }
 
-    private fun handleRepostMediaClick() {
-        post?.originalPost?.firstOrNull()?.let { originalPost ->
-            if (originalPost.files.isNotEmpty()) {
-                val files = originalPost.files
-                val fileIds = originalPost.fileIds
-
-                navigateToTappedFilesFragment(
-                    requireContext(),
-                    0,
-                    files,
-                    fileIds,
-                    originalPost
-                )
-            }
-        } ?: run {
-            Log.e(TAG, "No original post found")
-            Toast.makeText(requireContext(), "Unable to open media", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     private fun updateInteractionStates(post: OriginalPost) {
         // updateLikeUI(post.isLikedCount)
