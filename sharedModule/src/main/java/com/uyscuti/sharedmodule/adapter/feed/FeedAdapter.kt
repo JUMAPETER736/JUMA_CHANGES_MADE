@@ -4339,6 +4339,9 @@ class FeedAdapter(
         // Fixed setupLikeButton - Replace in your Feed Repost View Holder FeedAdapter.kt
 
         private fun setupLikeButton(data: com.uyscuti.social.network.api.response.posts.Post) {
+
+            Log.d(TAG, "FeedRepostViewHolder Set Up Like Button Initial State - PostId: ${data._id}, isLiked: ${data.isLiked}, likes: ${data.likes}")
+
             updateLikeButtonUI(data.isLiked)
             updateMetricDisplay(likesCount, data.likes, "like")
 
