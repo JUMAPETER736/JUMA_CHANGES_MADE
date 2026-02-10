@@ -7121,8 +7121,8 @@ class Fragment_Original_Post_With_Repost_Inside : Fragment() {
             val diffInHours = diffInMinutes / 60
             val diffInDays = diffInHours / 24
             val diffInWeeks = diffInDays / 7
-            val diffInMonths = diffInDays / 30 // Approximate
-            val diffInYears = diffInDays / 365 // Approximate
+            val diffInMonths = diffInDays / 30
+            val diffInYears = diffInDays / 365
 
             when {
                 diffInSeconds < 60 -> "now"

@@ -1020,8 +1020,5 @@ interface IFlashapi {
 
 
 
-//    @POST("feed/post/repost/{postId}")
-//    suspend fun repostsFeed(@Path("postId") postId: String, @Body request: RepostRequest): Response<CreateRepostFeedPost>
-//
 
 }
