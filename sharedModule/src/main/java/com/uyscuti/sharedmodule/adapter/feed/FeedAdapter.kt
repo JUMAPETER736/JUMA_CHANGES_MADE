@@ -101,6 +101,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Collections.addAll
 import java.util.Date
 import java.util.Locale
@@ -5464,13 +5465,17 @@ class FeedAdapter(
         }
 
         private fun formattedMongoDateTime(dateTimeString: String?): String {
+
             if (dateTimeString.isNullOrBlank()) return "Unknown Time"
             return try {
                 val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
                 inputFormat.timeZone = TimeZone.getTimeZone("UTC")
                 val date = inputFormat.parse(dateTimeString)
-                val now = Date()
-                val diffInMillis = now.time - (date?.time ?: 0)
+
+                // Get current time in UTC instead of local time
+                val nowUtc = Calendar.getInstance(TimeZone.getTimeZone("UTC")).time
+
+                val diffInMillis = nowUtc.time - (date?.time ?: 0)
                 val diffInSeconds = diffInMillis / 1000
                 val diffInMinutes = diffInSeconds / 60
                 val diffInHours = diffInMinutes / 60
