@@ -640,7 +640,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
     }
 
 
-
     override fun likeUnLikeFeed(
         position: Int,
         data: com.uyscuti.social.network.api.response.posts.Post
@@ -648,11 +647,6 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         Log.d("likeUnLikeFeed", "likeUnLikeFeed: $data")
         try {
 
-
-            // Trigger backend API call
-            lifecycleScope.launch {
-                feedUploadViewModel.likeUnLikeFeed(data._id)
-            }
 
             Log.d("likeUnLikeFeed", "likeUnLikeFeed: likes count is ${data.likes}")
 
@@ -684,8 +678,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                 Log.i("likeUnLikeFeed", "likeUnLikeFeed: favorite feed data is empty")
             }
 
-            // Update adapter
-            allFeedAdapter.updateItem(position, data)
+
 
             // Update my feed if exists
             val isMyFeedEmpty = getFeedViewModel.getMyFeedData().isEmpty()
