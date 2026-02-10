@@ -3582,65 +3582,7 @@ class FeedAdapter(
                 e.printStackTrace()
             }
         }
-
-        private fun navigateToEditPostToRepost(data: com.uyscuti.social.network.api.response.posts.Post) {
-            try {
-                val fragment = Fragment_Edit_Post_To_Repost(data).apply {
-                    arguments = Bundle().apply {
-                        putString("post_data", Gson().toJson(data))
-                        putString("post_id", data._id)
-                        data.originalPost.firstOrNull()?.let { originalPost ->
-                            putString("original_post_data", Gson().toJson(originalPost))
-                            putString("original_post_id", originalPost._id)
-                            putString("original_content", originalPost.content)
-                            putString("original_content_type", originalPost.contentType)
-                            putString("original_created_at", originalPost.createdAt)
-                            putString("original_author_id", originalPost.author._id)
-                            putString("original_author_username", originalPost.author.account.username)
-                            putString(
-                                "original_author_display_name",
-                                listOfNotNull(
-                                    originalPost.author.firstName.takeIf { it.isNotBlank() },
-                                    originalPost.author.lastName.takeIf { it.isNotBlank() }
-                                ).joinToString(" ").trim().takeIf { it.isNotEmpty() }
-                                    ?: originalPost.author.account.username
-                            )
-                            putString("original_author_avatar", originalPost.author.account.avatar.url)
-                            if (originalPost.files.isNotEmpty()) {
-                                putString("original_files_data", Gson().toJson(originalPost.files))
-                                putInt("original_files_count", originalPost.files.size)
-                            }
-                        }
-                        val currentUser = LocalStorage.getInstance(itemView.context).getUser() as? com.uyscuti.sharedmodule.model.business.User
-                        currentUser?.let { user ->
-                            putString("current_user_id", user._id)
-                            putString("current_user_username", user.account?.username)
-                            putString(
-                                "current_user_avatar",
-                                when {
-                                    user.avatar is Avatar -> user.avatar.url
-                                    user.avatar is String -> user.avatar
-                                    else -> null
-                                }.toString()
-                            )
-                        }
-                        putString("repost_type", "quote_repost")
-                        putString("existing_comment", data.content)
-                        putBoolean("is_editing_existing_repost", data.isReposted)
-                        putInt("adapter_position", absoluteAdapterPosition)
-                        putString("navigation_source", "repost_button_click")
-                        putLong("navigation_timestamp", System.currentTimeMillis())
-                    }
-                }
-
-                navigateToFragment(fragment, "edit_post_to_repost")
-
-            } catch (e: Exception) {
-                Log.e(tag, "Error navigating to edit post fragment: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-
+        
         private fun setupFollowButton(accountId: String, username: String) {
             val currentUserId = LocalStorage.getInstance(itemView.context).getUserId()
 
@@ -4896,7 +4838,8 @@ class FeedAdapter(
                     .duration(300)
                     .playOn(repostButton)
 
-
+                // Navigate to edit fragment WITHOUT changing any state
+                // The actual repost happens when user confirms in the fragment
                 feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
             }
         }
@@ -4924,7 +4867,61 @@ class FeedAdapter(
             }
         }
 
-
+        private fun navigateToEditPostToRepost(data: Post) {
+            try {
+                val fragment = Fragment_Edit_Post_To_Repost(data).apply {
+                    arguments = Bundle().apply {
+                        putString("post_data", Gson().toJson(data))
+                        putString("post_id", data._id)
+                        data.originalPost.firstOrNull()?.let { originalPost ->
+                            putString("original_post_data", Gson().toJson(originalPost))
+                            putString("original_post_id", originalPost._id)
+                            putString("original_content", originalPost.content)
+                            putString("original_content_type", originalPost.contentType)
+                            putString("original_created_at", originalPost.createdAt)
+                            putString("original_author_id", originalPost.author._id)
+                            putString("original_author_username", originalPost.author.account.username)
+                            putString(
+                                "original_author_display_name",
+                                listOfNotNull(
+                                    originalPost.author.firstName.takeIf { it.isNotBlank() },
+                                    originalPost.author.lastName.takeIf { it.isNotBlank() }
+                                ).joinToString(" ").trim().takeIf { it.isNotEmpty() }
+                                    ?: originalPost.author.account.username
+                            )
+                            putString("original_author_avatar", originalPost.author.account.avatar.url)
+                            if (originalPost.files.isNotEmpty()) {
+                                putString("original_files_data", Gson().toJson(originalPost.files))
+                                putInt("original_files_count", originalPost.files.size)
+                            }
+                        }
+                        val currentUser = LocalStorage.getInstance(itemView.context).getUser() as? User
+                        currentUser?.let { user ->
+                            putString("current_user_id", user._id)
+                            putString("current_user_username", user.account?.username)
+                            putString(
+                                "current_user_avatar",
+                                when {
+                                    user.avatar is Avatar -> user.avatar.url
+                                    user.avatar is String -> user.avatar
+                                    else -> null
+                                }.toString()
+                            )
+                        }
+                        putString("repost_type", "quote_repost")
+                        putString("existing_comment", data.content)
+                        putBoolean("is_editing_existing_repost", data.isReposted)
+                        putInt("adapter_position", absoluteAdapterPosition)
+                        putString("navigation_source", "repost_button_click")
+                        putLong("navigation_timestamp", System.currentTimeMillis())
+                    }
+                }
+                navigateToFragment(fragment, "edit_post_to_repost")
+            } catch (e: Exception) {
+                Log.e(tag, "Error navigating to edit post fragment: ${e.message}")
+                e.printStackTrace()
+            }
+        }
 
         // Share helper functions with multiple package name variants
         private fun shareToWhatsApp(context: Context, text: String) {
