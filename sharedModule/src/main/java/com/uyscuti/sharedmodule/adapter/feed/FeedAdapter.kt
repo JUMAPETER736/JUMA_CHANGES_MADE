@@ -1848,7 +1848,7 @@ class FeedAdapter(
         private var postClicked = false
         private var isFollowingUser = false
 
-        
+
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "SuspiciousIndentation")
         fun render(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -2563,8 +2563,11 @@ class FeedAdapter(
         }
 
         private fun setupRepostButton(data: Post) {
-            updateRepostButtonUI(data.isReposted)
+            // Display the current repost count
             updateMetricDisplay(repostCount, data.repostCount, "repost")
+
+            // Update UI based on whether current user has reposted
+            updateRepostButtonUI(data.isRepostedByMe ?: false)
 
             repostPost.setOnClickListener { view ->
                 if (!repostPost.isEnabled) return@setOnClickListener
