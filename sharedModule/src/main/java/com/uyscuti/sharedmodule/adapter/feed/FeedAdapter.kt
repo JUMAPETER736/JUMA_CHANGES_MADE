@@ -2625,9 +2625,9 @@ class FeedAdapter(
 
         private fun revertShareState(data: Post, previousStatus: Boolean, previousCount: Int) {
             data.isShared = previousStatus
-            data.shareCount = previousCount
+            totalMixedShareCounts = previousCount  // ✅ Update the variable
             updateShareButtonUI(data.isShared)
-            updateMetricDisplay(shareCountText, data.shareCount, "share")
+            updateMetricDisplay(shareCountText, totalMixedShareCounts, "share")  // ✅ Use the variable
             Log.d(TAG, "Reverted to previous state: isShared=$previousStatus, shareCount=$previousCount")
         }
 
