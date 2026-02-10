@@ -4924,7 +4924,7 @@ class FeedAdapter(
                 Log.e(TAG, "Error updating repost button UI", e)
             }
         }
-        
+
 
         // Share helper functions with multiple package name variants
         private fun shareToWhatsApp(context: Context, text: String) {
