@@ -39,7 +39,7 @@
                 android:layout_marginStart="12dp"
                 android:layout_marginTop="12dp"
                 android:contentDescription="@string/content_description"
-                android:src="@drawable/documents"
+                android:src="@drawable/flash21"
                 android:clickable="true"
                 android:focusable="true"
                 app:layout_constraintStart_toStartOf="parent"
@@ -378,15 +378,5 @@
 
     </LinearLayout>
 
-    <!-- Bottom Divider Line -->
-<!--    <View-->
-<!--        android:id="@+id/bottomDivider"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="1dp"-->
-<!--        android:background="#E1E8ED"-->
-<!--        app:layout_constraintTop_toBottomOf="@id/interactionButtonsLayout"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent" />-->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

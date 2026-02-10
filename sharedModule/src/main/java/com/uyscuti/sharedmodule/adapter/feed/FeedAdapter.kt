@@ -51,7 +51,6 @@ import com.daimajia.androidanimations.library.Techniques
 import com.daimajia.androidanimations.library.YoYo
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.gson.Gson
-import com.google.gson.stream.MalformedJsonException
 import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.Fragment_Original_Post_With_Repost_Inside
 import com.uyscuti.sharedmodule.data.model.shortsmodels.OtherUsersProfile
 import com.uyscuti.sharedmodule.R
@@ -79,12 +78,9 @@ import com.uyscuti.social.core.common.data.room.entity.FollowUnFollowEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntity
 import com.uyscuti.social.core.common.data.room.entity.ShortsEntityFollowList
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkRequest
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.BookmarkResponse
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.CommentCountResponse
-import android.content.res.ColorStateList
 import android.net.Uri
 import com.uyscuti.social.network.api.response.allFeedRepostsPost.RetrofitClient
-import com.uyscuti.social.network.api.response.allFeedRepostsPost.ShareResponse
 import com.uyscuti.social.network.api.response.getrepostsPostsoriginal.File
 import com.uyscuti.social.network.api.response.posts.Author
 import com.uyscuti.social.network.api.retrofit.instance.RetrofitInstance
@@ -106,7 +102,6 @@ import java.util.Collections.addAll
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import kotlin.math.abs
 
 
 private const val VIEW_TYPE_TEXT_FEED = 0
@@ -125,7 +120,6 @@ class FeedAdapter(
     private val context: Context,
     private val retrofitInterface: RetrofitInstance,
     private val feedClickListener: OnFeedClickListener,
-    private var currentCommentCount: Int = 0,
     private val fragmentManager: FragmentManager,
     private var followingUserIds: Set<String> = emptySet()
 
@@ -229,12 +223,6 @@ class FeedAdapter(
     // Track comment counts by post ID for more reliable updates
     private val commentCountMap = mutableMapOf<String, Int>()
 
-    private val userId = LocalStorage.getInstance(context).getUserId()
-
-    private val currentUsername = LocalStorage.getInstance(context).getUsername()
-
-    private var businessPost: com.uyscuti.social.network.api.response.business.response.post.Post? = null
-
     private var followList: MutableList<ShortsEntityFollowList> =
         mutableListOf()
 
@@ -285,11 +273,6 @@ class FeedAdapter(
         Log.d(TAG, "Following usernames updated: ${usernames.size} users")
     }
 
-
-    fun clearItems() {
-        submitItems(mutableListOf())
-        notifyDataSetChanged()
-    }
 
     private fun updatePostsForUser(userId: String) {
         for (i in 0 until itemCount) {
@@ -373,41 +356,6 @@ class FeedAdapter(
         return -1
     }
 
-    fun refreshPostCommentCount(postId: String) {
-        val position = findPostPosition(postId)
-        if (position != -1) {
-            Log.d("FeedAdapter", "Refreshing comment count for post at position $position")
-            notifyItemChanged(position)
-        }
-    }
-
-    fun notifyCommentAdded(postId: String) {
-        val position = findPostPosition(postId)
-        if (position != -1) {
-            Log.d("FeedAdapter", "Notifying comment added for post at position $position")
-            // Update the post data and refresh the view
-            notifyItemChanged(position)
-        }
-    }
-
-
-    // Enhanced helper method to get the correct comment count
-    private fun getCommentCount(post: com.uyscuti.social.network.api.response.posts.Post): Int {
-        return commentCountMap[post._id] ?: run {
-            // Fallback to original count if not in map
-            val originalCount = when {
-                post.originalPost?.isNotEmpty() == true -> {
-                    post.originalPost[0].commentCount ?: 0
-                }
-                else -> {
-                    0
-                }
-            }
-            commentCountMap[post._id] = originalCount
-            originalCount
-        }
-    }
-
 
     private var lifeCycleOwner: LifecycleOwner? = null
     private  var dialogViewModel: DialogViewModel? = null
@@ -419,9 +367,6 @@ class FeedAdapter(
         this.dialogViewModel = dialogViewModel
 
     }
-
-
-    var onItemVisible: ((Int) -> Unit)? = null
 
 
     inner class FeedTextOnyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
