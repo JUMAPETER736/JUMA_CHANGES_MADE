@@ -1848,7 +1848,7 @@ class FeedAdapter(
         private var postClicked = false
         private var isFollowingUser = false
 
-
+        
         @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "SuspiciousIndentation")
         fun render(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -1866,33 +1866,29 @@ class FeedAdapter(
                     // Check if this post has an original post (meaning it's a repost)
                     val originalPost = data.originalPost?.firstOrNull()
 
-
                     isFollowingUser = followingUserIds.contains(feedOwnerId)
                     Log.d(TAG, "render: User ${data.author?.account?.username} following status: $isFollowingUser")
-
-
-
 
                     if (originalPost != null) {
                         // This is a repost - use original post's engagement metrics
                         totalMixedComments = originalPost.commentCount
-                        totalMixedLikesCounts = originalPost.likeCount  // Note: likeCount in OriginalPost
+                        totalMixedLikesCounts = originalPost.likeCount
                         totalMixedBookMarkCounts = originalPost.bookmarkCount
                         totalMixedShareCounts = 0
-                        totalMixedRePostCounts = originalPost.repostCount
+                        totalMixedRePostCounts = originalPost.repostCount  //  Use original post's repost count
 
-
-
-                        Log.d(TAG, "Using original post metrics - Likes: ${originalPost.likeCount}, Comments: ${originalPost.commentCount}")
+                        Log.d(TAG, "Using original post metrics - Likes: ${originalPost.likeCount}, Comments: ${originalPost.commentCount}, Reposts: ${originalPost.repostCount}")
                     } else {
-                        // This is a regular post - use its own metrics
+                        // This is a NORMAL post - use its own metrics
                         totalMixedComments = data.comments
                         totalMixedLikesCounts = data.likes
                         totalMixedBookMarkCounts = data.bookmarkCount
                         totalMixedShareCounts = 0
-                        totalMixedRePostCounts = data.safeRepostCount
+                        //
+                        //  Use data.repostCount for normal posts
+                        totalMixedRePostCounts = data.repostCount  // Changed from data.safeRepostCount
 
-                        Log.d(TAG, "Using direct post metrics - Likes: ${data.likes}, Comments: ${data.comments}")
+                        Log.d(TAG, "Using direct post metrics - Likes: ${data.likes}, Comments: ${data.comments}, Reposts: ${data.repostCount}")
                     }
 
                     setupUserInfo(data, feedOwnerId)
@@ -1907,9 +1903,6 @@ class FeedAdapter(
                     ensurePostClickability(data)
                 }
             }
-
-
-
         }
 
         private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
