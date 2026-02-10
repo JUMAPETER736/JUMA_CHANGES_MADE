@@ -491,12 +491,12 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
                     !shouldFilter
                 }
 
-                // ✅ PURE CHRONOLOGICAL SORT - Newest activity first
+                //  PURE CHRONOLOGICAL SORT - Newest activity first
                 val sortedPosts = filteredPosts.sortedByDescending { post ->
                     parsePostDate(post.createdAt)
                 }
 
-                // ✅ Add debug logging to verify sort order
+                // Add debug logging to verify sort order
                 Log.d(TAG, "=== FEED SORT ORDER ===")
                 sortedPosts.take(5).forEachIndexed { index, post ->
                     Log.d(TAG, "Position $index:")
@@ -523,7 +523,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
         }
     }
 
-    // ✅ Add this helper function (put it outside getAllFeed, as a class method)
+    // Add this helper function (put it outside getAllFeed, as a class method)
     private fun parsePostDate(dateString: String?): Long {
         return try {
             val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
@@ -537,7 +537,7 @@ class AllFragment : Fragment(), OnFeedClickListener, FeedTextViewFragmentInterfa
             0L
         }
     }
- 
+
     private suspend fun loadBlockedUsers() {
 
         try {

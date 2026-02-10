@@ -4375,10 +4375,9 @@ class FeedAdapter(
                         if (response.isSuccessful) {
                             response.body()?.let { likeResponse ->
                                 if (likeResponse.success) {
-                                    // Sync with server data
+                                    // Sync BOTH isLiked AND likes count from server
                                     data.isLiked = likeResponse.data.isLiked
-
-
+                                    data.likes = likeResponse.data.likeCount
 
                                     updateLikeButtonUI(data.isLiked)
                                     updateMetricDisplay(likesCount, data.likes, "like")
@@ -4393,11 +4392,8 @@ class FeedAdapter(
                                     Log.e(TAG, "Like failed - success=false")
                                     revertLikeState(data, previousLikeStatus, previousLikeCount)
                                 }
-                            } ?: run {
-                                Log.e(TAG, "Like response body is null")
-                                revertLikeState(data, previousLikeStatus, previousLikeCount)
                             }
-                        } else {
+                        }else {
                             Log.e(TAG, "Like API error: ${response.code()} - ${response.message()}")
                             revertLikeState(data, previousLikeStatus, previousLikeCount)
 
