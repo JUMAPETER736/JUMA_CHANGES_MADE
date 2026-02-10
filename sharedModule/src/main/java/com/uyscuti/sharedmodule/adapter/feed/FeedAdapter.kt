@@ -1849,7 +1849,6 @@ class FeedAdapter(
         private var isFollowingUser = false
 
 
-        @OptIn(UnstableApi::class)
         @SuppressLint("SetTextI18n", "SuspiciousIndentation")
         fun render(data: com.uyscuti.social.network.api.response.posts.Post) {
 
@@ -1866,33 +1865,27 @@ class FeedAdapter(
                     // Check if this post has an original post (meaning it's a repost)
                     val originalPost = data.originalPost?.firstOrNull()
 
-
                     isFollowingUser = followingUserIds.contains(feedOwnerId)
                     Log.d(TAG, "render: User ${data.author?.account?.username} following status: $isFollowingUser")
-
-
-
 
                     if (originalPost != null) {
                         // This is a repost - use original post's engagement metrics
                         totalMixedComments = originalPost.commentCount
-                        totalMixedLikesCounts = originalPost.likeCount  // Note: likeCount in OriginalPost
+                        totalMixedLikesCounts = originalPost.likeCount
                         totalMixedBookMarkCounts = originalPost.bookmarkCount
-                        totalMixedShareCounts = 0
+                        totalMixedShareCounts = originalPost.shareCount
                         totalMixedRePostCounts = originalPost.repostCount
 
-
-
-                        Log.d(TAG, "Using original post metrics - Likes: ${originalPost.likeCount}, Comments: ${originalPost.commentCount}")
+                        Log.d(TAG, "Using original post metrics - Likes: ${originalPost.likeCount}, Comments: ${originalPost.commentCount}, Shares: ${originalPost.shareCount}, Reposts: ${originalPost.repostCount}")
                     } else {
                         // This is a regular post - use its own metrics
                         totalMixedComments = data.comments
                         totalMixedLikesCounts = data.likes
                         totalMixedBookMarkCounts = data.bookmarkCount
-                        totalMixedShareCounts = 0
-                        totalMixedRePostCounts = data.safeRepostCount
+                        totalMixedShareCounts = data.shareCount
+                        totalMixedRePostCounts = data.repostCount
 
-                        Log.d(TAG, "Using direct post metrics - Likes: ${data.likes}, Comments: ${data.comments}")
+                        Log.d(TAG, "Using direct post metrics - Likes: ${data.likes}, Comments: ${data.comments}, Shares: ${data.shareCount}, Reposts: ${data.repostCount}")
                     }
 
                     setupUserInfo(data, feedOwnerId)
@@ -1907,9 +1900,6 @@ class FeedAdapter(
                     ensurePostClickability(data)
                 }
             }
-
-
-
         }
 
         private fun navigateToOriginalPostWithoutRepostInside(data: com.uyscuti.social.network.api.response.posts.Post) {
@@ -2572,15 +2562,8 @@ class FeedAdapter(
         private fun setupRepostButton(data: Post) {
             updateRepostButtonUI(data.isReposted)
 
-            val originalPost = data.originalPost?.firstOrNull()
-
-            val displayRepostCount = if (originalPost != null) {
-                originalPost.repostCount
-            } else {
-                data.repostCount
-            }
-
-            updateMetricDisplay(repostCount, displayRepostCount, "repost")
+            // Use totalMixedRePostCounts which is now properly initialized
+            updateMetricDisplay(repostCount, totalMixedRePostCounts, "repost")
 
             repostPost.setOnClickListener { view ->
                 if (!repostPost.isEnabled) return@setOnClickListener
@@ -2594,7 +2577,6 @@ class FeedAdapter(
                 feedClickListener.feedRepostPost(absoluteAdapterPosition, data)
             }
         }
-
 
         private fun updateRepostButtonUI(isReposted: Boolean) {
             Log.d(TAG, "Updating repost button UI: isReposted=$isReposted")
@@ -3221,11 +3203,6 @@ class FeedAdapter(
                 else -> null
             }
         }
-
-        private val com.uyscuti.social.network.api.response.posts.Post.safeRepostCount: Int
-            get() =  0
-
-
 
 
         private fun formattedMongoDateTime(dateTimeString: String?): String {
