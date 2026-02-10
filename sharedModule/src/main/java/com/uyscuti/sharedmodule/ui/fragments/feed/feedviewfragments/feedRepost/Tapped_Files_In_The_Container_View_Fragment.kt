@@ -95,7 +95,6 @@ import com.google.android.material.snackbar.Snackbar
 import com.uyscuti.sharedmodule.ReportNotificationActivity2
 import com.uyscuti.sharedmodule.adapter.feed.FeedAdapter
 import com.uyscuti.sharedmodule.model.ShortsFollowButtonClicked
-import com.uyscuti.sharedmodule.ui.fragments.feed.feedviewfragments.editRepost.Fragment_Edit_Post_To_Repost
 import com.uyscuti.sharedmodule.utils.FollowingManager
 import com.uyscuti.sharedmodule.viewmodels.FollowUnfollowViewModel
 import com.uyscuti.sharedmodule.viewmodels.feed.FeedUploadViewModel
@@ -1203,7 +1202,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         // Show the dialog
         dialog.show()
 
-        // ==================== SHARE ACTION ====================
+        //  SHARE ACTION
         shareAction.setOnClickListener {
             val shareIntent = Intent(Intent.ACTION_SEND)
             shareIntent.type = "text/plain"
@@ -1212,7 +1211,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             dialog.dismiss()
         }
 
-        // ==================== DOWNLOAD ACTION ====================
+        //  DOWNLOAD ACTION
         downloadFiles.setOnClickListener {
             Log.d("DownloadButton", "Data: $data")
             if (!data.files.isNullOrEmpty()) {
@@ -1228,7 +1227,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             downloadFiles.visibility = View.GONE
         }
 
-        // ==================== MUTE ACTION ====================
+        //  MUTE ACTION
         muteOptionLayout.setOnClickListener {
             Log.d("MuteButton", "Mute button clicked for user: $authorId")
             dialog.dismiss()
@@ -1240,7 +1239,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             }
         }
 
-        // ==================== BLOCK USER ACTION ====================
+        //  BLOCK USER ACTION
         blockUserLayout.setOnClickListener {
             Log.d("BlockButton", "Block button clicked for user: $authorId")
             dialog.dismiss()
@@ -1256,23 +1255,16 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             }
         }
 
-        // ==================== REPOST ACTION ====================
+        //  REPOST ACTION
         quoteFeedLayout.setOnClickListener {
             // You may need to convert PostItem to Post here if Fragment_Edit_Post_To_Repost requires Post type
             // For now, commenting this out - you'll need to handle the conversion
             Toast.makeText(context, "Repost feature needs data conversion", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
 
-            /* Original code - may need adaptation:
-            val fragment = Fragment_Edit_Post_To_Repost(data)
-            val transaction = requireActivity().supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.frame_layout, fragment)
-            transaction.addToBackStack(null)
-            transaction.commit()
-            */
         }
 
-        // ==================== COPY LINK ACTION ====================
+        //  COPY LINK ACTION
         copyLink.setOnClickListener {
             val postId = data.postId  // Changed from data._id
             val linkToCopy = "https://circuitSocial.app/post/$postId"
@@ -1283,20 +1275,20 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             dialog.dismiss()
         }
 
-        // ==================== NOT INTERESTED ACTION ====================
+        //  NOT INTERESTED ACTION
         notInterested.setOnClickListener {
             handleNotInterestedPostItem(data)
             dialog.dismiss()
         }
 
-        // ==================== HIDE POST ACTION ====================
+        //  HIDE POST ACTION
         hidePostLayout.setOnClickListener {
             Log.d(TAG, "hidePostLayout: hide post clicked")
             hideSinglePostItem(position, data)
             dialog.dismiss()
         }
 
-        // ==================== REPORT USER ACTION ====================
+        //  REPORT USER ACTION
         reportUser.setOnClickListener {
             Log.d("reportUser", "Report button clicked")
             val intent = Intent(requireActivity(), ReportNotificationActivity2::class.java)
@@ -1308,7 +1300,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         followUnfollowLayout.visibility = View.GONE
     }
 
-    // ==================== MUTE TOGGLE ====================
+    //  MUTE TOGGLE
     private fun handleMuteToggle(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
@@ -1355,7 +1347,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
         }
     }
 
-    // ==================== BLOCK USER CONFIRMATION ====================
+    //  BLOCK USER CONFIRMATION
     private fun showBlockConfirmationDialog(userId: String, username: String, position: Int) {
         AlertDialog.Builder(requireContext())
             .setTitle("Block $username?")
@@ -1370,7 +1362,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
             .show()
     }
 
-    // ==================== BLOCK USER ====================
+    //  BLOCK USER
     private fun handleBlockUser(userId: String, position: Int) {
         lifecycleScope.launch {
             try {
@@ -1421,7 +1413,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
     }
 
 
-    // ==================== UNBLOCK USER ====================
+    //  UNBLOCK USER
     private fun handleUnblockUser(userId: String, username: String) {
         lifecycleScope.launch {
             try {
@@ -1848,7 +1840,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
 
     private fun loadUserInteractionState(postId: String) {
-        // TODO: Load from user preferences or API
+
         isLiked = false
         isReposted = false
     }
@@ -1892,7 +1884,7 @@ class Tapped_Files_In_The_Container_View_Fragment : Fragment() {
 
     private fun updateRepostButtonState() {
         val color = if (isReposted) {
-            ContextCompat.getColor(requireContext(), android.R.color.holo_green_light)
+            ContextCompat.getColor(requireContext(), android.R.color.holo_blue_bright)
         } else {
             ContextCompat.getColor(requireContext(), android.R.color.white)
         }
@@ -4717,7 +4709,7 @@ interface OnMultipleFilesClickListener {
 
 // MOCK CLASSES
 
-// TODO: Replace with your actual Post class
+
 class Post {
     var files: List<File> = emptyList()
     var fileIds: List<String> = emptyList()
