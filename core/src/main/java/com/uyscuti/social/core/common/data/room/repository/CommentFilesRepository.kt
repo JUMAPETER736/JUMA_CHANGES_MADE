@@ -16,17 +16,12 @@ class CommentFilesRepository(private val commentFilesDao: CommentFilesDao) {
     }
 
     suspend fun insertCommentFile(comment: CommentsFilesEntity) {
-//        Log.d(TAG, "Inserting or updating follow: $comment")
+
 
         commentFilesDao.insertCommentFile(comment)
 
-//        Log.d(TAG, "Follow inserted or updated successfully")
-
     }
 
-    //    suspend fun deleteFollowById(userId: String) {
-//        followDao.deleteFollowById(userId)
-//    }
     suspend fun deleteCommentFileById(postId: String): Boolean {
         val rowsDeleted = commentFilesDao.deleteCommentFileById(postId)
         return rowsDeleted > 0
